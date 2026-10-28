@@ -15,32 +15,42 @@ Hash-urile au fost recalculate dupa prima runda de lucru si sunt **identice** cu
 
 ### Volume (randuri)
 
-| Tabel | Alimente | MF | OI |
-|---|---:|---:|---:|
-| NIR | 192 | 2 | 4 |
-| Intrari | 1671 | 156 | 1137 |
-| IntrariStorno | 8 | 2 | 2 |
-| Iesiri_H | 127 | 7 | 96 |
-| Iesiri | 3196 | 154 | 1529 |
-| IesiriRetur | 0 | 0 | 0 |
-| Produse | 274 | 41 | 951 |
-| ProduseP | 2304 | 156 | 1144 |
-| ProduseM | 0 | 12 | — |
-| OI_Predare | 0 | 154 | 1529 |
-| OI_Transfer | 0 | 0 | 0 |
-| OI_Casare | 0 | 0 | 0 |
-| OI_Produse | 0 | 154 | 1529 |
-| LABC | 127 | 0 | 0 |
-| ListaAlimente | 127 | 0 | 0 |
-| LegBCLA | 127 | 0 | 0 |
-| MicDejun | 127 | 0 | 0 |
-| Dejun | 401 | 0 | 0 |
-| Cina | 127 | 0 | 0 |
-| Furnizori | 28 | 2 | 5 |
-| Clienti | 1 | 7 | 105 |
-| Masini | 4 | 2 | 2 |
-| TVA | 6 | 4 | 4 |
-| cpv | 9454 | 9454 | 9454 |
+Proveniență: **M** = volumele consemnate în manifestul VC00-01; **D** = numărătorile consemnate în dicționarul VC00-02, din dumpurile DAO doar-schema ale celor trei baze reale. `M, D` păstrează ambele observații când valorile coincid. Marcajul `—` rămâne distinct de `0`; MF/OI denumesc Mijloace_Fixe/Obiecte_Inventar. Observațiile istorice M de mai jos rămân la checkpointul lor.
+
+| Tabel | Alimente | MF | OI | Proveniență |
+|---|---:|---:|---:|---|
+| NIR | 192 | 2 | 4 | M, D |
+| Intrari | 1671 | 156 | 1137 | M, D |
+| IntrariStorno | 8 | 2 | 2 | M, D |
+| Iesiri_H | 127 | 7 | 96 | M, D |
+| Iesiri | 3196 | 154 | 1529 | M, D |
+| IesiriRetur | 0 | 0 | 0 | M, D |
+| Produse | 274 | 41 | 951 | M, D |
+| ProduseP | 2304 | 156 | 1144 | M, D |
+| ProduseM | 0 | 12 | — | M, D |
+| OI_Predare | 0 | 154 | 1529 | M, D |
+| OI_Transfer | 0 | 0 | 0 | M, D |
+| OI_Casare | 0 | 0 | 0 | M, D |
+| OI_Produse | 0 | 154 | 1529 | M, D |
+| LABC | 127 | 0 | 0 | M, D |
+| ListaAlimente | 127 | 0 | 0 | M, D |
+| LegBCLA | 127 | 0 | 0 | M, D |
+| MicDejun | 127 | 0 | 0 | M, D |
+| Dejun | 401 | 0 | 0 | M, D |
+| Cina | 127 | 0 | 0 | M, D |
+| Furnizori | 28 | 2 | 5 | M, D |
+| Clienti | 1 | 7 | 105 | M, D |
+| Masini | 4 | 2 | 2 | M, D |
+| TVA | 6 | 4 | 4 | M, D |
+| cpv | 9454 | 9454 | 9454 | M, D |
+| Alimente | 0 | 0 | — | D |
+| ComisieInventar | 0 | 0 | 0 | D |
+| ComisieNIR | 1 | 1 | 1 | D |
+| FeluriMancare | 0 | 0 | 0 | D |
+| NR | 1 | 1 | 1 | D |
+| Retetar | 0 | 0 | 0 | D |
+| Setari | 6 | 6 | 5 | D |
+| UNIT | 1 | 1 | — | D |
 
 Observatii (dovada): `OI_Predare`, `OI_Transfer`, `OI_Casare`, `OI_Produse`, `IesiriRetur` au 0 randuri in toate cele trei baze (nu exista documente reale pentru predare/transfer/casare/retur -> scenariile sunt sintetice). Predarile OI apar in `Iesiri`/`Iesiri_H` (OI: 96 bonuri, 1.529 linii; MF: 7 bonuri, 154 linii). `cpv` are 9454 randuri in backend (nomenclator CPV comun in baza: D08).
 

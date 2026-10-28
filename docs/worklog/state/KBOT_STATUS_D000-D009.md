@@ -8,12 +8,12 @@ Starea comună tuturor loturilor D001: aplicat local; fără teste, commit sau p
 
 | Subfelie | Rezultat | Jurnal |
 |---|---|---|
-| D001-01 | Duplicate VERCON înlocuite cu trimiteri, corecție KE01-02, README ca index | [D001-01](../SLICE-D001-01-documentatie-duplicate-si-index.md) |
-| D001-02 | Index global scurtat, repere istorice datate, șase descrieri VERCON consolidate cu păstrarea clauzelor unice | [D001-02](../SLICE-D001-02-index-status-si-rapoarte-vercon.md) |
-| D001-03 | Patru documente absorbite în planurile și jurnalele existente; corecții MainForm, istoric arbore și trasabilitate DDF păstrate | [D001-03](../SLICE-D001-03-absorbtie-planuri-si-predari.md) |
-| D001-04 | 21 de treceri: jurnale/statusuri, CHAT web, predări DDF/migrator, familia 0048, contracte NIR/tooltip/FOREXE, convenția formularelor și probe VERCON; absorbții și limite în jurnal | [D001-04](../SLICE-D001-04-consolidare-extinsa-documentatie.md) |
-| D001-05 | Contracte NIR/Menu, nomenclatoare și perioade MF centralizate; nouă jurnale Adobe absorbite, cu probe și limite datate | [D001-05](../SLICE-D001-05-contracte-nir-si-istoric-adobe.md) |
-| D001-06 | Liste de alimente, fișe/editori NIR/FCS/BC, cache și revizii VRC centralizate, cu probe/limite păstrate | [D001-06](../SLICE-D001-06-liste-si-rapoarte-vercon.md) |
+| D001-01 | Duplicate VERCON înlocuite cu trimiteri, corecție KE01-02, README ca index | [D001-01](../SLICE-D001-01-documentatie-duplicate-si-index.md#slice-d001-01) |
+| D001-02 | Index global scurtat, repere istorice datate, șase descrieri VERCON consolidate cu păstrarea clauzelor unice | [D001-02](../SLICE-D001-01-documentatie-duplicate-si-index.md#slice-d001-02) |
+| D001-03 | Patru documente absorbite în planurile și jurnalele existente; corecții MainForm, istoric arbore și trasabilitate DDF păstrate | [D001-03](../SLICE-D001-01-documentatie-duplicate-si-index.md#slice-d001-03) |
+| D001-04 | 21 de treceri: jurnale/statusuri, CHAT web, predări DDF/migrator, familia 0048, contracte NIR/tooltip/FOREXE, convenția formularelor și probe VERCON; absorbții și limite în jurnal | [D001-04](../SLICE-D001-01-documentatie-duplicate-si-index.md#slice-d001-04) |
+| D001-05 | Contracte NIR/Menu, nomenclatoare și perioade MF centralizate; nouă jurnale Adobe absorbite, cu probe și limite datate | [D001-05](../SLICE-D001-01-documentatie-duplicate-si-index.md#slice-d001-05) |
+| D001-06 | Liste de alimente, fișe/editori NIR/FCS/BC, cache și revizii VRC centralizate, cu probe/limite păstrate | [D001-06](../SLICE-D001-01-documentatie-duplicate-si-index.md#slice-d001-06) |
 | D001-07 | Hărți E-Factura: convenții comune, catalog/navigare/matrice reunite, trei fișe PDF grupate cu diferențele păstrate | [D001-07](../SLICE-D001-07-harti-istorice-efactura.md#slice-d001-07) |
 | D001-08 | Jurnale desktop 0010 și 0025 reunite în două fișiere existente, contracte/probe/restanțe pe etapă | [D001-08](../SLICE-D001-07-harti-istorice-efactura.md#slice-d001-08) |
 | D001-09 | 20 de însemnări VERCON din 18.10 reunite în jurnale tematice, cu reviziile și limitele istorice păstrate | [D001-09](../SLICE-D001-07-harti-istorice-efactura.md#slice-d001-09) |
@@ -239,9 +239,29 @@ Continuare după D002-99, în același domeniu. Stare comună: aplicat local; nu
 | D003-05 | Istoricul HTTP 0044 compact, cu conversii, corelații, reguli FK și probe istorice păstrate. | [D003-05](../SLICE-D003-01-continuare-documentara.md#slice-d003-05) |
 | D003-06 | Ierarhia etapelor absorbite corectată, ancore compacte și conținutul istoric păstrat. | [D003-06](../SLICE-D003-01-continuare-documentara.md#slice-d003-06) |
 | D003-07 | Predare, bilanț propriu fără rândurile independente și stage selectiv realizat. | [D003-07](../SLICE-D003-01-continuare-documentara.md#slice-d003-07) |
+| D003-08 | Metadatele și registrele comune centralizate în trei istorice D001. | [D003-08](../SLICE-D003-01-continuare-documentara.md#slice-d003-08) |
+| D003-09 | 29 de fișe de raport reunite în șapte, cu 1359 de controale păstrate. | [D003-09](../SLICE-D003-01-continuare-documentara.md#slice-d003-09) |
+| D003-10 | 68 de scheme e-Factura compacte, cu 809 câmpuri și proveniență reconstituibile. | [D003-10](../SLICE-D003-01-continuare-documentara.md#slice-d003-10) |
+| D003-11 | Inventarul și conversiile VERCON compacte, cu 377 de obiecte și 243 de câmpuri. | [D003-11](../SLICE-D003-01-continuare-documentara.md#slice-d003-11) |
+| D003-12 | Rândurile comune ale registrelor și continuările compacte în patru istorice. | [D003-12](../SLICE-D003-01-continuare-documentara.md#slice-d003-12) |
+| D003-13 | Comisiile și mesele: opt fișe reunite în trei, cu 55 de controale păstrate. | [D003-13](../SLICE-D003-01-continuare-documentara.md#slice-d003-13) |
+| D003-14 | Consemnările comune D002 centralizate; toate inventarele, bilanțurile și ancorele păstrate. | [D003-14](../SLICE-D003-01-continuare-documentara.md#slice-d003-14) |
+| D003-15 | 76 de inventare scurte compacte, cu cele 378 de perechi cale/număr păstrate. | [D003-15](../SLICE-D003-01-continuare-documentara.md#slice-d003-15) |
+| D003-16 | 12 fișe de bonuri/liste reunite în patru, cu 591 de controale și poziții explicite. | [D003-16](../SLICE-D003-01-continuare-documentara.md#slice-d003-16) |
+| D003-17 | Șapte fișe de evidență/centralizatoare/produse reunite în trei, cu 236 de controale păstrate. | [D003-17](../SLICE-D003-01-continuare-documentara.md#slice-d003-17) |
+| D003-18 | 18 tabele din cinci matrici compacte prin poziții explicite; 924 de controale identice. | [D003-18](../SLICE-D003-01-continuare-documentara.md#slice-d003-18) |
+| D003-19 | Indexul comun compactat fără padding; continuitatea D003 actualizată, rândul AV păstrat. | [D003-19](../SLICE-D003-01-continuare-documentara.md#slice-d003-19) |
+| D003-20 | Procedurile și cataloagele compacte, cu 74 de proceduri, 114 obiecte și opt ancore păstrate. | [D003-20](../SLICE-D003-01-continuare-documentara.md#slice-d003-20) |
+| D003-21 | Numărători M/D centralizate și relații FK grupate, cu observațiile și toate cele 26 de legături păstrate. | [D003-21](../SLICE-D003-01-continuare-documentara.md#slice-d003-21) |
+| D003-22 | 100 de scheme în profiluri compacte, cu toate atributele celor 1052 de câmpuri reconstituibile. | [D003-22](../SLICE-D003-01-continuare-documentara.md#slice-d003-22) |
+| D003-23 | Istoricul inițial reunit și cataloage compacte, cu etapele, ancorele și toate intrările păstrate. | [D003-23](../SLICE-D003-01-continuare-documentara.md#slice-d003-23) |
+| D003-24 | Continuări compacte în șapte documente; stările și cele 12 confirmări ADE reconstituibile. | [D003-24](../SLICE-D003-01-continuare-documentara.md#slice-d003-24) |
+| D003-25 | Opt documente compacte; citate/cod păstrate, Plan pe titluri și explicația 0030 într-un singur loc. | [D003-25](../SLICE-D003-01-continuare-documentara.md#slice-d003-25) |
+| D003-26 | Registre și continuări compacte; 19 stări C17 și trei fragmente RecordSource identice cu referință exactă. | [D003-26](../SLICE-D003-01-continuare-documentara.md#slice-d003-26) |
+| D003-27 | Predare finală și stage selectiv realizat; bilanțul propriu exclude editările independente. | [D003-27](../SLICE-D003-01-continuare-documentara.md#slice-d003-27) |
 
 ### Continuare D003
 
-Progres curent D003: [D003-07](../SLICE-D003-01-continuare-documentara.md#slice-d003-07); cumul 419 fișiere și 25906 rânduri mai puțin net. Curățarea nu este terminată; modificările proprii sunt în stage selectiv, fără commit/push.
+Progres curent D003: [D003-27](../SLICE-D003-01-continuare-documentara.md#slice-d003-27); cumul 463 fișiere și 31495 rânduri mai puțin net, inclusiv consemnările și registrele. Curățarea nu este terminată; modificările proprii sunt stagiate selectiv, fără commit/push.
 
-Următoarea subfelie D003: **SLICE-D003-08**. Următorul număr principal documentar liber: **D004**. Registrul numeric K-BOT rămâne neschimbat.
+Următoarea subfelie D003: **SLICE-D003-28**. Următorul număr principal documentar liber: **D004**. Registrul numeric K-BOT rămâne neschimbat.

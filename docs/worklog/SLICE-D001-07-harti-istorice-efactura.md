@@ -2,12 +2,24 @@
 
 Reunire documentară D001-93. Rezultatele, inventarele, bilanțurile și datele de mai jos rămân înregistrările loturilor originale; căile din inventarele istorice sunt proveniență, inclusiv când fișierul a fost retras ulterior. Numărătorile cumulative sunt cele consemnate atunci, fără recalcularea retroactivă a probelor.
 
-Tabelele indică rânduri eliminate; minus înseamnă rânduri adăugate. Pentru D001-18…30, următoarele două declarații identice se aplică fiecărui lot și sunt centralizate aici:
+Inventarele indică rânduri eliminate (în forma compactă, numărul dintre paranteze); minus înseamnă rânduri adăugate. Pentru D001-18…30, următoarele două declarații identice se aplică fiecărui lot și sunt centralizate aici:
 
 - Test results: Numai lectură/comparație documentară; fără teste, builduri, verificatoare, aplicații, ajutor runtime, SQL/MariaDB, commit sau push. Stage doar pentru Markdown propriu.
 - Unverified / deferred: Confirmările tehnice/vizuale nu sunt extinse prin consolidare. AVACONT, CLAUDE, ajutorul runtime, codul și exporturile brute sunt excluse.
 
-Declarațiile și excepțiile distincte ale D001-07…17 rămân în secțiunile lor. Continuările fiecărui lot sunt repere istorice; continuarea curentă este în registrul D001.
+Declarațiile și excepțiile distincte ale D001-07…17 rămân în secțiunile lor. Data comună D001-07…30: 25.10.2026; toate loturile sunt aplicate local, numai documentație. Continuările fiecărui lot sunt repere istorice; continuarea curentă este în registrul D001.
+
+Registrele comune fac parte din inventarul și numărul de căi al fiecărui lot; rândurile lor identice sunt grupate aici, cu excepțiile numerice păstrate. Celelalte căi sunt în secțiunea lotului.
+
+| Loturi D001 | `docs/worklog/state/KBOT_STATUS_D000-D009.md` | `docs/worklog/KBOT_STATUS.md` |
+|---|---|---|
+| 07…15 | -2 | 0 |
+| 16 | 10 | 0 |
+| 17…18 | -2 | 0 |
+| 19 | 0 | 0 |
+| 20…25 | -1 | 0 |
+| 26 | -1 | 19 |
+| 27…30 | -1 | 0 |
 
 ## SLICE-D001-07 — Hărțile istorice E-Factura <a id="slice-d001-07"></a>
 
@@ -63,14 +75,10 @@ Generatorul build-efactura.js rămâne neschimbat: regenerarea ar suprascrie con
 | `docs/access-map/efactura/README.md` | -25 |
 | `docs/access-map/efactura/00-overview.md` | 0 |
 | `docs/worklog/SLICE-D001-07-harti-istorice-efactura.md` | -58 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -2 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
 
 Bilanț: **29 căi; 4 fișiere retrase, 1 jurnal nou; 3 fișiere și 151 rânduri eliminate net**. Cumul D001-01…07: **30 fișiere și 4127 rânduri mai puțin**.
 
 ## SLICE-D001-08 — Jurnale istorice ale controalelor desktop <a id="slice-d001-08"></a>
-
-Data: 25.10.2026. Lot documentar aplicat local.
 
 ### What changed and why
 
@@ -95,8 +103,6 @@ Inventar complet; rânduri eliminate (minus = adăugate). Corpul tehnic este pă
 | `docs/worklog/SLICE-0010-01-kbotdataview-skeleton.md` | -505 |
 | `docs/worklog/state/KBOT_STATUS_0010-0019.md` | 6 |
 | `docs/worklog/SLICE-D001-08-jurnale-controale-desktop.md` | -47 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -2 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
 | `docs/worklog/SLICE-0025-02-navitem-icon.md` | 127 |
 | `docs/worklog/SLICE-0025-05-navlist-collapse-padding.md` | 181 |
 | `docs/worklog/SLICE-0025-06-navlist-collapse-button-icons.md` | 141 |
@@ -118,8 +124,6 @@ Gruparea reduce fragmentarea; proba vizuală și rotunda designerului nu sunt ce
 
 ## SLICE-D001-09 — Context, recepții MF și bonuri OI/MF <a id="slice-d001-09"></a>
 
-Data: 25.10.2026. Aplicat local, exclusiv documentație.
-
 ### What changed and why
 
 Cele 20 de însemnări generale din 18.10 sunt absorbite în cinci capitole tematice existente. Corpurile tehnice sunt păstrate cu paragrafe reunite; stările repetate sunt consemnate o dată pe capitol, iar fișierele sunt într-un tabel pe etapă. Titlurile jurnalului general rămân puncte de navigare. Regruparea reduce rânduri, dar adaugă text de trasabilitate și trimiteri.
@@ -132,17 +136,7 @@ Regulile inițiale diferite din 12/17.10 sunt marcate ca istorice. Nicio probă 
 
 Rânduri eliminate; minus înseamnă rânduri adăugate.
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-VC02-01-alegerea-contextului.md` | -31 |
-| `docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md` | -38 |
-| `docs/worklog/SLICE-VC06-02-fc-nir-si-extensia-mf.md` | -81 |
-| `docs/worklog/SLICE-VC07-OI-conturi-documente-rapoarte.md` | -67 |
-| `VERCON/CONTROALE_CUSTOM_THREAD.md` | -18 |
-| `implementare_vercon_v2.md` | 312 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -2 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
-| `docs/worklog/SLICE-D001-09-context-receptii-mf-si-bonuri.md` | -37 |
+Inventar: `docs/worklog/SLICE-VC02-01-alegerea-contextului.md` (-31); `docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md` (-38); `docs/worklog/SLICE-VC06-02-fc-nir-si-extensia-mf.md` (-81); `docs/worklog/SLICE-VC07-OI-conturi-documente-rapoarte.md` (-67); `VERCON/CONTROALE_CUSTOM_THREAD.md` (-18); `implementare_vercon_v2.md` (312); `docs/worklog/SLICE-D001-09-context-receptii-mf-si-bonuri.md` (-37).
 
 Bilanț: **9 căi; 38 rânduri mai puțin; un jurnal nou**. Cumul D001-01…09: **40 fișiere și 4059 rânduri mai puțin**.
 
@@ -155,8 +149,6 @@ Numai lectură și analiză documentară; fără teste, builduri, verificatoare,
 Rămân excluse AVACONT, documentația activă AV, CLAUDE, ajutorul runtime, codul și exporturile brute. Continuarea: D001-10.
 
 ## SLICE-D001-10 — Jurnale Adobe și DataView <a id="slice-d001-10"></a>
-
-Data: 25.10.2026. Exclusiv documentație, aplicat local.
 
 ### What changed and why
 
@@ -183,8 +175,6 @@ Se păstrează invalidarea rulărilor Adobe, schimbarea priorității userPrefs/
 | `docs/worklog/SLICE-0028-09-captionbar-theme-button.md` | 123 |
 | `docs/worklog/SLICE-0028-dataview-footer-collapse-tooltip.md` | -1147 |
 | `docs/worklog/state/KBOT_STATUS_0020-0029.md` | 113 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -2 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
 | `docs/worklog/SLICE-D001-10-jurnale-adobe-si-dataview.md` | -44 |
 
 Bilanț: **18 căi; 12 fișiere retrase, un jurnal nou; 33 rânduri mai puțin**. Cumul D001-01…10: **51 fișiere și 4092 rânduri mai puțin**.
@@ -199,8 +189,6 @@ Probe/limite istorice rămân istorice; nu sunt executate acum. AVACONT, CLAUDE,
 
 ## SLICE-D001-11 — Selecții și machete de rapoarte <a id="slice-d001-11"></a>
 
-Data: 25.10.2026. Exclusiv documentație, aplicat local.
-
 ### What changed and why
 
 20 de însemnări 17–19.10 sunt reunite în VC08-03: antet/export, perioade, încărcare lazy, bife, amortizare/balanțe, mesaje/totaluri, reutilizare/reset, catalog și valoare estimată. Fișierele sunt păstrate pe etapă, titlurile generale trimit la contractul consolidat. Etapele 0–7 nerulate/fără probe runtime și 8–19 Confirmat 23.10 rămân distincte.
@@ -211,15 +199,7 @@ Nota ME01-03 despre explicația din RightsForm și incertitudinea salvării a fo
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-ME01-03-privilegii-mariadb.md` | -2 |
-| `docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md` | -89 |
-| `implementare_vercon_v2.md` | 342 |
-| `docs/worklog/SLICE-ADE9-05-sistem-rapoarte-comun-vercon.md` | -2 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -2 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
-| `docs/worklog/SLICE-D001-11-selectii-si-machete-rapoarte.md` | -35 |
+Inventar: `docs/worklog/SLICE-ME01-03-privilegii-mariadb.md` (-2); `docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md` (-89); `implementare_vercon_v2.md` (342); `docs/worklog/SLICE-ADE9-05-sistem-rapoarte-comun-vercon.md` (-2); `docs/worklog/SLICE-D001-11-selectii-si-machete-rapoarte.md` (-35).
 
 Bilanț: **7 căi, 212 rânduri mai puțin; un jurnal nou**. Cumul D001-01…11: **50 fișiere și 4304 rânduri mai puțin**.
 
@@ -232,8 +212,6 @@ Numai lectură și analiză documentară; fără teste, builduri, verificatoare,
 Nu se extind confirmările istorice la etape nerulate. AVACONT, CLAUDE, ajutorul runtime, codul și exporturile brute rămân excluse. Continuare D001-12.
 
 ## SLICE-D001-12 — Sesiuni, editori și eFactura <a id="slice-d001-12"></a>
-
-Data: 25.10.2026. Aplicat local, numai documentație.
 
 ### What changed and why
 
@@ -257,8 +235,6 @@ Nota despre butonul panoului de font rămâne în jurnalul general pentru lotul 
 | `docs/worklog/SLICE-VC06-02-fc-nir-si-extensia-mf.md` | -15 |
 | `docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md` | -23 |
 | `implementare_vercon_v2.md` | 380 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -2 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
 | `docs/worklog/SLICE-D001-12-sesiuni-editori-si-efactura.md` | -41 |
 
 Bilanț: **13 căi; 190 rânduri mai puțin; un jurnal nou**. Cumul D001-01…12: **49 fișiere și 4494 rânduri mai puțin**.
@@ -273,8 +249,6 @@ Confirmările istorice rămân limitate la etapele lor. AVACONT, CLAUDE, ajutoru
 
 ## SLICE-D001-13 — Controale, editor și tipografie <a id="slice-d001-13"></a>
 
-Data: 25.10.2026. Aplicat local, numai documentație.
-
 ### What changed and why
 
 Opt secțiuni generale și nota finală despre font sunt absorbite în documentele existente. API-urile TextBox/CheckBox/Combobox/TreeView/Menu/ModalFrame/debug nu mai sunt copiate în jurnalul general; clauzele unice de integrare, etapele NIR și riscurile/probele sunt păstrate separat. Introducerea rescrierii VERCON rămâne în jurnalul general.
@@ -285,18 +259,7 @@ Inventarul tipografic are 167 de intrări, 131 mapări distincte. Cele 36 de râ
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-VC06-02-fc-nir-si-extensia-mf.md` | -25 |
-| `VERCON/CONTROALE_CUSTOM_THREAD.md` | -11 |
-| `docs/worklog/SLICE-VC02-02-meniuri-capabilitati-coloane.md` | -8 |
-| `docs/worklog/SLICE-VC02-01-alegerea-contextului.md` | -4 |
-| `docs/worklog/SLICE-VC08-01-motor-stoc-si-balante.md` | -8 |
-| `VERCON/TIPOGRAFIE_MIGRARE.md` | 24 |
-| `implementare_vercon_v2.md` | 106 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -2 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
-| `docs/worklog/SLICE-D001-13-controale-si-tipografie.md` | -38 |
+Inventar: `docs/worklog/SLICE-VC06-02-fc-nir-si-extensia-mf.md` (-25); `VERCON/CONTROALE_CUSTOM_THREAD.md` (-11); `docs/worklog/SLICE-VC02-02-meniuri-capabilitati-coloane.md` (-8); `docs/worklog/SLICE-VC02-01-alegerea-contextului.md` (-4); `docs/worklog/SLICE-VC08-01-motor-stoc-si-balante.md` (-8); `VERCON/TIPOGRAFIE_MIGRARE.md` (24); `implementare_vercon_v2.md` (106); `docs/worklog/SLICE-D001-13-controale-si-tipografie.md` (-38).
 
 Bilanț: **10 căi, 34 rânduri mai puțin; un jurnal nou**. Cumul D001-01…13: **48 fișiere și 4528 rânduri mai puțin**.
 
@@ -310,8 +273,6 @@ Probe și riscuri istorice nu sunt recertificate. AVACONT, CLAUDE, ajutorul runt
 
 ## SLICE-D001-14 — Gazda Adobe și arborele desktop <a id="slice-d001-14"></a>
 
-Data: 25.10.2026. Numai documentație, aplicat local.
-
 ### What changed and why
 
 Trei jurnale 0024 și trei 0027 sunt reunite în câte un fișier existent, cu ancore și corpuri păstrate. Notele/focusul registrului trimit la aceleași surse, păstrând verdictul istoric în coloana Status.
@@ -320,18 +281,7 @@ Trei jurnale 0024 și trei 0027 sunt reunite în câte un fișier existent, cu a
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-0024-02-adobe-profiles-runtime.md` | 123 |
-| `docs/worklog/SLICE-0024-03-adobe-host-teardown.md` | 422 |
-| `docs/worklog/SLICE-0024-01-adobe-shared-host.md` | -565 |
-| `docs/worklog/SLICE-0027-02-tree-footer-collapse.md` | 373 |
-| `docs/worklog/SLICE-0027-03-tree-designer-values-in-views.md` | 91 |
-| `docs/worklog/SLICE-0027-tree-designer-surface.md` | -472 |
-| `docs/worklog/state/KBOT_STATUS_0020-0029.md` | 86 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -2 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
-| `docs/worklog/SLICE-D001-14-gazda-adobe-si-arbore-desktop.md` | -36 |
+Inventar: `docs/worklog/SLICE-0024-02-adobe-profiles-runtime.md` (123); `docs/worklog/SLICE-0024-03-adobe-host-teardown.md` (422); `docs/worklog/SLICE-0024-01-adobe-shared-host.md` (-565); `docs/worklog/SLICE-0027-02-tree-footer-collapse.md` (373); `docs/worklog/SLICE-0027-03-tree-designer-values-in-views.md` (91); `docs/worklog/SLICE-0027-tree-designer-surface.md` (-472); `docs/worklog/state/KBOT_STATUS_0020-0029.md` (86); `docs/worklog/SLICE-D001-14-gazda-adobe-si-arbore-desktop.md` (-36).
 
 Bilanț: **10 căi; patru fișiere retrase, un jurnal nou; 20 rânduri mai puțin**. Cumul D001-01…14: **51 fișiere și 4548 rânduri mai puțin**.
 
@@ -344,8 +294,6 @@ Numai lectură/comparație documentară; fără teste, builduri, verificatoare, 
 Nicio concluzie despre starea actuală a Adobe ori funcționarea aplicației. Probe/reguli sunt istorice. AVACONT, CLAUDE, ajutorul runtime, codul și exporturile brute sunt excluse. Continuare D001-15.
 
 ## SLICE-D001-15 — Jurnalele istorice ale migratorului <a id="slice-d001-15"></a>
-
-Data: 25.10.2026. Aplicat local, exclusiv documentație.
 
 ### What changed and why
 
@@ -369,8 +317,6 @@ Se păstrează trecerea JSON/HTTP → direct, cele două situații ale fișierel
 | `docs/worklog/SLICE-0045-07-unitatea-randului-nu-a-buclei.md` | 136 |
 | `docs/worklog/SLICE-0045-01-descoperire-nomenclatoare.md` | -952 |
 | `docs/worklog/state/KBOT_STATUS_0040-0049.md` | 8 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -2 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
 | `docs/worklog/SLICE-D001-15-jurnale-migrator.md` | -41 |
 
 Bilanț: **15 căi; nouă fișiere retrase, un jurnal nou; 68 rânduri adăugate**. Cumul D001-01…15: **59 fișiere și 4480 rânduri mai puțin**.
@@ -385,24 +331,13 @@ Stările istorice ale uneltelor nu sunt recertificate. AVACONT, CLAUDE, ajutorul
 
 ## SLICE-D001-16 — Jurnalele ferestrei Setări <a id="slice-d001-16"></a>
 
-Data: 25.10.2026. Exclusiv documentație, aplicat local.
-
 ### What changed and why
 
 Patru jurnale 0072 sunt reunite în fișierul de bază, cu corpuri, fișiere și probe păstrate. Numele/notes/focus/restanțe din registru nu mai repetă cererile și contractele. Stările inițiale și mențiunea istorică «comis» sunt păstrate pe etapă, fără a pretinde operații Git actuale. Tabelul registrului D001 este refăcut continuu, eliminând separatoarele goale dintre rânduri.
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-0072-01-setari-jurnal-si-meniuri.md` | 174 |
-| `docs/worklog/SLICE-0072-02-optiuni-avansate.md` | 33 |
-| `docs/worklog/SLICE-0072-03-setari-forexe-fara-cadere.md` | 21 |
-| `docs/worklog/SLICE-0072-fereastra-setari.md` | -244 |
-| `docs/worklog/state/KBOT_STATUS_0070-0079.md` | 19 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | 10 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
-| `docs/worklog/SLICE-D001-16-jurnale-setari.md` | -32 |
+Inventar: `docs/worklog/SLICE-0072-01-setari-jurnal-si-meniuri.md` (174); `docs/worklog/SLICE-0072-02-optiuni-avansate.md` (33); `docs/worklog/SLICE-0072-03-setari-forexe-fara-cadere.md` (21); `docs/worklog/SLICE-0072-fereastra-setari.md` (-244); `docs/worklog/state/KBOT_STATUS_0070-0079.md` (19); `docs/worklog/SLICE-D001-16-jurnale-setari.md` (-32).
 
 Bilanț: **8 căi; trei fișiere retrase, un jurnal nou; 19 rânduri adăugate**. Cumul D001-01…16: **61 fișiere și 4461 rânduri mai puțin**.
 
@@ -416,24 +351,13 @@ Randările statice nu devin probe manuale, iar testele doar scrise nu devin rula
 
 ## SLICE-D001-17 — Jurnalele recorderului <a id="slice-d001-17"></a>
 
-Data: 25.10.2026. Aplicat local, exclusiv documentație.
-
 ### What changed and why
 
 Patru jurnale 0053 sunt reunite în fișierul de bază, cu conținutul tehnic/probele păstrate și ancore. Registrul și restanțele nu mai repetă corpurile. Variantele de andocare, CDP/NoViewport, cablarea și limitele CABWeb sunt delimitate cronologic; randarea statică nu devine probă live.
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-0053-02-recorder-cablare.md` | 94 |
-| `docs/worklog/SLICE-0053-03-recorder-ergonomie.md` | 111 |
-| `docs/worklog/SLICE-0053-04-andocare-reala.md` | 218 |
-| `docs/worklog/SLICE-0053-recorder.md` | -435 |
-| `docs/worklog/state/KBOT_STATUS_0050-0059.md` | 31 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -2 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
-| `docs/worklog/SLICE-D001-17-jurnale-recorder.md` | -32 |
+Inventar: `docs/worklog/SLICE-0053-02-recorder-cablare.md` (94); `docs/worklog/SLICE-0053-03-recorder-ergonomie.md` (111); `docs/worklog/SLICE-0053-04-andocare-reala.md` (218); `docs/worklog/SLICE-0053-recorder.md` (-435); `docs/worklog/state/KBOT_STATUS_0050-0059.md` (31); `docs/worklog/SLICE-D001-17-jurnale-recorder.md` (-32).
 
 Bilanț: **8 căi; trei fișiere retrase, un jurnal nou; 15 rânduri adăugate**. Cumul D001-01…17: **63 fișiere și 4446 rânduri mai puțin**.
 
@@ -447,32 +371,17 @@ Stările istorice nu sunt recertificate. AVACONT, CLAUDE, ajutorul runtime, codu
 
 ## SLICE-D001-18 — Jurnalele asocierii partenerilor <a id="slice-d001-18"></a>
 
-Data: 25.10.2026. Numai documentație, aplicat local.
-
 ### What changed and why
 
 Etapele 0084-02…04 sunt reunite în 02 cu corpurile păstrate. Se păstrează lista partenerilor față de antetul DDF, adăugarea fără dubluri, popupul, mutarea în ribbon și vizibilitatea/disponibilitatea succesivă. Registrul și trimiterea 0114-02 folosesc ancorele noi; reperul unic 0000-85 este transferat. 0084 și 0084-01 nu sunt absorbite.
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-0084-03-asociere-parteneri-popup-modal.md` | 27 |
-| `docs/worklog/SLICE-0084-04-asociere-parteneri-pe-ribbon.md` | 26 |
-| `docs/worklog/SLICE-0084-02-asociere-parteneri-sumar.md` | -65 |
-| `docs/worklog/state/KBOT_STATUS_0080-0089.md` | 0 |
-| `docs/worklog/SLICE-0114-02-ribbon-separator-si-butoane-fixate-conditionate.md` | 0 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -2 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
-| `docs/worklog/SLICE-D001-18-jurnale-asociere-parteneri.md` | -32 |
+Inventar: `docs/worklog/SLICE-0084-03-asociere-parteneri-popup-modal.md` (27); `docs/worklog/SLICE-0084-04-asociere-parteneri-pe-ribbon.md` (26); `docs/worklog/SLICE-0084-02-asociere-parteneri-sumar.md` (-65); `docs/worklog/state/KBOT_STATUS_0080-0089.md` (0); `docs/worklog/SLICE-0114-02-ribbon-separator-si-butoane-fixate-conditionate.md` (0); `docs/worklog/SLICE-D001-18-jurnale-asociere-parteneri.md` (-32).
 
-Bilanț: **8 căi; două fișiere retrase, un jurnal nou; 46 rânduri adăugate**. Cumul D001-01…18: **64 fișiere și 4400 rânduri mai puțin**.
-
-Continuare D001-19.
+Bilanț: **8 căi; două fișiere retrase, un jurnal nou; 46 rânduri adăugate**. Cumul D001-01…18: **64 fișiere și 4400 rânduri mai puțin**. Continuare D001-19.
 
 ## SLICE-D001-19 — Jurnalele Plăți și DDF <a id="slice-d001-19"></a>
-
-Data: 25.10.2026. Numai documentație, aplicat local.
 
 ### What changed and why
 
@@ -493,17 +402,11 @@ Data: 25.10.2026. Numai documentație, aplicat local.
 | `docs/worklog/state/KBOT_STATUS_0010-0019.md` | 17 |
 | `docs/worklog/state/KBOT_STATUS_0020-0029.md` | 24 |
 | `docs/worklog/SLICE-D001-03-absorbtie-planuri-si-predari.md` | 0 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | 0 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
 | `docs/worklog/SLICE-D001-19-jurnale-plati-si-ddf.md` | -38 |
 
-Bilanț: **14 căi; net 5 fișiere mai puțin; 30 rânduri eliminate**. Cumul D001-01…19: **69 fișiere și 4430 rânduri mai puțin**.
-
-Continuare D001-20.
+Bilanț: **14 căi; net 5 fișiere mai puțin; 30 rânduri eliminate**. Cumul D001-01…19: **69 fișiere și 4430 rânduri mai puțin**. Continuare D001-20.
 
 ## SLICE-D001-20 — Istoricul editorului de ordonanțare <a id="slice-d001-20"></a>
-
-Data: 25.10.2026. Numai documentație, aplicat local.
 
 ### What changed and why
 
@@ -511,23 +414,11 @@ Data: 25.10.2026. Numai documentație, aplicat local.
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-0049-ord-edit-form.md` | -517 |
-| `docs/worklog/SLICE-0049-01-plati-plus-ordonantare.md` | 206 |
-| `docs/worklog/SLICE-0049-02-ord-edit-corectii-operator.md` | 519 |
-| `docs/worklog/state/KBOT_STATUS_0040-0049.md` | 122 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -1 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
-| `docs/worklog/SLICE-D001-20-istoric-editor-ordonantare.md` | -31 |
+Inventar: `docs/worklog/SLICE-0049-ord-edit-form.md` (-517); `docs/worklog/SLICE-0049-01-plati-plus-ordonantare.md` (206); `docs/worklog/SLICE-0049-02-ord-edit-corectii-operator.md` (519); `docs/worklog/state/KBOT_STATUS_0040-0049.md` (122); `docs/worklog/SLICE-D001-20-istoric-editor-ordonantare.md` (-31).
 
-Bilanț: **7 căi; net 1 fișiere mai puțin; 298 rânduri eliminate**. Cumul D001-01…20: **70 fișiere și 4728 rânduri mai puțin**.
-
-Continuare D001-21.
+Bilanț: **7 căi; net 1 fișiere mai puțin; 298 rânduri eliminate**. Cumul D001-01…20: **70 fișiere și 4728 rânduri mai puțin**. Continuare D001-21.
 
 ## SLICE-D001-21 — Istoricul trimiterii și editorului DDF <a id="slice-d001-21"></a>
-
-Data: 25.10.2026. Numai documentație, aplicat local.
 
 ### What changed and why
 
@@ -551,17 +442,11 @@ Cele 12 jurnale existente 0081 sunt reunite în 01, cu ancore și corpurile etap
 | `docs/worklog/SLICE-0081-13-sectiunea-a-in-grila.md` | 66 |
 | `docs/worklog/state/KBOT_STATUS_0080-0089.md` | 39 |
 | `docs/worklog/SLICE-0000-06-partea-3-director.md` | 0 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -1 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
 | `docs/worklog/SLICE-D001-21-istoric-trimitere-ddf.md` | -41 |
 
-Bilanț: **17 căi; net 10 fișiere mai puțin; 16 rânduri adăugate**. Cumul D001-01…21: **80 fișiere și 4712 rânduri mai puțin**.
-
-Continuare D001-22.
+Bilanț: **17 căi; net 10 fișiere mai puțin; 16 rânduri adăugate**. Cumul D001-01…21: **80 fișiere și 4712 rânduri mai puțin**. Continuare D001-22.
 
 ## SLICE-D001-22 — Istoricul înregistrării și aprobării <a id="slice-d001-22"></a>
-
-Data: 25.10.2026. Numai documentație, aplicat local.
 
 ### What changed and why
 
@@ -579,17 +464,11 @@ Jurnalele 0075-01…05 sunt reunite în 01; 00 rămâne contract separat, cu rep
 | `docs/worklog/SLICE-0075-00-clasificatii-sursa-scrisa.md` | -6 |
 | `docs/worklog/state/KBOT_STATUS_0070-0079.md` | 76 |
 | `docs/PLAN_AutoProvisioning.md` | 0 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -1 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
 | `docs/worklog/SLICE-D001-22-istoric-inregistrare-si-aprobare.md` | -35 |
 
-Bilanț: **11 căi; net 3 fișiere mai puțin; 223 rânduri eliminate**. Cumul D001-01…22: **83 fișiere și 4935 rânduri mai puțin**.
-
-Continuare D001-23.
+Bilanț: **11 căi; net 3 fișiere mai puțin; 223 rânduri eliminate**. Cumul D001-01…22: **83 fișiere și 4935 rânduri mai puțin**. Continuare D001-23.
 
 ## SLICE-D001-23 — Planul înregistrării fără reluări <a id="slice-d001-23"></a>
-
-Data: 25.10.2026. Numai documentație, aplicat local.
 
 ### What changed and why
 
@@ -597,20 +476,11 @@ Predarea lungă din §0.0 a planului este înlocuită cu repere și trimiteri c�
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/PLAN_AutoProvisioning.md` | 164 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -1 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
-| `docs/worklog/SLICE-D001-23-plan-inregistrare-fara-reluari.md` | -28 |
+Inventar: `docs/PLAN_AutoProvisioning.md` (164); `docs/worklog/SLICE-D001-23-plan-inregistrare-fara-reluari.md` (-28).
 
-Bilanț: **4 căi; un jurnal nou; 135 rânduri eliminate**. Cumul D001-01…23: **82 fișiere și 5070 rânduri mai puțin**.
-
-Continuare D001-24.
+Bilanț: **4 căi; un jurnal nou; 135 rânduri eliminate**. Cumul D001-01…23: **82 fișiere și 5070 rânduri mai puțin**. Continuare D001-24.
 
 ## SLICE-D001-24 — Descărcări multiple, unelte și bugete <a id="slice-d001-24"></a>
-
-Data: 25.10.2026. Numai documentație, aplicat local.
 
 ### What changed and why
 
@@ -633,17 +503,11 @@ Data: 25.10.2026. Numai documentație, aplicat local.
 | `docs/worklog/SLICE-0103-06-trimite-in-access.md` | 44 |
 | `docs/worklog/state/KBOT_STATUS_0100-0109.md` | 4 |
 | `docs/worklog/SLICE-0000-36-ajutor-setari-multithread.md` | 0 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -1 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
 | `docs/worklog/SLICE-D001-24-descarcari-unelte-si-bugete.md` | -40 |
 
-Bilanț: **16 căi; net 6 fișiere mai puțin; 26 rânduri adăugate**. Cumul D001-01…24: **88 fișiere și 5044 rânduri mai puțin**.
-
-Continuare D001-25.
+Bilanț: **16 căi; net 6 fișiere mai puțin; 26 rânduri adăugate**. Cumul D001-01…24: **88 fișiere și 5044 rânduri mai puțin**. Continuare D001-25.
 
 ## SLICE-D001-25 — Actualizare, extrase și jurnale server <a id="slice-d001-25"></a>
-
-Data: 25.10.2026. Numai documentație, aplicat local.
 
 ### What changed and why
 
@@ -663,17 +527,11 @@ Data: 25.10.2026. Numai documentație, aplicat local.
 | `docs/worklog/SLICE-0089-01-jurnale-server-doar-avansat.md` | 25 |
 | `docs/worklog/state/KBOT_STATUS_0060-0069.md` | 14 |
 | `docs/worklog/state/KBOT_STATUS_0080-0089.md` | 15 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -1 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
 | `docs/worklog/SLICE-D001-25-actualizare-extrase-si-jurnale.md` | -37 |
 
-Bilanț: **13 căi; net 3 fișiere mai puțin; 17 rânduri eliminate**. Cumul D001-01…25: **91 fișiere și 5061 rânduri mai puțin**.
-
-Continuare D001-26.
+Bilanț: **13 căi; net 3 fișiere mai puțin; 17 rânduri eliminate**. Cumul D001-01…25: **91 fișiere și 5061 rânduri mai puțin**. Continuare D001-26.
 
 ## SLICE-D001-26 — Sumar, Recepții și Istoric <a id="slice-d001-26"></a>
-
-Data: 25.10.2026. Numai documentație, aplicat local.
 
 ### What changed and why
 
@@ -693,17 +551,11 @@ Opt jurnale sunt reunite în trei istorice, cu corpurile și ancorele etapelor p
 | `docs/worklog/SLICE-0022-02-istoric-view.md` | 154 |
 | `docs/worklog/state/KBOT_STATUS_0010-0019.md` | 24 |
 | `docs/worklog/state/KBOT_STATUS_0020-0029.md` | 9 |
-| `docs/worklog/KBOT_STATUS.md` | 19 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -1 |
 | `docs/worklog/SLICE-D001-26-sumar-receptii-istoric.md` | -37 |
 
-Bilanț: **13 căi; net 4 fișiere mai puțin; 136 rânduri eliminate**. Cumul D001-01…26: **95 fișiere și 5197 rânduri mai puțin**.
-
-Continuare D001-27.
+Bilanț: **13 căi; net 4 fișiere mai puțin; 136 rânduri eliminate**. Cumul D001-01…26: **95 fișiere și 5197 rânduri mai puțin**. Continuare D001-27.
 
 ## SLICE-D001-27 — Editorul DDF și corecțiile ingestiei <a id="slice-d001-27"></a>
-
-Data: 25.10.2026. Numai documentație, aplicat local.
 
 ### What changed and why
 
@@ -711,25 +563,11 @@ Data: 25.10.2026. Numai documentație, aplicat local.
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-0051-ddf-edit-form.md` | -2 |
-| `docs/worklog/SLICE-0051-03-ddf-edit-congruenta.md` | 236 |
-| `docs/worklog/SLICE-0056-tabloul-intreg.md` | -62 |
-| `docs/worklog/SLICE-0056-02-corecturi-la-descarcare.md` | 108 |
-| `docs/worklog/state/KBOT_STATUS_0050-0059.md` | 0 |
-| `docs/worklog/SLICE-0000-26-ajutor-pentru-0056-02.md` | 0 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -1 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
-| `docs/worklog/SLICE-D001-27-editor-ddf-si-corectii-ingestie.md` | -33 |
+Inventar: `docs/worklog/SLICE-0051-ddf-edit-form.md` (-2); `docs/worklog/SLICE-0051-03-ddf-edit-congruenta.md` (236); `docs/worklog/SLICE-0056-tabloul-intreg.md` (-62); `docs/worklog/SLICE-0056-02-corecturi-la-descarcare.md` (108); `docs/worklog/state/KBOT_STATUS_0050-0059.md` (0); `docs/worklog/SLICE-0000-26-ajutor-pentru-0056-02.md` (0); `docs/worklog/SLICE-D001-27-editor-ddf-si-corectii-ingestie.md` (-33).
 
-Bilanț: **9 căi; net 1 fișiere mai puțin; 246 rânduri eliminate**. Cumul D001-01…27: **96 fișiere și 5443 rânduri mai puțin**.
-
-Continuare D001-28.
+Bilanț: **9 căi; net 1 fișiere mai puțin; 246 rânduri eliminate**. Cumul D001-01…27: **96 fișiere și 5443 rânduri mai puțin**. Continuare D001-28.
 
 ## SLICE-D001-28 — Nucleul și vizualizatorul jurnalelor <a id="slice-d001-28"></a>
-
-Data: 25.10.2026. Numai documentație, aplicat local.
 
 ### What changed and why
 
@@ -737,23 +575,11 @@ Data: 25.10.2026. Numai documentație, aplicat local.
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-0031-01-log-core.md` | -95 |
-| `docs/worklog/SLICE-0031-04-log-viewer.md` | 197 |
-| `docs/worklog/state/KBOT_STATUS_0030-0039.md` | -4 |
-| `docs/PLAN_LogViewer.md` | -2 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -1 |
-| `docs/worklog/SLICE-D001-28-nucleu-si-vizualizator-jurnale.md` | -31 |
+Inventar: `docs/worklog/SLICE-0031-01-log-core.md` (-95); `docs/worklog/SLICE-0031-04-log-viewer.md` (197); `docs/worklog/state/KBOT_STATUS_0030-0039.md` (-4); `docs/PLAN_LogViewer.md` (-2); `docs/worklog/SLICE-D001-28-nucleu-si-vizualizator-jurnale.md` (-31).
 
-Bilanț: **7 căi; net 0 fișiere mai puțin; 64 rânduri eliminate**. Cumul D001-01…28: **96 fișiere și 5507 rânduri mai puțin**.
-
-Continuare D001-29.
+Bilanț: **7 căi; net 0 fișiere mai puțin; 64 rânduri eliminate**. Cumul D001-01…28: **96 fișiere și 5507 rânduri mai puțin**. Continuare D001-29.
 
 ## SLICE-D001-29 — Note de versiune și restanțe istorice <a id="slice-d001-29"></a>
-
-Data: 25.10.2026. Numai documentație, aplicat local.
 
 ### What changed and why
 
@@ -761,25 +587,11 @@ Jurnalul 0067-02 este absorbit în procedura release-notes: contractele comune a
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/release-notes/README.md` | -64 |
-| `docs/worklog/SLICE-0067-02-note-de-versiune.md` | 119 |
-| `docs/worklog/SLICE-0067-actualizare-automata.md` | 0 |
-| `docs/worklog/state/KBOT_STATUS_0060-0069.md` | 6 |
-| `docs/possible_future_directions.md` | 28 |
-| `docs/worklog/SLICE-0051-02-combo-editabil.md` | -4 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -1 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
-| `docs/worklog/SLICE-D001-29-note-de-versiune-si-restante-istorice.md` | -33 |
+Inventar: `docs/release-notes/README.md` (-64); `docs/worklog/SLICE-0067-02-note-de-versiune.md` (119); `docs/worklog/SLICE-0067-actualizare-automata.md` (0); `docs/worklog/state/KBOT_STATUS_0060-0069.md` (6); `docs/possible_future_directions.md` (28); `docs/worklog/SLICE-0051-02-combo-editabil.md` (-4); `docs/worklog/SLICE-D001-29-note-de-versiune-si-restante-istorice.md` (-33).
 
-Bilanț: **9 căi; net 0 fișiere mai puțin; 51 rânduri eliminate**. Cumul D001-01…29: **96 fișiere și 5558 rânduri mai puțin**.
-
-Continuare D001-30.
+Bilanț: **9 căi; net 0 fișiere mai puțin; 51 rânduri eliminate**. Cumul D001-01…29: **96 fișiere și 5558 rânduri mai puțin**. Continuare D001-30.
 
 ## SLICE-D001-30 — Istoricul copiilor locale ME02 <a id="slice-d001-30"></a>
-
-Data: 25.10.2026. Numai documentație, aplicat local.
 
 ### What changed and why
 
@@ -787,18 +599,6 @@ Etapele ME02-03…08 sunt reunite în 03; metadatele SQL 01 și dumpul text 02 r
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-ME02-03-format-si-motor.md` | -150 |
-| `docs/worklog/SLICE-ME02-04-verbul-snap-run.md` | 41 |
-| `docs/worklog/SLICE-ME02-05-pagina-copii-locale-si-sarcina-zilnica.md` | 43 |
-| `docs/worklog/SLICE-ME02-06-07-08-verificare-export-istoric-retentie.md` | 42 |
-| `docs/ME02_PLAN.md` | 5 |
-| `docs/worklog/state/KBOT_STATUS_ME02.md` | 5 |
-| `docs/worklog/KBOT_STATUS.md` | 0 |
-| `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -1 |
-| `docs/worklog/SLICE-D001-30-istoric-copii-locale-me02.md` | -33 |
+Inventar: `docs/worklog/SLICE-ME02-03-format-si-motor.md` (-150); `docs/worklog/SLICE-ME02-04-verbul-snap-run.md` (41); `docs/worklog/SLICE-ME02-05-pagina-copii-locale-si-sarcina-zilnica.md` (43); `docs/worklog/SLICE-ME02-06-07-08-verificare-export-istoric-retentie.md` (42); `docs/ME02_PLAN.md` (5); `docs/worklog/state/KBOT_STATUS_ME02.md` (5); `docs/worklog/SLICE-D001-30-istoric-copii-locale-me02.md` (-33).
 
-Bilanț: **9 căi; net 2 fișiere mai puțin; 48 rânduri adăugate**. Cumul D001-01…30: **98 fișiere și 5510 rânduri mai puțin**.
-
-Continuare D001-31.
+Bilanț: **9 căi; net 2 fișiere mai puțin; 48 rânduri adăugate**. Cumul D001-01…30: **98 fișiere și 5510 rânduri mai puțin**. Continuare D001-31.

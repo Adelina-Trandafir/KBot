@@ -6,69 +6,62 @@ Actualizare 13.10.2026: generarea pentru Materiale/Alimente este **IMPLEMENTAT_L
 
 Coloane: **Familie** (din denumire), **Surse** (tabele citite transitiv prin interogarile din RecordSource), **Capabilitate** (MAT/OI/MF/AL: da/nu/de verificat), **Parametri din formular** (`[Forms]![...]`/`TempVars` in interogari — de inlocuit cu parametri expliciti), **Sectiuni** (inclusiv grupari), schita.
 
-| Raport | Familie | Dispozitie | MAT | OI | MF | AL | Surse | Interogari | Parametri Forms!/TempVars | Schita |
-|---|---|---|---|---|---|---|---|---|---|---|
-| Amortizare | Comenzi/referate/situatii | INCLUS-RAPORT | nu | nu | da | nu | Intrari, NIR, OI_Predare, Produse, ProduseM, ProduseP, tmpSFP | Amortizare | sfp.dsf | [png](SCHITE/R_Amortizare.png) |
-| Balanta_produse | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | da | da | da | Masini, Produse, ProduseP, Iesiri, IesiriRetur, Iesiri_H, Intrari, IntrariStorno, NIR, tmpSFP | Balanta22, QSFP_BL | TempVars!zec, SFP.di, SFP.dsf, sfp.st | [png](SCHITE/R_Balanta_produse.png) |
-| Balanta_produse_AFB | Stoc/fise/balante/inventar | EXCLUS-CODURI (dependenta tranzitiva de Balanta (Coduri); obiect legacy exclus N06) | da | da | da | da |  |  |  | — |
-| Balanta_Produse_BF | Stoc/fise/balante/inventar | EXCLUS-CODURI (dependenta tranzitiva de Balanta listare 1 (Coduri); obiect legacy exclus N06) | da | da | da | da |  |  |  | — |
-| Balanta_produse_furnizor | Stoc/fise/balante/inventar | EXCLUS-CODURI (dependenta tranzitiva de Balanta listare 2 (Coduri); obiect legacy exclus N06) | da | da | da | da |  |  |  | — |
-| BC subreport 2013 | BC/BR | INCLUS-RAPORT | da | de verificat | de verificat | da | Iesiri, Iesiri_H, LegBCLA, Produse, ProduseP |  | ListaAlimente.IDLISTA | [png](SCHITE/R_BC_subreport_2013.png) |
-| BonRetur | BC/BR | INCLUS-RAPORT | da | de verificat | de verificat | da | Clienti, IesiriRetur, Iesiri_H, Masini, Produse, ProduseP |  | TempVars!zec, br.IdBonConsum | [png](SCHITE/R_BonRetur.png) |
-| Bon_Consum | BC/BR | INCLUS-RAPORT | da | nu | nu | da | Clienti, Iesiri, Iesiri_H, Masini, Produse, ProduseP, tmpSFP |  | SFP.di, SFP.dsf | [png](SCHITE/R_Bon_Consum.png) |
-| BUConsum | BC/BR | INCLUS-RAPORT | da | de verificat | de verificat | da | Clienti, Iesiri, Iesiri_H, Masini, Produse, ProduseP |  | TempVars!zec, bc.IdBonConsum | [png](SCHITE/R_BUConsum.png) |
-| BUConsum_F | BC/BR | INCLUS-RAPORT | da | de verificat | de verificat | da | Clienti, Furnizori, Iesiri, Iesiri_H, Masini |  | TempVars!zec, bc.IdBonConsum | [png](SCHITE/R_BUConsum_F.png) |
-| BUConsum_F1 | BC/BR | INCLUS-RAPORT | da | de verificat | de verificat | da | Clienti, Furnizori, Iesiri, Iesiri_H, Masini |  | TempVars!zec, bc.IdBonConsum | [png](SCHITE/R_BUConsum_F1.png) |
-| Centralizator_BC | Centralizatoare | INCLUS-RAPORT | da | nu | nu | da | Clienti, Iesiri, Iesiri_H, Masini, tmpSFP | Centralizator_BC | sfp.di, sfp.dsf | [png](SCHITE/R_Centralizator_BC.png) |
-| Centralizator_Conturi | Centralizatoare | INCLUS-RAPORT | da | da | da | da | Masini, Produse, ProduseP, Iesiri, IesiriRetur, Iesiri_H, Intrari, IntrariStorno, NIR, tmpSFP | Balanta22, QSFP_BL | TempVars!zec, SFP.di, SFP.dsf, sfp.st | [png](SCHITE/R_Centralizator_Conturi.png) |
-| Centralizator_Conturi_Furnizori | Centralizatoare | INCLUS-RAPORT | da | da | da | da | Furnizori, Intrari, Masini, NIR, Produse, ProduseP, tmpSFP |  | sfp.di, sfp.dsf | [png](SCHITE/R_Centralizator_Conturi_Furnizori.png) |
-| Centralizator_Furnizori | Centralizatoare | INCLUS-RAPORT | da | nu | nu | da | Furnizori, Intrari, IntrariStorno, Masini, NIR, Produse, ProduseP, tmpSFP | Listare toti furnizorii | sfp.di, sfp.dsf | [png](SCHITE/R_Centralizator_Furnizori.png) |
-| Centralizator_OI_Bon_BP | OI bonuri | INCLUS-RAPORT | nu | da | nu | nu | Clienti, Masini, OI_Predare, tmpSFP |  |  | [png](SCHITE/R_Centralizator_OI_Bon_BP.png) |
-| Centralizator_OI_Bon_BS | OI bonuri | INCLUS-RAPORT | nu | da | nu | nu | Clienti, Masini, OI_Casare, tmpSFP |  |  | [png](SCHITE/R_Centralizator_OI_Bon_BS.png) |
-| Centralizator_OI_Bon_BT | OI bonuri | INCLUS-RAPORT | nu | da | nu | nu | Clienti, Masini, OI_Transfer, tmpSFP |  |  | [png](SCHITE/R_Centralizator_OI_Bon_BT.png) |
-| Cina subreport | Alimente | INCLUS-RAPORT | nu | nu | nu | da | Cina |  |  | [png](SCHITE/R_Cina_subreport.png) |
-| Consumuri_Produs | Centralizatoare | INCLUS-RAPORT | da | nu | nu | da | Clienti, Iesiri, Iesiri_H, Masini, Produse, ProduseP, tmpSFP |  | SFP.di, SFP.dsf | [png](SCHITE/R_Consumuri_Produs.png) |
-| Consumuri_Unitati | Centralizatoare | INCLUS-RAPORT | da | nu | nu | da | Clienti, Iesiri, Iesiri_H, Masini, tmpSFP |  | SFP.di, SFP.dsf | [png](SCHITE/R_Consumuri_Unitati.png) |
-| Dejun subreport | Alimente | INCLUS-RAPORT | nu | nu | nu | da | Dejun |  |  | [png](SCHITE/R_Dejun_subreport.png) |
-| Fisa_Evidenta | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | nu | nu | da | Clienti, Iesiri, Iesiri_H, tmpSFP |  | SFP.di, SFP.dsf | [png](SCHITE/R_Fisa_Evidenta.png) |
-| Fisa_Magazie | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | da | da | da | Masini, Produse, ProduseP, tmpSFP | QFMA |  | [png](SCHITE/R_Fisa_Magazie.png) |
-| Fisa_Magazie_BF | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | da | da | da | FM_2, Furnizori, Intrari, Masini, NIR | Fisa de magazie antet furnizori, Fisa de magazie antet |  | [png](SCHITE/R_Fisa_Magazie_BF.png) |
-| Fisa_Produsului | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | da | da | da | Masini, Produse, ProduseP, Iesiri, IesiriRetur, Iesiri_H, Intrari, IntrariStorno, NIR, tmpSFP | QSFP_BL |  | [png](SCHITE/R_Fisa_Produsului.png) |
-| FM1-u | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | da | da | da | FM_2, Intrari, Masini | Fisa de magazie antet |  | [png](SCHITE/R_FM1-u.png) |
-| FM2 | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | da | da | da | FM_2 |  | sfp.di, sfp.dsf | [png](SCHITE/R_FM2.png) |
-| ListaAlimente2015 | Alimente | INCLUS-RAPORT | nu | nu | nu | da | LABC, LegBCLA, ListaAlimente, Iesiri, Iesiri_H, Produse, ProduseP | QDEP, qIesiri_H | listaalimente.idlista, TempVars!zec, ListaAlimente.DataLA | [png](SCHITE/R_ListaAlimente2015.png) |
-| LISTA_INVENTAR | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | da | da | da | Masini, Produse, ProduseP, Iesiri, IesiriRetur, Iesiri_H, Intrari, IntrariStorno, NIR, tmpSFP | Balanta22, QSFP_BL | TempVars!zec, SFP.di, SFP.dsf, sfp.st | [png](SCHITE/R_LISTA_INVENTAR.png) |
-| MF_Balanta | MF | INCLUS-RAPORT | nu | nu | da | nu | Clienti, Masini, tmpSFP, OI_Casare, OI_Predare, Produse, ProduseP | MF_Balanta, MF_Union_Balanta | sfp.di, sfp.dsf | [png](SCHITE/R_MF_Balanta.png) |
-| MF_Balanta_Subinv | MF | INCLUS-RAPORT | nu | nu | da | nu | Clienti, Masini, tmpSFP, OI_Casare, OI_Predare, Produse, ProduseP | MF_Balanta, MF_Union_Balanta | sfp.di, sfp.dsf | [png](SCHITE/R_MF_Balanta_Subinv.png) |
-| MF_Bon_BP | MF | INCLUS-RAPORT | nu | nu | da | nu | Clienti, Masini, OI_Predare, Produse, ProduseP, tmpSFP |  |  | [png](SCHITE/R_MF_Bon_BP.png) |
-| MF_Bon_BS | MF | INCLUS-RAPORT | nu | nu | da | nu | Clienti, Masini, OI_Casare, tmpSFP |  |  | [png](SCHITE/R_MF_Bon_BS.png) |
-| MF_Bon_BT | MF | INCLUS-RAPORT | nu | nu | da | nu | Clienti, Masini, OI_Transfer, tmpSFP |  |  | [png](SCHITE/R_MF_Bon_BT.png) |
-| MF_LISTA_INVENTAR | MF | INCLUS-RAPORT | nu | nu | da | nu | Clienti, Masini, Produse, ProduseP, tmpSFP, OI_Casare, OI_Predare, OI_Transfer | OI_Union | sfp.di, sfp.dsf | [png](SCHITE/R_MF_LISTA_INVENTAR.png) |
-| MicDejun subreport | Alimente | INCLUS-RAPORT | nu | nu | nu | da | MicDejun |  |  | [png](SCHITE/R_MicDejun_subreport.png) |
-| NIR | NIR | INCLUS-RAPORT | da | da | da | da | ComisieNIR, Furnizori, Intrari, Masini, NIR, Produse, ProduseP |  | FC.IdIntrare | [png](SCHITE/R_NIR.png) |
-| NIR_SFP | NIR | INCLUS-RAPORT | da | nu | nu | da | ComisieNIR, Furnizori, Intrari, Masini, NIR, Produse, ProduseP, tmpSFP |  |  | [png](SCHITE/R_NIR_SFP.png) |
-| NIR_Storno | NIR | INCLUS-RAPORT | da | da | da | da | ComisieNIR, Furnizori, IntrariStorno, Masini, NIR, Produse, ProduseP |  | TempVars!zec | [png](SCHITE/R_NIR_Storno.png) |
-| Nota_Comanda | Comenzi/referate/situatii | INCLUS-RAPORT | da | nu | nu | da | Furnizori, Intrari, NIR, Produse, ProduseP, tmpSFP |  | sfp.di, sfp.dsf | [png](SCHITE/R_Nota_Comanda.png) |
-| nou_Furnizori | Comenzi/referate/situatii | INCLUS-RAPORT | da | da | da | da | Furnizori, Intrari, NIR, tmpSFP | Listare Furnizori | sfp.di, sfp.dsf | [png](SCHITE/R_nou_Furnizori.png) |
-| OI_Balanta | OI evidenta/inventar | INCLUS-RAPORT | nu | da | nu | nu | Masini, tmpSFP, OI_Casare, OI_Predare, Produse, ProduseP | OI_Balanta, OI_Union_Balanta | sfp.di, sfp.dsf | [png](SCHITE/R_OI_Balanta.png) |
-| OI_Bon_BP | OI bonuri | INCLUS-RAPORT | nu | da | nu | nu | Clienti, Masini, OI_Predare, tmpSFP |  |  | [png](SCHITE/R_OI_Bon_BP.png) |
-| OI_Bon_BS | OI bonuri | INCLUS-RAPORT | nu | da | nu | nu | Clienti, Masini, OI_Casare, tmpSFP |  |  | [png](SCHITE/R_OI_Bon_BS.png) |
-| OI_Bon_BT | OI bonuri | INCLUS-RAPORT | nu | da | nu | nu | Clienti, Masini, OI_Transfer, tmpSFP |  |  | [png](SCHITE/R_OI_Bon_BT.png) |
-| OI_Casare | OI documente (formular-raport) | INCLUS-RAPORT | nu | da | da | nu | Clienti, Masini, OI_Casare, Produse, ProduseP |  | OI_Casare.IDBC | [png](SCHITE/R_OI_Casare.png) |
-| OI_Fisa_Evidenta | OI evidenta/inventar | INCLUS-RAPORT | nu | da | nu | nu | Clienti, tmpSFP, Masini, OI_Casare, OI_Predare, OI_Transfer, Produse, ProduseP | OI_Evidenta, OI_Union | sfp.di, sfp.dsf | [png](SCHITE/R_OI_Fisa_Evidenta.png) |
-| OI_Fisa_Evidenta_Primitori | OI evidenta/inventar | INCLUS-RAPORT | nu | da | nu | nu | Clienti, OI_Transfer, tmpSFP, Masini, OI_Casare, OI_Predare, Produse, ProduseP | OI_Evidenta, OI_Union | SFP.dsf, sfp.di, sfp.dsf | [png](SCHITE/R_OI_Fisa_Evidenta_Primitori.png) |
-| OI_Fisa_Evidenta_Primitori_STOC | OI evidenta/inventar | INCLUS-RAPORT | nu | da | nu | nu | Clienti, tmpSFP, Masini, OI_Casare, OI_Predare, OI_Transfer, Produse, ProduseP | OI_Evidenta, OI_Union | SFP.dsf, sfp.di, sfp.dsf | [png](SCHITE/R_OI_Fisa_Evidenta_Primitori_STOC.png) |
-| OI_Fisa_Evidenta_Produse | OI evidenta/inventar | INCLUS-RAPORT | nu | da | nu | nu | Clienti, Masini, tmpSFP, OI_Casare, OI_Predare, OI_Transfer, Produse, ProduseP | OI_Evidenta, OI_Union | sfp.di, sfp.dsf | [png](SCHITE/R_OI_Fisa_Evidenta_Produse.png) |
-| OI_Fisa_Evidenta_Produse_STOC | OI evidenta/inventar | INCLUS-RAPORT | nu | da | nu | nu | Clienti, Masini, tmpSFP, OI_Casare, OI_Predare, OI_Transfer, Produse, ProduseP | OI_Evidenta, OI_Union | sfp.di, sfp.dsf | [png](SCHITE/R_OI_Fisa_Evidenta_Produse_STOC.png) |
-| OI_LISTA_INVENTAR | OI evidenta/inventar | INCLUS-RAPORT | nu | da | nu | nu | Clienti, Masini, tmpSFP, OI_Casare, OI_Predare, OI_Transfer, Produse, ProduseP | OI_Union | sfp.di, sfp.dsf | [png](SCHITE/R_OI_LISTA_INVENTAR.png) |
-| OI_LISTA_INVENTAR_TOTAL | OI evidenta/inventar | INCLUS-RAPORT | nu | da | nu | nu | Clienti, Masini, tmpSFP, OI_Casare, OI_Predare, OI_Transfer, Produse, ProduseP | OI_Union | sfp.di, sfp.dsf | [png](SCHITE/R_OI_LISTA_INVENTAR_TOTAL.png) |
-| OI_Predare | OI documente (formular-raport) | INCLUS-RAPORT | nu | da | da | nu | Clienti, Masini, OI_Predare, Produse, ProduseP |  | OI_Predare.IDBP | [png](SCHITE/R_OI_Predare.png) |
-| OI_Transfer | OI documente (formular-raport) | INCLUS-RAPORT | nu | da | da | nu | Clienti, Masini, OI_Transfer, Produse, ProduseP |  | OI_Transfer.IDBt | [png](SCHITE/R_OI_Transfer.png) |
-| Plan_Achizitii | Comenzi/referate/situatii | INCLUS-RAPORT | da | da | nu | da | cpv, Intrari, Masini, Produse, ProduseP, tmpSFP |  |  | [png](SCHITE/R_Plan_Achizitii.png) |
-| Referat_periodic_Intrari | Comenzi/referate/situatii | INCLUS-RAPORT | da | nu | nu | da | Furnizori, Intrari, IntrariStorno, NIR, Produse, ProduseP, tmpSFP |  | sfp.di, sfp.dsf | [png](SCHITE/R_Referat_periodic_Intrari.png) |
-| Referat_periodic_produs | Comenzi/referate/situatii | INCLUS-RAPORT | da | da | da | da | Furnizori, Intrari, IntrariStorno, NIR, Produse, ProduseP, tmpSFP |  | sfp.di, sfp.dsf | [png](SCHITE/R_Referat_periodic_produs.png) |
-| Situatie_Intrari | Comenzi/referate/situatii | INCLUS-RAPORT | da | da | nu | da | Intrari, Masini, Produse, ProduseP, tmpSFP |  |  | [png](SCHITE/R_Situatie_Intrari.png) |
-| Stoc_Final | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | da | da | da | Masini, Produse, ProduseP, Iesiri, IesiriRetur, Iesiri_H, Intrari, IntrariStorno, NIR, tmpSFP | Balanta22, QSFP_BL | TempVars!zec, SFP.di, SFP.dsf, sfp.st | [png](SCHITE/R_Stoc_Final.png) |
+SLICE-D003-20: sunt grupate numai obiecte cu toate celelalte celule identice; numărul păstrează poziția inițială, iar fiecare schiță rămâne legată de obiectul său.
+
+| Obiecte (#: nume · Schita) | Familie | Dispozitie | MAT | OI | MF | AL | Surse | Interogari | Parametri Forms!/TempVars |
+|---|---|---|---|---|---|---|---|---|---|
+| 1: Amortizare · [png](SCHITE/R_Amortizare.png) | Comenzi/referate/situatii | INCLUS-RAPORT | nu | nu | da | nu | Intrari, NIR, OI_Predare, Produse, ProduseM, ProduseP, tmpSFP | Amortizare | sfp.dsf |
+| 2: Balanta_produse · [png](SCHITE/R_Balanta_produse.png)<br>30: LISTA_INVENTAR · [png](SCHITE/R_LISTA_INVENTAR.png)<br>61: Stoc_Final · [png](SCHITE/R_Stoc_Final.png) | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | da | da | da | Masini, Produse, ProduseP, Iesiri, IesiriRetur, Iesiri_H, Intrari, IntrariStorno, NIR, tmpSFP | Balanta22, QSFP_BL | TempVars!zec, SFP.di, SFP.dsf, sfp.st |
+| 3: Balanta_produse_AFB · — | Stoc/fise/balante/inventar | EXCLUS-CODURI (dependenta tranzitiva de Balanta (Coduri); obiect legacy exclus N06) | da | da | da | da |  |  |  |
+| 4: Balanta_Produse_BF · — | Stoc/fise/balante/inventar | EXCLUS-CODURI (dependenta tranzitiva de Balanta listare 1 (Coduri); obiect legacy exclus N06) | da | da | da | da |  |  |  |
+| 5: Balanta_produse_furnizor · — | Stoc/fise/balante/inventar | EXCLUS-CODURI (dependenta tranzitiva de Balanta listare 2 (Coduri); obiect legacy exclus N06) | da | da | da | da |  |  |  |
+| 6: BC subreport 2013 · [png](SCHITE/R_BC_subreport_2013.png) | BC/BR | INCLUS-RAPORT | da | de verificat | de verificat | da | Iesiri, Iesiri_H, LegBCLA, Produse, ProduseP |  | ListaAlimente.IDLISTA |
+| 7: BonRetur · [png](SCHITE/R_BonRetur.png) | BC/BR | INCLUS-RAPORT | da | de verificat | de verificat | da | Clienti, IesiriRetur, Iesiri_H, Masini, Produse, ProduseP |  | TempVars!zec, br.IdBonConsum |
+| 8: Bon_Consum · [png](SCHITE/R_Bon_Consum.png) | BC/BR | INCLUS-RAPORT | da | nu | nu | da | Clienti, Iesiri, Iesiri_H, Masini, Produse, ProduseP, tmpSFP |  | SFP.di, SFP.dsf |
+| 9: BUConsum · [png](SCHITE/R_BUConsum.png) | BC/BR | INCLUS-RAPORT | da | de verificat | de verificat | da | Clienti, Iesiri, Iesiri_H, Masini, Produse, ProduseP |  | TempVars!zec, bc.IdBonConsum |
+| 10: BUConsum_F · [png](SCHITE/R_BUConsum_F.png)<br>11: BUConsum_F1 · [png](SCHITE/R_BUConsum_F1.png) | BC/BR | INCLUS-RAPORT | da | de verificat | de verificat | da | Clienti, Furnizori, Iesiri, Iesiri_H, Masini |  | TempVars!zec, bc.IdBonConsum |
+| 12: Centralizator_BC · [png](SCHITE/R_Centralizator_BC.png) | Centralizatoare | INCLUS-RAPORT | da | nu | nu | da | Clienti, Iesiri, Iesiri_H, Masini, tmpSFP | Centralizator_BC | sfp.di, sfp.dsf |
+| 13: Centralizator_Conturi · [png](SCHITE/R_Centralizator_Conturi.png) | Centralizatoare | INCLUS-RAPORT | da | da | da | da | Masini, Produse, ProduseP, Iesiri, IesiriRetur, Iesiri_H, Intrari, IntrariStorno, NIR, tmpSFP | Balanta22, QSFP_BL | TempVars!zec, SFP.di, SFP.dsf, sfp.st |
+| 14: Centralizator_Conturi_Furnizori · [png](SCHITE/R_Centralizator_Conturi_Furnizori.png) | Centralizatoare | INCLUS-RAPORT | da | da | da | da | Furnizori, Intrari, Masini, NIR, Produse, ProduseP, tmpSFP |  | sfp.di, sfp.dsf |
+| 15: Centralizator_Furnizori · [png](SCHITE/R_Centralizator_Furnizori.png) | Centralizatoare | INCLUS-RAPORT | da | nu | nu | da | Furnizori, Intrari, IntrariStorno, Masini, NIR, Produse, ProduseP, tmpSFP | Listare toti furnizorii | sfp.di, sfp.dsf |
+| 16: Centralizator_OI_Bon_BP · [png](SCHITE/R_Centralizator_OI_Bon_BP.png)<br>44: OI_Bon_BP · [png](SCHITE/R_OI_Bon_BP.png) | OI bonuri | INCLUS-RAPORT | nu | da | nu | nu | Clienti, Masini, OI_Predare, tmpSFP |  |  |
+| 17: Centralizator_OI_Bon_BS · [png](SCHITE/R_Centralizator_OI_Bon_BS.png)<br>45: OI_Bon_BS · [png](SCHITE/R_OI_Bon_BS.png) | OI bonuri | INCLUS-RAPORT | nu | da | nu | nu | Clienti, Masini, OI_Casare, tmpSFP |  |  |
+| 18: Centralizator_OI_Bon_BT · [png](SCHITE/R_Centralizator_OI_Bon_BT.png)<br>46: OI_Bon_BT · [png](SCHITE/R_OI_Bon_BT.png) | OI bonuri | INCLUS-RAPORT | nu | da | nu | nu | Clienti, Masini, OI_Transfer, tmpSFP |  |  |
+| 19: Cina subreport · [png](SCHITE/R_Cina_subreport.png) | Alimente | INCLUS-RAPORT | nu | nu | nu | da | Cina |  |  |
+| 20: Consumuri_Produs · [png](SCHITE/R_Consumuri_Produs.png) | Centralizatoare | INCLUS-RAPORT | da | nu | nu | da | Clienti, Iesiri, Iesiri_H, Masini, Produse, ProduseP, tmpSFP |  | SFP.di, SFP.dsf |
+| 21: Consumuri_Unitati · [png](SCHITE/R_Consumuri_Unitati.png) | Centralizatoare | INCLUS-RAPORT | da | nu | nu | da | Clienti, Iesiri, Iesiri_H, Masini, tmpSFP |  | SFP.di, SFP.dsf |
+| 22: Dejun subreport · [png](SCHITE/R_Dejun_subreport.png) | Alimente | INCLUS-RAPORT | nu | nu | nu | da | Dejun |  |  |
+| 23: Fisa_Evidenta · [png](SCHITE/R_Fisa_Evidenta.png) | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | nu | nu | da | Clienti, Iesiri, Iesiri_H, tmpSFP |  | SFP.di, SFP.dsf |
+| 24: Fisa_Magazie · [png](SCHITE/R_Fisa_Magazie.png) | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | da | da | da | Masini, Produse, ProduseP, tmpSFP | QFMA |  |
+| 25: Fisa_Magazie_BF · [png](SCHITE/R_Fisa_Magazie_BF.png) | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | da | da | da | FM_2, Furnizori, Intrari, Masini, NIR | Fisa de magazie antet furnizori, Fisa de magazie antet |  |
+| 26: Fisa_Produsului · [png](SCHITE/R_Fisa_Produsului.png) | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | da | da | da | Masini, Produse, ProduseP, Iesiri, IesiriRetur, Iesiri_H, Intrari, IntrariStorno, NIR, tmpSFP | QSFP_BL |  |
+| 27: FM1-u · [png](SCHITE/R_FM1-u.png) | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | da | da | da | FM_2, Intrari, Masini | Fisa de magazie antet |  |
+| 28: FM2 · [png](SCHITE/R_FM2.png) | Stoc/fise/balante/inventar | INCLUS-RAPORT | da | da | da | da | FM_2 |  | sfp.di, sfp.dsf |
+| 29: ListaAlimente2015 · [png](SCHITE/R_ListaAlimente2015.png) | Alimente | INCLUS-RAPORT | nu | nu | nu | da | LABC, LegBCLA, ListaAlimente, Iesiri, Iesiri_H, Produse, ProduseP | QDEP, qIesiri_H | listaalimente.idlista, TempVars!zec, ListaAlimente.DataLA |
+| 31: MF_Balanta · [png](SCHITE/R_MF_Balanta.png)<br>32: MF_Balanta_Subinv · [png](SCHITE/R_MF_Balanta_Subinv.png) | MF | INCLUS-RAPORT | nu | nu | da | nu | Clienti, Masini, tmpSFP, OI_Casare, OI_Predare, Produse, ProduseP | MF_Balanta, MF_Union_Balanta | sfp.di, sfp.dsf |
+| 33: MF_Bon_BP · [png](SCHITE/R_MF_Bon_BP.png) | MF | INCLUS-RAPORT | nu | nu | da | nu | Clienti, Masini, OI_Predare, Produse, ProduseP, tmpSFP |  |  |
+| 34: MF_Bon_BS · [png](SCHITE/R_MF_Bon_BS.png) | MF | INCLUS-RAPORT | nu | nu | da | nu | Clienti, Masini, OI_Casare, tmpSFP |  |  |
+| 35: MF_Bon_BT · [png](SCHITE/R_MF_Bon_BT.png) | MF | INCLUS-RAPORT | nu | nu | da | nu | Clienti, Masini, OI_Transfer, tmpSFP |  |  |
+| 36: MF_LISTA_INVENTAR · [png](SCHITE/R_MF_LISTA_INVENTAR.png) | MF | INCLUS-RAPORT | nu | nu | da | nu | Clienti, Masini, Produse, ProduseP, tmpSFP, OI_Casare, OI_Predare, OI_Transfer | OI_Union | sfp.di, sfp.dsf |
+| 37: MicDejun subreport · [png](SCHITE/R_MicDejun_subreport.png) | Alimente | INCLUS-RAPORT | nu | nu | nu | da | MicDejun |  |  |
+| 38: NIR · [png](SCHITE/R_NIR.png) | NIR | INCLUS-RAPORT | da | da | da | da | ComisieNIR, Furnizori, Intrari, Masini, NIR, Produse, ProduseP |  | FC.IdIntrare |
+| 39: NIR_SFP · [png](SCHITE/R_NIR_SFP.png) | NIR | INCLUS-RAPORT | da | nu | nu | da | ComisieNIR, Furnizori, Intrari, Masini, NIR, Produse, ProduseP, tmpSFP |  |  |
+| 40: NIR_Storno · [png](SCHITE/R_NIR_Storno.png) | NIR | INCLUS-RAPORT | da | da | da | da | ComisieNIR, Furnizori, IntrariStorno, Masini, NIR, Produse, ProduseP |  | TempVars!zec |
+| 41: Nota_Comanda · [png](SCHITE/R_Nota_Comanda.png) | Comenzi/referate/situatii | INCLUS-RAPORT | da | nu | nu | da | Furnizori, Intrari, NIR, Produse, ProduseP, tmpSFP |  | sfp.di, sfp.dsf |
+| 42: nou_Furnizori · [png](SCHITE/R_nou_Furnizori.png) | Comenzi/referate/situatii | INCLUS-RAPORT | da | da | da | da | Furnizori, Intrari, NIR, tmpSFP | Listare Furnizori | sfp.di, sfp.dsf |
+| 43: OI_Balanta · [png](SCHITE/R_OI_Balanta.png) | OI evidenta/inventar | INCLUS-RAPORT | nu | da | nu | nu | Masini, tmpSFP, OI_Casare, OI_Predare, Produse, ProduseP | OI_Balanta, OI_Union_Balanta | sfp.di, sfp.dsf |
+| 47: OI_Casare · [png](SCHITE/R_OI_Casare.png) | OI documente (formular-raport) | INCLUS-RAPORT | nu | da | da | nu | Clienti, Masini, OI_Casare, Produse, ProduseP |  | OI_Casare.IDBC |
+| 48: OI_Fisa_Evidenta · [png](SCHITE/R_OI_Fisa_Evidenta.png) | OI evidenta/inventar | INCLUS-RAPORT | nu | da | nu | nu | Clienti, tmpSFP, Masini, OI_Casare, OI_Predare, OI_Transfer, Produse, ProduseP | OI_Evidenta, OI_Union | sfp.di, sfp.dsf |
+| 49: OI_Fisa_Evidenta_Primitori · [png](SCHITE/R_OI_Fisa_Evidenta_Primitori.png) | OI evidenta/inventar | INCLUS-RAPORT | nu | da | nu | nu | Clienti, OI_Transfer, tmpSFP, Masini, OI_Casare, OI_Predare, Produse, ProduseP | OI_Evidenta, OI_Union | SFP.dsf, sfp.di, sfp.dsf |
+| 50: OI_Fisa_Evidenta_Primitori_STOC · [png](SCHITE/R_OI_Fisa_Evidenta_Primitori_STOC.png) | OI evidenta/inventar | INCLUS-RAPORT | nu | da | nu | nu | Clienti, tmpSFP, Masini, OI_Casare, OI_Predare, OI_Transfer, Produse, ProduseP | OI_Evidenta, OI_Union | SFP.dsf, sfp.di, sfp.dsf |
+| 51: OI_Fisa_Evidenta_Produse · [png](SCHITE/R_OI_Fisa_Evidenta_Produse.png)<br>52: OI_Fisa_Evidenta_Produse_STOC · [png](SCHITE/R_OI_Fisa_Evidenta_Produse_STOC.png) | OI evidenta/inventar | INCLUS-RAPORT | nu | da | nu | nu | Clienti, Masini, tmpSFP, OI_Casare, OI_Predare, OI_Transfer, Produse, ProduseP | OI_Evidenta, OI_Union | sfp.di, sfp.dsf |
+| 53: OI_LISTA_INVENTAR · [png](SCHITE/R_OI_LISTA_INVENTAR.png)<br>54: OI_LISTA_INVENTAR_TOTAL · [png](SCHITE/R_OI_LISTA_INVENTAR_TOTAL.png) | OI evidenta/inventar | INCLUS-RAPORT | nu | da | nu | nu | Clienti, Masini, tmpSFP, OI_Casare, OI_Predare, OI_Transfer, Produse, ProduseP | OI_Union | sfp.di, sfp.dsf |
+| 55: OI_Predare · [png](SCHITE/R_OI_Predare.png) | OI documente (formular-raport) | INCLUS-RAPORT | nu | da | da | nu | Clienti, Masini, OI_Predare, Produse, ProduseP |  | OI_Predare.IDBP |
+| 56: OI_Transfer · [png](SCHITE/R_OI_Transfer.png) | OI documente (formular-raport) | INCLUS-RAPORT | nu | da | da | nu | Clienti, Masini, OI_Transfer, Produse, ProduseP |  | OI_Transfer.IDBt |
+| 57: Plan_Achizitii · [png](SCHITE/R_Plan_Achizitii.png) | Comenzi/referate/situatii | INCLUS-RAPORT | da | da | nu | da | cpv, Intrari, Masini, Produse, ProduseP, tmpSFP |  |  |
+| 58: Referat_periodic_Intrari · [png](SCHITE/R_Referat_periodic_Intrari.png) | Comenzi/referate/situatii | INCLUS-RAPORT | da | nu | nu | da | Furnizori, Intrari, IntrariStorno, NIR, Produse, ProduseP, tmpSFP |  | sfp.di, sfp.dsf |
+| 59: Referat_periodic_produs · [png](SCHITE/R_Referat_periodic_produs.png) | Comenzi/referate/situatii | INCLUS-RAPORT | da | da | da | da | Furnizori, Intrari, IntrariStorno, NIR, Produse, ProduseP, tmpSFP |  | sfp.di, sfp.dsf |
+| 60: Situatie_Intrari · [png](SCHITE/R_Situatie_Intrari.png) | Comenzi/referate/situatii | INCLUS-RAPORT | da | da | nu | da | Intrari, Masini, Produse, ProduseP, tmpSFP |  |  |
 
 ## Observatii
 

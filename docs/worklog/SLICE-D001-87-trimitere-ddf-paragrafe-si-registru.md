@@ -2,9 +2,18 @@
 
 Reunire documentară D001-99. Toate loturile de mai jos au data 26.10.2026 și privesc numai documentația aplicată local. Rezultatele, inventarele, bilanțurile/cumulurile și continuările istorice sunt păstrate pe lot, cu ancore proprii; căile din inventare sunt proveniență.
 
-Declarația comună Test results / unverified: numai lectură și comparație documentară/Git; fără teste, builduri, verificatoare, aplicații, comenzi operaționale, SQL, commit sau push. Confirmările istorice nu sunt extinse. AVACONT, claude*.md, documentația testelor, ajutorul runtime, sursele, exporturile și release-urile sunt excluse. Stage numai pentru Markdown propriu; precizarea fragmentelor din indexul comun rămâne pe lot.
+Declarația comună Test results / unverified: numai lectură și comparație documentară/Git; fără teste, builduri, verificatoare, aplicații, comenzi operaționale, SQL, commit sau push. Confirmările istorice nu sunt extinse. AVACONT, claude*.md, documentația testelor, ajutorul runtime, sursele, exporturile și release-urile sunt excluse. Stage numai pentru Markdown propriu; fragmentele din indexul comun sunt delimitate mai jos.
 
-Tabelele indică rânduri eliminate; minus înseamnă rânduri adăugate. Continuarea curentă este în registrul D000–D009.
+Inventarele indică rânduri eliminate (în forma compactă, numărul dintre paranteze); minus înseamnă rânduri adăugate. Continuarea curentă este în registrul D000–D009.
+
+Rândurile comune ale inventarelor sunt centralizate mai jos (SLICE-D003-12); valorile sunt istorice, cu aceeași convenție de semn ca inventarele. Celelalte căi rămân la fiecare lot.
+
+| Loturi | `docs/worklog/state/KBOT_STATUS_D000-D009.md` | `docs/worklog/KBOT_STATUS.md` |
+|---|---:|---:|
+| D001-87, D001-88, D001-89, D001-90, D001-91, D001-92, D001-93, D001-94, D001-95, D001-97, D001-98 | -1 | 0 |
+| D001-96 | -1 | 67 |
+
+Stage istoric în indexul comun: numai rândul D001 pentru loturile 87…95; numai fragmente proprii pentru 96…98.
 
 ## SLICE-D001-87 — Trimiterea DDF: istoric compact și registru fără note identice <a id="slice-d001-87"></a>
 
@@ -14,17 +23,9 @@ Istoricul 0081 și registrul 0080–0089 au fost citite integral. Continuările 
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-0081-01-starea-reviziei.md` | 343 |
-| `docs/worklog/state/KBOT_STATUS_0080-0089.md` | -2 |
-| docs/worklog/state/KBOT_STATUS_D000-D009.md | -1 |
-| docs/worklog/KBOT_STATUS.md | 0 |
-| docs/worklog/SLICE-D001-87-trimitere-ddf-paragrafe-si-registru.md | -25 |
+Inventar: `docs/worklog/SLICE-0081-01-starea-reviziei.md` (343); `docs/worklog/state/KBOT_STATUS_0080-0089.md` (-2); docs/worklog/SLICE-D001-87-trimitere-ddf-paragrafe-si-registru.md (-25).
 
-Bilanț: **5 căi; un fișier adăugat; 315 rânduri mai puțin**. Cumul D001-01…87: **290 fișiere și 12709 rânduri mai puțin**.
-
-Stage în indexul comun: numai rândul D001. Continuare istorică D001-88.
+Bilanț: **5 căi; un fișier adăugat; 315 rânduri mai puțin**. Cumul D001-01…87: **290 fișiere și 12709 rânduri mai puțin**. Continuare istorică D001-88.
 
 ## SLICE-D001-88 — Editorii ORD și DDF: istorice distincte, paragrafe compacte <a id="slice-d001-88"></a>
 
@@ -34,17 +35,9 @@ Ambele istorice au fost citite integral. Continuările de paragrafe și liste su
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-0049-ord-edit-form.md` | 137 |
-| `docs/worklog/SLICE-0051-ddf-edit-form.md` | 71 |
-| docs/worklog/state/KBOT_STATUS_D000-D009.md | -1 |
-| docs/worklog/KBOT_STATUS.md | 0 |
-| docs/worklog/SLICE-D001-88-editoare-ord-ddf-istorice-compacte.md | -25 |
+Inventar: `docs/worklog/SLICE-0049-ord-edit-form.md` (137); `docs/worklog/SLICE-0051-ddf-edit-form.md` (71); docs/worklog/SLICE-D001-88-editoare-ord-ddf-istorice-compacte.md (-25).
 
-Bilanț: **5 căi; un fișier adăugat; 182 rânduri mai puțin**. Cumul D001-01…88: **289 fișiere și 12891 rânduri mai puțin**.
-
-Stage în indexul comun: numai rândul D001. Continuare istorică D001-89.
+Bilanț: **5 căi; un fișier adăugat; 182 rânduri mai puțin**. Cumul D001-01…88: **289 fișiere și 12891 rânduri mai puțin**. Continuare istorică D001-89.
 
 ## SLICE-D001-89 — Înregistrarea și aprobarea: cronologie păstrată în paragrafe compacte <a id="slice-d001-89"></a>
 
@@ -54,16 +47,9 @@ Istoricul 0075-01…05 a fost citit integral și compactat prin reunirea continu
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-0075-01-inregistrare-preauth-anaf-cod.md` | 161 |
-| docs/worklog/state/KBOT_STATUS_D000-D009.md | -1 |
-| docs/worklog/KBOT_STATUS.md | 0 |
-| docs/worklog/SLICE-D001-89-inregistrare-aprobare-istoric-compact.md | -24 |
+Inventar: `docs/worklog/SLICE-0075-01-inregistrare-preauth-anaf-cod.md` (161); docs/worklog/SLICE-D001-89-inregistrare-aprobare-istoric-compact.md (-24).
 
-Bilanț: **4 căi; un fișier adăugat; 136 rânduri mai puțin**. Cumul D001-01…89: **288 fișiere și 13027 rânduri mai puțin**.
-
-Stage în indexul comun: numai rândul D001. Continuare istorică D001-90.
+Bilanț: **4 căi; un fișier adăugat; 136 rânduri mai puțin**. Cumul D001-01…89: **288 fișiere și 13027 rânduri mai puțin**. Continuare istorică D001-90.
 
 ## SLICE-D001-90 — Ingestie: premise compacte și completarea integrată în istoricul 03 <a id="slice-d001-90"></a>
 
@@ -73,21 +59,9 @@ Cele patru jurnale 0048-01, 02, 03 și completarea 03 au fost citite integral. P
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-0048-01-premise-si-ajutoare.md` | 85 |
-| `docs/worklog/SLICE-0048-02-alegerea-unitatii.md` | 114 |
-| `docs/worklog/SLICE-0048-03-pasii-3-8-si-contractul-in-doua-faze.md` | -233 |
-| `docs/worklog/SLICE-0048-03-completare.md` | 512 |
-| `docs/PLAN_ForexeIngest.md` | 0 |
-| `docs/worklog/state/KBOT_STATUS_0040-0049.md` | 0 |
-| docs/worklog/state/KBOT_STATUS_D000-D009.md | -1 |
-| docs/worklog/KBOT_STATUS.md | 0 |
-| docs/worklog/SLICE-D001-90-ingestie-premise-alegere-si-completare.md | -29 |
+Inventar: `docs/worklog/SLICE-0048-01-premise-si-ajutoare.md` (85); `docs/worklog/SLICE-0048-02-alegerea-unitatii.md` (114); `docs/worklog/SLICE-0048-03-pasii-3-8-si-contractul-in-doua-faze.md` (-233); `docs/worklog/SLICE-0048-03-completare.md` (512); `docs/PLAN_ForexeIngest.md` (0); `docs/worklog/state/KBOT_STATUS_0040-0049.md` (0); docs/worklog/SLICE-D001-90-ingestie-premise-alegere-si-completare.md (-29).
 
-Bilanț: **9 căi; 1 fișiere retrase și un jurnal adăugat; 448 rânduri mai puțin**. Cumul D001-01…90: **288 fișiere și 13475 rânduri mai puțin**.
-
-Stage în indexul comun: numai rândul D001. Continuare istorică D001-91.
+Bilanț: **9 căi; 1 fișiere retrase și un jurnal adăugat; 448 rânduri mai puțin**. Cumul D001-01…90: **288 fișiere și 13475 rânduri mai puțin**. Continuare istorică D001-91.
 
 ## SLICE-D001-91 — Asociere: editor, grafice și registru fără reluări <a id="slice-d001-91"></a>
 
@@ -97,20 +71,9 @@ Istoricele editorului și graficelor au fost citite integral; continuările sunt
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-0048-01-premise-si-ajutoare.md` | -4 |
-| `docs/worklog/SLICE-0048-02-alegerea-unitatii.md` | -4 |
-| `docs/worklog/SLICE-0048-04-asociere-oricand.md` | 130 |
-| `docs/worklog/SLICE-0048-05-graficul-evolutiei.md` | 349 |
-| `docs/worklog/state/KBOT_STATUS_0040-0049.md` | 84 |
-| docs/worklog/state/KBOT_STATUS_D000-D009.md | -1 |
-| docs/worklog/KBOT_STATUS.md | 0 |
-| docs/worklog/SLICE-D001-91-asociere-grafice-si-registru.md | -28 |
+Inventar: `docs/worklog/SLICE-0048-01-premise-si-ajutoare.md` (-4); `docs/worklog/SLICE-0048-02-alegerea-unitatii.md` (-4); `docs/worklog/SLICE-0048-04-asociere-oricand.md` (130); `docs/worklog/SLICE-0048-05-graficul-evolutiei.md` (349); `docs/worklog/state/KBOT_STATUS_0040-0049.md` (84); docs/worklog/SLICE-D001-91-asociere-grafice-si-registru.md (-28).
 
-Bilanț: **8 căi; 0 fișiere retrase și un jurnal adăugat; 526 rânduri mai puțin**. Cumul D001-01…91: **287 fișiere și 14001 rânduri mai puțin**.
-
-Stage în indexul comun: numai rândul D001. Continuare istorică D001-92.
+Bilanț: **8 căi; 0 fișiere retrase și un jurnal adăugat; 526 rânduri mai puțin**. Cumul D001-01…91: **287 fișiere și 14001 rânduri mai puțin**. Continuare istorică D001-92.
 
 ## SLICE-D001-92 — Refacerea recepțiilor și extrase: istorice compacte, probe delimitate <a id="slice-d001-92"></a>
 
@@ -120,17 +83,9 @@ Ambele istorice au fost citite integral; paragrafele și continuările listelor 
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-0062-receptii-neasezate-si-refacere-din-istoric.md` | 151 |
-| `docs/worklog/SLICE-0057-forexe-lista-oprire-extrase.md` | 125 |
-| docs/worklog/state/KBOT_STATUS_D000-D009.md | -1 |
-| docs/worklog/KBOT_STATUS.md | 0 |
-| docs/worklog/SLICE-D001-92-refacere-receptii-si-extrase-compactare.md | -25 |
+Inventar: `docs/worklog/SLICE-0062-receptii-neasezate-si-refacere-din-istoric.md` (151); `docs/worklog/SLICE-0057-forexe-lista-oprire-extrase.md` (125); docs/worklog/SLICE-D001-92-refacere-receptii-si-extrase-compactare.md (-25).
 
-Bilanț: **5 căi; 0 fișiere retrase și un jurnal adăugat; 250 rânduri mai puțin**. Cumul D001-01…92: **286 fișiere și 14251 rânduri mai puțin**.
-
-Stage în indexul comun: numai rândul D001. Continuare istorică D001-93.
+Bilanț: **5 căi; 0 fișiere retrase și un jurnal adăugat; 250 rânduri mai puțin**. Cumul D001-01…92: **286 fișiere și 14251 rânduri mai puțin**. Continuare istorică D001-93.
 
 ## SLICE-D001-93 — Istoricul curățării: loturile 07–30 într-un jurnal <a id="slice-d001-93"></a>
 
@@ -166,13 +121,9 @@ Cele 24 de jurnale D001-07…30 au fost citite integral și reunite în fișieru
 | `docs/worklog/SLICE-D001-28-nucleu-si-vizualizator-jurnale.md` | 31 |
 | `docs/worklog/SLICE-D001-29-note-de-versiune-si-restante-istorice.md` | 33 |
 | `docs/worklog/SLICE-D001-30-istoric-copii-locale-me02.md` | 33 |
-| docs/worklog/state/KBOT_STATUS_D000-D009.md | -1 |
-| docs/worklog/KBOT_STATUS.md | 0 |
 | docs/worklog/SLICE-D001-93-istoric-curatare-loturile-07-30.md | -47 |
 
-Bilanț: **27 căi; 23 fișiere retrase și un jurnal adăugat; 38 rânduri mai puțin**. Cumul D001-01…93: **308 fișiere și 14289 rânduri mai puțin**.
-
-Stage în indexul comun: numai rândul D001. Continuare istorică D001-94.
+Bilanț: **27 căi; 23 fișiere retrase și un jurnal adăugat; 38 rânduri mai puțin**. Cumul D001-01…93: **308 fișiere și 14289 rânduri mai puțin**. Continuare istorică D001-94.
 
 ## SLICE-D001-94 — Istoricul curățării: loturile 31–60 într-un jurnal <a id="slice-d001-94"></a>
 
@@ -214,13 +165,9 @@ Cele 30 de jurnale D001-31…60 au fost citite integral și reunite în fișieru
 | `docs/worklog/SLICE-D001-58-tema-scalare-si-controale.md` | 35 |
 | `docs/worklog/SLICE-D001-59-pdf-migrare-si-poarta-parintelui.md` | 33 |
 | `docs/worklog/SLICE-D001-60-efactura-model-import-si-token.md` | 34 |
-| docs/worklog/state/KBOT_STATUS_D000-D009.md | -1 |
-| docs/worklog/KBOT_STATUS.md | 0 |
 | docs/worklog/SLICE-D001-94-istoric-curatare-loturile-31-60.md | -53 |
 
-Bilanț: **33 căi; 29 fișiere retrase și un jurnal adăugat; 145 rânduri mai puțin**. Cumul D001-01…94: **336 fișiere și 14434 rânduri mai puțin**.
-
-Stage în indexul comun: numai rândul D001. Continuare istorică D001-95.
+Bilanț: **33 căi; 29 fișiere retrase și un jurnal adăugat; 145 rânduri mai puțin**. Cumul D001-01…94: **336 fișiere și 14434 rânduri mai puțin**. Continuare istorică D001-95.
 
 ## SLICE-D001-95 — Istoricul curățării: loturile 61–86 într-un jurnal <a id="slice-d001-95"></a>
 
@@ -258,13 +205,9 @@ Cele 26 de jurnale D001-61…86 au fost citite integral și reunite în fișieru
 | `docs/worklog/SLICE-D001-84-adechit-analiza-si-decizii.md` | 38 |
 | `docs/worklog/SLICE-D001-85-adechit-contracte-si-inventar.md` | 32 |
 | `docs/worklog/SLICE-D001-86-copii-locale-istorice-compacte.md` | 31 |
-| docs/worklog/state/KBOT_STATUS_D000-D009.md | -1 |
-| docs/worklog/KBOT_STATUS.md | 0 |
 | docs/worklog/SLICE-D001-95-istoric-curatare-loturile-61-86.md | -49 |
 
-Bilanț: **29 căi; 25 fișiere retrase și un jurnal adăugat; 173 rânduri mai puțin**. Cumul D001-01…95: **360 fișiere și 14607 rânduri mai puțin**.
-
-Stage în indexul comun: numai rândul D001. Continuare istorică D001-96.
+Bilanț: **29 căi; 25 fișiere retrase și un jurnal adăugat; 173 rânduri mai puțin**. Cumul D001-01…95: **360 fișiere și 14607 rânduri mai puțin**. Continuare istorică D001-96.
 
 ## SLICE-D001-96 — Indexul general: reguli comune în paragrafe compacte <a id="slice-d001-96"></a>
 
@@ -274,16 +217,9 @@ Indexul general a fost citit integral în afara rândului AV exclus. Regulile de
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
+Inventar: docs/worklog/SLICE-D001-96-index-general-paragrafe-compacte.md (-24).
 
-| docs/worklog/state/KBOT_STATUS_D000-D009.md | -1 |
-| docs/worklog/KBOT_STATUS.md | 67 |
-| docs/worklog/SLICE-D001-96-index-general-paragrafe-compacte.md | -24 |
-
-Bilanț: **3 căi; 0 fișiere retrase și un jurnal adăugat; 42 rânduri mai puțin**. Cumul D001-01…96: **359 fișiere și 14649 rânduri mai puțin**.
-
-Stage în indexul comun: numai fragmente proprii. Continuare istorică D001-97.
+Bilanț: **3 căi; 0 fișiere retrase și un jurnal adăugat; 42 rânduri mai puțin**. Cumul D001-01…96: **359 fișiere și 14649 rânduri mai puțin**. Continuare istorică D001-97.
 
 ## SLICE-D001-97 — Adobe găzduit: paragrafe compacte în istoricul 0078 <a id="slice-d001-97"></a>
 
@@ -293,16 +229,9 @@ Paragrafele și continuările listelor din istoricul ferestrei Adobe găzduite a
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-0078-05-fereastra-gazduita-ctrl-h.md` | 299 |
-| docs/worklog/state/KBOT_STATUS_D000-D009.md | -1 |
-| docs/worklog/KBOT_STATUS.md | 0 |
-| docs/worklog/SLICE-D001-97-adobe-gazduit-istoric-paragrafe-compacte.md | -24 |
+Inventar: `docs/worklog/SLICE-0078-05-fereastra-gazduita-ctrl-h.md` (299); docs/worklog/SLICE-D001-97-adobe-gazduit-istoric-paragrafe-compacte.md (-24).
 
-Bilanț: **4 căi; 0 fișiere retrase și un jurnal adăugat; 274 rânduri mai puțin**. Cumul D001-01…97: **358 fișiere și 14923 rânduri mai puțin**.
-
-Stage în indexul comun: numai fragmente proprii. Continuare istorică D001-98.
+Bilanț: **4 căi; 0 fișiere retrase și un jurnal adăugat; 274 rânduri mai puțin**. Cumul D001-01…97: **358 fișiere și 14923 rânduri mai puțin**. Continuare istorică D001-98.
 
 ## SLICE-D001-98 — Vederea DDF: etape istorice în paragrafe compacte <a id="slice-d001-98"></a>
 
@@ -312,13 +241,6 @@ Paragrafele și continuările listelor din istoricul vederii DDF sunt reunite f�
 
 ### Files touched
 
-| Cale | Rânduri |
-|---|---|
-| `docs/worklog/SLICE-0020-01-ddf-endpoint.md` | 197 |
-| docs/worklog/state/KBOT_STATUS_D000-D009.md | -1 |
-| docs/worklog/KBOT_STATUS.md | 0 |
-| docs/worklog/SLICE-D001-98-vedere-ddf-etape-paragrafe-compacte.md | -24 |
+Inventar: `docs/worklog/SLICE-0020-01-ddf-endpoint.md` (197); docs/worklog/SLICE-D001-98-vedere-ddf-etape-paragrafe-compacte.md (-24).
 
-Bilanț: **4 căi; 0 fișiere retrase și un jurnal adăugat; 172 rânduri mai puțin**. Cumul D001-01…98: **357 fișiere și 15095 rânduri mai puțin**.
-
-Stage în indexul comun: numai fragmente proprii. Continuare istorică D001-99.
+Bilanț: **4 căi; 0 fișiere retrase și un jurnal adăugat; 172 rânduri mai puțin**. Cumul D001-01…98: **357 fișiere și 15095 rânduri mai puțin**. Continuare istorică D001-99.

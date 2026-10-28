@@ -6,61 +6,51 @@ Tipuri: MAT = Materiale/alt tip fara MF si OI; OI; MF; AL = Alimente.
 
 ## Formulare
 
-| Formular | Familie | Dispozitie | MAT | OI | MF | AL | Date (tabele) | Interogari | Schita |
-|---|---|---|---|---|---|---|---|---|---|
-| AdaugaTabelInTBLS | Exclus | EXCLUS-SCHEMA-ACCESS | da | da | da | da |  |  | — |
-| ALEGE_BC | BC | INCLUS-UI | da | nu | nu | da |  |  | [png](SCHITE/F_ALEGE_BC.png) |
-| ALEGE_BC_RETUR | BR | INCLUS-UI | de verificat | de verificat | de verificat | de verificat |  |  | [png](SCHITE/F_ALEGE_BC_RETUR.png) |
-| BC | BC | INCLUS-UI | da | nu | nu | da | Masini, TmpFactV |  | [png](SCHITE/F_BC.png) |
-| BCP | BC | INCLUS-UI | da | nu | nu | da |  |  | [png](SCHITE/F_BCP.png) |
-| BR | BR | INCLUS-UI | da | nu | nu | da | Masini, TmpFactV |  | [png](SCHITE/F_BR.png) |
-| Clienti | Nomenclatoare | INCLUS-UI | da | da | da | da | Clienti |  | [png](SCHITE/F_Clienti.png) |
-| CLS2024 | Nomenclatoare | INCLUS-UI | da | da | da | da |  |  | [png](SCHITE/F_CLS2024.png) |
-| CN | Alimente | INCLUS-UI | nu | nu | nu | da | Feluri, Tmp_Cina |  | [png](SCHITE/F_CN.png) |
-| ComisieINV subform | Nomenclatoare | INCLUS-UI | da | da | da | da | ComisieInventar |  | [png](SCHITE/F_ComisieINV_subform.png) |
-| ComisieNIR subform | Nomenclatoare | INCLUS-UI | da | da | da | da | ComisieNIR |  | [png](SCHITE/F_ComisieNIR_subform.png) |
-| Config | Configurare | INCLUS-UI | da | da | da | da |  |  | [png](SCHITE/F_Config.png) |
-| CPV2017 | Nomenclatoare | INCLUS-UI | da | da | da | da |  |  | [png](SCHITE/F_CPV2017.png) |
-| D | Alimente | INCLUS-UI | nu | nu | nu | da | Feluri, Tmp_Dejun |  | [png](SCHITE/F_D.png) |
-| EFACTURA | Exclus | EXCLUS-EFACTURA | da | da | da | da | Masini |  | — |
-| FC | FC | INCLUS-UI | da | da | da | da | Masini, TVA |  | [png](SCHITE/F_FC.png) |
-| FCS | FCS | INCLUS-UI | de verificat | de verificat | de verificat | de verificat | Masini, NIR, TVA |  | [png](SCHITE/F_FCS.png) |
-| Feluri | Alimente | INCLUS-UI | nu | nu | nu | da |  |  | [png](SCHITE/F_Feluri.png) |
-| frmMail | Shell | EXCLUS-INFRA-ACCESS | da | da | da | da |  |  | — |
-| frmPB | Shell | EXCLUS-INFRA-ACCESS | da | da | da | da |  |  | — |
-| frmProgressBar | Shell | EXCLUS-INFRA-ACCESS | da | da | da | da |  |  | — |
-| Furnizori | Nomenclatoare | INLOCUIT-PARTENERI-KBOT | da | da | da | da | Furnizori |  | [png](SCHITE/F_Furnizori.png) |
-| Furnizori2022 | Nomenclatoare | INLOCUIT-PARTENERI-KBOT | da | da | da | da | Furnizori |  | [png](SCHITE/F_Furnizori2022.png) |
-| Gestionari | Configurare | NEREFERIT-NEPORTAT | da | da | da | da |  |  | [png](SCHITE/F_Gestionari.png) |
-| IA | Inchidere an | INCLUS-UI | da | nu | nu | da | tmp_Balanta |  | [png](SCHITE/F_IA.png) |
-| LABC | Alimente | INCLUS-UI | nu | nu | nu | da | tmp_LABC |  | [png](SCHITE/F_LABC.png) |
-| LEGBCLA | Alimente | INCLUS-UI | nu | nu | nu | da | tmp_LEGBCLA |  | [png](SCHITE/F_LEGBCLA.png) |
-| ListaAlimente | Alimente | INCLUS-UI | da | nu | nu | da | tmp_LEGBCLA |  | [png](SCHITE/F_ListaAlimente.png) |
-| ListaAlimente_copy | Alimente | NEREFERIT-NEPORTAT | nu | nu | nu | da |  |  | [png](SCHITE/F_ListaAlimente_copy.png) |
-| Main | Shell | EXCLUS-INFRA-ACCESS | da | da | da | da | TVA |  | [png](SCHITE/F_Main.png) |
-| Masini | Nomenclatoare | INCLUS-UI | da | da | da | da | Masini |  | [png](SCHITE/F_Masini.png) |
-| Masini_sub | Nomenclatoare | INCLUS-UI | da | da | da | da | Masini |  | [png](SCHITE/F_Masini_sub.png) |
-| MD | Alimente | INCLUS-UI | nu | nu | nu | da | Tmp_MicDejun |  | [png](SCHITE/F_MD.png) |
-| Mesaje_ANAF | Exclus | EXCLUS-EFACTURA | da | da | da | da |  |  | — |
-| MonthPicker | Shell | EXCLUS-INFRA-ACCESS | da | da | da | da |  |  | — |
-| OI_Casare | OI | INCLUS-UI | nu | da | da | nu | Masini, OI_TmpFact |  | [png](SCHITE/F_OI_Casare.png) |
-| OI_Predare | OI | INCLUS-UI | nu | da | da | nu | Masini, TmpFactV |  | [png](SCHITE/F_OI_Predare.png) |
-| OI_TmpFact | OI | INCLUS-UI | nu | da | da | nu | OI_TmpFact |  | [png](SCHITE/F_OI_TmpFact.png) |
-| OI_Transfer | OI | INCLUS-UI | nu | da | da | nu |  |  | [png](SCHITE/F_OI_Transfer.png) |
-| Produse | Nomenclatoare | INCLUS-UI | da | da | da | da |  |  | [png](SCHITE/F_Produse.png) |
-| ProduseM | Nomenclatoare | INCLUS-UI | da | da | da | da | tmpProduseM |  | [png](SCHITE/F_ProduseM.png) |
-| SETARI | Configurare | INCLUS-UI | da | da | da | da | Jud, UNIT, ComisieNIR, ComisieInventar |  | [png](SCHITE/F_SETARI.png) |
-| SFP | Situatii | INCLUS-UI | da | da | da | da | SFP_CautCBX |  | [png](SCHITE/F_SFP.png) |
-| subTreeView | Shell | EXCLUS-INFRA-ACCESS | da | da | da | da |  |  | — |
-| TmpFact | FC | INCLUS-UI | da | da | da | da | TmpFact |  | [png](SCHITE/F_TmpFact.png) |
-| TmpFactMF | FC | INCLUS-UI | da | da | da | da | TmpFact |  | [png](SCHITE/F_TmpFactMF.png) |
-| TmpFactV | FC | INCLUS-UI | da | da | da | da | TmpFactV |  | [png](SCHITE/F_TmpFactV.png) |
-| tmpSFP | Situatii | INCLUS-UI | da | da | da | da | tmpSFP |  | [png](SCHITE/F_tmpSFP.png) |
-| tmp_Balanta subform | Situatii | INCLUS-UI | da | da | da | da | tmp_Balanta |  | [png](SCHITE/F_tmp_Balanta_subform.png) |
-| UNIT | Configurare | INCLUS-PARTIAL | da | da | da | da | Jud, UNIT |  | [png](SCHITE/F_UNIT.png) |
-| VaerCon | Shell | EXCLUS-INFRA-ACCESS | da | da | da | da | cale |  | [png](SCHITE/F_VaerCon.png) |
-| XMLPath | Exclus | EXCLUS-EFACTURA | da | da | da | da |  |  | — |
-| XMLPath_sub | Exclus | EXCLUS-EFACTURA | da | da | da | da |  |  | — |
+SLICE-D003-20: sunt grupate numai obiecte cu toate celelalte celule identice; numărul păstrează poziția inițială, iar fiecare schiță rămâne legată de obiectul său.
+
+| Obiecte (#: nume · Schita) | Familie | Dispozitie | MAT | OI | MF | AL | Date (tabele) | Interogari |
+|---|---|---|---|---|---|---|---|---|
+| 1: AdaugaTabelInTBLS · — | Exclus | EXCLUS-SCHEMA-ACCESS | da | da | da | da |  |  |
+| 2: ALEGE_BC · [png](SCHITE/F_ALEGE_BC.png)<br>5: BCP · [png](SCHITE/F_BCP.png) | BC | INCLUS-UI | da | nu | nu | da |  |  |
+| 3: ALEGE_BC_RETUR · [png](SCHITE/F_ALEGE_BC_RETUR.png) | BR | INCLUS-UI | de verificat | de verificat | de verificat | de verificat |  |  |
+| 4: BC · [png](SCHITE/F_BC.png) | BC | INCLUS-UI | da | nu | nu | da | Masini, TmpFactV |  |
+| 6: BR · [png](SCHITE/F_BR.png) | BR | INCLUS-UI | da | nu | nu | da | Masini, TmpFactV |  |
+| 7: Clienti · [png](SCHITE/F_Clienti.png) | Nomenclatoare | INCLUS-UI | da | da | da | da | Clienti |  |
+| 8: CLS2024 · [png](SCHITE/F_CLS2024.png)<br>13: CPV2017 · [png](SCHITE/F_CPV2017.png)<br>40: Produse · [png](SCHITE/F_Produse.png) | Nomenclatoare | INCLUS-UI | da | da | da | da |  |  |
+| 9: CN · [png](SCHITE/F_CN.png) | Alimente | INCLUS-UI | nu | nu | nu | da | Feluri, Tmp_Cina |  |
+| 10: ComisieINV subform · [png](SCHITE/F_ComisieINV_subform.png) | Nomenclatoare | INCLUS-UI | da | da | da | da | ComisieInventar |  |
+| 11: ComisieNIR subform · [png](SCHITE/F_ComisieNIR_subform.png) | Nomenclatoare | INCLUS-UI | da | da | da | da | ComisieNIR |  |
+| 12: Config · [png](SCHITE/F_Config.png) | Configurare | INCLUS-UI | da | da | da | da |  |  |
+| 14: D · [png](SCHITE/F_D.png) | Alimente | INCLUS-UI | nu | nu | nu | da | Feluri, Tmp_Dejun |  |
+| 15: EFACTURA · — | Exclus | EXCLUS-EFACTURA | da | da | da | da | Masini |  |
+| 16: FC · [png](SCHITE/F_FC.png) | FC | INCLUS-UI | da | da | da | da | Masini, TVA |  |
+| 17: FCS · [png](SCHITE/F_FCS.png) | FCS | INCLUS-UI | de verificat | de verificat | de verificat | de verificat | Masini, NIR, TVA |  |
+| 18: Feluri · [png](SCHITE/F_Feluri.png) | Alimente | INCLUS-UI | nu | nu | nu | da |  |  |
+| 19: frmMail · —<br>20: frmPB · —<br>21: frmProgressBar · —<br>35: MonthPicker · —<br>44: subTreeView · — | Shell | EXCLUS-INFRA-ACCESS | da | da | da | da |  |  |
+| 22: Furnizori · [png](SCHITE/F_Furnizori.png)<br>23: Furnizori2022 · [png](SCHITE/F_Furnizori2022.png) | Nomenclatoare | INLOCUIT-PARTENERI-KBOT | da | da | da | da | Furnizori |  |
+| 24: Gestionari · [png](SCHITE/F_Gestionari.png) | Configurare | NEREFERIT-NEPORTAT | da | da | da | da |  |  |
+| 25: IA · [png](SCHITE/F_IA.png) | Inchidere an | INCLUS-UI | da | nu | nu | da | tmp_Balanta |  |
+| 26: LABC · [png](SCHITE/F_LABC.png) | Alimente | INCLUS-UI | nu | nu | nu | da | tmp_LABC |  |
+| 27: LEGBCLA · [png](SCHITE/F_LEGBCLA.png) | Alimente | INCLUS-UI | nu | nu | nu | da | tmp_LEGBCLA |  |
+| 28: ListaAlimente · [png](SCHITE/F_ListaAlimente.png) | Alimente | INCLUS-UI | da | nu | nu | da | tmp_LEGBCLA |  |
+| 29: ListaAlimente_copy · [png](SCHITE/F_ListaAlimente_copy.png) | Alimente | NEREFERIT-NEPORTAT | nu | nu | nu | da |  |  |
+| 30: Main · [png](SCHITE/F_Main.png) | Shell | EXCLUS-INFRA-ACCESS | da | da | da | da | TVA |  |
+| 31: Masini · [png](SCHITE/F_Masini.png)<br>32: Masini_sub · [png](SCHITE/F_Masini_sub.png) | Nomenclatoare | INCLUS-UI | da | da | da | da | Masini |  |
+| 33: MD · [png](SCHITE/F_MD.png) | Alimente | INCLUS-UI | nu | nu | nu | da | Tmp_MicDejun |  |
+| 34: Mesaje_ANAF · —<br>52: XMLPath · —<br>53: XMLPath_sub · — | Exclus | EXCLUS-EFACTURA | da | da | da | da |  |  |
+| 36: OI_Casare · [png](SCHITE/F_OI_Casare.png) | OI | INCLUS-UI | nu | da | da | nu | Masini, OI_TmpFact |  |
+| 37: OI_Predare · [png](SCHITE/F_OI_Predare.png) | OI | INCLUS-UI | nu | da | da | nu | Masini, TmpFactV |  |
+| 38: OI_TmpFact · [png](SCHITE/F_OI_TmpFact.png) | OI | INCLUS-UI | nu | da | da | nu | OI_TmpFact |  |
+| 39: OI_Transfer · [png](SCHITE/F_OI_Transfer.png) | OI | INCLUS-UI | nu | da | da | nu |  |  |
+| 41: ProduseM · [png](SCHITE/F_ProduseM.png) | Nomenclatoare | INCLUS-UI | da | da | da | da | tmpProduseM |  |
+| 42: SETARI · [png](SCHITE/F_SETARI.png) | Configurare | INCLUS-UI | da | da | da | da | Jud, UNIT, ComisieNIR, ComisieInventar |  |
+| 43: SFP · [png](SCHITE/F_SFP.png) | Situatii | INCLUS-UI | da | da | da | da | SFP_CautCBX |  |
+| 45: TmpFact · [png](SCHITE/F_TmpFact.png)<br>46: TmpFactMF · [png](SCHITE/F_TmpFactMF.png) | FC | INCLUS-UI | da | da | da | da | TmpFact |  |
+| 47: TmpFactV · [png](SCHITE/F_TmpFactV.png) | FC | INCLUS-UI | da | da | da | da | TmpFactV |  |
+| 48: tmpSFP · [png](SCHITE/F_tmpSFP.png) | Situatii | INCLUS-UI | da | da | da | da | tmpSFP |  |
+| 49: tmp_Balanta subform · [png](SCHITE/F_tmp_Balanta_subform.png) | Situatii | INCLUS-UI | da | da | da | da | tmp_Balanta |  |
+| 50: UNIT · [png](SCHITE/F_UNIT.png) | Configurare | INCLUS-PARTIAL | da | da | da | da | Jud, UNIT |  |
+| 51: VaerCon · [png](SCHITE/F_VaerCon.png) | Shell | EXCLUS-INFRA-ACCESS | da | da | da | da | cale |  |
 
 ## Reguli de capabilitate verificate la schita
 

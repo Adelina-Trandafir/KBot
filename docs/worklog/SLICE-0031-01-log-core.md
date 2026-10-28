@@ -38,19 +38,11 @@ Cele două `Catch`-uri goale (`Write`: «Eșec silențios la scriere»; `Init`: 
 
 #### 4. Citire, analiză, filtrare (`KBot.Common\Logging\`)
 
-* `LogFileReader` — `FileShare.ReadWrite` (obligatoriu: `RunLogger` își ține fișierul deschis cu
-  `AutoFlush` cât rulează bancul; e cazul obișnuit, nu unul marginal), ultimii 5 MB prin `Seek`,
-  prima linie parțială aruncată, BOM sărit.
-* Șase analizoare în spatele lui `ILogEntryParser`, fiecare scris **după scriitorul real**, nu după
-  tabelul planului.
-* `LogFileLoader` — ghicește analizorul după numele fișierului, **verifică ghicirea**, coase liniile
-  de continuare în blocuri, moștenește marcajele lipsă și raportează câte au moștenit și câte au
-  rămas fără dată.
-* `LogFilter` — clasă pură, aceeași formă ca `IstoricFilter` (citit înainte de scriere): patru axe
-  în ȘI, mulțime goală = nimic, intervalul comparat pe marcajul **corectat**, iar excluderile fără
-  dată se **numără** și se întorc.
-* `ServerClock` — decalajul față de ceasul serverului, cu regula din §6.6: se aplică **doar**
-  liniilor care nu poartă decalaj propriu.
+* `LogFileReader` — `FileShare.ReadWrite` (obligatoriu: `RunLogger` își ține fișierul deschis cu `AutoFlush` cât rulează bancul; e cazul obișnuit, nu unul marginal), ultimii 5 MB prin `Seek`, prima linie parțială aruncată, BOM sărit.
+* Șase analizoare în spatele lui `ILogEntryParser`, fiecare scris **după scriitorul real**, nu după tabelul planului.
+* `LogFileLoader` — ghicește analizorul după numele fișierului, **verifică ghicirea**, coase liniile de continuare în blocuri, moștenește marcajele lipsă și raportează câte au moștenit și câte au rămas fără dată.
+* `LogFilter` — clasă pură, aceeași formă ca `IstoricFilter` (citit înainte de scriere): patru axe în ȘI, mulțime goală = nimic, intervalul comparat pe marcajul **corectat**, iar excluderile fără dată se **numără** și se întorc.
+* `ServerClock` — decalajul față de ceasul serverului, cu regula din §6.6: se aplică **doar** liniilor care nu poartă decalaj propriu.
 
 ---
 
@@ -163,15 +155,10 @@ Numere **dintr-o rulare reală**, nu purtate din plan sau dintr-un worklog vechi
 
 Toate 11 sunt în zone fără legătură cu jurnalele — etichete de revizie DDF și vederea Istoric:
 
-* `KBot.Domain.Tests.DdfInfoTests` — `EtichetaRevizie_PadsWithSpaces_NotZeroes`,
-  `EtichetaRevizie_HandlesTwoAndThreeDigits`, `EtichetaRevizie_MissingDate_LeavesDatePartEmpty`
+* `KBot.Domain.Tests.DdfInfoTests` — `EtichetaRevizie_PadsWithSpaces_NotZeroes`, `EtichetaRevizie_HandlesTwoAndThreeDigits`, `EtichetaRevizie_MissingDate_LeavesDatePartEmpty`
 * `KBot.Api.Tests.ApiClientTests.GetDdf_FormatsRevisionLabel_WithSpacePadding_Not_Zeroes`
-* `KBot.App.Tests.DdfViewTests` — `Leaf_CaptionPadsRevisionNumberWithSpaces`,
-  `AdobeSettings_LiveOnTheDocumentPage_NotOnValues`
-* `KBot.App.Tests.IstoricViewTests` — `Tree_HasTwoLevels_MonthsThenDays`,
-  `GridColumns_FiveNoValueColumns_NoTotals`,
-  `DetailPane_FollowsSelection_DescriereAndNonZeroValues`,
-  `NewContext_RebuildsTheTree_AndAnEmptyResponseClearsIt`
+* `KBot.App.Tests.DdfViewTests` — `Leaf_CaptionPadsRevisionNumberWithSpaces`, `AdobeSettings_LiveOnTheDocumentPage_NotOnValues`
+* `KBot.App.Tests.IstoricViewTests` — `Tree_HasTwoLevels_MonthsThenDays`, `GridColumns_FiveNoValueColumns_NoTotals`, `DetailPane_FollowsSelection_DescriereAndNonZeroValues`, `NewContext_RebuildsTheTree_AndAnEmptyResponseClearsIt`
 * `KBot.App.Tests.MainFormNavItemsTests.Designer_WroteLiteralDiacritics_NotEscapes`
 
 Grupul DDF arată ca o singură cauză (eticheta de revizie completată cu spații vs. zerouri, care se vede în Domain, Api și App deodată). **Nu s-a atins nimic din ele** — sunt în afara feliei, iar repararea lor pe furiș ar ascunde o regresie a altcuiva. Intră la fire deschise în STATUS.
@@ -180,21 +167,13 @@ Grupul DDF arată ca o singură cauză (eticheta de revizie completată cu spaț
 
 ### Ce a rămas neverificat sau amânat
 
-1. **Nimic din felia asta nu a fost văzut pe ecran** — nu există UI în trecerea asta. Verdictul
-   vizual vine abia la 0031-04.
-2. **`TreeLogger` nu rulează în aplicația construită** (abaterea D). Mutarea în `Logs\` e corectă,
-   dar neobservabilă până când cineva cablează `Init`.
+1. **Nimic din felia asta nu a fost văzut pe ecran** — nu există UI în trecerea asta. Verdictul vizual vine abia la 0031-04.
+2. **`TreeLogger` nu rulează în aplicația construită** (abaterea D). Mutarea în `Logs\` e corectă, dar neobservabilă până când cineva cablează `Init`.
 3. **Rotația din `RunLogger` nu are efect azi** (abaterea C).
-4. **Căutarea nu pliază diacriticele** — «sters» nu găsește «șters». Limitare din plan, păstrată
-   deliberat și **fixată cu test în ambele sensuri**, ca să nu fie «reparată» din greșeală.
-5. **Ora fără dată a lui `TreeLogger`**: data unei intrări e dedusă din `LastWriteTime`-ul
-   fișierului, nu înregistrată. Peste miezul nopții orele chiar merg înapoi, pe aceeași dată — ales
-   în locul unei ghiciri, și fixat cu test ca purtare declarată.
-6. **`ApiServerParser` nu a văzut niciodată un fișier real de server.** Forma veche e scrisă după
-   `utils/logger.py` citit în depozit; forma nouă, după §6.2 din plan — care abia la 0031-02 devine
-   cod. Prima confruntare cu un fișier adevărat e în trecerea următoare.
-7. **`ServerClock` nu a primit niciodată un `server_time` real** — câmpul apare abia la 0031-02.
-   Aritmetica e testată; integrarea, nu.
+4. **Căutarea nu pliază diacriticele** — «sters» nu găsește «șters». Limitare din plan, păstrată deliberat și **fixată cu test în ambele sensuri**, ca să nu fie «reparată» din greșeală.
+5. **Ora fără dată a lui `TreeLogger`**: data unei intrări e dedusă din `LastWriteTime`-ul fișierului, nu înregistrată. Peste miezul nopții orele chiar merg înapoi, pe aceeași dată — ales în locul unei ghiciri, și fixat cu test ca purtare declarată.
+6. **`ApiServerParser` nu a văzut niciodată un fișier real de server.** Forma veche e scrisă după `utils/logger.py` citit în depozit; forma nouă, după §6.2 din plan — care abia la 0031-02 devine cod. Prima confruntare cu un fișier adevărat e în trecerea următoare.
+7. **`ServerClock` nu a primit niciodată un `server_time` real** — câmpul apare abia la 0031-02. Aritmetica e testată; integrarea, nu.
 8. **Cele 11 teste picate preexistente** rămân picate.
 
 ---
@@ -217,18 +196,9 @@ Cererea, în cuvintele operatorului: «integrate the new logging system into mai
 
 Trei hotărâri de fond:
 
-- **Citirea nu stă niciodată pe firul UI.** Fișierele se citesc și se analizează pe un fir de fundal
-  (un jurnal poate avea 5 MB), cu `BusyBar` aprins; **filtrarea e în memorie și sincronă** și nu
-  recitește niciodată un fișier. De aceea căutarea are cronometrul de 250 ms cerut de plan — altfel
-  fiecare literă ar reface filtrarea peste zeci de mii de intrări. O a doua selecție o **anulează** pe
-  prima (`CancellationTokenSource`): operatorul a schimbat fișierul, răspunsul vechi n-are ce căuta în
-  grilă.
-- **Coloana `Ora` arată ora CORECTATĂ, panoul de detaliu arată blocul BRUT.** Cine citește o urmă de
-  stivă trebuie să vadă exact ce s-a scris în fișier, nu o versiune ajutată de noi. Fixat cu test.
-- **Culorile rândurilor vin din paletă**, prin `RowFormatting` (§1.1 din plan): `ErrorColor`,
-  `WarningColor`, `TextDimColor`, `DisabledTextColor`. **`Info` nu se vopsește deloc** — e rândul
-  obișnuit, iar a-l colora ar face din normal o excepție. `KBotDataView` nu a fost atins, iar instanța
-  refolosită a argumentelor nu se reține.
+- **Citirea nu stă niciodată pe firul UI.** Fișierele se citesc și se analizează pe un fir de fundal (un jurnal poate avea 5 MB), cu `BusyBar` aprins; **filtrarea e în memorie și sincronă** și nu recitește niciodată un fișier. De aceea căutarea are cronometrul de 250 ms cerut de plan — altfel fiecare literă ar reface filtrarea peste zeci de mii de intrări. O a doua selecție o **anulează** pe prima (`CancellationTokenSource`): operatorul a schimbat fișierul, răspunsul vechi n-are ce căuta în grilă.
+- **Coloana `Ora` arată ora CORECTATĂ, panoul de detaliu arată blocul BRUT.** Cine citește o urmă de stivă trebuie să vadă exact ce s-a scris în fișier, nu o versiune ajutată de noi. Fixat cu test.
+- **Culorile rândurilor vin din paletă**, prin `RowFormatting` (§1.1 din plan): `ErrorColor`, `WarningColor`, `TextDimColor`, `DisabledTextColor`. **`Info` nu se vopsește deloc** — e rândul obișnuit, iar a-l colora ar face din normal o excepție. `KBotDataView` nu a fost atins, iar instanța refolosită a argumentelor nu se reține.
 
 Bara de stare spune tot ce ar putea altfel dispărea tăcut: câte intrări au intrat, câte se văd, cât s-a citit, dacă fereastra de citire a tăiat coada, decalajul ceasului de server și — obligatoriu — **câte intrări au fost excluse fiindcă n-au dată**, când e pus un capăt de interval.
 
@@ -244,11 +214,8 @@ DTO-urile (`LogFilesResponse` / `LogTailResponse`) sunt **private în formular**
 
 Doi pași, fiindcă nu există «înapoi»: întâi lista fiecărui fișier local cu mărimea și numărul de intrări, **nimic bifat** la deschidere; apoi o confirmare care NUMEȘTE fișierele și totalul.
 
-- Fișierul ținut deschis de rularea curentă se **arată**, dar șters și nebifabil. Se întreabă
-  EMPIRIC (o deschidere exclusivă de o clipă), nu după o listă de nume ținută pe de rost, care ar
-  rămâne în urmă la primul scriitor nou.
-- `File.Delete`; pe `IOException` fișierul se **golește** în loc să fie șters. Dacă nici asta nu merge,
-  apare pe nume, cu motivul, iar restul continuă. Nimic nu eșuează tăcut.
+- Fișierul ținut deschis de rularea curentă se **arată**, dar șters și nebifabil. Se întreabă EMPIRIC (o deschidere exclusivă de o clipă), nu după o listă de nume ținută pe de rost, care ar rămâne în urmă la primul scriitor nou.
+- `File.Delete`; pe `IOException` fișierul se **golește** în loc să fie șters. Dacă nici asta nu merge, apare pe nume, cu motivul, iar restul continuă. Nimic nu eșuează tăcut.
 - **Jurnalele de server nu se ating de aici, niciodată.**
 
 #### 4. Cablarea în bancul de probă (plan §9), fără ca bancul să refere `KBot.App`
@@ -277,17 +244,9 @@ Prima pornire e selectată din start: cine apasă Enter fără să citească pri
 
 Operatorul a deschis fereastra în designerul VS, a confirmat că **funcționează**, și a rearanjat așezarea: panourile andocate au fost înlocuite cu `TableLayoutPanel`-uri (`tlyMain`, `tlyFilter`, `tlyFilterActual`, `tlyFooter`) — «i want tly instead of those annoying panels where i have no real control» — apoi a cerut punerea la punct a plasării. Trei defecte reale găsite și reparate:
 
-1. **`btnGoleste` era DECLARAT, dar niciodată construit și niciodată adăugat undeva**, iar clauza
-   `Handles` fusese scoasă din code-behind. Formularul compila, se deschidea, arăta bine — și singurul
-   drum de ștergere pur și simplu **nu exista**. Reintrodus în `tlyFooter` (coloană nouă, lângă
-   «Deschide dosarul»: amândouă lucrează cu fișierele, iar un buton distructiv n-are ce căuta lângă
-   «Copiază»), cu `Handles` la loc. **Are acum test de regresie**: un câmp declarat nu e un control
-   montat. E același tipar cu `LstValori_ItemCheck` din 0030 și cu `btnSortClear`.
+1. **`btnGoleste` era DECLARAT, dar niciodată construit și niciodată adăugat undeva**, iar clauza `Handles` fusese scoasă din code-behind. Formularul compila, se deschidea, arăta bine — și singurul drum de ștergere pur și simplu **nu exista**. Reintrodus în `tlyFooter` (coloană nouă, lângă «Deschide dosarul»: amândouă lucrează cu fișierele, iar un buton distructiv n-are ce căuta lângă «Copiază»), cu `Handles` la loc. **Are acum test de regresie**: un câmp declarat nu e un control montat. E același tipar cu `LstValori_ItemCheck` din 0030 și cu `btnSortClear`.
 2. **`tlyMain.SetColumnSpan(tlyFooter, 4)` pe un tabel cu DOUĂ coloane** → 2.
-3. **`tlyFilter` avea trei rânduri de 60 + 80 + rest într-o celulă de 124 px**: suma depășea celula,
-   iar un `TableLayoutPanel` nu strânge rândurile absolute ca să încapă, deci bara de jetoane era
-   tăiată. Două rânduri acum (câmpuri fix, jetoane elastic), cu jetoanele pe `Dock = Fill`: bara își
-   rupe rândurile după LĂȚIME, iar înălțimea i-o dă tabelul.
+3. **`tlyFilter` avea trei rânduri de 60 + 80 + rest într-o celulă de 124 px**: suma depășea celula, iar un `TableLayoutPanel` nu strânge rândurile absolute ca să încapă, deci bara de jetoane era tăiată. Două rânduri acum (câmpuri fix, jetoane elastic), cu jetoanele pe `Dock = Fill`: bara își rupe rândurile după LĂȚIME, iar înălțimea i-o dă tabelul.
 
 Au fost șterse și trei declarații moarte (`pnlCard`, `pnlActiuni`, `pnlStare`) — controale care nu mai există nicăieri în formular.
 
@@ -316,15 +275,10 @@ Au fost șterse și trei declarații moarte (`pnlCard`, `pnlActiuni`, `pnlStare`
 
 Numere REALE, dintr-o rulare:
 
-- `dotnet build KBot.sln -c Debug`: **0 erori**, 4 avertismente `MSB3825` **preexistente** (cele patru
-  `.resx` de la alte felii, neatinse).
-- `dotnet build KBot.sln -c Release`: **0 erori**, aceleași 4 avertismente (vezi nota din
-  `SLICE-0031-03` despre «Release 0/0» din trecerea 01).
-- `KBot.App.Tests`: **163** teste, **156 verzi / 7 picate**. Cele 7 sunt **preexistente** (4 Istoric,
-  2 DDF, 1 `MainFormNavItemsTests.Designer_WroteLiteralDiacritics_NotEscapes`).
-- Suita completă: **11 picate**, aceleași ca înainte de felie — 3 `Domain` (DDF) + 1 `Api` (DDF) +
-  7 `App`. Restul verzi: `Controls` 831, `DevHarness` 170, `Theming` 71, `Common` 58, `Xfa` 39,
-  `LocalStore` 1.
+- `dotnet build KBot.sln -c Debug`: **0 erori**, 4 avertismente `MSB3825` **preexistente** (cele patru `.resx` de la alte felii, neatinse).
+- `dotnet build KBot.sln -c Release`: **0 erori**, aceleași 4 avertismente (vezi nota din `SLICE-0031-03` despre «Release 0/0» din trecerea 01).
+- `KBot.App.Tests`: **163** teste, **156 verzi / 7 picate**. Cele 7 sunt **preexistente** (4 Istoric, 2 DDF, 1 `MainFormNavItemsTests.Designer_WroteLiteralDiacritics_NotEscapes`).
+- Suita completă: **11 picate**, aceleași ca înainte de felie — 3 `Domain` (DDF) + 1 `Api` (DDF) + 7 `App`. Restul verzi: `Controls` 831, `DevHarness` 170, `Theming` 71, `Common` 58, `Xfa` 39, `LocalStore` 1.
 
 Probele 21–24 din plan, acoperite: fereastra montează bara de jetoane, lista, grila (cele șase coloane în ordine, `Ora` înghețată, grilă read-only), panoul de detaliu și notificările; `RowFormatting` mapează fiecare nivel pe culoarea din `ThemeManager.Current.Palette` (**niciodată pe un literal**), iar `Info` rămâne nevopsit; selecția pune `Raw` **neconvertit** în panou; un apel de server picat scoate notificarea și **lasă intrările locale întregi**.
 
@@ -332,21 +286,11 @@ Probele 21–24 din plan, acoperite: fereastra montează bara de jetoane, lista,
 
 ### Ce a rămas NEVERIFICAT sau amânat
 
-1. **Trecerea 0031-02 (jurnalele de server) NU s-a făcut.** Rutele, `LOG_DIR`, filtrul per unitate,
-   handler-ul catch-all, `gunicorn.conf.py`, metodele tipizate de pe `ApiClient` și probele 19–20 +
-   25–31 rămân. Până atunci grupul «Server» al ferestrei există, se poate apăsa și **spune pe șleau** că
-   ruta nu e livrată. `ApiServerParser` și `ServerClock` continuă să nu fi văzut date reale de server.
-2. **Proba vizuală din banc (`LogViewerTest`) nu a fost RULATĂ de mine.** Operatorul a confirmat
-   separat că fereastra funcționează și a rearanjat-o singur; ce **nu** a fost privit după reparațiile
-   de plasare de la §7 e rezultatul lor pe ecran (jetoanele netăiate, butonul de golire la locul lui,
-   subsolul cu cinci coloane).
+1. **Trecerea 0031-02 (jurnalele de server) NU s-a făcut.** Rutele, `LOG_DIR`, filtrul per unitate, handler-ul catch-all, `gunicorn.conf.py`, metodele tipizate de pe `ApiClient` și probele 19–20 + 25–31 rămân. Până atunci grupul «Server» al ferestrei există, se poate apăsa și **spune pe șleau** că ruta nu e livrată. `ApiServerParser` și `ServerClock` continuă să nu fi văzut date reale de server.
+2. **Proba vizuală din banc (`LogViewerTest`) nu a fost RULATĂ de mine.** Operatorul a confirmat separat că fereastra funcționează și a rearanjat-o singur; ce **nu** a fost privit după reparațiile de plasare de la §7 e rezultatul lor pe ecran (jetoanele netăiate, butonul de golire la locul lui, subsolul cu cinci coloane).
 3. **Fereastra nu a fost văzută în Dark / Modern.**
-4. **`StartupLauncherForm` nu a fost văzută pe ecran deloc** — e scrisă, compilează, dispecerul e
-   acoperit de tipuri, dar nimeni nu s-a uitat la ea.
-5. **Căutarea nu pliază diacriticele** («sters» nu găsește «șters») — limitare cunoscută a lui
-   `LogFilter`, moștenită din trecerea 01, nereparată aici pe tăcute.
-6. **Fără urmărire în timp real** (`FileSystemWatcher`), conform planului. Cititorul e scris ca să
-   poată primi asta ulterior.
+4. **`StartupLauncherForm` nu a fost văzută pe ecran deloc** — e scrisă, compilează, dispecerul e acoperit de tipuri, dar nimeni nu s-a uitat la ea.
+5. **Căutarea nu pliază diacriticele** («sters» nu găsește «șters») — limitare cunoscută a lui `LogFilter`, moștenită din trecerea 01, nereparată aici pe tăcute.
+6. **Fără urmărire în timp real** (`FileSystemWatcher`), conform planului. Cititorul e scris ca să poată primi asta ulterior.
 7. **Jurnalele nginx rămân invizibile**, ca în plan.
-8. `KBotChipBar` **nu a trecut prin designerul real VS ca instanță proaspăt pusă pe un formular** —
-   vezi firul deschis din `SLICE-0031-03`.
+8. `KBotChipBar` **nu a trecut prin designerul real VS ca instanță proaspăt pusă pe un formular** — vezi firul deschis din `SLICE-0031-03`.

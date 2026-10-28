@@ -1,6 +1,6 @@
 # Forms in scope
 
-Form details are in `forms/`; the three PDF viewers share one page with per-form records. Captions and bindings summarize the source; read each form page for its controls and handlers.
+Form details are in `forms/`; the three PDF viewers share one page with per-form records. Captions and bindings summarize the source; read each form page for its controls and handlers. Entry-point rows group only identical Object/Opens or identical form-control targets; `#: name` preserves each original row position.
 
 | Form | Caption | Bound to | Subforms | Opens | Controls | Procs |
 |---|---|---|---|---|---|---|
@@ -47,46 +47,21 @@ The catalog columns **Opens** and **Subforms** above contain these same 22 edges
 
 ## Entry points: code outside the scope that opens these forms
 
-| Object | Procedure | Opens |
+| Object | Procedures (#: name) | Opens |
 |---|---|---|
-| module:basRibbonCallbacks | OnActionButton | `EFACTURA_2025`, `EFACTURA_ADD` |
-| module:mdl_Popup2022 | Popup_Efactura_2022 | `EFACTURA_2025` |
-| module:mdl_Popup2022 | EF_OP | `EFACTURA_2025` |
-| module:mdl_Popup2022 | Popup_EFactura_Optiuni | `EFACTURA_ADD` |
-| module:mdl_Popup2022 | PP_EF_OPT | `EFACTURA_ADD` |
-| module:mdl_Popup2022 | OPT_EF | `EFACTURA_ADD` |
-| module:mdl_Popup2022 | Popup_EFactura_IncarcaXML | `EFACTURA_2025` |
-| module:mdl_Popup2022 | EF_ZILE | `EFACTURA_2025` |
-| module:mdl_Popup2022 | EFV | `EFACTURA_ADD` |
-| module:mdl_Popup2022 | Popup_EFactura_Raport | `EFACTURA_2025` |
-| module:mdl_Popup2022 | PP_EF_Raport | `EFACTURA_2025`, `EFACTURA_MSG` |
-| module:mdl_Salvare_NoteContabile | SaveEFactura | `EFACTURA_2025` |
-| module:mdl_Salvare_NoteContabile | SaveBurse | `EFACTURA_2025` |
-| form:MF2019_1 | EF_MouseUp | `MF2019_Asoc_EF` |
-| form:Note | Form_Load | `EFACTURA_2025` |
+| module:basRibbonCallbacks | 1: OnActionButton | `EFACTURA_2025`, `EFACTURA_ADD` |
+| module:mdl_Popup2022 | 2: Popup_Efactura_2022<br>3: EF_OP<br>7: Popup_EFactura_IncarcaXML<br>8: EF_ZILE<br>10: Popup_EFactura_Raport | `EFACTURA_2025` |
+| module:mdl_Popup2022 | 4: Popup_EFactura_Optiuni<br>5: PP_EF_OPT<br>6: OPT_EF<br>9: EFV | `EFACTURA_ADD` |
+| module:mdl_Popup2022 | 11: PP_EF_Raport | `EFACTURA_2025`, `EFACTURA_MSG` |
+| module:mdl_Salvare_NoteContabile | 12: SaveEFactura<br>13: SaveBurse | `EFACTURA_2025` |
+| form:MF2019_1 | 14: EF_MouseUp | `MF2019_Asoc_EF` |
+| form:Note | 15: Form_Load | `EFACTURA_2025` |
 
 ## Entry points: queries that read these forms (parameters)
 
-| Query | Reads form controls of |
+| Queries (#: name) | Reads form controls of |
 |---|---|
-| QEF_EV | `EFACTURA_2025` |
-| QEF_PL | `EFACTURA_2025` |
-| QEF_Plata | `EFACTURA_2025` |
-| QEF_RestDePlata | `EFACTURA_2025` |
-| QEF_RestDePlata_Data | `EFACTURA_2025` |
-| SAV_ACTIUNE_EV | `EFACTURA_2025` |
-| SAV_ACTIUNE_PL | `EFACTURA_2025` |
-| SAV_Cont8067_EV | `EFACTURA_2025` |
-| SAV_Cont8067_PL | `EFACTURA_2025` |
-| SAV_Credit_EV | `EFACTURA_2025` |
-| SAV_Credit_PL | `EFACTURA_2025` |
-| SAV_Debit_EV | `EFACTURA_2025` |
-| SAV_Debit_PL | `EFACTURA_2025` |
-| SAV_Document_EV | `EFACTURA_2025` |
-| SAV_OP | `EFACTURA_2025` |
-| SAV_OPER_EV | `EFACTURA_2025` |
-| SAV_OPER_PL | `EFACTURA_2025` |
-| SAV_PlatiFacturi | `EFACTURA_2025` |
+| 1: QEF_EV<br>2: QEF_PL<br>3: QEF_Plata<br>4: QEF_RestDePlata<br>5: QEF_RestDePlata_Data<br>6: SAV_ACTIUNE_EV<br>7: SAV_ACTIUNE_PL<br>8: SAV_Cont8067_EV<br>9: SAV_Cont8067_PL<br>10: SAV_Credit_EV<br>11: SAV_Credit_PL<br>12: SAV_Debit_EV<br>13: SAV_Debit_PL<br>14: SAV_Document_EV<br>15: SAV_OP<br>16: SAV_OPER_EV<br>17: SAV_OPER_PL<br>18: SAV_PlatiFacturi | `EFACTURA_2025` |
 ## Form x table matrix
 
 `R` = read, `W` = write, lowercase `r`/`w` = through a query that the form (or its code) runs. Combo/list sources count as `R`. Empty source cells are omitted below; — means no marker in any column. Compound markers (for example rwwW) are preserved literally, including repeated letters.

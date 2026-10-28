@@ -1,8 +1,8 @@
 # VERCON — dictionar de date si graf FK (SLICE-VC00-02)
 
-Generat de `VERCON/tools/dictionar.js` din `TZ_SCHEMA` (export tz_Alimente, referinta comuna decisa de utilizator) si din dump-uri **doar-schema** ale celor trei baze reale (`tools/dump_schema.ps1`, DAO read-only, numarul de randuri, fara continut). Tipurile tinta sunt **propuneri de dictionar** pentru VC03-02, nu DDL aplicat.
+Generat de `VERCON/tools/dictionar.js` din `TZ_SCHEMA` (export tz_Alimente, referinta comuna decisa de utilizator) si din dump-uri **doar-schema** ale celor trei baze reale (`tools/dump_schema.ps1`, DAO read-only, numarul de randuri, fara continut). Tipurile tinta sunt **propuneri de dictionar** pentru VC03-02, nu DDL aplicat. Numărătorile sunt centralizate în [volumele surselor](MANIFEST_SURSE.md#volume-randuri), cu proveniența VC00-01/02 păstrată separat.
 
-Starea: DOCUMENTAT. Nimic implementat, nimic validat pe server.
+Starea declarată la checkpointul VC00-02: DOCUMENTAT. Nimic implementat, nimic validat pe server.
 
 ## 1. Reguli de tip (se aplica uniform pe toate gestiunile)
 
@@ -18,246 +18,168 @@ Starea: DOCUMENTAT. Nimic implementat, nimic validat pe server.
 
 Fiecare tabel business tinta primeste in plus: `SubunitId`, `GestiuneId` (si `ExercitiuId` unde relatia o cere), cheie sursa in `VC_IdMap`, audit. Fara tabele per an / per fisier / per tip.
 
+### Conversii comune ale câmpurilor <a id="conversii-comune"></a>
+
+Compactare documentară SLICE-D003-11: un rând grupează numai câmpuri consecutive cu toate atributele identice; ordinea numelor și a rândurilor păstrează ordinea sursă. Profilul are forma `Tip Access · Marime · Clasa — câmpuri`. Atributele omise codifică Obligatoriu=nu și Implicit gol; în lipsa atributului Conversie se aplică exact conversia clasei de mai jos. Excepțiile sunt scrise integral. `{Marime}` este valoarea coloanei Marime din același rând, fără altă transformare. Celulele goale din Implicit rămân distincte de valoarea `0`. Regenerarea dicționarului poate suprascrie această prezentare.
+
+| Clasa | Conversia comună |
+|---|---|
+| CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
+| TEXT | VARCHAR({Marime})  utf8mb3_general_ci; zerouri initiale pastrate |
+| VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+| DATA | DATETIME, data locala fara conversie UTC |
+| INT | INT (contor/numar/durata); NU se scaleaza |
+| BOOL | TINYINT(1) NULL/0/1 (Access -1 -> 1); NULL separat |
+
 ## 2. Tabele business din TZ_SCHEMA si tratamentul coloanelor
 
 ### Alimente
 
-Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 0; Obiecte_Inventar: —
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| ID | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Denumire | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| UM | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| PU | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Cant | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Valoare | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| P | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
+- Long · 4 · CHEIE — ID
+- Text · 255 · TEXT — Denumire<br>UM
+- Double · 8 · VALOARE-INT — PU<br>Cant<br>Valoare
+- Long · 4 · INT — P · Implicit=0
 
 Indexuri/chei (export): `ID` (ID) PRIMARY UNIQUE
 
 ### Cina
 
-Randuri (alimente/MF/OI): Alimente: 127; Mijloace_Fixe: 0; Obiecte_Inventar: 0
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| Id | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdLista | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdFel | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Tip | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Explicatie | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
+- AutoNumber · 4 · CHEIE — Id
+- Long · 4 · CHEIE — IdLista · Implicit=0
+- Long · 4 · CHEIE — IdFel
+- Text · 50 · TEXT — Tip
+- Text · 255 · TEXT — Explicatie
 
 Indexuri/chei (export): `Id` (Id) PRIMARY UNIQUE; `LABC_IdLista__Cina_IdLista` (IdLista) FOREIGN
 
 ### Clienti
 
-Randuri (alimente/MF/OI): Alimente: 1; Mijloace_Fixe: 7; Obiecte_Inventar: 105
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| IDC | Long | 4 | da |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Denumire | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Adresa | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
-| CF | Text | 10 | nu |  | TEXT | VARCHAR(10)  utf8mb3_general_ci; zerouri initiale pastrate |
-| J | Text | 20 | nu |  | TEXT | VARCHAR(20)  utf8mb3_general_ci; zerouri initiale pastrate |
-| CNP | Text | 13 | nu |  | TEXT | VARCHAR(13)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Cont | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
+- Long · 4 · CHEIE — IDC · Obligatoriu=da
+- Text · 50 · TEXT — Denumire<br>Adresa
+- Text · 10 · TEXT — CF
+- Text · 20 · TEXT — J
+- Text · 13 · TEXT — CNP
+- Text · 50 · TEXT — Cont
 
 Indexuri/chei (export): `IDC` (IDC) PRIMARY UNIQUE
 
 ### ComisieInventar
 
-Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 0; Obiecte_Inventar: 0
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| IdComisieInv | Long | 4 | da | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Receptie1 | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Receptie2 | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Receptie3 | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Receptie4 | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
+- Long · 4 · CHEIE — IdComisieInv · Obligatoriu=da · Implicit=0
+- Text · 50 · TEXT — Receptie1<br>Receptie2<br>Receptie3<br>Receptie4
 
 Indexuri/chei (export): `IdComisie` (IdComisieInv) PRIMARY UNIQUE
 
 ### ComisieNIR
 
-Randuri (alimente/MF/OI): Alimente: 1; Mijloace_Fixe: 1; Obiecte_Inventar: 1
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| IdComisie | Long | 4 | da | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Receptie1 | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Receptie2 | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Receptie3 | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Receptie4 | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
+- Long · 4 · CHEIE — IdComisie · Obligatoriu=da · Implicit=0
+- Text · 50 · TEXT — Receptie1<br>Receptie2<br>Receptie3<br>Receptie4
 
 Indexuri/chei (export): `IdComisie` (IdComisie) PRIMARY UNIQUE
 
 ### cpv
 
-Randuri (alimente/MF/OI): Alimente: 9454; Mijloace_Fixe: 9454; Obiecte_Inventar: 9454
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| CODE | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| RO | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
+- Text · 255 · TEXT — CODE<br>RO
 
 Indexuri/chei (export): `CODE` (CODE) PRIMARY UNIQUE
 
 ### Dejun
 
-Randuri (alimente/MF/OI): Alimente: 401; Mijloace_Fixe: 0; Obiecte_Inventar: 0
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| Id | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdLista | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdFel | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Tip | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Explicatie | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
+- AutoNumber · 4 · CHEIE — Id
+- Long · 4 · CHEIE — IdLista · Implicit=0
+- Long · 4 · CHEIE — IdFel
+- Text · 50 · TEXT — Tip
+- Text · 255 · TEXT — Explicatie
 
 Indexuri/chei (export): `Id` (Id) PRIMARY UNIQUE; `LABC_IdLista__Dejun_IdLista` (IdLista) FOREIGN
 
 ### FeluriMancare
 
-Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 0; Obiecte_Inventar: 0
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| IDFel | Long | 4 | da |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| DenFel | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Explicatie | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
+- Long · 4 · CHEIE — IDFel · Obligatoriu=da
+- Text · 255 · TEXT — DenFel<br>Explicatie
 
 Indexuri/chei (export): `IDFel` (IDFel) PRIMARY UNIQUE
 
 ### Furnizori
 
-Randuri (alimente/MF/OI): Alimente: 28; Mijloace_Fixe: 2; Obiecte_Inventar: 5
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| IDF | Long | 4 | da |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Denumire | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Adresa | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| CF | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| J | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Cont | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| TIP | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| ONLINE | Yes/No | 1 | nu |  | BOOL | TINYINT(1) NULL/0/1 (Access -1 -> 1); NULL separat |
-| Orasul | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
+- Long · 4 · CHEIE — IDF · Obligatoriu=da
+- Text · 255 · TEXT — Denumire<br>Adresa<br>CF<br>J<br>Cont<br>TIP
+- Yes/No · 1 · BOOL — ONLINE
+- Text · 255 · TEXT — Orasul
 
 Indexuri/chei (export): `IDF` (IDF) PRIMARY UNIQUE
 
 ### Iesiri
 
-Randuri (alimente/MF/OI): Alimente: 3196; Mijloace_Fixe: 154; Obiecte_Inventar: 1529
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| ID | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdBonConsum | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| ValoareCUTVA | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| DataSalvare | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
+- AutoNumber · 4 · CHEIE — ID
+- Long · 4 · CHEIE — IdBonConsum · Implicit=0
+- Long · 4 · CHEIE — IdProdus
+- Double · 8 · VALOARE-INT — Cant<br>PUTVA · Implicit=0
+- Double · 8 · VALOARE-INT — ValoareCUTVA
+- Date/Time · 8 · DATA — DataSalvare
 
 Indexuri/chei (export): `ID` (ID) PRIMARY UNIQUE; `IdBonConsum` (IdBonConsum); `IdProdus` (IdProdus); `Iesiri_H_IdBonConsum__Iesiri_IdBonConsum` (IdBonConsum) FOREIGN; `ProdusePIesiri` (IdProdus) FOREIGN
 
 ### IesiriRetur
 
-Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 0; Obiecte_Inventar: 0
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| ID | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdBonConsum | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Long | 4 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa (sursa Long: fara fractiune de inventat) |
-| DataSalvare | Date/Time | 8 | nu | Now() | DATA | DATETIME, data locala fara conversie UTC |
+- AutoNumber · 4 · CHEIE — ID
+- Long · 4 · CHEIE — IdBonConsum<br>IdProdus
+- Double · 8 · VALOARE-INT — Cant · Implicit=0
+- Long · 4 · VALOARE-INT — PUTVA · Conversie=DECIMAL(20,4), valoare directa (sursa Long: fara fractiune de inventat)
+- Date/Time · 8 · DATA — DataSalvare · Implicit=Now()
 
 Indexuri/chei (export): `ID` (ID) PRIMARY UNIQUE; `idbc` (IdBonConsum); `IdProdus` (IdProdus); `Iesiri_HIesiriRetur` (IdBonConsum) FOREIGN; `ProdusePIesiriRetur` (IdProdus) FOREIGN
 
 ### Iesiri_H
 
-Randuri (alimente/MF/OI): Alimente: 127; Mijloace_Fixe: 7; Obiecte_Inventar: 96
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| IdBonConsum | Long | 4 | da | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdMasina | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdRetur | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDC | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| NumarBC | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| DataBC | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
-| ValoareBC | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Expl | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Retur | Yes/No | 1 | nu | No | BOOL | TINYINT(1) NULL/0/1 (Access -1 -> 1); NULL separat |
-| DataSalvare | Date/Time | 8 | nu | Now() | DATA | DATETIME, data locala fara conversie UTC |
+- Long · 4 · CHEIE — IdBonConsum · Obligatoriu=da · Implicit=0
+- Long · 4 · CHEIE — IdMasina<br>IdRetur<br>IDC · Implicit=0
+- Text · 255 · TEXT — NumarBC
+- Date/Time · 8 · DATA — DataBC
+- Double · 8 · VALOARE-INT — ValoareBC · Implicit=0
+- Text · 255 · TEXT — Expl
+- Yes/No · 1 · BOOL — Retur · Implicit=No
+- Date/Time · 8 · DATA — DataSalvare · Implicit=Now()
 
 Indexuri/chei (export): `Clienti_IDC__Iesiri_H_IDC` (IDC) FOREIGN; `IdBonConsum` (IdBonConsum) PRIMARY UNIQUE; `IDC` (IDC); `IdMasina` (IdMasina); `IdRetur` (IdRetur)
 
 ### Intrari
 
-Randuri (alimente/MF/OI): Alimente: 1671; Mijloace_Fixe: 156; Obiecte_Inventar: 1137
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| ID | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdIntrare | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDTVA | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Pret | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| TVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Valoare | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| ValoareCUTVA | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| DataSalvare | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
+- AutoNumber · 4 · CHEIE — ID
+- Long · 4 · CHEIE — IdIntrare · Implicit=0
+- Long · 4 · CHEIE — IdProdus
+- Long · 4 · CHEIE — IDTVA · Implicit=0
+- Double · 8 · VALOARE-INT — Cant<br>Pret<br>TVA<br>Valoare<br>PUTVA · Implicit=0
+- Double · 8 · VALOARE-INT — ValoareCUTVA
+- Date/Time · 8 · DATA — DataSalvare
 
 Indexuri/chei (export): `ID` (ID) PRIMARY UNIQUE; `IdProdus` (IdProdus); `NIR_IdIntrare__Intrari_IdIntrare` (IdIntrare) FOREIGN; `ProdusePIntrari` (IdProdus) FOREIGN; `PUTVA` (PUTVA); `TVAIntrari` (IDTVA) FOREIGN
 
 ### IntrariStorno
 
-Randuri (alimente/MF/OI): Alimente: 8; Mijloace_Fixe: 2; Obiecte_Inventar: 2
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| ID | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdIntrare | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Long | 4 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa (sursa Long: fara fractiune de inventat) |
-| DataSalvare | Date/Time | 8 | nu | Now() | DATA | DATETIME, data locala fara conversie UTC |
+- AutoNumber · 4 · CHEIE — ID
+- Long · 4 · CHEIE — IdIntrare<br>IdProdus
+- Double · 8 · VALOARE-INT — Cant · Implicit=0
+- Long · 4 · VALOARE-INT — PUTVA · Conversie=DECIMAL(20,4), valoare directa (sursa Long: fara fractiune de inventat)
+- Date/Time · 8 · DATA — DataSalvare · Implicit=Now()
 
 Indexuri/chei (export): `ID` (ID) PRIMARY UNIQUE; `idintrare` (IdIntrare); `IdProdus` (IdProdus)
 
 ### LABC
 
-Randuri (alimente/MF/OI): Alimente: 127; Mijloace_Fixe: 0; Obiecte_Inventar: 0
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| ID | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdLista | Long | 4 | da | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| NumarLA | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| DATALA | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
-| ValoareBon | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| DEP | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| ValoareLista | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+- AutoNumber · 4 · CHEIE — ID
+- Long · 4 · CHEIE — IdLista · Obligatoriu=da · Implicit=0
+- Long · 4 · INT — NumarLA · Implicit=0
+- Date/Time · 8 · DATA — DATALA
+- Double · 8 · VALOARE-INT — ValoareBon<br>DEP · Implicit=0
+- Double · 8 · VALOARE-INT — ValoareLista
 
 Indexuri/chei (export): `IdLista` (IdLista) PRIMARY UNIQUE
 
 ### LegBCLA
 
-Randuri (alimente/MF/OI): Alimente: 127; Mijloace_Fixe: 0; Obiecte_Inventar: 0
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| IdBonConsum | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdLista | Long | 4 | da | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
+- Long · 4 · CHEIE — IdBonConsum · Implicit=0
+- Long · 4 · CHEIE — IdLista · Obligatoriu=da · Implicit=0
 
 Indexuri/chei (export): `IdLista` (IdLista) PRIMARY UNIQUE; `Iesiri_HLegBCLA` (IdBonConsum) FOREIGN; `LABCLegBCLA` (IdLista) UNIQUE FOREIGN
 
@@ -265,298 +187,190 @@ Indexuri/chei (export): `IdLista` (IdLista) PRIMARY UNIQUE; `Iesiri_HLegBCLA` (I
 
 ### ListaAlimente
 
-Randuri (alimente/MF/OI): Alimente: 127; Mijloace_Fixe: 0; Obiecte_Inventar: 0
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| ID | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDLISTA | Long | 4 | da |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| MicDejun_P | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| VMD | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| MicDejun_V | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| MicDejun_D | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| Dejun_P | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| VD | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Dejun_V | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Dejun_D | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| Cina_P | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| VC | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Cina_V | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Cina_D | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| Comentarii | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
+- AutoNumber · 4 · CHEIE — ID
+- Long · 4 · CHEIE — IDLISTA · Obligatoriu=da
+- Long · 4 · INT — MicDejun_P · Implicit=0
+- Double · 8 · VALOARE-INT — VMD<br>MicDejun_V · Implicit=0
+- Long · 4 · INT — MicDejun_D<br>Dejun_P · Implicit=0
+- Double · 8 · VALOARE-INT — VD<br>Dejun_V · Implicit=0
+- Long · 4 · INT — Dejun_D<br>Cina_P · Implicit=0
+- Double · 8 · VALOARE-INT — VC<br>Cina_V · Implicit=0
+- Long · 4 · INT — Cina_D · Implicit=0
+- Text · 255 · TEXT — Comentarii
 
 Indexuri/chei (export): `ID` (ID) PRIMARY UNIQUE; `LABC_IdLista__ListaAlimente_IDLISTA` (IDLISTA) FOREIGN
 
 ### Masini
 
-Randuri (alimente/MF/OI): Alimente: 4; Mijloace_Fixe: 2; Obiecte_Inventar: 2
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| IdMasina | Long | 4 | da | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Masina | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
-| TIP | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
+- Long · 4 · CHEIE — IdMasina · Obligatoriu=da · Implicit=0
+- Text · 50 · TEXT — Masina
+- Text · 255 · TEXT — TIP
 
 Indexuri/chei (export): `IdMasina` (IdMasina) PRIMARY UNIQUE
 
 ### MicDejun
 
-Randuri (alimente/MF/OI): Alimente: 127; Mijloace_Fixe: 0; Obiecte_Inventar: 0
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| Id | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdLista | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdFel | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Tip | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Explicatie | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
+- AutoNumber · 4 · CHEIE — Id
+- Long · 4 · CHEIE — IdLista · Implicit=0
+- Long · 4 · CHEIE — IdFel
+- Text · 50 · TEXT — Tip
+- Text · 255 · TEXT — Explicatie
 
 Indexuri/chei (export): `ID` (Id) PRIMARY UNIQUE; `LABC_IdLista__MicDejun_IdLista` (IdLista) FOREIGN
 
 ### NIR
 
-Randuri (alimente/MF/OI): Alimente: 192; Mijloace_Fixe: 2; Obiecte_Inventar: 4
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| IdIntrare | Long | 4 | da | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdComisie | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdMasina | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDF | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDFV | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdStorno | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| NrFact | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Data | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
-| Numar | Double | 8 | nu | 0 | NUMAR | INT (numar document; negativ la storno/seria istorica); NU se scaleaza; fractia (document inserat intre doua numere) in NumarSub, in sutimi |
-| Valoare | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| DataFc | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
-| Storno | Yes/No | 1 | nu | No | BOOL | TINYINT(1) NULL/0/1 (Access -1 -> 1); NULL separat |
-| FurnizorV | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
+- Long · 4 · CHEIE — IdIntrare · Obligatoriu=da · Implicit=0
+- Long · 4 · CHEIE — IdComisie<br>IdMasina · Implicit=0
+- Long · 4 · CHEIE — IDF<br>IDFV
+- Long · 4 · CHEIE — IdStorno · Implicit=0
+- Text · 255 · TEXT — NrFact
+- Date/Time · 8 · DATA — Data
+- Double · 8 · NUMAR — Numar · Implicit=0 · Conversie=INT (numar document; negativ la storno/seria istorica); NU se scaleaza; fractia (document inserat intre doua numere) in NumarSub, in sutimi
+- Double · 8 · VALOARE-INT — Valoare
+- Date/Time · 8 · DATA — DataFc
+- Yes/No · 1 · BOOL — Storno · Implicit=No
+- Text · 255 · TEXT — FurnizorV
 
 Indexuri/chei (export): `ComisieNIRNIR` (IdComisie) FOREIGN; `Furnizori_IDF__NIR_IDF` (IDF) FOREIGN; `IdComisie` (IdComisie); `IDF` (IDF); `IdIntrare` (IdIntrare) PRIMARY UNIQUE; `IdMasina` (IdMasina); `IdStorno` (IdStorno)
 
 ### NR
 
-Randuri (alimente/MF/OI): Alimente: 1; Mijloace_Fixe: 1; Obiecte_Inventar: 1
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| ID | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| NR | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| NUM | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
-| NIR | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| NRFCT | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| NRBC | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| SI_LA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| ZEC | Long | 4 | nu |  | INT | INT (contor/numar/durata); NU se scaleaza |
+- AutoNumber · 4 · CHEIE — ID
+- Long · 4 · INT — NR · Implicit=0
+- Text · 50 · TEXT — NUM
+- Long · 4 · INT — NIR<br>NRFCT<br>NRBC · Implicit=0
+- Double · 8 · VALOARE-INT — SI_LA · Implicit=0
+- Long · 4 · INT — ZEC
 
 Indexuri/chei (export): `ID` (ID) PRIMARY UNIQUE
 
 ### OI_Casare
 
-Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 0; Obiecte_Inventar: 0
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| ID | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDBC | Long | 4 | da | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdMasina | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDC_BC | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| NRBC | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| DATABC | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| ValoareCUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Expl | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| DataSalvare | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
+- AutoNumber · 4 · CHEIE — ID
+- Long · 4 · CHEIE — IDBC · Obligatoriu=da · Implicit=0
+- Long · 4 · CHEIE — IdMasina<br>IDC_BC · Implicit=0
+- Long · 4 · CHEIE — IdProdus
+- Text · 255 · TEXT — NRBC
+- Date/Time · 8 · DATA — DATABC
+- Double · 8 · VALOARE-INT — Cant<br>PUTVA<br>ValoareCUTVA · Implicit=0
+- Text · 255 · TEXT — Expl
+- Date/Time · 8 · DATA — DataSalvare
 
 Indexuri/chei (export): `Clienti_IDC__OI_Casare_IDC_BC` (IDC_BC) FOREIGN; `ID` (ID) PRIMARY UNIQUE; `IDC_BC` (IDC_BC); `IdMasina` (IdMasina); `IdProdus` (IdProdus); `NRBC` (NRBC); `OI_CasareIDBC` (IDBC); `ProdusePOI_Casare` (IdProdus) FOREIGN; `PUTVA` (PUTVA)
 
 ### OI_Predare
 
-Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 154; Obiecte_Inventar: 1529
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| ID | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDBP | Long | 4 | da | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdBonConsum | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdMasina | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdMasinaP | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDC_BP | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| NRBP | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| DATABP | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| ValoareCUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Expl | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| DataSalvare | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
+- AutoNumber · 4 · CHEIE — ID
+- Long · 4 · CHEIE — IDBP · Obligatoriu=da · Implicit=0
+- Long · 4 · CHEIE — IdBonConsum<br>IdMasina<br>IdMasinaP<br>IDC_BP · Implicit=0
+- Long · 4 · CHEIE — IdProdus
+- Text · 255 · TEXT — NRBP
+- Date/Time · 8 · DATA — DATABP
+- Double · 8 · VALOARE-INT — Cant<br>PUTVA<br>ValoareCUTVA · Implicit=0
+- Text · 255 · TEXT — Expl
+- Date/Time · 8 · DATA — DataSalvare
 
 Indexuri/chei (export): `Clienti_IDC__OI_Predare_IDC_BP` (IDC_BP) FOREIGN; `ID` (ID) PRIMARY UNIQUE; `IdBonConsum` (IdBonConsum); `IDC_BP` (IDC_BP); `IdMasina` (IdMasina); `IdMasinaP` (IdMasinaP); `IdProdus` (IdProdus); `NRBP` (NRBP); `OI_PredareIDBP` (IDBP); `ProdusePOI_Predare` (IdProdus) FOREIGN; `PUTVA` (PUTVA)
 
 ### OI_Produse
 
-**Clarificare confirmată la 18.10.2026:** `IDBC` identifică bonul curent
-pentru predare/transfer/casare; `IDBP` și `IDBT` marchează numai predarea,
-respectiv transferul. `IDBO` este proveniența BP/BT numai la transfer/casare.
-ID-urile bonurilor se remapează dintr-o secvență comună pe gestiune, păstrând
-familia sursă. [Contractul complet, exemple și compatibilitatea VBA](REGISTRU_OI_MF.md).
-Aceste coloane sunt referințe/grupuri, nu chei AUTO_INCREMENT independente.
+**Clarificare confirmată la 18.10.2026:** `IDBC` identifică bonul curent pentru predare/transfer/casare; `IDBP` și `IDBT` marchează numai predarea, respectiv transferul. `IDBO` este proveniența BP/BT numai la transfer/casare. ID-urile bonurilor se remapează dintr-o secvență comună pe gestiune, păstrând familia sursă. [Contractul complet, exemple și compatibilitatea VBA](REGISTRU_OI_MF.md). Aceste coloane sunt referințe/grupuri, nu chei AUTO_INCREMENT independente.
 
-Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 154; Obiecte_Inventar: 1529
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| IDOI | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDBP | Long | 4 | nu | 0 | CHEIE | ID de grup al predarii, numai la BP; remapat identic cu VC_OI_Predare.IDBP |
-| IDBT | Long | 4 | nu | 0 | CHEIE | ID de grup al transferului, numai la BT; remapat identic cu VC_OI_Transfer.IDBT |
-| IDBC | Long | 4 | nu | 0 | CHEIE | bonul curent BP/BT/BS, ales dupa marcajele IDBP/IDBT; aceeasi mapare ca documentul, nu grup separat rezervat casarii |
-| IDBO | Long | 4 | nu | 0 | CHEIE | provenienta BP/BT numai la transfer/casare; aceeasi mapare ca documentul sursa, inclusiv pe ambele laturi ale transferului |
-| IDM | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDC_PTC | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| ValoareCUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| DataSalvare | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
+- AutoNumber · 4 · CHEIE — IDOI
+- Long · 4 · CHEIE — IDBP · Implicit=0 · Conversie=ID de grup al predarii, numai la BP; remapat identic cu VC_OI_Predare.IDBP
+- Long · 4 · CHEIE — IDBT · Implicit=0 · Conversie=ID de grup al transferului, numai la BT; remapat identic cu VC_OI_Transfer.IDBT
+- Long · 4 · CHEIE — IDBC · Implicit=0 · Conversie=bonul curent BP/BT/BS, ales dupa marcajele IDBP/IDBT; aceeasi mapare ca documentul, nu grup separat rezervat casarii
+- Long · 4 · CHEIE — IDBO · Implicit=0 · Conversie=provenienta BP/BT numai la transfer/casare; aceeasi mapare ca documentul sursa, inclusiv pe ambele laturi ale transferului
+- Long · 4 · CHEIE — IDM<br>IDC_PTC · Implicit=0
+- Long · 4 · CHEIE — IdProdus
+- Double · 8 · VALOARE-INT — Cant<br>PUTVA<br>ValoareCUTVA · Implicit=0
+- Date/Time · 8 · DATA — DataSalvare
 
 Indexuri/chei (export): `Clienti_IDC__OI_Produse_IDC_PTC` (IDC_PTC) FOREIGN; `IDBC` (IDBC); `IDBO` (IDBO); `IDBP` (IDBP); `IDBT` (IDBT); `IDC_PTC` (IDC_PTC); `IDM` (IDM); `IDOI` (IDOI) PRIMARY UNIQUE; `IdProdus` (IdProdus); `ProdusePOI_Produse` (IdProdus) FOREIGN; `PUTVA` (PUTVA)
 
 ### OI_Transfer
 
-Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 0; Obiecte_Inventar: 0
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| ID | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDBT | Long | 4 | da | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdMasina | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDC_BT | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IDC_OLD | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| NRBT | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| DATABT | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
-| Cant | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| ValoareCUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| Expl | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| DataSalvare | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
+- AutoNumber · 4 · CHEIE — ID
+- Long · 4 · CHEIE — IDBT · Obligatoriu=da · Implicit=0
+- Long · 4 · CHEIE — IdMasina<br>IDC_BT<br>IDC_OLD · Implicit=0
+- Long · 4 · CHEIE — IdProdus
+- Text · 255 · TEXT — NRBT
+- Date/Time · 8 · DATA — DATABT
+- Double · 8 · VALOARE-INT — Cant<br>PUTVA<br>ValoareCUTVA · Implicit=0
+- Text · 255 · TEXT — Expl
+- Date/Time · 8 · DATA — DataSalvare
 
 Indexuri/chei (export): `Clienti_IDC__OI_Transfer_IDC_BT` (IDC_BT) FOREIGN; `ID` (ID) PRIMARY UNIQUE; `IDBT` (IDBT); `IDC_BT` (IDC_BT); `IDC_OLD` (IDC_OLD); `IdMasina` (IdMasina); `IdProdus` (IdProdus); `NRBT` (NRBT); `ProdusePOI_Transfer` (IdProdus) FOREIGN; `PUTVA` (PUTVA)
 
 ### Produse
 
-Randuri (alimente/MF/OI): Alimente: 274; Mijloace_Fixe: 41; Obiecte_Inventar: 951
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| ID | AutoNumber | 4 | nu | GenUniqueID() | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdMasina | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| DenumireP | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| UM | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
-| CPV | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| CC | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| DataSalvare | Date/Time | 8 | nu | Now() | DATA | DATETIME, data locala fara conversie UTC |
-| DNF | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
+- AutoNumber · 4 · CHEIE — ID · Implicit=GenUniqueID()
+- Long · 4 · CHEIE — IdMasina · Implicit=0
+- Text · 255 · TEXT — DenumireP
+- Text · 50 · TEXT — UM
+- Text · 255 · TEXT — CPV<br>CC
+- Date/Time · 8 · DATA — DataSalvare · Implicit=Now()
+- Long · 4 · INT — DNF · Implicit=0
 
 Indexuri/chei (export): `ID` (ID) PRIMARY UNIQUE; `IdMasina` (IdMasina); `Masini_IdMasina__Produse_IdMasina` (IdMasina) FOREIGN
 
 ### ProduseM
 
-Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 12; Obiecte_Inventar: —
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| IDPMF | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| IdProdus | Long | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| DataIntrare | Date/Time | 8 | nu |  | DATA | DATETIME, data locala fara conversie UTC |
-| DNF | Long | 4 | nu |  | INT | INT (contor/numar/durata); NU se scaleaza |
-| DF | Long | 4 | nu |  | INT | INT (contor/numar/durata); NU se scaleaza |
-| ValoareLuna | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
+- AutoNumber · 4 · CHEIE — IDPMF
+- Long · 4 · CHEIE — IdProdus
+- Date/Time · 8 · DATA — DataIntrare
+- Long · 4 · INT — DNF<br>DF
+- Double · 8 · VALOARE-INT — ValoareLuna · Implicit=0
 
 Indexuri/chei (export): —
 
 ### ProduseP
 
-Randuri (alimente/MF/OI): Alimente: 2304; Mijloace_Fixe: 156; Obiecte_Inventar: 1144
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| IdProdus | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| ID | Long | 4 | nu | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| PUTVA | Double | 8 | nu | 0 | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| DataSalvare | Date/Time | 8 | nu | Now() | DATA | DATETIME, data locala fara conversie UTC |
-| COD | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
+- AutoNumber · 4 · CHEIE — IdProdus
+- Long · 4 · CHEIE — ID · Implicit=0
+- Double · 8 · VALOARE-INT — PUTVA · Implicit=0
+- Date/Time · 8 · DATA — DataSalvare · Implicit=Now()
+- Text · 255 · TEXT — COD
 
 Indexuri/chei (export): `ID` (ID); `PrimaryKey` (IdProdus) PRIMARY UNIQUE; `ProduseProduseP` (ID) FOREIGN
 
 ### Retetar
 
-Randuri (alimente/MF/OI): Alimente: 0; Mijloace_Fixe: 0; Obiecte_Inventar: 0
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| IdFel | Long | 4 | da |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| Continut | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Cantitate | Double | 8 | nu |  | VALOARE-INT | DECIMAL(20,4), valoare directa; stocat exact, refuz la overflow (nu se rotunjeste la migrare) |
-| AlteDetalii | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| UM | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| CPV | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
+- Long · 4 · CHEIE — IdFel · Obligatoriu=da
+- Text · 255 · TEXT — Continut
+- Double · 8 · VALOARE-INT — Cantitate
+- Text · 255 · TEXT — AlteDetalii<br>UM<br>CPV
 
 Indexuri/chei (export): `IdFel` (IdFel) PRIMARY UNIQUE
 
 ### Setari
 
-Randuri (alimente/MF/OI): Alimente: 6; Mijloace_Fixe: 6; Obiecte_Inventar: 5
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| ID | AutoNumber | 4 | nu |  | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| S | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| V | Double | 8 | nu | 0 | CONFIG | nu se copiaza; cheie tipizata in VC_Settings (INT); valorile reale: -1/0 sau ZEC |
+- AutoNumber · 4 · CHEIE — ID
+- Text · 255 · TEXT — S
+- Double · 8 · CONFIG — V · Implicit=0 · Conversie=nu se copiaza; cheie tipizata in VC_Settings (INT); valorile reale: -1/0 sau ZEC
 
 Indexuri/chei (export): `ID` (ID); `PrimaryKey` (ID) PRIMARY UNIQUE
 
 ### TVA
 
-Randuri (alimente/MF/OI): Alimente: 6; Mijloace_Fixe: 4; Obiecte_Inventar: 4
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| IdTVA | Long | 4 | da | 0 | CHEIE | cheie tehnica generata MariaDB; valoarea sursa (semnata) in VC_IdMap |
-| TVA | Double | 8 | nu | 0 | COTA | DECIMAL(20,4), cota fractionara directa |
-| Explicatie | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
+- Long · 4 · CHEIE — IdTVA · Obligatoriu=da · Implicit=0
+- Double · 8 · COTA — TVA · Implicit=0 · Conversie=DECIMAL(20,4), cota fractionara directa
+- Text · 50 · TEXT — Explicatie
 
 Indexuri/chei (export): `IdTVA` (IdTVA) PRIMARY UNIQUE
 
 ### UNIT
 
-Randuri (alimente/MF/OI): Alimente: 1; Mijloace_Fixe: 1; Obiecte_Inventar: —
-
-| Camp | Tip Access | Marime | Obligatoriu | Implicit | Clasa | Tinta / conversie |
-|---|---|---:|---|---|---|---|
-| NumeUnitate | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| CUI | Text | 50 | nu |  | TEXT | VARCHAR(50)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Adresa | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Director | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Contabil | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Culoare | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Expirat | Yes/No | 1 | nu |  | BOOL | TINYINT(1) NULL/0/1 (Access -1 -> 1); NULL separat |
-| Secretar | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| SursaCont | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| AdresaMail | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Orasul | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| TelefonContact | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| SectorSursa | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| AlteDetalii | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| AnDate | Long | 4 | nu | 0 | INT | INT (contor/numar/durata); NU se scaleaza |
-| DC | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Alte | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Gestionar | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| CodProgram | Text | 255 | nu | 0000000000 | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
-| Judetul | Text | 255 | nu |  | TEXT | VARCHAR(255)  utf8mb3_general_ci; zerouri initiale pastrate |
+- Text · 255 · TEXT — NumeUnitate
+- Text · 50 · TEXT — CUI
+- Text · 255 · TEXT — Adresa<br>Director<br>Contabil<br>Culoare
+- Yes/No · 1 · BOOL — Expirat
+- Text · 255 · TEXT — Secretar<br>SursaCont<br>AdresaMail<br>Orasul<br>TelefonContact<br>SectorSursa<br>AlteDetalii
+- Long · 4 · INT — AnDate · Implicit=0
+- Text · 255 · TEXT — DC<br>Alte<br>Gestionar
+- Text · 255 · TEXT — CodProgram · Implicit=0000000000
+- Text · 255 · TEXT — Judetul
 
 Indexuri/chei (export): —
 
@@ -564,34 +378,22 @@ Indexuri/chei (export): —
 
 Access declara cascade update + delete pe aproape toate; tinta **nu copiaza** CASCADE DELETE peste istoric (PLAN §Politica FK; decizia finala pe relatie = D05). Totalul din export: 29 relatii (3 de metadate Access, excluse).
 
-| # | Parinte.camp | Copil.camp | Atribute exportate | Tratament tinta |
-|---:|---|---|---|---|
-| 1 | Clienti.IDC | Iesiri_H.IDC | cascade update, cascade delete | FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05) |
-| 2 | Clienti.IDC | OI_Casare.IDC_BC | cascade update, cascade delete | FK de context (SubunitId, GestiuneId, IDC); RESTRICT/inactivare; detinatorul este nomenclator, nu se sterge daca e folosit |
-| 3 | Clienti.IDC | OI_Predare.IDC_BP | cascade update, cascade delete | FK de context (SubunitId, GestiuneId, IDC); RESTRICT/inactivare; detinatorul este nomenclator, nu se sterge daca e folosit |
-| 4 | Clienti.IDC | OI_Produse.IDC_PTC | cascade update, cascade delete | FK de context (SubunitId, GestiuneId, IDC); RESTRICT/inactivare; detinatorul este nomenclator, nu se sterge daca e folosit |
-| 5 | Clienti.IDC | OI_Transfer.IDC_BT | cascade update, cascade delete | FK de context (SubunitId, GestiuneId, IDC); RESTRICT/inactivare; detinatorul este nomenclator, nu se sterge daca e folosit |
-| 6 | ComisieNIR.IdComisie | NIR.IdComisie | cascade update, cascade delete | FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05) |
-| 7 | Furnizori.IDF | NIR.IDF | cascade update, cascade delete | FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05) |
-| 8 | Iesiri_H.IdBonConsum | IesiriRetur.IdBonConsum | cascade update, cascade delete | FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05) |
-| 9 | Iesiri_H.IdBonConsum | LegBCLA.IdBonConsum | — | FK composit de context spre Iesiri_H; atribut DAO 8192 neclasificat (vezi §4); cardinalitate verificata in date; RESTRICT |
-| 10 | Iesiri_H.IdBonConsum | Iesiri.IdBonConsum | cascade update, cascade delete | FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05) |
-| 11 | LABC.IdLista | LegBCLA.IdLista | one-to-one, cascade update, cascade delete | FK de context; one-to-one doar in Access, tinta web este 1:N (SCHEMA_VC); stergere numai prin serviciul tranzactional (D05) |
-| 12 | LABC.IdLista | Cina.IdLista | cascade update, cascade delete | FK de context; antet lista -> detalii mese; stergere numai prin serviciul tranzactional (D05) |
-| 13 | LABC.IdLista | Dejun.IdLista | cascade update, cascade delete | FK de context; antet lista -> detalii mese; stergere numai prin serviciul tranzactional (D05) |
-| 14 | LABC.IdLista | ListaAlimente.IDLISTA | cascade update, cascade delete | FK de context; antet lista -> detalii mese; stergere numai prin serviciul tranzactional (D05) |
-| 15 | LABC.IdLista | MicDejun.IdLista | cascade update, cascade delete | FK de context; antet lista -> detalii mese; stergere numai prin serviciul tranzactional (D05) |
-| 16 | Masini.IdMasina | Produse.IdMasina | cascade update, cascade delete | FK de context; nomenclator folosit = RESTRICT/inactivare (nu CASCADE DELETE) |
-| 17 | NIR.IdIntrare | Intrari.IdIntrare | cascade update, cascade delete | FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05) |
-| 18 | ProduseP.IdProdus | Iesiri.IdProdus | cascade update, cascade delete | FK de context; nomenclator folosit = RESTRICT/inactivare (nu CASCADE DELETE) |
-| 19 | ProduseP.IdProdus | IesiriRetur.IdProdus | cascade update, cascade delete | FK de context; nomenclator folosit = RESTRICT/inactivare (nu CASCADE DELETE) |
-| 20 | ProduseP.IdProdus | Intrari.IdProdus | cascade update, cascade delete | FK de context; nomenclator folosit = RESTRICT/inactivare (nu CASCADE DELETE) |
-| 21 | ProduseP.IdProdus | OI_Casare.IdProdus | cascade update, cascade delete | FK de context (SubunitId, GestiuneId, IdProdus); RESTRICT/inactivare; linie OI pe cheie de linie (ID), nu pe IDBP/IDBT/IDBC |
-| 22 | ProduseP.IdProdus | OI_Predare.IdProdus | cascade update, cascade delete | FK de context (SubunitId, GestiuneId, IdProdus); RESTRICT/inactivare; linie OI pe cheie de linie (ID), nu pe IDBP/IDBT/IDBC |
-| 23 | ProduseP.IdProdus | OI_Produse.IdProdus | cascade update, cascade delete | FK de context (SubunitId, GestiuneId, IdProdus); RESTRICT/inactivare; linie OI pe cheie de linie (ID), nu pe IDBP/IDBT/IDBC |
-| 24 | ProduseP.IdProdus | OI_Transfer.IdProdus | cascade update, cascade delete | FK de context (SubunitId, GestiuneId, IdProdus); RESTRICT/inactivare; linie OI pe cheie de linie (ID), nu pe IDBP/IDBT/IDBC |
-| 25 | Produse.ID | ProduseP.ID | cascade update, cascade delete | FK de context; nomenclator folosit = RESTRICT/inactivare (nu CASCADE DELETE) |
-| 26 | TVA.IdTVA | Intrari.IDTVA | cascade update, cascade delete | FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05) |
+| Parinte.camp | Copii (# inițial: camp) | Atribute exportate | Tratament tinta |
+|---|---|---|---|
+| Clienti.IDC | 1: Iesiri_H.IDC | cascade update, cascade delete | FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05) |
+| Clienti.IDC | 2: OI_Casare.IDC_BC<br>3: OI_Predare.IDC_BP<br>4: OI_Produse.IDC_PTC<br>5: OI_Transfer.IDC_BT | cascade update, cascade delete | FK de context (SubunitId, GestiuneId, IDC); RESTRICT/inactivare; detinatorul este nomenclator, nu se sterge daca e folosit |
+| ComisieNIR.IdComisie | 6: NIR.IdComisie | cascade update, cascade delete | FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05) |
+| Furnizori.IDF | 7: NIR.IDF | cascade update, cascade delete | FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05) |
+| Iesiri_H.IdBonConsum | 8: IesiriRetur.IdBonConsum<br>10: Iesiri.IdBonConsum | cascade update, cascade delete | FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05) |
+| Iesiri_H.IdBonConsum | 9: LegBCLA.IdBonConsum | — | FK composit de context spre Iesiri_H; atribut DAO 8192 neclasificat (vezi §4); cardinalitate verificata in date; RESTRICT |
+| LABC.IdLista | 11: LegBCLA.IdLista | one-to-one, cascade update, cascade delete | FK de context; one-to-one doar in Access, tinta web este 1:N (SCHEMA_VC); stergere numai prin serviciul tranzactional (D05) |
+| LABC.IdLista | 12: Cina.IdLista<br>13: Dejun.IdLista<br>14: ListaAlimente.IDLISTA<br>15: MicDejun.IdLista | cascade update, cascade delete | FK de context; antet lista -> detalii mese; stergere numai prin serviciul tranzactional (D05) |
+| Masini.IdMasina | 16: Produse.IdMasina | cascade update, cascade delete | FK de context; nomenclator folosit = RESTRICT/inactivare (nu CASCADE DELETE) |
+| NIR.IdIntrare | 17: Intrari.IdIntrare | cascade update, cascade delete | FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05) |
+| ProduseP.IdProdus | 18: Iesiri.IdProdus<br>19: IesiriRetur.IdProdus<br>20: Intrari.IdProdus | cascade update, cascade delete | FK de context; nomenclator folosit = RESTRICT/inactivare (nu CASCADE DELETE) |
+| ProduseP.IdProdus | 21: OI_Casare.IdProdus<br>22: OI_Predare.IdProdus<br>23: OI_Produse.IdProdus<br>24: OI_Transfer.IdProdus | cascade update, cascade delete | FK de context (SubunitId, GestiuneId, IdProdus); RESTRICT/inactivare; linie OI pe cheie de linie (ID), nu pe IDBP/IDBT/IDBC |
+| Produse.ID | 25: ProduseP.ID | cascade update, cascade delete | FK de context; nomenclator folosit = RESTRICT/inactivare (nu CASCADE DELETE) |
+| TVA.IdTVA | 26: Intrari.IDTVA | cascade update, cascade delete | FK de context; RESTRICT la nomenclator folosit; antet+linii se anuleaza numai prin serviciul tranzactional (D05) |
 
 ## 4. Atribute DAO brute ale relatiilor din bazele reale
 
