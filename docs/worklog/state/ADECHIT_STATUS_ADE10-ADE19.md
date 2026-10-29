@@ -48,10 +48,8 @@ Portalul părinților, conform planului aprobat și modelului de fișă de cont.
 
 ### Current focus
 
-Utilizatorul testează pe localhost:5050. Acreditări fictive: `/adechit/preview/parents`;
-login: `/adechit/parinti/preview`; inbox: `/adechit/preview/inbox`.
-AD11-03 separă DDL pentru AVACONT_SURSA de queryul de date pentru AvacontPush;
-conflictele din datele vechi blochează portalul identităților afectate, nu migrarea.
+Utilizatorul testează pe localhost:5050. Acreditări fictive: `/adechit/preview/parents`; login: `/adechit/parinti/preview`; inbox: `/adechit/preview/inbox`.
+AD11-03 separă DDL pentru AVACONT_SURSA de queryul de date pentru AvacontPush; conflictele din datele vechi blochează portalul identităților afectate, nu migrarea.
 AD11-04 corectează lățimile mobile și ascunde Imprimă la maximum 800px.
 AD11-05: vezi worklog; identitatea portalului rămâne pe tot DC-ul (poate bloca portalul pentru emailuri acceptate la salvare).
 Următoarea subfelie liberă: **AD11-06**.
@@ -78,16 +76,13 @@ Ajutor ADECHIT, o singură sursă pentru fereastră, imprimare și PDF.
 
 ### Current focus
 
-- ADE6-24 actualizează în aceeași intervenție ajutorul despre Email/CNP la educatori,
-  în catalog și închiderea anuală. Sursa: `PYTHON/static/help/adechit.json`.
-  Următoarea subfelie liberă: **AD12-02**.
+- ADE6-24 actualizează în aceeași intervenție ajutorul despre Email/CNP la educatori, în catalog și închiderea anuală. Sursa: `PYTHON/static/help/adechit.json`. Următoarea subfelie liberă: **AD12-02**.
 
 ### Open threads
 
 *Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
-- Citirea textului de către operator, aspectul PC/mobil, imprimarea și PDF-ul: confirmate
-  de operator, 23.10.2026.
+- Citirea textului de către operator, aspectul PC/mobil, imprimarea și PDF-ul: confirmate de operator, 23.10.2026.
 
 ## Slice AD13
 

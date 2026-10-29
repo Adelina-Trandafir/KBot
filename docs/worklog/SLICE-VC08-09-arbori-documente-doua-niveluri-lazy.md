@@ -13,7 +13,7 @@ NIR păstrează încărcarea lazy: se citesc numai rădăcinile lunilor sau furn
 
 Schimbarea modului păstrează documentul selectat și deschide rădăcina lui în noul mod. Bifa este dezactivată cât timp se pregătește gruparea; la eroare revine la valoarea anterioară. Gruparea nu se schimbă în editare. Ramurile deschise pot coexista: deschiderea uneia nu le închide pe celelalte.
 
-Controlul TreeView are acum randare incrementală opțională, activată pentru arborii VERCON. Reconciliază elementele după id, păstrând obiectele DOM ale rândurilor și subarborilor nemodificați. Expand/collapse și înlocuirea placeholder-ului lazy actualizează conținutul schimbat; indicii de navigare se sincronizează fără înlocuirea rândurilor vecine. `setData(..., {preserveExpanded: true})` păstrează expansiunea înainte de randare. Adaptorul VERCON nu mai golește containerul la refresh; se păstrează și scroll-ul și selecția. Căutarea și starea bifelor rămân gestionate de control. Alte aplicații păstrează randarea existentă până la activarea explicită a opțiunii `incrementalRender`.
+TreeView are randare incrementală opt-in, activată în VERCON: reconciliază după id și păstrează DOM-ul rândurilor/subarborilor nemodificați. Expand/collapse și placeholder-ul lazy actualizează numai conținutul schimbat și indicii de navigare. `setData(..., {preserveExpanded: true})` reține expansiunea; adaptorul nu mai golește containerul, păstrând scroll/selecție. Căutarea/bifele rămân ale controlului. Alte aplicații folosesc randarea veche până activează `incrementalRender`.
 
 Fișiere:
 

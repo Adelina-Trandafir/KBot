@@ -4,9 +4,7 @@ Reunire documentară D001-25. Etapa inițială aduce marcarea și citirea jurnal
 
 [0089-jurnale](#slice-0089-baza) · [0089-01](#slice-0089-01)
 
-<a id="slice-0089-baza"></a>
-
-## SLICE 0089 — Server journals in K-BOT, per user and per session
+## SLICE 0089 — Server journals in K-BOT, per user and per session <a id="slice-0089-baza"></a>
 
 **Date:** 28.09.2026. **Request (operator):** wire the Flask `api_server.log` and `forexe_timing.log` into the K-BOT journal page (`SetariJurnalView`, combo `CmbTipJurnal`), tied to the current user; show only the user's **last 3 sessions**, with an option for more; split the server journal into Error / Warning / Info.
 
@@ -19,7 +17,7 @@ Reunire documentară D001-25. Etapa inițială aduce marcarea și citirea jurnal
 
 ### The problem
 
-`api_server.log` lines carry the IP and (usually) the unit, never the user; `[forexe.ord_edit] genereaza: …` and traceback lines carry neither. Several operators of the same unit share an IP. So "the current user's lines" cannot be recovered from the existing file — each line has to be marked when it is written. The timing log already has `dc=` / `user=` on most blocks, but nothing that says which login they belong to.
+`api_server.log` has IP and usually unit, but no user; `[forexe.ord_edit] genereaza: …` and tracebacks have neither. Operators can share an IP, so existing lines cannot identify the user and must be tagged at write time. Timing blocks usually have `dc=` / `user=`, but no login/session identifier.
 
 ### What changed
 
@@ -44,16 +42,12 @@ Reunire documentară D001-25. Etapa inițială aduce marcarea și citirea jurnal
   - failures and "nothing of yours yet" go into `noticeGol`; «Deschide dosarul» / «Golește» disabled for server journals;
   - the old `/api/logs/files` + `/api/logs/tail` code removed (those routes never existed); `noticeServer` removed from the designer (it sat in the hidden file panel). Test hooks `DebugAduListaServerAsync` / `DebugNoticeServerAfisat` kept, now on the new path.
   - Filter row re-laid for the extra column (144 dpi designer numbers).
-  - Day grouping (correction 4): the group level gets `HeaderCaptionFormat` / `FooterCaptionFormat` = `{1}` (was the default `{0}: {1} ({2})`, where `{0}` is the column title «Ora») and `CollapsedByDefault = True`. `CollapsedByDefault` alone collapses a day only the first time it is seen, so `IncarcaSelectiaAsync(strangeZilele)` also calls `grila.CollapseAllGroups()` when a different journal is loaded (file, kind, session count). A refresh (button or page activation) passes False and keeps the days the operator opened. Applies to every journal, local and server.
+  - Day grouping (correction 4): `HeaderCaptionFormat` / `FooterCaptionFormat` = `{1}`, replacing `{0}: {1} ({2})` (`{0}` = «Ora»); `CollapsedByDefault = True`. Since that flag collapses each day only on first encounter, `IncarcaSelectiaAsync(strangeZilele)` also calls `grila.CollapseAllGroups()` when file/kind/session count changes. Refresh or page activation passes False to retain open days. Applies to local and server journals.
   - Export (correction 5): `btnExporta` takes only the rows that pass the filters AND sit in an expanded day, through the new public `KBotDataView.IsRowShown(rowIndex)` (a public form of the existing `RowIsOnScreen`). No day expanded = no dialog, status line «Nimic de exportat: deschideți zilele pe care vreți să le exportați.». Tooltip updated. «Copiază» unchanged (selected row, or every filtered row when nothing is selected).
 - `KBot.Controls`: `KBotDataView.IsRowShown` added (+ `KBotDataView.md`). FileVersion 1.54.0.0 → 1.55.0.0.
 
 ### Files touched
-- `PYTHON/utils/logger.py`, `PYTHON/utils/timing.py`, `PYTHON/routes/logs.py` (new), `PYTHON/main.py`
-- `src/KBot.Api/ApiClient.vb`, `src/KBot.Api/KBot.Api.vbproj`
-- `src/KBot.Common/Logging/LogFileLoader.vb`, `src/KBot.Common/Logging/Parsers/ForexeTimingParser.vb` (new), `src/KBot.Common/KBot.Common.vbproj`
-- `src/KBot.App/Setari/SetariJurnalView.vb`, `src/KBot.App/Setari/SetariJurnalView.Designer.vb`
-- `src/KBot.Controls/DataView/KBotDataView.Grouping.vb`, `src/KBot.Controls/DataView/KBotDataView.md`, `src/KBot.Controls/KBot.Controls.vbproj`
+`PYTHON/utils/logger.py`, `PYTHON/utils/timing.py`, `PYTHON/routes/logs.py` (new), `PYTHON/main.py`; `src/KBot.Api/ApiClient.vb`, `src/KBot.Api/KBot.Api.vbproj`; `src/KBot.Common/Logging/LogFileLoader.vb`, `src/KBot.Common/Logging/Parsers/ForexeTimingParser.vb` (new), `src/KBot.Common/KBot.Common.vbproj`; `src/KBot.App/Setari/SetariJurnalView.vb`, `src/KBot.App/Setari/SetariJurnalView.Designer.vb`; `src/KBot.Controls/DataView/KBotDataView.Grouping.vb`, `src/KBot.Controls/DataView/KBotDataView.md`, `src/KBot.Controls/KBot.Controls.vbproj`
 
 ### Test results
 - `dotnet build src/KBot.App/KBot.App.vbproj`: 0 errors, 0 warnings.
@@ -71,9 +65,7 @@ Reunire documentară D001-25. Etapa inițială aduce marcarea și citirea jurnal
 
 ---
 
-<a id="slice-0089-01"></a>
-
-## SLICE-0089-01 — server journals only with «Opțiuni avansate» (operator request, 01.10.2026)
+## SLICE-0089-01 — server journals only with «Opțiuni avansate» (operator request, 01.10.2026) <a id="slice-0089-01"></a>
 
 ### What changed and why
 Operator: the server journals are tied to the advanced options switch; with it off the user must not see the combo that picks the journal type.

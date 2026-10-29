@@ -20,7 +20,7 @@ Granulația e **un rând per indicator** al angajamentului. Coloanele de antet (
 
 #### Blocantul `Clsf` — REZOLVAT, ramura A
 
-Planul cerea explicit ca asta să fie lămurită **citind, nu ghicind**, înainte de a scrie query-ul. Pe stația de dezvoltare nu există `PYTHON/config.py`, deci un `SHOW COLUMNS` live era imposibil, iar în repo nu există DDL pentru `Clasificatii` (`DDL_FX_ListaAngajamente.sql` nu o menționează, iar `FX_System_Export/TABLES/` conține doar tabele `FX_*` — `ClasificatiiG` e tabel legat extern). Munca s-a oprit și s-a raportat; **operatorul a furnizat DDL-ul real** (2026-07-18).
+Planul cerea lămurirea prin citire înainte de query. Fără `PYTHON/config.py`, `SHOW COLUMNS` live era imposibil. Lipsea și DDL-ul `Clasificatii`: `DDL_FX_ListaAngajamente.sql` nu o menționează, exportul TABLES are numai `FX_*`, iar `ClasificatiiG` este legată extern. După oprire/raportare, **operatorul a furnizat DDL-ul real la 2026-07-18**.
 
 Verdict: **`Clasificatii.Clsf` EXISTĂ**, ca o coloană generată stocată:
 
@@ -40,10 +40,10 @@ Deci se selectează **direct** `C.Clsf` — nicio compunere în SQL, nicio inven
 > MariaDB e **cheia primară reală**, iar cealaltă păstrează **id-ul Access** venit din
 > import. Un port literal al join-ului din Access leagă cheia GREȘITĂ.
 
-| Familie | PK MariaDB | id Access păstrat |
-|---|---|---|
-| `FX_ORD*` | sufix **„P"** — `FX_ORD_TBL.IDORDTBLP`, `FX_ORD_TBL_REC.IDORDTBLP` | numele fără „P" — `IDORDTBL` |
-| `Clasificatii` | `IDClsf` (id-ul „PY") | `IdClsfAcc` |
+| Familie | PK MariaDB | id Access păstrat | Maparea numelor Access |
+|---|---|---|---|
+| `FX_ORD*` | sufix **„P"** — `FX_ORD_TBL.IDORDTBLP`, `FX_ORD_TBL_REC.IDORDTBLP` | numele fără „P" — `IDORDTBL` | exemplul de join greșit/corect este mai jos |
+| `Clasificatii` | `IDClsf` (id-ul „PY") | `IdClsfAcc` | Access `ClasificatiiG.IDClsf` (PK) → `IdClsfAcc`; `IdClsfPY` → `IDClsf` (PK) |
 
 Cele două lovituri, în ordine:
 
@@ -54,12 +54,7 @@ Cele două lovituri, în ordine:
 
 #### A doua capcană, găsită pe drum: cheia de join spre `Clasificatii`
 
-În MariaDB convenția e **inversată** față de Access:
-
-| | Access `ClasificatiiG` | MariaDB `Clasificatii` |
-|---|---|---|
-| id Access | `IDClsf` (PK) | `IdClsfAcc` |
-| id „PY" | `IdClsfPY` | `IDClsf` (PK) |
+Convenția inversată Access/MariaDB este în tabelul comun de mai sus.
 
 Dovezi în repo: `routes/clasificatii.py:134` — `SELECT IdClsf as IdClsfPY, IdClsfAcc as IdClsf`; `mdl_FX_DDF_Salvare.md:65-66` — `rand("IdClsf") = Rs!IdClsfPY` / `rand("IdClsfAcc") = Rs!IdClsf`.
 
@@ -112,9 +107,9 @@ Cele 15 teste noi din `test_forexe_sumar.py` sunt **host-only și s-au SĂRIT** 
 ### Rămâne NEVERIFICAT / amânat
 
 1. **Nimic din felia asta nu a atins o bază reală.** Toate testele sunt host-only și se sar în afara gazdei. Aceeași situație ca feliile 0008/0009.
-2. **Cheia de join spre `Clasificatii` (`I.IdClsf = C.IDClsf`) este o DECIZIE, nu un fapt verificat.** E convenția documentată a tabelelor `FX_` din MariaDB, dar nimeni nu a confirmat ce ține efectiv `FX_Indicatori.IdClsf` pe date reale. **Primul lucru de verificat la prima rulare live:** dacă `clsf` iese gol pe TOATE rândurile, cheia corectă e `C.IdClsfAcc` — se schimbă DOAR în `_SQL` din `sumar.py`. `LEFT JOIN`-ul face ca greșeala să fie vizibilă (coloană goală), nu tăcută (rânduri dispărute).
+2. **`I.IdClsf = C.IDClsf` este decizie, neverificată pe date reale**, bazată pe convenția `FX_`. La prima rulare live, `clsf` gol pe toate rândurile indică trecerea la `C.IdClsfAcc`, numai în `_SQL` din `sumar.py`. `LEFT JOIN` păstrează rândurile și expune greșeala prin coloana goală.
 3. **Nicio rută din `routes/forexe/` nu scrie `FX_Indicatori.IdClsf`** (verificat prin grep). Coloana e populată de push-ul Access, nu de robotul FOREXE. Dacă migrarea `FX_` nu a rulat, `IdClsf` poate fi `NULL`/`0` și `Clsf` va fi gol legitim.
-4. **Existența tabelelor NU a fost verificată** (`SHOW TABLES` cere o bază live). Sumarul atinge unsprezece: `FX_Angajamente`, `FX_Indicatori`, `FX_Istoric`, `FX_Rezervari`, `FX_Receptii`, `FX_Plati`, `FX_DDF_REV_SA`, `FX_ORD_TBL`, `FX_ORD_TBL_REC`, `Clasificatii`, `Parteneri`. `KBOT_STATUS.md` notează deja că **nu există DDL în repo pentru `FX_DDF_REV_SA` și familia `FX_ORD`**, deși operatorul confirmă că există live. Un endpoint corect peste tabele goale întoarce `rows: []` — **aceea nu e o eroare a feliei**, e migrarea care nu a rulat.
+4. **Existența celor 11 tabele nu este probată prin `SHOW TABLES` live:** `FX_Angajamente`, `FX_Indicatori`, `FX_Istoric`, `FX_Rezervari`, `FX_Receptii`, `FX_Plati`, `FX_DDF_REV_SA`, `FX_ORD_TBL`, `FX_ORD_TBL_REC`, `Clasificatii`, `Parteneri`. Pentru `FX_DDF_REV_SA`/`FX_ORD`, `KBOT_STATUS.md` consemnează DDL absent din repo, dar existență live confirmată de operator. Tabelele goale întorc legitim `rows: []` dacă migrarea nu a rulat.
 5. Presupunerea „exact un rând `FX_Istoric` cu `Descriere = 'Angajament nou.'` per angajament" e confirmată de operator, nu de o constrângere din schemă. Dacă apar două, `INNER JOIN`-ul dublează rândurile sumarului.
 
 ---
@@ -151,17 +146,17 @@ Structura oglindește `frmFX_MAIN_Sumar`: un bloc de antet cu datele angajamentu
 
 **DI — semnătura constructorului.** Planul avertiza că scaffolding-ul a greșit o dată o semnătură DI. S-a citit `MainForm.vb` înainte: câmpurile reale sunt `_forexeRunner, _session, _apiClient, _authApi, _loginFactory`. `SumarView` ia doar ce îi trebuie: `(apiClient, withReauth)`.
 
-**Plasa 401 rămâne în shell.** `MainForm.WithReauth(Of T)` e `Private`, deci vederea nu o poate apela direct. În loc să dublăm politica de re-login în vedere, se pasează **specializată pe `SumarInfo`**: `Func(Of Func(Of Task(Of SumarInfo)), Task(Of SumarInfo))`, iar `MainForm` o dă ca `Function(op) WithReauth(Of SumarInfo)(op)`. Politica rămâne într-un singur loc.
+**401 rămâne în shell:** `MainForm.WithReauth(Of T)` este `Private`; vederea primește specializarea `Func(Of Func(Of Task(Of SumarInfo)), Task(Of SumarInfo))`, furnizată ca `Function(op) WithReauth(Of SumarInfo)(op)`, fără duplicarea politicii de re-login.
 
-**snake_case se oprește la fir.** Spre deosebire de `/tree` (care emite PascalCase), `/sumar` emite snake_case. Cum `PropertyNamingPolicy = Nothing`, DTO-urile de fir au proprietăți snake_case verbatim, iar `ApiClient` le mapează pe POCO-uri curate — deci `SumarView` nu vede niciodată `total_rezervari`.
+**snake_case numai pe fir:** `/sumar` îl emite, spre deosebire de PascalCase din `/tree`. Cu `PropertyNamingPolicy = Nothing`, DTO-urile păstrează numele verbatim; `ApiClient` le mapează pe POCO, astfel încât `SumarView` nu vede `total_rezervari`.
 
 **Coloane de bani = `Text` + `FormatString = "N2"` + aliniere dreapta.** Nu se editează nimic (`ReadOnlyGrid = True`), deci un tip numeric de coloană ar fi degeaba. `FrozenColumnCount = 1` ține Clasificația fixă la stânga la derulare orizontală.
 
-**Reintrare / răspunsuri depășite.** Operatorul poate parcurge arborele rapid, iar răspunsurile pot veni în altă ordine decât cererile. `SumarView` reține codul CERUT (`_requestedCod`) și **aruncă** orice răspuns a cărui cheie nu mai e cea curentă — altfel grila unui angajament ar apărea sub antetul altuia. Are test dedicat.
+**Răspunsuri depășite:** `SumarView` reține `_requestedCod` și respinge răspunsul cu altă cheie, deoarece cererile din navigarea rapidă pot reveni în altă ordine și ar amesteca grila/antetul angajamentelor. Probă dedicată.
 
 **Fără apel de rețea pe context gol.** `SetContext(Nothing)` sau `CodAngajament` gol golește antetul + grila și arată starea goală, fără să atingă rețeaua. Are test.
 
-**Erori.** `LoadAsync` e pornit fără `await` din `SetContext` (un handler sincron al shell-ului nu are voie să blocheze firul UI), deci **nu există cine să prindă o excepție** — metoda își tratează singură toate erorile: loghează prin `GlobalErrorLog` și arată mesajul românesc din câmpul `error` al serverului (niciodată JSON brut). `ApplyTheme` loghează și înghite (boundary de pictare/temă), ca în `PlaceholderView`.
+**Erori:** `SetContext` pornește `LoadAsync` fără `await`, evitând blocarea UI din handlerul sincron. Metoda își tratează toate excepțiile: `GlobalErrorLog` și mesajul românesc `error` al serverului, fără JSON brut. `ApplyTheme` loghează și înghite la frontiera pictării/temei, ca `PlaceholderView`.
 
 **Temă.** Zero culori literale. Grila **nu** se atinge în `ApplyTheme`: `KBotDataView` implementează el însuși `IThemedControl`, iar `ThemeManager.Traverse` ajunge la el.
 
@@ -224,9 +219,9 @@ Un rând per indicator **garantat**, indiferent de duplicate; „fără clasific
 
 #### Extindere față de brief: același defect era și la `Parteneri`
 
-Brief-ul cerea doar `Clasificatii`, dar secțiunea „de consemnat" generalizează regula la nomenclatoarele partajate, iar `Parteneri` avea **exact aceeași structură de defect** — `LEFT JOIN Parteneri P ON SA.CodPartener = P.CodPartener`, fără `IdUnitate`. `FX_DDF_REV_SA` **are** `IdUnitate` (`FX_System_Export/TABLES/ FX_DDF_REV_SA.md:26`).
+Brief-ul cerea numai `Clasificatii`; regula generalizată la nomenclatoare partajate a găsit același defect în `LEFT JOIN Parteneri P ON SA.CodPartener = P.CodPartener`, fără `IdUnitate`, deși `FX_DDF_REV_SA` o are (`FX_System_Export/TABLES/ FX_DDF_REV_SA.md:26`).
 
-Acolo era **mai grav decât un defect de afișare**: join-ul stătea **înaintea lui `GROUP BY`**, deci un partener duplicat multiplica `SUM(SA.ValCur)` și **umfla `TotalRevizii`** — o cifră de bani greșită, nu o coloană goală. Mutat și el în subinterogare scalară:
+Join-ul preceda `GROUP BY`: duplicatul multiplica `SUM(SA.ValCur)` și umfla **`TotalRevizii`**, afectând suma, nu numai afișarea. A fost mutat în subinterogare scalară:
 
 ```sql
 MIN((SELECT P.DenumirePartener FROM Parteneri P
@@ -235,7 +230,7 @@ MIN((SELECT P.DenumirePartener FROM Parteneri P
       LIMIT 1)) AS Partener
 ```
 
-`SUM` rămâne peste rândurile `SA` reale; `MIN` peste subinterogare păstrează semantica originală. **Nu a fost cerut explicit** — motivul extinderii e că e același defect, descoperit prin regula pe care tocmai o primisem, iar a-l lăsa ar fi însemnat livrarea conștientă a unei sume greșite.
+`SUM` rămâne peste `SA`, iar `MIN` păstrează semantica originală. Extinderea **nu fusese cerută explicit**; justificarea consemnată atunci este aceeași cauză și evitarea livrării unei sume greșite.
 
 ### Fișiere atinse
 

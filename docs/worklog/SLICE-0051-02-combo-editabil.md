@@ -22,7 +22,7 @@ Rundă corectivă la felia 0051. Cerința operatorului, în două propoziții: c
 
 0051 a scris, și în cod și în `possible_future_directions.md`, că un combo editabil nu poate fi tematizat: are un EDIT nativ copil «pe care pictura noastră nu-l atinge». De aceea antetul DDF poartă și azi două controale pentru o singură valoare — `txtComp` (valoarea autoritară) lângă `cmbComp` (doar alegătorul).
 
-Partea adevărată: pictura noastră chiar NU ajunge la EDIT. Partea greșită: **culorile lui nu se dau cu pensula, ci cu un mesaj.** Un EDIT copil își întreabă PĂRINTELE ce culori să folosească (`WM_CTLCOLOREDIT`), iar părintele EDIT-ului dintr-un combo **este combo-ul însuși**, nu formularul. Mesajul ajunge deci exact la noi. Nimeni nu-i răspundea: WinForms reflectă un `WM_CTLCOLOR*` către controlul MANAGED care deține fereastra care l-a trimis, iar EDIT-ul nu e un control managed — așa că mesajul cădea în `DefWindowProc` și caseta ieșea în culorile SISTEMULUI, albă cu text negru. Adică exact dreptunghiul alb pentru care a fost scrisă clasa asta.
+Pictarea nu ajunge la EDIT, dar culorile se cer părintelui prin `WM_CTLCOLOREDIT`; părintele EDIT-ului este combo-ul, nu formularul. WinForms reflectă `WM_CTLCOLOR*` către controlul managed proprietar al ferestrei emitente; EDIT-ul nu este managed. Fără răspunsul nostru, `DefWindowProc` păstra culorile sistemului: alb cu text negru.
 
 Asta **nu e o deducție** — e diferența dintre două capturi de ecran făcute la o oră distanță: prima, cu `Editable` pus și fără `WndProc`, arată caseta albă pe schema întunecată; a doua, după ce am răspuns la mesaj, o arată în culorile schemei (§5).
 
@@ -32,11 +32,11 @@ Asta **nu e o deducție** — e diferența dintre două capturi de ecran făcute
 
 - **`Editable As Boolean` (implicit `False`)** — proprietate în designer, categoria «K-BOT Combo». Aprinsă, mută stilul pe `DropDown`; stinsă, îl aduce înapoi la `DropDownList`. Comutarea reface HWND-ul, deci tema ferestrei de listă și marginile casetei se cer din nou la `OnHandleCreated`.
 - **`LimitToList As Boolean` (implicit `True`)** — verdictul asupra unui text care nu e în listă: aprins ⇒ câmpul se întoarce la ultima valoare acceptată; stins ⇒ textul rămâne cum a fost tastat, iar `SelectedIndex` devine −1, fiindcă nu mai reprezintă niciun rând.
-- **`CommitText()`** — public. Dă verdictul ACUM, fără să aștepte ieșirea din câmp; e pentru gazda care citește valoarea dintr-un buton («Salvează») pe care operatorul poate ajunge fără să mute focusul. Idempotentă.
+- **`CommitText()`** — public și idempotent: validează imediat, pentru gazda care citește valoarea din «Salvează» înainte ca operatorul să părăsească câmpul.
 - **`WndProc`** — răspunde la `WM_CTLCOLOREDIT` (și la `WM_CTLCOLORSTATIC`, pe care îl trimite un EDIT dezactivat) cu culorile noastre. Fără el, tot restul feliei ar fi produs o casetă albă pe schemă întunecată. Regula casei: `WndProc` rămâne fără `Try` (`Application.ThreadException`).
 - **`AlignEditText()`** — marginile interioare ale EDIT-ului, calculate din dreptunghiul LUI real (nu dintr-o constantă ghicită): la stânga cât lipsește până la spațiul nostru de 8 px logici, la dreapta cât ar intra sub săgeată. Se cer din nou la `OnHandleCreated`, `OnResize` și `OnFontChanged`. Măsurat: `rcItem = {3, 3, 428, 26}` la 150% ⇒ marginile ies 5 și 4 px.
-- **`OnLeave`** cheamă `CommitText`; **`OnKeyDown`** îl cheamă la Enter cu lista închisă. `Leave`, nu `LostFocus`: primul vine de la containerul care mută controlul activ, deci nu se aprinde când fereastra listei ia focusul, și cade ÎNAINTE de clic-ul care l-a scos din câmp.
-- **`OnPaint`** — în modul editabil nu mai desenăm textul (îl desenează EDIT-ul, l-am fi desenat a doua oară peste el), iar evidențierea de hover trece de pe fundal pe contur: EDIT-ul își repictează dreptunghiul cu fundalul propriu, deci o umplere s-ar fi văzut doar ca un chenar gros.
+- **`OnLeave`** apelează `CommitText`; **`OnKeyDown`** la Enter cu lista închisă. `Leave`, emis de container la schimbarea controlului activ, precedă clicul exterior și nu se declanșează când lista ia focusul, spre deosebire de `LostFocus`.
+- **`OnPaint`** nu mai dublează textul EDIT-ului în modul editabil. Hover-ul colorează conturul, deoarece EDIT-ul își repictează fundalul și ar lăsa din umplere numai un chenar gros.
 - **`DropDownStyle`** nu mai aruncă pe `DropDown`, ci doar pe `Simple` (acolo lista e un panou permanent, pe care nu-l desenăm și nu-l tematizăm). Scrierea lui mută steagul `Editable`, ca să existe o singură sursă de adevăr; nu se serializează (C4 verificat, §4).
 - **Fișierul a fost MĂTURAT în engleză ASCII.** Comentariile și `<Description>`-urile erau românești cu diacritice, ceea ce încalcă REGULA 0 și regula «cod și comentarii în engleză»; controalele noi (`KBotDatePicker`, `KBotChartView`) sunt deja engleză. Regula spune că vechiul se mătură, nu se copiază — de aici diff-ul mare pe un fișier cu adaosuri mici. Categoriile din grila de proprietăți: «K-BOT Combo - Culori» ▸ «K-BOT Combo Colors».
 
@@ -46,7 +46,7 @@ Trei membri publici noi, din același motiv pentru care `ApplyWindowTheme` e pub
 
 - `GetComboEditBounds(combo)` — dreptunghiul EDIT-ului, prin `GetComboBoxInfo`, în coordonate client ale combo-ului. `Rectangle.Empty` = nu există (stil `DropDownList`) sau apelul a eșuat.
 - `SetComboEditMargins(combo, left, right)` — `EM_SETMARGINS` pe EDIT.
-- `ApplyControlColors(hdc, back, fore)` — răspunsul la `WM_CTLCOLOR*`: pune culorile pe DC-ul primit și întoarce pensula de fundal. Pensulele se **cachează pe culoare, pentru toată viața procesului**: răspunsul la `WM_CTLCOLOR*` e o pensulă pe care apelantul NU o deține, deci nu poate fi ștearsă după mesaj — cache-ul e singurul fel de a răspunde fără să scurgem o pensulă la fiecare repictare. Mulțimea e mărginită de numărul de culori de input din scheme (o cifră).
+- `ApplyControlColors(hdc, back, fore)` pune culorile în DC-ul primit și răspunde la `WM_CTLCOLOR*` cu pensula de fundal. Cache pe culoare pe durata procesului: apelantul nu deține pensula, deci nu poate fi ștearsă după mesaj, iar recrearea ar pierde una la fiecare pictare. Mulțime mărginită de culorile input ale schemelor, un număr de o cifră.
 
 ### Documentație
 
@@ -58,7 +58,7 @@ Trei membri publici noi, din același motiv pentru care `ApplyWindowTheme` e pub
 
 ## 3. O eroare adevărată, prinsă de verificare, nu de citit codul
 
-Prima scriere a lui `CommitText` întorcea textul refuzat astfel: `MyBase.SelectedIndex = target`. Rulat, rezultatul a fost: text refuzat «CEVA CE NU E IN LISTA», `SelectedIndex` = 1 — și textul refuzat **a rămas pe ecran**. Cauza: tastarea în casetă NU mută `SelectedIndex`, deci indexul era deja cel corect, iar scrierea aceleiași valori e un no-op care nu mai atinge textul. Corecția: indexul se scrie doar dacă diferă, iar textul se pune înapoi întotdeauna, separat.
+Rularea primei variante `CommitText` (`MyBase.SelectedIndex = target`) lăsa «CEVA CE NU E IN LISTA» pe ecran, deși `SelectedIndex = 1` era corect. Tastarea nu schimba indexul, iar reasignarea aceluiași index era no-op pentru text. Corecția scrie indexul numai dacă diferă și reface textul întotdeauna, separat.
 
 ## 4. Ce s-a verificat, cum și cu ce rezultat
 

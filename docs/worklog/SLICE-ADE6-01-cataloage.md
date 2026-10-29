@@ -6,19 +6,7 @@ Repere comune pentru etapele indicate: 09.10.2026 — ADE6-06, ADE6-07, ADE6-10,
 
 Nota comună Rezolvat din 05/06/24: *Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.* Limitele inițiale și rezultatele locale rămân în etapa lor; această confirmare nu este o probă nouă a consolidării.
 
-- [ADE6-01](#slice-ADE6-01)
-- [ADE6-05](#slice-ADE6-05)
-- [ADE6-06](#slice-ADE6-06)
-- [ADE6-07](#slice-ADE6-07)
-- [ADE6-10](#slice-ADE6-10)
-- [ADE6-11](#slice-ADE6-11)
-- [ADE6-12](#slice-ADE6-12)
-- [ADE6-13](#slice-ADE6-13)
-- [ADE6-14](#slice-ADE6-14)
-- [ADE6-16](#slice-ADE6-16)
-- [ADE6-17](#slice-ADE6-17)
-- [ADE6-23](#slice-ADE6-23)
-- [ADE6-24](#slice-ADE6-24)
+[ADE6-01](#slice-ADE6-01) · [ADE6-05](#slice-ADE6-05) · [ADE6-06](#slice-ADE6-06) · [ADE6-07](#slice-ADE6-07) · [ADE6-10](#slice-ADE6-10) · [ADE6-11](#slice-ADE6-11) · [ADE6-12](#slice-ADE6-12) · [ADE6-13](#slice-ADE6-13) · [ADE6-14](#slice-ADE6-14) · [ADE6-16](#slice-ADE6-16) · [ADE6-17](#slice-ADE6-17) · [ADE6-23](#slice-ADE6-23) · [ADE6-24](#slice-ADE6-24)
 
 ## SLICE-ADE6-01 — cataloage <a id="slice-ADE6-01"></a>
 
@@ -32,12 +20,7 @@ Din antet se deschid două ferestre modale. Fundalul este inert, Escape și clic
 
 ### Fișiere atinse
 
-- PYTHON/static/adechit.html
-- PYTHON/static/css/adechit.css
-- PYTHON/static/js/adechit/app.js și catalogs.js (nou)
-- PYTHON/routes/adechit/__init__.py și service.py
-- PYTHON/tests/test_adechit.py
-- ADECHIT_STATUS.md și docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md
+PYTHON/static/adechit.html; PYTHON/static/css/adechit.css; PYTHON/static/js/adechit/app.js și catalogs.js (nou); PYTHON/routes/adechit/__init__.py și service.py; PYTHON/tests/test_adechit.py; ADECHIT_STATUS.md și docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md
 
 ### Verificări efective
 
@@ -64,17 +47,13 @@ Plătitori urmează cele patru machete furnizate: trei liste dependente Grupe �
 
 Editorul grupei include numele, bifa, lista ANI și perioadele educatorilor. Editările grupei și perioadelor se salvează atomic; perioadele aceluiași educator nu se suprapun. Editorul copilului include numele, CNP, combobox comun pentru grupă, calendar pentru intrare/ieșire și bifa Plecat. Editorul plătitorului include toate câmpurile machetei, inclusiv telefon, email și Activ. CNP se validează în JS și API după algoritmul VBA: 13 cifre, limitele superioare pentru lună/zi/județ, checksum 279146358279, rest 10 → 1. CNP necompletat rămâne permis; nu reinterpretăm regulile VBA drept validare calendaristică.
 
-Ferestrele blochează fundalul; Escape și clicul în afară nu închid editorul. Salvează închide numai după reușită. Renunță abandonează explicit editările, conform machetelor ulterioare cererii inițiale. Erorile păstrează formularul și datele; reîncercarea aceluiași corp refolosește cheia idempotentă. Pe telefon conținutul derulează, butoanele rămân vizibile. Taxe păstrează editarea în celule și salvarea atomică din ADE6-05.
+Ferestrele păstrează regulile din [ADE6-05](#slice-ADE6-05): fundal blocat, Escape/clic exterior inerte, închidere numai după salvare reușită, date și cheie idempotentă păstrate la eroare. Renunță abandonează explicit editările, conform machetelor ulterioare cererii inițiale. Pe telefon conținutul derulează, cu butoanele vizibile. Taxe păstrează editarea în celule și salvarea atomică din 05.
 
 Mutarea individuală a copilului scrie istoricul și modifică numai prezențele lunilor deschise. Lunile închise păstrează grupa și snapshotul. Starea Plecat necesită dreptul transfer și data ieșirii. Copiii plecați cu sold sunt preluați în grupa specială PLECATI la luna nouă; nu implementăm compensarea. Educatorii se citesc din istoricul perioadelor, inclusiv pentru situația lunară; textul legacy este fallback doar dacă nu există istoric.
 
 ### Fișiere atinse
 
-- PYTHON/static/adechit.html, css/adechit.css, js/adechit/app.js și catalogs.js; modulele noi payers.js și cnp.js.
-- Componente comune: js/dgv/datagrid.js și css/dgv.css (selecție publică și afișare checkbox opt-in), combobox-ui.js/combobox-events.js, datepicker.js. Popupurile apar în dialogul nativ; alegerea din combobox nu redeschide lista.
-- PYTHON/routes/adechit/__init__.py, catalog_forms.py (nou), domain.py, repository.py, service.py, calculations.py și schema.json; PYTHON/tests/test_adechit.py.
-- ADECHIT/tools/preview.py și build_schema.py. Preview-ul are tabelele locale necesare; generatorul AD_01 refuză să suprascrie metadatele AD_03.
-- ADECHIT_STATUS.md, state/ADECHIT_STATUS_ADE0-ADE9.md și acest worklog.
+PYTHON/static/adechit.html, css/adechit.css, js/adechit/app.js și catalogs.js; modulele noi payers.js și cnp.js. Componente comune: js/dgv/datagrid.js și css/dgv.css (selecție publică și afișare checkbox opt-in), combobox-ui.js/combobox-events.js, datepicker.js. Popupurile apar în dialogul nativ; alegerea din combobox nu redeschide lista. PYTHON/routes/adechit/__init__.py, catalog_forms.py (nou), domain.py, repository.py, service.py, calculations.py și schema.json; PYTHON/tests/test_adechit.py. ADECHIT/tools/preview.py și build_schema.py. Preview-ul are tabelele locale necesare; generatorul AD_01 refuză să suprascrie metadatele AD_03. ADECHIT_STATUS.md, state/ADECHIT_STATUS_ADE0-ADE9.md și acest worklog.
 
 ### Verificări efective
 
@@ -91,7 +70,7 @@ Exportul local MariaDB_Schema nu conține tabele AD_. Întrebarea privind schema
 
 ### Predare și publicare
 
-Lucrarea rămâne locală, împreună cu modificările preexistente; nu am creat commit și nu am publicat. Prin AvacontPush trebuie predate modulele ADECHIT Python/JS/CSS/HTML și componentele comune enumerate mai sus. Instrumentele preview/testele nu sunt runtime server. Înaintea probei pe server trebuie confirmată schema finală AD_03 (Grupe_Educator, Platitori_Istoric, Telefon, Tip și InchisaDinAn); nu se rulează AD_01 peste AD_03. Nu există script suplimentar de ordonat pentru această felie. Pe server se probează încărcarea listelor, salvarea celor trei formulare, validarea CNP, perioadele educatorilor, PL numai din editor, drepturile și refuzul conflictelor, apoi Taxe. Următoarea subfelie liberă: ADE6-07.
+Lucrarea și modificările preexistente rămân locale, fără commit/publicare. Utilizatorul predă prin AvacontPush modulele ADECHIT și componentele comune enumerate; preview-ul/testele nu sunt runtime server. Înainte de proba server trebuie confirmat AD_03 (Grupe_Educator, Platitori_Istoric, Telefon, Tip, InchisaDinAn); AD_01 nu se rulează peste AD_03. Fără script suplimentar. Proba server: listele, cele trei formulare, CNP, perioade educator, PL numai din editor, drepturi/refuz conflicte și Taxe. Următoarea subfelie: ADE6-07.
 
 ## SLICE-ADE6-07 — editare DGV și formulare compacte <a id="slice-ADE6-07"></a>
 
@@ -105,9 +84,7 @@ Antetele tuturor dialogurilor ADE folosesc aceleași variabile de culoare ca ant
 
 ### Fișiere
 
-- PYTHON/static/js/dgv/editing.js și datagrid.js; css/dgv.css.
-- PYTHON/static/js/adechit/payers.js și catalogs.js; css/adechit.css; adechit.html.
-- ADECHIT_STATUS.md și state/ADECHIT_STATUS_ADE0-ADE9.md.
+PYTHON/static/js/dgv/editing.js și datagrid.js; css/dgv.css. PYTHON/static/js/adechit/payers.js și catalogs.js; css/adechit.css; adechit.html. ADECHIT_STATUS.md și state/ADECHIT_STATUS_ADE0-ADE9.md.
 
 ### Verificări și limite
 
@@ -217,11 +194,7 @@ Următoarea subfelie liberă: ADE6-24.
 
 ### Fișiere atinse
 
-- `PYTHON/routes/adechit/{schema.json,service.py,catalog_forms.py,annual.py}`.
-- `PYTHON/static/js/adechit/{payers.js,annual.js}`, `PYTHON/static/css/adechit.css`, `PYTHON/static/help/adechit.json`.
-- `sql/AD_09_educatori_contact.sql` (nou).
-- `ADECHIT/{UTILIZARE_WEB.md,PLAN_IMPLEMENTARE.md,STARE_LA_PAUZA.md (nou)}`, `ADECHIT/ADE.Migrator/README.md`, `ADECHIT_STATUS.md`, cele două fișiere de stare.
-- Acest worklog.
+`PYTHON/routes/adechit/{schema.json,service.py,catalog_forms.py,annual.py}`. `PYTHON/static/js/adechit/{payers.js,annual.js}`, `PYTHON/static/css/adechit.css`, `PYTHON/static/help/adechit.json`. `sql/AD_09_educatori_contact.sql` (nou). `ADECHIT/{UTILIZARE_WEB.md,PLAN_IMPLEMENTARE.md,STARE_LA_PAUZA.md (nou)}`, `ADECHIT/ADE.Migrator/README.md`, `ADECHIT_STATUS.md`, cele două fișiere de stare. Acest worklog.
 
 ### Verificări efective
 

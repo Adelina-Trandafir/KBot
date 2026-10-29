@@ -2,7 +2,7 @@
 
 Ultima dintre cele trei vederi reale rămase (Istoric și DDF sunt gata). `MainForm.CreateView("ord")` nu mai întoarce `PlaceholderView`.
 
-Forma e cea a sub-vederilor DDF (`PLAN_DdfSubViews`, felia 0032): arbore în `split.Panel1`, `KBotNavList` orizontal la dreapta, sub-pagini leneșe, editabile în designer, hrănite de părinte. Părintele deține datele; paginile sunt proaste prin construcție (fără DI, deci cu constructor fără parametri → se deschid în designerul Visual Studio).
+Vederea urmează sub-vederile DDF (`PLAN_DdfSubViews`, 0032): arbore în `split.Panel1`, `KBotNavList` orizontal la dreapta și pagini leneșe, editabile în designer. Părintele deține/furnizează datele; paginile nu folosesc DI și au constructor fără parametri pentru designerul VS.
 
 ## Ce s-a construit
 
@@ -29,13 +29,13 @@ Un singur drum dus-întors, două tablouri:
 2. **`ClasificatiiG` nu există în MariaDB** — nu se atinge deloc.
 3. **Inversiunea `IdClsf`.** În `FX_ORD_TBL`, MariaDB `IdClsf` e FK-ul către `Clasificatii` (id global/PY) și `IdClsfAcc` e id-ul Access — documentat în `routes/ord/sync_mdb_acc.py` liniile 6-8 și confirmat de `sync_acc_mdb.py`. Invers față de `FX_Indicatori`.
 
-**Filtrul pe `CodAngajament` — direct pe `FX_ORD`, nu prin `FX_DDF`.** Access ajungea la cod prin `FX_ORD.IDDF = FX_DDF.IDDF` (`qFX_ORD_TREE`), dar în MariaDB `FX_ORD.CodAngajament` e scris de AMBELE căi de migrare cu `_strict_str_nonempty` (`commit.py:85`, `sync_acc_mdb.py:80`), deci e populat prin contract, nu prin noroc. Ocolul prin `FX_DDF` ar fi adus și un fan-out (PK compus `(IDDF, CUAL)`).
+**`CodAngajament` se filtrează direct pe `FX_ORD`.** Access folosea `FX_ORD.IDDF = FX_DDF.IDDF` (`qFX_ORD_TREE`); ambele migrări MariaDB scriu însă direct codul cu `_strict_str_nonempty` (`commit.py:85`, `sync_acc_mdb.py:80`). Se evită și fan-out-ul prin PK compus `FX_DDF(IDDF, CUAL)`.
 
-**Clasificația — AMÂNDOUĂ drumurile, într-un `COALESCE`.** Planul cerea „alege unul după o probă pe date reale"; proba pe date reale **nu s-a putut face** (ruta n-a atins niciodată o bază vie). Deci: se încearcă întâi drumul DIRECT (`Clasificatii.IDClsf = t.IdClsf`, cel documentat de sync-ul ORD și identic cu ce face `ddf.py` pentru `FX_DDF_REV_SA`), și se cade pe drumul VERIFICAT în 0011-03 (`FX_Indicatori` pe `CodAI` → `Clasificatii.IdClsfAcc + IdUnitate`, cel folosit de `plati.py` / `receptii.py`) când primul e NULL sau gol. Alternativa — să ghicim unul — reintra exact în capcana «Clsf gol în producție» din 0011-03 / 0015. `FX_ORD_TBL` **nu** are coloană `Clsf` denormalizată (vezi lista din `routes/ord/tbl.py`), deci nu există a treia variantă. `descriere` = `Clasificatii.Denumire`, pe același `COALESCE`.
+**Clasificația: două drumuri prin `COALESCE`.** Alegerea cerută de plan după probă live rămâne neconfirmată. Se încearcă `Clasificatii.IDClsf = t.IdClsf`, documentat de sync-ul ORD și folosit de DDF SA; la NULL/gol, fallback-ul verificat în 0011-03, `FX_Indicatori.CodAI` → `Clasificatii.IdClsfAcc + IdUnitate`, ca în Plăți/Recepții. Evită ghicirea care produsese Clsf gol în 0011-03/0015. `FX_ORD_TBL` nu are `Clsf` denormalizat (`routes/ord/tbl.py`), deci nu există al treilea drum. `descriere` citește `Clasificatii.Denumire` prin același `COALESCE`.
 
-**`total_ord` = subinterogare scalară**, nu `JOIN … GROUP BY`: Access adună peste un join cu `FX_ORD_PART`, unde mai mulți beneficiari umflă totalul (familia `aggOrd` / `aggRev`). La fel, `linii` se filtrează prin `IN (SELECT …)`.
+**`total_ord` folosește subinterogare scalară**, evitând `JOIN … GROUP BY` peste `FX_ORD_PART`, care în Access umfla totalul la mai mulți beneficiari (`aggOrd` / `aggRev`). `linii` se filtrează tot fără multiplicare, prin `IN (SELECT …)`.
 
-**`pdf` — ABATERE de la plan, motivată.** Planul cerea `FX_ORD.PDF` ca șir înregistrat. Coloana se numește de fapt `CalePDF` (Access: `ArePDF` + `CalePDF`), și **nicio** rută de migrare nu o scrie — exact ca cele patru coloane PDF ale DDF-ului, scoase deliberat la migrare. Offline nu se poate ști dacă mai există în MariaDB, iar un `SELECT` pe o coloană inexistentă ar da 500 pe toată ruta. Soluția: coloana se **probează o dată** (`information_schema`, memorat per bază) și câmpul se trimite doar când există cu adevărat; altfel `None`. Oricum e DOAR UN SEMNAL — clientul își calculează singur calea și o verifică pe discul lui.
+**`pdf`, abatere de la plan:** coloana este `CalePDF`, nu `FX_ORD.PDF` (Access: `ArePDF` / `CalePDF`), și nicio migrare nu o scrie, ca la cele patru coloane PDF DDF. Existența MariaDB nu poate fi confirmată offline; se probează o dată prin `information_schema`, memorat per bază, evitând 500 pentru coloană absentă. Câmpul este valoarea când există, altfel `None`; rămâne doar semnal, clientul calculând și verificând propria cale locală.
 
 `part_ang` / `nume_partener` vin din `FX_DDF` prin `o.IDDF`, ca subinterogări scalare cu `LIMIT 1` (PK compus → un join ar dubla ordonanțarea). Nu se afișează: compun folderul PDF-ului.
 
@@ -57,9 +57,9 @@ Un singur drum dus-întors, două tablouri:
 
 **Convenția PDF a fost CITITĂ, nu ghicită** (`mdl_FX_ORD_PDF.md:261-286`): `<root>\<partener | GENERAL>\ORD_NR_{NrORD}_{CodAngajament}.PDF`, cu partenerul luat din `FX_DDF` prin `FX_ORD.IDDF` — de unde și `part_ang` / `nume_partener` pe firul rutei.
 
-**O ciudățenie Access reținută, nu reprodusă:** în datele exportate există căi `ORD_NR_0_…`, fiindcă VBA-ul ia numărul dintr-un dicționar populat DOAR pe ramura «toate documentele lunii»; pe ramura «un singur document» dicționarul e gol și numărul iese 0. `OrdPdfLocator` compune întotdeauna cu `NrORD`-ul real. Consecință onestă: pentru documentele vechi salvate cu «_0_», vederea va spune «nu există PDF».
+**Diferență față de Access:** căile exportate `ORD_NR_0_…` provin din dicționarul numerelor, populat numai pentru «toate documentele lunii», gol pentru un singur document. `OrdPdfLocator` folosește mereu `NrORD` real; fișierele vechi cu `_0_` apar ca PDF absent.
 
-**Pagina «Document» NU folosește suprafața „document lipsă" a lui `ReaderHostPreview`**, ci eticheta ei proprie: aceea poartă un buton «Generează», iar generarea ORD e o felie ulterioară — un buton care nu face nimic e mai rău decât niciun buton.
+**Pagina «Document» folosește propria etichetă pentru lipsa PDF**, deoarece suprafața `ReaderHostPreview` are «Generează», iar generarea ORD este amânată; nu se afișează un buton fără comportament.
 
 ### 4. Amânat DELIBERAT (nu scăpări)
 

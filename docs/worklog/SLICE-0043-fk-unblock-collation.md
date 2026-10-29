@@ -24,7 +24,7 @@ Două `FK CREATE`, zero `FK DROP`.
 
 ## 2. Verdictul: ipoteza A era cea corectă
 
-**Codul emitea corect și ștergerea, și recrearea.** Ce se stricase era baza de test. Fusese construită ca un singur lot `mariadb`, clientul se oprește la prima eroare, iar lotul murise înainte de a ajunge la `ADD CONSTRAINT` — deci ținta nu avea **nicio** cheie străină. Neexistând nimic de desfăcut, `_unblock_collation` tăcea, pe bună dreptate; cele două `FK CREATE` veneau din comparația obișnuită din `_foreign_keys` (`t is None` → creează), nu din pasul de deblocare.
+**Codul emitea corect ștergerea și recrearea.** Lotul unic `mariadb` care construise baza de test se oprise la prima eroare, înainte de `ADD CONSTRAINT`; ținta nu avea FK. `_unblock_collation` nu avea ce desface, iar cele două `FK CREATE` veneau din comparația obișnuită `_foreign_keys` (`t is None`), nu din deblocare.
 
 Ipoteza B (`_fk_blocks` ratează partea referită) — **infirmată**. Sondă pe 10.3.32: `information_schema.KEY_COLUMN_USAGE.REFERENCED_TABLE_SCHEMA` întoarce exact numele bazei (`probe_db`), deci `fk.ref_schema == self.db` chiar se declanșează.
 
@@ -51,7 +51,7 @@ plus un al cincilea, **fără eroare**: `fk_copil_extra`, o cheie pe care sursa 
 | 3 | O cheie de pe un tabel absent din sursă (deci programat pentru `DROP TABLE`, prioritatea 5) era pusă la loc la prioritatea 11, pe un tabel care nu mai există | `_unblock_collation` sare peste tabelele care nu există în sursă |
 | 4 | O cheie absentă din sursă era ștearsă de comparația obișnuită, apoi recreată din definiția **țintei** (`src_fk or fk`) | Ștergerea se cere în continuare (ea deblochează coloana, iar `_drop_fk` e idempotent), dar recrearea se face **numai** dintr-o definiție a sursei; fără ea, cheia rămâne ștearsă |
 
-Defectul 2 este cel mai urât dintre ele: nu dă eroare decât dacă datele se opun. Cu rânduri potrivite în șablon ar fi trecut în tăcere, lăsând baza unei unități legată prin cheie străină de `AVACONT_SURSA`.
+Defectul 2 putea rămâne silențios: cu date compatibile în șablon, baza unității rămânea legată prin FK de `AVACONT_SURSA`, fără eroare.
 
 ## 4. Rezultatele rulărilor (măsurate, nu reportate)
 

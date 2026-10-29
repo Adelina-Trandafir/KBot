@@ -15,7 +15,7 @@
 
 ## 0. Ce era înainte, și de ce nu era o regresie
 
-Formularul de asociere **nu exista**. Nu s-a pierdut și nu s-a stricat nimic: `D-A` din `docs/FUNDAMENT_Asociere_Receptii.md` împarte felia 0048 anume așa — **0048-03** = conducta plus contractul în două faze, coordonatorul deliberat nelegat; **0048-04** = tragerea în `AdvancedTreeControl`, formularul și legarea, împreună. Până azi, `ReceptiiView.Designer.vb` declara cinci controale și niciun buton, iar `src/KBot.Controls/Tree/` nu avea niciun rând de cod de tragere.
+Formularul de asociere **nu exista**: decizia `D-A` din `docs/FUNDAMENT_Asociere_Receptii.md` rezervă **0048-03** conductei și contractului în două faze (coordonator deliberat nelegat), iar **0048-04** tragerii în `AdvancedTreeControl`, formularului și legării. `ReceptiiView.Designer.vb` declara cinci controale, niciun buton; `src/KBot.Controls/Tree/` nu avea cod de tragere.
 
 Felia asta e 0048-04, plus cerința nouă (deschiderea oricând + regula de blocare).
 
@@ -37,7 +37,7 @@ End If
 
 Deci Access avea **două gazde peste aceleași patru subformulare**: `frmFX_DUBII` în timpul ingestiei și `frmFX_ASOC` oricând — exact ce a cerut operatorul. `mdl_FX_Popups.md:888` adaugă o a treia referință, `Forms!frmFX_ASOC!frmFX_ASOC_SUB!frmFX_DUBII_P_LISTA_R` (o listă soră, de plăți).
 
-**`frmFX_ASOC`, `frmFX_ASOC_SUB` și `frmFX_DUBII_P_LISTA_R` NU sunt în `FX_System_Export/FORMS`** — acolo sunt doar cele cinci fișiere `frmFX_DUBII*`. Codul gazdei «oricând» nu poate fi citit. Cele patru subformulare SUNT exportate și ele poartă regulile, deci pierderea e **aspectul gazdei, nu logica**. Aspectul formularului de aici e prin urmare **PROIECTAT, nu portat** — la fel ca `AlegereUnitateForm` în 0048-02, și din același motiv.
+**`frmFX_ASOC`, `frmFX_ASOC_SUB` și `frmFX_DUBII_P_LISTA_R` lipsesc din `FX_System_Export/FORMS`**, care conține doar cele cinci `frmFX_DUBII*`. Cele patru subformulare exportate păstrează regulile; lipsește aspectul gazdei. Formularul este deci **PROIECTAT, nu portat**, ca `AlegereUnitateForm` în 0048-02.
 
 ### 1.2 Ce fac cele patru panouri
 
@@ -52,7 +52,7 @@ Deci Access avea **două gazde peste aceleași patru subformulare**: `frmFX_DUBI
 
 ### 1.3 O divergență portată deliberat, consemnată ca să nu fie «reparată»
 
-`_LISTA_HN.Form_BeforeUpdate` calculează `TipReceptie` **per plasare**: fiecare instantaneu mai vechi al acelei recepții devine `PARTIAL`, iar cel plasat devine `FINAL` doar dacă TOATE sunt mai vechi. Felia 0048-03 a înlocuit asta cu «`Final` = cel mai TÂRZIU după `DataH`, recalculat o dată per recepție», fiindcă regula Access promovează orice tocmai a fost atașat — iar sub plasare manuală asta ar urca un instantaneu din ianuarie peste unul din mai. **Regula 0048-03 rămâne**; nu s-a re-portat cea din Access.
+`_LISTA_HN.Form_BeforeUpdate` calculează `TipReceptie` per plasare: instantaneele mai vechi ale recepției devin `PARTIAL`, cel plasat devine `FINAL` numai dacă TOATE sunt mai vechi. **Rămâne regula 0048-03**: `Final` este cel mai târziu după `DataH`, recalculat o dată per recepție. Regula Access ar promova la plasarea manuală și un instantaneu din ianuarie peste unul din mai; nu s-a re-portat.
 
 ---
 
@@ -100,15 +100,15 @@ Motivele se întorc ca listă de propoziții românești, **de la cel mai specif
 
 Blocajul păzește **editarea unei legături existente** — desprinderea sau re-țintirea unui instantaneu care are deja `IDRR`. **NU** păzește atașarea unuia încă neașezat.
 
-Nu e o scăpare, e necesar, și e ce făcea și Access: verificarea trăia în `btnDel_Click` — butonul de DESPRINDERE — și nicăieri altundeva. Sub F10, rezultatul normal al fiecărei descărcări e un teanc de instantanee istorice neașezate, toate cu plăți după ele; dacă blocajul le-ar opri așezarea, formularul de ingestie s-ar bloca în prima zi și nimic nu s-ar mai putea ingera. Consemnat în antetul rutei și pinuit de `test_un_instantaneu_neasezat_nu_poate_fi_blocat`.
+Access verifica blocajul numai la DESPRINDERE (`btnDel_Click`). Sub F10, descărcarea lasă instantanee istorice neașezate, cu plăți ulterioare; blocarea așezării lor ar opri ingestia din prima zi. Regula este consemnată în antetul rutei și pinuită de `test_un_instantaneu_neasezat_nu_poate_fi_blocat`.
 
 ### 2.5 F15 coboară de la veto la SEMN — dar numai în editor
 
-`valideaza_plasarile` a primit `f15_ca_avertisment` (implicit **False** = purtarea de până acum, calea de ingestie neatinsă). Motivul: în editor se DESPRIND legături, iar desprinderea ultimului instantaneu lasă, prin definiție, un lanț care nu se mai închide. Un veto acolo ar face imposibil tocmai lucrul pentru care există editorul. Fundamentul însuși descrie F15 ca pe un **semn** arătat per recepție (§1.5), iar Access nu îl verifica deloc la desprindere.
+`valideaza_plasarile` primește `f15_ca_avertisment`, implicit **False**, păstrând ingestia. În editor, desprinderea ultimului instantaneu lasă inevitabil un lanț neînchis; veto-ul ar împiedica desprinderea. Fundamentul §1.5 descrie F15 ca **semn** per recepție; Access nu îl verifica la desprindere.
 
 F13, F14 și F16 rămân vetouri în AMÂNDOUĂ căile: sunt absolute.
 
-O grijă mică, dar reală: în modul avertisment, nepotrivirea de total și nepotrivirea de linii ar fi raportat aceeași veste de două ori (în modul veto, primul `raise` scurtcircuita). Se iese după prima — dacă totalul nu se potrivește, nici liniile nu au cum.
+În modul avertisment se raportează numai prima nepotrivire: dacă totalul diferă, diferă și liniile. În modul veto, primul `raise` elimina deja raportarea dublă.
 
 ---
 
@@ -119,19 +119,19 @@ O grijă mică, dar reală: în modul avertisment, nepotrivirea de total și nep
 * `GET /api/forexe/asociere?cod=…` — tabloul citit DIRECT din bază: amprentă, TOATE recepțiile, TOATE instantaneele (asociate, neașezate și marcate `Sters`), fiecare cu `blocat` + `motive`, plus plățile ca context.
 * `POST /api/forexe/asociere` — aplică un set **PARȚIAL** de comenzi, o singură fază, o singură tranzacție. Amprenta rămâne (două sesiuni pot edita același angajament).
 
-**Ancora e `IDRH`, nu `rand_istoric`.** Contractul în două faze ancorează pe indicele rândului în `TabelIstoric` (F24) fiindcă id-urile atribuite în propunere dispar la rollback. Aici nu există sarcină utilă și nu se derulează nimic înapoi, deci ancora e cheia reală.
+**Ancora e `IDRH`, nu `rand_istoric`.** Ingestia ancorează pe indicele din `TabelIstoric` (F24), deoarece id-urile propunerii dispar la rollback. Editorul nu are sarcină utilă sau rollback de propunere și folosește cheia reală.
 
-**Acoperirea NU e obligatorie**, spre deosebire de ingestie. Aici tăcerea înseamnă «lasă legătura cum e», care e un răspuns adevărat; acolo ar fi fost o alegere ascunsă.
+**Acoperirea NU e obligatorie**: o comandă omisă păstrează legătura. În ingestie, omiterea ar ascunde o alegere.
 
 A cincea acțiune, **`desprins`**, există doar aici: în ingestie nimic nu e încă atașat, deci nu e nimic de desprins. `ApiClient.CatreFir` o refuză explicit pe calea de ingestie, cu un mesaj care spune DE CE.
 
-Codul-motiv nou: **409 `INSTANTANEU_BLOCAT`**. Nu 400 — cererea nu e greșită ca formă, doar clientul are un tablou învechit (sau o ordonanțare a apărut între citire și salvare). Verificarea rulează pe SERVER chiar dacă formularul știe deja blocajele.
+Cod nou: **409 `INSTANTANEU_BLOCAT`**. Cererea are formă validă, dar tabloul clientului poate fi învechit ori o ordonanțare poate apărea înaintea salvării. SERVERUL verifică blocajele chiar dacă formularul le cunoaște.
 
 Refolosite neschimbate din `prelucrare_asociere.py`: `amprenta`, `citeste_receptii`, `verifica_etichetele`, `materializeaza_reconstituite`, `valideaza_plasarile`, `recalculeaza_final`, `marcheaza_reconstituirile_nesigure`. Aliasul `rand_istoric = idrh` pe fiecare comandă e ce le face refolosibile fără să fie atinse.
 
 `_lanturi_rezultate` construiește lanțurile REZULTATE în memorie și validează ÎNAINTE de a scrie — și întoarce **doar lanțurile schimbate**: o încălcare veche, deja în bază, nu are voie să blocheze o corecție fără legătură cu ea.
 
-`_R_DEMARCHEAZA_SQL`: desprinderea rândului de ștergere lasă recepția «neștearsă» din nou. Steagul de pe `R` nu e o părere, e umbra unui instantaneu anume; dacă acela pleacă, umbra pleacă cu el. (Nu și pentru o recepție `Reconstituit = 1` — aceea există tocmai fiindcă a fost ștearsă.)
+`_R_DEMARCHEAZA_SQL`: desprinderea instantaneului de ștergere elimină steagul de pe `R`, exceptând recepțiile `Reconstituit = 1`, care există tocmai fiindcă au fost șterse.
 
 ### 3.2 Domeniu — `src/KBot.Domain/AsociereStare.vb` (NOU)
 
@@ -139,11 +139,11 @@ Refolosite neschimbate din `prelucrare_asociere.py`: `amprenta`, `citeste_recept
 
 ### 3.3 API — `GetAsociereAsync` / `SalveazaLegaturiAsync`
 
-Plus DTO-urile de fir. `PostPropunereReceptie` se refolosește la citire, fiindcă serverul folosește ACELAȘI `citeste_receptii` pentru amândouă rutele — două copii ar aluneca una față de alta fără să se vadă.
+Plus DTO-urile de fir. Citirea refolosește `PostPropunereReceptie`, deoarece ambele rute folosesc același `citeste_receptii`; evită copii care ar putea diverge.
 
 ### 3.4 Control — `src/KBot.Controls/Tree/AdvancedTreeControl.Drag.vb` (NOU)
 
-D-K: tragerea aparține arborelui. Consecința care contează e că **vetoul ajunge la validarea aruncării**, nu îngropat în tratarea ei — cine ascultă `NodeDragOver` spune «da» sau «nu, uite de ce» ÎNAINTE ca operatorul să dea drumul mouse-ului.
+D-K: tragerea aparține arborelui. `NodeDragOver` transmite acceptarea sau motivul vetoului ÎNAINTE de eliberarea mouse-ului, la validarea aruncării.
 
 * `DragEnabled` (implicit **False**, deci cele nouă vederi existente nu capătă comportament nou), `DragHighlightColor` / `DragForbiddenColor` (`Color.Empty` = din temă, cu perechea `ShouldSerialize`/`Reset` — altfel VS ar îngheța culoarea rezolvată în fiecare formular gazdă).
 * Trei evenimente: `NodeDragStarting` (gazda oprește rândurile care nu se mută), `NodeDragOver` (**`Allow` implicit False — refuzul e implicitul**), `NodeDropped`.
@@ -166,7 +166,7 @@ Combo-ul de așezare din `_LISTA_HN` și butonul de desprindere din `_LISTA_HA` 
 
 **O singură salvare, la sfârșit** (D-H): tragerile schimbă doar tabloul local, iar `Comenzi()` trimite DOAR ce diferă de ce s-a citit. Închiderea cu modificări nesalvate cere confirmare (D-D).
 
-Se reconstruiește tot arborele la fiecare mișcare, nu se mută frunza: un arbore peticit și un tablou de date ajung, după câteva trageri, să spună lucruri diferite — și acolo cel care minte e ecranul.
+Arborele se reconstruiește după fiecare mișcare din tabloul local; mutarea separată a frunzei ar putea desincroniza proiecția și datele.
 
 ### 3.6 Legarea — `ReceptiiView` + `MainForm`
 
@@ -240,7 +240,7 @@ tests/KBot.App.Tests/*.vb (8 fișiere)             cei doi membri noi în clien�
 
 **Raportat de operator:** «it should block changing the association for H's for which ordonantare exist. ordonantare exist means there is at least one ord_tbl row with a date newer than that h. it was tied to plati, a recent slice should've change it to ord, but it's not working».
 
-**Cauza, citită în cod.** După retragerea plăților (18.09.2026) blocajul stătea NUMAI pe `FX_ORD.IDRR = H.IDRR` / `FX_ORD.IDRH = H.IDRH`. Pe acele două coloane nu scrie nimeni: exportul Access le are `0` peste tot (§2.2, §6.4), iar editorul K-BOT de ordonanțări (`routes/forexe/ord_edit.py`, `_INSERT_ORD`) nici nu le numește în `INSERT`. Deci pe orice bază reală `ord_h = ord_r = 0` pentru fiecare instantaneu, `motive_blocare` întorcea listă goală și NIMIC nu era blocat — exact consecința anunțată în STATUS la 18.09 («jumătatea rămasă e chiar cea neprobată»), acum confirmată de operator pe ecran.
+**Cauza, citită în cod.** După retragerea plăților (18.09.2026), blocajul folosea numai `FX_ORD.IDRR = H.IDRR` / `FX_ORD.IDRH = H.IDRH`. Coloanele sunt `0` în export (§2.2, §6.4), iar `_INSERT_ORD` din `routes/forexe/ord_edit.py` nu le scrie. Rezultau `ord_h = ord_r = 0`, listă goală din `motive_blocare` și niciun blocaj. Operatorul a confirmat pe ecran riscul consemnat în STATUS la 18.09: jumătatea rămasă era neprobată.
 
 **Regula nouă (a operatorului).** Un instantaneu ASOCIAT e blocat dacă angajamentul are **cel puțin o linie `FX_ORD_TBL`** al cărei cap `FX_ORD` (prin `IDORDP`) are `DataORD` **în ziua instantaneului sau după**. Decizii de implementare, notate ca atare:
 

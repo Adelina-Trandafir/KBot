@@ -6,18 +6,7 @@ Repere comune: 08.10.2026 — ADE5-04; 09.10.2026 — ADE5-05, ADE5-06, ADE5-07,
 
 Nota comună de închidere din ADE5-04/05/06/07 și ADE10-07: *Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.* Descrierile inițiale „nerulat” și listele de predare de mai jos rămân checkpointurile de la implementare, urmate de această confirmare; nu sunt probe executate în consolidarea documentară. Planul de la ADE5-07 indica următoarea subfelie liberă ADE5-10, iar checkpointul ADE5-14 indica ADE5-15.
 
-- [ADE5-04](#slice-ADE5-04)
-- [ADE5-05](#slice-ADE5-05)
-- [ADE5-06](#slice-ADE5-06)
-- [ADE5-07](#slice-ADE5-07)
-- [ADE5-08](#slice-ADE5-08)
-- [ADE5-09](#slice-ADE5-09)
-- [ADE5-10](#slice-ADE5-10)
-- [ADE5-11](#slice-ADE5-11)
-- [ADE5-12](#slice-ADE5-12)
-- [ADE5-13](#slice-ADE5-13)
-- [ADE5-14](#slice-ADE5-14)
-- [ADE10-07](#slice-ADE10-07)
+[ADE5-04](#slice-ADE5-04) · [ADE5-05](#slice-ADE5-05) · [ADE5-06](#slice-ADE5-06) · [ADE5-07](#slice-ADE5-07) · [ADE5-08](#slice-ADE5-08) · [ADE5-09](#slice-ADE5-09) · [ADE5-10](#slice-ADE5-10) · [ADE5-11](#slice-ADE5-11) · [ADE5-12](#slice-ADE5-12) · [ADE5-13](#slice-ADE5-13) · [ADE5-14](#slice-ADE5-14) · [ADE10-07](#slice-ADE10-07)
 
 ## SLICE-ADE5-04 — ADE.Migrator: migrare directă din baza Access ADECHIT în MariaDB <a id="slice-ADE5-04"></a>
 
@@ -45,9 +34,7 @@ Un utilitar nou, în stilul lui KBot.Migrator, care înlocuiește calea extract 
 
 ### Fișiere atinse
 
-- Nou: `ADECHIT/ADE.Migrator/` (`ADE.Migrator.vbproj`, `Program.vb`, `AdeMigratorForm(.Designer).vb`, `AdeSource.vb`, `AdeSchema.vb`, `AdeValue.vb`, `AdeEducators.vb`, `AdePlan.vb`, `AdeWriter.vb`).
-- `KBot.sln` (proiectul + folderul `ADECHIT`); acest worklog; `ADECHIT_STATUS.md`; `state/ADECHIT_STATUS_ADE0-ADE9.md`.
-- Reutilizate, nemodificate: `KBot.Migrator.AccessProvider/TargetServer`, `KBot.Common`, `KBot.Theming`, `KBot.Controls`.
+Nou: `ADECHIT/ADE.Migrator/` (`ADE.Migrator.vbproj`, `Program.vb`, `AdeMigratorForm(.Designer).vb`, `AdeSource.vb`, `AdeSchema.vb`, `AdeValue.vb`, `AdeEducators.vb`, `AdePlan.vb`, `AdeWriter.vb`). `KBot.sln` (proiectul + folderul `ADECHIT`); acest worklog; `ADECHIT_STATUS.md`; `state/ADECHIT_STATUS_ADE0-ADE9.md`. Reutilizate, nemodificate: `KBot.Migrator.AccessProvider/TargetServer`, `KBot.Common`, `KBot.Theming`, `KBot.Controls`.
 
 ### Rezultatele verificărilor
 
@@ -76,11 +63,7 @@ Un utilitar nou, în stilul lui KBot.Migrator, care înlocuiește calea extract 
 
 ### Fișiere atinse
 
-- ADECHIT/ADE.Migrator/AdeMigratorForm.vb
-- ADECHIT/ADE.Migrator/AdeMigratorForm.Designer.vb
-- ADECHIT/ADE.Migrator/AdeWriter.vb
-- ADECHIT/ADE.Migrator/README.md — utilizare și interpretarea jurnalelor
-- ADECHIT/PLAN_IMPLEMENTARE.md, ADECHIT_STATUS.md, docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md și acest worklog
+ADECHIT/ADE.Migrator/AdeMigratorForm.vb; ADECHIT/ADE.Migrator/AdeMigratorForm.Designer.vb; ADECHIT/ADE.Migrator/AdeWriter.vb; ADECHIT/ADE.Migrator/README.md — utilizare și interpretarea jurnalelor; ADECHIT/PLAN_IMPLEMENTARE.md, ADECHIT_STATUS.md, docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md și acest worklog
 
 ### Verificări efective
 
@@ -192,8 +175,7 @@ La cererea utilizatorului, ADE.Migrator transformă marcajele `FARA CNP` și `-1
 
 ### Fișiere
 
-- ADECHIT/ADE.Migrator/AdePlan.vb și README.md.
-- ADECHIT_STATUS.md, ADECHIT/PLAN_IMPLEMENTARE.md și registrul ADE0–ADE9.
+ADECHIT/ADE.Migrator/AdePlan.vb și README.md. ADECHIT_STATUS.md, ADECHIT/PLAN_IMPLEMENTARE.md și registrul ADE0–ADE9.
 
 ### Verificări și predare
 
@@ -207,8 +189,7 @@ La cererea utilizatorului, LunaD.IDV și Prezenta.IDV intră în lista explicit�
 
 ### Fișiere și verificări
 
-- ADECHIT/ADE.Migrator/AdeSchema.vb și README.md.
-- ADECHIT_STATUS.md, PLAN_IMPLEMENTARE.md și registrul ADE0–ADE9.
+ADECHIT/ADE.Migrator/AdeSchema.vb și README.md. ADECHIT_STATUS.md, PLAN_IMPLEMENTARE.md și registrul ADE0–ADE9.
 
 Build în `bin/Debug/cnp-null`: 0 erori, 0 avertismente (include și ADE5-11). Dosarul obișnuit are DLL-uri folosite de un proces deschis; nu s-a oprit procesul. Verificare statică: exportul local 000_DEMO permite NULL în ambele coloane; FixLinks rulează înainte de scriere și păstrează referințele existente. Nu s-au rulat teste automate, probe vizuale sau migrare; MDB-urile și serverul rămân nemodificate. Utilizatorul recitește sursa și verifică faptul că cele 3/2305 legături raportate anterior apar la conversii, nu la blocaje, apoi testează destinația.
 

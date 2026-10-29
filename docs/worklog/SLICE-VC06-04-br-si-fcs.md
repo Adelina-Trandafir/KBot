@@ -29,14 +29,11 @@ Stare: **IMPLEMENTAT ÎN SURSE, NERULAT**. Cererea operatorului: implementarea p
 
 ### Fisiere atinse
 
-- `PYTHON/routes/vercon/documents.py`, `doc_routes.py`, `migration_links.py` (nou).
-- `PYTHON/static/js/vercon/docs.js`, `orphan-storno.js` (nou), `app.js` (ajutor).
-- `PYTHON/static/css/vercon.css`, `vercon-migration.css` (nou).
-- `implementare_vercon_v2.md`, `VERCON/VERCON_STATUS.md`, acest worklog.
+`PYTHON/routes/vercon/documents.py`, `doc_routes.py`, `migration_links.py` (nou). `PYTHON/static/js/vercon/docs.js`, `orphan-storno.js` (nou), `app.js` (ajutor). `PYTHON/static/css/vercon.css`, `vercon-migration.css` (nou). `implementare_vercon_v2.md`, `VERCON/VERCON_STATUS.md`, acest worklog.
 
 ### Rezultate si limite
 
-Doar analiza de design a surselor si a integrarii cu protocolul/repository-ul existente; structura coloanelor a fost citita din dumpul local `MariaDB_Schema/AVACONT_SURSA.sql`. Nu s-au rulat teste, compilari, verificari de sintaxa, browser, HTTP, SQL sau alte verificari automate. Nicio schema modificata si nicio creare automata de tabele. Nedeployat, neacceptat vizual. Anularea BR nu solicita sursa in codul existent; regulile de stoc raman aplicabile, inclusiv la anulare. Scenariile de acceptare, toate NERULATE, sunt păstrate în secțiunea de mai jos, absorbită din intrarea generală de la 18.10.2026. Decizia numerotarii OI/MF ramane operatorului. Modificarile sunt in arborele local de lucru; nu s-a facut commit sau push.
+Numai analiză de design a integrării cu protocolul/repository-ul; coloanele provin din dumpul local `MariaDB_Schema/AVACONT_SURSA.sql`. Fără teste, compilări, sintaxă, browser/HTTP, SQL, verificări automate, schemă modificată sau creată automat. Nedeployat/neacceptat vizual; modificări locale fără commit/push. Anularea BR nu cere sursă în codul existent, dar regulile de stoc se aplică și la anulare. Scenariile de mai jos, absorbite din consemnarea 18.10.2026, sunt toate NERULATE. Numerotarea OI/MF rămâne decizia operatorului.
 
 ## Detalii și criterii de acceptare absorbite în D001-04
 
@@ -59,7 +56,6 @@ Criterii de acceptare pregatite, **TOATE NERULATE**:
 | Anularea unei linii storno orfane | Motiv obligatoriu, `Anulat=1`, versiune +1 si audit; ramane in lista, fara efect in stoc. |
 | Context diferit, perioada inchisa, blocare lipsa, versiune veche | Refuz fara modificari. |
 | Raspuns pierdut la asociere/anulare orfana | Reia aceeasi cerere cu aceeasi cheie, fara dublarea efectului sau auditului. |
-
 
 La acel checkpoint, config.py, rapoartele, AGENTS și migratorul nu fuseseră modificate; fără modificări de subunități, IDM/IdMasinaP/IDBO, NumarSub ori CodFiscalSursa. Decizia OI/MF era încă deschisă atunci; confirmarea ulterioară și limitele remapării sunt în [REGISTRU_OI_MF](../../VERCON/REGISTRU_OI_MF.md).
 

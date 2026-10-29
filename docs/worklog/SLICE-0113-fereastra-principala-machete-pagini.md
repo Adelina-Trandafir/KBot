@@ -2,9 +2,7 @@
 
 Istoric 13–17.10.2026. 0113-01 înlocuiește regula inițială „toate machetele ca pagini, una câte una” cu pagini păstrate deschise și editoare modale; runda 2 scoate modalele din istoric. 0114-20 păstrează cele trei runde ale corecției de maximizare și baza comună KBotModalForm. Probele operatorului în KBOT_TEST preced implementările corective nevăzute pe ecran.
 
-- [0113 — arhitectura inițială](#slice-0113)
-- [0113-01 — pagini, Adobe și stivă](#slice-0113-01)
-- [0114-20 — cele trei runde modale](#slice-0114-20)
+[0113 — arhitectura inițială](#slice-0113) · [0113-01 — pagini, Adobe și stivă](#slice-0113-01) · [0114-20 — cele trei runde modale](#slice-0114-20)
 
 ## SLICE-0113 - Fereastra principala AvacontMain si machetele ca pagini (13.10.2026) <a id="slice-0113"></a>
 
@@ -21,8 +19,7 @@ Construit si probat in copia `KBOT_TEST`, adus in `KBOT\src` la 13.10.2026 (~17:
 8. `HelpService.ShowHelpMenu`: proprietarul popup-ului «?» = fereastra de sus (`TopLevelControl`), fiindca o pagina gazduita nu e fereastra de sus.
 
 ### Fisiere
-- NOU: `src/KBot.App/AvacontMain.vb` + `.Designer.vb` (partea de pagini; ribbonul si panoul sunt in 0114 / 0115), `src/KBot.App/KbotForm.Host.vb` (`HostForm`, `TakeHeader`, `PrepareForHosting`), `src/KBot.Controls/Adobe/AdobeTopForm.vb`.
-- Modificate: `KBot.App/Program.vb`, `KbotForm.vb`, `KbotForm.Chrome.vb`, `KbotForm.HelpCapture.vb`, `KbotForm.Extrase.vb`, `KbotForm.Grupe.vb`, `KbotForm.Ddf.vb`, `KbotForm.Ord.vb`, `KbotForm.Receptii.vb`, `KbotForm.Ingest.vb`, `KbotForm.MessageCatalog.vb`, `Views/SumarView.vb`, `Views/RezervariView.vb`, `Setari/SetariForm.vb` (`ShowFor`: pagina cand e gazduit), `Help/HelpService.vb` (proprietarul popup-ului); `KBot.Common/AppSettings.vb` (`FullScreenOffered` + DTO); `KBot.Controls/Adobe/AcroPdfViewer.vb`, `AcroPdfViewer.CheckLog.vb`, `.LightWatch.vb`, `.ReadMode.vb`, `.SaveTrap.vb`, `.Watch.vb`, `AdobeReaderHost.vb`, `KBot.Controls/Office/OfficeDocumentHost.vb`.
+NOU: `src/KBot.App/AvacontMain.vb` + `.Designer.vb` (partea de pagini; ribbonul si panoul sunt in 0114 / 0115), `src/KBot.App/KbotForm.Host.vb` (`HostForm`, `TakeHeader`, `PrepareForHosting`), `src/KBot.Controls/Adobe/AdobeTopForm.vb`. Modificate: `KBot.App/Program.vb`, `KbotForm.vb`, `KbotForm.Chrome.vb`, `KbotForm.HelpCapture.vb`, `KbotForm.Extrase.vb`, `KbotForm.Grupe.vb`, `KbotForm.Ddf.vb`, `KbotForm.Ord.vb`, `KbotForm.Receptii.vb`, `KbotForm.Ingest.vb`, `KbotForm.MessageCatalog.vb`, `Views/SumarView.vb`, `Views/RezervariView.vb`, `Setari/SetariForm.vb` (`ShowFor`: pagina cand e gazduit), `Help/HelpService.vb` (proprietarul popup-ului); `KBot.Common/AppSettings.vb` (`FullScreenOffered` + DTO); `KBot.Controls/Adobe/AcroPdfViewer.vb`, `AcroPdfViewer.CheckLog.vb`, `.LightWatch.vb`, `.ReadMode.vb`, `.SaveTrap.vb`, `.Watch.vb`, `AdobeReaderHost.vb`, `KBot.Controls/Office/OfficeDocumentHost.vb`.
 
 ### Teste / verificare
 - Dupa unire (MERGE_NOTES, «UNIT in KBOT»): `dotnet build KBot.sln` 0 erori, 0 avertismente. `dotnet test`: 99 teste picate, aceleasi ca pe codul de dinainte (mediu / cai), deci niciunul nou. Rulate de operator, nu in aceasta sesiune.
@@ -69,12 +66,7 @@ Corrective of 0113 (operator, 16.10.2026): "toate machetele ca pagini, una cate 
    - `KBotSidePanelRow.Italic` (new, Line style) and `FillMachete`: closed lines in italics; tooltips «Deschisă…» / «Închisă…».
 
 ### Files touched
-- NEW: `src/KBot.Common/Machete/IPutAway.vb`.
-- Round 2: `KBot.Common/Machete/MachetaRef.vb` (`InHistory`, `IsOpen`), `MachetaRegistry.vb`, `MachetaHistory.vb`; `KBot.Controls/SidePanel/KBotSidePanelItems.vb` + `KBotSidePanel.vb` (`Italic`); `AvacontMain.Sidebar.vb`; `KbotForm.Machete.vb` (types flagged out of the history).
-- `src/KBot.App/AvacontMain.vb` (pages list, `OpenNewPage`, `MakeFront`, `PutFrontAway`, `PutAwayFront`, `ShowModalAsync`, `ShowModal`, `FitModal`, `SwitchBase`, `Page_FormClosed`, `OnFormClosing`, caption), `KbotForm.Machete.vb` (`ShowModalAsync`, header), `KbotForm.Views.vb` (`PutAway`), `KbotForm.Ddf.vb`, `KbotForm.Ord.vb`, `KbotForm.Receptii.vb`, `KbotForm.Ingest.vb`, `KbotForm.CabNotes.vb`, `KbotForm.MessageCatalog.vb`, `Views/RezervariView.vb` (renamed call), `KbotForm.Grupe.vb` (modal), `KbotForm.Extrase.vb`, `KbotForm.Nomenclatoare.vb` (back to front), `Setari/SetariForm.vb`.
-- `Views/DdfView.vb`, `Views/OrdView.vb`, `Views/NoteCabView.vb`, `Views/EFactura/EFacturaView.vb` (`IPutAway`).
-- `src/KBot.EFactura/Views/Primite/PrimiteView.vb`, `Forms/PrimiteForm.vb`, `FacturiForm.vb`, `FacturiForm.Pdf.vb` (`IPutAway`).
-- Help: see [0000-86](SLICE-0000-69-ajutor-machete-ca-pagini.md#slice-0000-86).
+NEW: `src/KBot.Common/Machete/IPutAway.vb`. Round 2: `KBot.Common/Machete/MachetaRef.vb` (`InHistory`, `IsOpen`), `MachetaRegistry.vb`, `MachetaHistory.vb`; `KBot.Controls/SidePanel/KBotSidePanelItems.vb` + `KBotSidePanel.vb` (`Italic`); `AvacontMain.Sidebar.vb`; `KbotForm.Machete.vb` (types flagged out of the history). `src/KBot.App/AvacontMain.vb` (pages list, `OpenNewPage`, `MakeFront`, `PutFrontAway`, `PutAwayFront`, `ShowModalAsync`, `ShowModal`, `FitModal`, `SwitchBase`, `Page_FormClosed`, `OnFormClosing`, caption), `KbotForm.Machete.vb` (`ShowModalAsync`, header), `KbotForm.Views.vb` (`PutAway`), `KbotForm.Ddf.vb`, `KbotForm.Ord.vb`, `KbotForm.Receptii.vb`, `KbotForm.Ingest.vb`, `KbotForm.CabNotes.vb`, `KbotForm.MessageCatalog.vb`, `Views/RezervariView.vb` (renamed call), `KbotForm.Grupe.vb` (modal), `KbotForm.Extrase.vb`, `KbotForm.Nomenclatoare.vb` (back to front), `Setari/SetariForm.vb`. `Views/DdfView.vb`, `Views/OrdView.vb`, `Views/NoteCabView.vb`, `Views/EFactura/EFacturaView.vb` (`IPutAway`). `src/KBot.EFactura/Views/Primite/PrimiteView.vb`, `Forms/PrimiteForm.vb`, `FacturiForm.vb`, `FacturiForm.Pdf.vb` (`IPutAway`). Help: see [0000-86](SLICE-0000-69-ajutor-machete-ca-pagini.md#slice-0000-86).
 
 ### Test results
 `dotnet build src\KBot.App\KBot.App.vbproj`: 0 errors, 0 warnings (before the help edits; help edits do not touch code). No tests written or run (project rule). **Nothing was run or seen on screen.**

@@ -13,8 +13,7 @@ Portarea exe-ului `XFA_WRITTER` (din `Surse/SURSA_XFA_WRITTER`) în `src/KBot.Xf
 
 `docType` ∈ {DDF, ORD}. Rezultatul e un **`XfaResult`** (înlocuiește codurile de ieșire ale exe-ului): `Reusit`, `Semnat`, `Masca`, `SemnatAB/CD/Ordonator`, `CaleOutputPdf`, plus `CodIesireLegacy` (0 = generat fără semnare, 2 = nesemnat, 11..17 = semnat = 10 + mască) pentru compatibilitate/telemetrie.
 
-> ⚠️ Modurile cu semnare **blochează** (deschid Adobe, `WaitForExit`). Din UI trebuie rulate pe un
-> thread de fundal (`Await Task.Run(...)`) ca să nu înghețe fereastra.
+> ⚠️ Modurile cu semnare **blochează** (deschid Adobe, `WaitForExit`). Din UI trebuie rulate pe un thread de fundal (`Await Task.Run(...)`) ca să nu înghețe fereastra.
 
 ## Componente portate
 
@@ -41,11 +40,7 @@ Portarea exe-ului `XFA_WRITTER` (din `Surse/SURSA_XFA_WRITTER`) în `src/KBot.Xf
 
 ## Fișiere atinse
 
-- `src/KBot.Xfa/` — **nou:** `AdobeUtils.vb`, `XfaWriter.vb`, `XfaResult.vb`, `TemplateDownloader.vb`, `AttachmentModel.vb`, `Config.vb`, `XfaLog.vb`; `README.md` rescris.
-- `src/KBot.Xfa/KBot.Xfa.vbproj` — pachet `iTextSharp 5.5.13.3`, ProjectReference `KBot.Common`, `FileVersion` 1.0.0.0 → **1.1.0.0**.
-- `src/KBot.App/HarnessTests/XfaWriterHarnessTest.vb` — **nou** (categoria „XFA”, Debug-only).
-- `tests/KBot.Xfa.Tests/` — **nou** proiect xUnit (39 teste); adăugat în `KBot.sln`.
-- `docs/worklog/KBOT_STATUS.md` — rândul slice 0019, „Next free slice number” → 0020.
+`src/KBot.Xfa/` — **nou:** `AdobeUtils.vb`, `XfaWriter.vb`, `XfaResult.vb`, `TemplateDownloader.vb`, `AttachmentModel.vb`, `Config.vb`, `XfaLog.vb`; `README.md` rescris. `src/KBot.Xfa/KBot.Xfa.vbproj` — pachet `iTextSharp 5.5.13.3`, ProjectReference `KBot.Common`, `FileVersion` 1.0.0.0 → **1.1.0.0**. `src/KBot.App/HarnessTests/XfaWriterHarnessTest.vb` — **nou** (categoria „XFA”, Debug-only). `tests/KBot.Xfa.Tests/` — **nou** proiect xUnit (39 teste); adăugat în `KBot.sln`. `docs/worklog/KBOT_STATUS.md` — rândul slice 0019, „Next free slice number” → 0020.
 
 ## Rezultate teste
 

@@ -29,7 +29,7 @@ UPDATE FX_Extrase INNER JOIN FX_Plati ON FX_Extrase.ReferintaDest = FX_Plati.Ref
 
 `FX_Extrase` e scos din scop de planul părinte §12. §0 al planului acestei transe spune textual: *«If it requires FX_Extrase, report that and stop rather than porting half of it.»* Deci **pasul 8 nu se execută**. Nu e uitat și nu e înlocuit cu ceva aproximativ: fiecare răspuns al rutei poartă un avertisment care spune că nu a rulat și de ce (`prelucrare_pasi.MESAJ_PAS8`), iar un test îl pinuiește.
 
-**Ce înseamnă absența lui, spus pe față:** rândurile din `FX_Extrase` care s-ar fi legat de plățile scrise la pasul 5 rămân cu `CodAI` NULL. Nimic nu se strică; o legătură nu se face. Ambele `UPDATE`-uri sunt filtrate pe `CodAI Is Null`, deci felia care aduce `FX_Extrase` în scop recuperează tot restanțul dintr-o singură trecere. **D-G rămâne valabilă ca intenție.**
+**Efectul absenței:** `FX_Extrase.CodAI` rămâne NULL pentru legăturile cu plățile pasului 5. Ambele `UPDATE` filtrează `CodAI Is Null`, deci viitoarea felie care include extrasele poate recupera tot restanțul într-o trecere. **D-G rămâne intenție.**
 
 ### 0.3 `DIFH = 0` ca marcaj de salvare-fără-schimbare (F20 / O3) — NECONFIRMABIL de aici
 
@@ -48,11 +48,11 @@ Pașii 3a–3e, 4a, 4b, 4d, 5 și 7, portați din sursa VBA reală, funcție cu 
 Ce merită știut înainte de a-l citi:
 
 - **3b cheamă `CalculeazaValRezervareDif`**, pe care planul nu o numește deloc. Fără ea toate valorile `TipRand` de rezervare (`Rez_Initiala`, `Rez_Definitiva`, `Rez_Influenta`, `Rez_Zero` și cele trei cu `+`) ar rămâne goale, iar pașii 3c/3d — care filtrează pe ele — ar scrie zero rezervări. E portată integral.
-- **3a întoarce harta `indice payload ▸ FX_Istoric.ID` pentru TOATE rândurile**, nu doar pentru cele inserate. `rand_istoric` din decizii e chiar acel indice (F24), iar D-F cere ca instantaneele rămase neașezate din rulări anterioare să poată fi decise acum — rândurile lor de istoric există deja în bază.
+- **3a întoarce `indice payload ▸ FX_Istoric.ID` pentru toate rândurile**, inclusiv cele existente: deciziile folosesc indicele `rand_istoric` (F24), iar D-F permite asocierea acum a instantaneelor rămase neașezate din rulări anterioare.
 - **Două rânduri identice din același payload se colapsează într-unul.** `FX_Istoric.HASH` are index UNIQUE; fără colapsare, al doilea `INSERT` l-ar lovi. Access făcea la fel, fiindcă `rcHis.FindFirst` mergea peste un recordset care creștea cu fiecare `AddNew`.
-- **4a: rândul de ștergere nu e deviat.** `Descriere = "Stergere receptie"` poartă `(activ:true)` ca orice antet, deci devine instantaneu pe calea normală, cu `EsteStergere = 1`. Nu are rânduri pe indicator, deci nu produce linii — și asta iese de la sine, fiindcă liniile lui nu există în istoric, nu fiindcă le-am opri noi (F21).
+- **4a păstrează calea normală a ștergerii:** `Descriere = "Stergere receptie"` cu `(activ:true)` produce instantaneu `EsteStergere = 1`. Nu produce linii, deoarece istoricul nu are rânduri pe indicator pentru el (F21), fără suprimare specială.
 - **4b are regula F25 în SQL**, cu comentariul la fața locului. Potrivirea Access e pe `CLng(DataR)` — **granularitate de ZI** —, deci fără `Sters = 0` în interogarea de candidați o recepție creată în aceeași zi calendaristică în care fusese creată una ștearsă în martie s-ar potrivi peste aceea și i-ar suprascrie tăcut valorile.
-- **4d ordonează după `DataH`, nu după `IDRH`.** Access ordona după `ID` cu comentariul «autonumber = ordine cronologică în tmp». Sub plasare MANUALĂ ordinea de inserare încetează să mai fie cea cronologică — operatorul poate atașa un instantaneu din ianuarie după unul din mai. `DataH` E axa timpului (F2). Cu plasare pur automată cele două ordini coincid, deci nimic din datele deja produse nu se schimbă.
+- **4d folosește `DataH`, nu `IDRH`** (F2): comentariul Access «autonumber = ordine cronologică în tmp» nu mai ține la plasarea manuală a unui instantaneu din ianuarie după unul din mai. Pentru plasarea automată ordinea coincide, fără schimbarea datelor deja produse.
 - **5: `Data_plata` ia `FX_Istoric.DataFX`, nu data din Observații.** Contraintuitiv, dar e ce face `mdl_FX_Plati`: `data:` e parsată doar ca să fie VALIDATĂ (una neparsabilă sare rândul). Portat fidel, comentat la fața locului.
 
 ### 1.2 Asocierea — `routes/forexe/prelucrare_asociere.py` (fișier nou)
@@ -60,7 +60,7 @@ Ce merită știut înainte de a-l citi:
 Singurul loc în care cele două faze diferă, plus tot ce ține de contract: amprenta, forma deciziilor, validările F13–F16, regulile etichetelor și 4c-bis.
 
 - **Faza unu** rulează trecerea automată ca VBA-ul (două treceri, LIFO, fiecare recepție consumată o dată) și o raportează ca `sugestie_idrr` / `sugestie_automata` — **nu scrie niciun `IDRR`**. Un test verifică asta direct: toate interogările emise sunt `SELECT`.
-- **Faza doi** aplică `decizii` și ignoră complet trecerea automată. Operatorul i-a văzut sugestiile; a o rula din nou ar însemna să ne batem cu propriul om.
+- **Faza doi** aplică `decizii`, fără repetarea trecerii automate ale cărei sugestii le-a văzut operatorul.
 - **`Final` = cel mai TÂRZIU instantaneu după `DataH`**, recalculat per recepție o singură dată după aplicarea tuturor deciziilor. `AsociazaFinal` făcea `Final` orice tocmai atașase — cu plasare manuală, regula aceea ar lăsa un instantaneu din februarie să devină `Final` pe o recepție care are deja unul din mai. `HASH` se rescrie doar când `TipReceptie` se schimbă.
 - **Recepțiile ȘTERSE nu sunt candidate ale trecerii AUTOMATE.** Nimic nu se mai poate adăuga pe site unei recepții șterse, deci o potrivire automată pe ea ar fi mereu o coliziune — același raționament ca F25. Plasarea MANUALĂ pe una ștearsă rămâne permisă: vetoul e pe dată (F13), nu pe steag, iar un instantaneu dinaintea ștergerii îi aparține pe drept.
 
@@ -70,7 +70,7 @@ O singură rută, două moduri. Ce le desparte nu e adresa, ci ce are voie serve
 
 **Modul implicit e `propunere`** — un client care nu știe de faze primește faza care NU scrie. Tăcerea nu are voie să însemne «salvează».
 
-Faza unu se termină cu `conn.rollback()` **necondiționat**, pe calea de succes. Nu e o cale de eroare: e chiar contractul. Câmpul `scrise` raportează **ce s-ar fi scris**, iar docstring-ul o spune — un contor care arată a rezultat dar descrie o rulare anulată e exact genul de lucru care se citește greșit.
+Faza unu încheie necondiționat și succesul prin `conn.rollback()`. `scrise` descrie ce s-ar fi scris, conform docstring-ului, nu date persistate.
 
 Cele două 409-uri stau alături și nu se contopesc:
 
@@ -91,13 +91,13 @@ FX_Receptii_H   COUNT(*), MAX(IDRH), COUNT-ul celor cu IDRR NULL și Sters = 0
 
 toate filtrate pe `CodAngajament`, concatenate `cheie=valoare|…` și trecute prin SHA-256; se păstrează primele 32 de caractere hex.
 
-**De ce și `COUNT` și `MAX`:** `MAX` singur nu se mișcă la o ȘTERGERE de rând; `COUNT` singur nu se mișcă la o ștergere urmată de o inserare. Împreună prind ambele cazuri. **De ce ultimul câmp:** el E chiar mulțimea despre care operatorul ia decizii. Dacă altă sesiune a asociat ceva între timp, fișierul local nu mai descrie aceeași listă, iar `MAX(IDRH)` nu s-ar clinti. Nimic din ce se schimbă la CITIRE nu intră (fără `DTQ`, fără ceasuri).
+**Amprenta:** `COUNT` prinde ștergerea omisă de `MAX`; `MAX` prinde ștergere+inserare cu număr de rânduri constant. Ultimul câmp detectează asocierea concurentă a unui instantaneu din lista de decis, fără schimbarea `MAX(IDRH)`. Se exclud valorile schimbate la citire (`DTQ`, ceasuri).
 
-**Se calculează ÎNAINTE de orice scriere, în ambele faze.** Luată la coada fazei întâi ar descrie starea scrisă — care e apoi derulată înapoi — și faza a doua nu s-ar potrivi niciodată.
+**Calcul înaintea oricărei scrieri, în ambele faze:** starea scrisă și apoi anulată a propunerii nu s-ar potrivi cu baza la salvare.
 
 ### 1.5 4c-bis — recepțiile reconstituite (F26)
 
-Nimic nu se inventează; fiecare câmp are o sursă în istoric. `Preluat`, `Incarcat` și `TipReceptie` se pun **exact ca la o recepție nou inserată de pasul 4b**, iar planul cere să se scrie aici ce a ieșit: **`TipReceptie = 'NOU'`, `Preluat = 1`, `Incarcat` NEATINS (rămâne NULL)**. Rândurile astea n-au trecut niciodată prin `ListaReceptii`, deci oriunde altundeva ar însemna valorile astea ceva, aici înseamnă ceva ușor diferit.
+Fiecare câmp reconstituit provine din istoric. Ca la inserarea 4b: **`TipReceptie = 'NOU'`, `Preluat = 1`, `Incarcat` neatins (NULL)**. Aici valorile descriu recepții care nu au trecut prin `ListaReceptii`, deci au această semnificație particulară.
 
 `CreditBugetar` se ia dintr-un rând `RHR` existent cu același `CodAI`. **Dacă nu există niciunul, se RIDICĂ** — un zero acolo nu se deosebește de un zero real și ar fi citit ca fapt pe veci.
 
@@ -115,9 +115,9 @@ Se aplică **și pe `AVACONT_SURSA`**, ca `0048_alegeri_unitate.sql`. Scutirea c
 
 `KBot.Domain/AsociereInfo.vb` (nou): `ActiuneAsociere`, `PrelucrarePropunere`, `ReceptiePropusa`, `LinieReceptie`, `InstantaneuPropus`, `LinieInstantaneu`, `DecizieAsociere`, `AsociereDosar`. `PrelucrareStare` capătă `Propunere`, iar `PrelucrareRaspuns` capătă `Propunere As PrelucrarePropunere` — un singur tip pentru toate stările, ca la 409-ul din 0048-02.
 
-`KBot.Api`: `CerePropunereAsync` și `SalveazaAsociereaAsync`, amândouă pe aceeași rută, cu `mod` diferit. Un set **separat** de opțiuni JSON (`_jsonFaraNull`) ține `amprenta` și `decizii` afară din corpul unei propuneri; `_json` cel comun **nu** s-a atins, fiindcă «omite null-urile» ar fi o schimbare de contract pentru fiecare altă cerere a clientului.
+`KBot.Api.CerePropunereAsync`/`SalveazaAsociereaAsync` folosesc aceeași rută cu `mod` diferit. Opțiunile separate `_jsonFaraNull` omit `amprenta`/`decizii` din propunere; `_json` comun rămâne neatins pentru a păstra contractele celorlalte cereri.
 
-`KBot.Common/AsociereStore.vb` + `AsociereDosar`: dosarul local `<AppDir>\Asociere\<cod>.json`, scris prin fișier temporar + `File.Move` (o cădere în mijlocul scrierii ar lăsa un JSON trunchiat, adică exact un dosar corupt pe angajamentul la care operatorul tocmai lucra).
+`KBot.Common/AsociereStore.vb` + `AsociereDosar`: `<AppDir>\Asociere\<cod>.json`, scris prin temporar + `File.Move` pentru a evita JSON-ul trunchiat la cădere.
 
 `PrelucrareCoordinator.CerePropunereAsync` — aceeași buclă de întrebări ca `TrimiteAsync`, fiindcă 409 `ALEGERE_UNITATE` se poate declanșa și în faza întâi.
 
@@ -235,9 +235,9 @@ Cinci dintre ele au aceeași cauză consemnată deja în worklog-ul 0048-02: `Dd
 
 ### 4.3 Abateri de la literă, cu motivul
 
-**§6 al planului cere dosarul local «în `KBot.App`» ȘI «exercitat din `KBot.DevHarness`». Cele două nu pot fi amândouă adevărate.** `KBot.App` **referă** `KBot.DevHarness` (numai pe Debug, `KBot.App.vbproj:82`), deci săgeata merge App ▸ DevHarness și un tip din App nu poate fi văzut de harness. S-a rezolvat pe partea pe care planul o numește el însuși ca formă de urmat: `KBotPaths` — celălalt magazin-fișier de lângă executabil — stă în **`KBot.Common`**. Acolo a mers `AsociereStore`, iar POCO-ul `AsociereDosar` în `KBot.Domain`. Amândouă sunt văzute și de App, și de harness.
+**Abatere de la §6:** dosarul nu poate fi simultan în App și accesibil din DevHarness, deoarece App referă DevHarness numai în Debug (`KBot.App.vbproj:82`), nu invers. Ca `KBotPaths`, `AsociereStore` este în `KBot.Common`, iar `AsociereDosar` în `KBot.Domain`; ambele proiecte le văd.
 
-**`TipReceptie` din payload nu se citește nicăieri, deci nu se cere.** Planul părinte §5.3 cerea un 400 la lipsa lui. Citind `ObtineDateHeader` din `mdl_FX_Receptii`: hash-ul de identitate al antetului se construiește din **`Tip`**, nu din `TipReceptie`, iar `FX_Receptii_R.TipReceptie` primește `"NOU"` / `"EDIT"`, calculate. Cheia `TipReceptie` nu e atinsă de codul portat. Cerința cade; nu s-a adăugat un 400 pentru un câmp pe care nimeni nu-l citește.
+**`TipReceptie` din payload nu se cere**, contrar 400-ului din planul părinte §5.3: `ObtineDateHeader`/`mdl_FX_Receptii` construiește hash-ul din `Tip`, iar `FX_Receptii_R.TipReceptie` primește calculat `"NOU"`/`"EDIT"`. Codul portat nu citește cheia.
 
 **Un indicator fără clasificație rămâne, cu avertisment.** Access folosea `INNER JOIN ClasificatiiG`, deci un indicator a cărui clasificație lipsește CĂDEA din recordset și rândurile lui de istoric rămâneau tăcut fără `CodAI`. Aici indicatorul rămâne, cu `Clsf`/`CodSSI` NULL și un avertisment — aceeași alegere ca D19 din 0048-02, și regula casei (fără no-op-uri tăcute).
 
@@ -391,7 +391,7 @@ UPDATE FX_Extrase E INNER JOIN FX_Plati P ON E.ReferintaDest = P.Referinta_TREZO
 
 #### 1.2 F20 retrasă, pasul 4d mutat unde îl cheamă Access (§1, §4)
 
-**F20 e RETRASĂ**, și nu prin măsurătoare, ci prin raționament: `DIFH` **nu e ceva ce trimite FOREXE**. Se calculează local, de noi, în `FX_CalculeazaDIF_Receptii_Tmp`, **după** ce un instantaneu a fost asociat unei recepții. În clipa în care ar fi nevoie de judecata «s-a schimbat ceva?», `DIFH` nu există încă. **O3 se închide prin retragere, nu prin confirmare** — nicio interogare pe date vii nu mai e datorată, iar interogarea scrisă în worklog-ul 0048-03 §5.3 nu mai trebuie rulată.
+**F20 retrasă prin raționament, fără măsurătoare:** FOREXE nu trimite `DIFH`; `FX_CalculeazaDIF_Receptii_Tmp` o calculează după asociere, deci lipsește când s-ar decide schimbarea. **O3 se închide prin retragere, nu confirmare**; nu mai este datorată o interogare live, iar cea din 0048-03 §5.3 nu se rulează.
 
 Ce s-a schimbat în cod: **nimic de șters, fiindcă nimic nu citea `DIFH` ca să decidă ceva.** Căutat peste tot Python-ul și tot `src/`: singurii cititori sunt calea de AFIȘARE din Recepții (felia 0015-02, eticheta plutitoare), care e un consumator legitim al unei cifre calculate, nu o clasificare. Se consemnează ca fapt verificat, nu ca presupunere.
 
@@ -414,7 +414,7 @@ Restul câmpurilor din `collectFields` (`Tip`, `Data`, `Suma`, `TipReceptie`, `D
 
 **Confirmat pe date reale, nu doar din definiții:** sarcina utilă de probă `PYTHON/tests/fixtures/prelucrare_AAB37CNBK95.json` poartă exact aceste două coloane ca liste imbricate, și nicio alta.
 
-**Unde se pierdea și unde s-a oprit.** Executorul păstra deja structura — `WorkflowExecutor.Actions.vb:BuildCollectedRow` face `JToken.Parse(fromVar)`, cu comentariul «Preservă structura JArray/JObject». Pierderea era un pas mai încolo, în `ForexeRunner.TryParseTable`: `row(prop.Name) = prop.Value.ToString()`. Pentru un scalar e fără pierdere; pentru un `JArray` dă chiar textul JSON — o listă deghizată în text, pe care serverul trebuia apoi să o parseze a doua oară.
+**Pierderea structurii:** `WorkflowExecutor.Actions.vb:BuildCollectedRow` păstra deja `JArray`/`JObject` prin `JToken.Parse(fromVar)` (comentariul «Preservă structura JArray/JObject»). `ForexeRunner.TryParseTable` o aplatiza apoi prin `row(prop.Name) = prop.Value.ToString()`: scalar fără pierdere, dar `JArray` devenit text JSON de parsat din nou pe server.
 
 **Clientul.** Trei tipuri noi în `KBot.Domain/CelulaTabel.vb`:
 
@@ -441,7 +441,7 @@ Restul câmpurilor din `collectFields` (`Tip`, `Data`, `Suma`, `TipReceptie`, `D
 
 De ce se poate închide ușa fără plasă: **D2 spune că Access e scos din uz și nu există un al doilea scriitor, iar conducta nu a rulat încă niciodată pe o bază reală.** Nu există sarcini utile stocate în forma veche de recuperat.
 
-**`BugetIndicator` i se verifică forma deși nimeni nu-l citește.** Dacă EL sosește ca text, clientul aplatizează — iar clientul acela aplatizează și `Detaliu`, pe care chiar îl citim. E cel mai ieftin loc în care se prinde regresia, și prinde toată sarcina utilă deodată.
+**Forma `BugetIndicator` se verifică deși nu este consumată:** textul ar indica un client care aplatizează și `Detaliu`, detectând regresia întregului payload.
 
 **Cealaltă jumătate a regulii (§3.6).** Fiecare loc din `routes/forexe/` care citește o celulă de payload ca text o cere acum prin `text_celula(valoare, unde, coloana)`, care **ridică** pe o listă sau un obiect. Un `.strip()` peste o listă ar crăpa cu `AttributeError` la prima rulare reală; un `str()` peste ea ar fi mai rău — ar scrie liniștit `[{'Cod': 'AAB'}]` într-o coloană de bază de date și nimeni n-ar afla vreodată. Locurile: cele patru celule ale rândului de istoric (3a), cele două de identificare și cele patru de bani ale indicatorului (2), cele patru ale antetului de recepție (4b) și cele cinci frunze din interiorul lui `Detaliu`.
 

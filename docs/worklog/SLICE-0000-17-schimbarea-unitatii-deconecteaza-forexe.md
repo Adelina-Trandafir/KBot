@@ -11,11 +11,7 @@ Slice 0097 first REFUSED a unit switch while FOREXE was connected. The operator 
 
 ## Files touched
 
-- `src/KBot.App/HelpContent/contabil/fereastra.md`
-- `src/KBot.App/HelpContent/contabil/setari.md`
-- `src/KBot.App/HelpContent/tours/tur-fereastra.md`
-- `src/KBot.App/HelpContent/tours/tur-setari.md`
-- `docs/worklog/state/KBOT_STATUS_0000-0009.md` (row 0000-17, watermark note)
+`src/KBot.App/HelpContent/contabil/fereastra.md`; `src/KBot.App/HelpContent/contabil/setari.md`; `src/KBot.App/HelpContent/tours/tur-fereastra.md`; `src/KBot.App/HelpContent/tours/tur-setari.md`; `docs/worklog/state/KBOT_STATUS_0000-0009.md` (row 0000-17, watermark note)
 
 ## Test results
 

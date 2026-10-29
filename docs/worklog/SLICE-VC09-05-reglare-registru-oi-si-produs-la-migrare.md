@@ -12,11 +12,7 @@ După migrarea unei baze OI, pozițiile de primire (BP) din registrul `OI_Produs
 
 ## Fișiere
 
-- Migrator: `VERCON/VRC.Migrator/VrcRunner.OiAccounts.vb`, `VrcRunner.OiOrigins.vb`, `VrcRunner.Oi.vb`, `VrcRunner.vb`, `VrcRun.vb`, `VRC.Migrator.vbproj`, `README.md`.
-- VERCON server: `PYTHON/routes/vercon/oi_register_repair.py` (nou), `doc_routes.py`, `oi_accounts.py`, `oi_custody.py`.
-- VERCON pagină: `PYTHON/static/js/vercon/oi-register-repair.js` (nou), `docs.js`, `PYTHON/static/css/vercon-migration.css`.
-- Ajutor: `PYTHON/static/help/vercon.json` (secțiunea «Bon de predare — OI și MF»).
-- Documente: `VERCON/VERCON_STATUS.md`, `implementare_vercon_v2.md`.
+Migrator: `VERCON/VRC.Migrator/VrcRunner.OiAccounts.vb`, `VrcRunner.OiOrigins.vb`, `VrcRunner.Oi.vb`, `VrcRunner.vb`, `VrcRun.vb`, `VRC.Migrator.vbproj`, `README.md`. VERCON server: `PYTHON/routes/vercon/oi_register_repair.py` (nou), `doc_routes.py`, `oi_accounts.py`, `oi_custody.py`. VERCON pagină: `PYTHON/static/js/vercon/oi-register-repair.js` (nou), `docs.js`, `PYTHON/static/css/vercon-migration.css`. Ajutor: `PYTHON/static/help/vercon.json` (secțiunea «Bon de predare — OI și MF»). Documente: `VERCON/VERCON_STATUS.md`, `implementare_vercon_v2.md`.
 
 ## Rezultate verificări
 

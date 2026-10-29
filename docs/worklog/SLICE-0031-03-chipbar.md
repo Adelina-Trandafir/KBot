@@ -10,7 +10,7 @@ Ordinea trecerilor a fost schimbată de operator: 0031-03 (controlul) și 0031-0
 
 ### 1. Trei fișiere, copiate ca decizii din `KBotNavList`
 
-Planul cere explicit: «Copy `KBotNavList`'s decisions rather than reinventing them.» Așa s-a făcut — `KBotNavList.vb`, `KBotNavItem.vb` și colecția lor au fost citite întâi, iar bara nouă e recognoscibil același cod: același set `SetStyle`, aceeași `ThemeShapes.FillModern`, același chenar roșu de 2 px pe cheile greșite în designer, aceeași suspendare a validării între `BeginInit` și `EndInit`, aceleași cârlige `Debug*` pentru probe headless.
+Conform planului, controlul preia deciziile din `KBotNavList.vb`, `KBotNavItem.vb` și colecția lor, citite înainte: `SetStyle`, `ThemeShapes.FillModern`, chenar roșu de 2 px pentru chei greșite în designer, validare suspendată între `BeginInit`/`EndInit`, cârlige `Debug*` pentru probe headless.
 
 - **`KBotChip.vb`** — un jeton: `Key`, `Text`, `Checked`, `Count` (pastila), `Enabled`, `Visible`, `AccentOverride`. `Bounds` e `Friend` (stare derivată, nu se serializează). `ToString` întoarce `err — "Erori" [✓]`, ca dialogul de colecție să fie citibil.
 - **`KBotChipCollection.vb`** — `Collection(Of KBotChip)` cu `Owner`; cele patru mutatoare invalidează așezarea și **loghează + re-aruncă** (sunt puncte de intrare, deci acoperirea tranzitivă din regula casei nu se aplică). Validarea cheilor **nu** stă aici: dialogul de colecție inserează un jeton gol în clipa în care se apasă «Add».
@@ -18,11 +18,11 @@ Planul cere explicit: «Copy `KBotNavList`'s decisions rather than reinventing t
 
 ### 2. Culoarea vine de la APELANT, nu din control
 
-`AccentOverride` există pentru un singur motiv concret din plan: jetonul ERORI trebuie să fie roșu și cel de AVERTISMENTE chihlimbariu. Controlul **nu numește nicio culoare** — apelantul îi dă `Palette.ErrorColor` / `Palette.WarningColor` și i-o **re-dă** la fiecare comutare de schemă (`LogViewerForm.OnThemeChanged` face exact asta). `Color.Empty` = accentul schemei.
+`AccentOverride` permite apelantului să dea `Palette.ErrorColor` pentru ERORI și `Palette.WarningColor` pentru AVERTISMENTE (roșu/chihlimbariu în plan), reaplicate la schimbarea schemei (`LogViewerForm.OnThemeChanged`). Controlul nu fixează culori; `Color.Empty` folosește accentul schemei.
 
 ### 3. Rândurile se rup după lățime, dar bara nu-și scrie `Height`-ul
 
-Jetoanele curg stânga→dreapta și trec pe rândul următor când nu mai încap. Înălțimea de care ar fi nevoie se citește din `PreferredBarHeight`; **bara nu scrie `Height`**, fiindcă gazda o andochează — aceeași regulă ca `HostOwnsWidth` de la arbore (0027-02), unde scrisul dimensiunii contra unui părinte care andochează doar produce pâlpâire.
+Jetoanele curg stânga→dreapta și trec pe rând nou la depășirea lățimii. `PreferredBarHeight` expune înălțimea necesară; gazda andochează bara, deci aceasta nu scrie `Height`, evitând pâlpâirea ca la `HostOwnsWidth` al arborelui (0027-02).
 
 ### 4. `MinimumRequiredChecked`: un refuz care se VEDE, nu o excepție
 
@@ -32,7 +32,7 @@ Pragul contează fiindcă `LogFilter` tratează mulțimea goală ca «nimic», n
 
 ### 5. Ce s-a memorat și ce NU
 
-Planul cere pensule memorate, refăcute în `ApplyTheme`, eliberate în `Dispose`. S-au memorat doar cele care nu depind de starea jetonului (`_borderPen`, `_badgeBrush`). Umplerea jetonului trece prin `ThemeShapes.FillModern`, care ia o **culoare**, iar `TextRenderer` desenează tot cu o culoare, nu cu o pensulă — acolo n-ar fi avut ce să se memoreze. Câmpuri memorate și nefolosite ar fi fost cod mort care arată ca optimizare.
+Conform planului, `_borderPen` și `_badgeBrush` se memorează, se refac în `ApplyTheme` și se eliberează în `Dispose`. Sunt singurele independente de starea jetonului. `ThemeShapes.FillModern` și `TextRenderer` primesc culori, fără pensule de memorat.
 
 ---
 

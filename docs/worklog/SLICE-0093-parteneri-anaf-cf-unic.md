@@ -17,12 +17,7 @@ Filtrul «Arată partenerii ascunși» a fost scos: serverul nu mai trimite ascu
 
 ## Fișiere atinse
 
-- `PYTHON/routes/forexe/parteneri_edit.py` — filtre + grupare în GET, `bic` + `cf_unitate` în răspuns, `_comun_lookups`, `_bank_from_iban`, `_check_fiscal_code`, Tip = '1', ruta ANAF.
-- `src/KBot.Domain/Nomenclatoare.vb` — `ParteneriCatalog`: `Tipuri` scos, `Bic` + `CfUnitate` adăugate; clasă nouă `PartenerAnaf`.
-- `src/KBot.Api/INomenclatoareApi.vb`, `src/KBot.Api/ApiClient.Nomenclatoare.vb` — `GetPartenerAnafAsync`; citirea `bic` / `cf_unitate`.
-- `src/KBot.App/Views/Nomenclatoare/ParteneriForm.Designer.vb` — `lblTip`/`cmbTip`/`chkAscunsi` scoase, rândurile renumerotate (9), «Cod fiscal *», «Adresa», tooltip-uri.
-- `src/KBot.App/Views/Nomenclatoare/ParteneriForm.vb` — căutarea ANAF, banca din IBAN, validarea codului fiscal la salvare.
-- `docs/worklog/KBOT_STATUS.md`, `docs/worklog/state/KBOT_STATUS_0090-0099.md`.
+`PYTHON/routes/forexe/parteneri_edit.py` — filtre + grupare în GET, `bic` + `cf_unitate` în răspuns, `_comun_lookups`, `_bank_from_iban`, `_check_fiscal_code`, Tip = '1', ruta ANAF. `src/KBot.Domain/Nomenclatoare.vb` — `ParteneriCatalog`: `Tipuri` scos, `Bic` + `CfUnitate` adăugate; clasă nouă `PartenerAnaf`. `src/KBot.Api/INomenclatoareApi.vb`, `src/KBot.Api/ApiClient.Nomenclatoare.vb` — `GetPartenerAnafAsync`; citirea `bic` / `cf_unitate`. `src/KBot.App/Views/Nomenclatoare/ParteneriForm.Designer.vb` — `lblTip`/`cmbTip`/`chkAscunsi` scoase, rândurile renumerotate (9), «Cod fiscal *», «Adresa», tooltip-uri. `src/KBot.App/Views/Nomenclatoare/ParteneriForm.vb` — căutarea ANAF, banca din IBAN, validarea codului fiscal la salvare. `docs/worklog/KBOT_STATUS.md`, `docs/worklog/state/KBOT_STATUS_0090-0099.md`.
 
 ## Rezultate teste
 

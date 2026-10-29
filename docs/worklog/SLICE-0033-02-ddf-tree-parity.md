@@ -4,7 +4,7 @@ Sub-felie a lui 0033, cerere de operator: «fă arborele din DdfView să arate e
 
 ## Ce s-a schimbat și de ce
 
-**1. Iconițele se rezolvă acum ÎNTÂI din `ImageList`.** `DdfView` desena toate iconițele cu formele GDI din `DdfIcons` (`StatusIcon` / `LunaIcon`), deși `tree_image_list` exista deja în designer și era legat prin `tree.NodeImages` — pozele erau acolo, dar nimeni nu le cerea. Acum se folosește regula listă-întâi din `RezervariView.TipIconOf`: se caută cheia în listă și, doar dacă lipsește, se cade pe forma GDI colorată din paletă. Nicio poză nu se pierde, niciun nod nu rămâne gol.
+**1. `ImageList` are prioritate.** `tree_image_list` era legat prin `tree.NodeImages`, dar `DdfView` folosea numai `DdfIcons.StatusIcon`/`LunaIcon` GDI. Acum urmează `RezervariView.TipIconOf`: cheia din listă, altfel GDI colorat din paletă, fără noduri sau imagini pierdute.
 
 Cheile citite (cele care sunt deja în `tree_image_list`, plus una nouă):
 
@@ -35,4 +35,4 @@ Compatibil cu `PLAN_DdfSubViews` (felia 0032) în ambele sensuri: arborele răm�
 
 * `dotnet build KBot.sln` — 0 erori (vezi `SLICE-0033-ord-view.md` pentru inventarul de avertismente).
 * **Nerandat pe ecran.** Nici arborele DDF, nici efectul noii înălțimi de rând. Operatorul confirmă în designerul Visual Studio + la rulare.
-* Cheia `neutral` **nu este** în `tree_image_list` — până când operatorul pune poza, reviziile neutre rămân pe forma GDI (adică arată exact ca înainte). Nu e o regresie; e fallback-ul.
+* Lipsa cheii `neutral` din `tree_image_list` rămâne de rezolvat de operator; fallback-ul GDI din tabel păstrează aspectul anterior.

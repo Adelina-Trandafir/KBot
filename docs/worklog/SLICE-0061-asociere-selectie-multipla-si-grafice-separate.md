@@ -18,7 +18,7 @@ Cinci cereri ale operatorului din 10.09.2026, două pe control și trei pe `Asoc
 
 `AdvancedTreeControl.MultiSelect.vb` — partială nouă. Implicit **stins**, deci cele nouă vederi care folosesc deja arborele nu capătă niciun comportament nou.
 
-- **O singură rădăcină.** Un grup nu trece peste două rădăcini. Arborele nu e o listă plată: rădăcinile lui sunt lucrurile însele (o recepție, coșul), iar un grup întins peste două ar fi un grup de rânduri care n-au nimic în comun — fiecare gazdă ar trebui să-l despartă înapoi înainte să facă ceva cu el. Ctrl/Shift pe rândul altei rădăcini **începe un grup nou acolo**.
+- **O singură rădăcină:** un grup aparține aceleiași recepții/coș; gazdele nu trebuie să despartă rânduri fără legătură. Ctrl/Shift pe altă rădăcină începe acolo un grup nou.
 - **`SelectedNode` rămâne ce era**: rândul cu focus, mereu parte din grup, singurul care primește CHENARUL selecției (restul iau doar umplerea). Scris din afară, strânge grupul la el — cine spune «rândul e ăsta» nu poate lăsa în urmă alte cinci rânduri nenumite.
 - **Clicul simplu într-un grup îl strânge la ridicarea butonului, nu la apăsare.** Apăsarea pe un rând al grupului e ȘI felul în care începe tragerea întregului grup; strâns la apăsare, până se mișca mouse-ul ar fi rămas un singur rând. `_pendingSingleSelect` ține datoria, `MaybeBeginDrag` o șterge, `OnMouseUp` o plătește.
 - Tastatura: Shift + săgeți/Home/End/PgUp/PgDn întind plaja de la ancoră; Ctrl+A ia toată rădăcina rândului curent, fără rândul-rădăcină. Amândouă inerte cu `MultiSelect` stins.
@@ -32,7 +32,7 @@ Cererea (5), și e o cerință despre adevăr: în lanțul unei recepții locul 
 
 `SetDropPreview(root, ghosts)` / `ClearDropPreview()`, cu `TreeDropGhost(index, caption)`. Rădăcina se aprinde ÎNTREAGĂ (chenar punctat + văl subțire, în `DragHighlightColor`) și în ea apar rânduri-fantomă pe pozițiile primite. **Pozițiile le calculează GAZDA**, în șirul REZULTAT: ordinea aparține datelor, iar arborele nu știe nimic despre `DataH` — aceeași împărțire ca la vetourile tragerii (arborele arată, gazda hotărăște).
 
-Fantomele sunt `TreeItem`-uri adevărate (`IsDropGhost = True`) băgate în `Children`-ul rădăcinii, ca să treacă prin aceeași pictură, aceeași derulare și aceeași măsurătoare ca restul; o pictură separată «pe deasupra» s-ar fi despărțit de rânduri la prima schimbare de înălțime sau de derulare. Ies toate pe un singur drum, `ClearDropPreview`, chemat din `CancelDrag` (aruncare, ESC, pierderea ferestrei) și din `OnDragLeave`. Un `DragOver` care cade pe o fantomă e raportat gazdei ca fiind pe părintele ei.
+Fantomele sunt `TreeItem` în `Children` (`IsDropGhost = True`), deci folosesc pictura, derularea și măsurarea obișnuite. `ClearDropPreview` le elimină din `CancelDrag` (aruncare, ESC, pierderea ferestrei) și `OnDragLeave`; `DragOver` pe fantomă este raportat pe părintele ei.
 
 ### C. `AsociereForm` — ecran de lucru, grafice în fereastra lor
 

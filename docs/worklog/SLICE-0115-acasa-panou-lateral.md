@@ -2,9 +2,7 @@
 
 Istoric 13–18.10.2026. 01 mută butonul jos și restrânge acțiunile la ziua curentă, cu temporizator de miezul nopții; 02 înlocuiește vizibilitatea permanentă cu panoul în spatele machetelor în mod implicit, păstrând starea salvată de pliere. Proba din KBOT_TEST privește baza inițială; amendamentele nu au fost văzute pe ecran.
 
-- [0115](#slice-0115)
-- [0115-01](#slice-0115-01)
-- [0115-02](#slice-0115-02)
+[0115](#slice-0115) · [0115-01](#slice-0115-01) · [0115-02](#slice-0115-02)
 
 ## SLICE-0115 - Pagina «Acasa» si panoul lateral al ferestrei principale (13.10.2026) <a id="slice-0115"></a>
 
@@ -24,8 +22,7 @@ Construit si probat in `KBOT_TEST`, adus in `KBOT\src` la 13.10.2026. Istoria: `
 3. `ButtonStyles.ApplyTransparent` (KBot.Theming): buton fara corp, pentru o bara (butonul cardului «Ce este nou»). Singura schimbare adusa in `ButtonStyles.vb`; varianta portocalie de test NU (vezi 0114).
 
 ### Fisiere
-- NOU: `src/KBot.App/AcasaPage.vb` + `.Designer.vb`, `src/KBot.App/AvacontMain.Sidebar.vb`, `src/KBot.Controls/SidePanel/KBotSidePanel.vb` + `KBotSidePanelItems.vb`, `src/KBot.App/Resources/kbot_logo.png`.
-- Modificate: `KBot.Common/GlobalErrorLog.vb` (buffer in memorie; `Write` cheama `Remember`, nu arunca), `KBot.Common/AppSettings.vb` (`HomeSidebarCollapsed`, `HomeNewsCollapsed`, `NewsSeenVersion` + DTO nullabil, format compatibil cu cel vechi), `KBot.Theming/ButtonStyles.vb` (`ApplyTransparent`), `My Project/Resources.resx` + `Resources.Designer.vb` (`kbot_logo`), `AvacontMain.Designer.vb` (sectiunile panoului).
+NOU: `src/KBot.App/AcasaPage.vb` + `.Designer.vb`, `src/KBot.App/AvacontMain.Sidebar.vb`, `src/KBot.Controls/SidePanel/KBotSidePanel.vb` + `KBotSidePanelItems.vb`, `src/KBot.App/Resources/kbot_logo.png`. Modificate: `KBot.Common/GlobalErrorLog.vb` (buffer in memorie; `Write` cheama `Remember`, nu arunca), `KBot.Common/AppSettings.vb` (`HomeSidebarCollapsed`, `HomeNewsCollapsed`, `NewsSeenVersion` + DTO nullabil, format compatibil cu cel vechi), `KBot.Theming/ButtonStyles.vb` (`ApplyTransparent`), `My Project/Resources.resx` + `Resources.Designer.vb` (`kbot_logo`), `AvacontMain.Designer.vb` (sectiunile panoului).
 
 ### Teste / verificare
 - Build-ul unirii: 0 erori, 0 avertismente (operator). Nimic rulat in aceasta sesiune. Probat pe ecran in `KBOT_TEST`.
@@ -71,7 +68,7 @@ Operator's request of 18.10.2026: an application setting that keeps the sidebar 
 
 ### What changed and why
 - New setting `AppSettings.SidebarBehindPages` (default `True`), with its DTO field, `ToDto` and `FromDto` lines.
-- `AvacontMain.ApplySidebarPlacement` (in `AvacontMain.Sidebar.vb`): the panel is hidden only while a macheta is on screen (a page, or the shell = the list of angajamente: `_page` set or `_baseIsShell`) AND the setting is on; `pnlHost` (Dock.Fill) then takes the whole width. With no macheta on screen (the opening page) it is shown; with the setting off it is shown all the time. Called from the constructor, `UpdateCloseButton` (every page open / put away / close and every base switch already calls it) and `AppSettings_Changed`. History: v1 (SidebarAlwaysVisible, panel kept on the opening page and the shell) and v2 (the switch everywhere alike) both misread the request; the rule above is the one the operator gave on 18.10.2026.
+- `AvacontMain.ApplySidebarPlacement` (`AvacontMain.Sidebar.vb`) hides the panel when `SidebarBehindPages` is on AND a page or shell/list is shown (`_page` set or `_baseIsShell`); `pnlHost` (`Dock.Fill`) takes the freed width. On the opening page it stays visible; with the switch off it stays visible everywhere. Called by the constructor, `UpdateCloseButton` (page open/put away/close and base switch) and `AppSettings_Changed`. Historical v1 (`SidebarAlwaysVisible`: opening page + shell) and v2 (same rule everywhere) misread the request; this is the operator's 18.10.2026 rule.
 - Behind the machete the fold button («Ascunde meniul lateral») is not shown: new `KBotSidePanel.CollapseButtonVisible` (default True; hides the button and its band, no hit area, no tooltip). `ApplySidebarPlacement` sets it to `Not SidebarBehindPages` and unfolds the panel meanwhile (`Collapsed = False`) so a panel saved as folded cannot be stuck without its button; `_applyingPlacement` keeps `Sidebar_CollapsedChanged` from saving that, and the saved `HomeSidebarCollapsed` comes back when the setting is turned off.
 - `SetariAplicatieView`: new tick `chkSidebarInSpate` («Meniul lateral stă în spatele machetelor», checked = behind) in the «Fereastra principala» group (Designer row 7, the rows below shifted by one, `RowCount` 17), saved by `SalveazaComutator`, loaded in `IncarcaComutatoarele`.
 

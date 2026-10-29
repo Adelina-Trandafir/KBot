@@ -24,10 +24,7 @@ Left out on purpose (HELP_SYSTEM §5): how K-BOT recognises a confirmation windo
 
 ## Files touched
 
-- `src/KBot.App/HelpContent/contabil/fereastra.md`, `ajutor.md`, `setari.md`, `autentificare.md`, `ddf/nou.md`, `forexe/browser.md`
-- `src/KBot.App/HelpContent/tours/tur-fereastra.md`, `tur-ddf.md`, `tur-setari.md`
-- `src/KBot.App/HelpContent/README.md`, `help-version.txt`
-- `docs/HELP_SYSTEM.md`
+`src/KBot.App/HelpContent/contabil/fereastra.md`, `ajutor.md`, `setari.md`, `autentificare.md`, `ddf/nou.md`, `forexe/browser.md`; `src/KBot.App/HelpContent/tours/tur-fereastra.md`, `tur-ddf.md`, `tur-setari.md`; `src/KBot.App/HelpContent/README.md`, `help-version.txt`; `docs/HELP_SYSTEM.md`
 
 ## Test results
 

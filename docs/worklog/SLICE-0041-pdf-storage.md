@@ -18,7 +18,7 @@ Trei reguli au condus toată implementarea, fiindcă un PDF semnat digital trebu
 
 Decizii de plan reținute ca atare: se stochează **doar semnate** (cele nesemnate sunt artefacte derivate, se regenerează local), **fără istoric** (cheie unică → re-semnarea înlocuiește rândul), **fără coloană `Semnat`** (existența rândului ESTE semnalul), **`LONGBLOB` nu `MEDIUMBLOB`** (plafonul de 16 MB al lui MEDIUMBLOB cade exact pe estimarea maximă), **fără compresie de blob** în v1.
 
-Zona nesemnată e nouă și separată: `<AppDir>\TempPdf\`, golită la fiecare pornire. Regula „temporar, șters la fiecare deschidere" trăiește **exclusiv** acolo — cache-ul semnat nu se golește niciodată în bloc, se înlocuiește doar când suma nu mai corespunde.
+PDF-urile nesemnate folosesc separat `<AppDir>\TempPdf\`, golit la fiecare pornire. Cache-ul semnat nu se golește în bloc: se înlocuiește numai la nepotrivirea sumei.
 
 ---
 
@@ -38,7 +38,7 @@ Zona nesemnată e nouă și separată: `<AppDir>\TempPdf\`, golită la fiecare p
 | `routes/forexe/ord.py` | Idem, `LEFT JOIN FX_ORD_PDF` pe antete. Coloanele noi stau **înaintea** fragmentului opțional `{cale_pdf}`, ca pozițiile fixe din despachetare să nu depindă de proba de schemă. |
 | `main.py` | `MAX_CONTENT_LENGTH` 17 MB + handler 413 (§3). |
 
-`LEFT JOIN` și nu subinterogare: cheia părinte e **UNIQUE** în tabela de PDF-uri, deci cel mult un rând per document — fan-out imposibil. (Aceeași justificare ca `FX_ORD_PART` în `ord.py`.)
+`LEFT JOIN` nu multiplică documentele: cheia părinte este UNIQUE în tabela PDF, deci are cel mult un rând (aceeași justificare ca `FX_ORD_PART` în `ord.py`).
 
 ### Client (`src/`)
 | Fișier | Ce s-a făcut |

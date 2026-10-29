@@ -6,9 +6,7 @@ Toate corpurile, inventarele, capturile de refăcut, numărătorile, probele și
 
 [13](#slice-0000-13) · [14](#slice-0000-14) · [15](#slice-0000-15)
 
-<a id="slice-0000-13"></a>
-
-## SLICE-0000-13 — Where each explanation comes from + help for slice 0097 (30.09.2026)
+## SLICE-0000-13 — Where each explanation comes from + help for slice 0097 (30.09.2026) <a id="slice-0000-13"></a>
 
 Operator request (30.09.2026):
 1. every explanation in the help carries its slice, invisible to the user, so it is known where the decision behind it came from;
@@ -47,11 +45,7 @@ Capture ids: **new** `unitate-selector`, `setari-autentificare`. **Moved** `sele
 
 ### Files touched
 
-- engine: `src/KBot.App/Help/HelpLibrary.vb`, `Help/HelpTour.vb`
-- checker: `tools/HelpCheck/Check-Help.ps1`
-- all 47 topics and 12 tours under `src/KBot.App/HelpContent/` (tags); content changes as in §2
-- rule + syntax: `CLAUDE.md`, `docs/worklog/CODE_WORKFLOW.md`, `docs/HELP_SYSTEM.md`, `src/KBot.App/HelpContent/README.md`
-- status: `state/KBOT_STATUS_0000-0009.md` (row, watermark, Open threads), `KBOT_STATUS.md` index
+engine: `src/KBot.App/Help/HelpLibrary.vb`, `Help/HelpTour.vb`; checker: `tools/HelpCheck/Check-Help.ps1`; all 47 topics and 12 tours under `src/KBot.App/HelpContent/` (tags); content changes as in §2; rule + syntax: `CLAUDE.md`, `docs/worklog/CODE_WORKFLOW.md`, `docs/HELP_SYSTEM.md`, `src/KBot.App/HelpContent/README.md`; status: `state/KBOT_STATUS_0000-0009.md` (row, watermark, Open threads), `KBOT_STATUS.md` index
 
 ### De citit de operator
 
@@ -60,9 +54,7 @@ Capture ids: **new** `unitate-selector`, `setari-autentificare`. **Moved** `sele
 - «Stare» in the reception window shows «încărcată» / «preluată» without explaining them — say what they mean to the accountant if it matters.
 - The unit switch depends on the server routes of 0097 (`auth.py`, deploy by hand).
 
-<a id="slice-0000-14"></a>
-
-## SLICE-0000-14 — A signed document is never regenerated + the buttons of trees and grids (30.09.2026)
+## SLICE-0000-14 — A signed document is never regenerated + the buttons of trees and grids (30.09.2026) <a id="slice-0000-14"></a>
 
 Operator answers to 0000-13 (30.09.2026):
 1. «A signed document CAN NEVER BE REGENERATED. That was there before the 0078 slice; now we know we can insert data into an already signed document, so it is not needed anymore.»
@@ -85,9 +77,7 @@ Operator answers to 0000-13 (30.09.2026):
 
 ### Files touched
 
-- `src/KBot.App/Views/SigningMessages.vb`, `Views/OrdView.vb`, `Views/DdfView.vb`
-- HelpContent: new `contabil/liste.md`; `contabil/vederi/{ord,plati,sumar,istoric,receptii}.md`, `contabil/ddf/{index,semnare,trimitere,rezervare}.md`, `contabil/{fereastra,notecab}.md`, `contabil/forexe/descarcare.md`, `contabil/nomenclatoare/parteneri.md`, `tours/{tur-ord,tur-ddf,tur-plati}.md`
-- status: `state/KBOT_STATUS_0000-0009.md`, `KBOT_STATUS.md` index
+`src/KBot.App/Views/SigningMessages.vb`, `Views/OrdView.vb`, `Views/DdfView.vb`; HelpContent: new `contabil/liste.md`; `contabil/vederi/{ord,plati,sumar,istoric,receptii}.md`, `contabil/ddf/{index,semnare,trimitere,rezervare}.md`, `contabil/{fereastra,notecab}.md`, `contabil/forexe/descarcare.md`, `contabil/nomenclatoare/parteneri.md`, `tours/{tur-ord,tur-ddf,tur-plati}.md`; status: `state/KBOT_STATUS_0000-0009.md`, `KBOT_STATUS.md` index
 
 ### Test results
 
@@ -103,9 +93,7 @@ Capture ids **new**: `liste-subsol-arbore`, `liste-meniu-coloana`.
 - The ORD «Semnătura 1 on an incomplete table» trap now has no way out in K-BOT (a signed ORD is neither regenerated nor deleted). K-BOT documents have the full table, so it should not happen.
 - «încărcat» on receptions: K-BOT does not upload receptions yet; the meaning is Access's.
 
-<a id="slice-0000-15"></a>
-
-## SLICE-0000-15 — Dead footer icons removed + «PDF final — de semnat B» (30.09.2026)
+## SLICE-0000-15 — Dead footer icons removed + «PDF final — de semnat B» (30.09.2026) <a id="slice-0000-15"></a>
 
 Operator answers to 0000-14: the three footer icons with no action are **taken out**; the state label is **renamed**.
 
@@ -119,10 +107,7 @@ Operator answers to 0000-14: the three footer icons with no action are **taken o
 
 ### Files touched
 
-- `src/KBot.App/Views/{PlatiView,IstoricView,DdfView}.Designer.vb`
-- `src/KBot.Domain/DdfRevisionState.vb`
-- `src/KBot.App/HelpContent/contabil/ddf/index.md`, `contabil/vederi/{istoric,plati}.md`, `tours/tur-ddf.md`
-- status: `state/KBOT_STATUS_0000-0009.md`, `KBOT_STATUS.md` index
+`src/KBot.App/Views/{PlatiView,IstoricView,DdfView}.Designer.vb`; `src/KBot.Domain/DdfRevisionState.vb`; `src/KBot.App/HelpContent/contabil/ddf/index.md`, `contabil/vederi/{istoric,plati}.md`, `tours/tur-ddf.md`; status: `state/KBOT_STATUS_0000-0009.md`, `KBOT_STATUS.md` index
 
 ### Test results
 

@@ -2,10 +2,7 @@
 
 Etapele păstrează separat trace-ul calculelor, M05, comparatorul și planul anual. PENDING_ACCESS_RUN din 03 este starea inițială a fixture-ului; confirmarea ulterioară de paritate din 23.10 este consemnată în [predarea ADE6-24](SLICE-ADE6-01-cataloage.md#slice-ADE6-24), fără a inventa rezultate individuale. Nota Rezolvat din 04: *Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.* Redeschiderea lunii nu revine automat asupra cataloagelor reorganizate anual.
 
-- [ADE7-01](#slice-ADE7-01)
-- [ADE7-02](#slice-ADE7-02)
-- [ADE7-03](#slice-ADE7-03)
-- [ADE7-04](#slice-ADE7-04)
+[ADE7-01](#slice-ADE7-01) · [ADE7-02](#slice-ADE7-02) · [ADE7-03](#slice-ADE7-03) · [ADE7-04](#slice-ADE7-04)
 
 ## SLICE-ADE7-01 — fazele calculului <a id="slice-ADE7-01"></a>
 
@@ -33,12 +30,7 @@ Grupele noi se creează numai la confirmarea planului și necesită nume unic, c
 
 ### Fișiere
 
-- `PYTHON/routes/adechit/annual.py`, `service.py`, `__init__.py`.
-- `PYTHON/static/js/adechit/annual.js`, `app.js`.
-- `PYTHON/static/js/dgv/datagrid.js`, `selection.js`.
-- `PYTHON/static/adechit.html`, `PYTHON/static/css/adechit.css`.
-- `PYTHON/tests/test_adechit_annual.py`, `dgv_selection.test.mjs`, stubul nou în `adechit_lazy.test.mjs`.
-- Ajutorul de utilizare și registrul ADE7 actualizate în aceeași intervenție.
+`PYTHON/routes/adechit/annual.py`, `service.py`, `__init__.py`. `PYTHON/static/js/adechit/annual.js`, `app.js`. `PYTHON/static/js/dgv/datagrid.js`, `selection.js`. `PYTHON/static/adechit.html`, `PYTHON/static/css/adechit.css`. `PYTHON/tests/test_adechit_annual.py`, `dgv_selection.test.mjs`, stubul nou în `adechit_lazy.test.mjs`. Ajutorul de utilizare și registrul ADE7 actualizate în aceeași intervenție.
 
 Fișierele deja modificate în workspace au fost păstrate; nu s-a făcut commit/push.
 
@@ -49,7 +41,6 @@ Fișierele deja modificate în workspace au fost păstrate; nu s-a făcut commit
 Aceste probe au fost pornite înainte de citirea regulii care lasă testarea utilizatorului. Nu s-au mai rulat teste după identificarea ei. Ultimele ajustări de mesaje, selecție programatică și ordonare nu sunt retestate. O tentativă de deschidere a preview-ului 5057 în browserul integrat a primit ERR_CONNECTION_TIMED_OUT; nu s-a realizat probă vizuală. Serverul local de probă a fost oprit. Nu există rezultate de test UI/server revendicate.
 
 ### Neverificat sau amânat
-
 
 - Aspectul și interacțiunea drag-and-drop în browser, navigarea repetată și tema.
 - Validarea reală MariaDB și publicarea prin AvacontPush, care aparțin utilizatorului.

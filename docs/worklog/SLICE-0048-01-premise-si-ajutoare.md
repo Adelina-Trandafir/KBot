@@ -41,7 +41,7 @@ Se portează **intenția** (`StareAngajament`), nu defectul — cum cerea planul
 
 `src/KBot.Migrator/MariaDb/AutoIncrementStep.vb` (nou). Cele **șapte** chei primare devin `AUTO_INCREMENT` ca **ultim** lucru care i se întâmplă unei baze de unitate.
 
-De ce trebuie să rămână un pas separat și final, scris în clasă ca să nu se piardă: o bază nouă se creează din `AVACONT_SURSA` și se migrează **după aceea**, iar migrarea scrie id-urile Access **verbatim**. Pe o coloană `INT NOT NULL` simplă, un rând care sosește fără id (lipsă, NULL sau zero) **ridică** și rularea se oprește. Pe o coloană `AUTO_INCREMENT`, exact același rând e primit, iar MariaDB **inventează tăcut o cheie** — într-un tabel ale cărui id-uri sunt referite de alte cinci. Paza asta e chiar motivul pentru care coloanele sunt simple, și trebuie să supraviețuiască pentru fiecare bază încă nemigrată.
+Pasul separat și final păstrează protecția migrării: baza se creează din `AVACONT_SURSA`, apoi primește ID-urile Access verbatim. `INT NOT NULL` simplu refuză ID-ul lipsă/NULL/zero; `AUTO_INCREMENT` ar fabrica silențios o cheie referită de alte cinci tabele. Motivul este scris și în clasă, pentru toate bazele încă nemigrate.
 
 Ordinea e deci mereu: **creare din `AVACONT_SURSA` ▸ migrare ▸ verificare ▸ ALTER.**
 
@@ -53,7 +53,7 @@ Ce refuză clasa, în `RefusalReason`:
 
 Ce **raportează** per tabel (§3.3, măsurat, nu presupus): rânduri, `MAX(cheie)` înainte, `AUTO_INCREMENT` după. Tipul coloanei e luat din **coloana vie**, nu scris fix `INT(11)`: dacă referința se lărgește vreodată la `BIGINT`, `MODIFY` nu trebuie s-o îngusteze la loc.
 
-Pasul e **re-rulabil**: un tabel deja `AUTO_INCREMENT` e recunoscut și sărit. Contează, fiindcă **DDL-ul nu se poate derula înapoi** — o oprire la jumătate lasă convertite tabelele făcute până atunci, iar mesajul către operator spune asta pe față în loc să sugereze că baza e neatinsă.
+Pasul poate fi reluat: recunoaște și sare tabelele deja `AUTO_INCREMENT`. DDL-ul nu se derulează înapoi; la întrerupere, mesajul precizează că tabelele deja convertite rămân astfel și nu prezintă baza drept neatinsă.
 
 În `MigratorForm.btnTransfera_Click`, pasul rulează **doar după COMMIT**, iar **eșecul lui nu e eșecul transferului**: rândurile sunt deja scrise și rămân scrise. E prins separat, ca operatorul să nu fie anunțat niciodată că un transfer reușit a fost derulat înapoi.
 

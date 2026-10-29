@@ -3,7 +3,7 @@
 Evoluție în aceeași zi: detectorul inițial numai din indicatori este înlocuit de §4, care compară și reviziile/ordonanțările salvate. Reparația schimbă doar antetul, iar PDF-ul deja semnat și revizia deja trimisă își păstrează conținutul; avertismentul de neconcordanță nu le rescrie.
 
 ## What changed and why
-Operator, 23.10.2026: revision 0 of an angajament that comes from FOREXE got its program from the session (`_session.CodProgram`, or the fixed `0000000000` on the `/genereaza` path). The rule is: **SS = 01A -> `0000002510`, otherwise `0000000000`**. Every operator works with «Ordoneaza dupa data crearii», which hides the sector / source selector in the caption bar, so the session's SS says nothing about the angajament: the program must come from the SS of the angajament's own indicators (`FX_Indicatori.SS`). Documents already saved with a wrong program need a repair, put in the DDF ribbon, with the main-tree row painted in a red not used before and the error written out in the tooltip.
+Operator, 23.10.2026: revision 0 of an existing FOREXE angajament used `_session.CodProgram` or `/genereaza`'s fixed `0000000000`. Required rule: **indicator SS 01A → `0000002510`, otherwise `0000000000`** (`FX_Indicatori.SS`). With «Ordoneaza dupa data crearii», the caption's sector/source selector is hidden, so session SS does not identify the angajament. Wrong saved programs need a DDF ribbon repair, a new red in the main tree and an explanatory tooltip.
 
 Note on the rule: it is the same one `AVACONT_COMUN.DefaProgram` holds (01A -> 0000002510, 02A / 02E -> 0000000000). An angajament with indicators on 01A AND on another SS has no single program: nothing is guessed (not reported, not repaired; the editor already warns).
 

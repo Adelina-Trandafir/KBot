@@ -20,12 +20,7 @@ How blocks were assigned: a bullet goes to the slice named by the first 4-digit 
 
 ## Files touched
 
-- `docs/worklog/KBOT_STATUS.md`
-- `docs/worklog/state/` (new, 10 files)
-- `docs/worklog/CODE_WORKFLOW.md`
-- `CLAUDE.md`
-- `project_state.md` (deleted)
-- `docs/worklog/SLICE-0090-status-split.md` (this file)
+`docs/worklog/KBOT_STATUS.md`; `docs/worklog/state/` (new, 10 files); `docs/worklog/CODE_WORKFLOW.md`; `CLAUDE.md`; `project_state.md` (deleted); `docs/worklog/SLICE-0090-status-split.md` (this file)
 
 ## Test results
 

@@ -24,21 +24,21 @@ Ultimele două cer token-ul în antetul **`X-Registration-Token`** — antet, nu
 
 #### Magazinul dinainte de autentificare (§5.1)
 
-Constatarea F5 a planului s-a confirmat pe cod: `session_store.STORE.put_note / get_note / delete_note` acceptă **orice** șir drept token și nu ating niciodată cheile de sesiune pe care le validează paza bearer. Deci înregistrarea e **o notă**, numită `register`, pe un token pe care `store.py` îl bate singur. **Zero cod nou de backend**, și memoria și Redis se poartă identic — de aceea valoarea notei e numai JSON simplu (backend-ul Redis face `json.dumps` pe ea).
+F5 confirmată prin cod: `session_store.STORE.put_note / get_note / delete_note` acceptă orice șir ca token și nu ating cheile validate de paza bearer. Înregistrarea este nota `register` pe token generat de `store.py`, fără backend nou. Valoarea rămâne JSON simplu, compatibilă cu memoria și Redis (`json.dumps`).
 
-Durata: **30 de minute, absolut**, de la căutarea ANAF. Fiecare scriere pune nota la loc cu **cât a mai rămas**, niciodată cu 30 de minute noi — altfel fereastra ar putea fi plimbată înainte la nesfârșit cerând cod după cod.
+Durata este **30 de minute, absolut**, de la căutarea ANAF. Scrierile păstrează numai timpul rămas, împiedicând prelungirea ferestrei prin cereri repetate de cod.
 
 #### De ce token-ul se naște la `/anaf`, nu la `/cod`
 
 **Planul se contrazice singur**, și asta a fost lămurit cu operatorul: §4 spune «token-ul de la pasul 2», dar §5.1 pune `cf` și `anaf` printre câmpurile notei — care sunt date de la pasul 1. Decizia (22.09.2026): token-ul vine de la `/anaf`.
 
-Motivul e `FX_Inregistrari`, care are **două** coloane de denumire: `DenumireAnaf` (ce a spus ANAF) și `Denumire` (ce a scris solicitantul). Operatorul a confirmat că solicitantul **are voie** să schimbe denumirea, iar §7 cere ca pagina de aprobare să le arate una lângă alta. Dacă denumirea de la ANAF ar călători prin browser, pagina de aprobare ar compara ce a scris solicitantul cu ce a scris solicitantul. La fel și codul fiscal: D11 refuză un CF care are deja bază — ținut în browser, cineva ar putea trece verificarea la pasul 1 cu un cod liber și trimite altul la pasul 6.
+`FX_Inregistrari` păstrează separat `DenumireAnaf` și `Denumire`, editabilă de solicitant conform operatorului; aprobarea le compară (§7). Denumirea ANAF și CF-ul trebuie păstrate pe server: retransmiterea prin browser ar permite falsificarea comparației și schimbarea CF-ului după verificarea D11 de la pasul 1, înaintea trimiterii din pasul 6.
 
 #### Proxy-ul ANAF (§5.2)
 
 Portat din `InformatiiFirmaOnline2` (modulul Access `Module__EFactura`, citit de la operator pe 22.09.2026): POST, `Content-Type: application/json`, corp `[{"cui": <cifre, fără ghilimele>, "data": "yyyy-mm-dd"}]`, iar un răspuns care începe cu `<html>` înseamnă că ANAF s-a stricat, nu că nu știe codul. Verificarea aceea e păstrată literă cu literă. `urllib` din biblioteca standard (F10: nu există `requests` în venv).
 
-**Un lucru NU s-a portat, și contează.** Funcția din Access decide «negăsit» citind `cod <> "200"`. **v9 nu are deloc câmpul `cod`** — verificat pe un răspuns real din 22.09.2026, care avea exact două chei de nivel întâi, `found` și `notFound`. Deci testul de aici e `found` gol. Diferența e intenționată, nu o scăpare.
+**Diferență intenționată față de Access:** acesta testa `cod <> "200"`; v9 nu are `cod`. Răspunsul real din 22.09.2026 avea numai `found` și `notFound` la nivelul întâi, deci aici negăsit înseamnă `found` gol.
 
 Câmpurile citite, din `found[0].date_generale`: `denumire`, `adresa`, `cui`, `nrRegCom`. Structura `adresa_sediu_social` e lăsată în pace — șirul plat e ce recunoaște solicitantul, și tot el ajunge pe pagina de aprobare. ANAF întoarce diacritice cu **sedilă** (`PLOIEŞTI`, `Administraţia`), nu cu virgulă dedesubt; nimic nu le rescrie.
 
@@ -46,7 +46,7 @@ Câmpurile citite, din `found[0].date_generale`: `denumire`, `adresa`, `cui`, `n
 
 Aceeași mașinărie ca schimbarea parolei din felia 0072 (`auth.py`): șase cifre din `secrets`, se păstrează **numai** hash-ul SHA-256, comparație cu `hmac.compare_digest`, **10 minute**, cel mult **5** încercări greșite și codul se aruncă. Singura diferență e unde stă — o notă pe token-ul de înregistrare, nu pe o sesiune.
 
-Un cod nu poate trăi mai mult decât înregistrarea care îl poartă, iar `expires_in` spune numărul adevărat (`min(10 min, cât a mai rămas)`). Un cod nou îl înlocuiește pe cel vechi, iar schimbarea adresei **dez-verifică** înregistrarea: cine a dovedit vechea cutie poștală n-a dovedit nimic despre cea nouă.
+`expires_in = min(10 min, timpul rămas al înregistrării)`. Codul nou îl înlocuiește pe cel vechi; schimbarea adresei anulează verificarea, care dovedea numai adresa anterioară.
 
 #### Cele două verificări în bază
 

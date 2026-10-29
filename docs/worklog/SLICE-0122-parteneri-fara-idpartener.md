@@ -50,11 +50,13 @@ NOT in scope (kept on purpose): the Access migration (`Migrator` `TableMaps`/`Re
 On `FX_DDF_REV_SA`, `FX_DDF_REV_SB` and `FX_ORD_TBL` the column `CodPartener` holds the supplier's NORMALIZED CodFiscal; `IdPartener` is no longer written (NULL) and no longer read. The name of the column stays (it is a legacy name); no DDL on these three tables except dropping the foreign keys. K-BOT's DDF editor already writes the CodFiscal there; what changes is the normalization and the old rows. `VC_NIR` has NO `CodPartener` (only `IdPartener`): operator decision 20.10.2026 - the column `CodPartener` is ADDED to `VC_NIR` too (`sql/P122_01_vc_nir_codpartener.sql`), same convention.
 
 ### Proposal (sub-slices, in this order)
+
+În 01…03, propunerea inițială 02 de modificare a clientului rămâne distinctă de implementarea fără schimbare de client.
 | Sub-slice | What |
 |-----------|------|
-| 0122-01 | [Coloană VC_NIR, conversie și corecția 01b](#slice-0122-01). Propunerea 02 de modificare a clientului este delimitată de implementarea fără schimbare de client. |
-| 0122-02 | [Server DDF/ORD: normalizare, fără schimbarea clientului](#slice-0122-02). Propunerea 02 de modificare a clientului este delimitată de implementarea fără schimbare de client. |
-| 0122-03 | [Cititori: activitate, nume și diagnostic](#slice-0122-03). Propunerea 02 de modificare a clientului este delimitată de implementarea fără schimbare de client. |
+| 0122-01 | [Coloană VC_NIR, conversie și corecția 01b](#slice-0122-01). |
+| 0122-02 | [Server DDF/ORD: normalizare, fără schimbarea clientului](#slice-0122-02). |
+| 0122-03 | [Cititori: activitate, nume și diagnostic](#slice-0122-03). |
 | 0122-04 | **Drop the three foreign keys** (`FX_DDF_REV_SA_ibfk_3`, `tblDocFund_SB_ibfk_3`, `FX_ORD_TBL_ibfk_1`) - only after 0122-02 and 0122-03 are on the server. Removes the cascade that deletes DDF/ORD rows with a `Parteneri` row. DDL by the operator + structure sync. |
 | 0122-05 | **Vercon**: the column `VC_NIR.CodPartener` exists since 0122-01 (decided). The code that uses `VC_NIR.IdPartener` / `VC_FACTURI.PARTENER_ID` as the supplier key moves to `CodPartener` (9 route files, 2 report queries, 2 JS files). `VC_FACTURI` has no `CodPartener` yet - to decide. Own worklog. |
 | 0122-06 | **Migrator**: the last unit still to be migrated writes the Access `CodPartener`/`IdPartener` on these three tables; the operator re-runs 0122-01 after it (or the Migrator is changed to write the CodFiscal). |

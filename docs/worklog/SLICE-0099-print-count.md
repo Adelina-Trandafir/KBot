@@ -50,7 +50,7 @@ K-BOT has no print command. The operator prints from inside Adobe.
 - **`AdobePrintJobFilter.vb`** — the pure decisions (job name ↔ file, same user, Print-window title), kept apart so they can be unit-tested later.
 - **`AdobeSaveTrap.vb`** (changed, four lines): the trap already looks at every Adobe dialog on each sweep. A dialog whose title is a Print window's is now reported to the watcher. The dialog itself is left alone, as before.
 
-**About "watch Adobe's messages".** The operator also asked for a watcher on the Adobe window's print messages and on the Print window's messages. Reading another program's window messages needs code loaded inside that program; K-BOT never does that to Adobe (and Adobe's protected mode would refuse it). What K-BOT can see from outside is the Print window appearing and going away. That is what was wired. It cannot tell «Print» from «Cancel» — the queue does: a cancelled dialog leaves no job.
+**Adobe messages.** Reading another process's print-window messages requires loading code into it; K-BOT does not inject into Adobe, and protected mode would refuse it. The watcher therefore observes the Print window appearing/disappearing from outside. The queue distinguishes Print from Cancel: cancellation creates no job.
 
 ### 4. The client call (`KBot.Api`)
 - `IPrintCountApi` + `ApiClient.PrintCount.vb`: `RecordPrintAsync(kind, id)`.
@@ -71,15 +71,7 @@ K-BOT has no print command. The operator prints from inside Adobe.
 - With an id and a login — and not in «Doar simulează încărcarea» — the print is also sent to the server and counted on the **real** row of that id. The bench says so when the document is opened. Without them the print is only detected.
 
 ## Files touched
-- **New:**
-  - `sql/0099_print_count.sql`
-  - `PYTHON/routes/forexe/print_count.py`
-  - `src/KBot.Api/IPrintCountApi.vb`
-  - `src/KBot.Api/ApiClient.PrintCount.vb`
-  - `src/KBot.Controls/Adobe/PrintSpooler.vb`
-  - `src/KBot.Controls/Adobe/AdobePrintWatcher.vb`
-  - `src/KBot.Controls/Adobe/AdobePrintJobFilter.vb`
-  - `src/KBot.App/Views/PdfPrintTarget.vb`
+- **New:** `sql/0099_print_count.sql`; `PYTHON/routes/forexe/print_count.py`; `src/KBot.Api/IPrintCountApi.vb`; `src/KBot.Api/ApiClient.PrintCount.vb`; `src/KBot.Controls/Adobe/PrintSpooler.vb`; `src/KBot.Controls/Adobe/AdobePrintWatcher.vb`; `src/KBot.Controls/Adobe/AdobePrintJobFilter.vb`; `src/KBot.App/Views/PdfPrintTarget.vb`
 - **Changed:**
   - `PYTHON/routes/forexe/__init__.py`
   - `src/KBot.Controls/Adobe/AdobeSaveTrap.vb`
@@ -130,8 +122,7 @@ Operator request (kept as «still slice 0099»): when a node of the ORD / DDF tr
 - **Help.** `contabil.vederi.ord` and `contabil.ddf` get the «Lista de tipărire» section, tagged 0099 (same slice, no new 0000-NN number: the operator said this stays slice 0099; the help edit is part of this task). `PrintListPage` is deliberately NOT in a `screens:` line: F1 inside it walks up to `OrdView` / `DdfView`, which give the right topic for each (the checker lists it under «without a topic» — informational).
 
 ## Files touched (part 2)
-- **New:** `PYTHON/routes/forexe/print_count_column.py`; `src/KBot.App/Views/Print/PrintListItem.vb`, `PdfPrinter.vb`, `PrintListPage.vb`, `PrintListPage.Designer.vb`; `src/KBot.App/Views/Ord/OrdPdfGenerator.vb`.
-- **Changed:** `PYTHON/routes/forexe/ddf.py`, `ord.py`; `src/KBot.Api/UpsertAngajamenteRequest.vb`, `ApiClient.vb`; `src/KBot.Domain/DdfInfo.vb`, `OrdInfo.vb` (+ `KBot.Domain.vbproj` FileVersion 1.2.9.0); `src/KBot.App/Views/DdfView.vb`, `DdfView.Designer.vb`, `OrdView.vb`, `OrdView.Designer.vb`; `src/KBot.App/HelpContent/contabil/vederi/ord.md`, `contabil/ddf/index.md`.
+**New:** `PYTHON/routes/forexe/print_count_column.py`; `src/KBot.App/Views/Print/PrintListItem.vb`, `PdfPrinter.vb`, `PrintListPage.vb`, `PrintListPage.Designer.vb`; `src/KBot.App/Views/Ord/OrdPdfGenerator.vb`. **Changed:** `PYTHON/routes/forexe/ddf.py`, `ord.py`; `src/KBot.Api/UpsertAngajamenteRequest.vb`, `ApiClient.vb`; `src/KBot.Domain/DdfInfo.vb`, `OrdInfo.vb` (+ `KBot.Domain.vbproj` FileVersion 1.2.9.0); `src/KBot.App/Views/DdfView.vb`, `DdfView.Designer.vb`, `OrdView.vb`, `OrdView.Designer.vb`; `src/KBot.App/HelpContent/contabil/vederi/ord.md`, `contabil/ddf/index.md`.
 
 ## Test results (part 2)
 - `dotnet build src/KBot.App/KBot.App.vbproj`, Debug and Release: **0 warnings, 0 errors**.

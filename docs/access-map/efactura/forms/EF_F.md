@@ -108,3 +108,29 @@ See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 Nothing found by static scan (probably opened by name from a ribbon, a menu string or a variable).
 
 Raw source: `Surse/RawExport/Forms/EF_F.txt`
+
+## Form `EF_F_inlucru` <a id="ef-f-inlucru"></a>
+
+Source: `Forms/EF_F_inlucru.txt` (60,032 chars). Raw source: `Surse/RawExport/Forms/EF_F_inlucru.txt`.
+
+This is a distinct static record, not an implementation stage of EF_F. Reconstruct it from the EF_F record above with only the replacements below. Unlisted properties, wired form events, all three section rows, module declarations (including the common attribute prefix), control cells and handler cells are identical. The same static-scan limits and the same “Nothing found by static scan” Opened from result apply. The later [operator scope decision](../README.md#scope-decisions-operator-06102026-that-these-maps-pre-date) excludes this variant and the accounting flow; these records retain the earlier snapshot.
+
+### Form properties and Data
+
+Replace RecordSource with `EF_F` in both Form properties and Data; the tables/queries behind it are `EF_F`. Combo/list sources remain `Documente`. Omit OrderBy entirely (the EF_F record has `DataDocument, NumarDocument`); absence is not an empty exported value. Geometry: Left=4860, Top=2340, Right=13820, Bottom=5320. All other properties retain their original order.
+
+### Controls
+
+Replace exactly rows 6, 12, 14, 20 and 21 of the 21-row EF_F matrix, retaining their positions and all other rows:
+
+| # | Type | Name | Parent | Section | Pos L,T WxH | Caption | ControlSource | RowSource | Tab | Font | Events | Other |
+|---|---|---|---|---|---|---|---|---|---|---|---|---|
+| 6 | Label | lPlatita |  | FormHeader | 7377,0 1416x464 | Valoare ce se înregistrează |  |  |  | Consolas 8 bold |  |  |
+| 12 | TextBox | Suma |  | Section | 5961,0 1416x290 |  | ValoareRamasa |  | 4 | Consolas 9 | AfterUpdate | fmt=Standard |
+| 14 | TextBox | Platit |  | Section | 7377,0 1416x290 |  | Diferenta |  | 5 | Consolas 9 | BeforeUpdate, AfterUpdate | fmt=Standard; tip=Dacă nu se introduce și pltă, se lasă valoare totală a facturi! |
+| 20 | TextBox | Text43 |  | FormFooter | 5961,0 1416x290 |  | =Sum([ValoareRamasa]) |  |  | Consolas 9 bold |  | fmt=Standard |
+| 21 | TextBox | Text44 |  | FormFooter | 7377,0 1416x290 |  | =Sum([Diferenta]) |  | 1 | Consolas 9 bold |  | fmt=Standard; tip=Dacă nu se introduce și pltă, se lasă valoare totală a facturi! |
+
+### Event handlers and what they touch
+
+All 14 rows retain the EF_F order and dependencies; only Lines differs: BFX_Click=48 (EF_F: 54), Form_Load=29 (16), Platit_AfterUpdate=7 (11). In particular, Form_AfterUpdate still reads `tmpFacturi` and opens `EFACTURA_2025`; the RecordSource replacement does not rewrite those static findings.

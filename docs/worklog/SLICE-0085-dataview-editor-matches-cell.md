@@ -4,9 +4,7 @@ Jurnalele din 26 septembrie și 3 octombrie 2026 sunt reunite integral. Etapele 
 
 [0085-dataview](#slice-0085-baza) · [0085-02](#slice-0085-02)
 
-<a id="slice-0085-baza"></a>
-
-## SLICE-0085 — KBotDataView: the editor looks like the cell, single-click editing, Up/Down through the column
+## SLICE-0085 — KBotDataView: the editor looks like the cell, single-click editing, Up/Down through the column <a id="slice-0085-baza"></a>
 
 Operator request, 26.09.2026, slice dedicated to the custom grid (`KBot.Controls/DataView`):
 
@@ -28,20 +26,15 @@ The painter (`DrawCell`) skips the text of the cell being edited (`IsEditingCell
 
 **Single-click editing.** `OnMouseDown`, after selecting the cell, opens the editor when the cell is editable and puts the caret where the click landed (`PlaceCaretAt`). A click inside the cell already being edited (its padding around the one-line editor) keeps the edit and only moves the caret (`HandleMouseDownOnEditingCell`, checked before the grid takes focus). F2 and double click still open the editor; double click no longer re-opens an editor already open on that cell. The two hosts with `CellDoubleClick` handlers (`DdfEditSectiuneaAPage` «Clsf», `AlegereUnitateForm`) use read-only columns, so a single click never opens an editor there and their double click still reaches the grid.
 
-**Unchanged commit writes nothing.** With a single click opening the editor, most commits are the operator just passing through. `CommitEdit` now closes without validating, without setting `IsDirty` and without raising `CellValueChanged` when the editor still shows what it was opened with (`EditorUnchanged`). Before this, even an arrow press through an untouched cell raised `CellValueChanged` and marked the row edited.
+**Unchanged commit writes nothing.** `CommitEdit` closes without validation, `IsDirty` or `CellValueChanged` when `EditorUnchanged` finds the original text. Single-click editing otherwise made merely passing through a cell (including an arrow press) mark the row edited and raise the event.
 
-**Up/Down.** `MoveEditVertical` + `NextEditableRow` (Friend): the edit goes to the nearest row, in DRAWN order, whose cell in the same column is editable. Only data bands count — group headers/footers are stepped over, rows in a collapsed group have no band, and the grid's footer band is not a band at all. With nowhere to go (single row, first/last editable row) nothing happens: nothing is committed, the editor stays with the caret where it was. Disabled / non-editable rows in between are skipped (before, the edit landed on them and dropped to the grid).
+**Up/Down.** `MoveEditVertical` / `NextEditableRow` (Friend) find the nearest editable cell in the same column, in DRAWN order. They skip disabled/non-editable rows and group bands; collapsed rows have no band, and the grid footer is outside the bands. At the boundary or on a single row, nothing commits or moves: the editor/caret stay. Previously a disabled target dropped the edit back to the grid.
 
 **Rule 0 sweep.** `KBotDataView.Editing.vb` (all comments, the two designer `Description`s and the `ArgumentException` text) and `KBotDataView.Designer.vb` are now English/ASCII, plus the comments of the `OnMouseDown` / `OnMouseDoubleClick` blocks touched in `KBotDataView.Input.vb`.
 
 ### Files touched
 
-- `src/KBot.Controls/DataView/KBotDataView.Editing.vb` — placement, look resolution, padding measure, caret placement, unchanged-commit rule, `NextEditableRow` / `MoveEditVertical`; swept.
-- `src/KBot.Controls/DataView/KBotDataView.Designer.vb` — `editText`: `AutoSize = False`, `BorderStyle.None`; swept.
-- `src/KBot.Controls/DataView/KBotDataView.Input.vb` — single-click editing, click inside the edited cell, double click guard.
-- `src/KBot.Controls/DataView/KBotDataView.Painting.vb` — skip the edited cell's text.
-- `src/KBot.Controls/DataView/KBotDataView.Layout.vb` — `UpdateLayout` re-places the editor.
-- `src/KBot.Controls/DataView/KBotDataView.md` — Up/Down wording + new section «The editor looks like the cell».
+`src/KBot.Controls/DataView/KBotDataView.Editing.vb` — placement, look resolution, padding measure, caret placement, unchanged-commit rule, `NextEditableRow` / `MoveEditVertical`; swept. `src/KBot.Controls/DataView/KBotDataView.Designer.vb` — `editText`: `AutoSize = False`, `BorderStyle.None`; swept. `src/KBot.Controls/DataView/KBotDataView.Input.vb` — single-click editing, click inside the edited cell, double click guard. `src/KBot.Controls/DataView/KBotDataView.Painting.vb` — skip the edited cell's text. `src/KBot.Controls/DataView/KBotDataView.Layout.vb` — `UpdateLayout` re-places the editor. `src/KBot.Controls/DataView/KBotDataView.md` — Up/Down wording + new section «The editor looks like the cell».
 
 ### Test results
 
@@ -70,9 +63,7 @@ Pass 2 checks (same off-screen scratch program, 144 dpi): the edited cell's regi
 
 ---
 
-<a id="slice-0085-02"></a>
-
-## SLICE-0085-02 — KBotDataView: button cell configurable per column
+## SLICE-0085-02 — KBotDataView: button cell configurable per column <a id="slice-0085-02"></a>
 
 Operator request, 03.10.2026: columns of type `Button` in the custom grid must expose picture, background colour (can be transparent), inner padding, font and caption for the button, plus an outer padding / margin to position it, and alignment inside the cell.
 

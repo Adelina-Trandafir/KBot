@@ -31,8 +31,7 @@ Pagină nouă **Clonare DEMO** (sursa = baza aleasă în arborele din stânga; d
 
 ## Fișiere
 
-- `PYTHON/routes/admin_cli/admin_demo.py` (nou; verbele `demo-clone-plan`, `demo-clone`, consemnate și în vechiul registru ME01-04) + 2 linii în `admin_cli.py` (înregistrare, antet)
-- `KBotAdmin/Views/DemoCloneView.vb` + `.Designer.vb` (noi), `KBotAdmin/Server/Dtos.vb` (DTO-uri), `KBotAdmin/MainForm.vb` + `.Designer.vb` (butonul «Clonare DEMO»)
+`PYTHON/routes/admin_cli/admin_demo.py` (nou; verbele `demo-clone-plan`, `demo-clone`, consemnate și în vechiul registru ME01-04) + 2 linii în `admin_cli.py` (înregistrare, antet); `KBotAdmin/Views/DemoCloneView.vb` + `.Designer.vb` (noi), `KBotAdmin/Server/Dtos.vb` (DTO-uri), `KBotAdmin/MainForm.vb` + `.Designer.vb` (butonul «Clonare DEMO»)
 
 ## Nevalidat / limite (de știut înainte de prima rulare)
 

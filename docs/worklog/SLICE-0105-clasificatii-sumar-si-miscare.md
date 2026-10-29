@@ -2,13 +2,9 @@
 
 Istoric reunit pe tema ferestrei de buget. Etapele din 03.10.2026 păstrează probele și limitele originale. Totalul pe rând din 0107-02 și rândul separat «Buget + rectificări» descriu suprafețe diferite; regulile de credit și total anual sunt amendate ulterior în [0108](SLICE-0102-buget-pe-versiuni.md#slice-0108-01).
 
-- [0105 — sumar și mișcare](#slice-0105)
-- [0107-02 — total pe rând și subsoluri](#slice-0107-02)
-- [0107 — aliniere, rând final și FOREXE](#slice-0107-buget)
+[0105 — sumar și mișcare](#slice-0105) · [0107-02 — total pe rând și subsoluri](#slice-0107-02) · [0107 — aliniere, rând final și FOREXE](#slice-0107-buget)
 
-<a id="slice-0105"></a>
-
-## SLICE-0105 — Clasificatii: sumar pe noduri, filtru pe miscare, Verifica buget fara diferente zero
+## SLICE-0105 — Clasificatii: sumar pe noduri, filtru pe miscare, Verifica buget fara diferente zero <a id="slice-0105"></a>
 
 Operator request, 03.10.2026. Help: 0000-42 (`contabil/nomenclatoare/clasificatii.md`).
 
@@ -24,12 +20,7 @@ Assumptions (stated, not asked): slice number 0105; «last budget» = greatest s
 
 ### Files touched
 
-- `PYTHON/routes/forexe/clasificatii_edit.py`
-- `src/KBot.Domain/Nomenclatoare.vb` (`BudgetSummaryRow`, `BudgetCheck.Differences`)
-- `src/KBot.Api/INomenclatoareApi.vb`, `ApiClient.Nomenclatoare.vb` (`GetBudgetSummaryAsync`)
-- `src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb` + `.Designer.vb`
-- `src/KBot.App/Views/Nomenclatoare/BudgetCheckForm.vb` + `.Designer.vb`
-- `src/KBot.App/HelpContent/contabil/nomenclatoare/clasificatii.md`
+`PYTHON/routes/forexe/clasificatii_edit.py`; `src/KBot.Domain/Nomenclatoare.vb` (`BudgetSummaryRow`, `BudgetCheck.Differences`); `src/KBot.Api/INomenclatoareApi.vb`, `ApiClient.Nomenclatoare.vb` (`GetBudgetSummaryAsync`); `src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb` + `.Designer.vb`; `src/KBot.App/Views/Nomenclatoare/BudgetCheckForm.vb` + `.Designer.vb`; `src/KBot.App/HelpContent/contabil/nomenclatoare/clasificatii.md`
 
 ### Test results
 
@@ -44,23 +35,19 @@ Assumptions (stated, not asked): slice number 0105; «last budget» = greatest s
 
 ---
 
-<a id="slice-0107-02"></a>
-
-## SLICE-0107-02 - «Clasificatii bugetare»: row Total on the budget grid, no footer total where it means nothing
+## SLICE-0107-02 - «Clasificatii bugetare»: row Total on the budget grid, no footer total where it means nothing <a id="slice-0107-02"></a>
 
 Operator request, 03.10.2026 (filed under slice 0107).
 
 ### What changed and why
 
 - **Top grid (`gridBuget`)** gets a read-only **«Total»** column (key `total`, between «Trim. 4» and «✕»): the sum of the row's four quarters. Filled for a leaf (every version row), for the summary of a node (the last budget of each classification) and recomputed when a quarter is edited; a new «+» row starts at 0. The grid keeps NO footer total (no column has an aggregate), whatever node or leaf is chosen.
-- **Second grid (`gridRectificari`)**: its footer sums (Trim. 1-4 and Total, `Aggregate = Sum` in the designer) are switched off with `SetCorrectionsTotal(False)` whenever no leaf is chosen: a node above the leaves (summary) and the empty «nothing chosen» state. Summing the corrections of every classification under a node means nothing. A leaf turns them back on (`SetCorrectionsTotal(True)`). The footer caption «Total» is replaced by «Rectificarile anului, pe clasificatie» in the summary and is empty when nothing is chosen, so no caption promises a total that is not there.
+- **Second grid (`gridRectificari`)**: `SetCorrectionsTotal(False)` disables the designer `Aggregate = Sum` on Trim. 1–4 / Total for summaries and empty selection, since adding different classifications' corrections is meaningless. A leaf restores them with `SetCorrectionsTotal(True)`. The footer caption becomes «Rectificarile anului, pe clasificatie» in summary mode and empty without selection, avoiding a promised but absent total.
 - Help (slice 0000-44): `contabil.nomenclatoare.clasificatii` and the tour steps «Bugetul» and «Rectificari > Total» now describe both changes; tag `0107-02` on each.
 
 ### Files touched
 
-- `src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.Designer.vb` (column `KBotDataColumn19`)
-- `src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb` (`FillGrids`, `FillSummary`, `ShowNoSelection`, `ApplyMode`, new `SetCorrectionsTotal`, `Grid_CellValueChanged`, `GridBuget_FooterRightIconClicked`)
-- Help: `HelpContent/contabil/nomenclatoare/clasificatii.md`, `HelpContent/tours/tur-clasificatii.md`
+`src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.Designer.vb` (column `KBotDataColumn19`); `src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb` (`FillGrids`, `FillSummary`, `ShowNoSelection`, `ApplyMode`, new `SetCorrectionsTotal`, `Grid_CellValueChanged`, `GridBuget_FooterRightIconClicked`); Help: `HelpContent/contabil/nomenclatoare/clasificatii.md`, `HelpContent/tours/tur-clasificatii.md`
 
 ### Test results
 
@@ -75,9 +62,7 @@ Operator request, 03.10.2026 (filed under slice 0107).
 
 ---
 
-<a id="slice-0107-buget"></a>
-
-### Also under slice 0107 (03.10.2026): «Clasificatii bugetare», aligned grids and a final row
+### Also under slice 0107 (03.10.2026): «Clasificatii bugetare», aligned grids and a final row <a id="slice-0107-buget"></a>
 
 Same slice, operator request: the two grids of `ClasificatiiForm` keep their columns on the same vertical lines, and a row under both adds the last budget and all the corrections.
 

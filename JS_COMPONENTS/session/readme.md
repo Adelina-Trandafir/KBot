@@ -40,42 +40,29 @@ Object.assign(this, sessionMonitoringTimersMixin);
 
 Toate mixinurile folosesc `this.` pentru a accesa:
 
-- Proprietăți: `this.sessionStartTime`, `this.inGracePeriod`
-- Metode: `this.log()`, `this.showNotification()`
-- Config: importat în fiecare mixin cu `import { SESSION_CONFIG }`
+Proprietăți: `this.sessionStartTime`, `this.inGracePeriod`; Metode: `this.log()`, `this.showNotification()`; Config: importat în fiecare mixin cu `import { SESSION_CONFIG }`
 
 ## 📋 Funcționalități per Modul
 
 ### 1. **session-monitoring-manager.js**
 
-- ✅ Singleton pattern
-- ✅ ListenerTracker integration
-- ✅ Registry registration
-- ✅ Mixin orchestration
-- ✅ `init()`, `cleanup()`, `resetSessionState()`
-- ✅ `handleSessionExpired()`, `getStatus()`
+✅ Singleton pattern; ✅ ListenerTracker integration; ✅ Registry registration; ✅ Mixin orchestration; ✅ `init()`, `cleanup()`, `resetSessionState()`; ✅ `handleSessionExpired()`, `getStatus()`
 
 ### 2. **session-monitoring-timers.js**
 
-- ⏰ `scheduleWarningAndExpiry()` - programare timere warning/expiry
+⏰ `scheduleWarningAndExpiry()` - programare timere warning/expiry
 
 ### 3. **session-monitoring-extension.js**
 
-- 🔍 `verifySessionBeforeWarning()` - verificare server
-- 🔄 `attemptAutoExtension()` - prelungire automată
+🔍 `verifySessionBeforeWarning()` - verificare server; 🔄 `attemptAutoExtension()` - prelungire automată
 
 ### 4. **session-monitoring-ui.js**
 
-- 🎨 `loadMonitoringCSS()` - loading CSS dinamic
-- ⚠️ `showSessionWarning()` - modal warning
-- ⚠️ `showFinalWarning()` - warning final
-- 💬 `showNotification()` - toast notifications
+🎨 `loadMonitoringCSS()` - loading CSS dinamic; ⚠️ `showSessionWarning()` - modal warning; ⚠️ `showFinalWarning()` - warning final; 💬 `showNotification()` - toast notifications
 
 ### 5. **session-monitoring-activity.js**
 
-- 👆 `handleUserActivity()` - gestionare evenimente
-- 🎯 `setupActivityListeners()` - adaugă listeners
-- 🧹 `removeActivityListeners()` - cleanup listeners
+👆 `handleUserActivity()` - gestionare evenimente; 🎯 `setupActivityListeners()` - adaugă listeners; 🧹 `removeActivityListeners()` - cleanup listeners
 
 ## 🔧 Config
 
@@ -97,9 +84,7 @@ const SESSION_CONFIG = {
 
 CSS-ul se încarcă dinamic la `init()`:
 
-- Path: `/static/css/monitoring.css`
-- ID element: `sessionMonitoringCSS`
-- Promise-based cu error handling
+Path: `/static/css/monitoring.css`; ID element: `sessionMonitoringCSS`; Promise-based cu error handling
 
 ### Clase CSS pentru Header Warning
 
@@ -111,10 +96,7 @@ CSS-ul se încarcă dinamic la `init()`:
 
 ### Animații
 
-- **headerSlideIn** - tranziție background roșu (0.5s)
-- **slideDown** - slide down warning text (0.5s)
-- **pulse** - pulsing countdown (1s infinite)
-- **slideIn/slideOut** - notificări (0.3s)
+**headerSlideIn** - tranziție background roșu (0.5s); **slideDown** - slide down warning text (0.5s); **pulse** - pulsing countdown (1s infinite); **slideIn/slideOut** - notificări (0.3s)
 
 ## 🎨 Warning Flow
 
@@ -137,19 +119,13 @@ SESIUNE ACTIVĂ
 
 Când utilizatorul **mai are prelungiri disponibile** (1-2), apare un **modal blocant** cu:
 
-- Countdown
-- Număr prelungiri rămase
-- Mesaj "Sesiunea se va prelungi automat dacă continuați să lucrați"
+Countdown; Număr prelungiri rămase; Mesaj "Sesiunea se va prelungi automat dacă continuați să lucrați"
 
 ### Header Warning (când NU mai sunt prelungiri)
 
 Când utilizatorul **NU mai are prelungiri** (0/2 folosite), apare un **warning NON-BLOCANT** în header:
 
-- Text de warning **în mijloc în header** (între logo și user-info)
-- **Tot header-ul devine roșu** (gradient roșu)
-- **Countdown cu pulsing animation**
-- **NU blochează interfața** - utilizatorul poate continua să lucreze
-- **Slide-down animation** la afișare
+Text de warning **în mijloc în header** (între logo și user-info); **Tot header-ul devine roșu** (gradient roșu); **Countdown cu pulsing animation**; **NU blochează interfața** - utilizatorul poate continua să lucreze; **Slide-down animation** la afișare
 
 Exemplu HTML generat:
 
@@ -165,13 +141,7 @@ Exemplu HTML generat:
 
 Prin `eventBus`:
 
-- `SESSION_WARNING` - warning afișat
-- `SESSION_EXTENDED` - sesiune prelungită
-- `SESSION_FINAL_WARNING` - ultima avertizare
-- `SESSION_EXPIRED` - sesiune expirată
-- `SESSION_ERROR` - eroare
-- `SESSION_CLEANUP` - cleanup efectuat
-- `USER_ACTIVITY` - activitate utilizator
+`SESSION_WARNING` - warning afișat; `SESSION_EXTENDED` - sesiune prelungită; `SESSION_FINAL_WARNING` - ultima avertizare; `SESSION_EXPIRED` - sesiune expirată; `SESSION_ERROR` - eroare; `SESSION_CLEANUP` - cleanup efectuat; `USER_ACTIVITY` - activitate utilizator
 
 ## 🔍 Debugging
 

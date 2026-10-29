@@ -12,7 +12,7 @@ Branch: `SLICE-0100-Multithreading` (nothing committed).
 
 ### What changed and why
 
-**The problem (operator).** Generating revision 0 of a current angajament (case AAB2ES88K5F, line AA2) showed a NEGATIVE «Valoare ramasă»: the budget fell in the meantime (rectification) and the initial reservation was measured against today's smaller budget. «Buget» in the DDF came from `FX_Rezervari.R_CreditBug` / `FX_Indicatori.Credit_Bugetar`, i.e. what FOREXE says **today** (`R_CreditBug` is stamped from `Credit_Bugetar` when `FX_Rezervari` is written, so a history downloaded after the rectification gets today's value on January's reservation). The earlier budget was kept nowhere.
+**The problem (operator).** Revision 0 for AAB2ES88K5F / AA2 showed negative «Valoare ramasă» after a budget reduction. DDF used today's `FX_Rezervari.R_CreditBug` / `FX_Indicatori.Credit_Bugetar`: when reservations are written, `R_CreditBug` copies the current credit, even for January history downloaded after the rectification. No earlier budget was stored.
 
 **The rule (operator answers, 02.10.2026).**
 1. `Clasificatii_Buget` gets `DataInceput` (date, required): one row = one VERSION of the budget of a classification for a year, starting on that day. The existing rows get **01.04.2026** (a row of another year, if any, 01.01 of its year).

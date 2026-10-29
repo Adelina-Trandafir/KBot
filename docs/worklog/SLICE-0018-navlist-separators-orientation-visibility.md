@@ -35,9 +35,7 @@ Vechea `ItemRect(index)` presupunea sloturi egale, contigue, mereu vizibile — 
 
 ## Fișiere atinse
 
-- `src/KBot.Theming/KBotNavList.vb` — enum-uri noi `KBotNavOrientation`/`KBotNavAlign`; câmpuri `Visible`/`IsSeparator`/`Align`/`Bounds` pe `NavItem`; `Orientation`, `AddItem(…, align)`, `AddSeparator`, `SetItemVisible`; `RecalcLayout`/`EnsureLayout`/`InvalidateLayout`/`ItemExtent`/ `SeparatorExtent`/`DrawSeparator`; `OnSizeChanged` nou; remapare tastatură pe orientare.
-- `src/KBot.App/MainForm.vb` — `AddSeparator(Far)` + DDF/ORD pe `Far`; `ApplyViewGating` pe `SetItemVisible`.
-- `docs/worklog/KBOT_STATUS.md` — rândul slice 0018, firul deschis marcat rezolvat, „Next free slice number” → 0019.
+`src/KBot.Theming/KBotNavList.vb` — enum-uri noi `KBotNavOrientation`/`KBotNavAlign`; câmpuri `Visible`/`IsSeparator`/`Align`/`Bounds` pe `NavItem`; `Orientation`, `AddItem(…, align)`, `AddSeparator`, `SetItemVisible`; `RecalcLayout`/`EnsureLayout`/`InvalidateLayout`/`ItemExtent`/ `SeparatorExtent`/`DrawSeparator`; `OnSizeChanged` nou; remapare tastatură pe orientare. `src/KBot.App/MainForm.vb` — `AddSeparator(Far)` + DDF/ORD pe `Far`; `ApplyViewGating` pe `SetItemVisible`. `docs/worklog/KBOT_STATUS.md` — rândul slice 0018, firul deschis marcat rezolvat, „Next free slice number” → 0019.
 
 ## Rezultate teste
 

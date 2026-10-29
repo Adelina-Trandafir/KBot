@@ -60,7 +60,7 @@ Design rules (operator, 30.09.2026): every question goes to the server; **nothin
 2. One route, e.g. `POST /help/feedback`, in a new `PYTHON/routes/` file, registered like the others. Body = list of rows (cap ~50 rows / ~64 KB), **idempotent upsert by `qid`**, validate every field (lengths, rating 1-5, known ids only as strings). Bearer auth is fine (`require_session`, not the X-Api-Key guard) but the route must NOT read the user / unit into the row or into any log line.
 3. **Logging:** the route's own code must not log the user, unit, IP or question text. The VPS access log is out of scope (see "Server access log" below).
 4. A plain SQL query (documented in the worklog) that lists: questions with no click, rating <= 2, and top repeated questions. That is what the later "step 4" gate reads (target: ~85% of questions answered well = rated >= 4 or first hit opened).
-5. Retention: rows are kept for good (operator's decision); table in `AVACONT_COMUN`.
+5. Retention and database follow the operator decisions below (permanent retention, `AVACONT_COMUN`).
 
 ## 0000-22 — Help content, docs, record
 1. Write the help for what the operator now sees (Romanian, «tu», users only): the «?» popup, asking a question, the buttons on a result, the star rating, how to start a tour from the popup. One honest sentence that questions written there are sent anonymously to improve the help (no mention of the inner workings). Every new / changed section carries its `<!-- slice: ... -->` tag (`0000-18`…`0000-21`).
@@ -79,4 +79,4 @@ Design rules (operator, 30.09.2026): every question goes to the server; **nothin
 - The "outbox" is just a waiting list on the client PC (questions are written there first and sent in the background). Its storage (small file vs SQLite) and flush cadence are the instance's technical choice: take the simplest that survives a crash and an offline start. Do not ask the operator.
 
 ## Server access log: not a concern for now (operator, 30.09.2026)
-The web server's own request log (nginx / Flask console) may keep showing which PC called this route. The operator accepts that for now. Do NOT check or change the VPS logging, and do not stop for it. The rule that still holds is in OUR code and table: no user, unit, IP or machine in the row, and none in any log line our code writes (`GlobalErrorLog` on the client, Flask app logging in the route). Nothing to ask the operator.
+The operator accepts that nginx / Flask console access logs may identify the calling PC. Do not inspect/change VPS logging or block work on it. The client and route logging restrictions in 0000-21 still apply: this exception covers only the web server access log. No user, unit, IP or machine goes into rows or application logs (`GlobalErrorLog` / Flask).

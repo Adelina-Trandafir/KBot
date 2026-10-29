@@ -11,7 +11,7 @@ Istoric 17–21.10.2026. Etapa 22 înlocuiește păstrarea filtrului „fără o
 ## SLICE-0114-19 - E-Factura Vanzare: the month list removed, the tree rows no longer cut (operator item 7.1, 7.2) (17.10.2026) <a id="slice-0114-19"></a>
 
 ### What changed and why
-The month list above the tree of the issued invoices (`cmbLuna`, its fill, handler and filter) is removed: the tree shows every invoice of the year. The rows were cut after a few letters because the designer pinned the left text of the tree to 100 px (`tree.LeftTextWidth = 100`); that line is gone (0 = dynamic, as in the received-invoices tree), so the text takes the room between the icon and the amount. **Item 7.3 (the id used to download the invoice as ANAF draws it) was NOT changed**: the client sends only the invoice id and the server downloads with the `id_descarcare` stored on the invoice (`trimitere.descarca` -> `anaf_api.descarca`); nothing in the code picks another number, so if the stored value is not the one ANAF calls the download id (the 4xxx one) it was written wrong earlier. It needs the stored value or the error the operator sees.
+The issued-invoice tree now shows the whole year: `cmbLuna`, its fill/handler/filter are removed. Removing `tree.LeftTextWidth = 100` restores dynamic text width (0, as in received invoices), using the space between icon and amount. **Item 7.3 was not changed at this checkpoint:** the client sends the invoice id; the server uses stored `id_descarcare`, not another chosen number. The stored value/error was still needed; the complete path and later diagnostic are in [0114-24](#slice-0114-24-efactura).
 
 ### Files touched
 `src/KBot.EFactura/FacturiForm.vb`, `FacturiForm.Arbore.vb`, `FacturiForm.Designer.vb`.
@@ -26,7 +26,7 @@ The month list above the tree of the issued invoices (`cmbLuna`, its fill, handl
 ## SLICE-0114-21 - «Facturi primite» window: the empty strip at the bottom is gone (17.10.2026) <a id="slice-0114-21"></a>
 
 ### What changed and why
-Operator: «de ce la factura cumparare exista spatiul ala alb in footer? nu il vreau». The window «Facturi primite» (`PrimiteForm`) had a 58 px strip at the bottom (`pnlJos`) with the «Iesire» button and a state line (`lblStare`). As a page of the main window, the «Iesire» button is hidden (the ribbon's «Inchide» closes the page), and the state line only repeated what the footer of the tree already says, so the strip was empty white space. The strip, its two controls, the `CancelButton` link, the `SyncStatus` handler and the button's click handler are removed; the tree card now reaches the bottom of the page.
+Operator: «de ce la factura cumparare exista spatiul ala alb in footer? nu il vreau». `PrimiteForm.pnlJos` was a 58 px strip with «Iesire» and `lblStare`. Hosting as a page hid the button (ribbon «Inchide» closes it), while the tree footer already showed the state. Removed the strip, both controls, `CancelButton`, `SyncStatus` and the button handler; the tree card reaches the page bottom.
 
 ### Files touched
 `src/KBot.EFactura/Forms/PrimiteForm.vb`, `PrimiteForm.Designer.vb`.

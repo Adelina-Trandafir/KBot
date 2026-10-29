@@ -9,11 +9,7 @@ The «Coduri angajament» table of the «Parteneri» window now works on the sup
 - deleting a partner leaves the codes in place.
 
 ## Files touched
-- `src/KBot.App/HelpContent/contabil/nomenclatoare/parteneri.md` (section «Lista și tabelul «Coduri angajament»», tag `0121-03`)
-- `src/KBot.App/HelpContent/tours/tur-parteneri.md` (step «Coduri angajament», tag `0121-03`)
-- `src/KBot.App/HelpContent/tutorials/parteneri.md` (step «Codurile de angajament», tag `0121-03`)
-- `src/KBot.App/HelpContent/help-version.txt` (2026-10-19)
-- `docs/worklog/state/KBOT_STATUS_0000-0009.md` (registry row)
+`src/KBot.App/HelpContent/contabil/nomenclatoare/parteneri.md` (section «Lista și tabelul «Coduri angajament»», tag `0121-03`); `src/KBot.App/HelpContent/tours/tur-parteneri.md` (step «Coduri angajament», tag `0121-03`); `src/KBot.App/HelpContent/tutorials/parteneri.md` (step «Codurile de angajament», tag `0121-03`); `src/KBot.App/HelpContent/help-version.txt` (2026-10-19); `docs/worklog/state/KBOT_STATUS_0000-0009.md` (registry row)
 
 ## Test results
 `tools\HelpCheck\Check-Help.ps1 -Coverage`: no error or warning on the three partner files; its 22 errors are the existing «no slice tag» ones in `tutorials\ordonantare-din-plata.md` and others, not touched here. The app was not run.

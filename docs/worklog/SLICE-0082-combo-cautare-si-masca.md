@@ -15,17 +15,13 @@ Cele două cereri din 26.09.2026 folosesc aceeași listă separată fără activ
 - `FindAfterNChars: Integer = 1` (< 1 throws — no silent clamp)
 - `InputMask: String = ""` (an invalid mask throws, and the old mask stays) Plus `UnmaskedText` (read-only, hidden from the designer) and `FindMatches(captions, typed)` (Shared, pure).
 
-**Find as you type.** A separate window, `KBotComboFindList`, under the box — NOT the combo's own list. Filtering the native list means changing `Items`, which a data-bound combo cannot do, and every change of `Items` while it is open makes Windows rewrite the text and move the caret. The window only shows rows; it never takes the focus (`WS_EX_NOACTIVATE`, `ShowWithoutActivation`, `MA_NOACTIVATE` on click), so the caret stays in the box and the box drives it: Up/Down/PageUp/ PageDown, Enter or a click takes a row (as if picked from the drop-down), Escape closes it. While it is open Enter/Escape are input keys (`IsInputKey`), otherwise a dialog's AcceptButton/CancelButton would take them first. It closes on focus loss, when the native list opens, and when the form moves, resizes or is deactivated. Matching: rows that START with the text first, then rows that CONTAIN it; case and diacritics ignored. With `FindAsYouType` on, `CommitText` also accepts a text that is the start of exactly ONE row (a full code picks its «code — name» row).
+**Find as you type.** `KBotComboFindList` is separate from the native drop-down: filtering `Items` is unavailable for data-bound combos and would reset text/caret on each change. It never takes focus (`WS_EX_NOACTIVATE`, `ShowWithoutActivation`, `MA_NOACTIVATE`); the box handles Up/Down/PageUp/PageDown, Enter/click to select, Escape to close. While open, `IsInputKey` keeps Enter/Escape from the dialog AcceptButton/CancelButton. It closes on focus loss, native drop-down opening, or form move/resize/deactivation. Matches STARTING with the text precede those CONTAINING it; case/diacritics are ignored. With this option, `CommitText` also accepts a unique prefix (a full code selects its «code — name» row).
 
 **Input mask** — `KBotInputMask` (pure). `0` digit, `L` letter, `A` letter/digit, `&` any non-space, `\x` literal; anything else is a literal the mask writes. Every edit works on the raw value (typed characters only) and the text is rebuilt from it; a literal is written only in front of a following character, so `65` → `65`, next digit → `65.0` (no trailing dot to backspace over). Typed characters and Backspace go through `OnKeyPress`, Delete and Ctrl+V / Shift+Insert through `OnKeyDown`, and any other operator edit (Ctrl+X, the context-menu paste) is re-shaped in `OnTextUpdate` (which fires only for operator edits, never for a selection or a host writing `Text`). `FindAfterNChars` counts `UnmaskedText.Length` — the dots never count.
 
 ### Files touched
 
-- `src/KBot.Controls/Combo/KBotComboBox.vb` — the three properties, find list driving, mask keys
-- `src/KBot.Controls/Combo/KBotInputMask.vb` (new) — the mask engine + `KBotMaskEdit`
-- `src/KBot.Controls/Combo/KBotComboFindList.vb` (new) — the non-activating list window
-- `src/KBot.Controls/Combo/KBotComboBox.md` — documented
-- `tests/KBot.Controls.Tests/KBotInputMaskTests.vb` (new)
+`src/KBot.Controls/Combo/KBotComboBox.vb` — the three properties, find list driving, mask keys; `src/KBot.Controls/Combo/KBotInputMask.vb` (new) — the mask engine + `KBotMaskEdit`; `src/KBot.Controls/Combo/KBotComboFindList.vb` (new) — the non-activating list window; `src/KBot.Controls/Combo/KBotComboBox.md` — documented; `tests/KBot.Controls.Tests/KBotInputMaskTests.vb` (new)
 
 ### Test results
 
@@ -53,10 +49,8 @@ Cele două cereri din 26.09.2026 folosesc aceeași listă separată fără activ
   - `NewItemRequested` event with `KBotComboNewItemEventArgs.Text` (the typed text).
   - "The list is empty" means one of two cases:
     - the typed text matches no row. This works with or without `FindAsYouType`.
-    - the combo has no items and its drop-down is opened. The empty native list is closed and
-      replaced by the row.
-  - Enter on the row works like a click. If the host adds an item named exactly like the typed text,
-    it becomes the selection.
+    - the combo has no items and its drop-down is opened. The empty native list is closed and replaced by the row.
+  - Enter on the row works like a click. If the host adds an item named exactly like the typed text, it becomes the selection.
   - With `LimitToList` off it does nothing.
 - **`KBotComboFindList`**: the row is a `KBotComboFindRow` with `IsNewItem`, drawn in italic, and reported through its own `NewItemChosen` event.
 - **New file:** `KBotComboNewItemEventArgs.vb`.

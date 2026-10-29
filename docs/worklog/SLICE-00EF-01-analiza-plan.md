@@ -2,9 +2,7 @@
 
 Istoric din 06.10.2026. 03 înlocuiește propunerea inițială de migrare EF_UM: lista este completată de operator în baza comună și fila doar o citește. Referința din 02 la un job de refresh precede [04](SLICE-00EF-04-server-token.md#slice-00EF-04), care alege reînnoirea la cerere. Modelul furnizorului și stările de instalare sunt inițiale; [28](SLICE-00EF-28-mediu-vps.md) păstrează confirmarea ulterioară pe șablon/baza comună, fără extindere la celelalte baze sau la facturi reale ANAF.
 
-- [00EF-01](#slice-00EF-01)
-- [00EF-02](#slice-00EF-02)
-- [00EF-03](#slice-00EF-03)
+[00EF-01](#slice-00EF-01) · [00EF-02](#slice-00EF-02) · [00EF-03](#slice-00EF-03)
 
 ## SLICE-00EF-01 - analysis and plan for the new E-Factura app <a id="slice-00EF-01"></a>
 
@@ -16,8 +14,7 @@ Slice 00EF (operator, 06.10.2026). Documents only: no code, nothing run.
 - Registered the slice in `KBOT_STATUS.md` and `state/KBOT_STATUS_0000-0009.md` (next to 000T, which also has a letter id).
 
 ### Files touched
-- New: `docs/access-map/efactura/**`, `tools/AccessMap/extract.js`, `tools/AccessMap/build-efactura.js`, `docs/worklog/PLAN_00EF_EFactura.md`, this file.
-- Edited: `docs/worklog/KBOT_STATUS.md`, `docs/worklog/state/KBOT_STATUS_0000-0009.md`.
+New: `docs/access-map/efactura/**`, `tools/AccessMap/extract.js`, `tools/AccessMap/build-efactura.js`, `docs/worklog/PLAN_00EF_EFactura.md`, this file. Edited: `docs/worklog/KBOT_STATUS.md`, `docs/worklog/state/KBOT_STATUS_0000-0009.md`.
 
 ### Test results
 None run. The generator output was read and spot-checked against the raw files (forms, handlers, writes found by the scan, the token functions in `mdl_2025`, `mdl_2026`, the upload/status code in `mdl_EFactura`).

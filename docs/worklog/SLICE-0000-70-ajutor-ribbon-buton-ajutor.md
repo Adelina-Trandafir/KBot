@@ -2,13 +2,7 @@
 
 Etapele 70/85/88/89/90/91/100 păstrează traseul inițial → eliminarea butonului Ajutor → grupurile machetei/vederii → modul compact și panoul temporar. Capturile și rezultatele rămân pe checkpoint; numerele 36, 41 și 10 descriu loturi istorice, nu o sumă de capturi distincte. Etapa 88 are jurnal, dar nu un rând propriu în registrul 0000. Nu se modifică ajutorul runtime.
 
-- [0000-70](#slice-0000-70)
-- [0000-85](#slice-0000-85)
-- [0000-88](#slice-0000-88)
-- [0000-89](#slice-0000-89)
-- [0000-90](#slice-0000-90)
-- [0000-91](#slice-0000-91)
-- [0000-100](#slice-0000-100)
+[0000-70](#slice-0000-70) · [0000-85](#slice-0000-85) · [0000-88](#slice-0000-88) · [0000-89](#slice-0000-89) · [0000-90](#slice-0000-90) · [0000-91](#slice-0000-91) · [0000-100](#slice-0000-100)
 
 ## SLICE-0000-70 - Ajutorul pentru 0114: ribbonul si butonul «Ajutor» (13.10.2026) <a id="slice-0000-70"></a>
 
@@ -70,8 +64,7 @@ Captures `ribbon-file`, `ribbon-configurari` not redone (the ribbon looks differ
 ### What changed and why
 `contabil/vederi/extrase.md` (section «Descarcarea extraselor» rewritten; the opening of the window only via the ribbon), `contabil/ribbon.md` (the button appears only on the Extrase window / the list of angajamente), `contabil/fereastra.md` (the left footer icon line replaced), `tours/tur-extrase.md` and `tours/tur-fereastra.md` (the tree-footer steps removed), `tutorials/descarca-extrase.md` (first step is now a message about the ribbon button, no target: painted ribbon buttons cannot be ringed). Tags `0114-05, 0000-89`.
 
-**Captures marked `redo` (2026-10-17 18:00, why 0114-05)**: `extrase-fereastra`, `lista-actualizare`, `fereastra-zone`,
-`fereastra-principala` and every capture with `goto: view:*` (the whole window shows the list footer) - 36 in all.
+**Captures marked `redo` (2026-10-17 18:00, why 0114-05)**: `extrase-fereastra`, `lista-actualizare`, `fereastra-zone`, `fereastra-principala` and every capture with `goto: view:*` (the whole window shows the list footer) - 36 in all.
 
 ### Files touched
 The six help files above plus the capture lines in `contabil/**`.

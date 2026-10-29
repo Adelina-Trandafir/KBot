@@ -1,7 +1,6 @@
 # K-BOT — STATUS, slices 0100–0109
 
-Everything recorded about each slice: its registry row, its «Current focus» notes and its
-«Open threads» notes. The index in `../KBOT_STATUS.md` says what each slice is.
+Everything recorded about each slice: its registry row, its «Current focus» notes and its «Open threads» notes. The index in `../KBOT_STATUS.md` says what each slice is.
 
 ---
 
@@ -36,8 +35,7 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 
 ### Current focus
 
-- Branch `SLICE-0100-Multithreading`. Nimic din partea browserului (taburi în același context, adoptarea tabului păstrat)
-  nu a fost văzut rulând.
+- Branch `SLICE-0100-Multithreading`. Nimic din partea browserului (taburi în același context, adoptarea tabului păstrat) nu a fost văzut rulând.
 
 ### Open threads
 

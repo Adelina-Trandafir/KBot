@@ -12,7 +12,7 @@ Baza are cinci pagini, 01 adaugă Jurnal și mută opțiunile Adobe în dialog; 
 
 - **Numărul feliei: 0072** — «next free» din `KBOT_STATUS.md` la data cererii.
 - **Pagina 5 = fereastra de autentificare** («the logging form» + referința `LoginForm.vb`): ce ține minte login-ul (felia 0063), adresa serverului. Comutatorul de *jurnal detaliat* (VerboseLogging) stă pe pagina «Aplicație», acolo unde l-a cerut operatorul.
-- **Un magazin nou pentru comutatoare**, `%APPDATA%\AVACONT\KBot\app_settings.json` (`AppSettings`). Nu în `settings.json`: `SetariFoldere` raportează la pornire ORICE cheie necunoscută (deliberat), iar niște booleene acolo ar fi slăbit regula sau ar fi umplut jurnalul. `kbot_paths.json` (Adobe, per mașină) și `settings.json` (foldere) rămân unde sunt; fereastra le editează pe loc.
+- **Magazinul comutatoarelor:** `%APPDATA%\AVACONT\KBot\app_settings.json` (`AppSettings`). `SetariFoldere` raportează orice cheie necunoscută din `settings.json`; booleenele sunt separate pentru a păstra regula. `kbot_paths.json` (Adobe, per mașină) și `settings.json` (foldere) rămân editate pe loc.
 - **Parola = parola MariaDB a operatorului** (modelul «option A» al login-ului): se schimbă cu `SET PASSWORD` pe conexiunea operatorului, fără privilegii ale contului de serviciu. Al doilea factor = cod pe e-mail (numele de utilizator este e-mailul), trimis de serverul Flask prin SMTP.
 - **Datele comerciale** (demo / înregistrat): nu există model pe server; rândul «Tip instalare» există, spune ce știe sesiunea și că restul e în lucru.
 
@@ -89,7 +89,7 @@ Noi: `src\KBot.Common\AppSettings.vb`, `src\KBot.Controls\Adobe\AdobeHostSetting
 - **«Sincronizare (server)» a plecat din meniul butonului de opțiuni** — operatorul a spus «only the Jurnal … and the Setari option». `KbotForm.SincronizeazaAsync` a rămas în cod, dar nu mai are nicio cale de apel din interfață; de hotărât de operator dacă primește alt loc sau se șterge.
 - **«Font din temă» s-a mutat** din meniul butonului de temă în pagina «Temă», lângă cursor: meniul «will ONLY show the slider (if using the font din tema) … and the existing themes», iar comutatorul trebuie totuși să existe undeva, altfel cursorul n-ar mai putea fi readus.
 - **«Opțiuni temă…» și «Stiluri…» au plecat din meniu** fără înlocuitor: prima e pagina «Temă» însăși (portul din 0072); a doua (`ThemeEditorForm`, excepțiile pe controale) rămâne în cod fără cale de apel — thread deschis.
-- **Un buton «Opțiuni fereastră găzduită…» sub combo-ul motorului** (activ doar pe «Fereastră găzduită»): cererea spune că setările NU stau pe pagină și că dialogul se deschide când se alege motorul; fără buton operatorul n-ar mai fi putut ajunge la ele fără să comute motorul dus-întors.
+- **«Opțiuni fereastră găzduită…»** sub combo, activ doar pentru acel motor, redeschide dialogul fără comutarea motorului dus-întors. Dialogul se deschide și la alegerea motorului, conform cererii; setările nu rămân pe pagină.
 - **Toleranța de lipire: 3 unități** (procente): 97–103 → 100, 107–113 → 110, 122–128 → 125. Doar la mouse; săgețile merg în pași de 5 și nimeresc singure punctele. Aceleași trei puncte în meniu (`KBotCaptionBar.TextScaleSnapPoints`) și în pagina «Temă».
 
 ### Ce s-a schimbat și de ce

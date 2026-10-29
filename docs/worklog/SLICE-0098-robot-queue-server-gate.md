@@ -22,10 +22,10 @@ No tests and no git, as asked.
 #### 1. The server gate (`KBot.Api/ServerGate.vb`, `ServerGateHandler.vb`)
 - Every request on the shared `HttpClient` now goes through `ServerGateHandler`. This covers `ApiClient`, `AuthApi` and `UpdateApi`.
 - `ForexeController.RunGatedAsync` closes the gate around the runner call **only**. That includes the workflow run (`RunJobAsync` / `RunAsync`, so connect, downloads, DDF send and opening an angajament), the statements walk, the CAB document upload and the receipt search.
-- It does not close the gate around the whole operation. The server reads that decide how the run starts (the local history for REVERSE, the last statement date) happen just before the run, and the ingest happens after it.
+- Pre-run server reads (REVERSE local history, last statement date) and post-run ingest remain outside the gate.
 - **Closed gate = requests wait, they are not refused.** A view that loads during a download simply shows its busy bar until the run ends.
 - Closing the gate first waits for any request already on the wire to come back, answer body included. So the robot never starts while an answer is still arriving.
-- **The timeout moved into the handler.** It is counted after the wait, and `HttpClient.Timeout` is now infinite. Otherwise a request held for a four-minute download would die at 100 s without ever leaving the PC.
+- **The handler counts timeout after the gate wait; `HttpClient.Timeout` is infinite.** Otherwise a four-minute download could exhaust the 100 s timeout before a waiting request left the PC.
   - When it fires, the handler throws the same error as `HttpClient` (a `TaskCanceledException` over a `TimeoutException`), so the retry in `ApiClient` still recognises it.
 - **Some requests pass a closed gate** (`ServerGate.Bypass`, set on the request):
   - `process_excel`: a workflow step waits for it; no database.
@@ -35,7 +35,7 @@ No tests and no git, as asked.
 
 #### 2. The robot queue (`KBot.App/Forexe/RobotQueue.vb`)
 - **One task = the whole operation.** That means the questions, the download, the two-phase ingest (the «Asociere» window included), the tree reload and the pictures.
-- Tasks run one at a time, in order, on the UI thread. So the next robot run cannot start while an «Asociere» window is open, and the robot never runs while the previous package is being written (rule 1).
+- Tasks run sequentially on the UI thread; the next run waits for the previous association window and package write (rule 1).
 - **Entry points routed through the queue:**
 
   | Entry point | Duplicate guard key |
@@ -51,12 +51,12 @@ No tests and no git, as asked.
   | Operation captured in the FOREXE page | none; goes **in front** of the waiting tasks, because its pictures are of the page as the operator left it |
 
 - A second click on something already queued or running is refused, with a line on the console.
-- **Before each task the queue waits for the robot to be idle.** An operation started outside the queue (the Conectare button, the «Browser FOREXE» view) finishes first instead of making the task fail as «busy».
-- **A task that calls another queued flow runs it in place.** Otherwise it would wait behind itself forever. This is detected with an `AsyncLocal`.
+- **Each task first waits for robot idle**, allowing an outside operation («Conectare» / «Browser FOREXE») to finish instead of failing as busy.
+- **Nested queued flows run in place**, detected with `AsyncLocal`, avoiding a task waiting behind itself.
 - **A task that never ran throws `RobotTaskDroppedException`**, with a Romanian message. The click handlers swallow it, because the console already said it. The CAB note shows it in its receipt window.
 - **`DuLaIngestieAsync`** marks the queue as waiting while the «Asociere» window is open, and the queue window shows it.
 - **`KbotForm.LoadTreeAsync`** now reads the selected node **after** the tree request comes back.
-  - Before, it read it before the request. With the gate, that request can wait for a whole robot run, and the reload would have put back the old node and undone a click made in the meantime.
+  - Previously selection was read before the request; a gate wait could then restore the old node over a newer click.
 
 #### 3. The queue window (`RobotQueueForm`) and the footer button
 - **`RobotQueueForm`** is modeless, owned by the shell and does not take focus when shown.

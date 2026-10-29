@@ -4,24 +4,7 @@ Actualizările din 17.10 (93, 96…98) descriu vederea fără furnizor, etichete
 
 14 etape 61…66 și 75…82 din 09–16.10.2026. Pentru 61/62/63 se aplică aceeași limită: numai ajutor pentru utilizatori, fără server/tabele/jurnale; nevăzut pe ecran, fără captură. Restul probelor și capturilor rămân pe etapă. Regula de vizibilitate, sincronizarea, vederile și popup-ul evoluează conform [istoricului ecranelor](SLICE-00EF-18-primite-client.md). Numărul 0000-61 exista și la ajutorul grupelor 0008-02; acel rând rămâne distinct, neatins, fără renumerotare.
 
-- [0000-61](#slice-0000-61)
-- [0000-62](#slice-0000-62)
-- [0000-63](#slice-0000-63)
-- [0000-64](#slice-0000-64)
-- [0000-65](#slice-0000-65)
-- [0000-66](#slice-0000-66)
-- [0000-75](#slice-0000-75)
-- [0000-76](#slice-0000-76)
-- [0000-77](#slice-0000-77)
-- [0000-78](#slice-0000-78)
-- [0000-79](#slice-0000-79)
-- [0000-80](#slice-0000-80)
-- [0000-81](#slice-0000-81)
-- [0000-82](#slice-0000-82)
-- [0000-93](#slice-0000-93)
-- [0000-96](#slice-0000-96)
-- [0000-97](#slice-0000-97)
-- [0000-98](#slice-0000-98)
+[0000-61](#slice-0000-61) · [0000-62](#slice-0000-62) · [0000-63](#slice-0000-63) · [0000-64](#slice-0000-64) · [0000-65](#slice-0000-65) · [0000-66](#slice-0000-66) · [0000-75](#slice-0000-75) · [0000-76](#slice-0000-76) · [0000-77](#slice-0000-77) · [0000-78](#slice-0000-78) · [0000-79](#slice-0000-79) · [0000-80](#slice-0000-80) · [0000-81](#slice-0000-81) · [0000-82](#slice-0000-82) · [0000-93](#slice-0000-93) · [0000-96](#slice-0000-96) · [0000-97](#slice-0000-97) · [0000-98](#slice-0000-98)
 
 ## SLICE 0000-61 — help for 00EF-18 (09.10.2026) <a id="slice-0000-61"></a>
 

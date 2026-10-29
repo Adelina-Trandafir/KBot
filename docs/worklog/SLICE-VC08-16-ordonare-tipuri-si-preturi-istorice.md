@@ -22,13 +22,6 @@ stock_valuation.price validează existența și caracterul finit al prețului, a
 
 ## Fișiere
 
-- AGENTS.md — regula persistentă a tuturor aplicațiilor.
-- PYTHON/static/js/utils/typed-order.js (nou).
-- PYTHON/static/js/components/treeview/treeview-render.js.
-- PYTHON/static/js/components/combobox/combobox-state.js.
-- PYTHON/static/js/dgv/{datagrid.js,engine.js,filtering.js}.
-- PYTHON/static/js/vercon/{ui.js,nomenclator-grid.js,document-tree-order.js, receipt-tree.js,product-stock.js,report-selection.js,report-result.js}.
-- PYTHON/routes/vercon/{report_order.py (nou),stock_valuation.py (nou), report_data.py,report_oi.py,stock.py,report_selection.py, report_incoming_selection.py,report_outgoing_selection.py,report_mf_selection.py}.
-- PYTHON/static/help/vercon.json; PYTHON/reports/vercon/README.md; implementare_vercon_v2.md și acest jurnal.
+AGENTS.md — regula persistentă a tuturor aplicațiilor. PYTHON/static/js/utils/typed-order.js (nou). PYTHON/static/js/components/treeview/treeview-render.js. PYTHON/static/js/components/combobox/combobox-state.js. PYTHON/static/js/dgv/{datagrid.js,engine.js,filtering.js}. PYTHON/static/js/vercon/{ui.js,nomenclator-grid.js,document-tree-order.js, receipt-tree.js,product-stock.js,report-selection.js,report-result.js}. PYTHON/routes/vercon/{report_order.py (nou),stock_valuation.py (nou), report_data.py,report_oi.py,stock.py,report_selection.py, report_incoming_selection.py,report_outgoing_selection.py,report_mf_selection.py}. PYTHON/static/help/vercon.json; PYTHON/reports/vercon/README.md; implementare_vercon_v2.md și acest jurnal.
 
 Numai analiză de design pe surse. Nu s-au rulat teste, verificări automate, verificări de sintaxă, browser ori generări PDF/Excel. Fără acces MariaDB, SQL executat sau modificări de schemă. Capturile de help sunt nemodificate. Nu se poate identifica din captură dacă prețul concret este negativ sau NULL; nu s-au inspectat datele bazei. Publicarea cere toate modulele Python/JS și helpul împreună, urmate de repornirea serviciului web.

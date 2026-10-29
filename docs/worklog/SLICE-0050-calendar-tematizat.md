@@ -40,16 +40,16 @@ Amândouă sunt ferestre native pictate de Windows, exact cazul pentru care s-au
 Peste asta, fiecare are un defect propriu care contează aici:
 
 - `MonthCalendar` **refuză mărimile**: se aliniază la dale întregi de lună, deci nu se poate nici andoca, nici întinde în spațiul primit.
-- `DateTimePicker` **își rescrie propriile margini** (`SetBoundsCore`) și își trage `Height` înapoi la înălțimea de combo a sistemului. Exact asta cerea operatorul să dispară. `KBotDatePicker` e un `Control` obișnuit care **nu atinge niciodată** `SetBoundsCore`: `Height` e liber, `DefaultSize` e doar punctul de plecare, iar conturul se întinde, textul rămâne centrat pe verticală și butonul crește odată cu câmpul.
+- `DateTimePicker.SetBoundsCore` readuce `Height` la înălțimea combo-ului de sistem. `KBotDatePicker`, `Control` obișnuit, nu atinge `SetBoundsCore`: înălțime liberă, `DefaultSize` numai inițial, contur întins, text centrat vertical și buton care crește cu câmpul.
 
 ## 3. Deciziile care nu se citesc din cod
 
 1. **Două evenimente, nu unul.** `ValueChanged` se ridică la fiecare mișcare (inclusiv săgeți), `DateSelected` doar la o alegere adevărată (clic pe zi, Enter, rândul «Astăzi»). Fereastra desfășurată se închide pe al doilea; dacă s-ar închide pe primul, prima săgeată ar stinge calendarul.
-2. **Cultura e fixată pe `ro-RO`, nu pe cultura mașinii.** Numele lunilor și ale zilelor le citește operatorul, deci trebuie să fie românești pe ORICE stație, nu doar pe una configurată românește. Rămâne o proprietate (`CultureName`), dar valoarea implicită e o alegere, nu o moștenire. Singurele șiruri românești din familie sunt cele văzute pe ecran («Astăzi: …») și mesajele de excepție; restul e ASCII engleză (C9, RULE 0).
+2. **`CultureName = ro-RO` implicit**, pentru luni/zile românești pe orice stație, independent de cultura mașinii. Proprietatea rămâne configurabilă. Numai textele ecranului («Astăzi: …») și excepțiile sunt românești; restul familiei este ASCII engleză (C9, RULE 0).
 3. **Culoarea de weekend se DERIVĂ din paletă**, nu se inventează: `Blend(ErrorColor, InputBack, 0.25)`. O coloană întreagă în roșul de eroare s-ar citi ca o coloană de erori.
-4. **Așezarea ferestrei nu s-a rescris**: `KBotCalendarPopup` cheamă `CustomPopup.FitToWorkArea` (`Friend Shared`, același assembly), deci calendarul se răstoarnă deasupra câmpului sau se aliniază la marginea lui dreaptă exact în aceleași cazuri ca meniul contextual. La fel s-a copiat și garda `ClosedJustNow` (250 ms), fără de care al doilea clic pe buton ar redeschide instantaneu fereastra pe care tocmai a închis-o.
-5. **Fereastra SE ACTIVEAZĂ** (fără `WS_EX_NOACTIVATE`), fiindcă fără activare nu există focus de tastatură, iar un calendar prin care nu poți umbla cu săgețile e jumătate de calendar. Prețul e cel știut: bara de titlu de dedesubt se vede inactivă cât e deschis.
-6. **Textul netradusibil în dată readuce ultima valoare bună.** O dată pe jumătate tastată nu e o valoare pe care s-o poată salva cineva. Se acceptă la citire, în ordine: `Format`, apoi prescurtările pe care operatorul chiar le tastează (`2.9.26`, `02092026`, `2/9/2026`, `2026-09-02`), apoi citirea culturii.
+4. **Poziționare reutilizată:** `KBotCalendarPopup` apelează `CustomPopup.FitToWorkArea` (`Friend Shared`, același assembly), cu aceeași întoarcere deasupra/aliniere dreapta ca meniul. Garda `ClosedJustNow` de 250 ms împiedică redeschiderea la al doilea clic care tocmai închisese fereastra.
+5. **Fereastra se activează**, fără `WS_EX_NOACTIVATE`, pentru focus și navigare cu săgeți. Bara gazdei apare inactivă cât calendarul este deschis.
+6. **Text invalid → ultima valoare bună**, fără salvarea unei date parțiale. Ordinea citirii: `Format`, apoi `2.9.26`/`02092026`/`2/9/2026`/`2026-09-02`, apoi cultura.
 7. **Câmpul gol există doar cu `AllowEmpty`** — coloana de dată neumplută din Access. `ClearValue()` fără permisiunea asta ARUNCĂ `InvalidOperationException`, nu tace (C3).
 8. **`DefaultSize` suprascris, `Size` NEscris în constructor.** `Control.ShouldSerializeSize` se compară cu `DefaultSize`; dacă mărimea s-ar fi pus în constructor, orice control proaspăt pus pe formular ar fi scris o linie `Size` în `.Designer.vb`-ul gazdei (C4).
 
@@ -64,22 +64,10 @@ Peste asta, fiecare are un defect propriu care contează aici:
 
 ## 5. Fișiere atinse
 
-**Noi:**
-- `src/KBot.Controls/Calendar/KBotCalendarView.vb`
-- `src/KBot.Controls/Calendar/KBotDateSelectedEventArgs.vb`
-- `src/KBot.Controls/Calendar/KBotCalendar.vb`
-- `src/KBot.Controls/Calendar/KBotCalendar.Painting.vb`
-- `src/KBot.Controls/Calendar/KBotCalendarPopup.vb`
-- `src/KBot.Controls/Calendar/KBotDatePicker.vb`
-- `src/KBot.Controls/Calendar/KBotCalendar.md`
-- `src/KBot.Controls/Calendar/KBotDatePicker.md`
-- `docs/worklog/SLICE-0050-calendar-tematizat.md` (acest fișier)
+**Noi:** cele șase fișiere și cele două documente din familia `src/KBot.Controls/Calendar/` enumerate în §1, plus acest jurnal (`docs/worklog/SLICE-0050-calendar-tematizat.md`).
 
 **Modificate:**
-- `src/KBot.Controls/CONTROLS.md` — două rânduri noi în index
-- `src/KBot.Controls/README.md` — rândul `Calendar/` în tabelul de foldere
-- `src/KBot.Controls/KBot.Controls.vbproj` — familia nouă în comentariul de organizare + `FileVersion` 1.39.0.0 → **1.40.0.0** (regula: se urcă doar când se schimbă chiar proiectul ăsta; `AssemblyVersion` rămâne 1.0.0.0)
-- `docs/worklog/KBOT_STATUS.md` — rândul feliei 0050 + «Next free» mutat pe 0051
+`src/KBot.Controls/CONTROLS.md` — două rânduri noi în index; `src/KBot.Controls/README.md` — rândul `Calendar/` în tabelul de foldere; `src/KBot.Controls/KBot.Controls.vbproj` — familia nouă în comentariul de organizare + `FileVersion` 1.39.0.0 → **1.40.0.0** (regula: se urcă doar când se schimbă chiar proiectul ăsta; `AssemblyVersion` rămâne 1.0.0.0); `docs/worklog/KBOT_STATUS.md` — rândul feliei 0050 + «Next free» mutat pe 0051
 
 **Neatins:** `KBot.App`, `KBot.Theming`, `PYTHON/`, orice formular existent. `OrdEditForm` și `OrdZiuaForm` folosesc în continuare `DateTimePicker`-ul de sistem — înlocuirea lor n-a fost cerută în felia asta și nu s-a făcut.
 
@@ -163,12 +151,7 @@ Adăugat și `DropDownCalendar` (read-only, ne-serializat): calendarul viu din f
 
 ## 11. Fișiere atinse în runda asta
 
-- `src/KBot.Controls/Calendar/KBotDatePicker.vb` — paddinguri, `GlyphSize`, culoarea derivată a desenului, valoarea cu oră, `FormatHasTime`, `DropDownCalendar`
-- `src/KBot.Controls/Calendar/KBotCalendar.vb` — cele patru paddinguri proprii + `OnPaddingChanged`
-- `src/KBot.Controls/Calendar/KBotCalendar.Painting.vb` — `ScalePad`/`Shrink`, așezarea pe benzi, `NaturalSize`, dala celulei, textul din subsol
-- `src/KBot.App/Views/Ord/OrdEditForm.Designer.vb` — **șterse** `dtpData.GlyphColor` și `dtpData.HoverColor`
-- `src/KBot.Controls/Calendar/KBotCalendar.md`, `KBotDatePicker.md` — secțiunile noi
-- `src/KBot.Controls/KBot.Controls.vbproj` — `FileVersion` 1.40.0.0 → **1.41.0.0**
+`src/KBot.Controls/Calendar/KBotDatePicker.vb` — paddinguri, `GlyphSize`, culoarea derivată a desenului, valoarea cu oră, `FormatHasTime`, `DropDownCalendar`; `src/KBot.Controls/Calendar/KBotCalendar.vb` — cele patru paddinguri proprii + `OnPaddingChanged`; `src/KBot.Controls/Calendar/KBotCalendar.Painting.vb` — `ScalePad`/`Shrink`, așezarea pe benzi, `NaturalSize`, dala celulei, textul din subsol; `src/KBot.App/Views/Ord/OrdEditForm.Designer.vb` — **șterse** `dtpData.GlyphColor` și `dtpData.HoverColor`; `src/KBot.Controls/Calendar/KBotCalendar.md`, `KBotDatePicker.md` — secțiunile noi; `src/KBot.Controls/KBot.Controls.vbproj` — `FileVersion` 1.40.0.0 → **1.41.0.0**
 
 ## 12. Probe
 

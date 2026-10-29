@@ -35,23 +35,9 @@ Clasă pură (fără UI, fără browser, fără stare globală). Cele nouă regu
 
 ### Fișiere atinse
 
-Noi:
-- `src/KBot.Forexe/Executor/WorkflowExecutor.Docking.vb`
-- `src/KBot.Forexe/Executor/WorkflowExecutor.Recorder.vb`
-- `src/KBot.Forexe/Services/JavaScripts/Recorder.js`
-- `src/KBot.Forexe/Models/Recorder/RecordedStep.vb`
-- `src/KBot.Forexe/Models/Recorder/SelectorCandidate.vb`
-- `src/KBot.Forexe/Models/Recorder/RecordedAncestor.vb`
-- `src/KBot.Forexe/Models/Recorder/RecorderComment.vb`
-- `src/KBot.Forexe/Services/RecorderCompactor.vb`
-- `src/KBot.Forexe/Services/WflWriter.vb`
-- `src/KBot.Forexe/Helpers/RecorderForm.vb`
-- `src/KBot.Forexe/Helpers/RecorderForm.Designer.vb`
+Noi: `src/KBot.Forexe/Executor/WorkflowExecutor.Docking.vb`; `src/KBot.Forexe/Executor/WorkflowExecutor.Recorder.vb`; `src/KBot.Forexe/Services/JavaScripts/Recorder.js`; `src/KBot.Forexe/Models/Recorder/RecordedStep.vb`, `src/KBot.Forexe/Models/Recorder/SelectorCandidate.vb`, `src/KBot.Forexe/Models/Recorder/RecordedAncestor.vb`, `src/KBot.Forexe/Models/Recorder/RecorderComment.vb`; `src/KBot.Forexe/Services/RecorderCompactor.vb`; `src/KBot.Forexe/Services/WflWriter.vb`; `src/KBot.Forexe/Helpers/RecorderForm.vb`; `src/KBot.Forexe/Helpers/RecorderForm.Designer.vb`
 
-Modificate:
-- `src/KBot.Forexe/Executor/WorkflowExecutor.Browser.vb` — gărzi `_isDocked`
-- `src/KBot.Forexe/Executor/Actions/WorkflowExecutor.Actions.Minimize.vb` — gardă `_isDocked`
-- `src/KBot.Forexe/KBot.Forexe.vbproj` — `Recorder.js` ca `EmbeddedResource`, FileVersion 1.0.4.0 → 1.0.5.0
+Modificate: `src/KBot.Forexe/Executor/WorkflowExecutor.Browser.vb` — gărzi `_isDocked`; `src/KBot.Forexe/Executor/Actions/WorkflowExecutor.Actions.Minimize.vb` — gardă `_isDocked`; `src/KBot.Forexe/KBot.Forexe.vbproj` — `Recorder.js` ca `EmbeddedResource`, FileVersion 1.0.4.0 → 1.0.5.0
 
 ### Abateri de la documentul de predare (motivate)
 
@@ -92,7 +78,7 @@ Continuarea feliei 0053 ([SLICE-0053-recorder.md](#slice-0053-baza)), care lăsa
 
 #### Seam-ul: `ShowRecorder`, nu `Executor`
 
-`RecorderForm` are nevoie de `WorkflowExecutor`, care trăiește privat în `ForexeRunner`. Varianta „expunem executorul” ar fi mutat un obiect de motor în `KBot.App` doar ca să fie pasat înapoi într-un formular care oricum stă în `KBot.Forexe`. În loc de asta, interfața primește o intenție:
+`WorkflowExecutor` rămâne privat în `ForexeRunner`; interfața primește intenția de deschidere, evitând trecerea motorului prin `KBot.App` înapoi în formularul din `KBot.Forexe`:
 
 ```
 IForexeRunner:  Sub ShowRecorder(owner As IWin32Window)
@@ -120,19 +106,13 @@ Buton nou `btnMonitor` pe bara de înregistrare (pozițiile celorlalte trei răm
 
 `BtnMonitor_Click` pornește întâi `StartWicketMonitoringAsync` dacă nu rulează deja: `WicketMonitorForm` se hrănește exclusiv din `OnWicketStateChange`, deci fără asta fereastra s-ar deschide goală și ar părea stricată. Apoi creează monitorul o singură dată, îl leagă la același executor și îl arată; la a doua apăsare doar îl aduce în față (și îl restaurează dacă e minimizat).
 
-Monitorul își anulează propriul `FormClosing` la închiderea de către operator și se ascunde, deci NIMIC în afară de recorder nu-l distruge: `RecorderForm.Dispose` îl `Dispose`-uiește direct, ocolind `FormClosing` — exact ce trebuie.
+La închiderea de către operator, monitorul anulează `FormClosing` și se ascunde. Numai `RecorderForm.Dispose` îl distruge, prin `Dispose` direct, care ocolește acel eveniment.
 
 `AttachExecutor` / `DetachExecutor` din recorder duc mai departe schimbarea și către monitor, ca să nu rămână legat de un executor pe care recorderul l-a lăsat deja.
 
 ### Fișiere atinse
 
-- `src/KBot.Forexe/IForexeRunner.vb` — `ShowRecorder(owner)`
-- `src/KBot.Forexe/ForexeRunner.vb` — `_recorder`, `ShowRecorder`, `Recorder_FormClosed`, `DetachRecorder`, apel în `DisposeExecutorAsync`
-- `src/KBot.Forexe/Helpers/RecorderForm.vb` — `_monitor`, `BtnMonitor_Click`, monitorul urmărit în `AttachExecutor`/`DetachExecutor`/`Dispose`, gardă `IsDisposed` în `UpdateButtons`
-- `src/KBot.Forexe/Helpers/RecorderForm.Designer.vb` — `btnMonitor`
-- `src/KBot.App/Forexe/ForexeController.vb` — `ShowRecorder()`
-- `src/KBot.App/Forexe/ForexeConsoleForm.vb` — handler, stare, temă pe `btnRecorder`
-- FileVersion: `KBot.Forexe` 1.0.5 ▸ 1.0.6, `KBot.App` 1.0.25 ▸ 1.0.26
+`src/KBot.Forexe/IForexeRunner.vb` — `ShowRecorder(owner)`; `src/KBot.Forexe/ForexeRunner.vb` — `_recorder`, `ShowRecorder`, `Recorder_FormClosed`, `DetachRecorder`, apel în `DisposeExecutorAsync`; `src/KBot.Forexe/Helpers/RecorderForm.vb` — `_monitor`, `BtnMonitor_Click`, monitorul urmărit în `AttachExecutor`/`DetachExecutor`/`Dispose`, gardă `IsDisposed` în `UpdateButtons`; `src/KBot.Forexe/Helpers/RecorderForm.Designer.vb` — `btnMonitor`; `src/KBot.App/Forexe/ForexeController.vb` — `ShowRecorder()`; `src/KBot.App/Forexe/ForexeConsoleForm.vb` — handler, stare, temă pe `btnRecorder`; FileVersion: `KBot.Forexe` 1.0.5 ▸ 1.0.6, `KBot.App` 1.0.25 ▸ 1.0.26
 
 ### Rezultate
 
@@ -152,8 +132,7 @@ Trei observații ale operatorului după prima încercare de a folosi recorderul 
 
 ### 1. Nedocat, browserul cădea în spatele formularului
 
-**Simptom:** cu browserul NEandocat, orice clic pe recorder trimitea fereastra Chromium
-în spatele lui.
+**Simptom:** cu browserul NEandocat, orice clic pe recorder trimitea fereastra Chromium în spatele lui.
 
 Era exact ce trebuia să se întâmple: nimic nu ținea browserul deasupra. Calea andocată avea deja linia care rezolvă asta — `SyncDockedBoundsAsync` cheamă `SetWindowPos(hwnd, ownerHandle, …, NOACTIVATE)`, adică «pune browserul imediat deasupra formularului gazdă, fără să-i dai focusul». Nedocat, `ScheduleResync` ieșea din prima linie (`If Not _executor.IsDocked Then Return`), deci nu se întâmpla nimic.
 
@@ -164,16 +143,15 @@ Acum:
 
 Temporizatorul era deja acolo pentru amortizarea tragerilor, deci nu s-a adăugat niciun mecanism nou: aceleași evenimente (`Move`, `Resize`, `Activated`, mutarea splitterului) duc acum la două acțiuni diferite, după starea de andocare.
 
-**Consecință de spus cu voce tare:** nedocat, browserul stă acum DEASUPRA recorderului și
-îl poate acoperi complet (fereastra detașată e pusă la `100,100` × `1400×900`). Recorderul rămâne cel activ pentru tastatură, dar poate fi nevoie să fie mutat browserul ca să se vadă lista de pași. Andocat, nu se schimbă nimic — panoul e tocmai locul făcut pentru browser.
+**Consecință de spus cu voce tare:** nedocat, browserul stă acum DEASUPRA recorderului și îl poate acoperi complet (fereastra detașată e pusă la `100,100` × `1400×900`). Recorderul rămâne cel activ pentru tastatură, dar poate fi nevoie să fie mutat browserul ca să se vadă lista de pași. Andocat, nu se schimbă nimic — panoul e tocmai locul făcut pentru browser.
 
 ### 2. Viewportul emulat, la andocare
 
 Playwright desenează pagina într-un viewport EMULAT — contextul se creează în `WorkflowExecutor.Browser.vb` fără `ViewportSize`, deci implicit 1280×720 — iar viewportul acela NU urmează fereastra. Andocarea redimensionează fereastra la panoul gazdă, deci pagina rămânea desenată la dimensiunea veche, cu chenar gol în jur.
 
-`DockBrowserToAsync` cheamă acum `ClearEmulatedViewportAsync()` imediat după prima sincronizare de margini: dacă `_page.ViewportSize` e ceva (adică viewportul e activ), o sesiune CDP trimite `Emulation.clearDeviceMetricsOverride` și pagina începe să urmeze fereastra reală. Este exact modul «no viewport» al lui Playwright, aplicat după crearea contextului — API-ul .NET nu-l poate scoate altfel decât la construcție.
+`DockBrowserToAsync` cheamă `ClearEmulatedViewportAsync()` după prima sincronizare a marginilor. Dacă `_page.ViewportSize` este activ, o sesiune CDP trimite `Emulation.clearDeviceMetricsOverride`, urmărind fereastra reală. Este modul Playwright «no viewport», aplicat după crearea contextului, când API-ul .NET nu-l mai poate elimina direct.
 
-Nu se pune la loc la detașare, intenționat: o pagină care își urmează fereastra e corectă în ambele stări, pe când repunerea celor 1280×720 ar lăsa chenar gol în fereastra detașată de 1400×900.
+Viewportul nu revine la detașare: pagina urmează fereastra în ambele stări; restaurarea 1280×720 ar lăsa spațiu gol într-o fereastră de 1400×900.
 
 Eșecul se STRIGĂ în jurnal (`LogWarning`), nu pică andocarea: o pagină desenată la dimensiunea veche e urâtă, nu un motiv să refuzi andocarea pe care operatorul tocmai a cerut-o.
 
@@ -187,16 +165,13 @@ Fără token în cititor, `CertificateSelectionForm` se deschidea goală, anunț
 - **Debug cu token:** `False` — dialogul apare normal, iar un «Renunță» al operatorului rămâne un «Renunță».
 - **Debug fără niciun certificat pe token/smartcard:** se sare peste dialog (ar fi gol) și se merge mai departe cu `certificate = Nothing`.
 
-Merge fiindcă nimic din calea de lansare nu are nevoie de certificat: `ConfigureAutoSelectCertificatePolicy` iese din prima linie când e `Nothing`, iar `_windowsSecurityAutomation` nu se instanțiază în build-ul curent. Autentificarea la FOREXE va pica — dar **browserul rămâne deschis** (decizia A3 din `ForexeRunner.RunAsync`: «Browserul rămâne deschis pentru investigație»), deci `HasLiveSession` devine `True`, `btnRecorder` se aprinde și andocarea/monitorul pot fi încercate.
+Lansarea nu cere certificat: `ConfigureAutoSelectCertificatePolicy` iese pentru `Nothing`, iar `_windowsSecurityAutomation` nu este instanțiată în build-ul curent. Autentificarea FOREXE eșuează, dar browserul rămâne deschis pentru investigație (A3, `ForexeRunner.RunAsync`): `HasLiveSession = True`, `btnRecorder` activ, andocare/monitor disponibile pentru probă.
 
 Starea afișată spune ce s-a întâmplat («Fără token — pornesc sesiunea NEAUTENTIFICATĂ (doar Debug).»), iar `lblCert` din consolă rămâne pe «—», onest.
 
 ### Fișiere atinse
 
-- `src/KBot.Forexe/Executor/WorkflowExecutor.Docking.vb` — `ClearEmulatedViewportAsync`, `RaiseBrowserAboveAsync`, apelul de curățare a viewportului în `DockBrowserToAsync`
-- `src/KBot.Forexe/Helpers/RecorderForm.vb` — `ScheduleResync` / `TmrResync_Tick` ramificate pe starea de andocare
-- `src/KBot.App/Forexe/ForexeController.vb` — `NoTokenInDebug`, ramura din `ConnectAsync`
-- FileVersion: `KBot.Forexe` 1.0.6 ▸ 1.0.7, `KBot.App` 1.0.26 ▸ 1.0.27
+`src/KBot.Forexe/Executor/WorkflowExecutor.Docking.vb` — `ClearEmulatedViewportAsync`, `RaiseBrowserAboveAsync`, apelul de curățare a viewportului în `DockBrowserToAsync`; `src/KBot.Forexe/Helpers/RecorderForm.vb` — `ScheduleResync` / `TmrResync_Tick` ramificate pe starea de andocare; `src/KBot.App/Forexe/ForexeController.vb` — `NoTokenInDebug`, ramura din `ConnectAsync`; FileVersion: `KBot.Forexe` 1.0.6 ▸ 1.0.7, `KBot.App` 1.0.26 ▸ 1.0.27
 
 ### Rezultate
 
@@ -218,8 +193,7 @@ Operatorul: «andocarea tot nu merge». Și: «fă un banc de probă care deschi
 
 `GetOrRefreshBrowserHwndAsync` căuta fereastra plimbând TOATE procesele mașinii și comparând `Process.MainWindowTitle` cu marcajul unic `WF_BROWSER_<guid>`. Marcajul se scrie o singură dată, în `document.title`, pe `about:blank`, la pornirea browserului.
 
-**Prima navigare reală șterge marcajul.** Titlul ferestrei devine titlul sitului, iar căutarea
-nu mai găsește nimic: 20 de încercări × 250 ms = cinci secunde de scanat procese, apoi `IntPtr.Zero`, apoi excepția «Nu am găsit fereastra browserului. Andocarea nu poate continua.» Handle-ul nu era pus în cache la pornire decât pe calea *stealth* (`ApplyStealthWindowStyle`), deci în mod normal nu exista niciun handle memorat care să salveze situația.
+**Prima navigare reală șterge marcajul.** Titlul ferestrei devine titlul sitului, iar căutarea nu mai găsește nimic: 20 de încercări × 250 ms = cinci secunde de scanat procese, apoi `IntPtr.Zero`, apoi excepția «Nu am găsit fereastra browserului. Andocarea nu poate continua.» Handle-ul nu era pus în cache la pornire decât pe calea *stealth* (`ApplyStealthWindowStyle`), deci în mod normal nu exista niciun handle memorat care să salveze situația.
 
 Acum:
 
@@ -244,8 +218,7 @@ Acum, în `DockBrowserToAsync`:
 6. viewportul emulat se elimină ca înainte (`Emulation.clearDeviceMetricsOverride`).
 
 `SyncDockedBoundsAsync` s-a redus la un `MoveWindow(hwnd, 0, 0, latime, inaltime, True)`: coordonatele unui copil sunt pixelii CLIENT ai părintelui, adică exact ce raportează WinForms.
-**Nicio conversie DPI, niciun drum prin CDP, niciun z-order de întreținut** — un copil nu poate
-cădea în spatele propriului părinte. Funcția nu mai e `Async` de fapt; întoarce `Task` ca să nu se schimbe niciun apelant.
+**Nicio conversie DPI, niciun drum prin CDP, niciun z-order de întreținut** — un copil nu poate cădea în spatele propriului părinte. Funcția nu mai e `Async` de fapt; întoarce `Task` ca să nu se schimbe niciun apelant.
 
 `UndockBrowserAsync` face drumul invers: dezleagă cozile de intrare, `SetParent` la părintele dinainte, repune stilurile și dreptunghiul (sau `100,100 × 1400×900` dacă cel memorat nu era folosibil), `SWP_FRAMECHANGED`.
 
@@ -265,8 +238,7 @@ Un buton («Pornește + navighează») face toată secvența:
 lansează Chromium → instalează monitorul Wicket → navighează la pagina publică → andochează
 ```
 
-**Ordinea nu e întâmplătoare.** `StartWicketMonitoringAsync` își pune scriptul cu
-`AddInitScriptAsync`, iar un script de inițializare rulează abia la navigarea URMĂTOARE — deci monitorul intră ÎNAINTE de încărcarea paginii, niciodată după. Butonul «Reîncarcă pagina» există pentru același motiv: e felul în care un monitor pornit târziu devine viu.
+**Ordinea nu e întâmplătoare.** `StartWicketMonitoringAsync` își pune scriptul cu `AddInitScriptAsync`, iar un script de inițializare rulează abia la navigarea URMĂTOARE — deci monitorul intră ÎNAINTE de încărcarea paginii, niciodată după. Butonul «Reîncarcă pagina» există pentru același motiv: e felul în care un monitor pornit târziu devine viu.
 
 Monitorul **nu e copiat**: `pnlMonitor` găzduiește `WicketMonitorForm`-ul real (`TopLevel = False`), legat de același executor. Ce se vede în banc e literalmente ce vede operatorul în aplicație — inclusiv culorile pe fluxuri `[WFL]` / `[WICKET]` / `IDLE` / `[CLICK]` / `[KEY]`.
 
@@ -276,12 +248,7 @@ Pe pagina publică FOREXE **fluxul `[WICKET]` rămâne tăcut**: `#statlogo` / `
 
 ### Fișiere atinse
 
-- `src/KBot.Forexe/Executor/WorkflowExecutor.Docking.vb` — rescris pe reparentare
-- `src/KBot.Forexe/Executor/WorkflowExecutor.Browser.vb` — căutarea ferestrei prin `EnumWindows` + remarcare a titlului, handle rezolvat la pornire, `GetBrowserHwndAsync` șters
-- `src/KBot.Forexe/Helpers/RecorderForm.vb` — comentariul-antet, care descria vechea andocare
-- `src/KBot.DevHarness/Internal/BrowserDockHarnessForm.vb` / `.Designer.vb` — bancul
-- `src/KBot.DevHarness/Tests/BrowserDockHarnessTest.vb` — intrarea în banc
-- FileVersion: `KBot.Forexe` 1.0.7 ▸ 1.0.8, `KBot.DevHarness` 1.0.25 ▸ 1.0.26
+`src/KBot.Forexe/Executor/WorkflowExecutor.Docking.vb` — rescris pe reparentare; `src/KBot.Forexe/Executor/WorkflowExecutor.Browser.vb` — căutarea ferestrei prin `EnumWindows` + remarcare a titlului, handle rezolvat la pornire, `GetBrowserHwndAsync` șters; `src/KBot.Forexe/Helpers/RecorderForm.vb` — comentariul-antet, care descria vechea andocare; `src/KBot.DevHarness/Internal/BrowserDockHarnessForm.vb` / `.Designer.vb` — bancul; `src/KBot.DevHarness/Tests/BrowserDockHarnessTest.vb` — intrarea în banc; FileVersion: `KBot.Forexe` 1.0.7 ▸ 1.0.8, `KBot.DevHarness` 1.0.25 ▸ 1.0.26
 
 ### Rezultate
 
@@ -302,8 +269,7 @@ Cerință: cât timp e andocat, browserul nu trebuie să-și arate **banda de fi
 - o fereastră-copil e decupată de părinte, deci banda nu se desenează și nu se poate apăsa;
 - fereastra rămâne neatinsă: la detașare, sau cu `HideChromeWhenDocked = False`, bara revine.
 
-**Se compensează DOAR partea de sus.** Prima variantă compensa și stânga, dreapta și jos, cu
-aceeași măsurătoare — și operatorul a rămas fără **barele de derulare** ale paginii: fereastra copilului de randare nu le acoperă, așa că lărgirea le împingea dincolo de marginile panoului. O bordură reală rămasă pe laturi înseamnă câțiva pixeli morți; o bară de derulare lipsă înseamnă o pagină pe care nu o mai poți citi.
+**Se compensează DOAR partea de sus.** Prima variantă compensa și stânga, dreapta și jos, cu aceeași măsurătoare — și operatorul a rămas fără **barele de derulare** ale paginii: fereastra copilului de randare nu le acoperă, așa că lărgirea le împingea dincolo de marginile panoului. O bordură reală rămasă pe laturi înseamnă câțiva pixeli morți; o bară de derulare lipsă înseamnă o pagină pe care nu o mai poți citi.
 
 Banda e **măsurată, nu presupusă**: pagina se desenează într-o fereastră-copil de clasă `Chrome_RenderWidgetHostHWND`, iar distanța de la marginea de sus a cadrului la ea dă înălțimea reală, oricare ar fi DPI-ul, tema sau bara de marcaje. O cifră neverosimilă (peste 400 px) e respinsă; dacă măsurarea eșuează se folosește ultima bună, iar dacă nu există niciuna bara rămâne vizibilă și jurnalul o spune **o singură dată** pe andocare. Valoarea măsurată e scrisă în jurnal la fiecare schimbare, ca o bandă greșită să se vadă în cifre, nu doar în imagine.
 
@@ -327,9 +293,7 @@ Fără emulare, pagina **este** fereastra ei, corect și andocată și liberă. 
 
 #### Fișiere atinse
 
-- `src/KBot.Forexe/Executor/WorkflowExecutor.Docking.vb` — `HideChromeWhenDocked`, `ApplyDockedBounds`, măsurarea benzii (`MeasureChromeBandPx` / `FindLargestRenderWidget`)
-- `src/KBot.Forexe/Executor/WorkflowExecutor.Browser.vb` — contextul cu `NoViewport`
-- `src/KBot.DevHarness/Internal/BrowserDockHarnessForm.vb` / `.Designer.vb` — bifa
+`src/KBot.Forexe/Executor/WorkflowExecutor.Docking.vb` — `HideChromeWhenDocked`, `ApplyDockedBounds`, măsurarea benzii (`MeasureChromeBandPx` / `FindLargestRenderWidget`); `src/KBot.Forexe/Executor/WorkflowExecutor.Browser.vb` — contextul cu `NoViewport`; `src/KBot.DevHarness/Internal/BrowserDockHarnessForm.vb` / `.Designer.vb` — bifa
 
 #### Rămas neverificat
 
@@ -347,9 +311,7 @@ Fluxul de creare angajament rămânea proba de referință pentru captură: sele
 
 [0070-browserul](#slice-0070) · [0074-vedere](#slice-0074)
 
-<a id="slice-0070"></a>
-
-### SLICE 0070 — Browserul FOREXE nu mai apare niciodată singur pe ecran
+### SLICE 0070 — Browserul FOREXE nu mai apare niciodată singur pe ecran <a id="slice-0070"></a>
 
 **Data:** 19.09.2026 **Cererea operatorului:** «in the kbot.forexe we make the following changes: 1. the chromium browser CAN NEVER be displayed standalone! this allows the user to click the close button, and then the forexe flow is lost. so whenever the user wants to see the actual browser, it will open in its own form. like the recorder does. actually, we will use the recorder form, but if it is opened only for view, then all the recording options (the right panel) is disabled. also, this means that the form wil auto dock the browser on load. 2. when the browser is hidden by button or when the parent form is closed, the browser window must be auto-detached and hidden just like the Ascunde/Arata browser does. this is a new slice. no git. no tests!»
 
@@ -395,9 +357,7 @@ Fluxul de creare angajament rămânea proba de referință pentru captură: sele
 - **Recorderul doar-pentru-privit nu are nicio comandă** — panoul din dreapta e vizibil dar stins, cum a cerut operatorul («disabled»). Dacă spațiul mort deranjează, `splitMain.Panel2Collapsed` în `ApplyMode` e o linie.
 - `ExecuteMinimizeAsync` (pasul `<Minimize>`) mută browserul liber la (-2000,-2000): tot ascuns, dar în alt loc decât parcarea de stealth. Inofensiv; nealiniat.
 
-<a id="slice-0070-02"></a>
-
-#### Corecție 0070-02 — tastatura nu ajungea în pagina andocată (19.09.2026)
+#### Corecție 0070-02 — tastatura nu ajungea în pagina andocată (19.09.2026) <a id="slice-0070-02"></a>
 
 **Văzut pe ecran de operator:** cu browserul andocat, mouse-ul merge, dar nimic tastat nu ajunge în pagină.
 
@@ -412,12 +372,9 @@ Fluxul de creare angajament rămânea proba de referință pentru captură: sele
 
 **Rezultat:** `dotnet build` pe `src\KBot.Forexe` 0/0, `src\KBot.App` 0 erori (doar `MSB3825`). Diagnostic din citirea codului Chromium din memorie, nu măsurat; de confirmat pe ecran la prima tastare. Nimic rulat, nimic comis.
 
-**Neverificat:** dacă și fără `WS_CHILD` Windows dă activarea tot rădăcinii (formularului) — atunci
-tastarea tot nu merge, iar următorul pas este `SetFocus` pe rama browserului din firul UI (firele sunt legate) la `WM_PARENTNOTIFY` pe panou; gapul lateral al ramei poate diferi cu un pixel-doi.
+**Neverificat:** dacă și fără `WS_CHILD` Windows dă activarea tot rădăcinii (formularului) — atunci tastarea tot nu merge, iar următorul pas este `SetFocus` pe rama browserului din firul UI (firele sunt legate) la `WM_PARENTNOTIFY` pe panou; gapul lateral al ramei poate diferi cu un pixel-doi.
 
-<a id="slice-0074"></a>
-
-### SLICE 0074 — Vederea «Browser FOREXE» în shell: pagina andocată, arborele ↔ pagina
+### SLICE 0074 — Vederea «Browser FOREXE» în shell: pagina andocată, arborele ↔ pagina <a id="slice-0074"></a>
 
 **Data:** 21.09.2026 **Cererea operatorului:** «add a new view in the kbotform with the browser inside it which will only be visible if the user is connected … this WILL not have the recording panel in it - it is just for user use. it will HAVE the custom js menu and it will do everything we talked about» — adică, din mesajul anterior: «when one angajament is selected from the treeview, the browser will do a workflow selecting that angajament and opening it through (`<a href="javascript:;" id="idfa">Modificare</a>`) … it will stop after clicking on that href. also, if the user searches in the browser an angajament and opens it, the treeview will know about it and select it (without triggering the forexe part again)».
 
@@ -453,10 +410,7 @@ tastarea tot nu merge, iar următorul pas este `SetFocus` pe rama browserului di
 
 #### Fișiere atinse
 
-- `src/KBot.Forexe/Workflows/adlop - Deschide Angajament.wfl` (nou), `KBot.Forexe.vbproj` (copiere + 1.0.11 ▸ **1.0.12**), `WorkflowCatalog.vb`, `JobBuilder.vb`, `IForexeRunner.vb`, `ForexeRunner.vb`, `Executor/WorkflowExecutor.Docking.vb` (`DockHost`), `Executor/WorkflowExecutor.Watch.vb` (`ReadPageAngajamentAsync`, `PageOpened`, reluarea condiționată), `Models/ForexeWatchEvent.vb`, `Services/JavaScripts/ForexeWatch.js`, `Helpers/RecorderForm.vb`
-- `src/KBot.App/Views/BrowserView.vb` + `.Designer.vb` (noi), `KbotForm.Browser.vb` (nou), `KbotForm.vb` (CreateView, gating, clic, butonul din bandă), `KbotForm.Designer.vb` (`KBotNavItem9`), `KbotForm.ForexeWatch.vb`, `Forexe/ForexeController.vb`, `KBot.App.vbproj` (1.0.34 ▸ **1.0.35**)
-- `tests/KBot.App.Tests/ForexeControllerFailureTests.vb` (`FakeRunner`, doar editat)
-- `docs/worklog/KBOT_STATUS.md`, acest fișier
+`src/KBot.Forexe/Workflows/adlop - Deschide Angajament.wfl` (nou), `KBot.Forexe.vbproj` (copiere + 1.0.11 ▸ **1.0.12**), `WorkflowCatalog.vb`, `JobBuilder.vb`, `IForexeRunner.vb`, `ForexeRunner.vb`, `Executor/WorkflowExecutor.Docking.vb` (`DockHost`), `Executor/WorkflowExecutor.Watch.vb` (`ReadPageAngajamentAsync`, `PageOpened`, reluarea condiționată), `Models/ForexeWatchEvent.vb`, `Services/JavaScripts/ForexeWatch.js`, `Helpers/RecorderForm.vb`; `src/KBot.App/Views/BrowserView.vb` + `.Designer.vb` (noi), `KbotForm.Browser.vb` (nou), `KbotForm.vb` (CreateView, gating, clic, butonul din bandă), `KbotForm.Designer.vb` (`KBotNavItem9`), `KbotForm.ForexeWatch.vb`, `Forexe/ForexeController.vb`, `KBot.App.vbproj` (1.0.34 ▸ **1.0.35**); `tests/KBot.App.Tests/ForexeControllerFailureTests.vb` (`FakeRunner`, doar editat); `docs/worklog/KBOT_STATUS.md`, acest fișier
 
 #### Rezultatele testelor
 

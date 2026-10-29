@@ -2,13 +2,7 @@
 
 01 definește rapoartele și abaterile Access, 04 adaugă Situația de plată cu text HTML, 05 trece la model/snapshot și motor comun, 06 aliniază butoanele, 07 adaugă loading și blocarea unei singure pregătiri per pagină, iar 09 reduce numai textele cerute cu 2pt. 10 păstrează distinct inventarul capturilor mascate și ajutorul extraselor din 21.10. [08](SLICE-ADE9-08-resetare-eroare-la-actiune.md) rămâne separat, fiind notificarea generală a paginii. Nota Rezolvat repetată în 01 și 04: *Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.* Predarea/capturile din 10 nu primesc o confirmare de publicare inventată; probele și datele rămân în etapa lor.
 
-- [ADE9-01](#slice-ADE9-01)
-- [ADE9-04](#slice-ADE9-04)
-- [ADE9-05](#slice-ADE9-05)
-- [ADE9-06](#slice-ADE9-06)
-- [ADE9-07](#slice-ADE9-07)
-- [ADE9-09](#slice-ADE9-09)
-- [ADE9-10](#slice-ADE9-10)
+[ADE9-01](#slice-ADE9-01) · [ADE9-04](#slice-ADE9-04) · [ADE9-05](#slice-ADE9-05) · [ADE9-06](#slice-ADE9-06) · [ADE9-07](#slice-ADE9-07) · [ADE9-09](#slice-ADE9-09) · [ADE9-10](#slice-ADE9-10)
 
 ## SLICE-ADE9-01 — rapoartele ADECHIT <a id="slice-ADE9-01"></a>
 
@@ -32,7 +26,6 @@ Panoul «Rapoarte» din dreapta era dezactivat. Acum fiecare buton cere serverul
 
 ### Abateri față de Access (de confirmat)
 
-
 - **Registru/Bancă/Anulate**: sume cu 2 zecimale (Access arăta 0 zecimale; ar fi ascuns bani).
 - **Documente anulate**: Access filtrează după luna prezenței, deși antetul arată un interval; antetul arată acum luna. Plățile fără chitanță și fără alt document apar ca «Bon fiscal». Totalul «TOTAL DOCUMENTE ANULATE» din Access folosea două casete inexistente în raport (`[si]-[SP]`) și nu a fost reprodus; rămâne rândul TOTAL.
 - **Fișă cont**: rândurile «Transfer» vin din jurnalul `Platitori_Istoric` (MutaCopil nu se portează, M06). «Explicație» a documentelor alte plăți = textul din `AlteDoc.Explicatie` + număr (FelDoc nu mai există, AD_07). Ordinea rândurilor cu aceeași dată: sold inițial, prezență, plăți, restituiri, transferuri (Access nu definea o ordine).
@@ -54,7 +47,6 @@ Noi: `PYTHON/routes/adechit/reports.py`, `report_render.py`, `static/js/adechit/
 
 ### De probat de utilizator
 
-
 Fiecare raport pe date reale, listare + PDF; interogările SQL nu au fost rulate pe MariaDB (nici pe SQLite); `reportlab` lipsește din `.venv` local (PDF-ul se probează doar pe server); comparație cifre cu Access pe aceeași lună.
 
 ## SLICE-ADE9-04 — Situație de plată și text HTML configurabil <a id="slice-ADE9-04"></a>
@@ -67,16 +59,13 @@ Raport A4 portret după imagine: grupă, copii în ordine alfabetică, SID/SIC, 
 
 Butonul Situație de plată este sub Situație lunară și folosește Toate grupele. Toate grupele introduce mereu salt de pagină între grupe, independent de Separă grupe. HTML/PDF repetă antetul tabelului la continuare și nota sub fiecare grupă. Grupele numeroase sau notele lungi pot ocupa mai multe pagini.
 
-Meniul Text situație de plată deschide editor vizual și sursă HTML. Configurare per subunitate, drept Catalog, versiune pentru conflicte, cheie de idempotentă păstrată la reîncercare și blocare a schimbării subunității cât timp dialogul este deschis. Notele acceptă liste, paragrafe, titluri, aldine/cursive/subliniere, aliniere, șapte culori, trei familii de font și șapte mărimi. Randarea trece printr-o listă explicită de formatare acceptată, fără atribute sau CSS arbitrar. Editorul primește numai HTML filtrat; lipirea este text simplu, sursa permite HTML. Variabile: [UNITATE], [CONT], [COD_FISCAL], [GRUPA], [LUNA], [AN]. Primul cont este implicit, dar utilizatorul poate scrie alt IBAN în text. Datele instituției din imagine nu sunt introduse ca valori reale în aplicație.
+Meniul Text situație de plată deschide editor vizual/sursă HTML, per subunitate și cu drept Catalog. Salvarea are versiune și cheie idempotentă reutilizată; subunitatea nu se schimbă cât dialogul e deschis. Lista acceptată: liste, paragrafe, titluri, aldine/cursive/subliniere, aliniere, șapte culori, trei fonturi, șapte mărimi; fără CSS/atribute arbitrare. Editorul primește HTML filtrat; paste = text simplu, sursa acceptă HTML. Variabile: [UNITATE], [CONT], [COD_FISCAL], [GRUPA], [LUNA], [AN]. Primul cont este implicit, cu alt IBAN permis în text. Datele instituției din imagine nu devin valori reale.
 
 PDF folosește Helvetica/Times/Courier, cu DejaVu pentru caractere Unicode. Excel exportă nota ca text simplu și introduce salturi între grupe; lățimile se citesc la fiecare export prin reporting/excel_widths.py cu chei stabile.
 
 ### Fișiere de publicat
 
-- Python: `routes/adechit/__init__.py`, `reports.py`, `report_render.py`, `report_excel.py`, modulele noi `payment_notice.py` și `report_richtext.py`.
-- Pagina: `static/adechit.html`; JS: `static/js/adechit/app.js`, `reports.js`, `payment-notice-config.js`.
-- CSS: `static/css/adechit.css`, `adechit-payment-notice.css`, `adechit-richtext.css`, `adechit-payment-notice-config.css`.
-- Ajutor: `static/help/adechit.json`; ghidul UTILIZARE_WEB și statusurile au fost actualizate în aceeași intervenție.
+Python: `routes/adechit/__init__.py`, `reports.py`, `report_render.py`, `report_excel.py`, modulele noi `payment_notice.py` și `report_richtext.py`. Pagina: `static/adechit.html`; JS: `static/js/adechit/app.js`, `reports.js`, `payment-notice-config.js`. CSS: `static/css/adechit.css`, `adechit-payment-notice.css`, `adechit-richtext.css`, `adechit-payment-notice-config.css`. Ajutor: `static/help/adechit.json`; ghidul UTILIZARE_WEB și statusurile au fost actualizate în aceeași intervenție.
 
 ### Instalare manuală
 
@@ -87,7 +76,6 @@ PDF folosește Helvetica/Times/Courier, cu DejaVu pentru caractere Unicode. Exce
 Tabela nouă este AD_REPORT_CONFIG (SUBUNIT_ID, REPORT_KEY, FOOTER_HTML, VERSION), cu FK către AD_Subunits. Absența unei înregistrări folosește modelul implicit. Tabela trebuie să existe înainte de folosirea raportului/configurării. Nu există DDL automat în aplicație. Revenire: restaurați fișierele anterioare; tabela nouă poate rămâne fără să afecteze versiunea veche. Nu sunt necesare ștergeri de date.
 
 ### Rămâne de probat de utilizator
-
 
 Lună deschisă/închisă, SID/SIC și taxa integrală, totaluri, o grupă/toate grupele, separarea paginilor, nota cu liste/culori/font/mărime și variabile, conflictele de salvare și reîncercarea după o eroare HTTP, drepturile Catalog, izolarea subunităților, imprimarea/PDF/Excel și regresia rapoartelor existente.
 
@@ -111,13 +99,7 @@ Antetul și meniul de aplicații VERCON sunt furnizate de adaptorul existent. Co
 
 Din `PYTHON`, prin AvacontPush:
 
-- `reporting/output.py`, `errors.py`, `snapshots.py`, `richtext.py` (noi).
-- `routes/adechit/__init__.py`, `report_routes.py` (nou), `report_model.py` (nou), `report_render.py`, `report_excel.py`, `report_richtext.py`, `parent_statement.py`.
-- `routes/vercon/report_output.py`, `routes/vercon/report_service.py`.
-- `static/js/reporting/pdf-preview.js`, `report-dialog.js`, `columns.js` (noi).
-- `static/js/adechit/reports.js`, `app.js`, `static/js/vercon/pdf-preview.js`.
-- `static/css/report-preview.css` (nou), `adechit.css`, `vercon.css`, `vercon-preview.css`, `static/adechit.html`, `static/help/adechit.json`.
-- `.pushignore` actualizat: exclude și `instance/adechit-reports/`.
+`reporting/output.py`, `errors.py`, `snapshots.py`, `richtext.py` (noi). `routes/adechit/__init__.py`, `report_routes.py` (nou), `report_model.py` (nou), `report_render.py`, `report_excel.py`, `report_richtext.py`, `parent_statement.py`. `routes/vercon/report_output.py`, `routes/vercon/report_service.py`. `static/js/reporting/pdf-preview.js`, `report-dialog.js`, `columns.js` (noi). `static/js/adechit/reports.js`, `app.js`, `static/js/vercon/pdf-preview.js`. `static/css/report-preview.css` (nou), `adechit.css`, `vercon.css`, `vercon-preview.css`, `static/adechit.html`, `static/help/adechit.json`. `.pushignore` actualizat: exclude și `instance/adechit-reports/`.
 
 Resurse deja necesare, care trebuie să existe pe server: `static/fonts/DejaVuSans.ttf`, fonturile NIR existente, `static/js/portal/pdfview.js`, `static/css/pdfview.css`, `static/vendor/pdfjs/` și `static/css/confirm-box.css`. Dependențele rămân cele din `requirements-reporting.txt`.
 
@@ -164,11 +146,7 @@ Feedback-ul este într-un singur stylesheet pentru VERCON și ADECHIT. Importul 
 
 Prin AvacontPush, publicați împreună din `PYTHON/static/css/`:
 
-- `application-button-effects.css` (nou, comun);
-- `vercon-button-effects.css` (import compatibil către cel comun);
-- `adechit-buttons.css` (nou, adaptări ADECHIT);
-- `adechit-reports.css`;
-- `adechit.css`.
+`application-button-effects.css` (nou, comun); `vercon-button-effects.css` (import compatibil către cel comun); `adechit-buttons.css` (nou, adaptări ADECHIT); `adechit-reports.css`; `adechit.css`.
 
 Ajutorul actualizat: `PYTHON/static/help/adechit.json`. Documentație și stare: `ADECHIT/UTILIZARE_WEB.md`, `ADECHIT_STATUS.md`, starea ADE0–ADE9 și `implementare_vercon_v2.md`. Următoarea subfelie de rapoarte: **ADE9-07**.
 
@@ -202,14 +180,7 @@ Blocarea este comună fluxurilor din aceeași pagină de browser. Nu este un loc
 
 Din `PYTHON`, prin AvacontPush:
 
-- `static/js/reporting/report-progress.js` (nou), `pdf-preview.js`, `report-dialog.js`;
-- `static/js/portal/pdfview.js` (notificare opțională după desenarea paginii);
-- `static/css/report-preview.css`;
-- `static/js/adechit/reports.js`, `parents.js`;
-- `static/js/vercon/pdf-preview.js`, `ui.js`, `reports.js`, `document-report.js`, `documents.js`;
-- `static/adechit-parents.html` (resursele viewerului comun);
-- `routes/adechit/parent_portal.py` (opțiuni Excel și CSP pentru viewer);
-- `static/help/adechit.json`.
+`static/js/reporting/report-progress.js` (nou), `pdf-preview.js`, `report-dialog.js`; `static/js/portal/pdfview.js` (notificare opțională după desenarea paginii); `static/css/report-preview.css`; `static/js/adechit/reports.js`, `parents.js`; `static/js/vercon/pdf-preview.js`, `ui.js`, `reports.js`, `document-report.js`, `documents.js`; `static/adechit-parents.html` (resursele viewerului comun); `routes/adechit/parent_portal.py` (opțiuni Excel și CSP pentru viewer); `static/help/adechit.json`.
 
 Resurse deja necesare: `static/js/reporting/columns.js`, `static/js/utils/confirm-box.js`, `static/css/confirm-box.css`, `static/css/pdfview.css`, `static/vendor/pdfjs/` și fonturile rapoartelor. Publicați întregul set înainte de reîncărcarea paginilor. Utilizatorul repornește serviciul Python pentru modificarea rutei portalului părinților. Nu s-au executat publicare, restart, commit, push sau acces MariaDB/server.
 
@@ -237,8 +208,7 @@ Textul comenzilor de raport, butonul de restrângere și butonul calendarului î
 
 De publicat prin AvacontPush:
 
-- `PYTHON/static/css/adechit-reports.css`;
-- `PYTHON/static/help/adechit.json`.
+`PYTHON/static/css/adechit-reports.css`; `PYTHON/static/help/adechit.json`.
 
 Documentație: `ADECHIT/UTILIZARE_WEB.md`, statusul principal și starea ADE0–ADE9. Aspectul în teme luminoasă/întunecată, panoul extins/restrâns și butoanele calendarului: TESTAT, RULAT, PUBLICAT. Următoarea subfelie de rapoarte: **ADE9-10**.
 

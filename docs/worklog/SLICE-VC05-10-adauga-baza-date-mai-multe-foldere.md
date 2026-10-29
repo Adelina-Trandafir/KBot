@@ -13,10 +13,7 @@ Alimente, Materiale, OI and MF usually live in different folders (different data
 - **Precision (operator, 18.10.2026):** more than 4 decimals is NO LONGER a blocker. Access Double fields do not round correctly (noise like 0.1E+6); `VrcConvert.StoredDecimal` now rounds to 4 decimals (away from zero) and refuses only values that do not fit DECIMAL(20,4). The plan shows a WARNING per column (was BLOCAJ), the profile report an ATENTIE line. Reconciliation compares converted sums, so rounded values still match.
 
 ## Files touched
-- `VERCON/VRC.Migrator/VrcMigratorForm.vb` (`LoadFolder`, `btnAdauga_Click`, `SyncSelection`, `ShowFiles`, `UpdateButtons`)
-- `VERCON/VRC.Migrator/VrcMigratorForm.Designer.vb` (btnAdauga, Folder column, 7-row button table, tooltip)
-- `VERCON/VRC.Migrator/VrcSourceFile.vb` (FromChosenPath), `VrcConvert.vb`, `VrcPlan.vb` (CheckPrecision), `VrcReport.vb`
-- `VERCON/VRC.Migrator/VRC.Migrator.vbproj` (FileVersion 0.2.1.0 -> 0.2.2.0)
+`VERCON/VRC.Migrator/VrcMigratorForm.vb` (`LoadFolder`, `btnAdauga_Click`, `SyncSelection`, `ShowFiles`, `UpdateButtons`); `VERCON/VRC.Migrator/VrcMigratorForm.Designer.vb` (btnAdauga, Folder column, 7-row button table, tooltip); `VERCON/VRC.Migrator/VrcSourceFile.vb` (FromChosenPath), `VrcConvert.vb`, `VrcPlan.vb` (CheckPrecision), `VrcReport.vb`; `VERCON/VRC.Migrator/VRC.Migrator.vbproj` (FileVersion 0.2.1.0 -> 0.2.2.0)
 
 ## Test results
 `dotnet build VERCON/VRC.Migrator/VRC.Migrator.vbproj`: 0 warnings, 0 errors. Not run, not seen on screen (no tests, per standing rule).

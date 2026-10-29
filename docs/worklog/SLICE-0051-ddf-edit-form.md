@@ -12,7 +12,7 @@ Reunire documentară D001-27. Implementarea inițială și corecțiile 03 sunt p
 
 Language note: this worklog is in English, per plan §0.3 (this slice is English-only in comments and documentation, unlike slice 0049 which shipped Romanian-without-diacritics). Operator-facing strings are Romanian with real UTF-8 diacritics.
 
-**Nothing in this slice has run against MariaDB or against the Python server.** Neither is reachable from the development machine. Every SQL statement below was written by reading `MariaDB_Schema/000_DEMO.sql` — a structure-only dump, carrying no `INSERT` rows for any `FX_DDF*` table, so not one value could be sampled. Read §9 before deploying anything.
+**No MariaDB/Python-server execution:** neither was reachable. SQL comes from `MariaDB_Schema/000_DEMO.sql`, a structure-only dump with no `FX_DDF*` INSERT rows to sample. Deployment limits are in §9.
 
 ---
 
@@ -72,9 +72,9 @@ Three §13 stop-and-report conditions were genuine stops, and two further defect
 
 #### 2.1 `Desc_Lunga_ANSI` is not dead — D9 is reversed
 
-D9 declared `Desc_Lunga_ANSI` dead. It is not. `PYTHON/routes/forexe/ddf.py` selects it, emits it as `desc_lunga`, `ApiClient` maps it onto `DescLunga`, and `DdfXmlBuilder` writes it into the signed XFA document (`DescrieObFundRevizuireLung`, and `Left(…, 500)` into the section-A attribute `obiect_fd_reviz_lung`). Writing only `Desc_Lunga` would have made every document this slice creates render with an empty long description — through a route D19 forbids touching.
+D9 incorrectly declared `Desc_Lunga_ANSI` dead: `PYTHON/routes/forexe/ddf.py` emits it as `desc_lunga`, `ApiClient` maps `DescLunga`, and `DdfXmlBuilder` writes `DescrieObFundRevizuireLung` plus `Left(…, 500)` into section-A `obiect_fd_reviz_lung`. Writing only `Desc_Lunga` would leave the generated long description empty; D19 forbids changing that read route.
 
-**Operator's answer: write both columns.** The save writes the same text to `Desc_Lunga` and `Desc_Lunga_ANSI`. It is a duplicated column and it is deliberate: the read path that feeds the signed document is out of this slice's reach.
+**Operator's answer: write both columns.** Both `Desc_Lunga` and `Desc_Lunga_ANSI` receive the same text; this deliberate duplication preserves the signed-document read path outside this slice.
 
 #### 2.2 `Comp` — read the existing values, but let the operator type a new one
 
@@ -82,7 +82,7 @@ The plan gave no source for the `Comp` field. **Operator's answer:** list the va
 
 Server side that is `SELECT DISTINCT Comp FROM FX_DDF` (`GET /api/forexe/ddf/comp`).
 
-Client side it forced a **two-control workaround**, and the reason is worth recording: `KBotComboBox` **throws** on any `DropDownStyle` other than `DropDownList` — its owner-drawn painting cannot theme a native `EDIT` child, so an editable combo does not exist in this code base. The header therefore carries `txtComp` (a `KBotTextField`, which holds the authoritative value) next to `cmbComp` (a picker that writes into it). Both are documented as such in `DdfEditForm.Designer.vb`. Making `KBotComboBox` editable is a control-level job and is listed in `possible_future_directions.md`.
+The initial workaround uses authoritative `txtComp` (`KBotTextField`) plus picker `cmbComp`, documented in `DdfEditForm.Designer.vb`. At this checkpoint `KBotComboBox` throws unless `DropDownStyle = DropDownList`: owner drawing cannot theme native `EDIT`. Editable-combo work is listed separately in `possible_future_directions.md`.
 
 #### 2.3 `GenerateUniqueSequence` — the VBA source, ported
 
@@ -96,7 +96,7 @@ The plan referred to a function whose source was not in the export. The operator
 
 It is ported in `DdfDraft.vb` as `CaracterAleator` / `GenereazaUnic`, attribution kept.
 
-Two notes on the port. First, the original's comment claims each character class has "one chance out of 3"; it does not — `Round(Rnd * 2 + 1)` with banker's rounding gives 1/4 digits, 1/2 uppercase, 1/4 lowercase. The skew is harmless for a uniqueness token, so the behaviour was ported unchanged and the comment corrected in place. Second, `GenereazaUnic` re-draws up to twenty times against the codes already in the draft and **throws** rather than returning a duplicate: a silent duplicate would collide on save.
+The original comment incorrectly gives each character class 1/3 probability: banker rounding in `Round(Rnd * 2 + 1)` yields 1/4 digits, 1/2 uppercase, 1/4 lowercase. Behaviour is ported unchanged, comment corrected. `GenereazaUnic` retries up to twenty times against draft codes, then throws rather than returning a duplicate that would collide on save.
 
 #### 2.4 `FX_DDF_REV_ATT_IMG` is missing from the schema — DDL delivered
 
@@ -156,11 +156,11 @@ Each of these is a place where the port does **not** do what the Access original
 
 #### 3.3 Writing
 
-`_scrie_graf` performs the nine write steps in one transaction. New rows arrive with negative `TempId` values and the response carries `TempId → real key` maps, so the client can adopt the keys without re-reading. `_cheie_noua` raises when `lastrowid` comes back `0` rather than writing a child against key zero. `_sterge_absentii` removes rows the operator deleted. After the graph is written, `FX_Rezervari` and `FX_Angajamente` are updated, with the text columns explicitly truncated to 255 — MariaDB in strict mode would otherwise refuse the whole transaction on a long description.
+`_scrie_graf` runs nine writes in one transaction. Negative `TempId` values map to real keys in the response, avoiding a reread. `_cheie_noua` rejects `lastrowid = 0`; `_sterge_absentii` deletes removed rows. After graph writes, `FX_Rezervari` / `FX_Angajamente` text updates truncate explicitly to 255, avoiding strict-mode rollback for long descriptions.
 
 Attachments are a **second phase**, after the transaction: the bytes need an `IdRevAtt` to hang off. The PUT carries the file name in the `X-Nume-Fisier` header (same as ORD) and uses `ON DUPLICATE KEY UPDATE`, which is what the unique index on `IdRevAtt` is for.
 
-If phase two fails, **nothing is rolled back**. The operator is told which files did not upload and to attach them again. A half-rolled-back document is worse than a document missing a file.
+Phase-two failure rolls back nothing; the operator receives the failed-file list and must reattach those files.
 
 #### 3.4 The number lock
 
@@ -176,25 +176,25 @@ This is deliberately unlike slice 0049, which guessed the next number ("probabil
 
 `DdfDraft` (in `KBot.Domain`) is the whole editable graph: header, `LiniiA`, `LiniiB`, `Atasamente`. `RecalculeazaSectiuneaB()` derives B from A and is called immediately before validation on save, not merely when a cell changes — a stale B row would otherwise be written.
 
-The four pages implement `IDdfEditPage` and make **no network requests of their own**. That is why the three lookups `cmbClsf_AfterUpdate` performed in Access (previous value, receptions value, indicator code) were moved server-side into `GET /api/forexe/ddf/clasificatii` as pre-computed sub-selects: the page reads them off the row it already has.
+The four `IDdfEditPage` pages make no network requests. Access `cmbClsf_AfterUpdate` lookups (previous value, reception value, indicator code) are precomputed sub-selects in `GET /api/forexe/ddf/clasificatii`, read from the loaded row.
 
 The classification list is the three-part list Access built (on this angajament / same title / manual), with a separator row carrying `IDClsf = -1` inserted in Python.
 
 #### 4.2 Re-authentication
 
-`DdfEditReauth` carries seven named delegates. The 401 re-login net (`WithReauth`) is private and generic in `MainForm`, so the editor is handed the wrapped calls rather than reaching for the policy itself. That keeps one re-login policy in one place, as every other view does.
+`DdfEditReauth` receives seven named delegates wrapping the private generic `MainForm.WithReauth` 401 policy, keeping re-login policy in one place as for other views.
 
 #### 4.3 Where the commands come from
 
-`DdfView` gained an optional `executaComanda As Action(Of DdfComanda)` constructor parameter and a right-click menu on the tree, hung off the **existing** `Tree_NodeMouseUp` *after* the read path — a failure while building the menu cannot break selection, and the view stays usable read-only. A host that supplies no action (the tests) gets the full read-only view and the menu says so rather than doing nothing.
+`DdfView` receives optional `executaComanda As Action(Of DdfComanda)`. Its context menu runs after selection in existing `Tree_NodeMouseUp`, so menu failure preserves the read path. Without an action (test hosts), the full read-only view remains and the menu explains the limitation.
 
 `MainForm.ExecutaComandaDdf` executes them.
 
-**`Adauga` and `AdaugaRevizieInitiala` are called from the RESERVATIONS tree.** The `+` icon on a reservation leaf is the trigger — `RezervariView.Tree_RightIconClicked` builds the command and hands it to `MainForm.ExecutaComandaDdf` — which is exactly where Access put it: `mcTree_RightIconClick` in `frmFX_MAIN_REZ` raised `AdaugaRevizie(CBool(cNode.Value2))`, which landed in `FX_Adaugare_DDF`. Which of the two actions is chosen comes from the reservation's `EInitiala`, as `cNode.Value2` did; the client does not second-guess it, because the server refuses each of the two when the document's state contradicts it and that refusal reaches the operator in Romanian.
+**`Adauga` / `AdaugaRevizieInitiala` originate at the RESERVATIONS leaf `+`.** `RezervariView.Tree_RightIconClicked` passes the command to `MainForm.ExecutaComandaDdf`, matching Access `frmFX_MAIN_REZ.mcTree_RightIconClick` → `AdaugaRevizie(CBool(cNode.Value2))` → `FX_Adaugare_DDF`. Reservation `EInitiala` chooses the action, as `cNode.Value2` did; the server rejects either action when document state contradicts it, with Romanian feedback.
 
 `DdfView`'s context menu still has no «add» entry, deliberately: one trigger, in the one place the operator already knows. The commands had no caller only for as long as slice 0051 itself lasted (decision D20).
 
-The seam this replaced was `RezervariView`'s dormant `AdaugaDdfCerut` event from slice 0014. It is gone; the view now takes the same optional `Action(Of DdfComanda)` that `DdfView` and `PlatiView` take, so a host that supplies none (the tests) still gets the full read-only view and the `+` icon says so rather than doing nothing.
+This replaces dormant `RezervariView.AdaugaDdfCerut` (0014) with the same optional `Action(Of DdfComanda)` seam as `DdfView` / `PlatiView`. Without a delegate, read-only use remains and `+` explains the limitation.
 
 #### 4.4 The rich-text editor
 
@@ -204,24 +204,24 @@ The seam this replaced was `RezervariView`'s dormant `AdaugaDdfCerut` event from
 
 #### 4.5 The grid columns moved into the designers
 
-`DdfEditSectiuneaAPage`, `DdfEditSectiuneaBPage` and `DdfFileBrowser` built their `KBotDataView` columns in code, from a `ConstruiesteColoanele` / `BuildColumns` called in the constructor. All three now declare them in their `.Designer.vb`, as `KBotDataColumn` instances added to `grd.Columns` — the same shape the Visual Studio designer emits (`docs/kbot-forms-ui-convention.md`, and the pattern already in `DdfValoriPage`). The `COL_*` constants stay in the code-behind: they are the keys the cells are written through and must match the designer's, which is now the only place a column is defined. `FooterVisible` moved into the designer with them; `DdfFileBrowser` gained the `BeginInit` / `EndInit` pair it was missing, so the layout pass runs once rather than once per column.
+`DdfEditSectiuneaAPage`, `DdfEditSectiuneaBPage` and `DdfFileBrowser` move `KBotDataColumn` construction from constructor `ConstruiesteColoanele` / `BuildColumns` into `.Designer.vb`, added to `grd.Columns` as in `DdfValoriPage` and `docs/kbot-forms-ui-convention.md`. Code-behind `COL_*` keys must match these sole definitions. `FooterVisible` moves too; the missing `DdfFileBrowser.BeginInit` / `EndInit` pair reduces layout to once, rather than per column.
 
 #### 4.6 Section A is READ-ONLY for a document generated from reservations
 
-The operator's rule, and it narrows decision D8: section A is still the only grid that can be edited at all, but **a DDF built from `FX_Rezervari` is not edited by hand**. Its lines are what the reservations made them, and the post-save `FX_Rezervari` update writes back against those same reservations, so a retyped value would put the document and its reservations in a position to disagree. The grid unlocks only for a MANUALLY BUILT document — a path that does not exist yet.
+Operator rule narrowing D8: only section A can be editable, but a DDF generated from `FX_Rezervari` locks it. Retyping would disagree with the reservations updated after save. Only a MANUALLY BUILT document can unlock it; that path does not yet exist.
 
 How it is decided (`DdfDraft.DinRezervari`, in the domain so the client and any later caller read one copy of the rule):
 
 * `sursa` from the server — `_alege_sursa`'s answer, decision D5 — is now carried into the domain instead of being dropped at the wire. `"rezervari"` locks the grid.
 * That alone is not enough: `GET /draft/{iddf}/{idrev}` answers `"existent"` for EVERY revision read back, whatever it was generated from, so a REOPENED document would have looked editable. What survives the round trip is `GrpIdrz`, the `IDRZ` list a line was generated from, empty on a line that came from `FX_Istoric` or that the operator added. Any line carrying one locks the grid too.
 
-What the lock does, in `DdfEditSectiuneaAPage.AplicaModulDeEditare`: `grd.ReadOnlyGrid`, both buttons off, the Partener cell shut regardless of `PartAng`, the classification list not even fetched (no round trip for a list nothing can use), and the classification column switched from `Combo` to `Text` — a chevron that opens nothing is the same silent no-op as a button that does nothing. That last one is why `AplicaModulDeEditare` runs BEFORE the fill: a column's type only moves while the grid has no rows.
+`DdfEditSectiuneaAPage.AplicaModulDeEditare` sets `grd.ReadOnlyGrid`, disables both buttons, closes Partener regardless of `PartAng`, skips the unusable classification fetch, and changes that column from `Combo` to `Text`. It runs BEFORE filling, since column type changes require an empty grid.
 
 #### 4.7 `ButtonImageLayout` — one property for the toolbar's pictures
 
-The toolbar buttons are 30x30, and the icon set the operator binds is whatever size it is: a `Button` draws its `Image` at the picture's own pixel size and nothing else, so a 16x16 icon left a ring of background inside the button and a 64x64 one was cropped by its edges. The editor now publishes **one** property for the whole band — `KBotRichTextEditor.ButtonImageLayout`, category «K-BOT Icons», default `Original` — taking `RichTextImageLayout`: `Original`, `Stretch`, `Zoom`, `Tile`. One and not six, because the operator binds one icon set; a toolbar whose icons were fitted six different ways would read as broken.
+Toolbar buttons are 30x30; native `Button.Image` uses natural size, leaving space around 16x16 icons and cropping 64x64. One toolbar-wide `KBotRichTextEditor.ButtonImageLayout` («K-BOT Icons», default `Original`) takes `RichTextImageLayout`: `Original`, `Stretch`, `Zoom`, `Tile`, fitting the single operator-bound icon set consistently.
 
-`Original` changes nothing at all: the picture goes to `MyBase.Image` and the framework draws it, so the old look survives to the pixel. The other three are painted by `KBotNoFocusButton` itself, in its `OnPaint`, after the base class has laid down the flat background, the border and the text — there is no hook that skips only the image step, so the button keeps the picture in a field of its own and hands the base class `Nothing` while it is doing the drawing. That is why `Image` is shadowed there (`Browsable(False)` + serialization hidden, the house rule for a shadowed member): one storage, two drawing paths, and `btn.Image = picture` in `ApplyIcon` reads exactly as it did.
+`Original` passes the picture to `MyBase.Image`, preserving framework rendering. For `Stretch` / `Zoom` / `Tile`, `KBotNoFocusButton.OnPaint` draws after the base flat background, border and text; no image-only skip hook exists, so the base receives `Nothing`. Shadowed `Image` (`Browsable(False)`, serialization hidden) stores one picture for both paths; `ApplyIcon` still assigns `btn.Image`.
 
 Three details that are not obvious:
 
@@ -252,15 +252,15 @@ il_rtb.ImageStream = resources.GetObject(...)   ' the pictures, further down
 il_rtb.Images.SetKeyName(2, "bold")             ' and the key names, last
 ```
 
-The editor resolved a key the moment it was written and never again, so every button fell back to its lettered glyph — on a page whose designer surface showed the icons perfectly, because there the property grid re-applies each value after the file has been read. Reproduced exactly in a scratch WinForms exe before touching anything: all six buttons `image=NOTHING`, and the same code with the list filled BEFORE it is bound gave `image=ok` on all of them.
+Keys were resolved only when assigned; the designer order above therefore left letter glyphs at runtime. The designer surface worked because its property grid reapplies values after loading. A scratch WinForms reproduction confirmed six `image=NOTHING`; filling the list BEFORE binding gave six `image=ok`.
 
-The fix resolves the keys again in `OnHandleCreated`, by which time `InitializeComponent` has run to its end. The editor also listens to the bound list's `RecreateHandle` (raised when the contents are replaced wholesale), and `RefreshButtonIcons()` is now public for a host that adds pictures to an already-bound list while the form is on screen — `ImageList` raises nothing for that. Binding order no longer matters.
+The fix resolves keys again in `OnHandleCreated`, after `InitializeComponent`, and on bound-list `RecreateHandle` (wholesale replacement). Public `RefreshButtonIcons()` handles pictures added to a bound list on screen, for which `ImageList` raises no event. Binding order no longer matters.
 
 `OnHandleCreated` and not `OnCreateControl`: `CreateControl` is a no-op while the form is not visible, so a control rendered with `DrawToBitmap` — every visual test and the bench itself — would never have re-resolved.
 
-Resolving more than once made an existing leak matter: `ImageList.Images(i)` returns a NEW bitmap on every read, so each pass left one orphaned bitmap per button. `KBotNoFocusButton` now takes the picture through `SetPicture(picture, owned)` and frees the previous one only when it owned it. A picture assigned through `BoldImage` and its siblings belongs to the host and is never touched; disposing the bound list drops `Images` to `Nothing` and puts the letters back.
+`ImageList.Images(i)` returns a NEW bitmap per read. `KBotNoFocusButton.SetPicture(picture, owned)` now frees a previous picture only if owned, preventing repeated resolution leaks. Host-assigned `BoldImage` and sibling pictures remain host-owned; disposing the list clears `Images` and restores letters.
 
-**The header — not a bug.** `HeaderHeight` is a LOGICAL number at 96 dpi (rule C2), scaled once at layout time through `AppScaling`. The page asks for 40; this machine runs at 144 dpi, so the band is 60 px, and the designer surface — where the scale is always 1 — showed 40. Every other metric of the control behaves the same way. Three ways out, all the operator's call: type the number the 100 % form would want (40 / 1,5 ≈ 27), switch `AppScaling.Mode` to `Fixed100`, or leave it and accept that the band follows the screen. Nothing was changed in the control.
+**The header — not a bug.** C2 defines `HeaderHeight` at 96 dpi, scaled once by `AppScaling`: requested 40 becomes 60 px at 144 dpi, while designer scale 1 shows 40. All control metrics follow this rule. Operator choices: author the 100% value (`40 / 1,5 ≈ 27`), choose `AppScaling.Mode = Fixed100`, or accept screen scaling. No control change.
 
 **The bench.** `KBot.DevHarness\Internal\RichTextPlaygroundForm` (Controls/UI, safe), reached from the harness as «KBotRichTextEditor — proprietăți runtime (playground)». The editor on the right; on the left a `PropertyGrid` bound to it, which IS the complete list of editable properties — categories, descriptions, the `RichTextImageKeyConverter` drop-downs and the `ShouldSerialize` behaviour all come along, and nothing can fall behind a property added later. Above it, only what a property grid cannot give: which `ImageList` is bound (none / 16 / 24 / 64 px / mixed, drawn in code), in WHICH ORDER it is bound (the `.Designer.vb` order is one of the two), `ButtonImageLayout`, `Editabil`, `Collapsed`, and the application scale.
 
@@ -381,7 +381,7 @@ btn.BackColor = p.ButtonBackColor
 ...
 ```
 
-Bucla asta **sare peste `ModernRenderer`**. Pe schema `Modern`, `ButtonStyles.ApplyPrimary` / `ApplySecondary` cheamă `ModernRenderer.ApplyButton`, care pune un `Region` cu colțuri rotunjite și umplutura schemei; bucla nu. Rezultatul, care e exact reclamația: butoanele DDF ieșeau dreptunghiuri plate lângă butoanele rotunjite ale editorului de ordonanțare, și **niciunul nu purta accentul** — «Adaugă» arăta la fel ca «Șterge».
+Bucla ocolea `ModernRenderer`: pe `Modern`, `ButtonStyles.ApplyPrimary` / `ApplySecondary` cheamă `ModernRenderer.ApplyButton` pentru `Region` rotunjit și umplutură. DDF afișa dreptunghiuri plate fără accent, spre deosebire de ORD: «Adaugă» și «Șterge» arătau la fel, conform reclamației.
 
 #### Ce e acum
 
@@ -395,13 +395,13 @@ Bucla asta **sare peste `ModernRenderer`**. Pe schema `Modern`, `ButtonStyles.Ap
 
 Aceeași repartiție ca în `OrdAtasamentePage` / `OrdDocumentePage`: acțiunea poartă accentul, iar butonul distructiv rămâne secundar.
 
-Subsolul formularului e cazul invers și de aceea nu se mai scrie nimic acolo. `btnRenunta` și `btnSalveaza` stau DIRECT pe formular, nu într-un `IThemedControl`, deci `MyBase.OnThemeChanged` → `ThemeManager` le-a dat deja regula generică de buton, `ModernRenderer` inclus. Repictarea lor imediat după arunca rotunjirea. `OrdEditForm.OnThemeChanged` nu conține nicio linie despre butoanele lui, tocmai din acest motiv; acum nici `DdfEditForm` nu conține.
+În subsol, `btnRenunta` și `btnSalveaza` sunt direct pe formular: `MyBase.OnThemeChanged` → `ThemeManager` aplicase deja regula generică, inclusiv `ModernRenderer`; repictarea elimina rotunjirea. Ca `OrdEditForm`, `DdfEditForm.OnThemeChanged` nu mai repictează butoanele.
 
-Paginile sunt cazul celălalt și de aceea acolo se scrie: `ThemeManager.Traverse` **nu coboară cu regulile generice** în copiii unui control care e el însuși `IThemedControl` (`ThemeManager.vb`, liniile 304–321), iar paginile sunt `IThemedControl`. Motivul e scris la fiecare dintre cele două locuri, ca să nu pară nici omisiune, nici duplicare.
+Paginile implementează `IThemedControl`, iar `ThemeManager.Traverse` nu aplică regulile generice copiilor lor (`ThemeManager.vb`, 304–321). De aceea aplicarea explicită rămâne pe pagini, cu explicația la ambele locuri.
 
 ### 2. Grilele nu mai arată dezactivate
 
-`DdfEditSectiuneaAPage.Designer.vb` punea **`Enabled = False` pe TOATE cele zece coloane**. `KBotDataColumn.Enabled` nu înseamnă «nu se editează», ci — după propria lui documentație — «întreaga coloană e desenată ștearsă (gri) și inertă»: e chiar aspectul de control stins. Zece coloane așa = o grilă întreagă stinsă.
+`DdfEditSectiuneaAPage.Designer.vb` avea `Enabled = False` pe toate cele zece coloane. Proprietatea desenează coloana gri și o face inertă; nu exprimă doar interdicția editării.
 
 Două urmări, nu una:
 
@@ -422,20 +422,20 @@ Niciunul dintre cele trei nu atinge pictura. Regula e scrisă acum în capul des
 
 #### 3.1 `cmbComp` — compartimentul tastat nu ajungea nicăieri (funcțional, blocant)
 
-Felia 0051-02 a făcut combo-ul tastabil (`Editable = True`, `LimitToList = False`) și a lăsat scris la «rămas»: perechea `txtComp` + `cmbComp` din `DdfEditForm` așteaptă strângerea. Între timp `txtComp` a dispărut din designer, dar **codul care lega valoarea nu s-a mutat pe combo** — au rămas doar cinci linii comentate. Consecințele, toate în același sens:
+0051-02 a introdus `Editable = True` / `LimitToList = False`, lăsând unificarea `txtComp` / `cmbComp` restantă. `txtComp` a dispărut ulterior din designer, dar legarea valorii nu s-a mutat pe combo: rămăseseră cinci linii comentate. Urmări:
 
-- `_draft.Comp` se scria **numai** din `CmbComp_SelectedIndexChanged`, adică numai la alegerea din listă. Un compartiment TASTAT nu ajungea niciodată în schiță, iar `MotiveDeRefuz` refuza salvarea cu «Compartimentul lipsește» pentru un câmp pe care operatorul îl vedea completat.
-- Când lista venea goală de pe server — starea NORMALĂ pe o unitate fără documente anterioare, fiindcă nu există nomenclator de compartimente în MariaDB — `IncarcaListeleAsync` făcea `cmbComp.Enabled = False`, adică stingea singura cale de intrare rămasă. Pe o bază proaspătă documentul nu se putea salva deloc. Același lucru pe ramura `Catch`.
+- `_draft.Comp` se scria numai la alegerea din listă (`CmbComp_SelectedIndexChanged`). Textul tastat nu ajungea în schiță; `MotiveDeRefuz` răspundea «Compartimentul lipsește» deși câmpul părea completat.
+- Lista goală, normală pe o unitate fără DDF anterior și fără nomenclator de compartimente, declanșa `cmbComp.Enabled = False` în `IncarcaListeleAsync`; la fel ramura `Catch`. Singura intrare rămasă era astfel dezactivată, blocând salvarea pe baza nouă.
 - La încărcare, `cmbComp.SelectedItem = _draft.Comp`: pentru o valoare care nu e în listă — cazul frecvent — atribuirea e un no-op tăcut, deci compartimentul documentului dispărea din antet.
 - Sfatul de pe ecran spunea «Alegerea unuia îl scrie în caseta din stânga» și «Scrie compartimentul în caseta din stânga». Nu mai există nicio casetă în stânga.
 
-Acum: un `PreiaCompartimentul()` cheamă `cmbComp.CommitText()` (idempotent, exact pentru asta a fost scris în 0051-02) și pune `cmbComp.Text.Trim()` în schiță. Se cheamă din `cmbComp.Leave` și din nou din `BtnSalveaza_Click`, fiindcă operatorul poate apăsa butonul fără să iasă din câmp. `SelectedIndexChanged` rămâne, ca alegerea din listă să se vadă în schiță pe loc. Câmpul **rămâne aprins** când lista e goală sau când cererea eșuează — se schimbă doar sfatul. Reumplerea listei golește caseta, deci textul curent se pune înapoi, sub `_seIncarca`.
+Acum `PreiaCompartimentul()` cheamă idempotent `cmbComp.CommitText()` (0051-02) și copiază `cmbComp.Text.Trim()` în schiță la `cmbComp.Leave` și la `BtnSalveaza_Click` (salvare fără părăsirea câmpului). `SelectedIndexChanged` actualizează imediat alegerea. Lista goală/cererea eșuată schimbă numai sfatul, nu dezactivează câmpul. Textul se restaurează sub `_seIncarca` după reumplerea listei, care îl golește.
 
 Cele cinci linii comentate `txtComp` și nota din capul designerului care descria perechea au fost șterse; nota descrie acum un singur control.
 
 #### 3.2 `DdfEditFisierePage` construia coloanele în cod
 
-Un `ConstruiesteColoanele()` chemat din constructor — singurul loc din ambele editoare care face așa. Regula casei (`docs/kbot-forms-ui-convention.md`, și §4.5 din worklogul 0051, care mutase deja celelalte trei grile) cere declararea în `.Designer.vb`; altfel grila e goală la design time. Cele patru coloane sunt acum în designer, cu font, aliniere, `ReadOnly` și coloană de umplere (`cale_fisier`), la fel ca grilele din `OrdAtasamentePage`.
+`ConstruiesteColoanele()` din constructor era singura excepție a celor două editoare de la declararea în `.Designer.vb` (convenția formularelor și §4.5): grila rămânea goală la design time. Cele patru coloane sunt acum în designer, cu font, aliniere, `ReadOnly` și umplere pe `cale_fisier`, ca în `OrdAtasamentePage`.
 
 #### 3.3 `DdfEditSectiuneaBPage` era îmbrăcată altfel decât sora ei
 
@@ -454,7 +454,7 @@ Componenta `tips` era declarată și nefolosită pe pagina B; are acum sfatul de
 
 #### 3.4 `edtLunga.BackColor = Color.White`
 
-Culoare scrisă de mână în designer, ceea ce regula casei interzice — dar aici e mai rău decât o încălcare de stil: `KBotRichTextEditor.BackColor` are un setter care aprinde `_backColorPinned`, iar `ShouldSerializeBackColor` întoarce apoi True. Linia **pironea** fundalul editorului pe alb pentru totdeauna, deci suprafața rămânea albă și pe schema întunecată. Linia a fost ștearsă; controlul își ia din nou fundalul din temă.
+Linia `edtLunga.BackColor = Color.White` activa `_backColorPinned`; `ShouldSerializeBackColor = True` fixa albul inclusiv în schema întunecată. Ștergerea ei restabilește fundalul din temă și respectă regula culorilor din designer.
 
 #### 3.5 Un test care pica
 

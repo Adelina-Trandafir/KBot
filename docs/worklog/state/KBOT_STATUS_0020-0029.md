@@ -1,8 +1,6 @@
 # K-BOT — STATUS, slices 0020–0029
 
-Moved verbatim out of `../KBOT_STATUS.md` (28.09.2026). The index there says what
-each slice is; this file holds everything recorded about it: its registry row, its
-«Current focus» notes and its «Open threads» notes.
+Moved verbatim out of `../KBOT_STATUS.md` (28.09.2026). The index there says what each slice is; this file holds everything recorded about it: its registry row, its «Current focus» notes and its «Open threads» notes.
 
 ---
 
@@ -17,11 +15,6 @@ each slice is; this file holds everything recorded about it: its registry row, i
 | 0020-03 | DDF — două suprafețe de previzualizare (`XfaXmlPreview` implicit + `ReaderHostPreview` rezervă) | DONE (code) / **NO VISUAL VERDICT** / **ReaderHost NERULAT** | [0020-03](../SLICE-0020-01-ddf-endpoint.md#slice-0020-03) | Contractul, deviațiile și probele sunt în etapa legată; variantele ulterioare sunt delimitate cronologic. |
 | 0020-04 | DDF — `KBotPaths` + browser de fișiere + legare încrucișată frunză↔previzualizare | DONE (code) / **NO VISUAL VERDICT** | [0020-04](../SLICE-0020-01-ddf-endpoint.md#slice-0020-04) | Contractul, deviațiile și probele sunt în etapa legată; variantele ulterioare sunt delimitate cronologic. |
 | 0020-05 | DDF — generarea PDF (părțile ne-blocate) + `DdfXmlBuilder` + pasul 05-00 (client) | DONE (code) / **NEVER RUN LIVE** / **NO PDF VERDICT** | [0020-05](../SLICE-0020-01-ddf-endpoint.md#slice-0020-05) | Contractul, deviațiile și probele sunt în etapa legată; variantele ulterioare sunt delimitate cronologic. |
-| 0020-01 | `c0eab3a` | [Endpoint și client](../SLICE-0020-01-ddf-endpoint.md) | [0020-06](../SLICE-0020-01-ddf-endpoint.md#undefined) | Contractul, deviațiile și probele sunt în etapa legată; variantele ulterioare sunt delimitate cronologic. |
-| 0020-02 | `9531adc` | [DdfView](../SLICE-0020-02-ddf-view.md) | [0020-07](../SLICE-0020-01-ddf-endpoint.md#undefined) | Contractul, deviațiile și probele sunt în etapa legată; variantele ulterioare sunt delimitate cronologic. |
-| 0020-03 | `cff715a` | [Previzualizări și revizuirea «Document»](../SLICE-0020-03-ddf-preview.md) | [0020-08](../SLICE-0020-01-ddf-endpoint.md#undefined) | Contractul, deviațiile și probele sunt în etapa legată; variantele ulterioare sunt delimitate cronologic. |
-| 0020-04 | `df99591` | [Căi, browser și legarea previzualizării](../SLICE-0020-04-ddf-file-browser.md) | [0020-09](../SLICE-0020-01-ddf-endpoint.md#undefined) | Contractul, deviațiile și probele sunt în etapa legată; variantele ulterioare sunt delimitate cronologic. |
-| 0020-05 | `628e80f` | [Generarea PDF](../SLICE-0020-05-ddf-generate.md) | [0020-010](../SLICE-0020-01-ddf-endpoint.md#undefined) | Contractul, deviațiile și probele sunt în etapa legată; variantele ulterioare sunt delimitate cronologic. |
 
 ### Rezumat istoric de migrare — 24.07.2026
 
@@ -156,19 +149,4 @@ Familia 0028 este reunită în [jurnalul DataView](../SLICE-0028-dataview-footer
 
 ### Current focus
 
-- **Slice 0029 (`KBotDataView` — grupare ca la raportul Access) — DONE (code); nevăzut pe ecran.**
-  Trei lucruri merită scoase din ea. (1) **Gruparea a cerut o A TREIA numerotare** — indici de
-  BANDĂ, adică rândurile desenate, printre care antetele și subsolurile de grup, care nu sunt
-  rânduri de model deloc. Cele două de dinainte (MODEL / VEDERE) n-au fost atinse, și tocmai de
-  aceea `_view` a rămas exact ce era: lista rândurilor de date care trec de filtre. Consecința
-  fericită e că subsolul grilei și măsurarea coloanelor n-au avut nevoie de nicio modificare.
-  (2) **Sortarea NU poate rupe gruparea, și asta e o proprietate a comparatorului, nu o
-  verificare** — cheile de grupare se compară primele, deci nu există click care să împrăștie
-  aceeași cheie prin listă; iar sortarea pe coloana DE grupare întoarce sensul nivelului în loc să
-  adauge o a doua cheie. (3) **Filtrarea și strângerea NU sunt același lucru**, deși amândouă
-  ascund rânduri: prima schimbă pagina (deci și totalurile, deci și selecția cade), a doua doar ce
-  se vede din ea (totalurile stau, selecția rămâne). Dacă s-ar purta la fel, închiderea unei luni
-  ar face totalul general să se miște singur — ceea ce se citește ca o greșeală de calcul.
-  **Next:** aceeași datorie ca tot 0028 — nimic n-a fost pe ecran, iar aici se judecă privind exact
-  lucrurile pentru care a fost cerută felia (nuanța nivelurilor, retragerea, fonturile). Și niciun
-  ecran real nu grupează încă: `IstoricView` (clasificații) și `PlatiView` (luni) sunt candidații.
+- **Slice 0029 (`KBotDataView` — grupare ca la raportul Access) — DONE (code); nevăzut pe ecran.** Trei lucruri merită scoase din ea. (1) **Gruparea a cerut o A TREIA numerotare** — indici de BANDĂ, adică rândurile desenate, printre care antetele și subsolurile de grup, care nu sunt rânduri de model deloc. Cele două de dinainte (MODEL / VEDERE) n-au fost atinse, și tocmai de aceea `_view` a rămas exact ce era: lista rândurilor de date care trec de filtre. Consecința fericită e că subsolul grilei și măsurarea coloanelor n-au avut nevoie de nicio modificare. (2) **Sortarea NU poate rupe gruparea, și asta e o proprietate a comparatorului, nu o verificare** — cheile de grupare se compară primele, deci nu există click care să împrăștie aceeași cheie prin listă; iar sortarea pe coloana DE grupare întoarce sensul nivelului în loc să adauge o a doua cheie. (3) **Filtrarea și strângerea NU sunt același lucru**, deși amândouă ascund rânduri: prima schimbă pagina (deci și totalurile, deci și selecția cade), a doua doar ce se vede din ea (totalurile stau, selecția rămâne). Dacă s-ar purta la fel, închiderea unei luni ar face totalul general să se miște singur — ceea ce se citește ca o greșeală de calcul. **Next:** aceeași datorie ca tot 0028 — nimic n-a fost pe ecran, iar aici se judecă privind exact lucrurile pentru care a fost cerută felia (nuanța nivelurilor, retragerea, fonturile). Și niciun ecran real nu grupează încă: `IstoricView` (clasificații) și `PlatiView` (luni) sunt candidații.

@@ -2,19 +2,7 @@
 
 18 introduce controlul comun și vederea DDF; 19 adaugă fereastra tuturor facturilor, iar 20 închide restanța selectorului manual. 21 restrânge fila la facturi existente prin două cereri; 22 înlocuiește acele cereri cu steagul ArePrimite la încărcarea arborelui. 29 înlocuiește căutarea separată și starea citită, 30 mută sincronizarea în ribbon, 31 scoate Atașamente/Observații și schimbă salvarea PDF, 32 introduce rezultatul sincronizării, 33 îl mută în control/subsol, 35 adaugă opțiunile, iar 36 adaugă XmlViz. [34/37](SLICE-00EF-34-customPopup-combo-casuta.md) păstrează popup-ul și recitirea de pe serverul K-BOT. „Fără mesaj la succes” și „fără recitirea listei” sunt checkpointuri înlocuite de etapele ulterioare. 40 scoate contorul și anul din etichetele arborelui, cu revenirea anului pentru liste multianuale ca alegere de implementare neconfirmată. Fiecare etapă păstrează probele, limitele și ajutorul ei; amplasările ulterioare din ribbon sunt în 0114/0119, nu reguli concurente cu meniul inițial.
 
-- [00EF-18](#slice-00EF-18)
-- [00EF-19](#slice-00EF-19)
-- [00EF-20](#slice-00EF-20)
-- [00EF-21](#slice-00EF-21)
-- [00EF-22](#slice-00EF-22)
-- [00EF-29](#slice-00EF-29)
-- [00EF-30](#slice-00EF-30)
-- [00EF-31](#slice-00EF-31)
-- [00EF-32](#slice-00EF-32)
-- [00EF-33](#slice-00EF-33)
-- [00EF-35](#slice-00EF-35)
-- [00EF-36](#slice-00EF-36)
-- [00EF-40](#slice-00EF-40)
+[00EF-18](#slice-00EF-18) · [00EF-19](#slice-00EF-19) · [00EF-20](#slice-00EF-20) · [00EF-21](#slice-00EF-21) · [00EF-22](#slice-00EF-22) · [00EF-29](#slice-00EF-29) · [00EF-30](#slice-00EF-30) · [00EF-31](#slice-00EF-31) · [00EF-32](#slice-00EF-32) · [00EF-33](#slice-00EF-33) · [00EF-35](#slice-00EF-35) · [00EF-36](#slice-00EF-36) · [00EF-40](#slice-00EF-40)
 
 ## SLICE-00EF-18 -- Received e-invoices, client half (domain, API, view in the shell, sync dialog) <a id="slice-00EF-18"></a>
 
@@ -98,17 +86,16 @@ Replaces the client-side check of 00EF-21 (two requests per selection: the DDF r
 
 ## SLICE-00EF-29 - E-Factura received invoices: tree by supplier, search in the header, «Continut» view reworked (15.10.2026) <a id="slice-00EF-29"></a>
 
-Slice number: next free after 00EF-28 (checked with grep: 00EF-29 was not used anywhere). The help for it is recorded as
-**0000-75** in this same file (sub-slice of 0000, as the rules ask).
+Slice number: next free after 00EF-28 (checked with grep: 00EF-29 was not used anywhere). The help for it is recorded as **0000-75** in this same file (sub-slice of 0000, as the rules ask).
 
 ### What changed and why
 Operator request of 15.10.2026, eight points, all in the received-invoices control `PrimiteView` (used by the «E-Factura» view of the DDF and by the window «Facturi primite»):
 
-1. **Search box removed, search button in the tree** (like the main window): `txtCauta` and its handler / `_filter` / `ShownItems` are gone; the tree's own header search (`HeaderSearchIcon`, band «... tastează minim 3 caractere ...», the control's rules: 3 characters, Esc clears) does the narrowing. It searches the node captions (supplier name, date, number).
+1. **Tree-header search replaces the separate box.** Removed `txtCauta`, its handler, `_filter` and `ShownItems`. `HeaderSearchIcon` uses the standard band («... tastează minim 3 caractere ...»): 3 characters, Esc clears, matching node captions (supplier, date, number).
 2. **Right header button for filter options**: `HeaderRightIcon` (filter picture) + `Tree_HeaderRightIconClicked`. Nothing to put in it yet, so the menu has ONE disabled line («Opțiunile de filtrare vor fi adăugate aici.») instead of a silent no-op.
 3. **Grouping**: Toate facturile > MONTH > SUPPLIER > invoice. Supplier key = `CuiNormalizat` (the tax code, which the server's list SQL already returns, `EF_Primite.CuiNormalizat`); an invoice without a code falls back to the name written on it. The name shown is the one of the supplier's newest invoice. Suppliers in name order, invoices newest first. Leaf caption: `dd.MM.yyyy · [NC ]number ~~~ total`. Supplier row has a tooltip (count and total).
-4. **Text no longer cut**: `LeftTextWidth = 100` (fixed 100 px for the left text, which cut «Toate facturile (3 ...») is removed; `RightTextWidth = 96` reserves the right part instead, so the value (2 decimals, `~~~`, no columns) is always whole and right-aligned and the left text takes all the rest.
-5. **Opening an invoice** no longer rebuilds the tree (no repositioning, no dot change). Operator, same day: the read / new state is NOT shown at all and the colour of the dot «will mean something else» -> `MarkReadAsync` and `_markedRead` are removed (the invoice is no longer marked read on the server either; `MarkPrimitaCititaAsync` stays in the API, unused here, and `EF_Mesaje.Nou` stays 1), the «Noua» line is gone from the tooltip, and `DotOf` gives a NEUTRAL dot (`FacturaIcons.StareNeutra`, theme's dim colour); only in the DDF view an invoice not linked to the DDF keeps the grey ring.
+4. **Text no longer cut:** removed fixed `LeftTextWidth = 100`, which truncated «Toate facturile (3 ...». `RightTextWidth = 96` reserves the whole right-aligned value (2 decimals, `~~~`, no columns); left text uses the rest.
+5. **Opening an invoice** keeps the tree and position. Operator decision, same day: read/new state disappears; the dot colour «will mean something else». Removed `MarkReadAsync`, `_markedRead` and tooltip «Noua»; the server no longer marks read (`MarkPrimitaCititaAsync` remains unused in the API, `EF_Mesaje.Nou` stays 1). `DotOf` returns NEUTRAL `FacturaIcons.StareNeutra` (theme dim colour); the DDF view retains the grey ring for an unlinked invoice.
 6. **Taxable-base grid removed**: `gridCote` (and its columns, footer «TOTAL TVA») gone from `PrimiteLiniiPage`, and its filling from `PrimiteView.FillLines`. The model (`EFacturaPrimitaDetaliu.Cote`) and the classic PDF keep the VAT per rate.
 7. **Lines grid = 60% of the height**: `PrimiteLiniiPage` is now a `KBotTableLayoutPanel` (`tlyPagina`), rows 40% / 60%.
 8. **Supplier and notes on top** (the 40%): `lblFurnizor` (`KBotHtmlLabel`: name in bold, cod fiscal, adresa, scadenta, referinta for a credit note, accounts) and, under it, `rtbNote` (`KBotRichTextEditor`, read-only, header/footer hidden) with the notes of the XML joined. All text is HTML-encoded. «Observatii» view stays as it was.
@@ -137,7 +124,7 @@ Help (0000-75): `contabil/efactura/index.md`, sections «Facturile primite» and
 
 ### Follow-up (15.10.2026, same day)
 - Supplier block font 12 pt Calibri (was the default, too small); `lblFurnizor` 120 px logical, `rtbNote` the rest.
-- **Empty lines are dropped when notes are shown**: `PrimiteObservatiiPage.CleanNote` / `CleanNotes` (split on CR / LF, trim every line, drop the empty ones, drop a note with nothing left). Used by the notes box above the lines (notes also joined with one line break, no blank line between two notes) and by the «Observatii» view (rows and the full-text box); the view's «has notes» test counts only notes that show something. The stored XML text is not changed.
+- **Display-only note cleanup:** `PrimiteObservatiiPage.CleanNote` / `CleanNotes` splits CR/LF, trims lines, drops empty lines/notes and joins notes with one newline. Used above the lines and in «Observatii» rows/full text; visibility counts only nonempty notes. Stored XML remains unchanged.
 - Build KBot.App: 0 warnings, 0 errors; not seen on screen.
 - Second look (same day): supplier block 11 pt (was 12), notes text 10 pt (`rtbNote.EditorFont`, the editor's default was 11), the two side by side in `tlySus` (supplier 42% | 6 px gap | notes 58%, replaces `pnlFurnizor`); the lines grid font 10 pt (was the ambient Calibri 9; row height 28 px unchanged). Build KBot.App: 0 warnings, 0 errors; not seen on screen.
 
@@ -168,8 +155,8 @@ E-Factura side of the request; the ribbon side (fields, order, conditional visib
 ## SLICE-00EF-31 - Received invoices: no «Atasamente» / «Observatii» views; the operator chooses where a PDF is saved (15.10.2026) <a id="slice-00EF-31"></a>
 
 ### What changed and why
-1. **Views «Atasamente» and «Observatii» removed** from `PrimiteView` (the control of the «Cumparare» page and of the DDF view «E-Factura»): nav items, pages (`pgAtasamente`, `pgObservatii`), the double-click save of an attachment and their fill code. The files are still reached from the popup of «Factura PDF» (the notice for a file that cannot be shown no longer sends to the removed view); the notes are above the lines of «Continut» (slice 00EF-29). The page classes `PrimiteAtasamentePage` / `PrimiteObservatiiPage` stay in the project (`PrimiteObservatiiPage.CleanNotes` is used by the notes box).
-2. **Adobe's Save is trapped, and the operator chooses**: new `AdobeSaveTrap.ChooseSavePath` (`Func(Of String, String)`): when set, a Save As of the document is parked off screen, the chooser is called from a posted callback (never inside a sweep) with the file name Adobe offered and answers a full path, or Nothing; a path -> the same save flow as before but with THAT path in Adobe's dialog (`_chosenPath`; the overwrite question is already answered by the operator's own dialog and Adobe's is accepted by the trap as before); Nothing -> Adobe's dialog is cancelled, nothing is raised. Forwarded by `AdobeReaderHost` and `AcroPdfViewer`; `ReaderHostPreview.UserChoosesSave` shows a `SaveFileDialog` («Salveaza documentul», PDF, overwrite prompt); `FacturaPdfViewer(True)` is what the received-invoice hosts pass (`PrimiteForm`, `EFacturaView`). The issued invoices and the DDF keep the old behaviour (a save goes back onto the document).
+1. **Removed «Atasamente» / «Observatii» views** from shared `PrimiteView`: nav items, `pgAtasamente` / `pgObservatii`, attachment double-click save and filling. Files remain in «Factura PDF» popup (the unsupported-file notice no longer points to the removed view); notes stay above «Continut» lines (00EF-29). `PrimiteAtasamentePage` / `PrimiteObservatiiPage` remain: `PrimiteObservatiiPage.CleanNotes` still serves the notes box.
+2. **Adobe Save lets the operator choose a path.** New `AdobeSaveTrap.ChooseSavePath` (`Func(Of String, String)`), when set, parks Save As off screen and posts the chooser callback outside the sweep, passing the Adobe-proposed filename. Full path sets `_chosenPath` for the existing save flow; the operator chooser handles overwrite and the trap accepts Adobe confirmation as before. `Nothing` cancels the Adobe dialog without raising an event. Forwarded by `AdobeReaderHost` / `AcroPdfViewer`; `ReaderHostPreview.UserChoosesSave` uses `SaveFileDialog` («Salveaza documentul», PDF, overwrite prompt). Received-invoice hosts `PrimiteForm` / `EFacturaView` pass `FacturaPdfViewer(True)`; issued invoices and DDF retain save-to-document behaviour.
 3. The ribbon fields overlapped (the KBot combo forces its own height): see [0114-01](SLICE-0114-ribbon.md#slice-0114-01), follow-up.
 
 ### Files touched
@@ -191,7 +178,7 @@ At the end of `PrimiteForm.SyncFromAnafAsync`:
 - invoices were brought -> a window `SincronizareNoiForm` (own designer; caption bar, theme, one «OK») with a table of the NEW invoices (date, number, supplier, tax code, total, with a total in the footer), newest first; the same facts go to `mesaje_operator.log` through `OperatorLog` (the window is not a `KBotMessage`, so it logs by hand, as the house rule says);
 - nothing brought and no unreadable message -> the info message «Nu există facturi noi pe serverul ANAF.» (`KBotMessage`, Information);
 - brought but not visible in the list (another year than the one chosen in K-BOT, or the list could not be read first) -> an info message with the count.
-«New» = not in the list before the sync (the list is read first when it never was: `PrimiteView.Items` / `ListLoaded`, new members); no server change. The existing message system (`KBotMessageBox`) has no table, so the table is a small dialog of its own rather than a change to that box.
+«New» means absent from the pre-sync list, read first if needed via new `PrimiteView.Items` / `ListLoaded`; no server change. `KBotMessageBox` has no table, hence the separate small dialog.
 
 ### Files touched
 `src/KBot.EFactura/Forms/SincronizareNoiForm.vb` and `.Designer.vb` (new), `PrimiteForm.vb`, `src/KBot.EFactura/Views/Primite/PrimiteView.vb`, `contabil/efactura/index.md` (0000-78).
@@ -265,9 +252,7 @@ The options are of the session (not stored). The tree is built again with the sh
 Slice number: the operator wrote «SLICE-01EF» for the work that imports from the editor; there is no 01EF slice anywhere, so it is read as the E-Factura slice (00EF), next free number 00EF-36 (to be corrected if 01EF was meant). The file name keeps «in-editor» from the first version.
 
 ### What changed and why
-**First version (same day, REVERTED at the operator's word «NU e bine»)**: the FOREXE workflow editor was imported into
-`KBot.Forexe.Editor` and opened in a window of its own with a button of the bar. Taken out again: the ten imported files, `wfl_help.md`, the project / README edits and the launcher are gone; `src/KBot.Forexe.Editor` is as in HEAD (an empty project).
-**Now**: a new control, written from the ideas of that editor (the map, the colouring), made for the e-invoice:
+**First version (same day, REVERTED at the operator's word «NU e bine»)**: the FOREXE workflow editor was imported into `KBot.Forexe.Editor` and opened in a window of its own with a button of the bar. Taken out again: the ten imported files, `wfl_help.md`, the project / README edits and the launcher are gone; `src/KBot.Forexe.Editor` is as in HEAD (an empty project). **Now**: a new control, written from the ideas of that editor (the map, the colouring), made for the e-invoice:
 1. **`XmlViz`** (`KBot.Controls/Xml/XmlViz.vb` + designer): left a MAP (`AdvancedTreeControl`), right the text (a read-only `RichTextBox`). No help panel, no validation, no editing, no autocomplete, no window of its own.
    - **Map**: one node per element, named WITHOUT prefix (`cbc:IssueDate` -> «IssueDate»; the prefix only says value / aggregate, which the expander and the bold name already say); a value element shows its text on the right (`~~~`, cut at 60 characters). A click selects the element in the text.
    - **Text**: written by the control from the parsed XML (two spaces per level, one element per line) as RTF, so the position of every element is known and the colours cost one assignment. Colours are the theme palette's (punctuation, element, attribute name, attribute value, text, comment) and follow a theme change. A value longer than 400 characters (the base64 of an attachment) is cut with the count of what was left out. A text that is not well-formed is shown as it came, with the reason.

@@ -15,12 +15,7 @@ Date: 24.09.2026. Operator request: the ActiveX (AcroPDF) viewer misbehaves on a
 
 ## Files touched
 
-- `src/KBot.Controls/Adobe/AcroPdfTraceLog.vb` (new)
-- `src/KBot.Controls/Adobe/AcroPdfSurface.vb`
-- `src/KBot.Controls/Adobe/AdobeSaveTrap.vb`
-- `src/KBot.Common/AppSettings.vb`
-- `src/KBot.Common/Logging/LogFileLoader.vb`
-- `src/KBot.App/Setari/SetariAplicatieView.vb`, `SetariAplicatieView.Designer.vb`
+`src/KBot.Controls/Adobe/AcroPdfTraceLog.vb` (new); `src/KBot.Controls/Adobe/AcroPdfSurface.vb`; `src/KBot.Controls/Adobe/AdobeSaveTrap.vb`; `src/KBot.Common/AppSettings.vb`; `src/KBot.Common/Logging/LogFileLoader.vb`; `src/KBot.App/Setari/SetariAplicatieView.vb`, `SetariAplicatieView.Designer.vb`
 
 ## Test results
 
@@ -181,9 +176,7 @@ The trap pressed OK on EVERY «Warning: JavaScript Window» box. The forms also 
 
 ---
 
-<a id="slice-0078-16"></a>
-
-## SLICE-0078-16 — Jurnalul ActiveX pe culoare (lane-uri)
+## SLICE-0078-16 — Jurnalul ActiveX pe culoare (lane-uri) <a id="slice-0078-16"></a>
 
 Operator request, 07.10.2026: in the ActiveX log viewer, a button that takes the loaded log and opens a new form with the lane control (`KBot.Controls/Lane`); no date, only time and milliseconds; each root node of the left tree becomes a lane, each leaf a change in that lane.
 
@@ -195,9 +188,7 @@ Slice number: **0078-16 is an assumption** (continuation of the 0078-15 viewer; 
 - Not modal, like the viewer. A line with no parseable stamp is left out and counted in the status line.
 
 ### 2. Files touched
-- `src/KBot.App/HarnessTests/ActivexLaneForm.vb` + `.Designer.vb` (new)
-- `src/KBot.App/HarnessTests/ActivexLogViewerForm.vb` + `.Designer.vb`
-- `docs/worklog/KBOT_STATUS.md`, `docs/worklog/state/KBOT_STATUS_0070-0079.md` (0078-16 rows)
+`src/KBot.App/HarnessTests/ActivexLaneForm.vb` + `.Designer.vb` (new); `src/KBot.App/HarnessTests/ActivexLogViewerForm.vb` + `.Designer.vb`; `docs/worklog/KBOT_STATUS.md`, `docs/worklog/state/KBOT_STATUS_0070-0079.md` (0078-16 rows)
 
 ### 3. Test results
 - `dotnet build src\KBot.App\KBot.App.vbproj -c Debug`: 0 warnings, 0 errors.

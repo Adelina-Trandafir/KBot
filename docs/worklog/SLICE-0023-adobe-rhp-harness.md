@@ -4,11 +4,7 @@ Consolidare D001-10: cinci workloguri, etape 1, 2, 4, 5 și 6. Numerele original
 
 Important pentru lectură: pasul 2 are resturi ale descrierii inițiale (`chkApplyOnLoad`, `document.path`), deși începutul aceluiași pas consemnează eliminarea lor; acele resturi sunt istorice. Pasul 4 schimbă prioritatea userPrefs, pasul 5 introduce rândurile literale și restaurarea HKCU implicit oprită. Verdictul de bază curată este corectat ulterior; randarea formularului nu dovedește efectul asupra Adobe.
 
-- [Pasul 1](#slice-0023-pas-1)
-- [Pasul 2](#slice-0023-pas-2)
-- [Pasul 4](#slice-0023-pas-4)
-- [Pasul 5](#slice-0023-pas-5)
-- [Pasul 6](#slice-0023-pas-6)
+[Pasul 1](#slice-0023-pas-1) · [Pasul 2](#slice-0023-pas-2) · [Pasul 4](#slice-0023-pas-4) · [Pasul 5](#slice-0023-pas-5) · [Pasul 6](#slice-0023-pas-6)
 
 ## SLICE-0023 — Adobe right-hand pane (RHP): every removal option, in the harness only <a id="slice-0023-pas-1"></a>
 
@@ -23,26 +19,14 @@ The operator cannot remove Adobe's right-hand Tools pane ("Export PDF" / "Start 
 - **§3.C Ferestre copil** — `lstChildren` (populated by the probe; class + size, `Tag`=HWND) + hide/show/restore-all via `ShowWindow`. Hidden handles tracked for exact restore; every call guarded with `IsWindow`, dead handles dropped with a log line, `NudgeRedraw` after each change.
 - **§3.D Scurtături** — Shift+F4 / F4 sent to the hosted window (`SetFocus` + `SendKeys`), logged as EXPERIMENTAL and version-dependent; "nothing happened" is a valid recorded result (no retries, per plan).
 - **§3.E Preferințe Adobe (HKCU)** — the three community-sourced RHP values (`bExpandRHPInViewer=0`, `bRHPSticky=1`, `aDefaultRHPViewMode_L="Collapsed"`) plus the Adobe-documented viewer-generation switch (`bEnableAv2=0`), written to the auto-detected AVGeneral hive (Reader DC vs Adobe Acrobat; `cboHive` can override). Apply order per plan: once-per-session snapshot → kill our Adobe by PID + ask (Romanian, never silent) before killing foreign Adobe → write with old→new logging → relaunch via the existing `RelaunchAsync`. Restore (button and on-close, `chkRestoreOnClose` default checked) replays the snapshot exactly: **absent restores to DELETION, never to 0**; wrong-type originals are written back verbatim.
-- **§3.F Politici Adobe (HKLM)** — `bAcroSuppressUpsell=1` + `cServices\bToggleAdobeDocumentServices=1` under `HKLM\SOFTWARE\Policies\Adobe\<product>\DC\FeatureLockDown`, applied by generating `adobe_policy_apply.reg` / `adobe_policy_revert.reg` into `AppDir\Logs\` (UTF-16; revert built from pre-apply reads, with `"name"=-` deletion lines for absent values) and importing via `reg.exe` with `Verb=runas` — K-BOT itself is never elevated. UAC cancel (Win32Exception
-  1223) shows "Operația a fost anulată de utilizator." with full detail only in the log.
+- **§3.F Politici Adobe (HKLM)** — `bAcroSuppressUpsell=1` + `cServices\bToggleAdobeDocumentServices=1` under `HKLM\SOFTWARE\Policies\Adobe\<product>\DC\FeatureLockDown`, applied by generating `adobe_policy_apply.reg` / `adobe_policy_revert.reg` into `AppDir\Logs\` (UTF-16; revert built from pre-apply reads, with `"name"=-` deletion lines for absent values) and importing via `reg.exe` with `Verb=runas` — K-BOT itself is never elevated. UAC cancel (Win32Exception 1223) shows "Operația a fost anulată de utilizator." with full detail only in the log.
 - **§3.G** — `lblStatus` always shows one state block: hive in use, clip values, hidden-child count, HKCU values applied, HKLM applied this session, plus the last action message.
 
 Pure logic extracted behind an I/O seam so tests never touch the real registry (`Internal/Adobe/`): `AdobeRegistryConstants` (the §2 names, transcribed — never from memory), `RegistryValueSnapshot` + `RegistrySnapshotSet` (three-state snapshot: absent / present-with-value / wrong-type-as-present-verbatim; capture idempotent per session), `RegFileBuilder` (header, `dword:` hex, deletion lines, escaping), `AdobeHiveResolver` (hive/product from key existence + exe name), `IRegistryAccess` (seam) and `WinRegistryAccess` (the real HKCU/HKLM-read boundary; logs + rethrows per house rule).
 
 ### Files touched
 
-- `src/KBot.DevHarness/Internal/AdobeReaderHarnessForm.vb` — all §3 sections (see above)
-- `src/KBot.DevHarness/Internal/AdobeReaderHarnessForm.Designer.vb` — ~30 new controls, all declared here (house rule); flowLeft widened 320→360
-- `src/KBot.DevHarness/Internal/Adobe/AdobeRegistryConstants.vb` — new
-- `src/KBot.DevHarness/Internal/Adobe/RegistryValueSnapshot.vb` — new
-- `src/KBot.DevHarness/Internal/Adobe/RegistrySnapshotSet.vb` — new
-- `src/KBot.DevHarness/Internal/Adobe/RegFileBuilder.vb` — new
-- `src/KBot.DevHarness/Internal/Adobe/AdobeHiveResolver.vb` — new
-- `src/KBot.DevHarness/Internal/Adobe/IRegistryAccess.vb` — new
-- `src/KBot.DevHarness/Internal/Adobe/WinRegistryAccess.vb` — new
-- `tests/KBot.DevHarness.Tests/` — **new test project** (`KBot.DevHarness` had none; the pure helpers live in `KBot.DevHarness/Internal/Adobe/` and are covered from here): `RegistrySnapshotSetTests` (6), `RegFileBuilderTests` (8), `AdobeHiveResolverTests` (8), `FakeRegistryAccess` (in-memory seam)
-- `KBot.sln` — KBot.DevHarness.Tests added under the Tests folder
-- `src/KBot.DevHarness/KBot.DevHarness.vbproj` — FileVersion 1.0.2.0 → 1.0.3.0
+`src/KBot.DevHarness/Internal/AdobeReaderHarnessForm.vb` — all §3 sections (see above); `src/KBot.DevHarness/Internal/AdobeReaderHarnessForm.Designer.vb` — ~30 new controls, all declared here (house rule); flowLeft widened 320→360; `src/KBot.DevHarness/Internal/Adobe/AdobeRegistryConstants.vb`, `src/KBot.DevHarness/Internal/Adobe/RegistryValueSnapshot.vb`, `src/KBot.DevHarness/Internal/Adobe/RegistrySnapshotSet.vb`, `src/KBot.DevHarness/Internal/Adobe/RegFileBuilder.vb`, `src/KBot.DevHarness/Internal/Adobe/AdobeHiveResolver.vb`, `src/KBot.DevHarness/Internal/Adobe/IRegistryAccess.vb`, `src/KBot.DevHarness/Internal/Adobe/WinRegistryAccess.vb` — new; `tests/KBot.DevHarness.Tests/` — **new test project** (`KBot.DevHarness` had none; the pure helpers live in `KBot.DevHarness/Internal/Adobe/` and are covered from here): `RegistrySnapshotSetTests` (6), `RegFileBuilderTests` (8), `AdobeHiveResolverTests` (8), `FakeRegistryAccess` (in-memory seam); `KBot.sln` — KBot.DevHarness.Tests added under the Tests folder; `src/KBot.DevHarness/KBot.DevHarness.vbproj` — FileVersion 1.0.2.0 → 1.0.3.0
 
 Out-of-scope files NOT touched, per plan: `ReaderHostPreview.vb`, `IDdfPreview.vb` / `DdfPreviewFactory` (mode constant stays `XfaXml`), installer/publish/startup. No registry write happens outside an explicit button press in this harness.
 
@@ -99,8 +83,7 @@ Every test used to be a manual click sequence: the combination that worked (Shif
 
 #### 2. Layout rework (§2)
 
-> **This shipped broken and was fixed afterwards — see “Defect found on screen” below.**
-> The description here is the corrected end state.
+> **This shipped broken and was fixed afterwards — see “Defect found on screen” below.** The description here is the corrected end state.
 
 The fixed-width strip is replaced by: `splitMain` (`SplitContainer`, vertical, `SplitterDistance` 470, `Panel1MinSize` 300, `FixedPanel = None`, draggable at runtime) → Panel1 holds **`flowOptions`** (a `FlowLayoutPanel`: `AutoScroll`, `FlowDirection = TopDown`, `WrapContents = False`); Panel2 holds `tlpRight` (row 0 = 100% `pnlHost`, row 1 = AutoSize `lblStatus`). Each of the eleven sections is a `GroupBox` + inner `TableLayoutPanel`; the clip section uses two columns (AutoSize label + 100% input). `lblCmd` became **`txtCmd`** (multiline, vertical scrollbar, `MinimumSize` height 72) and `lstChildren` got `MinimumSize` height 120, so neither collapses when the splitter goes narrow. Pass/Fail stayed where the harness framework puts them.
 
@@ -130,13 +113,7 @@ Verified by rendering the real form: panel client 453×740, **vertical scrollbar
 
 ### Files touched
 
-- `src/KBot.DevHarness/Internal/AdobeReaderHarnessForm.Designer.vb` — full layout rework; ~40 controls re-declared (SplitContainer, 2 outer + 11 inner TableLayoutPanels, 11 GroupBoxes, the five Scenariu controls, `txtCmd`, `tmrLayout`); `lblSec*` labels and `flowLeft` removed (GroupBox captions replace them); `components` + `Dispose` added for the timer
-- `src/KBot.DevHarness/Internal/AdobeReaderHarnessForm.vb` — scenario load/run/save + the runner, the `RelaunchAsync` split, debounced layout refresh, hide-by-text with retries, the up-front registry confirmation, `SetControlsEnabled` now toggles `tlpOptions`
-- `src/KBot.DevHarness/Internal/Adobe/HarnessScenario.vb` — **new**: the config types + `HarnessScenarioSteps`
-- `src/KBot.DevHarness/Internal/Adobe/HarnessScenarioReader.vb` — **new**: reader/writer pair + `HarnessScenarioReadResult` (`IsValid` / `Errors` / `Warnings`, no message boxes inside)
-- `src/KBot.DevHarness/Config/rhp_collapse_then_hide.json` — **new** sample scenario (the §0 combination), copied to `<AppDir>\Config\` with `PreserveNewest`
-- `src/KBot.DevHarness/KBot.DevHarness.vbproj` — Config copy rule; FileVersion 1.0.3.0 → 1.0.4.0
-- `tests/KBot.DevHarness.Tests/HarnessScenarioTests.vb` — **new**, 17 tests
+`src/KBot.DevHarness/Internal/AdobeReaderHarnessForm.Designer.vb` — full layout rework; ~40 controls re-declared (SplitContainer, 2 outer + 11 inner TableLayoutPanels, 11 GroupBoxes, the five Scenariu controls, `txtCmd`, `tmrLayout`); `lblSec*` labels and `flowLeft` removed (GroupBox captions replace them); `components` + `Dispose` added for the timer; `src/KBot.DevHarness/Internal/AdobeReaderHarnessForm.vb` — scenario load/run/save + the runner, the `RelaunchAsync` split, debounced layout refresh, hide-by-text with retries, the up-front registry confirmation, `SetControlsEnabled` now toggles `tlpOptions`; `src/KBot.DevHarness/Internal/Adobe/HarnessScenario.vb` — **new**: the config types + `HarnessScenarioSteps`; `src/KBot.DevHarness/Internal/Adobe/HarnessScenarioReader.vb` — **new**: reader/writer pair + `HarnessScenarioReadResult` (`IsValid` / `Errors` / `Warnings`, no message boxes inside); `src/KBot.DevHarness/Config/rhp_collapse_then_hide.json` — **new** sample scenario (the §0 combination), copied to `<AppDir>\Config\` with `PreserveNewest`; `src/KBot.DevHarness/KBot.DevHarness.vbproj` — Config copy rule; FileVersion 1.0.3.0 → 1.0.4.0; `tests/KBot.DevHarness.Tests/HarnessScenarioTests.vb` — **new**, 17 tests
 
 Out of scope and untouched, as in pass 1: `ReaderHostPreview`, `IDdfPreview`, `DdfPreviewFactory` (mode constant stays `XfaXml`), installer, publish, startup paths.
 
@@ -318,14 +295,7 @@ Warn/block texts are origin-aware: each active value is tagged `[HKLM politică]
 
 ### Files touched
 
-- `src/KBot.DevHarness/Internal/Adobe/PrefRowSelection.vb` — **new** (row parse + round trip)
-- `src/KBot.DevHarness/Internal/Adobe/BaselineEvaluator.vb` — `BaselineOrigin`, `Policies` / `Preferences`, origin-aware describe/warn/block text
-- `src/KBot.DevHarness/Internal/AdobeReaderHarnessForm{.vb,.Designer.vb}` — `tlpPrefRows` + four combos + `lblPrefHint` replace the four checkboxes; `PopulatePrefRows`, `ParsePrefRows`, `InvalidPrefRows`, `CollectPanelUserPrefs`, `ApplyUserPrefValuesToRows`, `ReadUserRhpState`, `ReadBaselineState`; `chkRestoreOnClose` unticked
-- `src/KBot.DevHarness/Config/rhp_02_interfata_moderna.json` — `restoreOnClose` true → false
-- `tests/KBot.DevHarness.Tests/PrefRowSelectionTests.vb` — **new**, 15
-- `tests/KBot.DevHarness.Tests/HarnessTruthTests.vb` — +6 (HKCU baseline)
-- `tests/KBot.DevHarness.Tests/AdobeHarnessScenarioBindingTests.vb` — rewritten for rows, +4
-- `tests/KBot.DevHarness.Tests/AdobeHarnessLayoutTests.vb` — new control names
+`src/KBot.DevHarness/Internal/Adobe/PrefRowSelection.vb` — **new** (row parse + round trip); `src/KBot.DevHarness/Internal/Adobe/BaselineEvaluator.vb` — `BaselineOrigin`, `Policies` / `Preferences`, origin-aware describe/warn/block text; `src/KBot.DevHarness/Internal/AdobeReaderHarnessForm{.vb,.Designer.vb}` — `tlpPrefRows` + four combos + `lblPrefHint` replace the four checkboxes; `PopulatePrefRows`, `ParsePrefRows`, `InvalidPrefRows`, `CollectPanelUserPrefs`, `ApplyUserPrefValuesToRows`, `ReadUserRhpState`, `ReadBaselineState`; `chkRestoreOnClose` unticked; `src/KBot.DevHarness/Config/rhp_02_interfata_moderna.json` — `restoreOnClose` true → false; `tests/KBot.DevHarness.Tests/PrefRowSelectionTests.vb` — **new**, 15; `tests/KBot.DevHarness.Tests/HarnessTruthTests.vb` — +6 (HKCU baseline); `tests/KBot.DevHarness.Tests/AdobeHarnessScenarioBindingTests.vb` — rewritten for rows, +4; `tests/KBot.DevHarness.Tests/AdobeHarnessLayoutTests.vb` — new control names
 
 ### Test results
 
@@ -393,13 +363,7 @@ Shipped as `Config/rhp_05_muta_fereastra.json` with `clip.enabled` explicitly **
 
 ### Files touched
 
-- `src/KBot.DevHarness/Internal/Adobe/MoveOutcome.vb` — rewritten: `HostedWindowGeometry` (pure arithmetic) + outcome classifier. `MoveChildEntry`, `MoveOptionsConfig`, `MoveAttempt`, `MoveAttemptSummary` and `MoveOriginStore` deleted.
-- `src/KBot.DevHarness/Internal/Adobe/HarnessScenario.vb` — `MoveConfig`, `applyMove`
-- `src/KBot.DevHarness/Internal/Adobe/HarnessScenarioReader.vb` — all-zero `move` warning
-- `src/KBot.DevHarness/Internal/AdobeReaderHarnessForm{.vb,.Designer.vb}` — `grpMove` under `grpClip`, deltas inside `HostedBounds`, `ApplyHostedGeometry`, `ChildRectInParent`, status-block «Poziție». Child-move engine and reapply timer removed.
-- `src/KBot.DevHarness/Config/rhp_05_muta_fereastra.json` — **new** (replaces `rhp_05_muta_splitter.json`)
-- `tests/KBot.DevHarness.Tests/MoveWindowTests.vb` — **new**, 20 (was `MoveChildrenTests.vb`)
-- `tests/KBot.DevHarness.Tests/AdobeHarnessLayoutTests.vb`, `AdobeHarnessScenarioBindingTests.vb`
+`src/KBot.DevHarness/Internal/Adobe/MoveOutcome.vb` — rewritten: `HostedWindowGeometry` (pure arithmetic) + outcome classifier. `MoveChildEntry`, `MoveOptionsConfig`, `MoveAttempt`, `MoveAttemptSummary` and `MoveOriginStore` deleted. `src/KBot.DevHarness/Internal/Adobe/HarnessScenario.vb` — `MoveConfig`, `applyMove`; `src/KBot.DevHarness/Internal/Adobe/HarnessScenarioReader.vb` — all-zero `move` warning; `src/KBot.DevHarness/Internal/AdobeReaderHarnessForm{.vb,.Designer.vb}` — `grpMove` under `grpClip`, deltas inside `HostedBounds`, `ApplyHostedGeometry`, `ChildRectInParent`, status-block «Poziție». Child-move engine and reapply timer removed. `src/KBot.DevHarness/Config/rhp_05_muta_fereastra.json` — **new** (replaces `rhp_05_muta_splitter.json`); `tests/KBot.DevHarness.Tests/MoveWindowTests.vb` — **new**, 20 (was `MoveChildrenTests.vb`); `tests/KBot.DevHarness.Tests/AdobeHarnessLayoutTests.vb`, `AdobeHarnessScenarioBindingTests.vb`
 
 ### Test results
 

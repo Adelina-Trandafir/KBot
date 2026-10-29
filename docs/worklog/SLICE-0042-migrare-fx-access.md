@@ -8,7 +8,7 @@
 
 ## Ce s-a schimbat și de ce
 
-Forma cerută: **doi pași care nu se ating**. Un modul VBA exportă în fișiere JSON; un utilitar VB.NET citește fișierele și scrie în MariaDB prin rutele Flask de seed. Din .NET nu se referă niciun driver Access — nici OleDb, nici ACE, nici COM. Ăsta e chiar motivul pentru care exportul e VBA: rulează înăuntrul aplicației FOREXE, unde DAO există deja, deci nu există nici problemă de driver, nici de 32/64 de biți pe partea .NET.
+Doi pași separați: VBA exportă JSON, iar utilitarul VB.NET îl trimite rutelor Flask de seed pentru scrierea MariaDB. .NET nu referă OleDb/ACE/COM: exportul rulează în aplicația FOREXE, unde există deja DAO, evitând dependența de driver și bitness în utilitar.
 
 ### Partea A — `mdl_FX_ExportSeed` (VBA)
 
@@ -67,7 +67,7 @@ Detalii care merită ținute minte:
 - **`FX_Extrase_F` se multiplică intenționat.** Un fișier de extras poate purta linii pentru mai multe unități, deci același rând aparține legitim mai multor baze. Contorul `Duplicated` ține copiile suplimentare, ca socoteala de la pasul 7 să închidă exact.
 - **Cei doi părinți care nu sunt de acord opresc rularea.** La `FX_Receptii_IMG` și `FX_Receptii_Plati` se încearcă primul părinte cu retragere pe al doilea; dacă amândoi sunt prezenți și duc la DC-uri diferite, e eroare dură, nu retragere — a alege unul ar fi o ghiceală care mută date în baza greșită.
 - **Orfanii nu se pierd.** Un rând a cărui cheie de rutare nu se rezolvă nu se scrie și nu dispare: pleacă în CSV-ul de respinse cu cheia primară și motivul, iar rularea continuă.
-- **Folderul se cheamă `ExportArtifacts/`, nu `Artifacts/`, dintr-un motiv.** `.gitignore:66` are regula `artifacts/` (folderul de publish din rădăcină), iar Git pe Windows o potrivește fără să țină cont de majuscule — deci cele cinci fișiere din `Artifacts/` au fost ÎNGHIȚITE tăcut la `git add -A`, în timp ce build-ul local mergea perfect. O clonă proaspătă n-ar fi compilat. Redenumit, nu forțat cu `git add -f`: următorul om care adaugă un fișier acolo n-ar fi știut că trebuie forțat.
+- **`ExportArtifacts/`, nu `Artifacts/`:** regula `.gitignore:66` pentru `artifacts/` potrivește și majusculele pe Windows. Cele cinci fișiere fuseseră omise de `git add -A`, deși build-ul local reușea; o clonă nu ar fi compilat. Redenumirea, în loc de `git add -f`, protejează și fișierele adăugate ulterior.
 
 - **Nimic nu creează sau modifică vreun tabel.** O coloană prezentă în export și absentă pe țintă oprește tabelul cu numele ei; un tabel inexistent oprește tabelul. Schema se instalează separat, prin `AVACONT_COMUN`.
 

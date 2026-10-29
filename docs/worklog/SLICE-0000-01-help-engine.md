@@ -6,9 +6,7 @@ Registrul consemna pentru motor numărul inițial 0097-01, renumerotat la cerere
 
 [01](#slice-0000-01) · [02](#slice-0000-02) · [03](#slice-0000-03) · [04](#slice-0000-04) · [05](#slice-0000-05) · [06](#slice-0000-06) · [07](#slice-0000-07)
 
-<a id="slice-0000-01"></a>
-
-## SLICE-0000-01 — Help engine (F1, «?», help window, manual export)
+## SLICE-0000-01 — Help engine (F1, «?», help window, manual export) <a id="slice-0000-01"></a>
 
 Operator request, 30.09.2026: an interactive help system and a manual in three parts — Part 1 Contabil (everyday workflows), Part 2 Opțiuni avansate, Part 3 Director. This first pass is the engine only; content, screenshots and guided tours follow in 0000-02 onwards.
 
@@ -27,11 +25,7 @@ Operator request, 30.09.2026: an interactive help system and a manual in three p
 
 ### Files touched
 
-- `src/KBot.Theming/KBotHelp.vb` (new)
-- `src/KBot.Controls/CaptionBar/KBotCaptionBar.HelpButton.vb` (new), `KBotCaptionBar.vb`, `src/KBot.Controls/KBot.Controls.vbproj` (nesting)
-- `src/KBot.App/Help/HelpTopic.vb`, `HelpLibrary.vb`, `HelpHtml.vb`, `HelpService.vb`, `HelpForm.vb`, `HelpForm.Designer.vb` (new)
-- `src/KBot.App/HelpContent/` (new): `README.md`, `contabil/index.md`, `contabil/autentificare.md`, `contabil/ajutor.md`, `avansat/index.md`, `director/index.md`, `img/.gitkeep`
-- `src/KBot.App/KBot.App.vbproj` (Markdig, copy of HelpContent → Help), `src/KBot.App/Program.vb` (DI + install)
+`src/KBot.Theming/KBotHelp.vb` (new); `src/KBot.Controls/CaptionBar/KBotCaptionBar.HelpButton.vb` (new), `KBotCaptionBar.vb`, `src/KBot.Controls/KBot.Controls.vbproj` (nesting); `src/KBot.App/Help/HelpTopic.vb`, `HelpLibrary.vb`, `HelpHtml.vb`, `HelpService.vb`, `HelpForm.vb`, `HelpForm.Designer.vb` (new); `src/KBot.App/HelpContent/` (new): `README.md`, `contabil/index.md`, `contabil/autentificare.md`, `contabil/ajutor.md`, `avansat/index.md`, `director/index.md`, `img/.gitkeep`; `src/KBot.App/KBot.App.vbproj` (Markdig, copy of HelpContent → Help), `src/KBot.App/Program.vb` (DI + install)
 
 ### Test results
 
@@ -51,9 +45,7 @@ Operator request, 30.09.2026: an interactive help system and a manual in three p
 - Next: 0000-02 Part 1 content + screenshots, 0000-03 guided tours, 0000-04 Part 2, 0000-05 Part 3, plus the MF requirements for a new DDF (ORD left out until new ORD exists).
 - FileVersion of KBot.App / KBot.Controls / KBot.Theming not bumped (`push-update.ps1` asks).
 
-<a id="slice-0000-02"></a>
-
-## SLICE-0000-02 — Help capture tool («Capturi pentru ajutor»)
+## SLICE-0000-02 — Help capture tool («Capturi pentru ajutor») <a id="slice-0000-02"></a>
 
 Operator request, 30.09.2026: the operator takes the help screenshots through K-BOT itself (also on a client's PC, for the FOREXE flow); Claude only writes text with capture tags.
 
@@ -69,9 +61,7 @@ Operator request, 30.09.2026: the operator takes the help screenshots through K-
 
 ### Files touched
 
-- New: `src/KBot.App/Help/HelpCapture.vb`, `HelpCaptureStore.vb`, `HelpCaptureNative.vb`, `HelpCaptureOverlay.vb`, `HelpCapturePromptForm(.Designer).vb`, `HelpCaptureForm(.Designer).vb`, `IHelpCaptureNavigator.vb`, `src/KBot.App/KbotForm.HelpCapture.vb`, this worklog.
-- Edited: `HelpLibrary.vb`, `HelpHtml.vb`, `HelpService.vb`, `HelpForm(.Designer).vb`, `KbotForm.Designer.vb` (2 menu items), `KbotForm.Nomenclatoare.vb` (menu case), `Setari/SetariAplicatieView(.Designer).vb`, `KBot.Common/AppSettings.vb`, `KBot.App.vbproj`, `HelpContent/README.md`, `HelpContent/{contabil,avansat}/*.md`.
-- Renumbering 0097 → 0000 (operator): code comments, worklog 0000-01, status files.
+New: `src/KBot.App/Help/HelpCapture.vb`, `HelpCaptureStore.vb`, `HelpCaptureNative.vb`, `HelpCaptureOverlay.vb`, `HelpCapturePromptForm(.Designer).vb`, `HelpCaptureForm(.Designer).vb`, `IHelpCaptureNavigator.vb`, `src/KBot.App/KbotForm.HelpCapture.vb`, this worklog. Edited: `HelpLibrary.vb`, `HelpHtml.vb`, `HelpService.vb`, `HelpForm(.Designer).vb`, `KbotForm.Designer.vb` (2 menu items), `KbotForm.Nomenclatoare.vb` (menu case), `Setari/SetariAplicatieView(.Designer).vb`, `KBot.Common/AppSettings.vb`, `KBot.App.vbproj`, `HelpContent/README.md`, `HelpContent/{contabil,avansat}/*.md`. Renumbering 0097 → 0000 (operator): code comments, worklog 0000-01, status files.
 
 ### Test results
 
@@ -89,9 +79,7 @@ Operator request, 30.09.2026: the operator takes the help screenshots through K-
 
 Operator: some pictures cannot be taken from inside K-BOT. Each row now has a second button, «Încarcă»: pick a PNG / JPG / BMP from disk; it is copied into a fresh bitmap (source file not left locked) and saved as `<id>.png` to the same folders as a capture. Build: 0 warnings, 0 errors. Files: `HelpCaptureForm.vb`, `HelpCaptureForm.Designer.vb` (column `incarca`).
 
-<a id="slice-0000-03"></a>
-
-## SLICE-0000-03 — Part 1 «Contabil»: the text, with capture tags
+## SLICE-0000-03 — Part 1 «Contabil»: the text, with capture tags <a id="slice-0000-03"></a>
 
 Operator request, 30.09.2026: write Part 1 from the slice .md files; no custom-control or browser internals; the FOREXE page as it is meant to work, not what is clicked on it; a section on what MF expects for a NEW DDF (ORD creation left out: it does not exist yet).
 
@@ -113,8 +101,7 @@ Sources actually read: worklogs 0011-02, 0014, 0015-03, 0017-03/04, 0022-02, 003
 
 ### Files touched
 
-- New: `HelpContent/contabil/{fereastra,notecab,setari}.md`, `contabil/forexe/*` (6), `contabil/vederi/*` (8), `contabil/ddf/*` (7), `contabil/nomenclatoare/*` (3).
-- Rewritten: `contabil/index.md`, `contabil/autentificare.md`.
+New: `HelpContent/contabil/{fereastra,notecab,setari}.md`, `contabil/forexe/*` (6), `contabil/vederi/*` (8), `contabil/ddf/*` (7), `contabil/nomenclatoare/*` (3). Rewritten: `contabil/index.md`, `contabil/autentificare.md`.
 
 ### Test results
 
@@ -128,9 +115,7 @@ Sources actually read: worklogs 0011-02, 0014, 0015-03, 0017-03/04, 0022-02, 003
 - ORD creation not described (does not exist yet); Part 2 and Part 3 not written (0000-05/06).
 - Guided tours (0000-04) not started.
 
-<a id="slice-0000-04"></a>
-
-## SLICE-0000-04 — Guided tours (+ the «Sursă / sector» tooltip)
+## SLICE-0000-04 — Guided tours (+ the «Sursă / sector» tooltip) <a id="slice-0000-04"></a>
 
 Operator, 30.09.2026: «fix the tooltip, then go ahead with 0000-04».
 
@@ -147,8 +132,7 @@ Operator, 30.09.2026: «fix the tooltip, then go ahead with 0000-04».
 
 ### Files touched
 
-- New: `Help/HelpTour.vb`, `HelpTourRunner.vb`, `HelpTourFrame.vb`, `HelpTourBubble(.Designer).vb`, `HelpContent/tours/{tur-fereastra,tur-forexe,tur-rezervari,tur-ddf}.md`.
-- Edited: `HelpLibrary.vb` (tours; `ParsePart` Friend), `HelpService.vb` (`Navigate`, `StartTour`), `HelpCaptureForm.vb` (uses `Navigate`), `HelpHtml.vb` (`TourScheme`, links, CSS), `HelpForm.vb` (`tour:` links), `HelpContent/README.md`, `KbotForm.Designer.vb` (tooltip).
+New: `Help/HelpTour.vb`, `HelpTourRunner.vb`, `HelpTourFrame.vb`, `HelpTourBubble(.Designer).vb`, `HelpContent/tours/{tur-fereastra,tur-forexe,tur-rezervari,tur-ddf}.md`. Edited: `HelpLibrary.vb` (tours; `ParsePart` Friend), `HelpService.vb` (`Navigate`, `StartTour`), `HelpCaptureForm.vb` (uses `Navigate`), `HelpHtml.vb` (`TourScheme`, links, CSS), `HelpForm.vb` (`tour:` links), `HelpContent/README.md`, `KbotForm.Designer.vb` (tooltip).
 
 ### Test results
 
@@ -161,9 +145,7 @@ Operator, 30.09.2026: «fix the tooltip, then go ahead with 0000-04».
 - Painted parts (tree footer icons, caption-bar buttons, node icons) cannot be ringed on their own; the steps ring the whole control and say where to look.
 - Tours for Part 2 and Part 3 come with those parts (0000-05 / 0000-06).
 
-<a id="slice-0000-05"></a>
-
-## SLICE-0000-05 — Part 2 «Opțiuni avansate»: the text, with capture tags
+## SLICE-0000-05 — Part 2 «Opțiuni avansate»: the text, with capture tags <a id="slice-0000-05"></a>
 
 Operator, 30.09.2026: «go ahead with 0000-05».
 
@@ -188,8 +170,7 @@ Sources: the designers' operator text of `SetariAplicatieView`, `SetariPaginaVie
 
 ### Files touched
 
-- Rewritten: `HelpContent/avansat/index.md`.
-- New: `HelpContent/avansat/{documente,pagina,tema,foldere,jurnale}.md`.
+Rewritten: `HelpContent/avansat/index.md`. New: `HelpContent/avansat/{documente,pagina,tema,foldere,jurnale}.md`.
 
 ### Test results
 
@@ -202,9 +183,7 @@ Sources: the designers' operator text of `SetariAplicatieView`, `SetariPaginaVie
 - No guided tour for Part 2 (none asked for; the engine takes one file in `tours/` if wanted).
 - Part 3 «Director» (0000-06) next.
 
-<a id="slice-0000-06"></a>
-
-## SLICE 0000-06 — Part 3 «Director»
+## SLICE 0000-06 — Part 3 «Director» <a id="slice-0000-06"></a>
 
 **Date:** 30.09.2026. **Standing slice:** 0000 (help).
 
@@ -232,9 +211,7 @@ Captures: `director-fereastra`, `director-lista`, `director-semnare`, with no `g
 ### State
 Build App **0 warnings, 0 errors**; the files reach `bin\...\Help\director\` and `Help\tours\`. Nothing seen on screen (no director login available here).
 
-<a id="slice-0000-07"></a>
-
-## SLICE 0000-07 — coverage pass + finishing
+## SLICE 0000-07 — coverage pass + finishing <a id="slice-0000-07"></a>
 
 **Date:** 30.09.2026. **Standing slice:** 0000 (help). The plan (01–06) was complete; the operator said «go ahead with 0000-07» without naming it, so 07 = make F1 reach a topic from every operator window, write what was missing, add the Part 2 tour.
 

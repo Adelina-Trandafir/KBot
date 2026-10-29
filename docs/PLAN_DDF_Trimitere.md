@@ -150,9 +150,9 @@ The core step. Button «Trimite în FOREXE», enabled only in state S1.
 
 **Where the operator starts (operator, 25.09.2026).** Not the main KBOT tree — the **Rezervări** view:
 - **New angajament:** a new button **«Angajament nou»** on the main form's header, top left, **before «An»** (`KbotForm` `tlyHeader`, `lblAn` is today in column 1). It opens `DdfEditForm` in **create** mode (manual `!` angajament, Rev 0).
-- **Existing angajament with at least one reservation (the initial one):** the **Rezervări tree footer LEFT** icon (`RezervariView`; free today — the right one is refresh). It offers **«Adaugă rezervare»**, which opens `DdfEditForm` in **manual add-reservation** mode (a new revision), and, by the angajament's state, **«Definitivează»** (`Inițial`) or **«Derulează»** (`În definitivare`).
+- **Existing angajament with at least the initial reservation:** use the **Rezervări tree footer LEFT** icon (`RezervariView`; free at this checkpoint, right = refresh). «Adaugă rezervare» opens `DdfEditForm` in manual add-reservation mode (new revision); state actions follow the menu table below.
 - **One footer icon opening a `CustomPopup` menu** with the valid options only (operator, 25.09.2026 — the pattern already used by the main form's options menu).
-- «Definitivează» / «Derulează» exist **only for a new angajament**: offered only while the angajament's Rev 0 (created from «Angajament nou») is in **S2a**; their capture joins that revision. Never for later reservation changes, even with new indicators (operator, 25.09.2026).
+- State actions apply only to Rev 0 created from «Angajament nou» while S2a; their captures join that revision. Later changes, including new indicators, follow the direct-final-PDF rule in [revision states](#revision-states).
 - The main KBOT tree footer (its left icon = «Extrase de cont») is **not** touched.
 
 **The Rezervări footer menu — what it shows (operator, 25.09.2026).** Two rules decide it:
@@ -169,7 +169,7 @@ The core step. Button «Trimite în FOREXE», enabled only in state S1.
 | any | a later revision still open (S0 / S1 / S1x) | nothing (finish it from the DDF) |
 | `Anulat` / `Reziliat` / `Suspendat` | — | nothing |
 
-So the menu never shows two options at once. «Generează PDF final» lives in this menu (it closes the new angajament's Rev 0), and it only appears once the angajament is `În derulare`. The icon is disabled when the menu would be empty.
+The menu has at most one option; disable its icon when empty. «Generează PDF final» closes Rev 0 of the new angajament at the state shown in the table.
 
 Not covered, on purpose: an angajament that came from forexecab (not created in KBOT) and is still `Inițial` / `În definitivare` shows nothing — KBOT does not finish angajamente it did not create.
 

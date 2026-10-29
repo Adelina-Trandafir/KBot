@@ -62,13 +62,13 @@
 
 ### Mixin Responsibilities
 
-| Mixin      | File                 | Responsibility                                        |
-| ---------- | -------------------- | ----------------------------------------------------- |
-| **State**  | `combobox-state.js`  | Internal state management, result tracking            |
-| **UI**     | `combobox-ui.js`     | DOM creation, rendering, positioning                  |
-| **Events** | `combobox-events.js` | Event binding, keyboard navigation, user interactions |
-| **Search** | `combobox-search.js` | Search logic (static/dynamic), result handling        |
-| **Core**   | `combobox.js`        | Component orchestration, lifecycle management         |
+|Mixin|File|Responsibility|
+|----------|--------------------|-----------------------------------------------------|
+|**State**|`combobox-state.js`|Internal state management, result tracking|
+|**UI**|`combobox-ui.js`|DOM creation, rendering, positioning|
+|**Events**|`combobox-events.js`|Event binding, keyboard navigation, user interactions|
+|**Search**|`combobox-search.js`|Search logic (static/dynamic), result handling|
+|**Core**|`combobox.js`|Component orchestration, lifecycle management|
 
 ### ListenerTracker Integration
 
@@ -155,25 +155,25 @@ const combobox = new Combobox(container, {
 
 #### Required Parameters
 
-| Parameter   | Type          | Description                                     |
-| ----------- | ------------- | ----------------------------------------------- |
-| `container` | `HTMLElement` | DOM element where the combobox will be rendered |
+|Parameter|Type|Description|
+|-----------|-------------|-----------------------------------------------|
+|`container`|`HTMLElement`|DOM element where the combobox will be rendered|
 
 #### Configuration Options
 
-| Option             | Type       | Default          | Description                                      |
-| ------------------ | ---------- | ---------------- | ------------------------------------------------ |
-| `placeholder`      | `string`   | `'Selectați...'` | Input placeholder text                           |
-| `searchDelay`      | `number`   | `300`            | Debounce delay in milliseconds                   |
-| `onSearch`         | `function` | `null`           | Async search handler `(query) => Promise<Array>` |
-| `onSelect`         | `function` | `null`           | Selection callback `(value, text) => void`       |
-| `showLoader`       | `boolean`  | `true`           | Show loading indicator during search             |
-| `minSearchLength`  | `number`   | `0`              | Minimum characters before search triggers        |
-| `maxResults`       | `number`   | `50`             | Maximum results to display                       |
-| `highlightMatches` | `boolean`  | `true`           | Highlight matching text in results               |
-| `allowEmpty`       | `boolean`  | `true`           | Allow clearing the selection                     |
-| `readonly`         | `boolean`  | `false`          | Enable readonly/dropdown mode                    |
-| `staticData`       | `Array`    | `[]`             | Pre-loaded data for readonly mode                |
+|Option|Type|Default|Description|
+|------------------|----------|----------------|------------------------------------------------|
+|`placeholder`|`string`|`'Selectați...'`|Input placeholder text|
+|`searchDelay`|`number`|`300`|Debounce delay in milliseconds|
+|`onSearch`|`function`|`null`|Async search handler `(query) => Promise<Array>`|
+|`onSelect`|`function`|`null`|Selection callback `(value, text) => void`|
+|`showLoader`|`boolean`|`true`|Show loading indicator during search|
+|`minSearchLength`|`number`|`0`|Minimum characters before search triggers|
+|`maxResults`|`number`|`50`|Maximum results to display|
+|`highlightMatches`|`boolean`|`true`|Highlight matching text in results|
+|`allowEmpty`|`boolean`|`true`|Allow clearing the selection|
+|`readonly`|`boolean`|`false`|Enable readonly/dropdown mode|
+|`staticData`|`Array`|`[]`|Pre-loaded data for readonly mode|
 
 #### Data Format
 
@@ -198,52 +198,37 @@ Results from `onSearch` or `staticData` must follow this structure:
 
 Sets the current value and display text.
 
-**Parameters:**
-
-- `value` (string): The value to store (e.g., ID)
-- `text` (string): The text to display in input
-
-**Returns:** `void`
+**Parameters:** `value` (string): The value to store (e.g., ID); `text` (string): The text to display in input **Returns:** `void`
 
 ---
 
 ##### `getInputValue()`
 
-Gets the current input display value.
-
-**Returns:** `string` - Current input text
+Gets the current input display value. **Returns:** `string` - Current input text
 
 ---
 
 ##### `getSelectedValue()`
 
-Gets the stored value (ID from database).
-
-**Returns:** `string` - Selected value/ID
+Gets the stored value (ID from database). **Returns:** `string` - Selected value/ID
 
 ---
 
 ##### `getSelectedText()`
 
-Gets the display text of selected item.
-
-**Returns:** `string` - Selected display text
+Gets the display text of selected item. **Returns:** `string` - Selected display text
 
 ---
 
 ##### `getIndex()`
 
-Gets the currently selected index in results array.
-
-**Returns:** `number` - Selected index (-1 if none)
+Gets the currently selected index in results array. **Returns:** `number` - Selected index (-1 if none)
 
 ---
 
 ##### `clear()`
 
-Clears the current selection and hides dropdown.
-
-**Returns:** `void`
+Clears the current selection and hides dropdown. **Returns:** `void`
 
 ---
 
@@ -253,13 +238,7 @@ Clears the current selection and hides dropdown.
 
 Enables or disables the combobox.
 
-**Parameters:**
-
-- `enabled` (boolean): `true` to enable, `false` to disable
-
-**Returns:** `void`
-
-**Effect:** Disables input and prevents interaction when `false`
+**Parameters:** `enabled` (boolean): `true` to enable, `false` to disable **Returns:** `void` **Effect:** Disables input and prevents interaction when `false`
 
 ---
 
@@ -288,17 +267,9 @@ Destroys the combobox instance and cleans up all resources.
 
 Called when user types and search is triggered.
 
-**Parameters:**
+**Parameters:** `query` (string): Search query entered by user **Returns:** `Promise<Array>` - Array of result objects `{ value, label }`
 
-- `query` (string): Search query entered by user
-
-**Returns:** `Promise<Array>` - Array of result objects `{ value, label }`
-
-**When triggered:**
-
-- After `searchDelay` milliseconds of inactivity
-- Only if `query.length >= minSearchLength`
-- Not triggered in readonly mode with staticData
+**When triggered:** After `searchDelay` milliseconds of inactivity; Only if `query.length >= minSearchLength`; Not triggered in readonly mode with staticData
 
 **Example:**
 
@@ -318,18 +289,9 @@ onSearch: async (query) => {
 
 Called when user selects an item from dropdown.
 
-**Parameters:**
+**Parameters:** `value` (string): The stored value (ID); `text` (string): The display text **Returns:** `void`
 
-- `value` (string): The stored value (ID)
-- `text` (string): The display text
-
-**Returns:** `void`
-
-**When triggered:**
-
-- Click on dropdown option
-- Enter key on highlighted option
-- Programmatic selection via `setValue()`
+**When triggered:** Click on dropdown option; Enter key on highlighted option; Programmatic selection via `setValue()`
 
 **Example:**
 
@@ -347,28 +309,15 @@ onSelect: (value, text) => {
 
 ### Core Module (`combobox.js`)
 
-**Responsibilities:**
+**Responsibilities:** Instance creation and initialization; ListenerTracker application; Mixin orchestration; Lifecycle management (init, destroy)
 
-- Instance creation and initialization
-- ListenerTracker application
-- Mixin orchestration
-- Lifecycle management (init, destroy)
-
-**Key Methods:**
-
-- `constructor(container, options)`
-- `init()`
-- `destroy()`
+**Key Methods:** `constructor(container, options)`; `init()`; `destroy()`
 
 ---
 
 ### State Mixin (`combobox-state.js`)
 
-**Responsibilities:**
-
-- Internal state initialization
-- Result management
-- Selection tracking
+**Responsibilities:** Internal state initialization; Result management; Selection tracking
 
 **State Properties:**
 
@@ -383,22 +332,13 @@ onSelect: (value, text) => {
 - `lastShownAt`: Timestamp of last show
 - `instanceId`: Unique instance identifier
 
-**Key Methods:**
-
-- `initializeState()`
-- `updateResults(results, query)`
-- `hasResults()`
-- `getSelectedResult()`
+**Key Methods:** `initializeState()`; `updateResults(results, query)`; `hasResults()`; `getSelectedResult()`
 
 ---
 
 ### UI Mixin (`combobox-ui.js`)
 
-**Responsibilities:**
-
-- DOM element creation
-- Rendering and positioning
-- Visual state updates
+**Responsibilities:** DOM element creation; Rendering and positioning; Visual state updates
 
 **Key Methods:**
 
@@ -418,11 +358,7 @@ onSelect: (value, text) => {
 
 ### Events Mixin (`combobox-events.js`)
 
-**Responsibilities:**
-
-- Event listener binding (via ListenerTracker)
-- User interaction handling
-- Keyboard navigation
+**Responsibilities:** Event listener binding (via ListenerTracker); User interaction handling; Keyboard navigation
 
 **Key Methods:**
 
@@ -442,15 +378,9 @@ onSelect: (value, text) => {
 
 ### Search Mixin (`combobox-search.js`)
 
-**Responsibilities:**
+**Responsibilities:** Search execution (static/dynamic); Async operation handling; Result processing
 
-- Search execution (static/dynamic)
-- Async operation handling
-- Result processing
-
-**Key Methods:**
-
-- `performSearch(query)`: Executes search and updates UI
+**Key Methods:** `performSearch(query)`: Executes search and updates UI
 
 **Search Flow:**
 
@@ -497,15 +427,15 @@ onSelect: (value, text) => {
 
 ### State Transitions
 
-| Event           | From State    | To State      | Side Effects                      |
-| --------------- | ------------- | ------------- | --------------------------------- |
-| User types      | INIT          | SEARCHING     | Start debounce timer, show loader |
-| Search complete | SEARCHING     | RESULTS_SHOWN | Render results, show dropdown     |
-| Arrow key       | RESULTS_SHOWN | RESULTS_SHOWN | Update `selectedIndex`, highlight |
-| Enter key       | RESULTS_SHOWN | SELECTED      | Call `onSelect`, hide dropdown    |
-| Escape key      | RESULTS_SHOWN | INIT          | Hide dropdown, reset state        |
-| Click outside   | RESULTS_SHOWN | INIT          | Hide dropdown                     |
-| Destroy         | ANY           | DESTROYED     | Cleanup listeners, remove DOM     |
+|Event|From State|To State|Side Effects|
+|---------------|-------------|-------------|---------------------------------|
+|User types|INIT|SEARCHING|Start debounce timer, show loader|
+|Search complete|SEARCHING|RESULTS_SHOWN|Render results, show dropdown|
+|Arrow key|RESULTS_SHOWN|RESULTS_SHOWN|Update `selectedIndex`, highlight|
+|Enter key|RESULTS_SHOWN|SELECTED|Call `onSelect`, hide dropdown|
+|Escape key|RESULTS_SHOWN|INIT|Hide dropdown, reset state|
+|Click outside|RESULTS_SHOWN|INIT|Hide dropdown|
+|Destroy|ANY|DESTROYED|Cleanup listeners, remove DOM|
 
 ---
 
@@ -521,11 +451,7 @@ this.overlay.className = 'combobox-overlay';
 document.body.appendChild(this.overlay);
 ```
 
-**Z-Index Management:**
-
-- Integrates with global `window.ZIndexManager` if available
-- Overlay: `ZIndexManager.getNext() + 9999`
-- Dropdown: `ZIndexManager.getNext() + 10000`
+**Z-Index Management:** Integrates with global `window.ZIndexManager` if available; Overlay: `ZIndexManager.getNext() + 9999`; Dropdown: `ZIndexManager.getNext() + 10000`
 
 ### Viewport-Aware Positioning
 
@@ -544,11 +470,7 @@ The dropdown intelligently positions itself:
    - Add `.show-below` class
    - Calculate `top = rect.bottom`
 
-**Constraints:**
-
-- Minimum top position: 10px (prevents clipping at viewport top)
-- Width: Matches input width exactly
-- Max height: 200px with scroll
+**Constraints:** Minimum top position: 10px (prevents clipping at viewport top); Width: Matches input width exactly; Max height: 200px with scroll
 
 ---
 
@@ -577,29 +499,29 @@ The component supports theming via CSS custom properties:
 
 #### Container States
 
-| Class                 | Applied When     | Purpose                |
-| --------------------- | ---------------- | ---------------------- |
-| `.combobox-container` | Always           | Base container         |
-| `.readonly`           | `readonly: true` | Readonly mode styling  |
-| `.disabled`           | `disabled: true` | Disabled state styling |
+|Class|Applied When|Purpose|
+|---------------------|----------------|----------------------|
+|`.combobox-container`|Always|Base container|
+|`.readonly`|`readonly: true`|Readonly mode styling|
+|`.disabled`|`disabled: true`|Disabled state styling|
 
 #### Dropdown States
 
-| Class                | Applied When             | Purpose              |
-| -------------------- | ------------------------ | -------------------- |
-| `.combobox-dropdown` | Always                   | Base dropdown        |
-| `.visible`           | Dropdown open            | Display dropdown     |
-| `.hidden`            | Dropdown closed          | Hide dropdown        |
-| `.show-above`        | Insufficient space below | Position above input |
-| `.show-below`        | Sufficient space below   | Position below input |
+|Class|Applied When|Purpose|
+|--------------------|------------------------|--------------------|
+|`.combobox-dropdown`|Always|Base dropdown|
+|`.visible`|Dropdown open|Display dropdown|
+|`.hidden`|Dropdown closed|Hide dropdown|
+|`.show-above`|Insufficient space below|Position above input|
+|`.show-below`|Sufficient space below|Position below input|
 
 #### Option States
 
-| Class              | Applied When         | Purpose                  |
-| ------------------ | -------------------- | ------------------------ |
-| `.combobox-option` | Always               | Base option              |
-| `.highlighted`     | Keyboard navigation  | Highlight current option |
-| `.selected`        | (Not used currently) | Mark selected option     |
+|Class|Applied When|Purpose|
+|------------------|--------------------|------------------------|
+|`.combobox-option`|Always|Base option|
+|`.highlighted`|Keyboard navigation|Highlight current option|
+|`.selected`|(Not used currently)|Mark selected option|
 
 ### Responsive Design
 
@@ -617,10 +539,7 @@ The component is fully responsive with elastic width constraints:
 }
 ```
 
-**Mobile optimizations:**
-
-- `@media (max-width: 400px)`: Reduced font size (11px)
-- `@media (max-width: 350px)`: Max width constrained to viewport
+**Mobile optimizations:** `@media (max-width: 400px)`: Reduced font size (11px); `@media (max-width: 350px)`: Max width constrained to viewport
 
 ### Custom Scrollbar
 
@@ -676,13 +595,13 @@ this.results.slice(0, this.options.maxResults);
 
 ### Performance Metrics
 
-| Operation         | Typical Time | Notes                            |
-| ----------------- | ------------ | -------------------------------- |
-| `init()`          | < 10ms       | DOM creation, event binding      |
-| `show()`          | < 5ms        | Z-index calculation, positioning |
-| `renderResults()` | 5-50ms       | Depends on result count          |
-| `hide()`          | < 2ms        | Class removal, state reset       |
-| `destroy()`       | < 15ms       | Full cleanup                     |
+|Operation|Typical Time|Notes|
+|-----------------|------------|--------------------------------|
+|`init()`|< 10ms|DOM creation, event binding|
+|`show()`|< 5ms|Z-index calculation, positioning|
+|`renderResults()`|5-50ms|Depends on result count|
+|`hide()`|< 2ms|Class removal, state reset|
+|`destroy()`|< 15ms|Full cleanup|
 
 ### Best Practices
 
@@ -698,13 +617,13 @@ this.results.slice(0, this.options.maxResults);
 
 ### Minimum Requirements
 
-| Browser | Minimum Version | Notes        |
-| ------- | --------------- | ------------ |
-| Chrome  | 90+             | Full support |
-| Firefox | 88+             | Full support |
-| Safari  | 14+             | Full support |
-| Edge    | 90+             | Full support |
-| Opera   | 76+             | Full support |
+|Browser|Minimum Version|Notes|
+|-------|---------------|------------|
+|Chrome|90+|Full support|
+|Firefox|88+|Full support|
+|Safari|14+|Full support|
+|Edge|90+|Full support|
+|Opera|76+|Full support|
 
 ### Required Features
 
@@ -730,10 +649,7 @@ Modern browsers support all used features natively. No polyfills needed for targ
 
 #### Issue: Dropdown doesn't appear
 
-**Symptoms:**
-
-- No dropdown shown after typing
-- Console errors about missing elements
+**Symptoms:** No dropdown shown after typing; Console errors about missing elements
 
 **Solutions:**
 
@@ -747,10 +663,7 @@ Modern browsers support all used features natively. No polyfills needed for targ
 
 #### Issue: Dropdown positioned incorrectly
 
-**Symptoms:**
-
-- Dropdown appears off-screen
-- Overlaps with input
+**Symptoms:** Dropdown appears off-screen; Overlaps with input
 
 **Solutions:**
 
@@ -763,10 +676,7 @@ Modern browsers support all used features natively. No polyfills needed for targ
 
 #### Issue: Search not triggering
 
-**Symptoms:**
-
-- No loader shown
-- `onSearch` callback not called
+**Symptoms:** No loader shown; `onSearch` callback not called
 
 **Solutions:**
 
@@ -779,10 +689,7 @@ Modern browsers support all used features natively. No polyfills needed for targ
 
 #### Issue: Selection not working
 
-**Symptoms:**
-
-- Click on option does nothing
-- `onSelect` not called
+**Symptoms:** Click on option does nothing; `onSelect` not called
 
 **Solutions:**
 
@@ -795,10 +702,7 @@ Modern browsers support all used features natively. No polyfills needed for targ
 
 #### Issue: Memory leaks / listeners not cleaned up
 
-**Symptoms:**
-
-- Performance degradation over time
-- Increasing memory usage
+**Symptoms:** Performance degradation over time; Increasing memory usage
 
 **Solutions:**
 
@@ -819,10 +723,7 @@ window.checkAllListenersHealth(); // Health check
 
 #### Issue: Readonly mode not showing options
 
-**Symptoms:**
-
-- Click does nothing in readonly mode
-- Dropdown stays closed
+**Symptoms:** Click does nothing in readonly mode; Dropdown stays closed
 
 **Solutions:**
 

@@ -6,8 +6,7 @@ Everything recorded about each slice. The index in `../KBOT_STATUS.md` says what
 
 ## Slice 0120 — DDF editor: the action row beside «Salvează documentul»
 
-Part of the new main window recorded on 13.10.2026 (slices 0113–0120; decisions and the shared open threads in
-[KBOT_STATUS_0110-0119.md](KBOT_STATUS_0110-0119.md), «Slices 0113–0120»).
+Part of the new main window recorded on 13.10.2026 (slices 0113–0120; decisions and the shared open threads in [KBOT_STATUS_0110-0119.md](KBOT_STATUS_0110-0119.md), «Slices 0113–0120»).
 
 | Slice | Name | Status | Worklog |
 |------:|------|--------|---------|
@@ -15,8 +14,7 @@ Part of the new main window recorded on 13.10.2026 (slices 0113–0120; decision
 
 ### Open threads — 0120
 
-- Tour `tur-ddf-editor` has a step on `DdfEditForm.btnRenunta` (now hidden): proposal in the 0000-74 worklog; tours
-  not changed without the operator's OK.
+- Tour `tur-ddf-editor` has a step on `DdfEditForm.btnRenunta` (now hidden): proposal in the 0000-74 worklog; tours not changed without the operator's OK.
 
 ---
 

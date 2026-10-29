@@ -1,48 +1,31 @@
 # MAPARE ACCESS ▸ MARIADB — mandatory read
 
-> **Read this file in full before writing, planning or running any migration or transfer
-> code.** It is the authoritative column mapping for the DDF and ORD families. Anything
-> that contradicts it — an older plan, a worklog, a comment in the code — is wrong until
-> this file is updated. If something needed is not in here, **stop and ask**; do not infer
-> a mapping from column names.
+> **Read this file in full before writing, planning or running any migration or transfer code.** It is the authoritative column mapping for the DDF and ORD families. Anything that contradicts it — an older plan, a worklog, a comment in the code — is wrong until this file is updated. If something needed is not in here, **stop and ask**; do not infer a mapping from column names.
 
-Last updated: 22.08.2026 · MariaDB side verified against `000_DEMO.sql` · Access side
-against `FX_System_Export/TABLES/*.md` and the VBA sync modules.
+Last updated: 22.08.2026 · MariaDB side verified against `000_DEMO.sql` · Access side against `FX_System_Export/TABLES/*.md` and the VBA sync modules.
 
 ---
 
 ## 0. Cheile ORD — option (A), settled 22.08
 
-`IDORDP`, `IDORDPARTP`, `IDORDTBLP`, `IDORDDOCP` are `AUTO_INCREMENT` primary keys on
-MariaDB. **The Access id is written into them explicitly.**
+`IDORDP`, `IDORDPARTP`, `IDORDTBLP`, `IDORDDOCP` are `AUTO_INCREMENT` primary keys on MariaDB. **The Access id is written into them explicitly.**
 
-`AUTO_INCREMENT` fires only when a column is *omitted* from the INSERT. Supplied, the value
-lands verbatim — the same mechanism `FX_DDF.IDDF` and `FX_DDF_REV.IDREV` already depend on.
-So `FX_ORD_PART.IDORD` (Access) is written into `IDORDP`, and every parent link is correct
-with no id map, no `lastrowid`, no second pass.
+`AUTO_INCREMENT` fires only when a column is *omitted* from the INSERT. Supplied, the value lands verbatim — the same mechanism `FX_DDF.IDDF` and `FX_DDF_REV.IDREV` already depend on. So `FX_ORD_PART.IDORD` (Access) is written into `IDORDP`, and every parent link is correct with no id map, no `lastrowid`, no second pass.
 
 Two consequences:
 
-* **`ON DUPLICATE KEY UPDATE` works.** `IDORDP` is the real primary key and it carries a
-  value, so a second run updates instead of duplicating.
-* **The counter looks after itself.** InnoDB raises the `AUTO_INCREMENT` counter whenever an
-  explicit value above it is inserted, so no `ALTER TABLE ... AUTO_INCREMENT =` is needed
-  after the run. Worth *verifying* once on the first DC; not worth coding around.
+* **`ON DUPLICATE KEY UPDATE` works.** `IDORDP` is the real primary key and it carries a value, so a second run updates instead of duplicating.
+* **The counter looks after itself.** InnoDB raises the `AUTO_INCREMENT` counter whenever an explicit value above it is inserted, so no `ALTER TABLE ... AUTO_INCREMENT =` is needed after the run. Worth *verifying* once on the first DC; not worth coding around.
 
-The Access ids are not *stored* anywhere — the legacy `'ACCESS'` columns stay empty and are
-being dropped (§5). Their values live on as the MariaDB keys.
+The Access ids are not *stored* anywhere — the legacy `'ACCESS'` columns stay empty and are being dropped (§5). Their values live on as the MariaDB keys.
 
-Access's own mirror columns (`IDORDPartP`, `IDORDTBLP`, `IDORDDOCP`, `IDORDRECP`) are
-**never sent**, whether populated or not. In `FX_ORD_DOC` they have visibly drifted from the
-Access ids — `IDORDDOC` 17, 18, 19 against `IDORDDOCP` 40, 41, 42 — which is exactly why they
-are not a usable source.
+Access's own mirror columns (`IDORDPartP`, `IDORDTBLP`, `IDORDDOCP`, `IDORDRECP`) are **never sent**, whether populated or not. In `FX_ORD_DOC` they have visibly drifted from the Access ids — `IDORDDOC` 17, 18, 19 against `IDORDDOCP` 40, 41, 42 — which is exactly why they are not a usable source.
 
 ---
 
 ## 1. Rules
 
-**Rule 1 — classifications.** MariaDB has **only `IdClsf`** on the `FX_*` tables, pointing at
-`Clasificatii.IDClsf`. How it is filled changed on 22.08 and the old rule is now wrong:
+**Rule 1 — classifications.** MariaDB has **only `IdClsf`** on the `FX_*` tables, pointing at `Clasificatii.IDClsf`. How it is filled changed on 22.08 and the old rule is now wrong:
 
 In the nomenclator itself:
 
@@ -51,39 +34,25 @@ Access  Clasificatii.IdClsf   ▸   MariaDB  Clasificatii.IdClsfAcc
                                   MariaDB  Clasificatii.IDClsf  = AUTO_INCREMENT, assigned
 ```
 
-MariaDB assigns `IDClsf` on a fresh database, so **the `IdClsfPY` values in the Access `FX_*`
-rows are stale** — they were assigned by the *old* server and mean nothing on the new one.
-**Do not use `IdClsfPY`. Anywhere.**
+MariaDB assigns `IDClsf` on a fresh database, so **the `IdClsfPY` values in the Access `FX_*` rows are stale** — they were assigned by the *old* server and mean nothing on the new one. **Do not use `IdClsfPY`. Anywhere.**
 
 Resolve instead, through a map built during the run:
 
-1. Transfer `Clasificatii` first. Keep `(IdClsfAcc, IdUnitate) ▸ IDClsf` for every row written,
-   reading the assigned id back from `LAST_INSERT_ID()`.
-2. For each `FX_*` row, look up its **Access `IdClsf` + `IdUnitate`** in that map and write the
-   result into MariaDB `IdClsf`.
-3. `Clasificatii_Buget` and `Clasificatii_Rectificari` resolve through the same map, and are
-   therefore written after `Clasificatii` and before any `FX_*` table.
+1. Transfer `Clasificatii` first. Keep `(IdClsfAcc, IdUnitate) ▸ IDClsf` for every row written, reading the assigned id back from `LAST_INSERT_ID()`.
+2. For each `FX_*` row, look up its **Access `IdClsf` + `IdUnitate`** in that map and write the result into MariaDB `IdClsf`.
+3. `Clasificatii_Buget` and `Clasificatii_Rectificari` resolve through the same map, and are therefore written after `Clasificatii` and before any `FX_*` table.
 
-A lookup that misses is **blocking** on `FX_DDF_REV_SA.IdClsf` and `_SB.IdClsf` (`NOT NULL`
-with a foreign key) and blocking by choice on `FX_ORD_TBL.IdClsf` — nullable there, but a
-silently unclassified order line is worse than a refusal.
+A lookup that misses is **blocking** on `FX_DDF_REV_SA.IdClsf` and `_SB.IdClsf` (`NOT NULL` with a foreign key) and blocking by choice on `FX_ORD_TBL.IdClsf` — nullable there, but a silently unclassified order line is worse than a refusal.
 
-**Column-name matching is case-insensitive, always.** Access spells this column differently per
-table (`IdClsfPY`, `IdClsfPy`) and the inconsistency is not predictable. Never compare column
-names with `=`; lower-case both sides. This applies to every column, not just this one.
+**Column-name matching is case-insensitive, always.** Access spells this column differently per table (`IdClsfPY`, `IdClsfPy`) and the inconsistency is not predictable. Never compare column names with `=`; lower-case both sides. This applies to every column, not just this one.
 
-Access's `IdClsfPY` does **not** travel. `IdClsfAcc` on the `FX_*` tables is retired; on
-`Clasificatii` it stays and is the key of the resolution map.
+Access's `IdClsfPY` does **not** travel. `IdClsfAcc` on the `FX_*` tables is retired; on `Clasificatii` it stays and is the key of the resolution map.
 
-**Rule 2 — `CUAL` is `INT(11)` everywhere.** Access and MariaDB, `FX_DDF` and `FX_ORD`.
-Fixed 22.08. No text handling, no conversion.
+**Rule 2 — `CUAL` is `INT(11)` everywhere.** Access and MariaDB, `FX_DDF` and `FX_ORD`. Fixed 22.08. No text handling, no conversion.
 
-**Rule 3 — Access ids are not stored.** No `'ACCESS'` legacy column receives a value. See
-§0 for what happens to their *values*.
+**Rule 3 — Access ids are not stored.** No `'ACCESS'` legacy column receives a value. See §0 for what happens to their *values*.
 
-**Rule 4 — case-insensitive everywhere.** Table names, column names, rename maps, tick
-lists. Access is inconsistent (`IDORDPartP`, `IdClsfPy`, `CodAi` vs `CodAI`) and the
-inconsistency is not a pattern that can be predicted.
+**Rule 4 — case-insensitive everywhere.** Table names, column names, rename maps, tick lists. Access is inconsistent (`IDORDPartP`, `IdClsfPy`, `CodAi` vs `CodAI`) and the inconsistency is not a pattern that can be predicted.
 
 ---
 
@@ -97,25 +66,15 @@ Excluded by decision, 22.08 — do not write, do not check, do not include in th
 - `FX_ORD_TBL_REC`
 - `FX_ORD_PDF` (planned table, does not exist yet)
 
-**`Clasificatii`, `Parteneri`, `Clasificatii_Buget` and `Clasificatii_Rectificari` are now
-part of the transfer** (decision 22.08, reversing the earlier read-only status). They are fed
-from the registry `.accdb` per DC, for every subunit `IdUnitate` that `CAI` lists, **before**
-any `FX_*` table.
+**`Clasificatii`, `Parteneri`, `Clasificatii_Buget` and `Clasificatii_Rectificari` are now part of the transfer** (decision 22.08, reversing the earlier read-only status). They are fed from the registry `.accdb` per DC, for every subunit `IdUnitate` that `CAI` lists, **before** any `FX_*` table.
 
-Their column mapping is **not yet written** — it needs the real Access schemas, which are read
-in the discovery pass (`PLAN_MigratorDirect.md` §12). Until `docs/MAPARE_NOMENCLATOARE.md`
-exists, do not map them. `Clasificatii.IdClsfAcc` must stay correct per `IdUnitate`, exactly as
-it is on the existing databases.
+Their column mapping is **not yet written** — it needs the real Access schemas, which are read in the discovery pass (`PLAN_MigratorDirect.md` §12). Until `docs/MAPARE_NOMENCLATOARE.md` exists, do not map them. `Clasificatii.IdClsfAcc` must stay correct per `IdUnitate`, exactly as it is on the existing databases.
 
 `Unitati` remains read-only — nothing in this migration writes it.
 
-`FX_ORD_DOC` **is** in scope (confirmed 22.08) — it was the table meant by "FX_ORD_PDF",
-which does not exist.
+`FX_ORD_DOC` **is** in scope (confirmed 22.08) — it was the table meant by "FX_ORD_PDF", which does not exist.
 
-Note on `FX_ORD_TBL_REC`: it is the link between payments and order lines
-(`FX_Plati` ▸ `FX_ORD_TBL_REC` ▸ `FX_ORD_TBL`) and both its parents are migrated. Leaving it
-out is deliberate; the link between a payment and the order line it settled does not survive
-the migration.
+Note on `FX_ORD_TBL_REC`: it is the link between payments and order lines (`FX_Plati` ▸ `FX_ORD_TBL_REC` ▸ `FX_ORD_TBL`) and both its parents are migrated. Leaving it out is deliberate; the link between a payment and the order line it settled does not survive the migration.
 
 ---
 
@@ -161,8 +120,7 @@ Access PK `IDREV` · MariaDB PK `IDREV` (`AUTO_INCREMENT`).
 | — | DataAdugare, DataModificare | MariaDB-only (spelling: `DataAdugare`) |
 
 ### FX_DDF_REV_SA
-Access PK `ID` (does not travel) · MariaDB PK `IdSecA` (`AUTO_INCREMENT`).
-Access carries `IdSecA` separately — that is the MariaDB key.
+Access PK `ID` (does not travel) · MariaDB PK `IdSecA` (`AUTO_INCREMENT`). Access carries `IdSecA` separately — that is the MariaDB key.
 
 | Access | MariaDB | |
 |---|---|---|
@@ -215,8 +173,7 @@ Access PK `IDORD` · MariaDB PK `IDORDP` (`AUTO_INCREMENT`).
 | IDRR, IDRH | — | **being dropped from MariaDB** — do not map |
 | — | IDORD (legacy varchar) | leave empty (Rule 3) |
 
-Note the upsert: with `IDORDP` as the real PK and a value supplied,
-`ON DUPLICATE KEY UPDATE` matches correctly. Under (B) it cannot.
+Note the upsert: with `IDORDP` as the real PK and a value supplied, `ON DUPLICATE KEY UPDATE` matches correctly. Under (B) it cannot.
 
 ### FX_ORD_PART
 Access PK `IDORDPART` · MariaDB PK `IDORDPARTP` (`AUTO_INCREMENT`).
@@ -232,8 +189,7 @@ Access PK `IDORDPART` · MariaDB PK `IDORDPARTP` (`AUTO_INCREMENT`).
 | — | IDORDPART (legacy), tmpID | leave empty |
 
 ### FX_ORD_TBL
-Access PK `IDORDTBL` · MariaDB PK `IDORDTBLP` (`AUTO_INCREMENT`).
-Six foreign keys, three of them into tables the migration never writes.
+Access PK `IDORDTBL` · MariaDB PK `IDORDTBLP` (`AUTO_INCREMENT`). Six foreign keys, three of them into tables the migration never writes.
 
 | Access | MariaDB | |
 |---|---|---|
@@ -253,8 +209,7 @@ Six foreign keys, three of them into tables the migration never writes.
 | IDORDP (Access), IdClsfPY, IDRR, IDORDT, IDRD | — | do not travel |
 
 ### FX_ORD_DOC
-Access PK `IDORDDOC` · MariaDB PK `IDORDDOCP` (`AUTO_INCREMENT`).
-Access schema confirmed 22.08 from `TABLES/FX_ORD_DOC.md`.
+Access PK `IDORDDOC` · MariaDB PK `IDORDDOCP` (`AUTO_INCREMENT`). Access schema confirmed 22.08 from `TABLES/FX_ORD_DOC.md`.
 
 | Access | MariaDB | |
 |---|---|---|
@@ -283,27 +238,17 @@ Decided but not yet in the schema — `000_DEMO.sql` of 22.08 still shows the ol
 | Drop `FX_ORD.IDRR`, `FX_ORD.IDRH` | present |
 | Drop the legacy `'ACCESS'` columns (`FX_ORD.IDORD`, `FX_ORD_PART.IDORDPART`, `FX_ORD_TBL.IDORDTBL`, `FX_ORD_DOC.IDORDDOC`) | present |
 
-**`IdClsfAcc` no longer blocks anything.** It was `NOT NULL` with no default on SA and SB;
-set to allow NULL on 22.08, so a run that stops sending it succeeds. One thing follows while the column is still
-there:
+**`IdClsfAcc` no longer blocks anything.** It was `NOT NULL` with no default on SA and SB; set to allow NULL on 22.08, so a run that stops sending it succeeds. One thing follows while the column is still there:
 
-* Migrated rows will carry `IdClsfAcc = NULL`, while rows the app creates keep filling it
-  (`routes/ddf/staging.py` inserts and updates it explicitly). Anything that reads, joins or
-  filters on `FX_DDF_REV_SA.IdClsfAcc` / `_SB` / `FX_ORD_TBL.IdClsfAcc` will behave
-  differently for migrated data than for data entered afterwards. Retire those reads before
-  or with the column.
+* Migrated rows will carry `IdClsfAcc = NULL`, while rows the app creates keep filling it (`routes/ddf/staging.py` inserts and updates it explicitly). Anything that reads, joins or filters on `FX_DDF_REV_SA.IdClsfAcc` / `_SB` / `FX_ORD_TBL.IdClsfAcc` will behave differently for migrated data than for data entered afterwards. Retire those reads before or with the column.
 
 ---
 
 ## 6. Still unread
 
-1. `TABLES/FX_ORD.md` — the only remaining reconstruction; the column list in §4 comes from
-   `tmpFX_ORD` plus the VBA INSERT in `mdl_FX_ORD_SYNC_FROM_MARIADB`. Everything else in this
-   file is read from source on both sides.
-2. `FX_DDF_REV.ESpeciala` — present on MariaDB and written by the VBA, absent from the Access
-   export. Check the live `.accdb`.
+1. `TABLES/FX_ORD.md` — the only remaining reconstruction; the column list in §4 comes from `tmpFX_ORD` plus the VBA INSERT in `mdl_FX_ORD_SYNC_FROM_MARIADB`. Everything else in this file is read from source on both sides.
+2. `FX_DDF_REV.ESpeciala` — present on MariaDB and written by the VBA, absent from the Access export. Check the live `.accdb`.
 
 ## 7. Open questions
 
-None. All four decisions of 22.08 are folded in: option (A) for the ORD keys, `FX_ORD_DOC`
-in scope, `FX_ORD_TBL_REC` out of scope, `SS` always three characters.
+None. All four decisions of 22.08 are folded in: option (A) for the ORD keys, `FX_ORD_DOC` in scope, `FX_ORD_TBL_REC` out of scope, `SS` always three characters.

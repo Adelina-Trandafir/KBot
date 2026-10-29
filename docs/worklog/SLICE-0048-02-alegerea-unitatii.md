@@ -107,26 +107,13 @@ Trei decizii de scris pe față:
 ## 2. Fișiere atinse
 
 **Noi — server**
-- `PYTHON/routes/forexe/prelucrare.py` — ruta, pașii 0/1/2
-- `PYTHON/routes/forexe/prelucrare_unitate.py` — rezolvarea unității + memoria
-- `sql/0048_alegeri_unitate.sql` — `FX_Alegeri_Unitate`
-- `PYTHON/tests/test_forexe_prelucrare_unitate.py` — 28 de teste
-- `PYTHON/tests/test_forexe_prelucrare_route.py` — 11 teste
+`PYTHON/routes/forexe/prelucrare.py` — ruta, pașii 0/1/2; `PYTHON/routes/forexe/prelucrare_unitate.py` — rezolvarea unității + memoria; `sql/0048_alegeri_unitate.sql` — `FX_Alegeri_Unitate`; `PYTHON/tests/test_forexe_prelucrare_unitate.py` — 28 de teste; `PYTHON/tests/test_forexe_prelucrare_route.py` — 11 teste
 
 **Noi — client**
-- `src/KBot.Domain/PrelucrareInfo.vb`, `src/KBot.Domain/PrelucrareRezultat.vb` (mutat)
-- `src/KBot.App/Forexe/AlegereUnitateForm.vb` + `.Designer.vb`
-- `src/KBot.App/Forexe/PrelucrareCoordinator.vb`
-- `tests/KBot.Api.Tests/PrelucrareApiClientTests.vb` — 11 teste
-- `tests/KBot.App.Tests/AlegereUnitateFormTests.vb` — 10 teste
-- `tests/KBot.App.Tests/PrelucrareCoordinatorTests.vb` — 11 teste
+`src/KBot.Domain/PrelucrareInfo.vb`, `src/KBot.Domain/PrelucrareRezultat.vb` (mutat); `src/KBot.App/Forexe/AlegereUnitateForm.vb` + `.Designer.vb`; `src/KBot.App/Forexe/PrelucrareCoordinator.vb`; `tests/KBot.Api.Tests/PrelucrareApiClientTests.vb` — 11 teste; `tests/KBot.App.Tests/AlegereUnitateFormTests.vb` — 10 teste; `tests/KBot.App.Tests/PrelucrareCoordinatorTests.vb` — 11 teste
 
 **Modificate**
-- `PYTHON/routes/forexe/__init__.py` — înregistrarea rutei
-- `src/KBot.Api/IApiClient.vb`, `ApiClient.vb`, `UpsertAngajamenteRequest.vb` (DTO-urile de wire)
-- `src/KBot.App/Forexe/WorkflowResultStore.vb` — `PrelucrareRezultat` a plecat de aici
-- `src/KBot.Controls/Notice/KBotNotice.vb` — `Message`
-- șapte fișiere de test din `KBot.App.Tests` — falsurile de `IApiClient` au primit noul membru
+`PYTHON/routes/forexe/__init__.py` — înregistrarea rutei; `src/KBot.Api/IApiClient.vb`, `ApiClient.vb`, `UpsertAngajamenteRequest.vb` (DTO-urile de wire); `src/KBot.App/Forexe/WorkflowResultStore.vb` — `PrelucrareRezultat` a plecat de aici; `src/KBot.Controls/Notice/KBotNotice.vb` — `Message`; șapte fișiere de test din `KBot.App.Tests` — falsurile de `IApiClient` au primit noul membru
 
 ---
 

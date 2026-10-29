@@ -15,7 +15,7 @@ Pass 1 of slice 0022 (vederea Istoric), per `PLAN_IstoricView.md` §2–§3. Shi
 
 ### What changed and why
 
-One endpoint, two arrays, one round trip: `{cod, randuri[], clasificatii[]}`. The client (`IstoricView`) shapes the grid, the three column menus and the filtering **locally** — a filter change never issues a request. Decision inherited from 0020-01 §7; not re-litigated here.
+One round trip returns `{cod, randuri[], clasificatii[]}`. `IstoricView` builds the grid, three column menus and filters locally; filter changes issue no requests (0020-01 §7).
 
 - **`randuri`** — `SELECT … FROM FX_Istoric WHERE CodAngajament = %s ORDER BY DataFX, Clsf`. The `ORDER BY` is the Access `RecordSource`'s, verbatim. Nineteen wire fields (§2.1). `cod` is an **exact** match, parametrized (Access used `Like` — deviation, see §9 in 0022-02).
 - **`data_fx` keeps its time component** (§2.3). `FX_Istoric.DataFX` is a `datetime` and istoric rows are timestamped events. A dedicated `_iso_dt` returns the full ISO value **with** the time — deliberately NOT the `_iso` from `ddf.py`, which truncates to the day (right there, wrong here). Pinned by `test_data_fx_carries_time_component`.
@@ -72,7 +72,7 @@ Twelve columns in Access `Left` order: `Clsf`, `TipRand`, `Data` (`dd.MM.yyyy`),
 
 ### Detail pane (§4.3)
 
-Grid selection change → fills `txtDescriere`/`txtObservatii` from the selected row's `Tag` (`IstoricRand`); no selection → both empty. This **flattens** the Access two-band continuous-form row (values on line 1, Descriere+Observatii on line 2) into one grid row plus a pane — `KBotDataView` is one line per row and is not being changed for one consumer.
+Selection fills read-only `txtDescriere`/`txtObservatii` from the row Tag (`IstoricRand`); no selection clears both. The pane carries the second Access continuous-form band, keeping `KBotDataView` at one line per row.
 
 ### The three filters
 
@@ -88,11 +88,11 @@ The three menus are themed `ContextMenuStrip`s built from the loaded data (this 
 
 ### Loading (§6)
 
-`SetContext(info)`: `Nothing`/blank cod → clear grid + pane + menus, **no network call**. Otherwise set `_requestedCod`, call through `WithReauth(Of IstoricInfo)`, and **discard the response if `_requestedCod` has moved on** (stale-guard, copied from `DdfView`). On success: fill the grid, rebuild all three menus, and **reset all three filter segments unconditionally** — a filter from the previous angajament must never survive (same rule as `DdfView`'s combo reset).
+`SetContext(info)`: `Nothing`/blank cod clears grid, pane and menus without a request. Otherwise `_requestedCod` guards `WithReauth(Of IstoricInfo)` responses against context changes, as in `DdfView`. Success fills the grid, rebuilds all three menus and unconditionally resets all filter segments, preventing carryover between angajamente.
 
 ### `RandSchimbat` — wired, dormant, deliberate (§7)
 
-Access set a hidden `CL` textbox to the row `ID` on `Form_Current` and declared `Public Event RowChanged(key)` with the `RaiseEvent` commented out. Kept: `RandSchimbat` is raised on grid selection change, carrying the row `Id`. **Nothing subscribes** — same shape as `AdaugaDdfCerut` in Rezervări. Recorded here so a later pass does not "clean up" an apparently unused member.
+Access stored row `ID` in hidden `CL` on `Form_Current`; its `Public Event RowChanged(key)` had the `RaiseEvent` commented out. Here selection raises `RandSchimbat(Id)` with **no subscriber**, deliberately retained like `AdaugaDdfCerut` in Rezervări.
 
 ### Theming
 

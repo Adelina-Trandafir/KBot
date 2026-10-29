@@ -4,9 +4,7 @@ Reunire documentară D001-21. Se păstrează cele 12 etape existente (01…10, 1
 
 [0081-01](#slice-0081-01) · [0081-02](#slice-0081-02) · [0081-03](#slice-0081-03) · [0081-04](#slice-0081-04) · [0081-05](#slice-0081-05) · [0081-06](#slice-0081-06) · [0081-07](#slice-0081-07) · [0081-08](#slice-0081-08) · [0081-09](#slice-0081-09) · [0081-10](#slice-0081-10) · [0081-12](#slice-0081-12) · [0081-13](#slice-0081-13)
 
-<a id="slice-0081-01"></a>
-
-## SLICE 0081-01 — the revision state (G0a)
+## SLICE 0081-01 — the revision state (G0a) <a id="slice-0081-01"></a>
 
 **Date:** 25.09.2026. **Plan:** `docs/PLAN_DDF_Trimitere.md` §0081-01. **Handoff:** absorbed into [the plan](../PLAN_DDF_Trimitere.md#handoff-notes-absorbed-in-d001-04) in D001-04; its original assumptions are corrected below.
 
@@ -32,7 +30,7 @@ The plan said the state S0–S4 (and S1x) would be derived from `FX_DDF_REV.Inca
 
 Plus `IsOpen` (S0, S1, S1x, S2a — «one open revision at a time»), `CanEdit` (S0, S1), `CanSend` (S1, S1x), `IsSent` (S2a and after), `Label` (the Romanian text), `HasRole`.
 
-**The check the plan left for this step — settled:** an empty `X-Semnatura` is REFUSED (400, «Antetul X-Semnatura este gol»), not treated as a reset. Added: `X-Semnatura: -` (the same «nothing» marker as `X-Sha-Precedent`) writes `''`. The final PDF (0081-04) is uploaded with it. An empty header stays refused — empty is a client mistake, `-` is a statement.
+**Signature header:** empty `X-Semnatura` remains 400 («Antetul X-Semnatura este gol»), not a reset. Added `X-Semnatura: -`, like `X-Sha-Precedent`, explicitly writes `''`; the final PDF upload in 0081-04 uses it. Empty is a client error; `-` is intentional.
 
 **Read route** (`routes/forexe/ddf.py`, read-only additions): `stare_trimitere` (the literal 0 when the column is not there yet — probed once per database, `routes/forexe/ddf_stare.py`) and `are_rezervari` (scalar `EXISTS` on `FX_Rezervari.IDREV`, no fan-out).
 
@@ -66,9 +64,7 @@ Plus `IsOpen` (S0, S1, S1x, S2a — «one open revision at a time»), `CanEdit` 
 
 ---
 
-<a id="slice-0081-02"></a>
-
-## SLICE 0081-02 — editor modes, Section B hidden before the send, interim PDF, entry points (G6a)
+## SLICE 0081-02 — editor modes, Section B hidden before the send, interim PDF, entry points (G6a) <a id="slice-0081-02"></a>
 
 **Date:** 25.09.2026. **Plan:** `docs/PLAN_DDF_Trimitere.md` §0081-02 (option 2: B is created but not shown).
 
@@ -78,7 +74,7 @@ Plus `IsOpen` (S0, S1, S1x, S2a — «one open revision at a time»), `CanEdit` 
 - **«Angajament nou»** — a new button on the main header, top left, in the empty column 0 of `tlyHeader`, before «An». Port of Access `FX_Adaugare_ANG`: code `"!" + 10 chars` (`DdfCodIndicator.Genereaza(10)`), `Stare = "MANUAL"`, `Manual = True`, `Incarcat/Preluat/Buget = False`, revision 0, `Tip = "Manual"`, DC = the session's database, Program = the session's program, section A empty. The existing save (its Manual branch) writes `FX_Angajamente` / `FX_Indicatori`; after the save the tree reloads ONTO the new code (`LoadTreeAsync(codDeSelectat:=…)`).
 - **«Adaugă rezervare»** — the Rezervări tree footer LEFT icon. On an angajament with a document: a new revision on the same header (read through the editor's `/draft` of the LAST revision; only the header is kept), section A empty, `NumarRev = last + 1` (the number lock then holds the real one). Without a document: its revision 0 on the existing forexecab angajament (header from the tree node: description, creation date, state). Refused when a revision is still open (checked again on fresh data).
 
-**The Rezervări footer LEFT icon** — one icon, one option at most (`RezervariMenu.Decide`, the menu table of plan 0081-04, pure and tested). Computed after each Rezervări load from the angajament's forexecab state (`FX_Angajamente.Stare`, read without diacritics/case) and its DDF revisions (one more GET of the existing DDF read route, only when the angajament has a document). No option → the icon is HIDDEN (the tree has no disabled look for a footer icon). Click → `CustomPopup` with that one option → the shell. In this sub-slice the shell handles «Adaugă rezervare»; the other three are wired in 0081-04.
+**Rezervări footer LEFT icon:** `RezervariMenu.Decide` (pure, tested; plan 0081-04 table) offers at most one option. Each load uses `FX_Angajamente.Stare` without case/diacritics and DDF revisions, fetched by one extra existing GET only when a document exists. No option hides the icon, which has no disabled look. Click opens the one-option `CustomPopup` and delegates to the shell; only «Adaugă rezervare» is handled here, the other three in 0081-04.
 
 **The editor knows the revision state** (`DdfEditForm(…, stare, sendApi)`):
 - «Secțiunea B» nav item hidden by key (`navSub.SetItemVisible`) unless the revision is sent. Section B stays derived from A on every edit (unchanged), it is only not shown.
@@ -88,7 +84,7 @@ Plus `IsOpen` (S0, S1, S1x, S2a — «one open revision at a time»), `CanEdit` 
 
 **Interim PDF** — `DdfXmlBuilder.BuildComplete(…, mode)`, `DdfPdfMode.Interim`: `Table3` only the hidden template row, `CheckBox9 = 0`, NOTAFD `sectiuneaB` with `ckbx_secta_inreg_ctrl_ang = 0` and no rows, no `PrtScr` attachment. `DdfView` picks Interim for a revision not sent, Final otherwise. The «Vizualizare» page never rendered Section B (checked), so nothing changes there.
 
-**Sending API kept out of `IApiClient`** — `KBot.Api/IDdfSendApi.vb` + `ApiClient.DdfSend.vb`, the `IMarcajApi` pattern: nine test fakes implement `IApiClient`, and every one would have had to learn the new calls. The shell reaches it with `TryCast(_apiClient, IDdfSendApi)`. The whole 0081 set is declared here (start / codes / capture / stage / director list); the server routes arrive with 0081-04 and -06.
+**Sending API** — `KBot.Api/IDdfSendApi.vb` + `ApiClient.DdfSend.vb` follow `IMarcajApi`, avoiding new members on the nine `IApiClient` test fakes. The shell uses `TryCast(_apiClient, IDdfSendApi)`. This step declares the full 0081 API (start / codes / capture / stage / director list); server routes follow in 0081-04 / -06.
 
 **Read route** — `FX_DDF.Manual` added to the header (`DdfAntet.Manual`): only a K-BOT-created document's Rev 0 gets «Definitivează» / «Derulează».
 
@@ -130,9 +126,7 @@ Plus `IsOpen` (S0, S1, S1x, S2a — «one open revision at a time»), `CanEdit` 
 
 ---
 
-<a id="slice-0081-03"></a>
-
-## SLICE 0081-03 — the workflow edits (G1, G2; G3 dropped)
+## SLICE 0081-03 — the workflow edits (G1, G2; G3 dropped) <a id="slice-0081-03"></a>
 
 **Date:** 25.09.2026. **Plan:** `docs/PLAN_DDF_Trimitere.md` §0081-03. Only `.wfl` files in `src/KBot.Forexe/Workflows/Creare/` (never `Surse/`), plus the project entry that copies them.
 
@@ -155,10 +149,7 @@ Plus `IsOpen` (S0, S1, S1x, S2a — «one open revision at a time»), `CanEdit` 
 
 ### Files touched
 
-- `src/KBot.Forexe/Workflows/Creare/adlop - Definitivare Angajament.wfl` (new)
-- `src/KBot.Forexe/Workflows/Creare/adlop - Derulare Angajament.wfl` (new)
-- `src/KBot.Forexe/Workflows/Creare/adlop - Incarca Rezervare.wfl` — G2
-- `src/KBot.Forexe/KBot.Forexe.vbproj` — copy the four sending workflows
+`src/KBot.Forexe/Workflows/Creare/adlop - Definitivare Angajament.wfl` (new); `src/KBot.Forexe/Workflows/Creare/adlop - Derulare Angajament.wfl` (new); `src/KBot.Forexe/Workflows/Creare/adlop - Incarca Rezervare.wfl` — G2; `src/KBot.Forexe/KBot.Forexe.vbproj` — copy the four sending workflows
 
 ### Test results
 
@@ -174,9 +165,7 @@ All six `Creare\*.wfl` parse as XML (Python `xml.etree`; an XML comment with `--
 
 ---
 
-<a id="slice-0081-04"></a>
-
-## SLICE 0081-04 — the send (G6b)
+## SLICE 0081-04 — the send (G6b) <a id="slice-0081-04"></a>
 
 **Date:** 25.09.2026. **Plan:** `docs/PLAN_DDF_Trimitere.md` §0081-04. Only the SEND (KBOT → forexecab); the import (`prelucrare_pasi.py`, the read workflows) is untouched and is called as it is.
 
@@ -210,19 +199,15 @@ Rezervări footer menu (`ExecutaMeniulRezervari`): «Definitivează» / «Derule
 8. **The final-PDF upload** uses the unsigned-PDF path of `UploadDdfPdfAsync` with no `semnaturi` rows (nobody signed anything).
 
 ### Files touched
-- NEW `src/KBot.App/KbotForm.DdfSend.vb`.
-- `src/KBot.App/KbotForm.vb` — `Case DdfActiune.Trimite`; `Definitiveaza` / `Deruleaza` / `GenereazaPdfFinal` in `ExecutaMeniulRezervari`; `DuLaIngestieAsync` → `Task(Of Boolean)`.
-- Already written in the earlier part of this sub-slice: `PYTHON/routes/forexe/ddf_trimitere.py` (`start`, `coduri`, `captura`, `stare`), `src/KBot.Domain/DdfSendInputs.vb`, `src/KBot.Api/IDdfSendApi.vb` + `ApiClient.DdfSend.vb`, `ForexeController.RuleazaTrimitereAsync`, `ForexeRunner.FailedWithVariables` (a failed run keeps its variables), `WorkflowCatalog` / `JobBuilder` (four builders), `DdfPdfGenerator`, `DdfView` («Trimite» / «Reia trimiterea» entries), `DdfComanda`.
-- NEW test `tests/KBot.Domain.Tests/DdfSendInputsTests.vb` (written, NOT run).
+
+NEW `src/KBot.App/KbotForm.DdfSend.vb`. `src/KBot.App/KbotForm.vb` — `Case DdfActiune.Trimite`; `Definitiveaza` / `Deruleaza` / `GenereazaPdfFinal` in `ExecutaMeniulRezervari`; `DuLaIngestieAsync` → `Task(Of Boolean)`. Already written in the earlier part of this sub-slice: `PYTHON/routes/forexe/ddf_trimitere.py` (`start`, `coduri`, `captura`, `stare`), `src/KBot.Domain/DdfSendInputs.vb`, `src/KBot.Api/IDdfSendApi.vb` + `ApiClient.DdfSend.vb`, `ForexeController.RuleazaTrimitereAsync`, `ForexeRunner.FailedWithVariables` (a failed run keeps its variables), `WorkflowCatalog` / `JobBuilder` (four builders), `DdfPdfGenerator`, `DdfView` («Trimite» / «Reia trimiterea» entries), `DdfComanda`. NEW test `tests/KBot.Domain.Tests/DdfSendInputsTests.vb` (written, NOT run).
 
 ### State
 Build `KBot.App` **0 errors / 0 warnings**. Nothing run live, nothing seen on screen, no suite run. **Done when** (operator, 000_DEMO): Rev 0 manual S1 → S2a → (Definitivează, Derulează, PDF final) S2b; a Rev 1 S1 → S2b; one run interrupted on purpose and resumed without a second angajament.
 
 ---
 
-<a id="slice-0081-05"></a>
-
-## SLICE 0081-05 — the FOREXE captures in the final PDF (G5)
+## SLICE 0081-05 — the FOREXE captures in the final PDF (G5) <a id="slice-0081-05"></a>
 
 **Date:** 25.09.2026. **Plan:** `docs/PLAN_DDF_Trimitere.md` §0081-05.
 
@@ -238,19 +223,15 @@ Build `KBot.App` **0 errors / 0 warnings**. Nothing run live, nothing seen on sc
 2. Size: a full-page PNG is a few hundred KB; several captures make the PDF several MB. Left as the plan says — to watch on the first real document.
 
 ### Files touched
-- `src/KBot.App/Views/Ddf/DdfXmlBuilder.vb` (`Table4Of`, `DdfPdfMode`, mode parameter).
-- `src/KBot.App/Views/Ddf/DdfPdfGenerator.vb` (captures gathering).
-- `src/KBot.Xfa/AdobeUtils.vb` (`CopyAttributes`, used for every table cell).
-- Tests (written, NOT run): `tests/KBot.App.Tests/DdfXmlBuilderModeTests.vb` (4 new: Table4 shape, order, placement, none), `tests/KBot.Xfa.Tests/CopyAttributesTests.vb` (new).
+
+`src/KBot.App/Views/Ddf/DdfXmlBuilder.vb` (`Table4Of`, `DdfPdfMode`, mode parameter). `src/KBot.App/Views/Ddf/DdfPdfGenerator.vb` (captures gathering). `src/KBot.Xfa/AdobeUtils.vb` (`CopyAttributes`, used for every table cell). Tests (written, NOT run): `tests/KBot.App.Tests/DdfXmlBuilderModeTests.vb` (4 new: Table4 shape, order, placement, none), `tests/KBot.Xfa.Tests/CopyAttributesTests.vb` (new).
 
 ### State
 Builds 0 / 0 (App, Xfa). **Done when:** a final PDF opened in Adobe shows the captures under Section B.
 
 ---
 
-<a id="slice-0081-06"></a>
-
-## SLICE 0081-06 — the director's K-BOT (G0b)
+## SLICE 0081-06 — the director's K-BOT (G0b) <a id="slice-0081-06"></a>
 
 **Date:** 25.09.2026. **Plan:** `docs/PLAN_DDF_Trimitere.md` §0081-06.
 
@@ -262,7 +243,7 @@ Builds 0 / 0 (App, Xfa). **Done when:** a final PDF opened in Adobe shows the ca
 
 - **Server** `PYTHON/routes/forexe/ddf_director.py`, `GET /api/forexe/ddf/director/de-semnat`: only for a session whose role is `Director` (else 403). Reads the director's units (`Unitati_Utilizatori.Rol = 'Director'`) and, in each database, the revisions that have a PDF on the server, are past the send (`StareTrimitere = 3`, or `Incarcat` / `Preluat` for those sent before 0081) and carry signatures A and B but not Ordonator. A unit that cannot be read is named in `unitati_necitite` and does not stop the list. A database without the 0081 column is still read (only `Incarcat` / `Preluat`).
 - **`Program`**: after login, `Role = "Director"` → `DirectorForm` instead of `KbotForm`.
-- **`DirectorForm`** (`KBotShellForm`, all controls in the Designer except the DDF view, which takes the API client in its constructor — same as the shell's views): «Aveți N documente de fundamentare de semnat», the list (unit, angajament, object, revision, date, total), and on the right the existing `DdfView` on the selected revision. Its signing session (0078) signs and uploads; the upload writes `A,B,Ordonator` → S4. The write commands of the DDF menu answer «here the document is only signed».
+- **`DirectorForm`** (`KBotShellForm`): Designer controls except API-client-constructed `DdfView`, as in the shell. Shows «Aveți N documente de fundamentare de semnat», a list (unit, angajament, object, revision, date, total) and the selected revision in `DdfView` at right. Signing/upload uses 0078 and writes `A,B,Ordonator` → S4; write commands refuse with «here the document is only signed».
 - **`LoginForm.PreferredDc`**: the unit pre-selected at phase 2 (wins over the remembered one).
 - **`IDdfSendApi.GetDdfDeSemnatDirectorAsync`** now returns `DdfDeSemnatLista` (revisions + units not read).
 
@@ -274,20 +255,15 @@ Builds 0 / 0 (App, Xfa). **Done when:** a final PDF opened in Adobe shows the ca
 5. The list is a plain `ListView` (a standard control, themed by the generic rules), not a new custom control.
 
 ### Files touched
-- NEW `PYTHON/routes/forexe/ddf_director.py`; `PYTHON/routes/forexe/__init__.py` (import).
-- NEW `src/KBot.App/Director/DirectorForm.vb` + `DirectorForm.Designer.vb`.
-- `src/KBot.App/Program.vb` (role → window, DI), `src/KBot.App/LoginForm.vb` (`PreferredDc`).
-- `src/KBot.Api/IDdfSendApi.vb`, `src/KBot.Api/ApiClient.DdfSend.vb` (`DdfDeSemnatLista`).
-- NEW test `PYTHON/tests/test_forexe_ddf_director.py` (written, NOT run).
+
+NEW `PYTHON/routes/forexe/ddf_director.py`; `PYTHON/routes/forexe/__init__.py` (import). NEW `src/KBot.App/Director/DirectorForm.vb` + `DirectorForm.Designer.vb`. `src/KBot.App/Program.vb` (role → window, DI), `src/KBot.App/LoginForm.vb` (`PreferredDc`). `src/KBot.Api/IDdfSendApi.vb`, `src/KBot.Api/ApiClient.DdfSend.vb` (`DdfDeSemnatLista`). NEW test `PYTHON/tests/test_forexe_ddf_director.py` (written, NOT run).
 
 ### State
 Build App **0 / 0**; `py_compile` green. Nothing run, nothing seen on screen. **Done when:** a login with a `Director` row sees only its waiting list and signs one document end to end. The operator must add the `Director` rows to `AVACONT_COMUN.Unitati_Utilizatori` (one per unit).
 
 ---
 
-<a id="slice-0081-07"></a>
-
-## SLICE 0081-07 — dry run, replay, and every FOREXE answer kept
+## SLICE 0081-07 — dry run, replay, and every FOREXE answer kept <a id="slice-0081-07"></a>
 
 **Date:** 26.09.2026. **Asked by the operator (26.09.2026):**
 1. There is no FOREXE test server: every run on any database writes to the real forexecab.
@@ -362,9 +338,7 @@ Build App (with Common, Forexe) **0 / 0**; `py_compile` green. Nothing run, noth
 
 ---
 
-<a id="slice-0081-08"></a>
-
-## SLICE 0081-08 — Section A line window (and the two dead ends of «Adaugă rând»)
+## SLICE 0081-08 — Section A line window (and the two dead ends of «Adaugă rând») <a id="slice-0081-08"></a>
 
 **Date:** 26.09.2026. **Request (operator), in the DDF editor (`DdfEditForm`):**
 1. For «Adaugă rezervare» (a new reservation made in K-BOT, to be sent to FOREXE) «Adaugă rând» is not active.
@@ -373,22 +347,19 @@ Build App (with Common, Forexe) **0 / 0**; `py_compile` green. Nothing run, noth
 
 ### What was wrong
 
-- **(2) — verified in the files.** The column the operator sees is «Clsf» (`clsf`, read-only). The combo column «Clasificatie» (`clasificatie`) is `Visible = Hidden` in `DdfEditSectiuneaAPage.Designer.vb`, and `Grd_CellDoubleClick` answered ONLY to `clasificatie`. So a double click could never reach it.
-- **(1) — the cause is NOT verified on data.** `btnAdauga.Enabled` was `disponibile > 0`: off when the server list came back empty, and off when the request failed. Neither «Adaugă rezervare» factory (`ForAddedReservation`, `ForFirstRevisionOfExisting`) sets `Sursa` or `GrpIdrz`, so the reservations lock (`DinRezervari`) is not it. For an angajament whose code no longer starts with «!» the list comes only from `FX_Indicatori` of that `CodAngajament` (+ same `Titlu`); an empty one there gives exactly this. The empty-list message also lied («toate clasificațiile sunt deja folosite» for a list that was simply empty).
-- **Found on the way:** `DdfEditForm.AduClasificatiileAsync` took `Titlu` (manual angajament) as the THIRD dotted part of `Clsf`. `Capitol` and `Subcapitol` are `NN.NN` themselves (varchar(5), checked in `MariaDB_Schema/000_DEMO.sql`), so that is half of Subcapitol: `04` instead of `20` for `65.02.04.02.20.01.01`. Now `Substring(12, 2)` = Access's `Mid(Clsf, 13, 2)`.
+- **(2), verified in files:** visible «Clsf» (`clsf`) is read-only; the combo «Clasificatie» (`clasificatie`) is `Visible = Hidden` in `DdfEditSectiuneaAPage.Designer.vb`. `Grd_CellDoubleClick` handled only the hidden column, making it unreachable.
+- **(1), cause NOT verified on data:** `btnAdauga.Enabled = disponibile > 0` disables on an empty/failed server list. `ForAddedReservation` / `ForFirstRevisionOfExisting` set neither `Sursa` nor `GrpIdrz`, excluding the `DinRezervari` lock. For codes without «!», classifications come from `FX_Indicatori` for `CodAngajament` (+ same `Titlu`); an empty list fits the symptom. Its message incorrectly said all classifications were used.
+- **Also found:** `DdfEditForm.AduClasificatiileAsync` took manual `Titlu` from the third dotted `Clsf` part. `Capitol` / `Subcapitol` are each `NN.NN`, varchar(5), per `MariaDB_Schema/000_DEMO.sql`: this yielded `04`, not `20`, for `65.02.04.02.20.01.01`. Fixed to `Substring(12, 2)`, matching Access `Mid(Clsf, 13, 2)`.
 
 ### What changed
 
 - **New window `DdfEditLinieAForm`** (`DDF_EDIT/`, all controls in the `.Designer.vb`, 144 dpi, `AutoScaleMode.Dpi`, `KBotThemedForm`): Clasificație (`KBotComboBox` with `Editable`, `FindAsYouType`, `FindAfterNChars = 2`, `InputMask = 00.00.00.00.00.00.00` — slice 0082), Denumire, Element fundamentare *, Parametrii, Partener (only when the document has a partner), Valoare curentă *; read-only: valoare precedentă, recepții, totală (live), cod indicator. Works on a COPY of the line; OK writes it back, «Renunță» leaves the draft untouched. The refusals are section A's own (separator never offered; empty element; value 0; negative value below receptions), all in one message. Picking a classification fills the element with its name unless the operator wrote their own.
-- **`DdfEditSectiuneaAPage`:** «Adaugă rând» follows the reservations lock only. It opens the window on a new line — the line joins the draft only on OK (before, an empty line was added first and left behind on cancel). A double click on «Clsf» (or the hidden «Clasificatie») opens it on that line. The list is fetched again when the last fetch failed or was empty, and every time for a manual angajament (its `Titlu` restriction follows the first line). When there is nothing to choose, a message says which of the two cases it is. The status line now tells «server sent nothing» from «all used». The in-grid combo code (fill, validate, apply) is gone — its column is hidden.
+- **`DdfEditSectiuneaAPage`:** only the reservations lock controls «Adaugă rând». The new line joins the draft on OK, leaving none on cancel (previously a blank line remained); double-click on «Clsf» or hidden «Clasificatie» edits through the window. Refetch after empty/failed results and always for manual angajamente (`Titlu` follows the first line). Messages distinguish server-empty from all-used. Removed hidden in-grid combo filling/validation/application.
 - **`DdfEditForm.AduClasificatiileAsync`:** the `Titlu` fix above.
 
 ### Files touched
 
-- `src/KBot.App/DDF_EDIT/DdfEditLinieAForm.vb` (new), `DdfEditLinieAForm.Designer.vb` (new)
-- `src/KBot.App/DDF_EDIT/DdfEditSectiuneaAPage.vb`
-- `src/KBot.App/DDF_EDIT/DdfEditForm.vb`
-- (depends on slice 0082: `src/KBot.Controls/Combo/*`)
+`src/KBot.App/DDF_EDIT/DdfEditLinieAForm.vb` (new), `DdfEditLinieAForm.Designer.vb` (new); `src/KBot.App/DDF_EDIT/DdfEditSectiuneaAPage.vb`; `src/KBot.App/DDF_EDIT/DdfEditForm.vb`; (depends on slice 0082: `src/KBot.Controls/Combo/*`)
 
 ### Test results
 
@@ -404,9 +375,7 @@ Build App (with Common, Forexe) **0 / 0**; `py_compile` green. Nothing run, noth
 
 ---
 
-<a id="slice-0081-09"></a>
-
-## SLICE 0081-09 — Locked header, the source / sector in section A, the partner only in the header
+## SLICE 0081-09 — Locked header, the source / sector in section A, the partner only in the header <a id="slice-0081-09"></a>
 
 **Date:** 26.09.2026. **Request (operator), in the DDF editor (`DdfEditForm`):**
 1. A new revision on an existing angajament: the header (Compartiment, Program, ...) MUST be locked -- it comes from the initial angajament.
@@ -451,12 +420,7 @@ Build App (with Common, Forexe) **0 / 0**; `py_compile` green. Nothing run, noth
 
 ### Files touched
 
-- `PYTHON/routes/forexe/ddf_edit.py`
-- `src/KBot.Api/IDdfProgramApi.vb` (new), `ApiClient.DdfProgram.vb` (new)
-- `src/KBot.Domain/DdfSectiuneaAReguli.vb` (new), `DdfDraft.vb`, `DdfSending.vb`
-- `src/KBot.App/DDF_EDIT/DdfEditForm.vb`, `DdfEditSectiuneaAPage.vb`, `DdfEditLinieAForm.vb`, `DdfEditLinieAForm.Designer.vb`, `DdfEditReauth.vb`
-- `src/KBot.App/KbotForm.vb`
-- `tests/KBot.Domain.Tests/DdfSectiuneaAReguliTests.vb` (new)
+`PYTHON/routes/forexe/ddf_edit.py`; `src/KBot.Api/IDdfProgramApi.vb` (new), `ApiClient.DdfProgram.vb` (new); `src/KBot.Domain/DdfSectiuneaAReguli.vb` (new), `DdfDraft.vb`, `DdfSending.vb`; `src/KBot.App/DDF_EDIT/DdfEditForm.vb`, `DdfEditSectiuneaAPage.vb`, `DdfEditLinieAForm.vb`, `DdfEditLinieAForm.Designer.vb`, `DdfEditReauth.vb`; `src/KBot.App/KbotForm.vb`; `tests/KBot.Domain.Tests/DdfSectiuneaAReguliTests.vb` (new)
 
 ### Test results
 
@@ -474,9 +438,7 @@ Build App (with Common, Forexe) **0 / 0**; `py_compile` green. Nothing run, noth
 
 ---
 
-<a id="slice-0081-10"></a>
-
-## SLICE 0081-10 — Classification without «.02», the partner list, the header of revision 0
+## SLICE 0081-10 — Classification without «.02», the partner list, the header of revision 0 <a id="slice-0081-10"></a>
 
 **Date:** 26.09.2026. **Request (operator), in the DDF editor:**
 1. In the classification combo «65.02» must be just «65». The «02» after the chapter is an Access relic: not shown, and not filled into the sending workflows. Change only the row window and the workflow inputs.
@@ -500,10 +462,7 @@ Build App (with Common, Forexe) **0 / 0**; `py_compile` green. Nothing run, noth
 
 ### Files touched
 
-- `src/KBot.Domain/DdfSendInputs.vb`
-- `src/KBot.App/DDF_EDIT/DdfEditLinieAForm.vb`, `DdfEditLinieAForm.Designer.vb`, `DdfEditForm.vb`
-- `PYTHON/routes/forexe/ddf_edit.py`
-- `tests/KBot.Domain.Tests/DdfSendInputsTests.vb`
+`src/KBot.Domain/DdfSendInputs.vb`; `src/KBot.App/DDF_EDIT/DdfEditLinieAForm.vb`, `DdfEditLinieAForm.Designer.vb`, `DdfEditForm.vb`; `PYTHON/routes/forexe/ddf_edit.py`; `tests/KBot.Domain.Tests/DdfSendInputsTests.vb`
 
 ### Test results
 
@@ -519,9 +478,7 @@ Build App (with Common, Forexe) **0 / 0**; `py_compile` green. Nothing run, noth
 
 ---
 
-<a id="slice-0081-12"></a>
-
-## SLICE 0081-12 — New revision from the existing indicators, used classifications first, zero lines dropped at save
+## SLICE 0081-12 — New revision from the existing indicators, used classifications first, zero lines dropped at save <a id="slice-0081-12"></a>
 
 **Date:** 26.09.2026. **Request (operator), DDF editor:**
 1. «Adauga rezervare» from the + in the Rezervari tree footer opens a popup with «1. Adaugă revizie goală» and «2. Folosește indicatorii existenți». With 2, the section-A grid of the editor starts filled with every indicator code the selected angajament already has.
@@ -542,7 +499,7 @@ Build App (with Common, Forexe) **0 / 0**; `py_compile` green. Nothing run, noth
 - **`KbotForm`:** `ExecutaMeniulRezervari` handles the new option; `AdaugaRezervareDdfAsync` and `DeschideEditorulDdf` carry `cuIndicatori` to `DdfEditForm.PornesteCuIndicatorii`.
 - **`DdfEditForm`:**
   - `PornesteCuIndicatorii`: on Shown, after the lists are fetched, an EMPTY section A is filled through `LiniiDinIndicatori` (classifications fetched by the form's own `AduClasificatiileAsync`). The notice says how many lines were added, or that there were none / the fetch failed.
-  - Save: if every section-A line is 0 -> message, nothing saved. Otherwise the zero lines are listed in the save question («... se șterg la salvare»); only on Yes are they removed (section B rebuilt, section-A page refreshed). If the save fails (API or other exception), they are put back at their places. `MotiveDeRefuz` skips the lines about to be dropped (their section-B twins too) but keeps counting them, so row numbers match the grid.
+  - Save rejects all-zero section A with a message. Otherwise confirmation lists zero lines; Yes removes them, rebuilds B and refreshes A. API/other failure restores original positions. `MotiveDeRefuz` skips dropped lines and B twins but counts them for grid-matching row numbers.
 - **`DdfEditLinieAForm`:** takes `manual`; orders its classifications with `InAngajamentIntai` and tells the combo where the group ends (`FindFirstGroupCount`), recomputed every time the SS filter refills the list.
 - **`DdfEditSectiuneaAPage`:** passes `_draft.Manual` to the line window.
 
@@ -575,13 +532,7 @@ The operator got «Angajamentul nu are indicatori de preluat» on an angajament 
 
 ### Files touched
 
-- `src/KBot.Domain/DdfSending.vb`, `src/KBot.Domain/DdfSectiuneaAReguli.vb`, `src/KBot.Domain/DdfDraft.vb`
-- `src/KBot.Api/DdfEditContract.vb`, `src/KBot.Api/ApiClient.vb`
-- `src/KBot.Controls/Combo/KBotComboBox.vb`, `src/KBot.Controls/DataView/KBotDataView.Editing.vb`
-- `src/KBot.App/DDF_EDIT/DdfEditLinieAForm.Designer.vb`, `DdfEditSectiuneaAPage.Designer.vb`
-- `PYTHON/routes/forexe/ddf_edit.py`
-- `src/KBot.App/Views/RezervariView.vb`, `src/KBot.App/KbotForm.vb`
-- `src/KBot.App/DDF_EDIT/DdfEditForm.vb`, `DdfEditLinieAForm.vb`, `DdfEditSectiuneaAPage.vb`
+`src/KBot.Domain/DdfSending.vb`, `src/KBot.Domain/DdfSectiuneaAReguli.vb`, `src/KBot.Domain/DdfDraft.vb`; `src/KBot.Api/DdfEditContract.vb`, `src/KBot.Api/ApiClient.vb`; `src/KBot.Controls/Combo/KBotComboBox.vb`, `src/KBot.Controls/DataView/KBotDataView.Editing.vb`; `src/KBot.App/DDF_EDIT/DdfEditLinieAForm.Designer.vb`, `DdfEditSectiuneaAPage.Designer.vb`; `PYTHON/routes/forexe/ddf_edit.py`; `src/KBot.App/Views/RezervariView.vb`, `src/KBot.App/KbotForm.vb`; `src/KBot.App/DDF_EDIT/DdfEditForm.vb`, `DdfEditLinieAForm.vb`, `DdfEditSectiuneaAPage.vb`
 
 ### Test results
 
@@ -605,9 +556,7 @@ The operator got «Angajamentul nu are indicatori de preluat» on an angajament 
 
 ---
 
-<a id="slice-0081-13"></a>
-
-## SLICE 0081-13 — Section A entered straight in the grid; no new angajament while reservations lack a DDF
+## SLICE 0081-13 — Section A entered straight in the grid; no new angajament while reservations lack a DDF <a id="slice-0081-13"></a>
 
 **Date:** 23.10.2026. **Request (operator), «+» / «Angajament nou» and the DDF editor:**
 1. If there are downloaded angajamente WITHOUT a DDF but WITH reservations, a new angajament cannot be created.

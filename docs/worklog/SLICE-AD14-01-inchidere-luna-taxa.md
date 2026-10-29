@@ -11,11 +11,7 @@
 
 ## Fișiere atinse
 
-- `PYTHON/static/adechit.html` (dialogul `ade-close-month`)
-- `PYTHON/static/css/adechit-close-month.css` (nou), `PYTHON/static/css/adechit.css` (import)
-- `PYTHON/static/js/adechit/catalogs.js` (două ferestre pe același tabel; `confirmMonthClose`)
-- `PYTHON/static/js/adechit/app.js` (lacătul apelează `confirmMonthClose` în loc de `confirmBox`)
-- `PYTHON/static/help/adechit.json`, `ADECHIT/UTILIZARE_WEB.md`, `ADECHIT_STATUS.md`, `docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md`
+`PYTHON/static/adechit.html` (dialogul `ade-close-month`); `PYTHON/static/css/adechit-close-month.css` (nou), `PYTHON/static/css/adechit.css` (import); `PYTHON/static/js/adechit/catalogs.js` (două ferestre pe același tabel; `confirmMonthClose`); `PYTHON/static/js/adechit/app.js` (lacătul apelează `confirmMonthClose` în loc de `confirmBox`); `PYTHON/static/help/adechit.json`, `ADECHIT/UTILIZARE_WEB.md`, `ADECHIT_STATUS.md`, `docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md`
 
 ## Verificări
 

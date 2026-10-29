@@ -1,6 +1,4 @@
-<a id="slice-0086"></a>
-
-# SLICE-0086 — KbotForm split into partial classes + «Angajament nou» as primary button
+# SLICE-0086 — KbotForm split into partial classes + «Angajament nou» as primary button <a id="slice-0086"></a>
 
 Operator request, 26.09.2026:
 
@@ -58,10 +56,7 @@ Build App (+ Controls): **0 warnings, 0 errors**. The nesting was not checked in
 
 ## Files touched
 
-- `src/KBot.App/KbotForm.vb` (rewritten, 2766 → 266 lines)
-- new: `src/KBot.App/KbotForm.{Periods,Views,Tree,Receptii,Ord,Ddf,DdfDelete,Extrase,Download,Ingest,Console,Chrome}.vb`
-- pass 2: `src/KBot.App/KbotForm.DdfSend.vb` (trimmed), new `KbotForm.DdfSendMenu.vb` / `KbotForm.DdfSendHelpers.vb`, `src/KBot.App/KBot.App.vbproj`, `src/KBot.Controls/KBot.Controls.vbproj`
-- `docs/worklog/KBOT_STATUS.md`, this file
+`src/KBot.App/KbotForm.vb` (rewritten, 2766 → 266 lines); new: `src/KBot.App/KbotForm.{Periods,Views,Tree,Receptii,Ord,Ddf,DdfDelete,Extrase,Download,Ingest,Console,Chrome}.vb`; pass 2: `src/KBot.App/KbotForm.DdfSend.vb` (trimmed), new `KbotForm.DdfSendMenu.vb` / `KbotForm.DdfSendHelpers.vb`, `src/KBot.App/KBot.App.vbproj`, `src/KBot.Controls/KBot.Controls.vbproj`; `docs/worklog/KBOT_STATUS.md`, this file
 
 ## Test results
 

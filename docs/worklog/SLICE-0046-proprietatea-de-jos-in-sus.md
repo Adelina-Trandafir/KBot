@@ -32,7 +32,7 @@ Incrementa contorul și mergea mai departe. `BuildValues` n-are ramură de orfan
 
 #### `Transfer/OwnershipPlan.vb` (nou) — cine pleacă, hotărât înainte de prima scriere
 
-Unitatea unui DDF stă în `FX_DDF_REV_SA`, iar a unui ORD în `FX_ORD_TBL` — tabele scrise **după** capul lor, fiindcă cheia străină arată în direcția aia. `WrittenKeys` se umple pe măsură ce rularea merge, deci nu poate răspunde la „pleacă documentul ăsta?" în clipa în care se scrie `FX_DDF`. Așa că selecția se rezolvă **o dată**, într-o citire separată a fișierului Access, și se refolosește neschimbată.
+Unitatea DDF este în `FX_DDF_REV_SA`, iar cea ORD în `FX_ORD_TBL`, scrise după antete din cauza FK. `WrittenKeys`, umplut în timpul scrierii, nu poate decide selecția antetului; aceasta se calculează o dată, prin citire separată Access, apoi se refolosește neschimbată.
 
 Săgeata proprietății s-a **întors**. 0045-07 o avea invers: SA întreba `FX_DDF` al cui e. Citirea aia a murit cu D1 — `FX_DDF.IdUnitate` e relicvă, nu se citește niciodată, și **un IDDF poate servi mai multe unități**, deci n-ar fi putut răspunde cinstit nici acolo unde era completată.
 
@@ -43,7 +43,7 @@ Săgeata proprietății s-a **întors**. 0045-07 o avea invers: SA întreba `FX_
 | `FX_Extrase_F` ▸ `IDEXF`, `NumeFisier`; `FX_Extrase_H` ▸ `IDEXH`, `IDEXF` | fișierele care se potrivesc pe cod fiscal, și antetele lor |
 | `FX_DDF` ▸ `IDDF` | documentele fără nicio linie de secțiune A (D6) |
 
-Citirea e pe **coloane numite**, nu `SELECT *` — `AccessSchema.OpenKeyReader` (nou). `FX_Extrase_F` ține XML-ul semnat al fiecărui extras într-un Memo, și n-are rost citit ca să afli 72 de nume.
+Citirea folosește coloane numite prin noul `AccessSchema.OpenKeyReader`, evitând `SELECT *` și Memo-ul cu XML semnat din `FX_Extrase_F` pentru numai 72 de nume.
 
 `Decide(map, reader, passUnits)` e **singura** funcție întrebată, identic, de verificator și de scriitor. Familiile rutate stau într-un tabel scurt și explicit (`Routes`) — care coloană numește subarborele e un fapt despre **fișierul Access**, iar cheile țintei au fost redenumite pe dedesubt (`IDORD` ▸ `IDORDP`), deci nu se poate deduce din cheile străine. Restul celor șaptesprezece tabele `FX_*` cad pe regula generică.
 

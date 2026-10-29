@@ -6,7 +6,7 @@
 
 ## Ce s-a găsit
 
-Toate formularele K-BOT sunt `FormBorderStyle.None` (21 de `.Designer.vb`). Windows desenează umbră doar ferestrelor cu ramă; o fereastră fără ramă n-are nici umbră, nici margine. Pe Windows 11 `ThemeManager.Apply` cere colțuri rotunjite (`DWMWA_WINDOW_CORNER_PREFERENCE`), iar DWM aduce umbra odată cu ele; pe Windows 10 atributul nu există (eșec logat o dată, documentat în `NativeMethods.SetRoundedCorners`), deci fereastra rămânea pătrată ȘI fără umbră — exact ce a văzut operatorul.
+Cele 21 de `.Designer.vb` folosesc `FormBorderStyle.None`, fără rama care primește umbra Windows. Pe Windows 11, `ThemeManager.Apply` obține colțuri rotunjite prin `DWMWA_WINDOW_CORNER_PREFERENCE`, iar DWM adaugă umbra. Windows 10 nu are atributul (eșec logat o dată în `NativeMethods.SetRoundedCorners`): fereastra rămânea pătrată, fără umbră sau margine, conform sesizării operatorului.
 
 ## Ce s-a schimbat și de ce
 

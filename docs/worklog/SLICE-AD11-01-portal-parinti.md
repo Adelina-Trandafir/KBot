@@ -4,11 +4,7 @@ Istoric AD11-01…05, păstrat în ordine. TESTAT, RULAT, PUBLICAT conform opera
 
 AD11-05 restrânge verificarea la salvare la copiii activi și subunitatea curentă; identitatea portalului se verifică în continuare pe întregul DC, inclusiv copii plecați. ID-ul AD11-01 al anulării documentelor aparține istoricului distinct [ADE8](SLICE-ADE8-01-documente.md#slice-AD11-01-anulare).
 
-- [AD11-01 — portal](#slice-AD11-01)
-- [AD11-02 — font, totaluri și scroll](#slice-AD11-02)
-- [AD11-03 — conflicte și query de date](#slice-AD11-03)
-- [AD11-04 — lățimi mobile](#slice-AD11-04)
-- [AD11-05 — copil+părinte și navigare](#slice-AD11-05)
+[AD11-01 — portal](#slice-AD11-01) · [AD11-02 — font, totaluri și scroll](#slice-AD11-02) · [AD11-03 — conflicte și query de date](#slice-AD11-03) · [AD11-04 — lățimi mobile](#slice-AD11-04) · [AD11-05 — copil+părinte și navigare](#slice-AD11-05)
 
 ## SLICE-AD11-01 — Portalul părinților <a id="slice-AD11-01"></a>
 
@@ -22,12 +18,7 @@ Preview dedicat cu acreditări fictive și inbox loopback; aceeași logică de a
 
 ### Fișiere
 
-- `sql/AD_08_portal_parinti.sql`.
-- `PYTHON/routes/adechit/parent_identity.py`, `parent_portal.py`, `parent_statement.py`.
-- Integrare: `main.py`, `adechit/__init__.py`, `repository.py`, `service.py`, `catalog_forms.py`, `importer.py`, `schema.json`.
-- UI: `static/adechit-parents.html`, `js/adechit/parents.js`, `payers.js`, `statement-print.js`, `css/adechit-parents.css`, `adechit-statement.css`, `templates/adechit/statement.html`.
-- Migrator: `ADECHIT/ADE.Migrator/AdeWriter.vb`, README.
-- Local: `ADECHIT/tools/preview.py`; documentație `ADECHIT/PORTAL_PARINTI.md`, `UTILIZARE_WEB.md`, `PLAN_IMPLEMENTARE.md`, status.
+`sql/AD_08_portal_parinti.sql`. `PYTHON/routes/adechit/parent_identity.py`, `parent_portal.py`, `parent_statement.py`. Integrare: `main.py`, `adechit/__init__.py`, `repository.py`, `service.py`, `catalog_forms.py`, `importer.py`, `schema.json`. UI: `static/adechit-parents.html`, `js/adechit/parents.js`, `payers.js`, `statement-print.js`, `css/adechit-parents.css`, `adechit-statement.css`, `templates/adechit/statement.html`. Migrator: `ADECHIT/ADE.Migrator/AdeWriter.vb`, README. Local: `ADECHIT/tools/preview.py`; documentație `ADECHIT/PORTAL_PARINTI.md`, `UTILIZARE_WEB.md`, `PLAN_IMPLEMENTARE.md`, status.
 
 ### Verificări efective
 

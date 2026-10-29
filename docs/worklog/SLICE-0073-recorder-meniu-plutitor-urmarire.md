@@ -44,11 +44,7 @@ Gazdele și andocarea sunt în [0053/0070/0074](SLICE-0053-recorder.md). Legarea
 
 ### Fișiere atinse
 
-- `src/KBot.Theming/ButtonStyles.vb` (+`ApplyDefault`), `KBot.Theming.vbproj` (1.13.0 ▸ 1.13.1)
-- `src/KBot.Forexe/Services/JavaScripts/ForexeWatch.js` (nou), `Models/ForexeWatchEvent.vb` (nou), `Executor/WorkflowExecutor.Watch.vb` (nou), `Helpers/RecorderForm.vb`, `IForexeRunner.vb`, `ForexeRunner.vb`, `KBot.Forexe.vbproj` (resursă + 1.0.10 ▸ 1.0.11)
-- `src/KBot.App/Forexe/ForexeController.vb`, `KbotForm.vb` (`LeagaUrmarirea()` în Load), `KbotForm.ForexeWatch.vb` (nou), `Forexe/IstoricIntervalForm.vb` + `.Designer.vb` (noi), `Views/IstoricView.vb`, `Views/IstoricFilter.vb`, `KBot.App.vbproj` (1.0.32.4 ▸ 1.0.33.0)
-- `tests/KBot.App.Tests/ForexeControllerFailureTests.vb` — `FakeRunner` declară noul eveniment (doar editat; nicio suită construită sau rulată)
-- `docs/worklog/KBOT_STATUS.md`, acest fișier
+`src/KBot.Theming/ButtonStyles.vb` (+`ApplyDefault`), `KBot.Theming.vbproj` (1.13.0 ▸ 1.13.1); `src/KBot.Forexe/Services/JavaScripts/ForexeWatch.js` (nou), `Models/ForexeWatchEvent.vb` (nou), `Executor/WorkflowExecutor.Watch.vb` (nou), `Helpers/RecorderForm.vb`, `IForexeRunner.vb`, `ForexeRunner.vb`, `KBot.Forexe.vbproj` (resursă + 1.0.10 ▸ 1.0.11); `src/KBot.App/Forexe/ForexeController.vb`, `KbotForm.vb` (`LeagaUrmarirea()` în Load), `KbotForm.ForexeWatch.vb` (nou), `Forexe/IstoricIntervalForm.vb` + `.Designer.vb` (noi), `Views/IstoricView.vb`, `Views/IstoricFilter.vb`, `KBot.App.vbproj` (1.0.32.4 ▸ 1.0.33.0); `tests/KBot.App.Tests/ForexeControllerFailureTests.vb` — `FakeRunner` declară noul eveniment (doar editat; nicio suită construită sau rulată); `docs/worklog/KBOT_STATUS.md`, acest fișier
 
 ### Rezultatele testelor
 
@@ -89,7 +85,7 @@ Jurnalul monitorului Wicket dat de operator pentru clicul pe «Istoric» se term
 
 Ultimele două linii sunt exact raportul inițial pe care `WicketMonitor.js` îl face la `DOMContentLoaded` (`#statlogo` întâi, apoi `#animlogo`) — adică un **document nou**: apelul Ajax s-a încheiat cu o redirecționare Wicket, o navigare completă, nu doar o re-randare.
 
-Pe un document nou scriptul intră prin `AddInitScriptAsync`, care rulează ÎNAINTE ca parserul să fi produs `<html>`: în acel moment `document.head` ȘI `document.documentElement` sunt `null`, deci `(document.head || document.documentElement).appendChild(style)` arunca în `catch (ignored)` și **nimic nu se instala la start**. `boot()` nu instala foile, iar bătaia de 2 s (`MENU_KEEPALIVE_MS`) era primul lucru care le punea la loc. Toate cele trei simptome sunt aceeași foaie (`kbot-watch-style`: regulile + dark) și foaia vălului (`kbot-watch-busy-style`), care apăreau după până la 2 secunde. Punctul 4 nu mai are obiect: intră toate deodată, înainte de prima afișare.
+Pe document nou, `AddInitScriptAsync` rulează înainte de `<html>`: `head` și `documentElement` sunt null, iar inserarea stilului cade în `catch (ignored)`. `boot()` nu instala foile; abia bătaia `MENU_KEEPALIVE_MS` de 2 s instala `kbot-watch-style` (reguli + dark) și `kbot-watch-busy-style`. Aceeași lipsă explica toate cele trei simptome; punctul 4 ar fi mascat cauza, nu era necesar după corecție.
 
 Presupunere marcată ca atare: că `documentElement` e `null` în init script-ul Playwright pe Chromium nu a fost măsurat pe FOREXE (nu s-a atins un browser real); e comportamentul cunoscut al `Page.addScriptToEvaluateOnNewDocument` și se potrivește cu toate simptomele. Dacă totuși foile ar intra târziu, scriptul spune acum în consolă, o singură dată pe document: «stilurile paginii au intrat abia la încărcarea completă».
 
@@ -197,12 +193,7 @@ Răspunsurile operatorului la cele trei întrebări puse înainte de scris: **(a
 
 ### Fișiere atinse
 
-- `src/KBot.Forexe/Workflows/adlop - Receptie Editata.wfl` (nou), `adlop - Rezervari Editate.wfl` (nou), `adlop - Receptii Angajament.wfl` (preambul pus la loc), `KBot.Forexe.vbproj` (copiere
-  + 1.0.12 ▸ **1.0.13**), `WorkflowCatalog.vb`, `JobBuilder.vb`, `ForexeRunner.vb`, `Executor/WorkflowExecutor.Watch.vb`, `Models/ForexeWatchEvent.vb`, `Services/JavaScripts/ForexeWatch.js`
-- `src/KBot.Api/IMarcajApi.vb` (nou), `ApiClient.Marcaj.vb` (nou), `KBot.Api.vbproj` (1.0.6 ▸ **1.0.7**)
-- `src/KBot.App/Program.vb`, `Forexe/ForexeController.vb`, `Forexe/WorkflowResultStore.vb`, `KbotForm.ForexeWatch.vb`, `KBot.App.vbproj` (1.0.36.5 ▸ **1.0.37.0**)
-- `PYTHON/routes/forexe/marcaj.py` (nou), `__init__.py`, `prelucrare_helpers.py`, `prelucrare_pasi.py`, `ddf_edit.py`
-- `docs/worklog/KBOT_STATUS.md`, acest fișier
+`src/KBot.Forexe/Workflows/adlop - Receptie Editata.wfl` (nou), `adlop - Rezervari Editate.wfl` (nou), `adlop - Receptii Angajament.wfl` (preambul pus la loc), `KBot.Forexe.vbproj` (copiere + 1.0.12 ▸ **1.0.13**), `WorkflowCatalog.vb`, `JobBuilder.vb`, `ForexeRunner.vb`, `Executor/WorkflowExecutor.Watch.vb`, `Models/ForexeWatchEvent.vb`, `Services/JavaScripts/ForexeWatch.js`; `src/KBot.Api/IMarcajApi.vb` (nou), `ApiClient.Marcaj.vb` (nou), `KBot.Api.vbproj` (1.0.6 ▸ **1.0.7**); `src/KBot.App/Program.vb`, `Forexe/ForexeController.vb`, `Forexe/WorkflowResultStore.vb`, `KbotForm.ForexeWatch.vb`, `KBot.App.vbproj` (1.0.36.5 ▸ **1.0.37.0**); `PYTHON/routes/forexe/marcaj.py` (nou), `__init__.py`, `prelucrare_helpers.py`, `prelucrare_pasi.py`, `ddf_edit.py`; `docs/worklog/KBOT_STATUS.md`, acest fișier
 
 ### Rezultatele testelor
 

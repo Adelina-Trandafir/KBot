@@ -259,9 +259,59 @@ Continuare după D002-99, în același domeniu. Stare comună: aplicat local; nu
 | D003-25 | Opt documente compacte; citate/cod păstrate, Plan pe titluri și explicația 0030 într-un singur loc. | [D003-25](../SLICE-D003-01-continuare-documentara.md#slice-d003-25) |
 | D003-26 | Registre și continuări compacte; 19 stări C17 și trei fragmente RecordSource identice cu referință exactă. | [D003-26](../SLICE-D003-01-continuare-documentara.md#slice-d003-26) |
 | D003-27 | Predare finală și stage selectiv realizat; bilanțul propriu exclude editările independente. | [D003-27](../SLICE-D003-01-continuare-documentara.md#slice-d003-27) |
+| D003-28 | Cinci registre cu continuări compacte; dublurile DDF cu ancore inexistente retrase, rezumatul datat păstrat. | [D003-28](../SLICE-D003-01-continuare-documentara.md#slice-d003-28) |
+| D003-29 | Harta istorică DDF/ORD cu paragrafe/listă/citat continue, fără schimbarea mapărilor. | [D003-29](../SLICE-D003-01-continuare-documentara.md#slice-d003-29) |
+| D003-30 | Predare din 28.10 și stage selectiv: 75 rânduri mai puțin net, modificările independente excluse. | [D003-30](../SLICE-D003-01-continuare-documentara.md#slice-d003-30) |
+| D003-31 | Ghidul JavaScript Combobox cu metadate și inventare scurte compacte; codul și tabelele păstrate. | [D003-31](../SLICE-D003-01-continuare-documentara.md#slice-d003-31) |
+| D003-32 | Ancorele și inventarele scurte ale istoricului DDF 0081 compacte, cu toate etapele păstrate. | [D003-32](../SLICE-D003-01-continuare-documentara.md#slice-d003-32) |
+| D003-33 | Cele cinci fișe de pregătire VC00 reunite într-un istoric, cu etapele și reviziile păstrate. | [D003-33](../SLICE-D003-01-continuare-documentara.md#slice-d003-33) |
+| D003-34 | Inventarele Session Monitoring și trei continuări din rapoartele VERCON compacte, fără schimbări de cod. | [D003-34](../SLICE-D003-01-continuare-documentara.md#slice-d003-34) |
+| D003-35 | Inventarele scurte și cinci ancore compacte în șapte istorice, cu toate căile și limitele păstrate. | [D003-35](../SLICE-D003-01-continuare-documentara.md#slice-d003-35) |
+| D003-36 | Patru istorice cu 15 inventare, 12 ancore și cinci continuări compacte; probele și reviziile păstrate. | [D003-36](../SLICE-D003-01-continuare-documentara.md#slice-d003-36) |
+| D003-37 | Inventarele și ancorele 0097 și 0000-18…22 compacte; opțiunile, căutarea și probele istorice păstrate. | [D003-37](../SLICE-D003-01-continuare-documentara.md#slice-d003-37) |
+| D003-38 | Inventarele și ancorele tururilor/capturilor 0000-23…34 compacte, cu toate limitele istorice păstrate. | [D003-38](../SLICE-D003-01-continuare-documentara.md#slice-d003-38) |
+| D003-39 | Inventarele Server/Client și ancorele istoricului DDF 0020 compacte, cu probele și limitele păstrate. | [D003-39](../SLICE-D003-01-continuare-documentara.md#slice-d003-39) |
+| D003-40 | Inventarele bancului RHP compacte, cu șapte calificări identice grupate și toate etapele păstrate. | [D003-40](../SLICE-D003-01-continuare-documentara.md#slice-d003-40) |
+| D003-41 | Inventarele recorderului, consolei și motorului de ajutor compacte, cu 12 ancore și probele distincte. | [D003-41](../SLICE-D003-01-continuare-documentara.md#slice-d003-41) |
+| D003-42 | Inventarele de fișiere din opt fișe autonome compacte, cu toate limitele istorice păstrate. | [D003-42](../SLICE-D003-01-continuare-documentara.md#slice-d003-42) |
+| D003-43 | Opt jurnale OI/DDF/ADE/e-Factura cu inventare compacte, trei ancore și proveniența păstrate. | [D003-43](../SLICE-D003-01-continuare-documentara.md#slice-d003-43) |
+| D003-44 | Nouă inventare ADE/XFA/migrare/asociere compacte, cu fazele și deciziile istorice păstrate. | [D003-44](../SLICE-D003-01-continuare-documentara.md#slice-d003-44) |
+| D003-45 | Inventarele ADE, portalului, BR/FCS și jurnalelor compacte, fără extinderea probelor istorice. | [D003-45](../SLICE-D003-01-continuare-documentara.md#slice-d003-45) |
+| D003-46 | Inventarele paginilor, Plăți, grilei și migratorului compacte, cu etapele/probele distincte. | [D003-46](../SLICE-D003-01-continuare-documentara.md#slice-d003-46) |
+| D003-47 | Inventare și citate compacte în descărcare/context/ActiveX/scalare, cu toate limitele păstrate. | [D003-47](../SLICE-D003-01-continuare-documentara.md#slice-d003-47) |
+| D003-48 | Inventare ale actualizării, partenerilor, ADE și FOREXE compacte, cu dependențele și limitele păstrate. | [D003-48](../SLICE-D003-01-continuare-documentara.md#slice-d003-48) |
+| D003-49 | Inventare cu titluri alternative compacte în șapte istorice, cu toate calificările păstrate. | [D003-49](../SLICE-D003-01-continuare-documentara.md#slice-d003-49) |
+| D003-50 | Inventare numerotate și grupuri compacte în tipărire/asociere/DPI, cu probele istorice distincte. | [D003-50](../SLICE-D003-01-continuare-documentara.md#slice-d003-50) |
+| D003-51 | Inventarele de publicare ADE9 și reperele comune ale ribbonului compacte, cu limitele păstrate. | [D003-51](../SLICE-D003-01-continuare-documentara.md#slice-d003-51) |
+| D003-52 | Inventarul numerotat și patru citate NavList compacte, cu ciclurile și limitele istorice păstrate. | [D003-52](../SLICE-D003-01-continuare-documentara.md#slice-d003-52) |
+| D003-53 | Inventare server/client și grafic/benzi compacte, cu evoluția regulilor și probele distincte. | [D003-53](../SLICE-D003-01-continuare-documentara.md#slice-d003-53) |
+| D003-54 | 129 de trimiteri interne în 23 de istorice deja citite sunt compacte, în ordinea originală. | [D003-54](../SLICE-D003-01-continuare-documentara.md#slice-d003-54) |
+| D003-55 | Navigarea a patru istorice de ajutor compactă, cu 45 de trimiteri și limitele capturilor păstrate. | [D003-55](../SLICE-D003-01-continuare-documentara.md#slice-d003-55) |
+| D003-56 | Navigare, inventare și continuări compacte în facturi primite/DataView, cu codul și probele păstrate. | [D003-56](../SLICE-D003-01-continuare-documentara.md#slice-d003-56) |
+| D003-57 | Fișele EF_F reunite cu diferențe explicite; bilanțul include SLICELESS și toate consemnările. | [D003-57](../SLICE-D003-01-continuare-documentara.md#slice-d003-57) |
+| D003-58 | Restanțele documentare condensate, cu întrebări, dovezi demo și limite istorice păstrate. | [D003-58](../SLICE-D003-01-continuare-documentara.md#slice-d003-58) |
+| D003-59 | Reluările din planurile EV/DDF scurtate; regulile și stările istorice păstrate. | [D003-59](../SLICE-D003-01-continuare-documentara.md#slice-d003-59) |
+| D003-60 | Explicațiile stilurilor, excepției access-log și STORE Redis condensate; comenzile și limitele păstrate. | [D003-60](../SLICE-D003-01-continuare-documentara.md#slice-d003-60) |
+| D003-61 | Explicații tehnice scurtate în cinci istorice; datele și limitele probelor păstrate. | [D003-61](../SLICE-D003-01-continuare-documentara.md#slice-d003-61) |
+| D003-62 | Explicații redundante scurtate în scalare/PDF/migrare/FK, cu probele istorice delimitate. | [D003-62](../SLICE-D003-01-continuare-documentara.md#slice-d003-62) |
+| D003-63 | Explicații condensate în proprietate/migrare/formulare/ingestie; limitele istorice păstrate. | [D003-63](../SLICE-D003-01-continuare-documentara.md#slice-d003-63) |
+| D003-64 | Explicații condensate în recepții, selecție și DPI/umbră, cu regulile și probele păstrate. | [D003-64](../SLICE-D003-01-continuare-documentara.md#slice-d003-64) |
+| D003-65 | Explicații condensate în consolă/Setări/PDF/controale/jurnale, cu limitele istorice păstrate. | [D003-65](../SLICE-D003-01-continuare-documentara.md#slice-d003-65) |
+| D003-66 | Explicații condensate pentru cauza rezervărilor, lista combo și observarea imprimării. | [D003-66](../SLICE-D003-01-continuare-documentara.md#slice-d003-66) |
+| D003-67 | Explicații condensate în descărcări paralele, buget și diagnosticul Folder. | [D003-67](../SLICE-D003-01-continuare-documentara.md#slice-d003-67) |
+| D003-68 | Explicații condensate în sesiunea/cititorii portalului, catalog și corecția propunerii. | [D003-68](../SLICE-D003-01-continuare-documentara.md#slice-d003-68) |
+| D003-69 | Explicații UI scurtate; diagnosticul ANAF și distincția clientului 0122 fără reluări. | [D003-69](../SLICE-D003-01-continuare-documentara.md#slice-d003-69) |
+| D003-70 | Explicații ADECHIT condensate, cu reguli comune și diferențe de etapă explicite. | [D003-70](../SLICE-D003-01-continuare-documentara.md#slice-d003-70) |
+| D003-71 | Reluări KE eliminate, explicații KE/VERCON condensate; predare și bilanț net. | [D003-71](../SLICE-D003-01-continuare-documentara.md#slice-d003-71) |
+| D003-72 | Rezumatul asocierii trimite la detalii; inventar comun VC07-07/08. | [D003-72](../SLICE-D003-01-continuare-documentara.md#slice-d003-72) |
+| D003-73 | Explicații ORD scurtate; tabelul registrului D003 reparat. | [D003-73](../SLICE-D003-01-continuare-documentara.md#slice-d003-73) |
+| D003-74 | Explicații DataView scurtate; formule și limite păstrate. | [D003-74](../SLICE-D003-01-continuare-documentara.md#slice-d003-74) |
+| D003-75 | Tabel comun al cheilor și explicații Sumar scurtate; etape păstrate. | [D003-75](../SLICE-D003-01-continuare-documentara.md#slice-d003-75) |
+| D003-76 | Explicații Designer/NavList scurtate, cu cicluri și probe distincte. | [D003-76](../SLICE-D003-01-continuare-documentara.md#slice-d003-76) |
+| D003-77 | Explicații istorice condensate; inventar Calendar unic, condiții și probe păstrate. | [D003-77](../SLICE-D003-01-continuare-documentara.md#slice-d003-77) |
 
 ### Continuare D003
 
-Progres curent D003: [D003-27](../SLICE-D003-01-continuare-documentara.md#slice-d003-27); cumul 463 fișiere și 31495 rânduri mai puțin net, inclusiv consemnările și registrele. Curățarea nu este terminată; modificările proprii sunt stagiate selectiv, fără commit/push.
+Progres curent D003: [D003-77](../SLICE-D003-01-continuare-documentara.md#slice-d003-77); bilanț propriu D003-31…77: 1146 rânduri mai puțin net, cu jurnal/registre/index și SLICELESS-rezervari-reanaliza incluse. Checkpointul D003-30 rămâne istoric. Stage selectiv final; curățarea proiectului nu este terminată; fără commit/push.
 
-Următoarea subfelie D003: **SLICE-D003-28**. Următorul număr principal documentar liber: **D004**. Registrul numeric K-BOT rămâne neschimbat.
+Următoarea subfelie D003: **SLICE-D003-78**. Următorul număr principal documentar liber: **D004**. Registrul numeric K-BOT rămâne neschimbat.

@@ -2,20 +2,7 @@
 
 Istoricul urmărește aceeași secțiune din `src/KBot.App/HelpContent/contabil/efactura/index.md`; toate etapele de mai jos au acest fișier în domeniu, iar căile suplimentare rămân în etapa lor. Interfața descrisă nu a fost văzută rulând la aceste checkpointuri. Rezultatele HelpCheck sunt păstrate separat: 109/111/112/115 nu l-au rulat, iar celelalte raportează propriul rezultat. 95 mută clasificațiile în legare; 101 înlocuiește ferestrele succesive cu una comună; 102 o mută în ribbon și 105 o încorporează în vederi. 108 reafișează facturile acoperite, 109 mută desfacerea sub recepții, 114 păstrează angajamentele furnizorului, iar 115 permite sume parțiale în propuneri. Afirmațiile anterioare despre lipsa butoanelor sau propunerile 1:1 sunt istorice. Capturile neschimbate, lipsă sau de refăcut rămân explicit consemnate.
 
-- [0000-83](#slice-0000-83)
-- [0000-95](#slice-0000-95)
-- [0000-99](#slice-0000-99)
-- [0000-101](#slice-0000-101)
-- [0000-102](#slice-0000-102)
-- [0000-103](#slice-0000-103)
-- [0000-104](#slice-0000-104)
-- [0000-105](#slice-0000-105)
-- [0000-108](#slice-0000-108)
-- [0000-109](#slice-0000-109)
-- [0000-111](#slice-0000-111)
-- [0000-112](#slice-0000-112)
-- [0000-114](#slice-0000-114)
-- [0000-115](#slice-0000-115)
+[0000-83](#slice-0000-83) · [0000-95](#slice-0000-95) · [0000-99](#slice-0000-99) · [0000-101](#slice-0000-101) · [0000-102](#slice-0000-102) · [0000-103](#slice-0000-103) · [0000-104](#slice-0000-104) · [0000-105](#slice-0000-105) · [0000-108](#slice-0000-108) · [0000-109](#slice-0000-109) · [0000-111](#slice-0000-111) · [0000-112](#slice-0000-112) · [0000-114](#slice-0000-114) · [0000-115](#slice-0000-115)
 
 ## SLICE-0000-83 - Help: the "Receptii" view of a received invoice (slices KE01..KE07) (16.10.2026) <a id="slice-0000-83"></a>
 

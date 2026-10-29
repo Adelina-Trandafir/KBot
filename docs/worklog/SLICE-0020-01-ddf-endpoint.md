@@ -4,28 +4,24 @@ Reunire documentară D001-19. Corpurile etapelor păstrează contractele, devia�
 
 [0020-01](#slice-0020-01) · [0020-02](#slice-0020-02) · [0020-03](#slice-0020-03) · [0020-04](#slice-0020-04) · [0020-05](#slice-0020-05)
 
-<a id="slice-0020-01"></a>
-
-## SLICE-0020-01 — server + client: `GET /api/forexe/ddf`
+## SLICE-0020-01 — server + client: `GET /api/forexe/ddf` <a id="slice-0020-01"></a>
 
 Pass 1 of slice 0020 (vederea DDF), per `PLAN_DdfView.md` §3–§4. Ships the endpoint, its host-only tests, the `KBot.Domain` POCOs and `GetDdfAsync` on the API client. **No UI yet** — `MainForm.CreateView("ddf")` still returns a `PlaceholderView`; that is pass 02.
 
-> **Worklog naming.** The plan names a single `SLICE-0020-ddf-view.md`. `CODE_WORKFLOW.md` §3.2
-> requires multi-pass slices to use sub-numbered files (`SLICE-0007-01-…`), which is also what
-> 0015 and 0017 did. Followed the standing rule, not the plan's filename.
+> **Worklog naming.** The plan names a single `SLICE-0020-ddf-view.md`. `CODE_WORKFLOW.md` §3.2 requires multi-pass slices to use sub-numbered files (`SLICE-0007-01-…`), which is also what 0015 and 0017 did. Followed the standing rule, not the plan's filename.
 
 ### What changed and why
 
 One endpoint, three arrays, one round trip: `{cod, antet[], revizii[], linii[]}`. The client filters locally (tree, grid, clsf combo) so a tree click never issues a request — decision 7.
 
-- **`antet` is an array, not an object.** `FX_DDF`'s MariaDB PK is composite `(IDDF, CUAL)` and there is no unique constraint on `CodAngajament` (verified in `000_DEMO.sql:161`). Every Access query assumes one header; nothing enforces it. The server logs a warning when the count is > 1, and `DdfInfo.AntetDeLucru(iddfPreferat)` makes the client's pick **explicit** (match on `AngajamentTreeInfo.IDDF`, else first) rather than silent.
-- **`TotalRevizie` is a real `SUM(ValCur)`**, as a correlated scalar subquery. Access aliases `SA.ValCur AS TotalRevizie` — one section-A line wearing a total's name — and `Show_Revizii` then re-adds the same `"RC_" & IDREV` leaf once per line, displaying an arbitrary one. Same defect family as the `aggRev` fan-out in 0011-03. `COALESCE(…, 0)` keeps a revision with zero section-A lines visible with a 0 total instead of dropping it (Access's `INNER JOIN` drops it).
+- **`antet` is an array:** the composite MariaDB PK `(IDDF, CUAL)` and absent `CodAngajament` uniqueness (`000_DEMO.sql:161`) do not enforce the single header Access assumes. Count > 1 logs a warning; `DdfInfo.AntetDeLucru(iddfPreferat)` explicitly matches `AngajamentTreeInfo.IDDF`, otherwise picks the first.
+- **`TotalRevizie = SUM(ValCur)`** in a correlated scalar subquery. Access labels one `SA.ValCur` as the total; `Show_Revizii` re-adds `"RC_" & IDREV` per line, displaying an arbitrary value, like the 0011-03 `aggRev` fan-out. `COALESCE(…, 0)` keeps revisions without section-A lines at 0, which the Access `INNER JOIN` drops.
 - **`Clsf` needs none of the 0011-03 `IdClsfAcc` + `IdUnitate` treatment.** Confirmed from `routes/ddf/sync_acc_mdb.py:7-8` (`Access.IdClsfPY → MariaDB.IdClsf`) and the DDL constraint `FX_DDF_REV_SA_ibfk_4 FOREIGN KEY (IdClsf) REFERENCES Clasificatii (IDClsf)`: on this table `IdClsf` already holds the nomenclator **primary key**, the reverse of `FX_Indicatori`. Keying on a PK is unique by definition → no fan-out, so **no `IdUnitate` predicate**. The denormalised `FX_DDF_REV_SA.Clsf` is preferred, falling back to the nomenclator only when blank.
 - **`ParametriiFund` is on `linii` from the start** (plan §8 bis asked for this explicitly): the grid never shows it (decision 4), but the pass-05 XML builder writes it into section A's `Cell4`. Adding it now avoids reopening the endpoint later.
 
 #### Deviation from the plan: no join to the header
 
-§3 specifies `revizii` as "`FX_DDF_REV` joined to its `FX_DDF` header". **I did not do that.** Given the composite PK above, an `INNER JOIN … ON IDDF` fans every revision out by the number of `CUAL` rows that `IDDF` carries. Both `revizii` and `linii` filter through `IN (SELECT …)` instead, which makes "one row per `IDREV`" / "one row per `IdSecA`" a property of the query *shape* — not of a `GROUP BY` someone can later edit. That is the stated lesson of 0011-03 and §3 applies it to `TotalRevizie` but not to the join; this extends it consistently.
+Plan §3 joins `FX_DDF_REV` to `FX_DDF`, but `INNER JOIN … ON IDDF` would multiply revisions by the composite-key `CUAL` rows. Instead, `revizii`/`linii` use `IN (SELECT …)`, guaranteeing one row per `IDREV`/`IdSecA` by query shape, without a mutable `GROUP BY`. This extends the 0011-03 lesson already applied to `TotalRevizie`.
 
 `test_second_cual_row_does_not_fan_out_revisions` is the regression pin: it inserts a genuine second `CUAL` row and asserts `antet` grows to 2 while `revizii` stays at 3 and `linii` at 4.
 
@@ -39,18 +35,9 @@ One endpoint, three arrays, one round trip: `{cod, antet[], revizii[], linii[]}`
 
 ### Files touched
 
-**Server**
-- `PYTHON/routes/forexe/ddf.py` — **new**. Three parameterised queries, `@require_session`, `ensure_ascii=False`, base from `g.session.db_name` (never a query parameter).
-- `PYTHON/routes/forexe/__init__.py` — registers `ddf` on `forexe_bp`.
-- `PYTHON/tests/test_forexe_ddf.py` — **new**, 17 host-only tests (skip cleanly off-host).
+**Server** `PYTHON/routes/forexe/ddf.py` — **new**. Three parameterised queries, `@require_session`, `ensure_ascii=False`, base from `g.session.db_name` (never a query parameter). `PYTHON/routes/forexe/__init__.py` — registers `ddf` on `forexe_bp`. `PYTHON/tests/test_forexe_ddf.py` — **new**, 17 host-only tests (skip cleanly off-host).
 
-**Client**
-- `src/KBot.Domain/DdfInfo.vb` — **new**: `DdfAntet`, `RevizieRow`, `LinieSaRow`, `DdfInfo`. Carries three derived members read out of the Access source, not guessed: `DdfAntet.FolderPdf` / `NormalizeazaNume` (the partener vs `GENERAL` convention, `\W+` → `_`), `RevizieRow.EtichetaRevizie` (§2.6: `Format(NumarRev,"@@@")` is a **text** format — right-align in 3 chars padded with **spaces**, so `PadLeft(3)`, never `D3`/`000`), and `AntetDeLucru`.
-- `src/KBot.Api/UpsertAngajamenteRequest.vb` — wire DTOs `GetDdfResponse` / `GetDdfAntetRow` / `GetDdfRevizieRow` / `GetDdfLinieRow` (snake_case stops at the wire).
-- `src/KBot.Api/IApiClient.vb`, `src/KBot.Api/ApiClient.vb` — `GetDdfAsync`.
-- `tests/KBot.App.Tests/{Plati,Receptii,Rezervari,Sumar}ViewTests.vb` — the four `FakeApiClient` stubs gain `GetDdfAsync` (interface addition; they throw `NotSupportedException` as before).
-- `tests/KBot.Api.Tests/ApiClientTests.vb` — 8 tests.
-- `tests/KBot.Domain.Tests/DdfInfoTests.vb` — **new**, 13 tests on the derived members.
+**Client** `src/KBot.Domain/DdfInfo.vb` — **new**: `DdfAntet`, `RevizieRow`, `LinieSaRow`, `DdfInfo`. Carries three derived members read out of the Access source, not guessed: `DdfAntet.FolderPdf` / `NormalizeazaNume` (the partener vs `GENERAL` convention, `\W+` → `_`), `RevizieRow.EtichetaRevizie` (§2.6: `Format(NumarRev,"@@@")` is a **text** format — right-align in 3 chars padded with **spaces**, so `PadLeft(3)`, never `D3`/`000`), and `AntetDeLucru`. `src/KBot.Api/UpsertAngajamenteRequest.vb` — wire DTOs `GetDdfResponse` / `GetDdfAntetRow` / `GetDdfRevizieRow` / `GetDdfLinieRow` (snake_case stops at the wire). `src/KBot.Api/IApiClient.vb`, `src/KBot.Api/ApiClient.vb` — `GetDdfAsync`. `tests/KBot.App.Tests/{Plati,Receptii,Rezervari,Sumar}ViewTests.vb` — the four `FakeApiClient` stubs gain `GetDdfAsync` (interface addition; they throw `NotSupportedException` as before). `tests/KBot.Api.Tests/ApiClientTests.vb` — 8 tests. `tests/KBot.Domain.Tests/DdfInfoTests.vb` — **new**, 13 tests on the derived members.
 
 ### Test results
 
@@ -59,17 +46,15 @@ One endpoint, three arrays, one round trip: `{cod, antet[], revizii[], linii[]}`
 
 ### Anything left unverified or deferred
 
-1. **The endpoint has never run against a real database.** Every DDF test is host-only and was only observed *skipping*. The SQL is written against the verified DDL and the Access export, but no row has passed through it. This is the same standing caveat as slices 0008/0011/0014/ 0015/0017 and it is not discharged by this pass.
-2. **§3 item 5 — the duplicate-header count is NOT yet known.** `test_report_duplicate_cod_angajament_count` is written as a *fact-finding* test (it never fails; it prints the count of `CodAngajament` with more than one `FX_DDF` row). It has not run, so **whether §2.7 is theoretical or real remains open.** Run it on the host and record the number here. Until then `antet` stays an array and the client logs — which is the safe behaviour either way.
+1. **No real-database run:** every DDF test was observed only skipping host-only execution. SQL follows the verified DDL/Access export, but no row passed through it; the standing caveat from 0008/0011/0014/0015/0017 remains.
+2. **Duplicate-header count unknown (§3.5):** `test_report_duplicate_cod_angajament_count` only prints how many `CodAngajament` values have multiple `FX_DDF` rows; it never fails and has not run. Host execution must record the count to resolve §2.7. Meanwhile `antet` remains an array with client logging.
 3. **`data_creare` / `data_def` are truncated to a date.** They are `datetime` in MariaDB; the view groups and displays by day. If a later pass needs the time component, `_iso` must change.
 4. **`Program` ambiguity is untouched** (§2.9): `FX_DDF.Program` is carried on `antet`, but which of it and the session's program code the Access XML builder actually wins with is a pass-05 question. Nothing here depends on the answer.
 5. **`Tip` and `Semnatura`** are carried and displayed nowhere, per §8 item 3. `Semnatura` becomes live only if pass 06 goes ahead.
 
 ---
 
-<a id="slice-0020-02"></a>
-
-## SLICE-0020-02 — client: `DdfView`
+## SLICE-0020-02 — client: `DdfView` <a id="slice-0020-02"></a>
 
 Pass 2 of slice 0020 (vederea DDF), per `PLAN_DdfView.md` §5. The **fifth real view** — after Sumar (0011), Rezervări (0014), Recepții (0015), Plăți (0017) — replacing `MainForm.CreateView("ddf")` → `PlaceholderView`.
 
@@ -101,11 +86,7 @@ Each has a test pinning it.
 
 ### Files touched
 
-- `src/KBot.App/Views/DdfView.Designer.vb` — **new**. Every control declared here (house rule); children added in **reverse dock order** (Fill first, Top last) inside each card panel.
-- `src/KBot.App/Views/DdfView.vb` — **new**. Also declares `DdfNodeRows` (the node payload POCO).
-- `src/KBot.App/DdfIcons.vb` — **new**. GDI, palette-tinted, cached on (state, colour, size).
-- `src/KBot.App/MainForm.vb` — `Case "ddf"` now returns `New DdfView(...)`.
-- `tests/KBot.App.Tests/DdfViewTests.vb` — **new**, 19 headless STA tests.
+`src/KBot.App/Views/DdfView.Designer.vb` — **new**. Every control declared here (house rule); children added in **reverse dock order** (Fill first, Top last) inside each card panel. `src/KBot.App/Views/DdfView.vb` — **new**. Also declares `DdfNodeRows` (the node payload POCO). `src/KBot.App/DdfIcons.vb` — **new**. GDI, palette-tinted, cached on (state, colour, size). `src/KBot.App/MainForm.vb` — `Case "ddf"` now returns `New DdfView(...)`. `tests/KBot.App.Tests/DdfViewTests.vb` — **new**, 19 headless STA tests.
 
 ### Test results
 
@@ -125,9 +106,7 @@ Each has a test pinning it.
 
 ---
 
-<a id="slice-0020-03"></a>
-
-## SLICE-0020-03 — client: two DDF preview surfaces
+## SLICE-0020-03 — client: two DDF preview surfaces <a id="slice-0020-03"></a>
 
 Pass 3 of slice 0020 (vederea DDF), per `PLAN_DdfView.md` §6 and §11. **Both** preview implementations are built here; neither is dead code that "will be finished later". Selection is one compile-time constant in `DdfPreviewFactory` — deliberately **no runtime switch**.
 
@@ -142,17 +121,11 @@ Pass 3 of slice 0020 (vederea DDF), per `PLAN_DdfView.md` §6 and §11. **Both**
 
 #### The DDF element set was derived from the module source, not the repo sample
 
-**Finding that contradicts the plan.** §0/§8 bis/DoD all assume a known-good DDF `.xml` exists in the repo (`Surse/SURSA_XFA_WRITTER/XSD_XML/ddf_demo.xml`) to render/validate against. **`ddf_demo.xml` and `ord_demo.xml` are byte-identical (same MD5 `9e5fe957…`)** — the file named `ddf_demo.xml` is a copy of the ORD sample, not a real DDF. So the DDF element set (`SubformAntet` → `DenInstPb`/`cif`/`NrUnicInreg`/`SubtitluDF`/`DataRevizuirii`/`Revizuirea`; `SubformSectiuneaA` → `Subform123` + `Subform4/Table1/Row1` with `Cell1`=ElementFund, `Cell3`=SS+clsf, `Cell5`=ValPrec, `Cell6`=ValCur) was read out of `mdl_FX_DDF_PDF.GenereazaXML_PentruPython`, which is the authoritative source and what pass 05 will port. **This must be recorded as an open thread: there is no genuine DDF sample in the repo to diff pass 05's output against** — DoD's "structurally matches a known-good Access-written `.xml`" cannot be met from the repo as it stands; a real one has to be captured from a live run.
+**Plan discrepancy (§0/§8 bis/DoD):** `Surse/SURSA_XFA_WRITTER/XSD_XML/ddf_demo.xml` is byte-identical to `ord_demo.xml` (MD5 `9e5fe957…`), hence an ORD copy. The DDF elements were derived from `mdl_FX_DDF_PDF.GenereazaXML_PentruPython`, the source for pass 05: `SubformAntet` → `DenInstPb`/`cif`/`NrUnicInreg`/`SubtitluDF`/`DataRevizuirii`/`Revizuirea`; `SubformSectiuneaA` → `Subform123` + `Subform4/Table1/Row1`, with `Cell1`=ElementFund, `Cell3`=SS+clsf, `Cell5`=ValPrec, `Cell6`=ValCur. **Open thread:** no genuine Access DDF XML exists in the repo for the DoD comparison; capture from a live run is required.
 
 ### Files touched
 
-- `src/KBot.App/Views/Ddf/IDdfPreview.vb` — contract, `DdfPreviewMode`, `DdfPreviewFactory`.
-- `src/KBot.App/Views/Ddf/DdfXfaModel.vb` — `DdfXfaModel`, `DdfXfaLinie`, `DdfXfaParser`.
-- `src/KBot.App/Views/Ddf/XfaXmlPreview.vb` + `.Designer.vb` — the default surface.
-- `src/KBot.App/Views/Ddf/ReaderHostPreview.vb` + `.Designer.vb` — the backup surface.
-- `src/KBot.App/Views/DdfView.vb` — mounts the preview, `GenerateRequested`, theme cascade, `Clear()` on root/clear.
-- `tests/KBot.App.Tests/DdfXfaParserTests.vb` — **new**, 9 pure-logic tests.
-- `tests/KBot.App.Tests/XfaXmlPreviewTests.vb` — **new**, 7 headless STA state-machine tests (incl. the real render-from-sibling-`.xml` path via a temp file).
+`src/KBot.App/Views/Ddf/IDdfPreview.vb` — contract, `DdfPreviewMode`, `DdfPreviewFactory`. `src/KBot.App/Views/Ddf/DdfXfaModel.vb` — `DdfXfaModel`, `DdfXfaLinie`, `DdfXfaParser`. `src/KBot.App/Views/Ddf/XfaXmlPreview.vb` + `.Designer.vb` — the default surface. `src/KBot.App/Views/Ddf/ReaderHostPreview.vb` + `.Designer.vb` — the backup surface. `src/KBot.App/Views/DdfView.vb` — mounts the preview, `GenerateRequested`, theme cascade, `Clear()` on root/clear. `tests/KBot.App.Tests/DdfXfaParserTests.vb` — **new**, 9 pure-logic tests. `tests/KBot.App.Tests/XfaXmlPreviewTests.vb` — **new**, 7 headless STA state-machine tests (incl. the real render-from-sibling-`.xml` path via a temp file).
 
 ### Test results
 
@@ -161,8 +134,8 @@ Pass 3 of slice 0020 (vederea DDF), per `PLAN_DdfView.md` §6 and §11. **Both**
 
 ### Anything left unverified or deferred
 
-1. **NO VISUAL VERDICT — and for `ReaderHostPreview`, none is possible here.** The Win32 window-hosting path (`EnumWindows` match, `SetParent`, style-stripping, resize, detach) has **never run** and cannot be exercised headless or without Adobe installed. It is written defensively against every failure the plan lists, but "written carefully" is not "seen working". This is the single least-verified piece of the whole slice.
-2. **No genuine DDF sample in the repo** (see above). `XfaXmlPreview` was tested against a `form1` XML built by hand from the module source, not against a real Access-written file. The DoD item "structurally matches a known-good Access `.xml`" is **unmeetable from the repo** — logged as an open thread; needs a captured live artifact.
+1. **No visual verdict:** `ReaderHostPreview` window hosting (`EnumWindows`, `SetParent`, styles, resize, detach) has never run and cannot be exercised headless or without Adobe. Defensive implementation does not prove operation; this remains the least-verified part.
+2. **No genuine DDF sample** as documented above: `XfaXmlPreview` used hand-built `form1` from the module source, not Access output. The structural DoD comparison remains open pending a live artifact.
 3. **Cross-linking is pass 04.** Selecting a leaf does **not** yet call `ShowDocument` — that needs `KBotPaths.DdfPdfRoot` + `CUAL`/`PartAng` to compute the §2.5 path, which pass 04 adds. Pass 03 only `Clear()`s the preview on a root click. The preview is therefore inert until 04.
 4. **`GenerateRequested` is stubbed.** `DdfView.OnGenerateRequested` logs a `NotImplementedException` to `GlobalErrorLog`; pass 05 replaces the body with the real `XfaWriter.Genereaza` call on a background thread.
 5. **`ReaderHostPreview` keyboard/focus across the process boundary** is documented as not-native and deliberately not fixed (§6).
@@ -183,9 +156,7 @@ Tests: `View_MountsFileBrowser_AndBothPreviews` (now also asserts a `ReaderHostP
 
 ---
 
-<a id="slice-0020-04"></a>
-
-## SLICE-0020-04 — client: `KBotPaths` + DDF file browser + cross-linking
+## SLICE-0020-04 — client: `KBotPaths` + DDF file browser + cross-linking <a id="slice-0020-04"></a>
 
 Pass 4 of slice 0020 (vederea DDF), per `PLAN_DdfView.md` §7. Adds the local-path config, the `*.pdf` browser under it, and the tree-leaf → preview cross-link.
 
@@ -228,9 +199,7 @@ Pass 4 of slice 0020 (vederea DDF), per `PLAN_DdfView.md` §7. Adds the local-pa
 
 ---
 
-<a id="slice-0020-05"></a>
-
-## SLICE-0020-05 — DDF PDF generation (un-gated parts)
+## SLICE-0020-05 — DDF PDF generation (un-gated parts) <a id="slice-0020-05"></a>
 
 Pass 5 of slice 0020 (vederea DDF), per `PLAN_DdfView.md` §8 bis. **Scope decision (operator):** build the parts that do not depend on the live machete download; leave step 05-00's live verification and the real-PDF verdict for a host run. **Pass 06 (signing) deferred to slice 0021** (operator decision).
 

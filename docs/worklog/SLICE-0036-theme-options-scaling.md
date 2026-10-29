@@ -2,9 +2,7 @@
 
 Baza 0036 introduce AppScaling și opțiunile; 01 adaugă TextScale și cursorul. 02 înlocuiește aplicarea grea la fiecare pas cu predarea la MouseUp/KeyUp/Leave, păstrând actualizarea ieftină a procentului. Rezultatele testelor citate sunt istorice și nu certifică aspectul sau activarea reală a ferestrelor. Nu se citește ori modifică documentația proiectelor de teste.
 
-- [0036](#slice-0036)
-- [0036-01](#slice-0036-01)
-- [0036-02](#slice-0036-02)
+[0036](#slice-0036) · [0036-01](#slice-0036-01) · [0036-02](#slice-0036-02)
 
 ## SLICE-0036 — Opțiunile temei (fereastră proprie) + scalarea reglabilă <a id="slice-0036"></a>
 
@@ -27,17 +25,17 @@ Două lucruri, una singură ca miez:
 
 #### (a) `AppScaling` — sursa UNICĂ a scării
 
-Până acum formula `DeviceDpi / 96` era scrisă în **trei** locuri: `ThemeShapes.ScaleDpi` (drumul pe care merg ~157 de locuri din pictura controalelor), plus câte un `_dpiScale` în `AdvancedTreeControl` și în `KBotDataView`. Formula era una singură, dar **nu exista niciun loc din care s-o poți schimba**. Modulul nou e acel loc; cele trei drumuri întreabă acum acolo, deci o alegere ajunge peste tot deodată sau nicăieri — niciodată pe jumătate. Asta a și fost condiția de proiectare: o setare aplicată doar arborelui și grilei ar fi fost mai rea decât niciuna.
+`AppScaling` centralizează `DeviceDpi / 96` din trei locuri: `ThemeShapes.ScaleDpi` (~157 apeluri în pictarea controalelor), `_dpiScale` din `AdvancedTreeControl` și din `KBotDataView`. Toate cer aceeași scară, respectând condiția de proiectare: setarea se aplică întregii geometrii, nu numai arborelui/grilei.
 
 `Automatic` calculează exact ce se calcula înainte, deci **implicitul e comportamentul dinaintea feliei**, bit cu bit.
 
-Difuzarea (`AppScaling.Broadcast`) merge pe ferestrele deschise și cheamă `IDpiScaledControl.RefreshDpiMetrics` — interfață nouă în `KBot.Theming`, implementată de arbore și de grilă. De ce doar ele: constantele dintr-un `OnPaint` trec prin `ScaleDpi` la **fiecare** pictare, deci le prinde o invalidare; cine își ține înălțimea de rând sau lățimile de coloană într-un **câmp** le-a calculat o dată, la scara de atunci, și trebuie chemat pe nume. Difuzarea **nu** se oprește la `IThemedControl` (spre deosebire de `ThemeManager.Traverse`): scara nu e o culoare, n-are cum să strice un copil intern.
+`AppScaling.Broadcast` parcurge ferestrele deschise și cheamă noul `IDpiScaledControl.RefreshDpiMetrics` (`KBot.Theming`), implementat de arbore/grilă pentru măsurile memorate în câmpuri. Constantele `OnPaint` trec deja prin `ScaleDpi` la fiecare pictare și cer numai invalidare. Spre deosebire de culorile din `ThemeManager.Traverse`, difuzarea scării continuă și sub `IThemedControl`.
 
 Evenimentul `ScalingChanged` există, dar difuzarea **nu** merge pe el — un eveniment de modul ar fi ținut referințe tari la controale și le-ar fi scurs.
 
 #### (b) Onestitatea celor două comutatoare
 
-`Fix 100%` oprește scalarea măsurilor **NOASTRE**. Fonturile (care sunt în puncte) și `Bounds`-urile controalelor obișnuite le scalează în continuare WinForms prin `AutoScaleMode.Font`, iar acela nu poate fi oprit din afară — deci la 150% textul rămâne mai mare decât geometria din jurul lui. **E compromisul modului, nu o scăpare**, și e scris ca atare atât în cod, cât și pe eticheta din fereastră.
+`Fix 100%` oprește numai măsurile K-BOT. WinForms scalează în continuare fonturile în puncte și `Bounds` ale controalelor obișnuite prin `AutoScaleMode.Font`, care nu poate fi oprit extern: la 150%, textul depășește geometria fixată. Compromisul este explicit în cod și eticheta ferestrei.
 
 Singurul comutator care dă proporții IDENTICE cu proiectarea e `DpiUnaware`, fiindcă acolo întinde Windows toată fereastra ca bitmap; costul e textul mai moale. De aceea sunt **două** setări.
 
@@ -57,25 +55,20 @@ Trei reguli scrise în ea:
 
 #### (d) Suprascrierea schemelor built-in
 
-`ThemeManager.AvailableSchemes` nu mai concatenează orbește. Un fișier cu numele unei scheme built-in o **înlocuiește**, păstrându-i poziția în listă. Regula veche ar fi produs două rânduri «Modern» în meniul de teme, iar `ResolveByName` — care întoarce primul potrivit — ar fi ales mereu pe cel **NEeditat**: salvarea ar fi părut că nu face nimic.
+`ThemeManager.AvailableSchemes` înlocuiește schema built-in cu fișierul omonim, păstrând poziția. Concatenarea veche ar duplica «Modern», iar `ResolveByName` ar alege prima variantă, needitată, făcând salvarea aparent fără efect.
 
-`ThemeStore` a primit `SaveScheme` / `DeleteScheme` / `SchemeFilePath` și — important — **toate scrierile în `theme.json` trec acum prin citire-modificare-scriere**: schema activă și scalarea stau în același fișier și se scriu din locuri diferite, deci fără asta una ar fi ștears-o pe cealaltă. Un `theme.json` vechi, fără câmpurile noi, primește implicitele.
+`ThemeStore` adaugă `SaveScheme`/`DeleteScheme`/`SchemeFilePath`. Toate scrierile `theme.json` sunt citire-modificare-scriere: schema activă și scara, modificate separat, nu trebuie să se șteargă reciproc. Fișierul vechi fără câmpurile noi primește implicitele.
 
 #### (e) Meniul butonului de temă
 
-Rând nou «Opțiuni temă...», **înaintea** lui «Stiluri...» (prima e ce caută operatorul în nouă din zece cazuri; a doua e unealta rară). Comutator propriu — `ShowThemeOptions` — deliberat **separat** de `ShowThemeEditor`: cele două unelte fac lucruri diferite, deci o fereastră care o vrea pe una n-are de ce s-o capete și pe cealaltă. `LoginForm`, care stingea deja editorul, stinge acum și opțiunile: înainte de autentificare rămâne un comutator de scheme curat.
+«Opțiuni temă...» precede «Stiluri...». `ShowThemeOptions` este separat de `ShowThemeEditor`, fiind unelte diferite. `LoginForm` le stinge pe ambele; înainte de autentificare rămâne numai comutarea schemelor.
 
 Separatorul aparține **grupului** de unelte: se pune o dată dacă rămâne măcar una aprinsă și pleacă doar când se sting amândouă.
 
 ### Fișiere atinse
 
 **Noi**
-- `src/KBot.Theming/AppScaling.vb` — enum `ScalingMode` + modulul de scalare
-- `src/KBot.Theming/IDpiScaledControl.vb`
-- `src/KBot.Controls/ThemeOptions/ThemeOptionsForm.vb` / `.Designer.vb`
-- `src/KBot.Controls/ThemeOptions/SchemeOptionsProxy.vb` (+ `InstalledFontNameConverter`)
-- `tests/KBot.Theming.Tests/AppScalingTests.vb`
-- `tests/KBot.Theming.Tests/SchemeOverrideTests.vb`
+`src/KBot.Theming/AppScaling.vb` — enum `ScalingMode` + modulul de scalare; `src/KBot.Theming/IDpiScaledControl.vb`; `src/KBot.Controls/ThemeOptions/ThemeOptionsForm.vb` / `.Designer.vb`; `src/KBot.Controls/ThemeOptions/SchemeOptionsProxy.vb` (+ `InstalledFontNameConverter`); `tests/KBot.Theming.Tests/AppScalingTests.vb`; `tests/KBot.Theming.Tests/SchemeOverrideTests.vb`
 
 **Modificate**
 - `src/KBot.Theming/ThemeShapes.vb` — `ScaleDpi` devine drum, nu decizie
@@ -118,19 +111,19 @@ Trecere peste felia 0036, cerută imediat după ea: «se poate prelua și scalar
 
 ### Cum funcționează (și de ce așa)
 
-**Mărirea nu redimensionează controale cu mâna — o face platforma.** Toate formularele sunt `AutoScaleMode.Font`. Când li se schimbă fontul, WinForms rulează singur `PerformAutoScale` și rescalează dreptunghiurile copiilor. Deci e destul să scriem fontul formularului (din baza lui) ca să crească și literele, și controalele. Peste asta, factorul intră și în `AppScaling.FactorFor`, ca măsurile pe care le desenăm NOI (rândul din arbore și din grilă, constantele din pictură) să crească în același pas — altfel textul ar crește într-un rând care nu crește, adică fix defectul reparat în 0035.
+**Zoom prin platformă:** toate formularele sunt `AutoScaleMode.Font`; schimbarea fontului din bază declanșează WinForms `PerformAutoScale` pentru dreptunghiurile copiilor. Factorul intră și în `AppScaling.FactorFor`, mărind simultan geometria desenată de noi (rânduri de arbore/grilă, constante), pentru a nu repeta nepotrivirea text/rând din 0035.
 
 Cele două scări se **înmulțesc**, nu se aleg: la 150% pe ecran cu textul pus pe 125%, un rând trebuie să fie de 1,875 ori cel de la 96 dpi.
 
-**`FontBaseline`** (modul nou) ține fontul de la 100% pentru fiecare control, ca înmulțirea să pornească mereu din același loc. Nu se refolosește `DesignerBaseline`: acela există ca să PUNĂ LA LOC fontul din designer — exact ce face «Colorat» — deci mărirea sprijinită pe el ar fi dispărut tăcut pe o singură schemă. Se ating doar formularele și controalele cu font PROPRIU; unul care moștenește fontul ambiental nu se atinge, fiindcă scriindu-i-l l-am fixa și l-am rupe de formular pentru totdeauna (crește oricum, prin moștenire).
+**`FontBaseline`** păstrează baza de 100% per control. `DesignerBaseline` nu poate fi refolosit: restaurarea fontului de designer în «Colorat» ar elimina zoom-ul. Se ating numai formularele și controalele cu font PROPRIU; cele cu font ambiental cresc prin moștenire, fără atribuirea care le-ar fixa fontul.
 
 Ordinea în `ThemeManager.Apply`: tema întâi, mărirea **la sfârșit**. Invers, `ApplyBaseFont` și restaurarea «Colorat» ar fi șters mărirea.
 
 #### Bugul prins de un test, nu de ochi
 
-Prima formă a lui `FontBaseline` **ghicea** dacă tema rescrisese fontul, comparând REFERINȚA obiectului scris de noi cu cea de pe control. Nu ține pe un `Form`: fiindcă formularele sunt `AutoScaleMode.Font`, scrierea fontului declanșează `PerformAutoScale`, iar autoscalarea își face **propria** instanță de `Font` — deci obiectul de pe control nu mai era niciodată cel scris de noi, **tocmai în cazul care contează**. Baza se muta la fiecare pas și mărimile se compuneau: 10 → 15 → **30** în loc de 20.
+Prima variantă `FontBaseline` detecta rescrierea temei prin identitatea fontului atribuit. Pe `Form`, `PerformAutoScale` creează altă instanță, invalidând comparația și mutând repetat baza: 10 → 15 → 30 în loc de 20.
 
-Leacul nu e o comparație mai deșteaptă, ci renunțarea la ghicit: cele două locuri care scriu fonturi peste ale noastre — `ThemeManager.ApplyBaseFont` și `DesignerBaseline.Restore` — cheamă acum `FontBaseline.Rebase`. Semnal explicit, care nu depinde de ce face WinForms în interior.
+`ThemeManager.ApplyBaseFont` și `DesignerBaseline.Restore`, singurele două locuri care suprascriu fonturile noastre, cheamă explicit `FontBaseline.Rebase`, eliminând ghicirea după referință.
 
 #### Rândul-CURSOR din `CustomPopup`
 
@@ -145,7 +138,7 @@ Regulile lui, toate din același miez («un cursor se trage, nu se alege»):
 - săgețile stânga/dreapta mută valoarea cu 5, iar `Home`/`End` sar la capetele ȘINEI — dar numai când evidențierea e pe cursor; altfel rămân ale meniului;
 - evenimentul se ridică **doar la schimbare reală**: tragerea produce zeci de mesaje pe același pixel, iar gazda rescrie fonturile întregii aplicații în handler.
 
-Croiala meniului rezervă etichetă + șină + valoare (o valoare de lățime FIXĂ, ca șina să nu-și schimbe lungimea când se trece de la «100%» la «95%» — o șină care tresare sub deget e cel mai ușor fel de a rata pasul dorit). Capetele se pot chiar atinge cu mouse-ul: valoarea se măsoară pe șina utilă, cea din care s-a scăzut lățimea degetului, fiindcă degetul se desenează centrat pe poziție.
+Meniul rezervă etichetă, șină și valoare de lățime FIXĂ, astfel încât trecerea 100% → 95% să nu miște șina. Calculul valorii scade lățimea degetului din șina utilă, deoarece acesta este centrat pe poziție; capetele rămân accesibile cu mouse-ul.
 
 Culorile nu introduc nimic nou: șina nefolosită e culoarea separatorului, partea parcursă și degetul sunt culoarea de evidențiere, prin aceeași `ThemeShapes.FillModern` ca rândul evidențiat.
 
@@ -159,9 +152,7 @@ Meniul nu poate produce niciodată doi separatori alăturați, oricâte grupuri 
 ### Fișiere atinse
 
 **Noi**
-- `src/KBot.Theming/FontBaseline.vb`
-- `src/KBot.Controls/Popup/CustomPopup.Slider.vb`
-- `tests/KBot.Controls.Tests/CustomPopupSliderTests.vb`
+`src/KBot.Theming/FontBaseline.vb`; `src/KBot.Controls/Popup/CustomPopup.Slider.vb`; `tests/KBot.Controls.Tests/CustomPopupSliderTests.vb`
 
 **Modificate**
 - `src/KBot.Theming/AppScaling.vb` — `TextScale`, `SetTextScale`, `ApplyTextScale`, `FactorFor` înmulțește cele două scări, `Broadcast` scalează fonturile înaintea măsurilor
@@ -197,38 +188,30 @@ Meniul nu poate produce niciodată doi separatori alăturați, oricâte grupuri 
 
 Corecție cerută de operator după prima probă a cursorului din 0036-01:
 
-> «apply-ul pe cursor ar trebui făcut pe mouse up sau pe un eveniment care se declanșează după ce
-> termin de mutat cursorul. așa cum e acum, nu pot face nimic pentru că aplică totul la orice
-> schimbare, deci popup-ul dispare»
+> «apply-ul pe cursor ar trebui făcut pe mouse up sau pe un eveniment care se declanșează după ce termin de mutat cursorul. așa cum e acum, nu pot face nimic pentru că aplică totul la orice schimbare, deci popup-ul dispare»
 
 ### Ce era greșit
 
 `SliderValueChanged` se ridica la fiecare pixel al tragerii, iar bara de titlu rescria din el fonturile ÎNTREGII aplicații. Două urmări:
 
 1. **De nefolosit ca viteză** — zeci de reașezări de ferestre pe secundă.
-2. **Meniul dispărea**, ceea ce e mai rău și e chiar plângerea. Cauza nu e evidentă din cod și merită scrisă: aplicarea mărimii reașază toate ferestrele deschise, fereastra de dedesubt se REACTIVEAZĂ, iar `CustomPopup` se închide singur pe `Deactivate` — comportamentul corect al oricărui meniu la un clic în afară, declanșat aici de propria noastră comandă. Cursorul se sabota singur la prima mișcare.
+2. **Meniul dispărea:** aplicarea mărimii reașeza ferestrele și reactiva gazda, provocând `CustomPopup.Deactivate`. Închiderea normală la pierderea activării era declanșată aici de propria comandă, la prima mișcare.
 
 Diagnosticul contează pentru viitor: **orice** handler de meniu care mută ferestre va lovi aceeași capcană.
 
 ### Ce s-a schimbat
 
-**Un al doilea eveniment, cu o împărțire clară a muncii.** `SliderValueChanged` rămâne, la fiecare pas, pentru ce e IEFTIN (cifra de pe șină, desenată de meniu). Nou: `SliderValueCommitted`, ridicat **o singură dată, la sfârșitul gestului** — ridicarea butonului de mouse sau a tastei — și doar dacă valoarea chiar s-a schimbat față de începutul gestului (o apăsare care n-a mișcat nimic nu e o comandă). Acolo se pune lucrul greu. Cele două suprafețe consumatoare au trecut pe el.
+**Evenimente separate:** `SliderValueChanged` păstrează actualizarea ieftină a cifrei la fiecare pas. `SliderValueCommitted` declanșează lucrul greu o singură dată la ridicarea mouse-ului/tastei, numai dacă valoarea diferă de începutul gestului. Ambele suprafețe consumatoare îl folosesc; un clic fără mișcare nu predă.
 
 **Tastatura are propriul gest.** Săgețile se REPETĂ cât ții tasta apăsată, deci predarea la fiecare apăsare ar fi comandat lucrul greu de zeci de ori — exact ce făcea mouse-ul. `OnKeyUp` încheie gestul; apăsările dintre timp doar mută valoarea.
 
-**Garda de `Deactivate`.** Cât ține predarea, meniul nu se mai închide pe pierderea activării: aceea vine din propria comandă, nu dintr-un clic al operatorului. După predare își ia activarea înapoi, ca să rămână folosibil pentru pasul următor. Steagul se coboară într-un `Finally` — lăsat ridicat de o excepție, meniul n-ar mai putea fi închis printr-un clic în afară și ar părea agățat pe ecran.
+**Garda `Deactivate`:** în timpul predării, pierderea activării din propria comandă nu închide meniul; după predare, acesta se reactivează. Steagul este coborât în `Finally`, evitând un meniu rămas imposibil de închis prin clic exterior la excepție.
 
 **`TrackBar`-ul din fereastra de opțiuni** a primit aceeași regulă (`MouseUp` / `KeyUp` / `Leave`), din al doilea motiv: fereastra de opțiuni se rescala pe ea însăși în timpul tragerii, deci cursorul se plimba sub deget. Eticheta cu procentul rămâne live.
 
 ### Fișiere atinse
 
-- `src/KBot.Controls/Popup/CustomPopup.Slider.vb` — `SliderValueCommitted`, `CommitSlider`, gestul de tastatură, `IsCommittingSlider`, cusătura de test `TestDeactivate`
-- `src/KBot.Controls/Popup/CustomPopup.vb` — garda din `OnDeactivate`
-- `src/KBot.Controls/Popup/CustomPopup.Input.vb` — `OnKeyUp`
-- `src/KBot.Controls/CaptionBar/KBotCaptionBar.ThemeButton.vb` — abonare la `Committed`
-- `src/KBot.Controls/ThemeOptions/ThemeOptionsForm.vb` — aplicare la sfârșitul gestului
-- `tests/KBot.Controls.Tests/CustomPopupSliderTests.vb` — șase teste noi
-- `src/KBot.Controls/KBot.Controls.vbproj` — `FileVersion` 1.29.0.0
+`src/KBot.Controls/Popup/CustomPopup.Slider.vb` — `SliderValueCommitted`, `CommitSlider`, gestul de tastatură, `IsCommittingSlider`, cusătura de test `TestDeactivate`; `src/KBot.Controls/Popup/CustomPopup.vb` — garda din `OnDeactivate`; `src/KBot.Controls/Popup/CustomPopup.Input.vb` — `OnKeyUp`; `src/KBot.Controls/CaptionBar/KBotCaptionBar.ThemeButton.vb` — abonare la `Committed`; `src/KBot.Controls/ThemeOptions/ThemeOptionsForm.vb` — aplicare la sfârșitul gestului; `tests/KBot.Controls.Tests/CustomPopupSliderTests.vb` — șase teste noi; `src/KBot.Controls/KBot.Controls.vbproj` — `FileVersion` 1.29.0.0
 
 ### Rezultatele testelor
 

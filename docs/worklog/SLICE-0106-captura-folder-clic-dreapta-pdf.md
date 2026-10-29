@@ -2,28 +2,21 @@
 
 0106 repară trei defecte. 0107 continuă numai regula clicului dreapta și înlocuiește efectul de selecție încă acceptat la checkpointul 0106. Celelalte avertizări și excepții menționate rămân în afara acestor remedieri. Modificările grilelor din aceeași felie 0107 sunt în [istoricul bugetului](SLICE-0105-clasificatii-sumar-si-miscare.md#slice-0107-buget).
 
-- [0106 — cele trei remedieri](#slice-0106)
-- [0107 — clic dreapta fără selecție](#slice-0107)
+[0106 — cele trei remedieri](#slice-0106) · [0107 — clic dreapta fără selecție](#slice-0107)
 
-<a id="slice-0106"></a>
-
-## SLICE-0106 — capture folder null, quieter Adobe lock retries, right click keeps the PDF
+## SLICE-0106 — capture folder null, quieter Adobe lock retries, right click keeps the PDF <a id="slice-0106"></a>
 
 Operator request, 03.10.2026. Three things seen while refreshing the info of an angajament.
 
 ### What changed and why
 
-1. **«Capturile nu au putut fi trimise: Value cannot be null. (Parameter 'path1')»** on every refresh of the info of an angajament. Cause (read in code, matches the stack in the log): `CapturaStore.FolderSau(folder As String)` returned `If(IsNullOrWhiteSpace(folder), Folder, folder)`. VB is case-insensitive, so inside that method `Folder` is the PARAMETER `folder`, not the shared property `Folder` - it was `Nothing` exactly in the branch that wanted the default. `Path.Combine(Nothing, cod)` then threw in `FolderAngajament`, from `AleSale` / `CapturileDe` / `TrimiteCapturileAsync`. Fixed with `CapturaStore.Folder`. `AsociereStore.FolderSau` had the identical line (same defect, not yet reported); fixed the same way. This is the known trap in the memory note on VB.NET shadowing.
+1. **«Capturile nu au putut fi trimise: Value cannot be null. (Parameter 'path1')»** at every refresh. Code and logged stack agree: in `CapturaStore.FolderSau(folder As String)`, `If(IsNullOrWhiteSpace(folder), Folder, folder)` resolves `Folder` to the parameter because VB ignores case. The default branch therefore returns `Nothing`; `Path.Combine(Nothing, cod)` fails in `FolderAngajament`, via `AleSale` / `CapturileDe` / `TrimiteCapturileAsync`. Qualified as `CapturaStore.Folder`; the identical, not-yet-reported defect in `AsociereStore.FolderSau` is fixed likewise. This is the documented VB.NET shadowing trap.
 2. **`SignedPdfFiles.ReadShared` / `ReadWhenSettledAsync.Retry` IOExceptions** in the error log. These are the settle loop waiting for Adobe to release a file it is mid-write on; the loop retries by design. The defect was only that every attempt wrote two error entries (`ReadShared` + `.Retry`). Now the retry path reads through an unlogged private `ReadSharedCore`; the last lock exception is logged ONCE (`...ReadWhenSettledAsync.Timeout`) and only if the file never became readable within the timeout. `ReadShared` (public, single shot) still logs and rethrows. Behaviour of the loop itself is unchanged.
 3. **Right click on the tree in the DDF view (and the ORD view) reloaded the PDF.** `Tree_NodeMouseUp` moved the view context, pushed it to the active page and started `EnsureSignedPdfAsync` for any button. Now the right button only opens the context menu: both menus take their node from the clicked item (`pNode` / its payload), not from the view's selection state, so nothing else was needed. The PDF reloads on the LEFT click only. Keyboard Enter is unaffected (it raises the event with the left button).
 
 ### Files touched
 
-- `src/KBot.Common/CapturaStore.vb` - `FolderSau`
-- `src/KBot.Common/AsociereStore.vb` - `FolderSau`
-- `src/KBot.App/Views/SignedPdfFiles.vb` - `ReadShared`, new `ReadSharedCore`, `ReadWhenSettledAsync`
-- `src/KBot.App/Views/DdfView.vb` - `Tree_NodeMouseUp`
-- `src/KBot.App/Views/OrdView.vb` - `Tree_NodeMouseUp`
+`src/KBot.Common/CapturaStore.vb` - `FolderSau`; `src/KBot.Common/AsociereStore.vb` - `FolderSau`; `src/KBot.App/Views/SignedPdfFiles.vb` - `ReadShared`, new `ReadSharedCore`, `ReadWhenSettledAsync`; `src/KBot.App/Views/DdfView.vb` - `Tree_NodeMouseUp`; `src/KBot.App/Views/OrdView.vb` - `Tree_NodeMouseUp`
 
 ### Test results
 
@@ -39,9 +32,7 @@ Operator request, 03.10.2026. Three things seen while refreshing the info of an 
 
 ---
 
-<a id="slice-0107"></a>
-
-## SLICE-0107 — tree control: a right click does not select a row
+## SLICE-0107 — tree control: a right click does not select a row <a id="slice-0107"></a>
 
 Operator request, 03.10.2026 (follow-up of 0106, item 3): a row that is not selected must not become selected by a right click alone; the operator left clicks first.
 
@@ -56,10 +47,7 @@ Operator request, 03.10.2026 (follow-up of 0106, item 3): a row that is not sele
 
 ### Files touched
 
-- `src/KBot.Controls/Tree/AdvancedTreeControl.Properties.vb` - property + flag
-- `src/KBot.Controls/Tree/AdvancedTreeControl.Overrides.vb` - `OnMouseDown`, `OnMouseUp`
-- `src/KBot.App/Views/DdfView.Designer.vb`, `src/KBot.App/Views/OrdView.Designer.vb`, `src/KBot.App/Forexe/AsociereForm.Designer.vb`
-- Help: see `SLICE-0000-43-ajutor-clic-dreapta-ddf-ord.md`
+`src/KBot.Controls/Tree/AdvancedTreeControl.Properties.vb` - property + flag; `src/KBot.Controls/Tree/AdvancedTreeControl.Overrides.vb` - `OnMouseDown`, `OnMouseUp`; `src/KBot.App/Views/DdfView.Designer.vb`, `src/KBot.App/Views/OrdView.Designer.vb`, `src/KBot.App/Forexe/AsociereForm.Designer.vb`; Help: see `SLICE-0000-43-ajutor-clic-dreapta-ddf-ord.md`
 
 ### Test results
 

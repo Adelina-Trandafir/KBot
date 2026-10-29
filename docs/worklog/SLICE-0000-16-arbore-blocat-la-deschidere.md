@@ -16,12 +16,7 @@ Data: 30.09.2026. Pentru felia 0078-08 (arborii nu mai iau alt rând cât Adobe 
 
 ## Fișiere atinse
 
-- `src/KBot.App/HelpContent/contabil/liste.md`
-- `src/KBot.App/HelpContent/contabil/ddf/index.md`
-- `src/KBot.App/HelpContent/contabil/vederi/ord.md`
-- `src/KBot.App/HelpContent/contabil/notecab.md`
-- `src/KBot.App/HelpContent/contabil/fereastra.md`
-- `docs/HELP_SYSTEM.md` (regula «fără felul în care lucrează K-BOT pe dinăuntru»)
+`src/KBot.App/HelpContent/contabil/liste.md`; `src/KBot.App/HelpContent/contabil/ddf/index.md`; `src/KBot.App/HelpContent/contabil/vederi/ord.md`; `src/KBot.App/HelpContent/contabil/notecab.md`; `src/KBot.App/HelpContent/contabil/fereastra.md`; `docs/HELP_SYSTEM.md` (regula «fără felul în care lucrează K-BOT pe dinăuntru»)
 
 ## Rezultatele testelor
 

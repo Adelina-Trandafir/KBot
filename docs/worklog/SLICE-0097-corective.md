@@ -2,16 +2,9 @@
 
 Istoric 30.09–25.10.2026. 0097-04 înlocuiește condiția inițială de vizibilitate a bifei pentru parolă; 0097-05 înlocuiește forțarea reautentificării și limitarea intervalului fără avansate. 0097-06 înlocuiește ascunderea selectorului Sursă/Sector după sortarea pe dată din 0097-03. Corpurile de mai jos sunt checkpointuri datate, nu reguli concurente. Nota istorică de captură din 0097-03 nu înlocuiește regula actuală AGENTS pentru mascarea datelor.
 
-- [0097 — prima trecere](#slice-0097)
-- [0097-02](#slice-0097-02)
-- [0097-03](#slice-0097-03)
-- [0097-04](#slice-0097-04)
-- [0097-05](#slice-0097-05)
-- [0097-06](#slice-0097-06)
+[0097 — prima trecere](#slice-0097) · [0097-02](#slice-0097-02) · [0097-03](#slice-0097-03) · [0097-04](#slice-0097-04) · [0097-05](#slice-0097-05) · [0097-06](#slice-0097-06)
 
-<a id="slice-0097"></a>
-
-## SLICE-0097 — Corective updates (operator request, 30.09.2026)
+## SLICE-0097 — Corective updates (operator request, 30.09.2026) <a id="slice-0097"></a>
 
 Nine operator requests in one message. Answers given by the operator before the code (30.09.2026): a signed DDF revision keeps only «Trimite / Reia trimiterea» in its menu; the new tree roots are in ORD **and** DDF; a month / «toate» delete is **refused** (not offered) when any document under it is signed; the re-login interval acts **at session expiry**, not on a timer.
 
@@ -29,21 +22,21 @@ Nine operator requests in one message. Answers given by the operator before the 
    - DDF leaf signed → no «Modifică / Șterge revizia / Șterge documentul»; «Trimite / Reia trimiterea» stays when the state allows it; no entry left → no menu.
 
 #### KbotForm
-5. **Collapsed nav flyout too narrow at scales other than 150%** (`KBotNavList` + `KBotNavFlyout`). The flyout width left the caption EXACTLY its measured width, measured on the screen DC with other flags than the ones used to draw it. Now: measured on this window's own device context, with the draw flags, with both fonts (regular + semibold, the wider wins), plus a scaled gap; the flyout also ignores `WM_DPICHANGED` (a per-monitor-aware form crossing to a monitor of another DPI was resized by the suggested rectangle). **Hypothesis, not a proven cause** — nothing was reproduced on another scale here.
+5. **Collapsed nav flyout too narrow outside 150%** (`KBotNavList`, `KBotNavFlyout`): width previously matched caption measured on screen DC with different draw flags. It now uses the window DC, actual draw flags, wider regular/semibold font and a scaled gap. Flyout ignores `WM_DPICHANGED` suggested resizing across monitors. **Hypothesis, unproven cause:** no reproduction at another scale.
 6. **«Note corecție» only when the branch has notes**, like ORD/DDF. Server: `GET /api/forexe/tree` returns `AreNoteCab` = `EXISTS FX_NoteCAB_Corectii.CodAngajament`, or a literal 0 when that table does not exist on the unit database (checked in `information_schema` per request — `000_DEMO` does not have it). Client: `AngajamentTreeInfo .AreNoteCab`, gating in `ApplyViewGating` / `IsViewEnabled`; a note saved on the selected angajament raises the flag locally (`AprindePoartaNotelor`).
 
 #### Caption bar — unit selector
 7. `KBotCaptionBar` gains a painted non-editable drop-down after the title (`KBotCaptionBar.UnitSelector.vb`: `SetSelectorItems`, `ClearSelector`, `SelectorSelectedKey`, event `SelectorChanged`). Shown only with two or more choices; otherwise the bar is unchanged. The list is a `CustomPopup` with a check on the current unit.
    - Server (gitignored `routes/auth/auth.py`): `GET /api/auth/my-units` (the operator's SELECT on `Unitati_Utilizatori ⋈ Unitati`, filtered by the session's UN) and `POST /api/auth/switch-unit` (bearer; same access check and answer as `/login`, new token, old token revoked, journal action `SWITCH_UNIT`). No password needed: the live token proves identity.
    - Client: `IAuthApi.GetMyUnitsAsync` / `SwitchUnitAsync`; `UnitInfo` gets `CF`, `Rol`; `KbotForm.Units.vb` loads the list after the tree, and on a pick: switch → session → the unit remembered (`LastLoginStore`) → combos, tree and views reset → periods + tree + «operațiuni necorelate» mark, as after login.
-   - A live FOREXE session is **closed first, silently** (operator, 30.09.2026: «se deconectează și apoi se schimbă unitatea»): the browser session belongs to the unit being left, and downloads write into the session's database. New `IForexeDisconnect` (KBot.Forexe, apart from `IForexeRunner` so the test doubles stay as they are) → `ForexeRunner.DisconnectAsync` (the same teardown a new connection does) → `ForexeController.DisconnectAsync(forgetCertificate)`. The REMEMBERED certificate (the one «Conectare» uses without asking, `CertificateService.LastUsedCertificate`) is forgotten **only** when the operator ticks the new switch «Setări → FOREXE → Uită certificatul memorat când schimb unitatea din bara de titlu» (`AppSettings.ForexeForgetCertificateOnUnitSwitch`, **off by default**, operator 30.09.2026). **Refused** only while a FOREXE operation is running, and for a unit where the role is «Director» (that one is the signing window).
+   - **Unit switch first closes FOREXE silently** (operator, 30.09.2026), preventing downloads into the wrong session database. Separate `IForexeDisconnect` leaves `IForexeRunner` doubles unchanged; `ForexeRunner.DisconnectAsync` uses the reconnect teardown, via `ForexeController.DisconnectAsync(forgetCertificate)`. `CertificateService.LastUsedCertificate` is forgotten only when `AppSettings.ForexeForgetCertificateOnUnitSwitch` is checked («Setări → FOREXE → Uită certificatul memorat când schimb unitatea din bara de titlu», default off, operator 30.09). Switch is refused while FOREXE is busy or when the target role is Director (signing window).
 
 #### Setări → Autentificare + login window
 8. New section «În timpul lucrului (sesiunea expirată)»:
    - «Reafișează fereastra de autentificare când expiră sesiunea» (`ReloginPrompt`) — changeable only with the advanced options; without them it is always on.
    - «Reafișează cel mult o dată la» (`ReloginMinutes`): 10, 15, 20, 30, 45, 60 minutes; with the advanced options also 5, 90, 120, 240, 480. Without them the value in effect is clamped to 10..60.
    - At startup the login window is always shown (unchanged).
-   - Mechanism (`KbotForm.ReautentificaAsync`, called by `WithReauth` on a 401): if the window is off, or the last login typed in the window is younger than the interval, K-BOT logs back in by itself (`/api/auth/login` on the SAME unit) with the password kept in memory; otherwise, or if that fails, the window. One silent re-login at a time (semaphore); a server refusal drops the kept password.
+   - `WithReauth` calls `KbotForm.ReautentificaAsync` on 401. With prompt off or a typed login younger than the interval, it silently calls `/api/auth/login` on the SAME unit with the in-memory password. Otherwise, or on failure, it shows the window. Semaphore serializes silent re-login; server refusal clears the password.
 9. Login window: «Ține minte parola până la repornirea calculatorului» under the password. Visible only with the advanced options AND the new switch «Arată în fereastra de autentificare bifa…» (`RememberPasswordOption`, default on, shown only with the advanced options) plus «Uită parola memorată». Storage (`KBot.Common/SessionCredentials.vb`): DPAPI (current Windows user, via crypt32 P/Invoke — no package) in a **volatile** HKCU key `Software\AVACONT\KBot\Session`, which Windows discards at sign-out / restart. Unticked at login → the stored pair is erased. The in-process copy for item 8 is DPAPI-encrypted too.
 
 ### Files touched
@@ -81,9 +74,7 @@ Nine operator requests in one message. Answers given by the operator before the 
 
 ---
 
-<a id="slice-0097-02"></a>
-
-## SLICE-0097-02 — Corective updates, second pass (operator request, 01.10.2026)
+## SLICE-0097-02 — Corective updates, second pass (operator request, 01.10.2026) <a id="slice-0097-02"></a>
 
 Seven operator requests (six in one message, the seventh added while the work was running). Answers given by the operator before the code (01.10.2026): point 5 means the login window must **not** have the «?» button (F1 stays); the work is recorded as **0097-02** (not a new slice). The help for it is `SLICE-0000-25`.
 
@@ -94,7 +85,7 @@ Seven operator requests (six in one message, the seventh added while the work wa
 - It runs **at every start** until:
   1. it was **seen to the end** («Gata» on the last step, or the last steps skipped because their parts are not on screen) — counted however the tour was started (by itself or from «?»);
   2. the operator ticks **«Nu mai arăta turul inițial»** and closes the tour. Both write `ShowInitialTour = False` (`HelpService.InitialTourSeen`, called by `HelpTourRunner.Finish`). Closing without the box leaves it on.
-- **Where the box is** (the operator left the place open): on the tour bubble itself, its own row between the text and the buttons (`HelpTourBubble.chkNuMaiArata`), shown only on the automatic tour (`ShowNeverAgain`). The button row has no room for it at 440 px, hence a row of its own; `FitToText` counts it.
+- **Placement chosen here:** `HelpTourBubble.chkNuMaiArata` gets a row between text and buttons, counted by `FitToText`, shown only for automatic tours (`ShowNeverAgain`). The 440 px button row had no room.
 - The way back: **Setări › Aplicație › Generale** «Arată turul ferestrei principale la pornirea K-BOT» (`chkTurInitial`), which also follows `AppSettings.Changed` (it unticks itself when the tour ends with the settings window open).
 
 #### 2. Confirmation questions in the in-page browser are answered «Da»
@@ -110,7 +101,7 @@ Seven operator requests (six in one message, the seventh added while the work wa
   3. the tree selection is cleared (`_currentInfo = Nothing`, `tree.SelectedNode = Nothing`, the view gate on «no node») — first, so the view does not send the robot after the old node;
   4. the «Browser FOREXE» view is selected;
   5. `BrowserView.CereAngajamentNouAsync` → `ForexeController.DeschideAngajamentNouAsync` runs the new **`Workflows\adlop - Angajament Nou.wfl`**: reset, Home through the logo, the «Angajament nou» link, wait for `textarea[name='descriere']`, stop. Every step is copied from sections 1 and 2 of «Creare\adlop - Creare Angajament.wfl». A request made while the browser is still docking waits for that dock (`_nouCerut`) and is dropped if the dock fails.
-- `ForexeWatch.js` section 18: the robot's click on «Angajament nou» is not watched (the watcher sleeps during a job), so a page handed back on the empty form **starts the «Angajament nou» operation** as if the operator had pressed the link. Without it the save that follows would never be reported and K-BOT would not download the new angajament.
+- `ForexeWatch.js` §18 starts the «Angajament nou» operation when the robot returns the empty form. The watcher sleeps during jobs and misses the robot click; without this, the later save would neither be reported nor download the new angajament.
 
 #### 4. The in-page mini menu follows a setting
 - `AppSettings.ForexeShowPageMenu` (default **True** = as before) → `ForexeWatchConfig` sends `menu` → `ForexeWatch.js` `config.menu` (`syncMenu`, one place for the menu's visibility).
@@ -164,9 +155,7 @@ Seven operator requests (six in one message, the seventh added while the work wa
 
 ---
 
-<a id="slice-0097-03"></a>
-
-## SLICE-0097-03 — Year and Sector selectors move into the caption bar (operator request, 01.10.2026)
+## SLICE-0097-03 — Year and Sector selectors move into the caption bar (operator request, 01.10.2026) <a id="slice-0097-03"></a>
 
 Follow-up to 0097 (the unit selector in the caption bar). Help recorded as 0000-33.
 
@@ -188,9 +177,7 @@ The operator asked for three things:
 
 ### Files touched
 
-- `src/KBot.Controls/CaptionBar/KBotCaptionBar.Selectors.vb` (**new**, replaces `KBotCaptionBar.UnitSelector.vb`), `KBotCaptionBar.vb`, `KBotCaptionBar.HelpParts.vb`
-- `src/KBot.App/KbotForm.Designer.vb`, `KbotForm.vb`, `KbotForm.Periods.vb`, `KbotForm.Tree.vb`, `KbotForm.TreeOptions.vb`, `KbotForm.Units.vb`, `KbotForm.Chrome.vb`
-- Help (0000-33): `HelpContent/tours/tur-fereastra.md`, `contabil/fereastra.md`, `contabil/autentificare.md`; `tools/HelpCheck/Check-Help.ps1` (caption bar parts list)
+`src/KBot.Controls/CaptionBar/KBotCaptionBar.Selectors.vb` (**new**, replaces `KBotCaptionBar.UnitSelector.vb`), `KBotCaptionBar.vb`, `KBotCaptionBar.HelpParts.vb`; `src/KBot.App/KbotForm.Designer.vb`, `KbotForm.vb`, `KbotForm.Periods.vb`, `KbotForm.Tree.vb`, `KbotForm.TreeOptions.vb`, `KbotForm.Units.vb`, `KbotForm.Chrome.vb`; Help (0000-33): `HelpContent/tours/tur-fereastra.md`, `contabil/fereastra.md`, `contabil/autentificare.md`; `tools/HelpCheck/Check-Help.ps1` (caption bar parts list)
 
 ### Test results
 
@@ -208,9 +195,7 @@ The operator asked for three things:
 
 ---
 
-<a id="slice-0097-04"></a>
-
-## SLICE-0097-04 — «Ține minte parola»: bifa nu mai depinde de opțiunile avansate
+## SLICE-0097-04 — «Ține minte parola»: bifa nu mai depinde de opțiunile avansate <a id="slice-0097-04"></a>
 
 Cererea operatorului, 19.10.2026. (Numărul 0097-04 e ales de mine, urmând după 0097-03; de confirmat.)
 
@@ -226,10 +211,7 @@ Regula nouă (operator): starea bifei rămâne cea stabilită, indiferent de op�
 
 ### Files touched
 
-- `src/KBot.Common/AppSettings.vb`
-- `src/KBot.App/LoginForm.vb` (doar comentariul)
-- `src/KBot.App/Setari/SetariAutentificareView.vb`
-- `src/KBot.App/HelpContent/contabil/autentificare.md`, `setari.md`
+`src/KBot.Common/AppSettings.vb`; `src/KBot.App/LoginForm.vb` (doar comentariul); `src/KBot.App/Setari/SetariAutentificareView.vb`; `src/KBot.App/HelpContent/contabil/autentificare.md`, `setari.md`
 
 ### Test results
 
@@ -244,9 +226,7 @@ Regula nouă (operator): starea bifei rămâne cea stabilită, indiferent de op�
 
 ---
 
-<a id="slice-0097-05"></a>
-
-## SLICE-0097-05 — Opțiunile avansate doar permit schimbarea, nu blochează aplicarea
+## SLICE-0097-05 — Opțiunile avansate doar permit schimbarea, nu blochează aplicarea <a id="slice-0097-05"></a>
 
 Cererea operatorului, 23.10.2026. Numărul 0097-05 a fost confirmat de operator.
 
@@ -266,10 +246,7 @@ Lăsate neschimbate, pentru că nu sunt setări aplicate, ci unelte/conținut vi
 
 ### Files touched
 
-- `src/KBot.Common/AppSettings.vb`
-- `src/KBot.App/KbotForm.HelpCapture.vb`
-- `src/KBot.App/Setari/SetariAutentificareView.vb`
-- `src/KBot.App/HelpContent/contabil/setari.md`
+`src/KBot.Common/AppSettings.vb`; `src/KBot.App/KbotForm.HelpCapture.vb`; `src/KBot.App/Setari/SetariAutentificareView.vb`; `src/KBot.App/HelpContent/contabil/setari.md`
 
 ### Test results
 
@@ -285,9 +262,7 @@ Lăsate neschimbate, pentru că nu sunt setări aplicate, ci unelte/conținut vi
 
 ---
 
-<a id="slice-0097-06"></a>
-
-## SLICE-0097-06 — Sursa «Toate» în bara de titlu și mesaj de perioadă pe tot aplicația
+## SLICE-0097-06 — Sursa «Toate» în bara de titlu și mesaj de perioadă pe tot aplicația <a id="slice-0097-06"></a>
 
 Cererea operatorului, 25.10.2026. Slice-ul 0097-03 a mutat anul și sursa/sectorul în bara de titlu; numărul 0097-06 este ultimul sub-slice liber al lui 0097 (cerut de operator).
 
@@ -308,12 +283,7 @@ Interpretare (de confirmat): „la fel și la ordonare nume" = și la trecerea p
 
 ### Files touched
 
-- `src/KBot.Common/SessionContext.vb`
-- `src/KBot.App/KbotForm.Periods.vb`
-- `src/KBot.App/KbotForm.Tree.vb`
-- `src/KBot.App/KbotForm.TreeOptions.vb`
-- `src/KBot.App/Forexe/ForexeController.vb`
-- `src/KBot.App/HelpContent/contabil/fereastra.md`, `tours/tur-fereastra.md`, `contabil/forexe/lista.md`
+`src/KBot.Common/SessionContext.vb`; `src/KBot.App/KbotForm.Periods.vb`; `src/KBot.App/KbotForm.Tree.vb`; `src/KBot.App/KbotForm.TreeOptions.vb`; `src/KBot.App/Forexe/ForexeController.vb`; `src/KBot.App/HelpContent/contabil/fereastra.md`, `tours/tur-fereastra.md`, `contabil/forexe/lista.md`
 
 ### Test results
 

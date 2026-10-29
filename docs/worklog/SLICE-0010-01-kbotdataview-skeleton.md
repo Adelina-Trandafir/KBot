@@ -17,8 +17,7 @@ Prima trecere din slice-ul 0010 (`KBotDataView`): grila owner-drawn, nelegată d
   - `KBotDataColumn` — modelul de coloană (Key/ColumnType fixate la creare; Width clamp-at la MinWidth; Visible/Frozen/ReadOnly/Enabled/TextAlign/FormatString/ComboItems/Progress*/ Resizable/Tag).
   - `KBotDataRow` — store de celule `Dictionary(Of String, Object)` (cheie lipsă => `Nothing`), `Enabled`, `Tag`, `IsDirty` + `MarkClean`, `HasValue`. Setter-ul `Item` ridică `IsDirty`.
 - **Control `KBotDataView` (Inherits `Control`, Implements `IThemedControl`):**
-  - Bază double-buffered (UserPaint | AllPaintingInWmPaint | OptimizedDoubleBuffer | ResizeRedraw
-    | Selectable), aceeași familie ca `KBotNavList`.
+  - Bază double-buffered (UserPaint | AllPaintingInWmPaint | OptimizedDoubleBuffer | ResizeRedraw | Selectable), aceeași familie ca `KBotNavList`.
   - Suprafață publică pentru acest pas: `AddColumn`, `Columns`, `Column(key)`, `FrozenColumnCount`, `AddRow`, `Rows`, `RowCount`, `ClearRows`, `GetDirtyRows`, `Item(colKey, rowIndex)`, `RowHeight`, `HeaderHeight`, `ShowHeader`, `AlternatingRows`, `ReadOnlyGrid`, `BeginUpdate`/`EndUpdate`, `InvalidateCell`/`InvalidateRow`, `ApplyTheme`.
   - `Designer.vb` declară TOATE cele 4 controale copil (regula casei): `editText`, `editCombo`, `vScroll`, `hScroll` — ascunse; poziționarea/afișarea lor vine în pașii următori.
   - Pictare: fundal corp + bandă de antet (text pe coloană, separatoare verticale, linie de bază), chenar exterior. Doar rânduri vizibile se vor picta (virtualizare în 0010-02).
@@ -32,14 +31,7 @@ Prima trecere din slice-ul 0010 (`KBotDataView`): grila owner-drawn, nelegată d
 
 ## Fișiere atinse
 
-- `src/KBot.Controls/KBot.Controls.vbproj` — `ProjectReference` + `Import` pentru `KBot.Theming`.
-- `src/KBot.Controls/KBotColumnType.vb` (nou)
-- `src/KBot.Controls/KBotDataColumn.vb` (nou)
-- `src/KBot.Controls/KBotDataRow.vb` (nou)
-- `src/KBot.Controls/KBotDataView.vb` (nou)
-- `src/KBot.Controls/KBotDataView.Designer.vb` (nou)
-- `tests/KBot.Controls.Tests/` (nou proiect: `.vbproj` + `KBotDataModelTests.vb` + `KBotDataViewTests.vb`)
-- `KBot.sln` — adăugat proiectul de teste.
+`src/KBot.Controls/KBot.Controls.vbproj` — `ProjectReference` + `Import` pentru `KBot.Theming`. `src/KBot.Controls/KBotColumnType.vb` (nou); `src/KBot.Controls/KBotDataColumn.vb` (nou); `src/KBot.Controls/KBotDataRow.vb` (nou); `src/KBot.Controls/KBotDataView.vb` (nou); `src/KBot.Controls/KBotDataView.Designer.vb` (nou); `tests/KBot.Controls.Tests/` (nou proiect: `.vbproj` + `KBotDataModelTests.vb` + `KBotDataViewTests.vb`); `KBot.sln` — adăugat proiectul de teste.
 
 ## Rezultate teste
 
@@ -54,9 +46,7 @@ Prima trecere din slice-ul 0010 (`KBotDataView`): grila owner-drawn, nelegată d
 - `InvalidateCell`/`InvalidateRow` fac invalidare integrală (dreptunghiul exact vine la virtualizare, 0010-02).
 - Restul pașilor: 02 render+virtualizare, 03 tipuri de coloană, 04 formatare+disable, 05 input+selecție, 06 editare.
 
-<a id="slice-0010-02"></a>
-
-## SLICE-0010-02 — KBotDataView: render + virtualizare + scrollbar-uri
+## SLICE-0010-02 — KBotDataView: render + virtualizare + scrollbar-uri <a id="slice-0010-02"></a>
 
 A doua trecere din slice-ul 0010. Livrează motorul de randare virtualizat: benzile de layout, matematica de virtualizare, barele de derulare, pictarea rândurilor (Text + CheckBox), plumbing-ul evenimentelor de formatare și **poarta de verificare headless** a virtualizării.
 
@@ -120,9 +110,7 @@ Implementată conform tabelului din plan: antet = `SurfaceAlt`/`Text`/`Border`/`
 - Scrollbar-urile sunt cele standard WinForms — gaura de tematizare asumată pentru v1.
 - Urmează: 03 restul tipurilor de coloană, 04 formatare+disable, 05 input+selecție, 06 editare.
 
-<a id="slice-0010-03"></a>
-
-## SLICE-0010-03 — KBotDataView: restul tipurilor de coloană
+## SLICE-0010-03 — KBotDataView: restul tipurilor de coloană <a id="slice-0010-03"></a>
 
 A treia trecere din slice-ul 0010. Completează cele șase tipuri de coloană: peste **Text** și **CheckBox** (livrate în 0010-02) se adaugă **Combo**, **OptionButton**, **Button** și **ProgressBar**, plus semantica de date a grupurilor de opțiuni.
 
@@ -144,12 +132,7 @@ Toate culorile vin din paletă — zero literale.
 
 ### Fișiere atinse
 
-- `src/KBot.Controls/KBotDataColumn.vb` — `OptionGroup`.
-- `src/KBot.Controls/KBotDataView.vb` — `SetOptionValue` + `ClearOptionSiblings`.
-- `src/KBot.Controls/KBotDataView.Theming.vb` — culori + resurse GDI pentru cele patru tipuri noi.
-- `src/KBot.Controls/KBotDataView.Painting.vb` — `DrawOptionCell`, `DrawButtonCell`, `DrawProgressCell`, `DrawComboCell`, `ProgressFraction`, `ToDouble` + dispatch-ul pe tip.
-- `tests/KBot.Controls.Tests/KBotDataViewColumnTypeTests.vb` (nou, 9 teste).
-- `src/KBot.DevHarness/Internal/DataViewHarnessForm.vb` — datele sintetice conțin acum câte o coloană din fiecare tip (acceptanța pasului).
+`src/KBot.Controls/KBotDataColumn.vb` — `OptionGroup`. `src/KBot.Controls/KBotDataView.vb` — `SetOptionValue` + `ClearOptionSiblings`. `src/KBot.Controls/KBotDataView.Theming.vb` — culori + resurse GDI pentru cele patru tipuri noi. `src/KBot.Controls/KBotDataView.Painting.vb` — `DrawOptionCell`, `DrawButtonCell`, `DrawProgressCell`, `DrawComboCell`, `ProgressFraction`, `ToDouble` + dispatch-ul pe tip. `tests/KBot.Controls.Tests/KBotDataViewColumnTypeTests.vb` (nou, 9 teste). `src/KBot.DevHarness/Internal/DataViewHarnessForm.vb` — datele sintetice conțin acum câte o coloană din fiecare tip (acceptanța pasului).
 
 ### Rezultate teste
 
@@ -164,9 +147,7 @@ Toate culorile vin din paletă — zero literale.
 - `KBotDataColumn.Frozen` rămâne metadata neutilizată (autoritar e `FrozenColumnCount`).
 - Urmează: 04 formatare+disable, 05 input+selecție, 06 editare.
 
-<a id="slice-0010-04"></a>
-
-## SLICE-0010-04 — KBotDataView: formatare condiționată + dezactivare pe trei niveluri
+## SLICE-0010-04 — KBotDataView: formatare condiționată + dezactivare pe trei niveluri <a id="slice-0010-04"></a>
 
 A patra trecere din slice-ul 0010. Plumbing-ul evenimentelor de formatare exista din 0010-02; acum capătă **efect vizual** și, mai important, **contractul de activare efectivă** pe care se va sprijini blocarea input-ului și a editării în 0010-05/06.
 
@@ -197,11 +178,7 @@ Ambele ridică evenimentele de formatare cu **instanțe de argumente SEPARATE** 
 
 ### Fișiere atinse
 
-- `src/KBot.Controls/KBotDataView.vb` — `IsRowEnabled`, `IsCellEnabled`, instanțele „probe”.
-- `src/KBot.Controls/KBotDataView.Theming.vb` — `_cDisabledText`/`_cDisabledWash` + resurse GDI.
-- `src/KBot.Controls/KBotDataView.Painting.vb` — aplicarea stării dezactivate în `DrawCell` și în cei cinci pictori de tip.
-- `tests/KBot.Controls.Tests/KBotDataViewFormattingTests.vb` (nou, 10 teste).
-- `src/KBot.DevHarness/Internal/DataViewHarnessForm.vb` — cele două reguli demonstrative.
+`src/KBot.Controls/KBotDataView.vb` — `IsRowEnabled`, `IsCellEnabled`, instanțele „probe”. `src/KBot.Controls/KBotDataView.Theming.vb` — `_cDisabledText`/`_cDisabledWash` + resurse GDI. `src/KBot.Controls/KBotDataView.Painting.vb` — aplicarea stării dezactivate în `DrawCell` și în cei cinci pictori de tip. `tests/KBot.Controls.Tests/KBotDataViewFormattingTests.vb` (nou, 10 teste). `src/KBot.DevHarness/Internal/DataViewHarnessForm.vb` — cele două reguli demonstrative.
 
 ### Rezultate teste
 
@@ -215,9 +192,7 @@ Ambele ridică evenimentele de formatare cu **instanțe de argumente SEPARATE** 
 - Hover/pressed pe `Button`, textul procentual pe `ProgressBar` — tot amânate.
 - Urmează: 05 input+selecție, 06 editare.
 
-<a id="slice-0010-05"></a>
-
-## SLICE-0010-05 — KBotDataView: input + selecție
+## SLICE-0010-05 — KBotDataView: input + selecție <a id="slice-0010-05"></a>
 
 A cincea trecere din slice-ul 0010. Grila devine INTERACTIVĂ: celulă curentă, navigație de la tastatură în stil Access, click/dublu-click, comutarea bifelor/opțiunilor, acționarea butoanelor și redimensionarea coloanelor din antet. Totul respectă activarea efectivă definită în 0010-04.
 
@@ -248,10 +223,7 @@ Drag pe marginea dreaptă a unei coloane din antet (toleranță ~4px, DPI-scalat
 
 ### Fișiere atinse
 
-- `src/KBot.Controls/KBotDataView.Input.vb` (nou — selecție, hit-testing, tastatură, mouse, resize)
-- `src/KBot.Controls/KBotDataView.vb` — `_currentColumnKey`, cele cinci evenimente de interacțiune
-- `src/KBot.Controls/Events/KBotCellEventArgs.vb`, `KBotButtonClickEventArgs.vb`, `KBotCellValueEventArgs.vb` (noi)
-- `tests/KBot.Controls.Tests/KBotDataViewInputTests.vb` (nou, 18 teste)
+`src/KBot.Controls/KBotDataView.Input.vb` (nou — selecție, hit-testing, tastatură, mouse, resize); `src/KBot.Controls/KBotDataView.vb` — `_currentColumnKey`, cele cinci evenimente de interacțiune; `src/KBot.Controls/Events/KBotCellEventArgs.vb`, `KBotButtonClickEventArgs.vb`, `KBotCellValueEventArgs.vb` (noi); `tests/KBot.Controls.Tests/KBotDataViewInputTests.vb` (nou, 18 teste)
 
 ### Rezultate teste
 
@@ -266,9 +238,7 @@ Drag pe marginea dreaptă a unei coloane din antet (toleranță ~4px, DPI-scalat
 - Selecție multiplă, reordonare de coloane — în afara scopului v1.
 - Urmează: **0010-06** (editare: editorii flotanți, commit/veto/cancel, `IsDirty` real).
 
-<a id="slice-0010-06"></a>
-
-## SLICE-0010-06 — KBotDataView: editare in-place (ultima trecere)
+## SLICE-0010-06 — KBotDataView: editare in-place (ultima trecere) <a id="slice-0010-06"></a>
 
 Ultima trecere din slice-ul 0010 — motivul pentru care grila e NELEGATĂ de date. Peste celula activă plutește UN SINGUR editor real (TextBox sau ComboBox, declarați în Designer încă din 0010-01), deci numărul de handle-uri rămâne constant indiferent de câte mii de rânduri sunt.
 
@@ -298,15 +268,7 @@ Ambele sunt reparate cu `Me.` explicit (+ comentariu de avertizare) și au acum 
 
 ### Fișiere atinse
 
-- `src/KBot.Controls/KBotDataView.Editing.vb` (nou — ciclul complet + `CellRect` + editorii)
-- `src/KBot.Controls/Events/KBotCellValidatingEventArgs.vb` (nou; bug reparat)
-- `src/KBot.Controls/KBotDataColumn.vb` — bug `HeaderText` reparat
-- `src/KBot.Controls/KBotDataRow.vb` — `Item` nu mai murdărește; documentație de contract
-- `src/KBot.Controls/KBotDataView.vb` — `ClearDirty`, `GetDirtyRows` redocumentat, `WireEditors`
-- `src/KBot.Controls/KBotDataView.Input.vb` — F2, dublu-click => editare; auto-commit la mutare
-- `src/KBot.Controls/KBotDataView.Layout.vb` — auto-commit la derulare
-- `tests/KBot.Controls.Tests/KBotDataViewEditingTests.vb` (nou, 15 teste) + 2 teste rescrise
-  + 1 test nou de regresie pe `HeaderText`
+`src/KBot.Controls/KBotDataView.Editing.vb` (nou — ciclul complet + `CellRect` + editorii); `src/KBot.Controls/Events/KBotCellValidatingEventArgs.vb` (nou; bug reparat); `src/KBot.Controls/KBotDataColumn.vb` — bug `HeaderText` reparat; `src/KBot.Controls/KBotDataRow.vb` — `Item` nu mai murdărește; documentație de contract; `src/KBot.Controls/KBotDataView.vb` — `ClearDirty`, `GetDirtyRows` redocumentat, `WireEditors`; `src/KBot.Controls/KBotDataView.Input.vb` — F2, dublu-click => editare; auto-commit la mutare; `src/KBot.Controls/KBotDataView.Layout.vb` — auto-commit la derulare; `tests/KBot.Controls.Tests/KBotDataViewEditingTests.vb` (nou, 15 teste) + 2 teste rescrise + 1 test nou de regresie pe `HeaderText`
 
 ### Rezultate teste
 
@@ -315,24 +277,20 @@ Ambele sunt reparate cu `Me.` explicit (+ comentariu de avertizare) și au acum 
 
 ### Rămas neverificat / amânat (starea finală a slice-ului)
 
-- **Verdictul vizual/interactiv uman NU a fost dat — pentru NICIUNA dintre cele șase treceri.** Nimeni n-a rulat încă harness-ul. Ce NU poate fi verificat headless: fluența derulării, traseul WinForms tastă→handler, drag-ul de redimensionare, poziționarea reală a editorului flotant peste celulă, focusul și select-all-ul, și cum arată efectiv culorile. Bug-ul cu antetele gol arată exact cât de necesară e proba vizuală: testele nu-l puteau prinde. **Rulează:** DevHarness (pornire Debug → «Nu») → Controls/UI → «KBotDataView — virtualizare
-  + temă (5.000 × 20)».
+- **Verdictul vizual/interactiv uman NU a fost dat — pentru NICIUNA dintre cele șase treceri.** Nimeni n-a rulat încă harness-ul. Ce NU poate fi verificat headless: fluența derulării, traseul WinForms tastă→handler, drag-ul de redimensionare, poziționarea reală a editorului flotant peste celulă, focusul și select-all-ul, și cum arată efectiv culorile. Bug-ul cu antetele gol arată exact cât de necesară e proba vizuală: testele nu-l puteau prinde. **Rulează:** DevHarness (pornire Debug → «Nu») → Controls/UI → «KBotDataView — virtualizare + temă (5.000 × 20)».
 - **Neimplementat din plan** (asumat, nu uitat): intrarea în editare prin simpla TASTARE a unui caracter (F2 și dublu-click funcționează); hover/pressed pe celulele `Button`; textul procentual pe `ProgressBar`.
 - `KBotDataColumn.Frozen` rămâne metadata neutilizată — mecanismul autoritar e `FrozenColumnCount`. De curățat sau de cablat.
 - În afara scopului v1 (conform planului): scrollbar-uri tematizate (rămân cele WinForms standard — singura gaură de tematizare), sortare/filtrare în antet, selecție multiplă, reordonare de coloane prin drag, orice fel de data binding.
 - Urmează: slice-ul **Sumar**, care consumă grila în mod read-only (`ReadOnlyGrid = True`).
 
-<a id="slice-0010-07"></a>
-
-## SLICE-0010-07 — KBotDataView: proprietatea ScrollByColumn
+## SLICE-0010-07 — KBotDataView: proprietatea ScrollByColumn <a id="slice-0010-07"></a>
 
 Adăugare cerută după închiderea slice-ului 0010: o proprietate `ScrollByColumn` care face derularea ORIZONTALĂ să avanseze o coloană întreagă odată, în loc de pixel cu pixel.
 
 ### Ce s-a schimbat și de ce
 
 - **`Public Property ScrollByColumn As Boolean`** (implicit False), în partiala `.Layout`. Când e True, valoarea barei orizontale se **aliniază la marginile coloanelor** din banda derulată. Nu atinge derularea verticală — aceea e deja „pe rând”, prin virtualizare.
-- **Aliniere în DIRECȚIA mișcării** (`SnapHScrollToColumn` / `SnappedHValue`): la creștere se urcă la marginea următoare (`CeilToColumnStart`), la scădere se coboară la cea precedentă (`FloorToColumnStart`). Așa un pas mic — o săgeată, o rotiță — tot avansează o coloană întreagă, în loc să se lipească de aceeași margine (capcana unei alinieri „la cea mai apropiată”). Valoarea aliniată e limitată la maximul util al barei (`Maximum − LargeChange
-  + 1`), deci ultimele coloane rămân accesibile chiar dacă capătul nu cade pe o margine.
+- **Aliniere în DIRECȚIA mișcării** (`SnapHScrollToColumn` / `SnappedHValue`): la creștere se urcă la marginea următoare (`CeilToColumnStart`), la scădere se coboară la cea precedentă (`FloorToColumnStart`). Așa un pas mic — o săgeată, o rotiță — tot avansează o coloană întreagă, în loc să se lipească de aceeași margine (capcana unei alinieri „la cea mai apropiată”). Valoarea aliniată e limitată la maximul util al barei (`Maximum − LargeChange + 1`), deci ultimele coloane rămân accesibile chiar dacă capătul nu cade pe o margine.
 - **Aliniere pe două căi, după cum se derulează:**
   - *Săgeți / șină / rotiță* — trec prin `ValueChanged` și se aliniază DIRECȚIONAL (ceil la creștere, floor la scădere), cu gardă de reintrare `_snappingHScroll`.
   - *Tragerea thumb-ului cu mouse-ul* — se ascultă evenimentul `ScrollBar.Scroll` (care spune CUM se derulează, spre deosebire de `ValueChanged`). Cât timp `ThumbTrack`, derularea e **liberă** (pixel cu pixel), altfel alinierea ar smuci thumb-ul înapoi la fiecare mișcare a mouse-ului („se refresh-uia oribil, de parcă nu se decidea ce coloană să arate”). Alinierea se face DOAR la `EndScroll` (eliberare), la marginea cea mai APROPIATĂ.
@@ -342,15 +300,12 @@ Adăugare cerută după închiderea slice-ului 0010: o proprietate `ScrollByColu
 
 ### Fișiere atinse
 
-- `src/KBot.Controls/KBotDataView.Layout.vb` — proprietatea + mecanica de aliniere.
-- `tests/KBot.Controls.Tests/KBotDataViewScrollByColumnTests.vb` (nou, 7 teste).
-- `src/KBot.DevHarness/Internal/DataViewHarnessForm.vb` + `.Designer.vb` — checkbox «Derulare pe coloană» care comută proprietatea, ca proba vizuală să o poată exercita.
+`src/KBot.Controls/KBotDataView.Layout.vb` — proprietatea + mecanica de aliniere. `tests/KBot.Controls.Tests/KBotDataViewScrollByColumnTests.vb` (nou, 7 teste). `src/KBot.DevHarness/Internal/DataViewHarnessForm.vb` + `.Designer.vb` — checkbox «Derulare pe coloană» care comută proprietatea, ca proba vizuală să o poată exercita.
 
 ### Rezultate teste
 
 - `dotnet build src/KBot.Controls` și `src/KBot.DevHarness` — **0 warnings / 0 errors**.
-- `KBot.Controls.Tests` — **111 passed / 0 failed** (12 pentru `ScrollByColumn`: 7 direcționale
-  + 5 pentru tragerea thumb-ului — liberă în timpul tragerii, „nearest” la eliberare, inertă când proprietatea e off, iar săgețile rămân direcționale după eliberare). Tragerea se simulează prin `BeginHorizontalThumbDrag`/`EndHorizontalThumbDrag` (Friend) — evenimentul `Scroll` nu se poate ridica headless.
+- `KBot.Controls.Tests` — **111 passed / 0 failed** (12 pentru `ScrollByColumn`: 7 direcționale + 5 pentru tragerea thumb-ului — liberă în timpul tragerii, „nearest” la eliberare, inertă când proprietatea e off, iar săgețile rămân direcționale după eliberare). Tragerea se simulează prin `BeginHorizontalThumbDrag`/`EndHorizontalThumbDrag` (Friend) — evenimentul `Scroll` nu se poate ridica headless.
 - Grila de test e fixată pe dimensionare MANUALĂ (`AutoSizeColumnsMode = None`, `ColumnFillMode = None`) ca marginile de coloană să fie deterministe (5 × 100px => marginile 0/100/200/300/400, maximul util 300). Acoperit: implicit = pixel; creștere => marginea următoare; scădere => marginea precedentă; un pas mic tot avansează o coloană; alinierea nu depășește maximul util; activarea aliniază offset-ul curent; o poziție deja pe margine nu se mișcă.
 
 ### Notă de mediu

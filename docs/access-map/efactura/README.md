@@ -6,7 +6,7 @@ Relationship maps for rebuilding the E-Factura feature of Avacont.accdb in K-BOT
 |---|---|
 | [00-overview.md](00-overview.md) | what the feature is, the two flows (received / issued invoices), storage map. **Start here.** |
 | [forms.md](forms.md) | the 21 forms, the 7 outside forms they touch, navigation entry points and form/table access markers |
-| [forms/](forms/) | form records: properties, sections, controls with position / binding / events and handler dependencies; three PDF viewers share a page |
+| [forms/](forms/) | form records: properties, sections, controls with position / binding / events and handler dependencies; three PDF viewers share a page; EF_F / EF_F_inlucru share a variant record |
 | [data-model.md](data-model.md) | the e-invoice tables: fields, indexes, relations, which database they live in, who reads / writes |
 | [shared-tables.md](shared-tables.md) | the tables from the wider system that the e-invoice screens read |
 | [queries.md](queries.md) | the 43 queries in scope: what they read / write, and their full SQL |
@@ -34,11 +34,11 @@ Ignore everything named `in_lucru`, `old` or `copy` (and the `_` prefix: `_MF201
 
 ## Form-page conventions
 
-These conventions apply to the 21 form records (19 pages after grouping the three PDF viewers); every record retains its source filename, source character count and raw-export path.
+These conventions apply to the 21 form records (18 pages after grouping the three PDF viewers and the EF_F pair); every record retains its source filename, source character count and raw-export path.
 
 Units are twips (1 inch = 1440). `Parent` is the tab page or group a control sits in, or - for a label - the control it is attached to. Positions are relative to the section that holds the control; `LayoutCached*` values are used when present.
 
-The exact RecordSource SQL is kept once in the page's Data section; its properties row links there when it previously repeated the same SQL. Different SQL, bindings, controls and event rows are not deduplicated across forms.
+The exact RecordSource SQL is kept once in the page's Data section; its properties row links there when it previously repeated the same SQL. Different SQL, bindings, controls and event rows remain explicit per form; the EF_F_inlucru record replaces only named cells/rows of EF_F and inherits identical ones.
 
 ### Module declarations
 

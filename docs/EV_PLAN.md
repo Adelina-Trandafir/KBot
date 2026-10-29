@@ -13,7 +13,7 @@ Unde codul diferă de plan, hotărăște codul:
 
 Facturile primite din K-BOT (E-Factura › cumpărare) trebuie să ajungă în Vercon, ca Administratorul să le poată prelua într-un NIR. **Contabilul decide în K-BOT** dacă o factură merge la Vercon; Administratorul nu primește tot, ci doar ce a trimis contabilul.
 
-**Contabilul poate alege, dacă vrea, contul Vercon pentru fiecare linie a facturii.** Conturile sunt cele existente în Vercon, din toate subunitățile (deci un arbore: gestiune → conturi). Selecția se face în DGV, ca în asocierea facturilor cu recepțiile (KE11): linii grupate pe factură, valoarea se alege pe linie sau o dată pe rândul de grupare (`GroupHeaderCombo`), iar alegerea de pe grupare se scrie pe toate liniile facturii.
+Conturile opționale pe linii și pe gruparea facturii sunt definite în D1 și EV03; referința DGV este KE11 (`GroupHeaderCombo`).
 
 Planul Vercon (`VERCON/PLAN_IMPLEMENTARE.md`, N13 / D11) a lăsat integrarea cu E-Factura pentru „un pas separat, la cerere”. Aceasta este cererea; la implementare se corectează și documentele care spun „e-Factura exclusă”.
 
@@ -117,15 +117,15 @@ Ordinea: EV01 → EV02 → EV03 (de aici se poate trimite) → EV04 → EV05. EV
 - Fără cont (NULL), Administratorul alege contul după produs, ca azi.
 - Conturile inactivate între trimitere și preluare se semnalează în Vercon („contul nu mai e activ”) și Administratorul alege altul.
 - Gestiunea nu mai e o alegere separată: rezultă din contul fiecărei linii, la preluare, prin editorul existent.
-- Liniile cu **conturi diferite din aceeași gestiune** ajung într-un singur NIR (numărul editabil); numai conturile din gestiuni diferite dau NIR-uri diferite, create în aceeași salvare. Deci cazul obișnuit — o factură, o gestiune, câteva conturi — produce un singur NIR.
+- Aceeași gestiune → un NIR, număr editabil; gestiuni diferite → NIR-uri distincte într-o salvare atomică, conform editorului descris în §3–4.
 
 ## 7. Riscuri
 
 - **Fișiere deja modificate în lucru** (`doc_routes.py`, `receipt_context.py`, `docs.js`, `receipt-context.js` și altele apar modificate în git). EV04/EV05 ating exact zona NIR; înainte de a le porni se citește ce e deja în lucru, ca să nu se suprapună.
 - **Control nou (`KBotTreeComboBox`).** Cel mai mare element nou al planului pe partea K-BOT; nu există nimic asemănător în `KBot.Controls`. Locul de risc: popup-ul cu arbore în celula DGV și pe rândul de grupare (ca și combo-ul plat din KE11, ne-văzut la acea vreme pe ecran).
-- **MF/OI în arbore (D8).** Un NIR de MF/OI cere date în plus (clasificare MF, deținător OI). Precompletarea aduce doar furnizor/factură/linii; restul îl completează Administratorul. De verificat la EV04 că „Adăugare NIR” acceptă fluxul din coadă și pentru MF/OI (editorul lor are reguli proprii: `mf.py`, `oi.py`).
+- **MF/OI (D8):** precompletarea aduce numai furnizor/factură/linii; Administratorul adaugă clasificarea MF/deținătorul OI. EV04 trebuie să probeze regulile editorilor `mf.py` / `oi.py` în fluxul din coadă.
 - **Linii fără produs.** Liniile facturii sunt text liber; contul din K-BOT restrânge lista de produse, dar nu alege produsul. Sugestiile automate vin abia în EV06.
-- **Total exact.** Se trimit toate liniile (D10) și valoarea declarată pe NIR este totalul facturii (`Total`), deci regula „total egal cu valoarea facturii” se aplică neschimbat, inclusiv când editorul împarte factura pe mai multe NIR-uri. La facturile cu reducere pe toată factura (KE_PLAN §7.1) suma liniilor nu dă `Total`; diferența se arată, nu se ascunde.
+- **Total exact:** D10 și §4 păstrează totalul global chiar la mai multe NIR-uri. La reduceri pe toată factura (KE_PLAN §7.1), suma liniilor poate diferi de `Total`; diferența se arată, nu se ascunde.
 - **Serverul și DDL-ul nu rulează singure.** Nimic nu se deploiază de către asistent; DDL-ul îl rulează operatorul.
 
 ## 8. Rămas de hotărât

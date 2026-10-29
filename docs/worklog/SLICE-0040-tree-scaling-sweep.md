@@ -4,9 +4,9 @@
 
 «Analizează arborele și asigură-te că sistemul de scalare e folosit peste tot. Peste tot!»
 
-Feliile 0035 (măsurile proprii: `ItemHeight`, `HeaderHeight`, iconițe) și 0039 (marginile din `.Paddings`) scalaseră **o parte** din geometria lui `AdvancedTreeControl`. Felia asta a fost o trecere sistematică prin toate cele 31 de fișiere ale familiei `Tree/`, căutând ce mai citea încă pixeli bruți acolo unde ar fi trebuit să citească o valoare scalată.
+0035 scalase măsurile proprii (`ItemHeight`, `HeaderHeight`, iconițe), iar 0039 marginile `.Paddings`. 0040 citește sistematic toate cele 31 fișiere `Tree/`, căutând pixeli bruți în `AdvancedTreeControl`.
 
-Metoda de căutare, ca s-o poată repeta cineva: numărul de apeluri `SX(`/`SY(`/`ScaleDpi(` pe fișier. Erau **14** în `.Properties`, `.Paddings` și `.Dpi` — și **0 sau 1** în TOATE fișierele de pictură, de așezare și de hit-test. Adică exact pe dos: scara era bine definită și aproape nefolosită de cei care desenează.
+Metodă reproductibilă: numărarea apelurilor `SX(`/`SY(`/`ScaleDpi(` pe fișier. Erau 14 în `.Properties`/`.Paddings`/`.Dpi`, dar numai 0 sau 1 în pictură/așezare/hit-test: scara era definită și aproape nefolosită.
 
 ## Ce era stricat (verificat, citind fișierele)
 

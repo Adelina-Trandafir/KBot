@@ -31,7 +31,7 @@ Deciziile lui, luate în timpul feliei:
 
 Între timp, niciun `.Designer.vb` nu scria fontul formularului (o singură excepție, `FrmNodeDebug.Designer.vb:127`), deci suprafața de proiectare din Visual Studio măsura cu fontul implicit WinForms, `Segoe UI` 9.
 
-Toate formularele sunt `AutoScaleMode.Font`. Asta înseamnă că WinForms compară fontul de pe formular cu perechea `AutoScaleDimensions` scrisă în designer și înmulțește CU RAPORTUL fiecare dreptunghi de copil și `ClientSize`-ul formularului. Fontul nu e o podoabă: e o jumătate dintr-o măsurătoare, cealaltă jumătate fiind fișierul de designer.
+Toate formularele folosesc `AutoScaleMode.Font`: WinForms compară fontul cu `AutoScaleDimensions` și aplică raportul dreptunghiurilor copiilor și `ClientSize`. Fontul și ștampila designerului sunt cele două părți ale măsurătorii.
 
 Cele două jumătăți nu se potriveau. Măsurat pe ecranul operatorului (150%):
 
@@ -46,7 +46,7 @@ Peste asta, `Segoe UI Variable Text` e un font de Windows 11: pe Windows 10 GDI 
 
 **Nu era defect, contrar primei impresii:** cele trei valori diferite de `AutoScaleDimensions` din soluție. Fiecare e corectă pentru spațiul în care i-au fost scrise coordonatele — vezi §2.3.
 
-**Sprijin pe care planul nu-l avea:** Calibri era DEJA fontul dominant în designere, la nivel de control — **242** `New Font("Calibri"…)` față de 28 `"Segoe UI"`, 11 `"Consolas"` și 8 `"Segoe UI Semibold"`. Fontul ambiental era singurul care nu se potrivea cu restul. Felia nu introduce Calibri, ci îl aduce și pe cel ambiental acolo unde era deja tot restul.
+**Calibri domina deja controalele din designere:** 242 `New Font("Calibri"…)`, față de 28 `"Segoe UI"`, 11 `"Consolas"`, 8 `"Segoe UI Semibold"`. Felia aliniază fontul ambiental cu acestea, fără a introduce o alegere nouă.
 
 ---
 
@@ -59,7 +59,7 @@ Două drumuri independente, tocmai ca să nu depindă răspunsul de amintirea cu
 * **(A)** `ContainerControl.CurrentAutoScaleDimensions` pe un `Form` adevărat cu `AutoScaleMode.Font` — chiar proprietatea pe care o citește serializatorul designerului.
 * **(B)** o reimplementare GDI (`CreateCompatibleDC` + `GetTextMetricsW`), parametrizată după DPI, ca să poată da numere pentru 96 / 120 / 144 fără să se mute cineva pe alt monitor.
 
-**O capcană, meritată de reținut:** `CurrentAutoScaleDimensions` se calculează și se REȚINE în clipa în care se atribuie `AutoScaleMode`, iar o schimbare ulterioară de font NU o invalidează. Prima trecere a măsurat fontul implicit de trei ori și a dat `(10, 25)` pentru trei fonturi diferite. **Fontul întâi, modul după.**
+**Fontul înaintea modului:** `CurrentAutoScaleDimensions` se calculează/cachează la atribuirea `AutoScaleMode`; schimbarea ulterioară a fontului nu o invalidează. Prima probă a măsurat implicitul de trei ori: `(10, 25)` pentru trei fonturi.
 
 Pentru numerele de la 96 dpi, procesul a fost pornit cu `HighDpiMode.DpiUnaware`, ceea ce îl face să creadă că e la 96 dpi și dă valori de 100% adevărate pe un ecran la 150%. Verificarea e încorporată: `Segoe UI` 9 TREBUIE să iasă `(7F, 15F)`, valoarea deja aflată în unsprezece fișiere. A ieșit.
 
@@ -82,7 +82,7 @@ Cele două drumuri sunt de acord, la 144 dpi și la 96 dpi:
 
 `Calibri` s-a rezolvat la `"Calibri"` pe mașina operatorului (nu substituit).
 
-**Reimplementarea GDI e greșită la lățime** și nu se folosește pentru nimic din ce contează: la 96 dpi dă 6 pentru `Segoe UI` acolo unde API-ul (și convenția universală WinForms) dă 7. Cauza e care din două formule de lățime folosește WinForms — `tmAveCharWidth`, sau media rotunjită a unui șir de 52 de litere. Pentru Calibri cele două formule dau același număr la orice DPI, deci nu schimbă nimic; dar numerele reținute mai sus sunt cele de la drumul (A), cel autoritar.
+**GDI greșește lățimea**, deci nu este autoritar: la 96 dpi dă 6 pentru `Segoe UI`, față de 7 din API/convenția WinForms. Diferența provine din formula WinForms: `tmAveCharWidth` sau media rotunjită a 52 de litere. La Calibri formulele coincid pentru orice DPI. Tabelul păstrează numerele metodei (A).
 
 ### 2.3 Ce s-a aflat despre ștampilele EXISTENTE
 
@@ -98,7 +98,7 @@ Drumul (B), rulat pe mai multe DPI, explică fiecare valoare din soluție. Toate
 
 ### 2.4 Un defect în planul inițial, prins de măsurătoare
 
-Planul cerea ca pasul 4 să înlocuiască FIECARE `AutoScaleDimensions` cu `CALIBRI_9_AT_150`. Aplicat orbește, asta le-ar fi spus celor 11 fișiere scrise la 96 dpi că sunt în spațiul de 150%: pe ecranul operatorului ar fi fost desenate cu factorul 1 în loc de ~1,5, adică **micșorate la circa două treimi**. Aceeași problemă, mai mică, pentru `CertificateSelectionForm` la 125%.
+Înlocuirea tuturor ștampilelor cu `CALIBRI_9_AT_150`, cerută de plan, ar trata cele 11 fișiere @96 dpi ca @150: factor 1 în loc de ~1,5, micșorare la circa două treimi. `CertificateSelectionForm` @125% ar avea aceeași problemă, mai mică.
 
 Corectarea aprobată — o hartă pe GRUP, după valoarea de acum:
 
@@ -163,7 +163,7 @@ Mesajul către operator, arătat o singură dată la pornire din `Program.Main` 
 * `KBotShellForm` — **fără constructor propriu**, moștenește de la `KBotThemedForm`. Planul cerea unul pe fiecare; a doua scriere ar fi spus același lucru de două ori și ar fi invitat la derivă.
 * `KBotThemedUserControl` (nou) — un `UserControl` e `ContainerControl`, deci are ștampila LUI și rulează `PerformAutoScale` singur, independent de formularul care-l găzduiește. Fără fontul din constructor se măsura de două ori: o dată la construire, pe fontul implicit, și încă o dată când era adăugat pe un formular cu alt font.
 
-Momentul e toată povestea: constructorul clasei de bază rulează ÎNAINTEA celui derivat, iar acela cheamă `InitializeComponent`, unde se atribuie `AutoScaleDimensions` și `AutoScaleMode.Font`. Numai așa formularul poartă deja fontul corect când e măsurat. Bonus: Visual Studio instanțiază tipul de BAZĂ ca să deseneze un formular derivat, deci și suprafața de proiectare vede acum Calibri.
+Constructorul de bază pune fontul înainte de `InitializeComponent` din clasa derivată, deci înainte de `AutoScaleDimensions` / `AutoScaleMode.Font`. Visual Studio instanțiază tot tipul de bază pentru formularul derivat: și designerul vede Calibri.
 
 **26 de `.Designer.vb`** au trecut de la `UserControl` la `KBotThemedUserControl` — 25 în `KBot.App` (`ForexeFooterView`, cele opt vederi, cele unsprezece pagini DDF, cele cinci pagini ORD) și `KBotRichTextEditor` în `KBot.Controls`.
 
@@ -190,7 +190,7 @@ Valorile se scriu oricum, ca intenție declarată a schemei; comportamentul e id
 * Bara de titlu — rând bifabil «Font din temă», sub cursorul «Mărime text» și deasupra separatorului care precedă schemele. Bifa e desenată (16×16, în culoarea textului din schema activă) fiindcă `CustomPopupItem` n-are stare de bifare: are exact trei roluri, normal / separator / cursor. Stins, rândul n-are imagine, iar slotul rămâne gol — alinierea coloanei de pictograme nu se strică.
 * Cursorul de mărime se ascunde pe `_showTextScaleSlider AndAlso ThemeManager.WritesFormFont`: mărirea textului trece tocmai prin scrierea fontului pe formular.
 
-**La ce e bun un comutator care nu se vede.** Fontul fiind același în ambele locuri, scrierea temei e un no-op și stinsul nu mișcă nimic. Asta E treaba lui: îi dă operatorului cum să PROBEZE că nu mișcă nimic, și o ieșire dintr-un clic dacă vreo mașină ajunge totuși să măsoare Calibri altfel — caz în care fereastra s-ar redimensiona la comutarea temei, iar cauza ar fi altfel imposibil de arătat cu degetul.
+**Rolul comutatorului.** Cu același font în ambele locuri, scrierea temei este un no-op. Operatorul poate proba asta și o poate opri dintr-un clic dacă o mașină măsoară Calibri diferit; redimensionarea la schimbarea temei ar indica astfel cauza.
 
 ---
 
@@ -256,7 +256,7 @@ Cerut de operator: editoarele DDF și ORD pornesc **cât fereastra principală �
 
 `StartPosition = CenterScreen` era deja pe toate trei, și e corect — ce lipsea era mărimea. `ClientSize` a trecut de la `1300×1000` la `1641×1000` pe `DdfEditForm` și `OrdEditForm`, adică fix mărimea lui `MainForm`.
 
-**Lărgirea e sigură prin construcție, nu prin noroc.** Ambele au `tlyMain` cu o singură coloană `Percent 100` andocată `Fill`, iar antetul (`tlyAntet`) are șapte coloane `Absolute` urmate de o a opta `Percent 100`. Cei 341px în plus se duc integral în acea ultimă coloană — niciun câmp nu se mută și niciunul nu se întinde.
+**Distribuția lățimii.** Ambele formulare au `tlyMain` cu o coloană `Percent 100`, andocată `Fill`; `tlyAntet` are șapte coloane `Absolute` și ultima `Percent 100`. Cei 341 px suplimentari intră în ultima coloană, fără mutarea sau întinderea câmpurilor.
 
 ---
 

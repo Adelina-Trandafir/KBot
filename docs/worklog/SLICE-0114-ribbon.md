@@ -2,25 +2,7 @@
 
 Istoric 13–17.10.2026: etapa inițială și 01…18. 02 scoate «Ajutor», 03 înlocuiește butonul fixat contextual cu RightGroup, 06/07 adaugă FormGroup și separă comenzile machetei de cele ale vederii. Descărcarea Extrase trece prin etapele 04/05/08/09, iar 15/16 mută comenzile vederilor în ribbon. 18 înlocuiește crearea imediată a câmpurilor din 01 cu crearea la primul layout. Etapele E-Factura 19/21…24 sunt în [istoricul lor](SLICE-0114-19-efactura-vanzare-fara-luna-si-randuri-taiate.md), 20 în [istoricul ferestrelor](SLICE-0113-fereastra-principala-machete-pagini.md#slice-0114-20); 25…27 rămân distincte. 0114-24 — ribbon, mai jos, înlocuiește lipsa panoului temporar și gestul inițial de desfacere. Stările sunt istorice. Probe identice și limite copiate între subetape au mai jos o singură definiție, fără extinderea vreunei confirmări vizuale.
 
-- [0114](#slice-0114)
-- [0114-01](#slice-0114-01)
-- [0114-02](#slice-0114-02)
-- [0114-03](#slice-0114-03)
-- [0114-04](#slice-0114-04)
-- [0114-05](#slice-0114-05)
-- [0114-06](#slice-0114-06)
-- [0114-07](#slice-0114-07)
-- [0114-08](#slice-0114-08)
-- [0114-09](#slice-0114-09)
-- [0114-10](#slice-0114-10)
-- [0114-11](#slice-0114-11)
-- [0114-12](#slice-0114-12)
-- [0114-13](#slice-0114-13)
-- [0114-14](#slice-0114-14)
-- [0114-15](#slice-0114-15)
-- [0114-16](#slice-0114-16)
-- [0114-17](#slice-0114-17)
-- [0114-18](#slice-0114-18)
+[0114](#slice-0114) · [0114-01](#slice-0114-01) · [0114-02](#slice-0114-02) · [0114-03](#slice-0114-03) · [0114-04](#slice-0114-04) · [0114-05](#slice-0114-05) · [0114-06](#slice-0114-06) · [0114-07](#slice-0114-07) · [0114-08](#slice-0114-08) · [0114-09](#slice-0114-09) · [0114-10](#slice-0114-10) · [0114-11](#slice-0114-11) · [0114-12](#slice-0114-12) · [0114-13](#slice-0114-13) · [0114-14](#slice-0114-14) · [0114-15](#slice-0114-15) · [0114-16](#slice-0114-16) · [0114-17](#slice-0114-17) · [0114-18](#slice-0114-18)
 
 ## SLICE-0114 - Ribbonul ferestrei principale (KBotRibbon) si butoanele fixate «Ajutor» / «Inchide» (13.10.2026) <a id="slice-0114"></a>
 
@@ -35,11 +17,8 @@ Construit si probat in `KBOT_TEST`, adus in `KBOT\src` la 13.10.2026. Istoria: `
    - **E-Factura**: vezi 0119;
    - **Configurari**: Configurare (Jurnal activitate, Configurare K-BOT, Istoric versiuni), Unitate (0119), Administrare (Mesaje (catalog), Capturi pentru ajutor, Designer tutoriale; ascunse in afara Debug / modului capturi).
    Un clic ajunge la acelasi handler pe care il folosea meniul (`KbotForm.RunMenuEntry` -> `MenuNou_ItemClicked`).
-   Ce se vede doar uneori urmeaza regulile meniului vechi: `KbotForm.MirrorMenuTo` aplica `MenuNou_Opening` si
-   copiaza vizibilitatea fiecarui rand cu aceeasi cheie (plus textul si culoarea randului necorelatelor);
-   `MenuStateChanged` (ridicat si la sfarsitul `MarkUncorrelated`) si `AppSettings.Changed` declanseaza copierea.
-   Intrarile care lucreaza pe lista angajamentelor (angajament_nou, angajament_forexe, operatiuni_necorelate) aduc
-   intai lista pe ecran (`ShowShell`).
+   Ce se vede doar uneori urmeaza regulile meniului vechi: `KbotForm.MirrorMenuTo` aplica `MenuNou_Opening` si copiaza vizibilitatea fiecarui rand cu aceeasi cheie (plus textul si culoarea randului necorelatelor); `MenuStateChanged` (ridicat si la sfarsitul `MarkUncorrelated`) si `AppSettings.Changed` declanseaza copierea.
+   Intrarile care lucreaza pe lista angajamentelor (angajament_nou, angajament_forexe, operatiuni_necorelate) aduc intai lista pe ecran (`ShowShell`).
 4. **Butoane fixate** (`PinnedButtons`): in dreapta benzii de file, vizibile pe orice fila si cu ribbonul strans.
    - **«Inchide»** (`pagina_inchide`, `AvacontMain.CloseCurrent`): inchide macheta de pe ecran; din lista angajamentelor revine la «Acasa» (lista nu se distruge, doar se ascunde). Nu exista pe pagina «Acasa»; aplicatia se inchide doar din X-ul ferestrei. Butonul e mare, in dreapta panoului; cu ribbonul strans se micsoreaza in banda de file (`KBotRibbonButton.DrawSmall`).
    - **«Ajutor»** (`ajutor`, resursa `ajutor_128.png`): fara macheta deschisa -> fereastra de ajutor ca pagina (`HelpService.ShowHelpPage`, macheta `ajutor` in registru); cu o macheta sau lista angajamentelor pe ecran -> meniul «?» complet al ei (cautare, ecranul acesta, tururi, tutoriale), ancorat sub buton (`KBotRibbon.ButtonScreenBounds`). `KBotHelp.RequestMenu` / `IKBotHelpProvider.ShowHelpMenu` primesc `k_withTours` (False = fara tururi si tutoriale); ribbonul nu il mai foloseste, parametrul ramane.
@@ -48,8 +27,7 @@ Construit si probat in `KBOT_TEST`, adus in `KBOT\src` la 13.10.2026. Istoria: `
 6. **Decizie: portocaliul a fost doar pentru test.** Accentele portocalii din `KBOT_TEST` (`BuiltInSchemes.vb`, `ButtonStyles.ApplyPrimary`) NU au fost aduse in `KBOT`; temele raman cele albastre.
 
 ### Fisiere
-- NOU: `src/KBot.Controls/Ribbon/KBotRibbon.vb`, `KBotRibbonItems.vb`, `src/KBot.App/Resources/ajutor_128.png`.
-- Modificate: `src/KBot.App/AvacontMain.vb` + `.Designer.vb` (ribbonul, `Ribbon_ItemClicked`, `SyncRibbon`, `CloseCurrent`, `UpdateCloseButton`, `ShowRibbonHelp`), `KbotForm.Host.vb` (`RunMenuEntry`, `MirrorMenuTo`, `MenuStateChanged`), `KbotForm.CabNotes.vb` (o linie), `KBot.Theming/KBotHelp.vb`, `Help/HelpService.vb` (`k_withTours`, `ShowHelpPage`, `PopupHomeRows`), `My Project/Resources.resx` + `Resources.Designer.vb`, `KBot.Common/AppSettings.vb` (`RibbonCollapsed`).
+NOU: `src/KBot.Controls/Ribbon/KBotRibbon.vb`, `KBotRibbonItems.vb`, `src/KBot.App/Resources/ajutor_128.png`. Modificate: `src/KBot.App/AvacontMain.vb` + `.Designer.vb` (ribbonul, `Ribbon_ItemClicked`, `SyncRibbon`, `CloseCurrent`, `UpdateCloseButton`, `ShowRibbonHelp`), `KbotForm.Host.vb` (`RunMenuEntry`, `MirrorMenuTo`, `MenuStateChanged`), `KbotForm.CabNotes.vb` (o linie), `KBot.Theming/KBotHelp.vb`, `Help/HelpService.vb` (`k_withTours`, `ShowHelpPage`, `PopupHomeRows`), `My Project/Resources.resx` + `Resources.Designer.vb`, `KBot.Common/AppSettings.vb` (`RibbonCollapsed`).
 
 ### Teste / verificare
 - Build-ul unirii: 0 erori, 0 avertismente (operator, MERGE_NOTES). Nimic rulat in aceasta sesiune.
@@ -67,8 +45,8 @@ Construit si probat in `KBOT_TEST`, adus in `KBOT\src` la 13.10.2026. Istoria: `
 Sub-slice of 0114 (the slice that made `KBotRibbon`), asked by the operator: changes to the menu go in the slice that made it. The E-Factura side of the same request is [00EF-30](SLICE-00EF-18-primite-client.md#slice-00EF-30).
 
 ### What changed and why
-1. **New: `KBotRibbonField`** (`KBot.Controls/Ribbon/KBotRibbonItems.vb`): a small input in a group, authored in the designer (Group -> Fields). Two kinds: **Combo** (KBotComboBox, `Editable = False`: pick only, no typing) and **Text** (KBotTextBox: `PlaceholderText`, `MaxLength`, `DigitsOnly`). Own `Key`, `Width` (logical, 150), `Visible`, `Enabled`, tooltip. The value is read from code (`Text`, `SelectedIndex`); there is no event. `KBotRibbonFieldCollection` makes / drops the real control.
-2. **`KBotRibbon`**: `AttachField` / `DetachField` (the control is a child of the ribbon, not made at design time), layout = one column after the buttons of the group, a row each (three at most), `ApplyFieldControls` places and shows / hides them with the layout (hidden tab, folded ribbon, hidden field); a group with only a visible field is shown; `FindField`; `ValidateKeys` also checks the field keys; the tooltip component and the theme reach the field controls. The class summary no longer says «no child controls».
+1. **New `KBotRibbonField`** (`KBot.Controls/Ribbon/KBotRibbonItems.vb`), designer Group → Fields: **Combo** (`KBotComboBox`, `Editable = False`, selection only) or **Text** (`KBotTextBox`, `PlaceholderText`, `MaxLength`, `DigitsOnly`). Properties: `Key`, logical `Width` 150, `Visible`, `Enabled`, tooltip. Code reads `Text`/`SelectedIndex`; no event. `KBotRibbonFieldCollection` creates/removes the real control.
+2. **`KBotRibbon`:** `AttachField`/`DetachField` manage runtime child controls. Fields occupy a column after group buttons, maximum three rows. `ApplyFieldControls` positions/shows/hides for tab/collapse/field visibility; a visible field alone keeps its group visible. `FindField`, field keys in `ValidateKeys`, tooltips and theme are supported; «no child controls» is removed from the summary.
 3. **E-Factura tab** (`AvacontMain.Designer.vb`): «Cumparare» now stands BEFORE «Vanzare»; the button «Sincronizeaza facturi primite» and its two fields start hidden (`Visible = False`) and `AvacontMain.UpdatePrimiteSyncControls` shows them only while the page on screen is the received-invoices window (`PrimiteForm`); called from `UpdateCloseButton`, i.e. on every page change.
 
 ### Files touched
@@ -344,17 +322,11 @@ Cause: the generated designer code adds a field to the group BEFORE it sets the 
 
 ## Probe și limite comune — numai pentru etapele care trimit aici
 
-<a id="probe-b1"></a>
+**B1.** `dotnet build src/KBot.App/KBot.App.vbproj`: 0 warnings, 0 errors. Nothing run, nothing seen on screen. <a id="probe-b1"></a>
 
-**B1.** `dotnet build src/KBot.App/KBot.App.vbproj`: 0 warnings, 0 errors. Nothing run, nothing seen on screen.
+**U2.** Not seen on screen: layout of the two ribbon groups side by side, the footer popup position, the nav order. <a id="limita-u2"></a>
 
-<a id="limita-u2"></a>
-
-**U2.** Not seen on screen: layout of the two ribbon groups side by side, the footer popup position, the nav order.
-
-<a id="limita-u3"></a>
-
-**U3.** Not seen on screen: the new buttons in the view group, the popup of the document button (opens at the mouse), the fields in the ribbon, the tree rows of the issued invoices.
+**U3.** Not seen on screen: the new buttons in the view group, the popup of the document button (opens at the mouse), the fields in the ribbon, the tree rows of the issued invoices. <a id="limita-u3"></a>
 
 ## Trasabilitate ajutor păstrată din registru
 

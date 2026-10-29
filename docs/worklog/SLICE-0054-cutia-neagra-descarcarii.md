@@ -4,9 +4,7 @@ Etapele diagnostic → instrumentare → apelant → prima rulare/corecție sunt
 
 [0054-cutia](#slice-0054) · [0055-ingestia](#slice-0055)
 
-<a id="slice-0054"></a>
-
-## SLICE 0054 — cutia neagră a descărcătorului FOREXE
+## SLICE 0054 — cutia neagră a descărcătorului FOREXE <a id="slice-0054"></a>
 
 ### De ce
 
@@ -47,7 +45,7 @@ Deci: **descărcarea nu e stricată, e neterminată.** Pachetul ajunge pe disc �
 
 ### Ce s-a schimbat
 
-Felia 0054 nu leagă ingestia. Face lucrul care lipsea ca să se poată **vedea de la distanță ce a adus robotul**: o cutie neagră a descărcătorului, fiindcă rularea s-a făcut pe alt calculator (cel cu tokenul și cu FOREXE), iar aici nu se poate reproduce nimic.
+Felia 0054 instrumentează descărcarea pentru diagnostic la distanță: rularea era pe calculatorul cu tokenul și FOREXE, inaccesibil de aici. Ingestia rămâne nelegată la această etapă.
 
 1. **`ForexeRunDump` (clasă nouă)** — un folder per încercare de descărcare, sub `<WorkflowResults>\Runs\<stamp>_<operatie>_<cod>\`:
 
@@ -71,10 +69,7 @@ Politica de erori a cutiei negre: `Save` loghează și întoarce `Nothing` în l
 
 ### Fișiere atinse
 
-- `src/KBot.App/Forexe/ForexeRunDump.vb` — **nou** (`ForexeRunDump` + POCO-ul `ForexeRunInfo`).
-- `src/KBot.App/Forexe/ForexeController.vb` — jurnalul pe toate ramurile celor două descărcări, plus ajutorul `ScrieJurnal`.
-- `tests/KBot.App.Tests/ForexeRunDumpTests.vb` — **nou**, 5 teste.
-- `docs/worklog/KBOT_STATUS.md` — rândul 0054, numărul liber următor, firul deschis.
+`src/KBot.App/Forexe/ForexeRunDump.vb` — **nou** (`ForexeRunDump` + POCO-ul `ForexeRunInfo`). `src/KBot.App/Forexe/ForexeController.vb` — jurnalul pe toate ramurile celor două descărcări, plus ajutorul `ScrieJurnal`. `tests/KBot.App.Tests/ForexeRunDumpTests.vb` — **nou**, 5 teste. `docs/worklog/KBOT_STATUS.md` — rândul 0054, numărul liber următor, firul deschis.
 
 ### Rezultate de test
 
@@ -93,13 +88,11 @@ Politica de erori a cutiei negre: `Save` loghează și întoarce `Nothing` în l
 
 ---
 
-<a id="slice-0055"></a>
-
-## SLICE 0055 — ingestia legată de buton: `AsociereForm` devine și editorul propunerii
+## SLICE 0055 — ingestia legată de buton: `AsociereForm` devine și editorul propunerii <a id="slice-0055"></a>
 
 ### De ce
 
-Felia 0054 a stabilit de ce o reîmprospătare «reușită» nu scria nimic în tabele: descărcarea se oprea la fișierul local, iar treapta de scriere — rută, client, coordonator — exista întreagă, dar **fără niciun apelant**. Felia asta îi pune apelantul.
+Felia 0055 leagă apelantul lipsă diagnosticat în [0054](#slice-0054): pachetul local ajunge la conducta de scriere existentă.
 
 Pachetul descărcat pe 07.09.2026 (`AAB2MAACHXB`, trimis de operator) a fost verificat câmp cu câmp împotriva a ceea ce citește conducta din `PYTHON/routes/forexe/`: `TabelIndicatori_results` cu `BugetIndicator` imbricat, `TabelIstoric` cu `Timp` / `Utilizator` / `Descriere` / `Observatii`, `ListaReceptii_results` cu `Detaliu[]`, și scalarii `DescriereAngajament`, `StareAngajament`, `DataAngajament`, `DataInceputDerulare` în forma ZZ/LL/AAAA. **Tot ce cere serverul există în ce aduce robotul** — deci nu lipsea o mapare, lipsea legătura.
 
@@ -113,7 +106,7 @@ Pachetul descărcat pe 07.09.2026 (`AAB2MAACHXB`, trimis de operator) a fost ver
 
 #### 1. Editorul de asociere lucrează acum peste amândouă tablourile
 
-`AsociereForm` a primit un **al doilea constructor** și un mod. Alegerea (a operatorului, pusă explicit) a fost refolosirea editorului în locul unui al doilea formular: cele două tablouri descriu ACEEAȘI treabă, iar două desene ale aceleiași hotărâri ar aluneca unul față de altul și ar cere operatorului să învețe de două ori același lucru.
+La alegerea explicită a operatorului, `AsociereForm` primește un al doilea constructor și un mod: același editor servește ambele tablouri, evitând două interfețe ale aceleiași decizii.
 
 | | `ModAsociere.Oricand` | `ModAsociere.Propunere` |
 |---|---|---|
@@ -123,7 +116,7 @@ Pachetul descărcat pe 07.09.2026 (`AAB2MAACHXB`, trimis de operator) a fost ver
 | butonul se aprinde când | s-a schimbat ceva | **nu mai e niciun rând nehotărât** |
 | o închidere fără salvare pierde | niște corecturi | **toată descărcarea** |
 
-Cusătura e o singură funcție pură, `AsociereStare.DinPropunere` (în `KBot.Domain`, deci verificabilă fără fereastră): propunerea se aduce la forma pe care formularul o desenează deja. Indicele rândului călătorește pe locul lui `Idrh` — nu ca să se dea drept cheie, ci fiindcă editorul are nevoie doar de un număr **stabil** pe care să-și țină dicționarele, iar la salvare el pleacă înapoi ca `rand_istoric`, exact de unde a venit. Cele două numere nu se amestecă niciodată: un tablou vine sau dintr-o propunere, sau din bază.
+Funcția pură `AsociereStare.DinPropunere` (`KBot.Domain`, fără fereastră) adaptează propunerea la tabloul existent. Indicele rândului ocupă `Idrh` ca reper stabil pentru dicționarele editorului și revine la salvare ca `rand_istoric`, fără a deveni cheie. Tabloul provine exclusiv din propunere sau din bază; cele două numerotări nu se amestecă.
 
 Sugestia automată a serverului devine **poziția de plecare**, nu o hotărâre luată în locul omului: se vede pe ecran, iar apăsarea butonului o confirmă (F18 — trecerea automată poate fi și greșită, nu doar incompletă). Serverul ignoră complet automatul în faza a doua, deci ce nu pleacă din formular nu se aplică.
 

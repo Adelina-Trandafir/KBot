@@ -24,10 +24,7 @@ Nu sunt necesare modificări de schemă sau scripturi DDL/seed.
 
 ## Fișiere
 
-- `PYTHON/routes/adechit/report_identity.py` (nou), `reports.py`.
-- `PYTHON/routes/adechit/working_days.py`, `working_days_holidays.py`, `working_days_routes.py` (noi), `__init__.py`, `service.py`.
-- `PYTHON/static/js/adechit/working-days.js` (nou), `app.js`.
-- `PYTHON/static/css/adechit-working-days.css` (nou), `adechit.css`.
+`PYTHON/routes/adechit/report_identity.py` (nou), `reports.py`. `PYTHON/routes/adechit/working_days.py`, `working_days_holidays.py`, `working_days_routes.py` (noi), `__init__.py`, `service.py`. `PYTHON/static/js/adechit/working-days.js` (nou), `app.js`. `PYTHON/static/css/adechit-working-days.css` (nou), `adechit.css`.
 
 ## Limitele verificării
 

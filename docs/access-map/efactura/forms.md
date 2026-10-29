@@ -1,6 +1,6 @@
 # Forms in scope
 
-Form details are in `forms/`; the three PDF viewers share one page with per-form records. Captions and bindings summarize the source; read each form page for its controls and handlers. Entry-point rows group only identical Object/Opens or identical form-control targets; `#: name` preserves each original row position.
+Form details are in `forms/`; the three PDF viewers share one page with per-form records; EF_F and EF_F_inlucru share another, with explicit variant replacements. Captions and bindings summarize the source; read each form page for its controls and handlers. Entry-point rows group only identical Object/Opens or identical form-control targets; `#: name` preserves each original row position.
 
 | Form | Caption | Bound to | Subforms | Opens | Controls | Procs |
 |---|---|---|---|---|---|---|
@@ -17,7 +17,7 @@ Form details are in `forms/`; the three PDF viewers share one page with per-form
 | [`EFACTURA_UM`](forms/EFACTURA_UM.md) | FACTURI PRIMITE | `TC`, `EF_UM` (SQL) |  | `EFACTURA_ADD` | 9 | 3 |
 | [`EFACTURA_VANZATOR`](forms/EFACTURA_VANZATOR.md) |  | unbound |  |  | 19 | 4 |
 | [`EF_F`](forms/EF_F.md) | tmpDoc2017 | `tmpFacturi` |  | `EFACTURA_2025` | 21 | 14 |
-| [`EF_F_inlucru`](forms/EF_F_inlucru.md) | tmpDoc2017 | `EF_F` |  | `EFACTURA_2025` | 21 | 14 |
+| [`EF_F_inlucru`](forms/EF_F.md#ef-f-inlucru) | tmpDoc2017 | `EF_F` |  | `EFACTURA_2025` | 21 | 14 |
 | [`EF_P`](forms/EF_P.md) | tmpDoc2017 subform | `tmpDoc2017P` |  | `EFACTURA_2025` | 15 | 9 |
 | [`MF2019_Asoc_EF`](forms/MF2019_Asoc_EF.md) |  | `tmpNote_EFactura` |  | `MF_PDF_EF`, `MF2019`, `Note`, `_MF2019_Asoc_EF` | 25 | 5 |
 | [`MF_PDF_EF`](forms/EFACTURA_PDF.md#mf-pdf-ef) |  | `EF` (SQL) |  |  | 1 | 2 |

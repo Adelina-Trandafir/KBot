@@ -23,7 +23,7 @@ Plan: `PLAN_DesignerSurfaces.md` (lipit în sesiune). Planul presupunea felia **
 
 ### 1.1 `KBotNavList` (+ `KBotNavItem`, `KBotNavItemCollection`) — `KBot.Theming`
 
-Modelul de element a ieșit din control. Clasa privată imbricată `NavItem` a fost **înlocuită** cu `KBotNavItem` public, cu constructor fără parametri (cerința dialogului de colecție), toate cele șapte proprietăți atribuite `Category`/`Description`/`DefaultValue`, și `Bounds` lăsat **`Friend`** ca designer-ul să nu-l vadă și să nu-l serializeze (e stare derivată, recalculată la fiecare layout).
+Clasa privată imbricată `NavItem` devine `KBotNavItem` public, cu constructor fără parametri pentru dialogul colecției. Cele șapte proprietăți au `Category`/`Description`/`DefaultValue`; `Bounds` rămâne `Friend`, stare derivată recalculată la layout, neserializată de designer.
 
 `ToString()` e motivul pentru care **un singur tip** de element e suportabil: lista din stânga dialogului de colecție arată `ddf — "DDF" (Far)` pentru un buton și `──────── separator (Far) ────────` pentru un separator, deci diferența se vede dintr-o privire. Un element fără cheie apare ca `<fără cheie> — …`. (Decizia 1 din plan: două tipuri într-o colecție ordonată ar cere un editor de colecție PROPRIU, care cere un assembly de design-time — în afara scopului.)
 
@@ -36,29 +36,29 @@ Pe control:
 - `AddItem`/`AddSeparator`/`SetBadge`/`SetItemEnabled`/`SetItemVisible` — **semnături și comportament de rulare NESCHIMBATE**, inclusiv fiecare `ArgumentException`; scriu prin `Items`;
 - `FindIndex` **sare peste separatori** ȘI respinge cheia vidă. A doua parte nu e cosmetică: `OnKeyDown` cheamă `FindIndex(_selectedKey)` cu `Nothing` când nu e nimic selectat, iar `String.Equals(Nothing, Nothing)` = True ar fi potrivit un element autorit în designer cu cheia încă goală și ar fi selectat elementul greșit;
 - cheile separatorilor: `NextSeparatorKey()` incrementează `_sepSeq` până nimerește o cheie **nefolosită de niciun element** (inclusiv de un separator căruia i s-a tastat manual `__sep_1` în designer), și e folosită atât de `AddSeparator` cât și de `EndInit`;
-- `SelectedKey` între `BeginInit` și `EndInit`: **se reține fără validare** și getter-ul întoarce valoarea reținută. Designer-ul nu are nicio obligație să emită `Items` înaintea lui `SelectedKey`, iar setter-ul de rulare ar arunca pe o cheie care apare o linie mai jos. În afara inițializării, comportamentul e exact cel de azi;
-- `EndInit`: (1) dă chei separatorilor fără cheie, (2) validează butoanele (cheie vidă / duplicată → `ArgumentException` care numește indexul și cheia, în română cu diacritice reale), (3) aplică selecția reținută pe drumul normal. **În designer, (2) și (3) se sar** — dar valoarea reținută se scrie totuși în `_selectedKey`, ca să se re-serializeze corect (dacă am ignora-o, designer-ul ar pierde-o la următoarea regenerare; asta e o mică abatere de la plan, în plus, nu în minus);
+- `SelectedKey` între `BeginInit`/`EndInit` este reținut fără validare și returnat de getter: designerul poate emite `Items` ulterior. În afara inițializării, comportamentul rămâne neschimbat.
+- `EndInit`: atribuie chei separatorilor fără cheie, validează butoanele (cheie vidă/duplicată → `ArgumentException` cu index/cheie în română cu diacritice), apoi aplică selecția reținută. În designer sare validarea/aplicarea, dar scrie `_selectedKey` pentru reserializare; altfel s-ar pierde la regenerare. Aceasta este abaterea suplimentară de la plan.
 - `OnPaint`, doar design-time: un buton cu cheie vidă sau duplicată primește un **chenar roșu de 2px** în locul ramei normale. La rulare calea nu se execută niciodată.
 
 ### 1.2 `KBotDataColumn` + `KBotDataColumnCollection` + `KBotDataView` — `KBot.Controls`
 
 `KBotDataColumn` primește constructor fără parametri (cel de patru argumente rămâne **identic**, inclusiv aruncarea pe cheie vidă) și un `Friend Property Owner As KBotDataView`, setat de colecție la inserare și golit la scoatere.
 
-`Key` și `ColumnType` trec din `ReadOnly` în citire/scriere, dar **aruncă `InvalidOperationException` când coloana aparține unei grile cu rânduri**: valorile celulelor sunt ținute pe cheia coloanei în dicționarul lui `KBotDataRow`, deci o redenumire peste date ar orfelina fiecare celulă stocată și coloana ar picta gol — adică pierdere de date deghizată în no-op. `Key` cheamă apoi `Owner.OnColumnKeyChanged` (reconstruiește indexul și mută selecția curentă dacă stătea pe cheia veche); `ColumnType` abandonează editarea deschisă (`CancelEdit`), fiindcă ea aparține tipului VECHI. Cât `Owner` e `Nothing` — situația designer-ului — ambele sunt libere.
+`Key`/`ColumnType` devin editabile, dar aruncă `InvalidOperationException` dacă grila proprietară are rânduri: schimbarea cheii ar orfelina celulele din dicționarul `KBotDataRow`. `Key` apelează `Owner.OnColumnKeyChanged` pentru index și selecția cheii vechi; `ColumnType` abandonează editorul vechi prin `CancelEdit`. Fără `Owner`, ca în designer, sunt libere.
 
-Toată suprafața publică a coloanei e atribuită `Category("K-BOT")`/`Description`/`DefaultValue`. `IsEffectivelyVisible`, `ComboItems` și `Tag` sunt `Browsable(False)` + `DesignerSerializationVisibility(Hidden)`: primul e stare derivată, ultimele două **nu pot face rotunda** prin `InitializeComponent` (o `IList(Of Object)` și un `Object` arbitrar), iar o sursă combo pe jumătate serializată e mai rea decât niciuna. `UserSized`/`AutoHidden` erau deja `Friend`, deci nu se serializează.
+Proprietățile publice au `Category("K-BOT")`/`Description`/`DefaultValue`. `IsEffectivelyVisible`, `ComboItems`, `Tag` au `Browsable(False)` + `DesignerSerializationVisibility(Hidden)`: stare derivată, respectiv `IList(Of Object)`/`Object` fără rotundă sigură prin `InitializeComponent`. `UserSized`/`AutoHidden` erau deja `Friend`, neserializate.
 
-`KBotDataColumnCollection` face pe `KBotDataView`: `RebuildColumnIndex()` + `RecomputeTotals()` + `LayoutChanged()` la fiecare adăugare/înlocuire/ștergere/golire (prin `OnColumnsChanged`). **Asta închide jumătate din limitarea consemnată la felia 0013** («fără back-reference coloană→grilă»): add și remove declanșează layout singure. Editarea PROPRIETĂȚILOR unei coloane după încărcare se comportă ca azi și tot are nevoie de `AutoSizeColumns()` explicit. Cheile duplicate se **sar în tăcere la reconstrucția indexului** — validarea e la `AddColumn` și la `EndInit`, din același motiv ca la navlist.
+`KBotDataColumnCollection.OnColumnsChanged` declanșează `RebuildColumnIndex()` + `RecomputeTotals()` + `LayoutChanged()` la adăugare/înlocuire/ștergere/golire. Închide parțial limita 0013 fără back-reference: add/remove produc layout; editarea proprietăților după încărcare cere în continuare `AutoSizeColumns()`. Reconstrucția sare cheile duplicate; validarea este la `AddColumn`/`EndInit`, ca la NavList.
 
-`KBotDataView`: `Implements ISupportInitialize` (`EndInit` validează cheile, se sare în designer), `Columns` trece de la `IReadOnlyList(Of KBotDataColumn)` la `KBotDataColumnCollection` (atribuit `Content`), `AddColumn` își păstrează semnătura, cele două aruncări și valoarea întoarsă dar nu mai duplică `_columnIndex(key) = col` / `RecomputeTotals()` / `LayoutChanged()` (vin de la colecție). `Column(key)` neatins. Proprietățile de grilă au primit `Category`/`Description`/`DefaultValue`; `Rows`, `RowCount`, `Item`, `CurrentRowIndex`, `CurrentColumnKey`, `CurrentRow`, `IsEditing` sunt `Browsable(False)` + `Hidden` — sunt DATE de rulare, iar un designer care le-ar scrie în `InitializeComponent` ar îngheța în formular datele de test ale cuiva.
+`KBotDataView` implementează `ISupportInitialize` (validare chei în `EndInit`, exceptând designerul); `Columns` trece de la `IReadOnlyList(Of KBotDataColumn)` la `KBotDataColumnCollection` cu `Content`. `AddColumn` păstrează semnătura, cele două aruncări și rezultatul; colecția preia indexarea/recalculul/layout-ul descrise mai sus. `Column(key)` rămâne. Proprietățile grilei primesc `Category`/`Description`/`DefaultValue`; datele de rulare `Rows`, `RowCount`, `Item`, `CurrentRowIndex`, `CurrentColumnKey`, `CurrentRow`, `IsEditing` sunt `Browsable(False)` + `Hidden`, evitând serializarea datelor de test în formular.
 
-**Un defect de rotundă prins pe drum, care nu e în plan:** `TotalsRowHeight` NU putea primi `<DefaultValue(0)>`. Getter-ul lui întoarce `HeaderHeight` cât timp banda e pe «urmărește antetul», deci designer-ul ar fi serializat numărul REZOLVAT (30) și ar fi fixat banda pentru totdeauna — o rotundă care schimbă tăcut înțelesul. Rezolvat cu `ShouldSerializeTotalsRowHeight` / `ResetTotalsRowHeight`, pe care designer-ul le respectă înaintea oricărui `DefaultValue`. Test dedicat.
+**Defect neprevăzut în plan:** `<DefaultValue(0)>` la `TotalsRowHeight` ar serializa valoarea rezolvată `HeaderHeight` (30), fixând banda care trebuia să urmărească antetul. `ShouldSerializeTotalsRowHeight`/`ResetTotalsRowHeight` au precedență în designer față de `DefaultValue`. Probă dedicată.
 
 ### 1.3 `KBotCaptionBar` / `KBotBusyBar`
 
 Ambele trec pe `<ToolboxItem(True)>` și primesc `Category`/`Description`/`DefaultValue` pe `IconImage`, `ShowMinimize`, `ShowMaximize`, respectiv `Running`. `Text` (moștenit) rămâne neatins.
 
-`KBotBusyBar.Running`: când `KBotDesignTime.IsDesignTime` e True, valoarea se reține, se cere repictare, și **cronometrul nu se atinge**. Un timer la 15 ms care ticăie în procesul designer-ului repictează suprafața la infinit și arde CPU în `devenv`/`DesignToolsServer`. `Dispose` rămâne corect pe calea asta (opreșterea unui timer nepornit e no-op) — verificat prin citire.
+`KBotBusyBar.Running` reține valoarea și cere repictare în design-time, fără atingerea timerului de 15 ms care ar consuma continuu CPU în `devenv`/`DesignToolsServer`. `Dispose` rămâne corect pentru timerul nepornit, prin citire.
 
 **`IconImage` NU se setează în designer-ul lui `MainForm`/`LoginForm`.** `MainForm.vb:163` face `capBar.IconImage = My.Resources.kbot_64` în cod și acea atribuire câștigă la rulare; setarea și în designer ar copia imaginea a doua oară în `.resx`-ul formularului, degeaba.
 
@@ -66,19 +66,14 @@ Ambele trec pe `<ToolboxItem(True)>` și primesc `Category`/`Description`/`Defau
 
 `KBotDesignTime.IsDesignTime(c)` întoarce True dacă: `LicenseManager.UsageMode = Designtime`; sau `c.Site.DesignMode`; sau un părinte urcând lanțul e sitat în design mode; sau procesul curent e unul dintre `devenv` / `DesignToolsServer` / `Microsoft.VisualStudio.DesignTools.DesignToolsServer` / `XDesProc` / `Blend`. `Control.DesignMode` singur nu ajunge: e False în constructor și False pentru un control imbricat în alt control.
 
-**Toate** apelurile `GlobalErrorLog.Write` din pictarea / mouse-ul / tastatura celor patru controale sunt acum sărite la design time (11 locuri). `GlobalErrorLog` scrie în `AppContext.BaseDirectory\Logs\harness_errors.log`, adică **lângă `devenv.exe`** când rulează în designer — zgomot în cel mai bun caz, sursă de excepții în cel mai rău.
+**Design time:** cele 11 apeluri `GlobalErrorLog.Write` din pictarea/mouse-ul/tastatura celor patru controale sunt sărite. Calea `AppContext.BaseDirectory\Logs\harness_errors.log` ar scrie lângă `devenv.exe`, producând zgomot sau excepții în designer.
 
-**Abatere deliberată de la regula casei, consemnată:** `IsDesignTime` și `DetectDesignerProcess` prind excepția și întorc `False` **fără să logheze**. Sunt singurele două locuri din felie care fac asta, și motivul e că logarea e exact lucrul pe care predicatul îl suprimă; comentariul din cod o spune la fața locului.
+**Abatere deliberată:** numai `IsDesignTime` și `DetectDesignerProcess` prind excepția și întorc `False` fără logare: predicatul suprimă tocmai logarea. Motivul este comentat local.
 
 ## 2. Fișiere atinse
 
 **Noi**
-- `src/KBot.Theming/KBotDesignTime.vb`
-- `src/KBot.Theming/KBotNavItem.vb` (`KBotNavItem` + `KBotNavItemCollection`)
-- `src/KBot.Controls/KBotDataColumnCollection.vb`
-- `tests/KBot.Theming.Tests/KBotNavListTests.vb`
-- `tests/KBot.Controls.Tests/KBotDataColumnDesignerTests.vb`
-- `docs/worklog/SLICE-0025-designer-surfaces.md` (acesta)
+`src/KBot.Theming/KBotDesignTime.vb`; `src/KBot.Theming/KBotNavItem.vb` (`KBotNavItem` + `KBotNavItemCollection`); `src/KBot.Controls/KBotDataColumnCollection.vb`; `tests/KBot.Theming.Tests/KBotNavListTests.vb`; `tests/KBot.Controls.Tests/KBotDataColumnDesignerTests.vb`; `docs/worklog/SLICE-0025-designer-surfaces.md` (acesta)
 
 **Modificate**
 - `src/KBot.Theming/KBotNavList.vb` — model extern, `Items`, `ISupportInitialize`, `FindIndex`, chei de separator, marcaj roșu, cârlige `Friend` pentru teste
@@ -93,7 +88,7 @@ Ambele trec pe `<ToolboxItem(True)>` și primesc `Category`/`Description`/`Defau
 - `tests/KBot.App.Tests/MainFormNavItemsTests.vb` (nou, pasul 7)
 - `docs/worklog/KBOT_STATUS.md`
 
-**`AssemblyVersion` rămâne 1.0.0.0 în ambele.** Pentru `KBot.Theming` e evident (suprafața doar crește). Pentru `KBot.Controls` **NU** e evident și merită spus pe față: `Columns` **și-a schimbat tipul declarat** din `IReadOnlyList(Of KBotDataColumn)` în `KBotDataColumnCollection`, ceea ce e o rupere la compilare pentru orice cod care îl ținea ca `IReadOnlyList`. Toată soluția se recompilează împreună și niciun apelant nu îl ținea așa (verificat prin grep la pasul 0: cele 11 locuri folosesc doar `.Count`, indexatorul și `For Each`, toate oferite de `Collection(Of T)`), deci `AssemblyVersion` stă pe loc — dar contractul manifestului cere ca decizia să fie scrisă, nu subînțeleasă.
+**`AssemblyVersion` rămâne 1.0.0.0 în ambele.** În `KBot.Theming` suprafața doar crește. În `KBot.Controls`, `Columns` trece din `IReadOnlyList(Of KBotDataColumn)` în `KBotDataColumnCollection`, rupând compilarea unui apelant tipat ca vechea interfață. Decizia de a păstra versiunea: soluția se recompilează împreună, iar cele 11 locuri găsite la pasul 0 folosesc numai `.Count`, indexatorul și `For Each`, oferite de `Collection(Of T)`. Niciun apelant nu îl ținea ca `IReadOnlyList`.
 
 `KBot.App` a primit bump (1.0.5.0 → 1.0.6.0) fiindcă pasul 7 a rulat.
 
@@ -160,7 +155,7 @@ Ce NU probează nimic din cele de mai sus: că dialogul chiar se deschide, că `
 
 ## 6. Pasul 7 — migrarea `MainForm.navViews`: **A RULAT** (cerut explicit de operator)
 
-Prima variantă a feliei a livrat pașii 0–5 și **a oprit înaintea pasului 7**, fiindcă planul îl condiționează de trecerea pașilor 1 și 6, iar pasul 6 cere Visual Studio. Operatorul a cerut migrarea oricum, după ce riscul i-a fost spus. Consemnat ca atare: pasul 7 e livrat pe o rotundă **neprobată în designer**, nu pe una verificată.
+Prima variantă a livrat 0–5 și s-a oprit înainte de 7, condiționat în plan de 1 și de pasul 6 din Visual Studio. După comunicarea riscului, operatorul a cerut migrarea oricum: pasul 7 este livrat cu rotunda **neprobată în designer**.
 
 Cele opt intrări trăiesc acum în `MainForm.Designer.vb`, exact în forma pe care o emite designer-ul (instanțe `Dim KBotNavItem1..8`, atribuiri de proprietăți, `navViews.Items.Add(...)`), plus perechea `CType(navViews, ISupportInitialize).BeginInit()` / `.EndInit()` alături de cea a lui `split`:
 
@@ -175,11 +170,11 @@ Cele opt intrări trăiesc acum în `MainForm.Designer.vb`, exact în forma pe c
 | 7 | `ddf` | `DDF` | **Far** | |
 | 8 | `ord` | `ORD` | **Far** | |
 
-`Align = Near` NU e emis (e `DefaultValue`), la fel `Enabled`/`Visible`/`Badge`; se emit doar `Align = Far` și `IsSeparator = True`. Nu am adăugat un `AddRange` pe colecție tocmai ca forma scrisă de mână să fie cea pe care o va regenera VS: `CollectionCodeDomSerializer` folosește `AddRange` doar dacă există, altfel emite `Add` per element — și `Collection(Of T)` nu are `AddRange`.
+`DefaultValue` omite `Align = Near`, `Enabled`, `Visible` și `Badge`; se emit `Align = Far` și `IsSeparator = True`. Colecția nu primește `AddRange`: `CollectionCodeDomSerializer` îl folosește numai dacă există, altfel emite `Add` per element, ca pentru `Collection(Of T)`. Forma manuală urmează astfel regenerarea VS.
 
-Din `MainForm.vb` a dispărut blocul `AddItem`/`AddSeparator` (dacă rămânea, `AddItem` lovea aruncarea pe cheie duplicată la prima rulare). **`navViews.SelectedKey = "sumar"` rămâne în cod** — atribuirea aia e cea care ridică `SelectionChanged` și deci creează prima vedere; în designer ar fi o valoare moartă. Cele trei intrări comentate (`indicatori`, `revizii`, `partener`) NU au fost adăugate în designer; comentariul din cod le păstrează numele pentru ziua în care vederile lor există.
+Din `MainForm.vb` dispare blocul `AddItem` / `AddSeparator`, care ar dubla cheile la prima rulare. **`navViews.SelectedKey = "sumar"` rămâne în cod** pentru `SelectionChanged` și crearea primei vederi; în designer ar fi o valoare moartă. `indicatori`, `revizii`, `partener` rămân numai în comentariul din cod, până există vederile.
 
-**O corecție la plan:** §9.3 spune «keep `navViews.SelectedKey = "sumar"` in code, after `ApplyViewGating(Nothing)` as today». În cod era, și a rămas, **înaintea** lui `ApplyViewGating(Nothing)`. Ambele ordini funcționează (`IsViewEnabled` întoarce True și pentru cheie goală, și pentru «sumar»), dar «as today» descria greșit codul, așa că am păstrat ordinea reală în loc să introduc o schimbare de comportament pe care nimeni nu a cerut-o.
+**Corecție față de plan §9.3:** `navViews.SelectedKey = "sumar"` era și rămâne ÎNAINTE de `ApplyViewGating(Nothing)`, deși planul spunea «after … as today». Ambele ordini funcționează (`IsViewEnabled = True` pentru cheie goală și «sumar»); se păstrează ordinea reală.
 
 **Diacriticele sunt literale, verificat pe octeți**, nu doar pe ochi: `Rezervări` = `C4 83`, `Recepții` / `Plăți` = `C8 9B`, zero apariții de `\u00` în fișier. Și, mai important, cele două teste noi compară cu literalele românești la RULARE — dacă designer-ul ar rescrie vreodată fișierul cu escape-uri, VB le-ar purta ca text simplu și testele ar pica.
 
@@ -193,7 +188,7 @@ Asta e apărarea reală împotriva pericolului feliei: o regenerare de designer 
 
 ## 7. Nefăcut / neverificat, explicit
 
-- **Rotunda din designer, Toolbox-ul, marcajul roșu și grila de proprietăți** — vezi §4 și §5. NERULATE, nu «verificate». Asta include acum și `MainForm`: cele opt intrări sunt scrise în `MainForm.Designer.vb` în forma pe care o emite designer-ul, dar **nimeni nu a deschis formularul în designer după migrare** — dacă VS le reîncarcă în dialogul de colecție și le rescrie identic la prima regenerare rămâne întrebarea deschisă a feliei. Starea de RULARE e fixată de cinci teste, iar calea de întoarcere (blocul `AddItem`) e în istoricul git.
+- **Rotunda din designer, Toolbox-ul, marcajul roșu și proprietățile — NERULATE** (§4–§5). Pentru `MainForm`, limitele migrației, cele cinci probe de rulare și revenirea prin `AddItem` din istoricul Git sunt descrise în §6; reîncărcarea/rescrierea VS rămâne neprobată.
 - **Fără manipulare directă pe suprafața de design** (decizia 2 a planului): nu poți da click pe un buton din bară în designer, nu îl poți trage ca să-l reordonezi și nu îl poți șterge cu Del. Ar cere un `ControlDesigner` propriu, iar pe `net8.0-windows` designer-ul rulează în alt proces, deci orice designer / `UITypeEditor` / `TypeConverter` propriu ar avea nevoie de un assembly de design-time separat, contra `Microsoft.WinForms.Designer.SDK`. În afara scopului, deliberat.
 - **Fără editare de noduri pentru `AdvancedTreeControl`** — arborele din `MainForm` se umple din `GET /api/forexe/tree`, deci nodurile autorite în designer ar fi aruncate la încărcare.
 - **Fără migrarea coloanelor vederilor existente** — `IstoricView`, `PlatiView`, `SumarView`, `RezervariView`, `ReceptiiView`, `DdfView` și formularele din DevHarness își construiesc în continuare coloanele în cod cu `AddColumn`, neatinse. Felia asta doar face autorarea din designer POSIBILĂ.
@@ -215,7 +210,7 @@ Pasul 2 al feliei 0025 (vezi [0025-baza](#slice-0025-baza) pentru pasul 1 și pe
 Public Property Image As System.Drawing.Image
 ```
 
-**Numele e `Image`, nu `Icon` sau `IconImage`, deliberat.** Cererea a fost «ca orice pictogramă de buton», iar echivalentul exact e `Button.Image`: același nume, același tip, **același editor de imagine din grila de proprietăți** (cel stoc — designer-ul depune imaginea în `.resx`-ul formularului și emite `KBotNavItem1.Image = CType(resources.GetObject(…), Image)`). Cine caută proprietatea o va căuta sub numele ăsta. `KBotCaptionBar` folosește `IconImage`, deci în casă există acum două nume pentru aceeași idee — abaterea e conștientă și e consemnată aici; bara de titlu nu se editează prin dialog de colecție, deci cele două nu se întâlnesc niciodată în aceeași grilă.
+**`Image` preia deliberat numele, tipul și editorul stoc de la `Button.Image`**, conform cererii: designerul stochează imaginea în `.resx` și emite `KBotNavItem1.Image = CType(resources.GetObject(…), Image)`. Diferența față de `KBotCaptionBar.IconImage` este asumată; bara de titlu nu se editează în dialogul colecției, deci numele nu coexistă în aceeași grilă.
 
 Tipul e scris CALIFICAT (`System.Drawing.Image`). În VB, o proprietate `Image` din aceeași clasă ascunde numele de tip `Image`, deci `Public Property Image As Image` nu compilează.
 
@@ -228,7 +223,7 @@ Trei decizii mici:
 
 Latura (px logici, scalați la DPI) a pătratului în care se desenează pictograma; implicit **20**, `DefaultValue`, deci designer-ul nu o serializează degeaba.
 
-Se aplică TUTUROR elementelor, nu per element: într-o bară de navigație pictogramele trebuie să aibă aceeași mărime, altfel textul nu se mai aliniază pe verticală. Sursa poate fi de orice dimensiune (o probă de 64px se scalează în pătratul de 20), deci nu impune lățimea rândului. `IconSize = 0` înseamnă «fără pictograme» — nu «pictograme de zero pixeli care lasă totuși o gaură»: textul revine la padding-ul simplu.
+`IconSize` este comun barei, aliniind textul tuturor elementelor. Orice sursă se scalează (64 px în pătratul de 20) fără a impune lățimea rândului. La `IconSize = 0`, slotul dispare și textul revine la padding simplu.
 
 #### Geometrie și pictare
 
@@ -242,15 +237,11 @@ Trei funcții private, folosite **și** la măsurare **și** la pictare, ca cele
 
 `ItemExtent` (orizontal) adaugă `IconSlotWidth`; pe vertical înălțimea rândului e fixă, deci pictograma nu schimbă nimic. Textul începe acum de la `r.Left + padX + IconSlotWidth(it)` în loc de `r.Left + padX`. Badge-ul rămâne neatins (e ancorat la dreapta).
 
-**Pe un element dezactivat pictograma se estompează**, ca imaginea unui `Button` dezactivat: `ImageAttributes` + `ColorMatrix` cu luminanța standard (0.299/0.587/0.114) și alfa 45%. Fără asta, un buton stins ar avea text gri lângă o pictogramă în culori vii. S-a ales matricea în locul lui `ControlPaint.DrawImageDisabled` fiindcă aceea nu scalează imaginea, iar noi desenăm mereu într-un pătrat impus.
+**Pictograma dezactivată se estompează** prin `ImageAttributes` / `ColorMatrix` (luminanță 0.299/0.587/0.114, alfa 45%), evitând culori vii lângă textul gri. `ControlPaint.DrawImageDisabled` nu scalează, deci nu poate desena în pătratul impus.
 
 ### 2. Fișiere atinse
 
-- `src/KBot.Theming/KBotNavItem.vb` — proprietatea `Image`
-- `src/KBot.Theming/KBotNavList.vb` — `IconSize`, cele trei funcții de geometrie, `ItemExtent`, pictarea, `DrawItemImage`, două cârlige `Friend` de test, `Imports System.Drawing.Imaging`
-- `src/KBot.Theming/KBot.Theming.vbproj` — `FileVersion` 1.1.0.0 → **1.2.0.0** (`AssemblyVersion` stă: suprafața doar crește)
-- `tests/KBot.Theming.Tests/KBotNavListTests.vb` — 8 teste noi
-- `docs/worklog/SLICE-0025-02-navitem-icon.md` (acesta), `docs/worklog/KBOT_STATUS.md`
+`src/KBot.Theming/KBotNavItem.vb` — proprietatea `Image`; `src/KBot.Theming/KBotNavList.vb` — `IconSize`, cele trei funcții de geometrie, `ItemExtent`, pictarea, `DrawItemImage`, două cârlige `Friend` de test, `Imports System.Drawing.Imaging`; `src/KBot.Theming/KBot.Theming.vbproj` — `FileVersion` 1.1.0.0 → **1.2.0.0** (`AssemblyVersion` stă: suprafața doar crește); `tests/KBot.Theming.Tests/KBotNavListTests.vb` — 8 teste noi; `docs/worklog/SLICE-0025-02-navitem-icon.md` (acesta), `docs/worklog/KBOT_STATUS.md`
 
 Niciun element din `MainForm` nu primește o pictogramă în pasul ăsta — s-a cerut PROPRIETATEA, nu un set de pictograme. `MainForm.Designer.vb` e neatins, `KBot.App` nu primește bump.
 
@@ -275,14 +266,7 @@ Cele 8 teste noi: un element fără imagine lasă textul exact unde era (regresi
 
 Pasul 5 al feliei 0025 (vezi [0025-baza](#slice-0025-baza) pentru pasul 1 și pasul 7, [0025-02](#slice-0025-02) pentru pictogramă). Cerere de operator, în afara planului:
 
-> «navlist-ul să aibă o proprietate vizibilă în designer "Colapsable". Când e true, o pictogramă
-> mică apare într-unul din colțuri (proprietatea `CollapseCorner {TopLeft, TopRight, BottomLeft,
-> BottomRight}`). Strâns are două opțiuni: "Complete" și "Icons". La "Complete" lățimea barei (sau
-> înălțimea, dacă e orizontală) devine puțin mai mare decât butonul de strângere. La "Icons", doar
-> pe verticală, se redimensionează și bara și butoanele la lățimea pictogramei plus niște padding;
-> dacă niciun buton nu are pictogramă, opțiunea nu e disponibilă. Merg din același buton: 1 =
-> icons, 2 = complet, 3 = mărimea inițială. În plus, navlist-ul trebuie să expună o proprietate de
-> padding, ca să pot controla aerul din jurul butoanelor.»
+> «navlist-ul să aibă o proprietate vizibilă în designer "Colapsable". Când e true, o pictogramă mică apare într-unul din colțuri (proprietatea `CollapseCorner {TopLeft, TopRight, BottomLeft, BottomRight}`). Strâns are două opțiuni: "Complete" și "Icons". La "Complete" lățimea barei (sau înălțimea, dacă e orizontală) devine puțin mai mare decât butonul de strângere. La "Icons", doar pe verticală, se redimensionează și bara și butoanele la lățimea pictogramei plus niște padding; dacă niciun buton nu are pictogramă, opțiunea nu e disponibilă. Merg din același buton: 1 = icons, 2 = complet, 3 = mărimea inițială. În plus, navlist-ul trebuie să expună o proprietate de padding, ca să pot controla aerul din jurul butoanelor.»
 
 ### 1. Ce s-a schimbat și de ce
 
@@ -330,11 +314,11 @@ Trei proprietăți + un eveniment + o metodă:
 
 Lățimea butoanelor în `Icons` = `IconSize + 2*8` (implicit 36) și bate **și** `AutoSize` pe element **și** `ItemWidth` pe bară: bara s-a strâns la lățimea unei pictograme, nicio cerere de lățime nu mai are ce cere.
 
-**„Mărimea inițială" e a operatorului, nu a constructorului.** `OnSizeChanged` reține mărimea curentă ca `_expandedExtent` cât timp starea e `Expanded`, deci dacă operatorul lățește bara la 240 și apoi o strânge, al treilea click îi dă înapoi 240, nu 170. Steagul `_applyingCollapseExtent` oprește propriile noastre redimensionări să fie confundate cu ale lui — fără el, prima strângere ar deveni noua „mărime inițială" și bara nu s-ar mai putea desfășura niciodată.
+**Mărimea inițială este cea autorată:** în `Expanded`, `OnSizeChanged` actualizează `_expandedExtent`; 240 revine ca 240, nu 170, după al treilea clic. `_applyingCollapseExtent` exclude redimensionările proprii, care altfel ar înlocui mărimea desfășurată cu prima mărime strânsă.
 
 **Banda rezervată.** Butonul din colț își ia o bandă de `18 + 2*6` la capătul axei principale dinspre colțul ales (sus/jos pe verticală, stânga/dreapta pe orizontală), ca să nu stea peste primul sau ultimul buton. Se pictează ultimul, peste tot, fiindcă pe o bară foarte îngustă un buton lat tot i-ar putea intra pe dedesubt.
 
-**`Complete` nu lasă niciun slot.** `RecalcLayout` iese devreme, toate `Bounds` rămân `Rectangle.Empty` — deci nici pictarea, nici `IndexAt`, nici hover-ul nu mai ating vreun buton. Un buton pictat „tăiat" într-o bară de 30px ar fi fost gunoi vizual, iar unul apăsabil, invizibil, ar fi fost mai rău.
+**`Complete`:** `RecalcLayout` iese devreme, toate `Bounds` sunt `Rectangle.Empty`; pictarea, `IndexAt` și hover-ul nu ating butoane tăiate sau invizibile în bara de 30px.
 
 **Pictarea în `Icons`:** pictograma se **centrează** (nu mai are text lângă care să stea), textul dispare, iar pastila badge-ului devine un **punct** în colțul din dreapta-sus — informația «are ceva de arătat» nu are voie să dispară complet. Un buton **fără** pictogramă primește **inițiala** textului, centrată: starea se poate cere de îndată ce UN singur buton are pictogramă, iar restul trebuie totuși să se distingă între ele.
 
@@ -376,10 +360,7 @@ Cele 25 de teste noi acoperă: implicitul `ItemPadding = 6` **este** vechea marg
 
 Pasul 6 al feliei 0025 (vezi [0025-baza](#slice-0025-baza) pentru pașii 1 și 7, [0025-02](#slice-0025-02) pentru pictograma elementelor, [0025-05](#slice-0025-05) pentru butonul de strângere însuși). A treia cerere de operator în afara planului:
 
-> «in kbotnavlist, the expander button must have an exposed property to allow for puting a
-> expanded icon and an collapsed icon in the designer (and in code). if none is supplied use the
-> current `DrawCollapseButton`, but with the mention that when collapsed it should show the other
-> arrow `>` instead of the same `<`»
+> «in kbotnavlist, the expander button must have an exposed property to allow for puting a expanded icon and an collapsed icon in the designer (and in code). if none is supplied use the current `DrawCollapseButton`, but with the mention that when collapsed it should show the other arrow `>` instead of the same `<`»
 
 ### 1. Ce s-a schimbat și de ce
 
@@ -394,11 +375,11 @@ Public Property CollapseCollapsedImage As Image    ' strânsă     => butonul de
 
 Tipul e `Image`, nu `Icon`/`Bitmap`, și numele conține `Image`, exact ca `KBotNavItem.Image` de la pasul 02 — asta e ce face grila de proprietăți să deschidă **editorul de imagine stoc** și designer-ul să depună imaginea în `.resx`-ul formularului. Ambele merg și din cod, evident (setter public, nicio validare de stare).
 
-**Sunt INDEPENDENTE.** Cine dă doar una primește unghiul desenat pe cealaltă stare; cererea a fost «să pot pune o pictogramă», nu «un set complet sau nimic». Rezolvarea se face pe starea curentă, într-un singur loc (`CollapseButtonImage`), folosit și la pictare și de cârligul de test — aceeași regulă ca la geometria pictogramei de la 0025-02: o singură funcție, ca cele două să nu se despartă.
+**Imaginile sunt independente:** starea fără imagine folosește chevronul desenat. Rezolvarea unică `CollapseButtonImage` servește pictarea și cârligul de probă, ca geometria din 0025-02.
 
 **O singură pictogramă pentru amândouă stările strânse** (`Icons` și `Complete`): din amândouă butonul face același lucru — desfășoară. Trei proprietăți ar fi cerut operatorului să aleagă o imagine pentru o distincție pe care butonul n-o face.
 
-**Bara NU deține imaginea** și nu o eliberează niciodată (`Dispose` rămâne neatins) — ca `KBotNavItem.Image` și `KBotCaptionBar.IconImage`. E a apelantului sau a resurselor formularului; o pictogramă partajată de două bare n-are voie să moară odată cu prima. Test dedicat.
+**Bara nu deține și nu eliberează imaginea** (`Dispose` neatins), ca `KBotNavItem.Image`/`KBotCaptionBar.IconImage`. Apelantul sau resursele formularului o dețin, putând fi partajată între bare. Probă dedicată.
 
 `ShouldSerialize*` / `Reset*` **private** pentru amândouă, ca la `KBotNavItem.Image` (0025-03): un tip referință n-are `<DefaultValue>` utilizabil în VB, iar fără ele designer-ul ar fi scris `navViews.CollapseExpandedImage = Nothing` în fiecare formular care nu s-a atins de proprietate. `TypeDescriptor` le găsește după nume inclusiv nepublice.
 
@@ -463,11 +444,7 @@ Nimic în `MainForm`/`DdfView`: s-a cerut **proprietatea**, nu un set de pictogr
 
 Pasul 7 al feliei 0025 (nu confunda cu «PASUL 7» din planul original = migrarea `MainForm.navViews`; numerotarea `-0x` a sub-feliilor merge separat de pașii planului). Vezi [0025-05](#slice-0025-05) pentru strângere și [0025-06](#slice-0025-06) pentru butonul din colț. A patra cerere de operator în afara planului:
 
-> «i removed the complete collapse. only icons or expanded. what i need is when is collapsed and i
-> hover any navbar button (except for the sep) to have a sort of tooltip with the entire button.
-> but it mustn't be a real tooltip (yellow and ugly), but some kind of floating control which takes
-> on all the props of the hovered button and displays it on a small timer from left to right (if
-> the navbar is vertical - not yet sure for the horizontal)»
+> «i removed the complete collapse. only icons or expanded. what i need is when is collapsed and i hover any navbar button (except for the sep) to have a sort of tooltip with the entire button. but it mustn't be a real tooltip (yellow and ugly), but some kind of floating control which takes on all the props of the hovered button and displays it on a small timer from left to right (if the navbar is vertical - not yet sure for the horizontal)»
 
 ### 1. Ce s-a schimbat și de ce
 
@@ -475,7 +452,7 @@ Pasul 7 al feliei 0025 (nu confunda cu «PASUL 7» din planul original = migrare
 
 Fișier nou: `src/KBot.Controls/NavList/KBotNavFlyout.vb` (fereastra + `KBotNavFlyoutStyle`).
 
-Cheia întregii felii e **de unde pleacă** eticheta. Nu se așază lângă buton (aia ar fi tot un tooltip, doar mai frumos): pleacă **exact din dreptunghiul butonului strâns** și crește doar spre dreapta, iar pictograma se desenează **centrată în prima bandă**, adică fix peste locul unde bara o pictează deja. Ce se vede e un buton care se **desfășoară**, cu pictograma nemișcată și textul ieșind de sub ea — nu două pictograme una lângă alta. Asta rezolvă și ambiguitatea din cerere («the entire button» vs. «doar ce s-a tăiat»): se desenează butonul ÎNTREG, dar suprapus peste el însuși, deci nimic nu apare de două ori.
+Eticheta pornește exact din dreptunghiul butonului strâns și crește numai spre dreapta; pictograma rămâne centrată în prima bandă, peste poziția ei din bară. Se desenează butonul întreg, suprapus peste el însuși, fără dublarea pictogramei: rezolvarea ambiguității «the entire button» versus «doar ce s-a tăiat».
 
 La progres `0` eticheta e **nedeosebită** de buton (test dedicat); la `1` are lățimea completă.
 
@@ -485,7 +462,7 @@ Preia toate proprietățile butonului de sub cursor: pictograma (estompată la f
 
 `WS_EX_NOACTIVATE` + `ShowWithoutActivation` (nu fură focusul), `WS_EX_TOOLWINDOW` (fără buton de bară de activități), `AutoScaleMode.None` (bara dă px deja scalați; o a doua ajustare ar dezalinia eticheta de butonul din care trebuie să pară că iese), `Region` tăiată din calea rotunjită (altfel în colțuri s-ar vedea dreptunghiul ferestrei peste vederea de dedesubt).
 
-**`HTTRANSPARENT` pe `WM_NCHITTEST` — nu e cosmetică.** Eticheta acoperă chiar butonul peste care stă cursorul. Fără click-through, apariția ei ar fi însemnat «mouse-ul a părăsit bara» ⇒ eticheta se ascunde ⇒ mouse-ul e iar pe bară ⇒ eticheta apare… la infinit. Cu `HTTRANSPARENT` mouse-ul trece prin ea la bară, hover-ul se păstrează, și click-ul pe pictogramă ajunge tot la buton.
+**`HTTRANSPARENT` pe `WM_NCHITTEST`:** eticheta acoperă butonul cursorului; fără click-through ar alterna infinit apariția/pierderea hover-ului/ascunderea. Mouse-ul trece la bară, păstrând hover-ul și clicul pe pictogramă.
 
 #### 1.3 Cronometrul
 
@@ -497,7 +474,7 @@ Două proprietăți, amândouă în grilă:
 | `FlyoutDelay` | 250 ms | cât stă cursorul înainte să iasă eticheta (0 = imediat) |
 | `FlyoutSlideDuration` | 120 ms | cât durează desfășurarea (0 = fără animație) |
 
-`CollapsedFlyout` e **True implicit**, spre deosebire de `Collapsible` (care e False). Nu e o inconsecvență: poarta rămâne `Collapsible` — dacă bara nu se strânge, eticheta nu există. Dar o bară STRÂNSĂ fără etichete e nefolosibilă (nu mai scrie nimic pe butoane), deci implicitul care respectă intenția e «pornit». Negativele se aduc la 0, ca la `IconSize`/`ItemWidth`/`ItemPadding`.
+`CollapsedFlyout = True` implicit, dar capabilitatea rămâne condiționată de `Collapsible` (False implicit). Bara strânsă are nevoie de etichete pentru identificarea butoanelor. Duratele negative devin 0, ca la `IconSize`/`ItemWidth`/`ItemPadding`.
 
 Pasul animației e fix, 15 ms; progresul avansează `15 / FlyoutSlideDuration` pe tic și se oprește exact la `1.0`.
 
@@ -507,7 +484,7 @@ Cere: bară strânsă la `Icons`, `CollapsedFlyout = True`, și sub cursor un **
 
 **Butoanele DEZACTIVATE primesc etichetă**, spre deosebire de hover-ul obișnuit care le sare: tocmai pe o bară strânsă e cel mai greu de ghicit ce e butonul stins de sub cursor. Se desenează stins, cu culorile lui.
 
-Eticheta se retrage la: părăsirea barei, trecerea pe alt buton (repornește de acolo), trecerea pe butonul din colț, **orice invalidare de layout** (add/remove, vizibilitate, `ItemPadding`, orientare, resize, strângere/desfășurare — ține minte un index și un dreptunghi din layout-ul vechi, deci se retrage, nu se recalculează), și `CollapsedFlyout = False`. Mișcarea ÎN INTERIORUL aceluiași buton nu repornește nimic (altfel temporizarea s-ar reseta la fiecare pixel și eticheta n-ar ieși niciodată). Se reîmprospătează, fără să se retragă, la schimbarea selecției (click pe butonul de sub etichetă) și la schimbarea temei.
+Eticheta se retrage la ieșirea din bară, alt buton (repornește acolo), butonul din colț, `CollapsedFlyout = False` sau invalidarea layout-ului: add/remove, vizibilitate, `ItemPadding`, orientare, resize, strângere/desfășurare. Indexul/dreptunghiul vechi impun retragerea, nu recalcularea. Mișcarea în același buton nu repornește temporizarea. Schimbarea selecției prin clic și schimbarea temei o reîmprospătează fără retragere.
 
 #### 1.5 Bara orizontală — întrebarea se închide singură
 
@@ -544,9 +521,7 @@ Nimic în `MainForm`/`DdfView`: s-a cerut capacitatea. `MainForm.navViews` n-are
 
 Pasul 8 al feliei 0025. Continuă direct [0025-07](#slice-0025-07) (eticheta plutitoare). Cerere de operator:
 
-> «the appearing button must have rounded corners (also the buttons in the navlist) similar to the
-> button. that property should be exposed in the designer per navlist (not per button) and also it
-> should have a modern gradient. also it should use the theming system»
+> «the appearing button must have rounded corners (also the buttons in the navlist) similar to the button. that property should be exposed in the designer per navlist (not per button) and also it should have a modern gradient. also it should use the theming system»
 
 ### 1. Ce s-a schimbat și de ce
 

@@ -1,8 +1,6 @@
 # K-BOT — STATUS, slices 0010–0019
 
-Moved verbatim out of `../KBOT_STATUS.md` (28.09.2026). The index there says what
-each slice is; this file holds everything recorded about it: its registry row, its
-«Current focus» notes and its «Open threads» notes.
+Moved verbatim out of `../KBOT_STATUS.md` (28.09.2026). The index there says what each slice is; this file holds everything recorded about it: its registry row, its «Current focus» notes and its «Open threads» notes.
 
 ---
 
@@ -135,6 +133,4 @@ each slice is; this file holds everything recorded about it: its registry row, i
 
 ### Open threads
 
-- **No real DDF PDF produced or opened** (0019 open items a/c, still open after 0020-05). The
-  generation flow is wired and unit-tested, but `XfaWriter.Genereaza` needs the machete + Adobe;
-  the "Adobe opens the generated PDF correctly" verdict is outstanding.
+- **No real DDF PDF produced or opened** (0019 open items a/c, still open after 0020-05). The generation flow is wired and unit-tested, but `XfaWriter.Genereaza` needs the machete + Adobe; the "Adobe opens the generated PDF correctly" verdict is outstanding.

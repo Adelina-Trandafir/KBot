@@ -2,11 +2,7 @@
 
 Etape din 08–09.10.2026, păstrate cronologic, după [checkpointul parțial ADE1–ADE8](SLICE-ADE1-01-implementare-partiala.md). TESTAT, RULAT, PUBLICAT conform operatorului la 23.10.2026. Pentru rubricile inițiale de amânare/nevalidat din ADE1-04: *Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.* Separarea preview/runtime și limitele fiecărei probe rămân explicite. Extensiile ulterioare DataGrid sunt în [istoricul ADE6](SLICE-ADE6-01-cataloage.md).
 
-- [ADE1-02](#slice-ADE1-02)
-- [ADE1-03](#slice-ADE1-03)
-- [ADE1-04](#slice-ADE1-04)
-- [ADE1-05](#slice-ADE1-05)
-- [ADE1-06](#slice-ADE1-06)
+[ADE1-02](#slice-ADE1-02) · [ADE1-03](#slice-ADE1-03) · [ADE1-04](#slice-ADE1-04) · [ADE1-05](#slice-ADE1-05) · [ADE1-06](#slice-ADE1-06)
 
 ## SLICE-ADE1-02 — pagina aplicației <a id="slice-ADE1-02"></a>
 
@@ -24,10 +20,7 @@ Pagina generică pe cataloage a fost înlocuită cu un singur workspace operați
 
 ### Fișiere atinse
 
-- `PYTHON/static/adechit.html`
-- `PYTHON/static/css/adechit.css`
-- `PYTHON/static/js/adechit/app.js`
-- `ADECHIT/tools/preview.py` — port configurabil pentru probe locale.
+`PYTHON/static/adechit.html`; `PYTHON/static/css/adechit.css`; `PYTHON/static/js/adechit/app.js`; `ADECHIT/tools/preview.py` — port configurabil pentru probe locale.
 
 ### Verificări
 
@@ -63,14 +56,11 @@ Cauza identificată prin citirea sursei și tracebackul utilizatorului. Nu am po
 
 Utilizatorul a raportat 404 la /portal?next=%2Fadechit și a autorizat explicit testarea până la pornirea serverului și deschiderea aplicației, fără verificări vizuale. gate.js introdus pentru autentificarea portalului trimitea pagina locală fără token spre /portal; aplicația preview izolată nu avea această rută.
 
-Răspunsul /adechit generat cu repository_factory local poartă data-ade-preview="true". Gate-ul recunoaște acest marker servit de backend și nu redirecționează preview-ul. Pagina runtime obișnuită nu are markerul și păstrează verificarea sesiunii portalului. Drepturile API și autentificarea runtime nu sunt schimbate. Preview-ul rămâne accesibil exclusiv localhost. În launcher, / și /portal redirecționează la /adechit pentru a recupera inclusiv adresa 404 deja deschisă în browser. Nu introducem un portal local fictiv.
+Răspunsul /adechit cu `repository_factory` local poartă `data-ade-preview="true"`, recunoscut de gate pentru a evita redirecționarea. Runtime-ul nu primește markerul și păstrează verificarea sesiunii; drepturile/API-ul nu se schimbă. Preview-ul rămâne exclusiv localhost. Launcherul redirecționează / și /portal spre /adechit, recuperând și adresa 404 deja deschisă, fără portal local fictiv.
 
 ### Fișiere
 
-- PYTHON/routes/adechit/__init__.py: marker în răspunsul HTML local.
-- PYTHON/static/js/adechit/gate.js: recunoașterea markerului.
-- ADECHIT/tools/preview.py: rutele de intrare locală.
-- Statusul principal/detaliat și acest worklog.
+PYTHON/routes/adechit/__init__.py: marker în răspunsul HTML local. PYTHON/static/js/adechit/gate.js: recunoașterea markerului. ADECHIT/tools/preview.py: rutele de intrare locală. Statusul principal/detaliat și acest worklog.
 
 ### Verificări executate
 

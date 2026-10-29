@@ -2,17 +2,13 @@
 
 Istoric distinct de rescrierea controlului ComboBox din 0094. Etapa 03 înlocuiește vizibilitatea permanentă a filei din 02; ascunderea ei păstrează partenerii suplimentari la salvare, cu decizia operatorului încă deschisă. Probe, presupuneri și limite pe etapă.
 
-- [0094-02 — listă, partener principal și salvare](#slice-0094-02)
-- [0094-03 — vizibilitate după bifă](#slice-0094-03)
+[0094-02 — listă, partener principal și salvare](#slice-0094-02) · [0094-03 — vizibilitate după bifă](#slice-0094-03)
 
-<a id="slice-0094-02"></a>
-
-## SLICE 0094/02 — DDF editor: the «Parteneri» page (operator, 01.10.2026)
+## SLICE 0094/02 — DDF editor: the «Parteneri» page (operator, 01.10.2026) <a id="slice-0094-02"></a>
 
 Operator request: `DdfEditForm` must allow associating several partners with a DDF. (a) The current combo in the header stays: it selects ONE partner — most documents have just that. (b) A new view, aligned to the right — «Parteneri» — presents the form that associates partners with a DDF.
 
-Filed under 0094-02 because 0094 is the last slice that did something to `DdfEditForm` (its designer changed with the combo rewrite). The table, the server routes and the shared list control are
-**0084/02** (the Sumar button); the help and the guided tour are **0000-28**.
+Filed under 0094-02 because 0094 is the last slice that did something to `DdfEditForm` (its designer changed with the combo rewrite). The table, the server routes and the shared list control are **0084/02** (the Sumar button); the help and the guided tour are **0000-28**.
 
 ### What changed and why
 
@@ -38,9 +34,7 @@ Filed under 0094-02 because 0094 is the last slice that did something to `DdfEdi
 
 ---
 
-<a id="slice-0094-03"></a>
-
-## SLICE-0094-03 — DDF editor: the «Parteneri» tab follows «Partener asociat»
+## SLICE-0094-03 — DDF editor: the «Parteneri» tab follows «Partener asociat» <a id="slice-0094-03"></a>
 
 Corrective on 0094-02 (operator, 04.10.2026). Only `DdfEditForm`.
 
@@ -55,8 +49,7 @@ Nothing else moved: `KBotNavList` unchanged, no other form touched, the draft an
 
 ### Files touched
 
-- `src/KBot.App/DDF_EDIT/DdfEditForm.vb` — `DdfEditForm_Load`, `ChkPartAng_CheckedChanged`.
-- Help (0094-03 added to the slice tags): `HelpContent/contabil/ddf/editor.md`, `HelpContent/tours/tur-ddf-editor.md`. The tours skip a part that is not on screen (`KBotNavList.HelpParts` returns an empty rectangle for a hidden item), and the 000T tutorial step «Fila «Parteneri»» already has `when: checked:DdfEditForm.chkPartAng`, so neither needed a structural change.
+`src/KBot.App/DDF_EDIT/DdfEditForm.vb` — `DdfEditForm_Load`, `ChkPartAng_CheckedChanged`. Help (0094-03 added to the slice tags): `HelpContent/contabil/ddf/editor.md`, `HelpContent/tours/tur-ddf-editor.md`. The tours skip a part that is not on screen (`KBotNavList.HelpParts` returns an empty rectangle for a hidden item), and the 000T tutorial step «Fila «Parteneri»» already has `when: checked:DdfEditForm.chkPartAng`, so neither needed a structural change.
 
 ### Test results
 

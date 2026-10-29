@@ -19,9 +19,7 @@ Rules (the order the operator gave):
 Missing tables or columns (`KE_01_primite_receptii.sql` not applied, receptions not transferred yet): one warning, the step is skipped, the rest of the import is unaffected. An invoice that did not reach `EF_Primite` (the writer skips a row that collides on another unique key) is skipped by `Write`, so the foreign key cannot fail the whole import.
 
 ## Files touched
-- `src/KBot.Migrator/EFactura/EfReceptionLinker.vb` (new: `EfLinkInvoice`, `EfLinkProposal`, `EfReceptionLinker`)
-- `src/KBot.Migrator/EFactura/EfImporter.vb` (fields, `ResetState`, step count 6 -> 7, `ReceivedSpec.AfterRow` collects the invoices, `DoReceptionLinks`, `LoadTargetIntKeys`)
-- `src/KBot.Migrator/KBot.Migrator.vbproj` (FileVersion 1.19.0.0 -> 1.20.0.0)
+`src/KBot.Migrator/EFactura/EfReceptionLinker.vb` (new: `EfLinkInvoice`, `EfLinkProposal`, `EfReceptionLinker`); `src/KBot.Migrator/EFactura/EfImporter.vb` (fields, `ResetState`, step count 6 -> 7, `ReceivedSpec.AfterRow` collects the invoices, `DoReceptionLinks`, `LoadTargetIntKeys`); `src/KBot.Migrator/KBot.Migrator.vbproj` (FileVersion 1.19.0.0 -> 1.20.0.0)
 
 No Python, no SQL, no change to anything the K-BOT operator sees: nothing in the help or in `NOUTATI.md` (the Migrator is the owner's tool).
 

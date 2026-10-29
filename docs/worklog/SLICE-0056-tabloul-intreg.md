@@ -4,9 +4,7 @@ Reunire documentară D001-27. Varianta inițială introduce rand_receptie și co
 
 [0056-tabloul](#slice-0056-baza) · [0056-02](#slice-0056-02)
 
-<a id="slice-0056-baza"></a>
-
-## SLICE 0056 — tabloul întreg al propunerii: ancora recepțiilor noi și contextul care lipsea
+## SLICE 0056 — tabloul întreg al propunerii: ancora recepțiilor noi și contextul care lipsea <a id="slice-0056-baza"></a>
 
 ### De ce
 
@@ -19,8 +17,7 @@ Prima salvare adevărată a contractului în două faze, pe calculatorul cu FORE
 
 Operatorul a renunțat («am apăsat pe renunță»), a deschis editorul de oricând ca să se uite — ultimele trei rânduri din jurnal, `sumar` / `receptii` / `asociere` — și a spus ce a văzut:
 
-> receptiile vechi NU mai vin in macheta de asociere! ele trebuie sa vina TOATE impreuna cu
-> cele noi - nu doar cele noi. si se vor salva DOAR cele modificate sau noi - NU TOATE din nou!
+> receptiile vechi NU mai vin in macheta de asociere! ele trebuie sa vina TOATE impreuna cu cele noi - nu doar cele noi. si se vor salva DOAR cele modificate sau noi - NU TOATE din nou!
 
 **Sunt două defecte, și amândouă sunt ale tabloului pe care îl trimite faza întâi.** Al doilea îl explică pe primul: dacă pe ecran nu se vede decât ce a adus descărcarea asta, atunci fiecare tragere a operatorului a căzut, prin construcție, pe o recepție nou-nouță — adică exact pe categoria de recepții al cărei număr nu supraviețuiește până la salvare.
 
@@ -38,9 +35,7 @@ Deci recepția care în propunere s-a numit 188 se naște, la salvare, cu alt nu
 
 Fișierul își spunea singur regula, la instantanee, și nu o aplicase și la recepții:
 
-> `citeste_instantanee`: «id-urile atribuite in timpul propunerii dispar la rollback si nu se
-> intorc identice, dar indicele e stabil prin constructie, fiindca AMBELE faze poarta acelasi
-> payload.»
+> `citeste_instantanee`: «id-urile atribuite in timpul propunerii dispar la rollback si nu se intorc identice, dar indicele e stabil prin constructie, fiindca AMBELE faze poarta acelasi payload.»
 
 Instantaneele erau ancorate pe `rand_istoric`, indicele rândului în `TabelIstoric` (F24). Recepțiile — nu. Recepțiile *reconstituite* aveau deja tratamentul corect (eticheta `receptie_noua`, fiindcă nu există încă); recepțiile *descărcate* au căzut între cele două cazuri.
 
@@ -76,7 +71,7 @@ Ce vede operatorul dintr-o recepție cu lanț de lungime zero:
 
 Adică exact «recepțiile vechi nu mai vin». Erau acolo; povestea lor nu era.
 
-**Și nu e doar aspect.** Serverul își dă deja vetourile F15 / F16 **pe lanțul întreg** — `aplica_decizii` citește din bază instantaneele deja asociate ale acelorași recepții înainte de `valideaza_plasarile`, tocmai fiindcă «lanțul» înseamnă tot lanțul. Până la felia asta, formularul era singurul care nu vedea ce vede vetoul care îl refuză.
+**Vetourile foloseau deja contextul.** Înainte de `valideaza_plasarile`, `aplica_decizii` citește instantaneele deja asociate ale recepțiilor: F15/F16 privesc lanțul întreg. Formularul nu arăta lanțul pe care serverul îl valida.
 
 #### Ce s-a schimbat
 
@@ -85,7 +80,7 @@ Propunerea poartă acum, pe lângă rândurile de decis:
 * **`instantanee_asezate`** — restul instantaneelor angajamentului, în aceeași formă ca cele ale editorului de oricând (aceleași DTO-uri, ca să nu existe două conversii care alunecă una față de alta);
 * **`plati`** — plățile angajamentului. §1.3 din fundament: fiecare ordonanțare citește totalul recepției **așa cum stătea la data plății**, deci partea pe care cade un instantaneu față de o plată e diferența dintre o cifră corectă și una greșită, tăcut și pentru totdeauna (F12). Reperele trebuie să fie pe ecran **când** se așază, nu abia după.
 
-**Complement, nu al doilea filtru.** `citeste_instantanee_context` întoarce tot ce NU e în mulțimea de decis, calculat pe `IDRH` în Python. Așa nu poate exista un rând pe care să nu-l ia niciuna dintre cele două liste — nici măcar cel lăsat afară fiindcă rândul lui de istoric nu e în descărcarea asta (până acum dispărea de pe ecran cu totul, rămânând doar într-un avertisment).
+**Contextul este complementul mulțimii de decis.** `citeste_instantanee_context` îl calculează pe `IDRH` în Python, astfel încât niciun rând nu lipsește din ambele liste, inclusiv cele al căror istoric nu apare în descărcarea curentă și care înainte produceau doar avertisment.
 
 **Se arată, nu se mișcă.** Toate ies cu `blocat = True`. Nu e o alegere de aspect: acoperirea cerută de `verifica_acoperirea` e exact mulțimea de decis, iar o decizie pentru un rând din afara ei e respinsă cu 400 — și pe drept, altfel fiecare descărcare ar rescrie tăcut legături vechi. Asta e chiar a doua jumătate a cerinței operatorului: **«se vor salva DOAR cele modificate sau noi — NU TOATE din nou!»** Corectarea unei legături vechi rămâne treaba editorului de oricând, care e la un clic distanță și există exact pentru asta.
 
@@ -98,7 +93,7 @@ Motivul afișat spune care dintre cele două cazuri e:
 
 **Formularul n-a avut nevoie de cod nou ca să le arate cum trebuie.** `Blocat` era deja onorat în toate cele șase locuri: lacătul din arbore, culoarea stinsă, stilul marcajului de pe bandă, pornirea tragerii din arbore, pornirea tragerii de pe bandă și meniul contextual.
 
-**Chei negative, ca să nu se ciocnească două numerotări.** Un rând de decis e ancorat pe indicele lui (0, 1, 2…), unul de context pe `IDRH`, cheia reală. Amândouă ajung în `_pozitie` și în dicționarele de rânduri ale formularului, unde `IDRH = 5` și indicele `5` ar fi același lucru. `AsociereStare.DinPropunere` păstrează deci contextul ca `-IDRH`: negarea e reversibilă (`IDRH` pornește de la 1, e cheie primară Access), nu poate atinge un indice, și spune dintr-o privire că rândul nu poartă o hotărâre.
+**Chei negative pentru context.** Rândurile de decis folosesc indicii 0, 1, 2…, iar contextul folosește chei reale `IDRH`; ambele intră în `_pozitie` și dicționarele formularului. `AsociereStare.DinPropunere` reprezintă contextul prin `-IDRH`, evitând coliziunea cheii 5 cu indicele 5. Negarea este reversibilă, deoarece cheia primară Access începe de la 1, și identifică rândurile fără hotărâre.
 
 Două locuri au trebuit să învețe să sară peste ele:
 
@@ -146,9 +141,7 @@ Anume:
 
 ---
 
-<a id="slice-0056-02"></a>
-
-## SLICE-0056-02 — old links can be corrected while placing a download
+## SLICE-0056-02 — old links can be corrected while placing a download <a id="slice-0056-02"></a>
 
 Operator, 01.10.2026: «I need to be able to edit ANY reception when new data is downloaded, as long as there is no ordonantare for it. Now, when I download new data, it does not let me change the old receptions — the ones that already exist — and I do not want that.»
 
@@ -185,11 +178,7 @@ Compatibility: an old client against the new server still marks all context rows
 
 ### Files touched
 
-- `PYTHON/routes/forexe/prelucrare_asociere.py`, `prelucrare.py`, `asociere.py`
-- `src/KBot.Domain/AsociereStare.vb`, `AsociereInfo.vb`, `KBot.Domain.vbproj` (1.2.7.0 → 1.2.8.0)
-- `src/KBot.Api/ApiClient.vb`, `UpsertAngajamenteRequest.vb`, `KBot.Api.vbproj` (1.0.15.0 → 1.0.16.0)
-- `src/KBot.App/Forexe/AsociereForm.vb`
-- help: see [0000-26](#slice-0000-26)
+`PYTHON/routes/forexe/prelucrare_asociere.py`, `prelucrare.py`, `asociere.py`; `src/KBot.Domain/AsociereStare.vb`, `AsociereInfo.vb`, `KBot.Domain.vbproj` (1.2.7.0 → 1.2.8.0); `src/KBot.Api/ApiClient.vb`, `UpsertAngajamenteRequest.vb`, `KBot.Api.vbproj` (1.0.15.0 → 1.0.16.0); `src/KBot.App/Forexe/AsociereForm.vb`; help: see [0000-26](#slice-0000-26)
 
 ### Test results
 
@@ -213,9 +202,7 @@ Compatibility: an old client against the new server still marks all context rows
 
 Consolidare documentară D002-18: jurnalul ajutorului scris în aceeași sarcină cu 0056-02 este păstrat mai jos ca etapă distinctă. Textul ajutorului și verificarea sa nu certifică salvarea reală rămasă neprobată.
 
-<a id="slice-0000-26"></a>
-
-## SLICE-0000-26 — the help for slice 0056-02
+## SLICE-0000-26 — the help for slice 0056-02 <a id="slice-0000-26"></a>
 
 Slice 0056-02 ([0056-02](SLICE-0056-tabloul-intreg.md#slice-0056-02), operator, 01.10.2026) lets the operator move old links while placing a download. This is the help for it, written in the same task, every changed section tagged `0056-02`.
 
@@ -233,9 +220,7 @@ Left out on purpose (HELP_SYSTEM §5): anchors, how the corrections travel to th
 
 ### Files touched
 
-- `src/KBot.App/HelpContent/contabil/asocieri/cazuri.md`, `fereastra.md`
-- `src/KBot.App/HelpContent/tours/tur-receptii.md`
-- `help-version.txt` stays `2026-10-01`
+`src/KBot.App/HelpContent/contabil/asocieri/cazuri.md`, `fereastra.md`; `src/KBot.App/HelpContent/tours/tur-receptii.md`; `help-version.txt` stays `2026-10-01`
 
 ### Test results
 

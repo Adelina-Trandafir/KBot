@@ -2,16 +2,9 @@
 
 Șase jurnale existente din 02–03.10.2026 sunt reunite pe tema bugetelor. „Fără total” din 40 precede coloana pe rând din 44 și rândul separat din 46; 45 schimbă creditul la total anual, iar 47 mută verificarea într-un subiect propriu. Secțiunea Access din 41 rămâne o descriere istorică a ajutorului 0103; restricția ulterioară din 0104 și 45 este păstrată, fără editarea ajutorului runtime. 0000-42 este menționat în [0105](SLICE-0105-clasificatii-sumar-si-miscare.md#slice-0105), dar nu are jurnal propriu sau rând de registru; nu inventăm unul prin consolidare.
 
-- [0000-40](#slice-0000-40)
-- [0000-41](#slice-0000-41)
-- [0000-44](#slice-0000-44)
-- [0000-45](#slice-0000-45)
-- [0000-46](#slice-0000-46)
-- [0000-47](#slice-0000-47)
+[0000-40](#slice-0000-40) · [0000-41](#slice-0000-41) · [0000-44](#slice-0000-44) · [0000-45](#slice-0000-45) · [0000-46](#slice-0000-46) · [0000-47](#slice-0000-47)
 
-<a id="slice-0000-40"></a>
-
-## SLICE-0000-40 — Help for 0102: the budget on versions, and how the DDF uses it (02.10.2026)
+## SLICE-0000-40 — Help for 0102: the budget on versions, and how the DDF uses it (02.10.2026) <a id="slice-0000-40"></a>
 
 ### What changed and why
 
@@ -41,9 +34,7 @@ Nothing looked at on screen. The sentence about a line added by hand («Adaugă 
 
 ---
 
-<a id="slice-0000-41"></a>
-
-## SLICE-0000-41 — Help for 0103-04 / 0103-06: «Verifică bugetul» and «Trimite în Access» (operator request, 02.10.2026)
+## SLICE-0000-41 — Help for 0103-04 / 0103-06: «Verifică bugetul» and «Trimite în Access» (operator request, 02.10.2026) <a id="slice-0000-41"></a>
 
 ### What changed and why
 
@@ -68,9 +59,7 @@ Nothing run, nothing seen on screen. `help-version.txt` already reads 2026-10-02
 
 ---
 
-<a id="slice-0000-44"></a>
-
-## SLICE-0000-44 - help for 0107-02: «Clasificatii bugetare» totals
+## SLICE-0000-44 - help for 0107-02: «Clasificatii bugetare» totals <a id="slice-0000-44"></a>
 
 Operator rule (30.09.2026): any change the operator sees is recorded in the help with its slice.
 
@@ -95,9 +84,7 @@ Text only, tag `0107-02` added to every section touched:
 
 ---
 
-<a id="slice-0000-45"></a>
-
-## SLICE-0000-45 - help for 0108: credit per classification, budget without quarters
+## SLICE-0000-45 - help for 0108: credit per classification, budget without quarters <a id="slice-0000-45"></a>
 
 Operator rule (30.09.2026): any change the operator sees is recorded in the help with its slice.
 
@@ -124,9 +111,7 @@ No capture needs redoing for this change except possibly `sumar` if the credit c
 
 ---
 
-<a id="slice-0000-46"></a>
-
-## SLICE-0000-46 - help for 0107: «Clasificatii bugetare» widths and final row
+## SLICE-0000-46 - help for 0107: «Clasificatii bugetare» widths and final row <a id="slice-0000-46"></a>
 
 Operator rule (30.09.2026): any change the operator sees is recorded in the help with its slice.
 
@@ -152,9 +137,7 @@ Text only, tag `0107` added to every section touched:
 
 ---
 
-<a id="slice-0000-47"></a>
-
-## SLICE-0000-47 - help topic for the «Verificare buget FOREXE» window
+## SLICE-0000-47 - help topic for the «Verificare buget FOREXE» window <a id="slice-0000-47"></a>
 
 Operator request, 03.10.2026: note the double click (slice 0107) in the help of the check window; create that help if it does not exist; at least one picture of the window.
 

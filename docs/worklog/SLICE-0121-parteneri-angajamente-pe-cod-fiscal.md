@@ -2,13 +2,7 @@
 
 Planul și șase etape implementate documentar sunt reunite. Dependențele sunt în tabelul planului: 02…07 cer schema 01 aplicată și sincronizată, iar 05 folosește ruta 04. 07 adaugă copierea datelor vechi după constatarea că Migratorul nu acoperă ce s-a introdus ulterior în K-BOT; limitele inițiale sunt checkpointuri. Corecția din 20.10 la 03 trimite id_clsf = 0 pentru clientul 1.1.2.4. Nicio schemă, interogare sau migrare nu este executată prin consolidare.
 
-- [0121 — plan și decizii](#slice-0121-plan)
-- [0121-01](#slice-0121-01)
-- [0121-02](#slice-0121-02)
-- [0121-03](#slice-0121-03)
-- [0121-04](#slice-0121-04)
-- [0121-05](#slice-0121-05)
-- [0121-07](#slice-0121-07)
+[0121 — plan și decizii](#slice-0121-plan) · [0121-01](#slice-0121-01) · [0121-02](#slice-0121-02) · [0121-03](#slice-0121-03) · [0121-04](#slice-0121-04) · [0121-05](#slice-0121-05) · [0121-07](#slice-0121-07)
 
 ## SLICE-0121 - Supplier <-> angajament links by CodFiscal (PLAN, 19.10.2026) <a id="slice-0121-plan"></a>
 
@@ -66,9 +60,7 @@ Choices (all from the plan, plus the ones I made):
 - `CREATE TABLE IF NOT EXISTS`: safe to run twice.
 
 ### Files touched
-- `sql/P121_01_parteneri_angajamente.sql` (new)
-- `docs/worklog/SLICE-0121-01-schema.md` (this file)
-- `docs/worklog/state/KBOT_STATUS_0120-0129.md`, `docs/worklog/KBOT_STATUS.md` (status)
+`sql/P121_01_parteneri_angajamente.sql` (new); `docs/worklog/SLICE-0121-01-schema.md` (this file); `docs/worklog/state/KBOT_STATUS_0120-0129.md`, `docs/worklog/KBOT_STATUS.md` (status)
 
 ### Test results
 Nothing run: the DDL has not been executed anywhere (the operator runs it by hand; Claude deploys nothing). Not syntax-checked against a live MariaDB.
@@ -103,14 +95,7 @@ Access `ParteneriAng` no longer goes into `Parteneri_Coduri`. It becomes two tab
 - The ticked table is still «Parteneri_Angajamente» (Access source `ParteneriAng`); the indicators table is written with it. `Parteneri_Coduri` is not written any more and stays on the server untouched (0121-06 drops it, at the operator's word).
 
 ### Files touched
-- `src/KBot.Migrator/Transfer/PartnerLinkSet.vb` (new): `PartnerLinkSet`, `PartnerLink`, `PartnerLinkIndicator`, `PartnerRowCount`, `PartnerLinkReader` (reads Access, shapes the links, reads the known `CodAI`).
-- `src/KBot.Migrator/Transfer/TableMap.vb`: `WritesPartnerLinks`, `CompanionTable`, `AsPartnerLinks`.
-- `src/KBot.Migrator/Transfer/TableMaps.vb`: the `ParteneriAng` map now targets `Parteneri_Angajamente` (+ companion).
-- `src/KBot.Migrator/Transfer/Finding.vb`: new kinds `LEGATURI_PARTENERI`, `PARTENER_FARA_COD_FISCAL`, `PARTENER_LIPSA_ACCESS`, `LEGATURA_FARA_ANGAJAMENT`, `LEGATURI_CONFLICT_UNITATI`, `CONT_BANCAR_DIFERIT`, `INDICATOR_LIPSA_FX`, `COD_FISCAL_NENUMERIC`.
-- `src/KBot.Migrator/Transfer/Verifier.vb`: companion table existence, the 1364 / missing-column guard for both tables, and the new gate `CheckPartnerLinks` (in the existing step «Se rezolvă partenerii…»).
-- `src/KBot.Migrator/Transfer/TransferRunner.vb`: `WritePartnerLinks`, called from the write loop for a `WritesPartnerLinks` map.
-- `src/KBot.Migrator/KBot.Migrator.vbproj`: FileVersion 1.20.0.0 -> 1.21.0.0.
-- Status: `state/KBOT_STATUS_0120-0129.md`, `KBOT_STATUS.md`, the plan file.
+`src/KBot.Migrator/Transfer/PartnerLinkSet.vb` (new): `PartnerLinkSet`, `PartnerLink`, `PartnerLinkIndicator`, `PartnerRowCount`, `PartnerLinkReader` (reads Access, shapes the links, reads the known `CodAI`). `src/KBot.Migrator/Transfer/TableMap.vb`: `WritesPartnerLinks`, `CompanionTable`, `AsPartnerLinks`. `src/KBot.Migrator/Transfer/TableMaps.vb`: the `ParteneriAng` map now targets `Parteneri_Angajamente` (+ companion). `src/KBot.Migrator/Transfer/Finding.vb`: new kinds `LEGATURI_PARTENERI`, `PARTENER_FARA_COD_FISCAL`, `PARTENER_LIPSA_ACCESS`, `LEGATURA_FARA_ANGAJAMENT`, `LEGATURI_CONFLICT_UNITATI`, `CONT_BANCAR_DIFERIT`, `INDICATOR_LIPSA_FX`, `COD_FISCAL_NENUMERIC`. `src/KBot.Migrator/Transfer/Verifier.vb`: companion table existence, the 1364 / missing-column guard for both tables, and the new gate `CheckPartnerLinks` (in the existing step «Se rezolvă partenerii…»). `src/KBot.Migrator/Transfer/TransferRunner.vb`: `WritePartnerLinks`, called from the write loop for a `WritesPartnerLinks` map. `src/KBot.Migrator/KBot.Migrator.vbproj`: FileVersion 1.20.0.0 -> 1.21.0.0. Status: `state/KBOT_STATUS_0120-0129.md`, `KBOT_STATUS.md`, the plan file.
 
 ### Test results
 `dotnet build src/KBot.Migrator/KBot.Migrator.vbproj`: succeeded, 0 warnings, 0 errors. **Nothing else was run, on purpose** (operator, 19.10.2026: no way to test the Migrator now - built only; no tests written or run, no Access file opened, no database touched). The test project was not built.

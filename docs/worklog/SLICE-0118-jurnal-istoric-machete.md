@@ -13,8 +13,7 @@ Construit si probat in `KBOT_TEST`, adus in `KBOT\src` la 13.10.2026. Istoria: `
 3. **Jurnalul**: ziua curenta e desfacuta cand zilele se strang (`KBotDataView.ExpandGroup`, nou in `KBotDataView.Grouping.vb`), iar intre grila si detaliu e un separator reglabil (`splitJurnal`, SplitContainer).
 
 ## Fisiere
-- NOU: `src/KBot.App/JurnalPage.vb` + `.Designer.vb`, `IstoricVersiuniPage.vb` + `.Designer.vb`, `KbotForm.Pagini.vb`.
-- Modificate: `Setari/SetariForm.Designer.vb`, `Setari/SetariForm.vb`, `Setari/SetariJurnalView.vb` + `.Designer.vb`, `KBot.Controls/DataView/KBotDataView.Grouping.vb`.
+NOU: `src/KBot.App/JurnalPage.vb` + `.Designer.vb`, `IstoricVersiuniPage.vb` + `.Designer.vb`, `KbotForm.Pagini.vb`. Modificate: `Setari/SetariForm.Designer.vb`, `Setari/SetariForm.vb`, `Setari/SetariJurnalView.vb` + `.Designer.vb`, `KBot.Controls/DataView/KBotDataView.Grouping.vb`.
 
 ## Teste / verificare
 - Build-ul unirii: 0 erori, 0 avertismente (operator). Nimic rulat in aceasta sesiune. Probat pe ecran in `KBOT_TEST`.

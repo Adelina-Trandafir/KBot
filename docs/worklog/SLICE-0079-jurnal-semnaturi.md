@@ -27,7 +27,7 @@ Deciziile operatorului (23.09.2026):
 | `IpPublic` | serverul — adresa cererii (ProxyFix) |
 | `IpLocal`, `NumeCalculator`, `UtilizatorWindows`, `SistemOperare`, `VersiuneKbot` | calculatorul operatorului |
 
-**Doar semnăturile NOI.** Câmpurile deja semnate când documentul a fost deschis sunt ale altcuiva; dacă ar fi trimise din nou, ar primi contul, IP-ul și calculatorul operatorului de acum. `SignatureRecords.Added` scade din fișierul salvat mulțimea de câmpuri citită la pornirea sesiunii de semnare. Copia păstrată în `PdfDeIncarcat` își ține propriile înregistrări în `.json` (reîncercarea are loc mai târziu, când nimeni nu mai știe cum arăta fișierul înainte).
+**Doar semnăturile noi.** `SignatureRecords.Added` scade câmpurile citite la pornirea sesiunii din cele ale fișierului salvat, evitând atribuirea semnăturilor vechi contului/IP-ului/calculatorului curent. `PdfDeIncarcat` păstrează înregistrările proprii în `.json`, necesare reîncercării ulterioare.
 
 **Fără dubluri.** Serverul sare peste un rând pe care îl are deja (același document, câmp și dată a semnăturii), deci o reîncercare după un răspuns pierdut nu dublează nimic.
 

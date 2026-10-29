@@ -7,13 +7,9 @@ The K-BOT login session store (`routes/auth/session_store.py`) has two backends 
 | `memory` (default) | `SessionStore` | this Gunicorn process | no | no (single worker only) |
 | `redis` | `RedisSessionStore` | shared Redis server | yes | yes (for sessions) |
 
-Login (`/api/auth/login`) mints tokens into `STORE`, and the data-route guard (`routes/auth/guard.py`) validates against the **same** `STORE`. (Historically login wrote to a private dict while the guards read a different store — a real login token was invisible to the data routes and every first authenticated call returned 401. That is fixed: one `STORE`, either backend.)
+Login (`/api/auth/login`) and the data guard (`routes/auth/guard.py`) use the same `STORE`. Historically login wrote a private dict while guards read another store, causing 401 on the first authenticated call; that split is fixed for both backends. `SESSION_BACKEND` ships as **memory**, avoiding deployment dependence on Redis. Switching to Redis is a deliberate, one-time VPS configuration change.
 
-The code ships with `SESSION_BACKEND` defaulting to **memory**, so a deploy can never fail because Redis is unreachable. Switching to Redis is a deliberate, one-time config change on the VPS, described below.
-
-> Note: the Gunicorn single-worker guard in `gunicorn.conf.py` stays even on Redis,
-> because `_upload_sessions` is **not** on Redis yet. Multi-worker requires migrating
-> that too — a separate, planned step.
+The Gunicorn single-worker guard in `gunicorn.conf.py` remains even with Redis: `_upload_sessions` is not migrated. Multi-worker support requires that separate, planned migration.
 
 ---
 
@@ -34,12 +30,7 @@ redis-cli ping                      # -> PONG
 redis-cli -n 3 dbsize               # how many keys already in logical DB 3
 ```
 
-What you need out of this:
-
-- **host / port** — almost always `127.0.0.1` / `6379` for a local Redis.
-- **password** — the value of `requirepass` if present; otherwise none.
-- **a free logical DB number** — Redis has DBs `0..15`. Pick one the other project is **not** using (e.g. `3`) so K-BOT keys can't collide. Check candidates with `redis-cli -n <N> dbsize` (0 = empty = safe to take). K-BOT also namespaces every key as `kbot:sess:<token>`, so even sharing a DB is safe, but a dedicated DB is cleaner.
-
+Required values: **host/port** (usually local `127.0.0.1:6379`), **password** (`requirepass`, otherwise none) and a **free logical DB** from `0..15`, such as `3`. Check candidates with `redis-cli -n <N> dbsize`: 0 means empty. A dedicated DB avoids the other project's keys; prefix `kbot:sess:<token>` also permits safe sharing.
 ## 2. Install the Python client on the host
 
 ```bash

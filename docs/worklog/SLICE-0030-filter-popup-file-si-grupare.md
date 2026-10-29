@@ -13,7 +13,7 @@
 
 ## a. Filtrarea: o clauză `Handles` pierdută la o redenumire
 
-`LstValori_ItemCheck` rămăsese fără `Handles lstValori.ItemCheck`. Consecința nu e „filtrul nu merge”, ci ceva mai rău, fiindcă arată corect pe ecran: bifele puse cu mouse-ul nu ajungeau niciodată în model, deci la OK se preda mulțimea de dinaintea oricărui clic. Pe drumul obișnuit — «(Selectează tot)» stinge tot, apoi se bifează una singură — mulțimea aia e **goală**, adică o grilă goală. «Șterge filtrul» continua să meargă fiindcă el nu trece prin bife deloc.
+`LstValori_ItemCheck` pierduse `Handles lstValori.ItemCheck`: bifele vizibile nu ajungeau în model, iar OK trimitea mulțimea veche. După debifarea «(Selectează tot)» și bifarea unei valori, aceasta rămânea goală, golind grila. «Șterge filtrul» funcționa deoarece nu folosește bifele.
 
 Clauza e la loc, cu un comentariu care spune ce se rupe fără ea, și cu un test care merge pe drumul operatorului (`UncheckAllThenTickOne_FiltersToThatOneValue`), nu prin porțile `Debug*`.
 
@@ -29,15 +29,15 @@ A doua jumătate: `AjusteazaInaltimea` citea `lstValori.Height` **înainte** de 
 
 Fișier nou în `KBot.Theming`, lângă `ModernRenderer`.
 
-**Regula, într-o propoziție:** un rând fix crește cu EXACT surplusul pe care conținutul lui îl cere peste măsura AUTORATĂ, și se întoarce la măsura autorată când surplusul dispare. Nu „rândul devine cât conținutul” — atunci aerul ales de operator între controale s-ar pierde la prima comutare de schemă.
+**Regula:** rândul fix crește numai cu surplusul cerut de conținut peste măsura autorată și revine când surplusul dispare. Nu devine pur și simplu cât conținutul, ceea ce ar pierde spațiul ales de operator.
 
 Trei lucruri au ieșit din implementare și merită reținute:
 
-1. **Baza e un instantaneu, nu mărimea de acum.** Fără `Capture`, a doua comutare de schemă ar măsura peste rezultatul primeia și rândurile ar crește la fiecare trecere prin Modern, fără să se mai întoarcă niciodată. Același tipar ca înălțimea autorată a unui buton din `ModernRenderer` și ca lățimea autorată a unei coloane de grilă.
+1. **Baza este instantaneul `Capture`**, nu dimensiunea curentă: altfel comutările Modern ar acumula creșterea fără revenire. Același tipar ca înălțimea autorată din `ModernRenderer` și lățimea autorată a coloanei.
 
-2. **Se întreabă `GetPreferredSize`, NU `Height`** — și asta a fost miezul. `ModernRenderer` chiar crește butonul ca să-i încapă umplutura schemei, dar înăuntrul unui `TableLayoutPanel` creșterea aia nu se vede niciodată: motorul de așezare taie orice control andocat la dreptunghiul celulei la primul layout de după. Un buton de 56px într-o celulă de 40 **raportează 40**, deci o măsurare care s-ar uita la mărimea lui ar afla mereu că totul încape perfect. Prima versiune a testului a picat exact pe asta. Corolar: `KBotTextField` a primit un `GetPreferredSize` care spune cinstit cât îi trebuie pe fontul curent — cadrul nu se redimensionează singur (înălțimea lui e a designerului), deci ăsta era singurul loc unde putea răspunde la «mai încape textul?».
+2. **`GetPreferredSize`, nu `Height`:** layout-ul taie butonul mărit de `ModernRenderer` la celula andocată; 56px într-o celulă de 40 raportează 40, ascunzând deficitul. Prima probă a eșuat aici. `KBotTextField.GetPreferredSize` raportează necesarul fontului, deoarece cadrul nu se redimensionează singur, înălțimea fiind autorată.
 
-3. **`Control.Visible` nu poate fi întrebat de nimeni.** Getter-ul răspunde despre lanțul de părinți, deci pe un formular încă nearătat TOT ce e în tabel raportează `False` — o măsurare care ar sări controalele „ascunse” ar ieși goală headless. De aceea un rând care chiar trebuie să dispară (butonul de condiții pe o coloană logică) se strânge **explicit**, prin `SetRowCollapsed`. Aceeași capcană a mutat starea filei din `pnlX.Visible` într-un câmp.
+3. **`Control.Visible` reflectă părinții:** înainte de afișarea formularului, tot tabelul pare ascuns și măsurarea ar ieși goală headless. Rândul realmente ascuns (condițiile pe coloană logică) se strânge explicit prin `SetRowCollapsed`; starea filei este în câmp propriu, nu `pnlX.Visible`.
 
 ## d. Trei file, și fila de grupare
 
@@ -55,9 +55,9 @@ Gruparea rămâne deschisă fiindcă are șapte opțiuni: o filă care s-ar înc
 
 **„Dinamic din ce e în grilă”** înseamnă: controalele sunt ale designerului (regula casei), dar NIMIC din ce scrie pe ele nu e — titlul («Grupează după «Luna»»), starea celor șapte opțiuni, ierarhia de niveluri cu coloana curentă marcată, toate se citesc din `KBotDataView.Groups` la deschidere. E aceeași împărțire ca la lista de valori de la 0028-06.
 
-**Nivelul EXISTENT se refolosește, nu se înlocuiește:** pe el pot sta culori și fonturi puse din designer (`HeaderBackColor`, `FooterFont`…), iar o bifă din meniu n-are voie să le șteargă. Și `SetColumnGroupLevel` înlocuiește pe LOCUL LUI din ierarhie — o schimbare de opțiuni n-are voie să mute coloana de pe nivelul 1 pe ultimul, fiindcă ordinea nivelurilor E ierarhia.
+**Nivelul existent se refolosește**, păstrând culorile/fonturile autorate (`HeaderBackColor`, `FooterFont`…). `SetColumnGroupLevel` înlocuiește la aceeași poziție: schimbarea opțiunilor nu mută nivelul 1 la final și nu schimbă ierarhia.
 
-`EnableGrouping` e **implicit stins**, și gatează DOAR fila: o grilă poate porni grupată din designer cu steagul stins, și atunci gruparea e a machetei, nu una pe care operatorul o poate desface. Cele șase vederi livrate nu capătă nicio filă nouă peste noapte.
+`EnableGrouping = False` implicit ascunde numai fila. Gruparea autorată în designer poate rămâne activă și indisponibilă operatorului; cele șase vederi livrate nu primesc automat fila.
 
 ---
 

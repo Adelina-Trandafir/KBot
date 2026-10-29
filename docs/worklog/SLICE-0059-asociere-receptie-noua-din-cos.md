@@ -14,7 +14,7 @@ Coșul din dreapta avea până acum exact două ieșiri: **pune instantaneul pe 
 
 F26 spune că nu întotdeauna există. O recepție creată **și** ștearsă pe site înainte ca K-BOT să fi descărcat vreodată angajamentul nu are rând în `ListaReceptii`, deci nu are rând în `FX_Receptii_R` — dar instantaneele ei sunt toate în istoric, fiindcă istoricul vine întreg. Pentru acele instantanee coșul era o fundătură: nu aveau pe ce fi puse, iar «fără schimbare» ar fi fost o minciună.
 
-**Serverul știa deja să le primească.** Acțiunea `reconstituire` și câmpul `receptie_noua` există în `routes/forexe/asociere.py` și în `routes/forexe/prelucrare_asociere.py` (§4c-bis, `verifica_etichetele` + `materializeaza_receptiile_reconstituite`), sunt duse până la capăt prin `ApiClient` și prin `ComandaAsociere.ReceptieNoua` / `DecizieAsociere.ReceptieNoua`, și au teste. **Nimic din tot lanțul ăsta nu era chemat de nicăieri** — formularul nu avea niciun gest care să producă o `reconstituire`. Felia asta nu adaugă un contract, ci pune capătul de client pe unul care aștepta.
+**Contractul exista, gestul UI lipsea.** `reconstituire` / `receptie_noua` erau implementate și testate în `routes/forexe/asociere.py`, `routes/forexe/prelucrare_asociere.py` (§4c-bis: `verifica_etichetele`, `materializeaza_receptiile_reconstituite`), `ApiClient` și `ComandaAsociere.ReceptieNoua` / `DecizieAsociere.ReceptieNoua`. Formularul nu putea produce acțiunea; felia adaugă acel capăt de client.
 
 Nicio linie de Python nu s-a atins.
 
@@ -22,7 +22,7 @@ Nicio linie de Python nu s-a atins.
 
 ## 2. Cum e ținută o recepție nouă în formular
 
-**Un IDRR NEGATIV în `_pozitie`, și atât.** `_pozitie` rămâne singura evidență a așezărilor; o recepție pornită aici e mulțimea instantaneelor care poartă același număr negativ. Lista `_receptiiNoi` e o **proiecție**, refăcută din `_pozitie` la fiecare `Reconstruieste` (`ActualizeazaReceptiileNoi`), nu o a doua evidență care s-ar putea contrazice cu prima.
+**IDRR negativ în `_pozitie`.** Recepția nouă este mulțimea instantaneelor cu același număr negativ. `_pozitie` rămâne evidența unică; `_receptiiNoi` este proiecția refăcută de `ActualizeazaReceptiileNoi` la fiecare `Reconstruieste`.
 
 Trei lucruri ies gratis din alegerea asta:
 
@@ -30,7 +30,7 @@ Trei lucruri ies gratis din alegerea asta:
 - **Toate suprafețele o văd fără să știe de ea**: arborele din stânga, graficul, benzile și țintele de tragere citesc acum `Receptiile()` (server + pornite aici) în loc de `_stare.Receptii`. Cheia de nod e `R:-1`, cheia de serie `R-1`, iar `IdrrDinCheie` le citește ca pe oricare altele.
 - **`_stare` rămâne neatins**, adică rămâne adevărul de pe server, cu care se compară ce s-a schimbat.
 
-Cifrele rândului se **recalculează** din lanț la fiecare mutare, fiindcă exact așa le va scrie serverul: `DataR` = momentul celui mai vechi instantaneu, `SumaAntet` = totalul rândului de ștergere. Un rând care ar arăta altceva decât ce se va scrie ar fi singura minciună de pe ecran.
+La fiecare mutare, cifrele sunt recalculate din lanț după regula de salvare a serverului: `DataR` = momentul celui mai vechi instantaneu; `SumaAntet` = totalul rândului de ștergere.
 
 `EtichetaTrimisa(-1)` = `"R1"`. Numerele nu se reciclează cât ține fereastra: două recepții pornite una după alta pe același număr ar ajunge la server cu aceeași etichetă, iar acolo o etichetă se declară **o singură dată**.
 

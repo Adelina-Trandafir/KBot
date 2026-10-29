@@ -4,11 +4,7 @@ Repere comune: 07.10.2026 — ADE0-01/02; 08.10.2026 — ADE0-03…05. Starea TE
 
 Etape documentare din 07–08.10.2026, în ordinea lor, cu livrabilele și limitele inițiale păstrate. Confirmarea comună a rubricilor de nevalidat/amânat din ADE0-01…05: *Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.* Planul inițial nu constituie singur dovada implementării ADE1–ADE9.
 
-- [ADE0-01](#slice-ADE0-01)
-- [ADE0-02](#slice-ADE0-02)
-- [ADE0-03](#slice-ADE0-03)
-- [ADE0-04](#slice-ADE0-04)
-- [ADE0-05](#slice-ADE0-05)
+[ADE0-01](#slice-ADE0-01) · [ADE0-02](#slice-ADE0-02) · [ADE0-03](#slice-ADE0-03) · [ADE0-04](#slice-ADE0-04) · [ADE0-05](#slice-ADE0-05)
 
 ## SLICE-ADE0-01 — planul inițial ADECHIT <a id="slice-ADE0-01"></a>
 
@@ -24,9 +20,7 @@ Codex scrie și verifică local pe localhost:5050; utilizatorul publică prin Av
 
 ### Fișiere atinse
 
-- [ADECHIT_STATUS.md](../../ADECHIT_STATUS.md) — index, reguli, decizii și ordinea lucrărilor.
-- [ADECHIT_STATUS_ADE0-ADE9.md](state/ADECHIT_STATUS_ADE0-ADE9.md) — planul detaliat, criterii de acceptare, dependențe și întrebări rămase.
-- Acest worklog.
+[ADECHIT_STATUS.md](../../ADECHIT_STATUS.md) — index, reguli, decizii și ordinea lucrărilor. [ADECHIT_STATUS_ADE0-ADE9.md](state/ADECHIT_STATUS_ADE0-ADE9.md) — planul detaliat, criterii de acceptare, dependențe și întrebări rămase. Acest worklog.
 
 ### Rezultatele verificărilor
 
@@ -54,12 +48,7 @@ Utilizatorul a confirmat păstrarea încasărilor în lună închisă cu actuali
 
 ### Fișiere
 
-- [Maparea fluxurilor](../../ADECHIT/MAPARE_ACCESS_WEB.md).
-- [Contractul calculelor](../../ADECHIT/CONTRACT_CALCULE.md).
-- [Inventarul obiectelor](../../ADECHIT/INVENTAR_OBIECTE.md).
-- [Indexul ADECHIT](../../ADECHIT_STATUS.md).
-- [Starea ADE0–ADE9](state/ADECHIT_STATUS_ADE0-ADE9.md).
-- Acest worklog.
+[Maparea fluxurilor](../../ADECHIT/MAPARE_ACCESS_WEB.md). [Contractul calculelor](../../ADECHIT/CONTRACT_CALCULE.md). [Inventarul obiectelor](../../ADECHIT/INVENTAR_OBIECTE.md). [Indexul ADECHIT](../../ADECHIT_STATUS.md). [Starea ADE0–ADE9](state/ADECHIT_STATUS_ADE0-ADE9.md). Acest worklog.
 
 ### Verificări efective
 
@@ -91,11 +80,7 @@ Un registru separat urmărește M01–M10 și D01–D10, cu feliile afectate și
 
 ### Fișiere
 
-- [PLAN_IMPLEMENTARE](../../ADECHIT/PLAN_IMPLEMENTARE.md), nou.
-- [DECIZII_DESCHISE](../../ADECHIT/DECIZII_DESCHISE.md), nou.
-- [ADECHIT_STATUS](../../ADECHIT_STATUS.md), actualizat.
-- [Stare ADE0–ADE9](state/ADECHIT_STATUS_ADE0-ADE9.md), actualizată.
-- Acest worklog.
+[PLAN_IMPLEMENTARE](../../ADECHIT/PLAN_IMPLEMENTARE.md), nou. [DECIZII_DESCHISE](../../ADECHIT/DECIZII_DESCHISE.md), nou. [ADECHIT_STATUS](../../ADECHIT_STATUS.md), actualizat. [Stare ADE0–ADE9](state/ADECHIT_STATUS_ADE0-ADE9.md), actualizată. Acest worklog.
 
 ### Verificări efective
 
@@ -115,11 +100,7 @@ La cererea explicită a utilizatorului, au fost adoptate cele 15 reguli din list
 
 ### Fișiere
 
-- [Reguli proiect](../../ADECHIT/REGULI_PROIECT.md), nou.
-- [Index](../../ADECHIT_STATUS.md), trimitere obligatorie și stare actualizată.
-- [Stare ADE0](state/ADECHIT_STATUS_ADE0-ADE9.md), subfelie și următor număr ADE0-05.
-- [Plan](../../ADECHIT/PLAN_IMPLEMENTARE.md), actualizarea numerelor libere.
-- Acest worklog.
+[Reguli proiect](../../ADECHIT/REGULI_PROIECT.md), nou. [Index](../../ADECHIT_STATUS.md), trimitere obligatorie și stare actualizată. [Stare ADE0](state/ADECHIT_STATUS_ADE0-ADE9.md), subfelie și următor număr ADE0-05. [Plan](../../ADECHIT/PLAN_IMPLEMENTARE.md), actualizarea numerelor libere. Acest worklog.
 
 ### Verificări
 
@@ -137,11 +118,7 @@ Am salvat instrucțiunea utilizatorului: datele reale sunt în `C:\Users\Adelina
 
 ### Fișiere
 
-- [Reguli](../../ADECHIT/REGULI_PROIECT.md).
-- [Index](../../ADECHIT_STATUS.md).
-- [Stare](state/ADECHIT_STATUS_ADE0-ADE9.md).
-- [Plan](../../ADECHIT/PLAN_IMPLEMENTARE.md), următor număr ADE0-06.
-- Acest worklog.
+[Reguli](../../ADECHIT/REGULI_PROIECT.md). [Index](../../ADECHIT_STATUS.md). [Stare](state/ADECHIT_STATUS_ADE0-ADE9.md). [Plan](../../ADECHIT/PLAN_IMPLEMENTARE.md), următor număr ADE0-06. Acest worklog.
 
 ### Verificări
 

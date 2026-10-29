@@ -19,19 +19,19 @@ S-a ales vederea Recepții pentru amândouă: acolo e simptomul (lista goală) �
 
 ### 1. De ce dispăreau (cererea 1)
 
-`GET /api/forexe/receptii` pornea din `FX_Receptii_R` cu `INNER JOIN FX_Receptii_H ON H.IDRR = R.IDRR` — portul literal al lui `qFX_MAIN_REC_TREE`. Un antet cu `IDRR NULL` nu se potrivește cu nicio recepție, deci cădea din rezultat; când TOATE anteturile sunt așa, răspunsul e `receptii: []` și vederea spune «Angajamentul nu are recepții». Serverul nu mințea despre ce a găsit — mințea interogarea, prin ce alegea să nu caute.
+`GET /api/forexe/receptii` porta literal `qFX_MAIN_REC_TREE`: `FX_Receptii_R INNER JOIN FX_Receptii_H ON H.IDRR = R.IDRR`. Anteturile cu `IDRR NULL` dispăreau; dacă erau toate neașezate, rezultatul `receptii: []` producea «Angajamentul nu are recepții».
 
 **Schimbarea:** rădăcina interogării e acum `FX_Receptii_H`, cu `LEFT JOIN FX_Receptii_R` și `WHERE H.CodAngajament = %s`. Un antet neașezat vine cu toate câmpurile de recepție `NULL` (`idrr: null`, `data_r: null`, `suma_antet: 0.0`, steagurile `false`). Restul rămâne: `LEFT JOIN FX_Receptii`, `LEFT JOIN FX_Indicatori`, subinterogările scalare pe `Clasificatii`, aceeași ordine (`R.NRCRT, R.DataR, H.NrCrt, H.DataH, Rc.IDR` — NULL-urile lui R vin primele în MariaDB, dar clientul oricum grupează). O recepție FĂRĂ niciun antet nu apare — nici în Access nu apărea.
 
-**Pe fir:** `GetReceptieRow.idrr` devine `Integer?`; `ReceptieRow.Idrr` rămâne `Integer`, cu **0 = neașezat** — aceeași convenție pe care o are deja `AsociereInfo` (`idrr = 0` = «pe nicio recepție»). Un `null` JSON într-un `Integer` nenulabil ar fi picat deserializarea întregului răspuns, deci schimbarea DTO-ului nu e cosmetică.
+**Pe fir:** `GetReceptieRow.idrr` devine `Integer?`, evitând eșecul deserializării pentru JSON `null`. `ReceptieRow.Idrr` rămâne `Integer`, cu **0 = neașezat**, ca `AsociereInfo.idrr = 0`.
 
-**În arbore (`ReceptiiView.BuildTree`):** rândurile se despart în așezate (`Idrr > 0`) și neașezate. Lunile și tooltip-urile de reconciliere se calculează DOAR peste cele așezate — un antet fără `DataR` n-are lună și n-are ce căuta într-un cumul. Neașezatele merg într-un dosar nou, **ultimul**, «Instantanee neașezate», cu totalul = `Sum(Total)` pe anteturi distincte și un nod per antet (`h_{IDRH}`: `DataH`, descrierea antetului, `Total`; iconița după semnul valorii, ca la recepții). Click pe dosar sau pe un antet umple grila cu liniile lor, ca orice nod. Tooltip-ul dosarului spune câte sunt și că se așază din editorul de legături (iconița din antetul arborelui), care le vede deja: `citeste_instantanee` din `asociere.py` citea DE LA ÎNCEPUT toate anteturile angajamentului, cu `idrr = 0` pentru cele fără recepție.
+**În arbore (`ReceptiiView.BuildTree`):** rândurile așezate (`Idrr > 0`) alimentează lunile și tooltip-urile de reconciliere; neașezatele fără `DataR` nu intră în cumul. Ultimul dosar, **«Instantanee neașezate»**, însumează `Total` pe antete distincte și are câte un `h_{IDRH}` (`DataH`, descriere, `Total`, iconiță după semn). Clicul umple grila cu liniile dosarului/antetului. Tooltip-ul dă numărul și indică editorul din antetul arborelui; `asociere.py.citeste_instantanee` citea deja toate antetele, cu `idrr = 0` pentru cele fără recepție.
 
 ### 2. Refacerea din istoric (cererea 2)
 
 #### 2.1 Ce e sursa de adevăr
 
-`FX_Istoric` nu pierde nimic: fiecare antet și fiecare linie poartă `IDH = FX_Istoric.ID` (verificat în `TABLES/FX_Receptii_H.md` și `TABLES/FX_Receptii.md`: coloana `IDH` și relația `FX_IstoricFX_Receptii_H` / `FX_IstoricFX_Receptii`). Iar algoritmul care construiește H și liniile din istoric există deja, de două ori: în Access (`mdl_FX_Istoric.FX_Istoric_Populeaza_ Receptii`, liniile 529–652 din export) și portat în `prelucrare_pasi.step4a_populeaza_receptii` (felia 0048-03). Amândouă merg peste rândurile de istoric de recepție în ordinea `ID`, strâng liniile (`Val_Receptie <> 0`) într-un tampon și le varsă sub primul rând cu `(activ:true)` în `Observatii`, care e antetul (`IDH` = ID-ul lui, `DataH = DataFX`, `Total = Val_Receptie`, `Descriere` = textul dintre «Receptie: » și virgulă).
+`IDH = FX_Istoric.ID` leagă antetele și liniile, verificat în `TABLES/FX_Receptii_H.md` / `FX_Receptii.md` prin coloana și relațiile `FX_IstoricFX_Receptii_H` / `FX_IstoricFX_Receptii`. Algoritmul există în Access `mdl_FX_Istoric.FX_Istoric_Populeaza_ Receptii` (export 529–652) și în portul `prelucrare_pasi.step4a_populeaza_receptii` (0048-03): istoric de recepție în ordinea `ID`, tampon cu `Val_Receptie <> 0`, golit sub primul `(activ:true)` din `Observatii`. Antetul primește `IDH = ID`, `DataH = DataFX`, `Total = Val_Receptie`, descrierea dintre «Receptie: » și virgulă.
 
 #### 2.2 Ruta nouă: `POST /api/forexe/receptii/refacere`
 
@@ -43,17 +43,17 @@ S-a ales vederea Recepții pentru amândouă: acolo e simptomul (lista goală) �
 
 Trei lucruri se **semnalează** fără să se înghită: liniile rămase fără antet la sfârșit (tamponul nevidat), liniile sărite, și anteturile existente care au linii cu `IDH NULL` (la ele nu se poate judeca ce lipsește, deci liniile lor nu se ating și se spune de ce).
 
-**DIF-urile.** O linie adăugată sau relegată sub un antet care e DEJA pe o recepție îi schimbă lanțul: `step4d_calculeaza_dif(cursor, cod, idrr)` se cheamă pentru fiecare `IDRR` atins (`receptii_recalculate` în răspuns). Un antet nou n-are `IDRR`, deci n-are lanț — îl va avea când operatorul îl așază, iar așezarea (`recalculeaza_final`) își face socoteala ei.
+**DIF-urile.** Pentru fiecare `IDRR` atins de adăugarea/relegarea unei linii se cheamă `step4d_calculeaza_dif(cursor, cod, idrr)` (`receptii_recalculate` în răspuns). Antetul nou, fără `IDRR`, va fi recalculat de `recalculeaza_final` când operatorul îl așază.
 
 **Două moduri, un singur cod.** `aplica = false` (implicit) e o PROBĂ: numără, nu scrie (`rollback`). `aplica = true` scrie într-o singură tranzacție. Cheile răspunsului sunt ASCII, identice în ambele moduri: `antete_lipsa, linii_lipsa, linii_orfane, antete_scrise, linii_scrise, linii_relegate, linii_fara_antet, linii_sarite, receptii_recalculate, avertismente, aplicat, cod`.
 
 #### 2.2b Toată baza dintr-un foc
 
-A doua cerere a operatorului din aceeași zi: «trebuie să le pot face pe toate deodată, pentru o bază». Același endpoint, corp `{ "toate": true, "aplica": … }` (exclusiv cu `cod`): `refa_toate` ia toate `CodAngajament`-urile cu rânduri de istoric de recepție prelucrate și cheamă `refa_receptii` pentru fiecare, **fiecare în tranzacția lui** — un angajament care cade (FK, indicator) intră în `erori` cu mesajul lui și nu trage după el nici ce s-a scris înainte, nici ce vine după. Răspunsul: `angajamente`, `cu_lipsuri`, `totaluri` (suma pe cele opt chei numărate) și `detalii` DOAR pentru angajamentele la care s-a găsit ceva de făcut sau de spus. Fișier de cereri pentru VS Code (REST Client): `PYTHON/requests/receptii_refacere.http` — login, probă pe un cod, aplicare pe un cod, probă pe toată baza, aplicare pe toată baza. Parola se cere la prompt, nu stă în fișier.
+Pentru cererea operatorului de refacere a întregii baze, același endpoint acceptă `{ "toate": true, "aplica": … }`, exclusiv cu `cod`. `refa_toate` parcurge `CodAngajament` cu istoric de recepție prelucrat, chemând `refa_receptii` în tranzacții separate. Eșecul unui angajament (FK, indicator) intră în `erori`, fără a afecta celelalte. Răspuns: `angajamente`, `cu_lipsuri`, `totaluri` (suma celor opt contoare), `detalii` numai pentru cazurile cu acțiuni/semnalări. `PYTHON/requests/receptii_refacere.http` oferă login și probă/aplicare pe cod/bază; parola este cerută la prompt.
 
 #### 2.2c Fără sesiune, cu cheia de administrare
 
-«Nu pot cu utilizatorul admin, să dau doar numele bazei?» — ba da: `POST /api/admin/receptii/refacere`, în `routes/admin.py`, sub `require_api_key` (`X-Api-Key` = `API_KEY` din `config.py`), cu `db_name` în corp (validat de `_validate_db_name`), plus `cod` sau `toate`, și `aplica`. Același nucleu (`citeste_cererea` + `executa_refacerea`, scoase în `receptii_refacere.py` ca ambele rute să le împartă), același răspuns, plus `db_name` ecou. **Nu trece prin `get_db_connection`** ca restul rutelor de administrare: tabelele `FX_` sunt pe serverul K-BOT (`get_kbot_connection`). Importul e local în handler — `angajamente.py` importă deja `_validate_db_name` din `admin.py`, un import la vârf închidea un cerc. Regula «bearer ≠ X-Api-Key, nu se amestecă» rămâne: sunt două rute, fiecare cu o singură pază.
+La cererea operatorului, `POST /api/admin/receptii/refacere` din `routes/admin.py` folosește `require_api_key` (`X-Api-Key = config.API_KEY`), cu `db_name` în corp, validat de `_validate_db_name`, `cod` sau `toate`, și `aplica`. Împarte nucleul `citeste_cererea` / `executa_refacerea` din `receptii_refacere.py`, întorcând același răspuns plus ecoul `db_name`. Folosește `get_kbot_connection`, nu `get_db_connection`, deoarece tabelele FX sunt pe serverul K-BOT. Importul local evită ciclul cu `angajamente.py`, care importă validatorul din `admin.py`. Bearer și cheia rămân separate, câte o pază per rută.
 
 `PYTHON/requests/refacere.ps1` (curl.exe): `-Db 000_DEMO [-Apply] [-Cod …]` pe calea admin (cheia la prompt mascat / `-ApiKey` / `KBOT_API_KEY`), sau `-User … -Dc …` pe calea cu login. Scrie răspunsul brut lângă script și îl rezumă în consolă.
 
@@ -61,7 +61,7 @@ A doua cerere a operatorului din aceeași zi: «trebuie să le pot face pe toate
 
 * `IApiClient.RebuildReceptiiAsync(cod, apply, ct)` ▸ `ReceptiiRebuildResult` (POCO nou în `KBot.Domain`, cu `NothingToDo`). DTO-urile `PostReceptiiRefacereRequest/Response` în `UpsertAngajamenteRequest.vb`, lângă celelalte.
 * `ReceptiiView`: al treilea callback opțional, `rebuildMissing As Action(Of String)`, legat de **iconița din STÂNGA subsolului** arborelui (`FooterLeftIcon = database`, slot liber până acum — butonul de strângere nu e pornit în vederea asta, deci nu-i ia colțul). Fără callback iconița se stinge, ca celelalte două.
-* `MainForm.RebuildReceptiiFromIstoric(cod)`: proba ▸ dacă nu lipsește nimic, o spune și se oprește ▸ altfel întreabă cu cifrele reale (câte anteturi, câte linii, câte orfane) și cu avertizarea că anteturile refăcute vor apărea în dosarul «Instantanee neașezate» ▸ la Da, scrierea ▸ raportul (scrise / relegate / recepții recalculate / semnalări) ▸ `LoadTreeAsync(pastreazaSelectia:=True)`, ca după editorul de legături: steagurile `Are*` ale nodului se pot schimba, iar reîncărcarea împinge singură contextul nou în vedere. Trăiește în shell din motivul obișnuit: plasa de re-autentificare pe o formă de răspuns proprie, iar `WithReauth` e privat acolo.
+* `MainForm.RebuildReceptiiFromIstoric(cod)`: probă; dacă nu sunt lipsuri, informare și oprire. Altfel confirmare cu numerele reale (antete, linii, orfane) și destinația «Instantanee neașezate»; Da aplică și raportează scrise/relegate/recalculate/semnalări. `LoadTreeAsync(pastreazaSelectia:=True)` reîncarcă steagurile `Are*` și propagă contextul, ca după editorul de legături. Rămâne în shell pentru `WithReauth` privat, cu răspunsul propriu.
 
 #### 2.4 Drumul operatorului
 
@@ -126,7 +126,7 @@ S-a mers pe prima.
 
 `MotivulRefuzului` din `AsociereForm` (și perechea lui de pe server, `valideaza_plasarile` din `prelucrare_asociere.py`) aplică F16: de-a lungul lanțului ordonat după `DataH`, mulțimea indicatorilor unui instantaneu trebuie s-o conțină pe a celui dinainte. Mulțimile se iau din `FX_Receptii` — liniile instantaneului.
 
-Numai că liniile cu zero **nu ajungeau niciodată în `FX_Receptii`**. Pasul 4a al ingestiei (`prelucrare_pasi.step4a_populeaza_receptii`) e portul fidel al lui `FX_Istoric_Populeaza_ Receptii` din Access (`mdl_FX_Istoric.md`, linia 623: `ElseIf CDbl(rcHis!Val_Receptie) <> 0`), care păstra doar rândurile cu valoare. Un indicator care nu s-a mișcat într-o salvare (site-ul îl trimite cu `Suma receptie: 0 RON`) dispărea deci din instantaneu, deși recepția îl are în continuare în `RHR` (pasul 4b scrie TOATE rândurile din `Detaliu`, și pe cele cu zero). Rezultatul: primul instantaneu al lanțului numea {AAB, AA2}, următorul — cu AA2 la zero — numea doar {AAB}, și F16 spunea, corect după datele pe care le vedea, că AA2 «a dispărut». Mesajul însuși zice «un indicator poate cădea la zero, dar nu poate dispărea» — regula presupunea exact liniile pe care ingestia le arunca.
+Pasul 4a (`prelucrare_pasi.step4a_populeaza_receptii`) elimina zerourile, portând Access `mdl_FX_Istoric.md:623`, `ElseIf CDbl(rcHis!Val_Receptie) <> 0`. Indicatorul nemișcat (`Suma receptie: 0 RON`) dispărea din `FX_Receptii`, deși 4b îl păstra în `RHR` din `Detaliu`. Astfel {AAB, AA2} devenea {AAB} când AA2 ajungea la zero, iar F16 refuza corect datele primite. Regula «poate cădea la zero, dar nu poate dispărea» presupunea liniile eliminate de ingestie.
 
 Nu era un defect al vetoului, ci al datelor de sub el. Vetoul rămâne.
 
@@ -188,13 +188,13 @@ Două defecte, fără legătură între ele, ambele confirmate pe cod.
 
 `'rand_istoric'` este un `KeyError` din Python, ajuns la operator prin ramura `except Exception` a lui `post_asociere` (500, `Eroare la salvarea asocierii: {e}`).
 
-Editorul de oricând (`routes/forexe/asociere.py`) ancorează instantaneele pe `idrh` — nu există sarcină utilă, deci nu există indice de rând (scris în antetul fișierului). `normalizeaza_comenzi` pune totuși pe fiecare COMANDĂ aliasul `rand_istoric = idrh`, «ca să putem refolosi neschimbate funcțiile din prelucrare_asociere». Dar `citeste_instantanee` din același fișier NU punea aliasul pe INSTANTANEE. Felia 0058 (jurnalul `asociere.log`) a adăugat în `valideaza_plasarile` un `journal.table(...)` peste lanț care citește `i["rand_istoric"]` — iar lista de argumente se evaluează chiar dacă jurnalul e stins. `valideaza_plasarile` rulează la fiecare salvare care atinge un lanț cu cel puțin un instantaneu rămas, deci **orice salvare** cădea acolo. `materializeaza_reconstituite` (reconstituirile, F26) cheiază la fel și ar fi căzut și ea.
+Editorul de oricând (`routes/forexe/asociere.py`) folosește `idrh`, fără payload/indice de rând. `normalizeaza_comenzi` adăuga aliasul `rand_istoric = idrh` numai COMENZILOR, nu și `citeste_instantanee` INSTANTANEELOR. `asociere.log` din 0058, prin `journal.table(...)`, citea `i["rand_istoric"]` în `valideaza_plasarile`; argumentele se evaluează inclusiv cu jurnalul oprit, deci orice salvare atingând un lanț cu instantanee rămase cădea. Și `materializeaza_reconstituite` (F26) ar fi eșuat pe aceeași cheie.
 
 **Fix:** `citeste_instantanee` din `asociere.py` pune `"rand_istoric": idrh` pe fiecare instantaneu, exact ca pe comenzi. Un rând, plus docstring. Clientul VB citește GET-ul prin `GetAsociereInstantaneu`, care nu are câmpul, deci îl ignoră — nimic de schimbat în VB.
 
 ### 2. Antetele fără linii — F32
 
-În istoric, un instantaneu = rândurile-linie (câte unul per indicator) urmate de rândul-antet (`(activ:true)`, cu totalul). Pasul 4a acumulează liniile într-un tampon și le varsă sub antet când sosește. Un antet fără nicio linie înaintea lui producea un `FX_Receptii_H` cu zero rânduri în `FX_Receptii`. Vederea Recepții îl arăta deliberat (LEFT JOIN, «un antet FĂRĂ linii nu are voie să DISPARĂ din arbore», ca în Access); editorul îl arăta; F16 îl vedea cu mulțimea de indicatori VIDĂ în mijlocul lanțului (deci «indicatorii dispar» pe un rând pe care operatorul nu l-a atins); `DIFH` îl lua ca `precedent`; `recalculeaza_final` îl putea face `Final`; trecerea automată 4c îl putea potrivi pe `Total`.
+În istoric, liniile indicatorilor preced antetul `(activ:true)` cu totalul; 4a le acumulează și le varsă la antet. Fără linii producea H gol, arătat deliberat prin LEFT JOIN în Recepții (ca Access) și în editor. F16 vedea indicatori dispăruți; `DIFH` îl lua ca precedent, `recalculeaza_final` ca `Final`, iar 4c îl putea potrivi pe `Total`.
 
 Singurul antet fără linii care E instantaneu: rândul de ștergere (F21). Rămâne.
 
@@ -259,13 +259,13 @@ Numărul feliei: 0065 = «Next free» din STATUS. Presupunere, nu confirmare —
 
 În JSON-ul operatorului (`AAB2KRCC64T`, `027_SCGM`), antetul `IDRH 242` (recepția `IDRR 187`) are `DIFH NULL`, iar liniile lui 476/477 au `DIF NULL`. Celelalte șase recepții au `DIFH = 4.235`. Tooltip-ul din Recepții însuma `DIFH` pe anteturi (`qFX_MAIN_REC_TT_DIFH`), iar `qFX_ORD_REC_ANT` (ordonanțarea) însumează `DIF` pe linii: `NULL` -> 0 pe amândouă drumurile, deci 6 × 4.235 = 25.410.
 
-De ce e NULL: `DIFH`/`DIF` nu vin de pe site, le calculăm noi (pasul 4d, `step4d_calculeaza_dif`) — F20 retras spune exact asta. Ingestia îl rulează după 4c (`_pas4d_pe_receptiile_atinse`) și refacerea din 0062 după ce a scris. **Editorul de oricând (`routes/forexe/asociere.py`, `aplica_comenzi`) nu îl rula deloc**: recalcula `Final`/`Partial` și F28, dar nu diferențele. Orice instantaneu așezat de acolo (sau o recepție pornită de acolo, 0059 — `IDRR 187` are `Incarcat NULL`, semnul unui rând scris de editor) rămânea invizibil pentru ambele totaluri.
+`DIFH` / `DIF` sunt calculate local de 4d (`step4d_calculeaza_dif`), conform retragerii F20. Ingestia îl chema după 4c (`_pas4d_pe_receptiile_atinse`), refacerea 0062 după scriere. **`asociere.py.aplica_comenzi` recalcula numai Final/Partial și F28**, lăsând fără diferențe instantaneele așezate în editor și recepțiile create acolo (0059). `IDRR 187`, cu `Incarcat NULL`, avea acest indiciu de origine și lipsea din ambele totaluri.
 
 **Fix:** `aplica_comenzi` cheamă `step4d_calculeaza_dif(cursor, cod, idrr)` pentru fiecare lanț atins (`de_recalculat`), după `recalculeaza_final`. Datele deja stricate se repară de la sine la următoarea salvare din editor pe acel angajament, la orice «Reîmprospătare» (ingestia rulează 4d pe TOATE recepțiile angajamentului) sau la «Refacere din istoric» pe lanțurile atinse.
 
 ### 2. Vederea Recepții — o recepție VALOREAZĂ ultimul ei instantaneu
 
-Lanțul unei recepții = instantaneele ei în ordinea `DataH`, fiecare cu valoarea ÎNTREGII recepții la acel moment (F3). Ce e adevărat acum e ULTIMUL antet. Vederea le calcula altfel: totalul nodului R era `SumaAntet` al rândului R, grila aduna `Valoare` peste TOATE anteturile lanțului (deci `AAB` = 4.235 + 0 pe `IDRR 180`, când ultimul antet spune 0), iar tooltip-ul aduna `DIFH`-uri.
+F3: fiecare instantaneu în ordinea `DataH` exprimă valoarea ÎNTREGII recepții; valoarea actuală este ultimul antet. Înainte, nodul R folosea `SumaAntet`, grila suma toate `Valoare` (AAB: 4.235 + 0 pe `IDRR 180`, deși ultimul era 0), iar tooltip-ul suma `DIFH`.
 
 `ReceptiiView.vb` acum:
 

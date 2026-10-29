@@ -10,7 +10,7 @@ Trei lucruri cerute de operator, în aceeași trecere. Primele două sunt repara
 
 ## 1. Descărcarea listei „rămânea în aer"
 
-**Ce era.** Subsolul arborelui din `MainForm` are două iconițe. În designer, cea din STÂNGA purta imaginea `database` și eticheta «Sursa datelor: unitatea și perioada…», iar cea din DREAPTA purta imaginea de refresh și eticheta «Actualizează lista de angajamente din FOREXE». Handler-ul însă era legat pe cea din **stânga** (`Tree_FooterLeftIconClicked`), iar cea din dreapta nu avea niciun handler. Deci: butonul care spunea că actualizează lista nu făcea nimic, iar celălalt descărca lista și o salva doar local — `DownloadListaAsync` întorcea rândurile mapate, iar shell-ul le arunca. Nimic nu ajungea nici în arbore, nici pe server.
+**Ce era.** În subsolul arborelui `MainForm`, stânga afișa `database` / «Sursa datelor: unitatea și perioada…», dreapta refresh / «Actualizează lista de angajamente din FOREXE». Handlerul era numai pe stânga (`Tree_FooterLeftIconClicked`): dreapta nu făcea nimic, iar stânga descărca local, apoi shell-ul arunca rândurile întoarse de `DownloadListaAsync`. Arborele și serverul rămâneau neactualizate.
 
 **Ce s-a făcut.** Alegerea operatorului (2026-09-08): **dreapta = lista, stânga = extrasele**.
 
@@ -24,7 +24,7 @@ Trei lucruri cerute de operator, în aceeași trecere. Primele două sunt repara
 
 Cifrele vin de la SERVER, nu se numără în client: arborele arată o singură perioadă (un an + un SS), deci un angajament al altei perioade i-ar părea nou.
 
-**Ce înseamnă „gol" (asumat, nu confirmat).** «Îl trimite la server gol (doar el ca denumire)» s-a citit ca *doar antetul angajamentului* — `Cod` + `Descriere` + `Stare`, așa cum le dă lista FOREXE — fără indicatori / recepții / plăți. Descrierea reală se trimite pentru că altfel nodul din arbore ar apărea cu codul drept titlu (`PopulateTree` folosește `Descriere` ca titlu). Descărcarea întreagă rămâne iconița din dreapta NODULUI.
+**„Gol” — asumat, neconfirmat:** numai antetul din lista FOREXE (`Cod`, `Descriere`, `Stare`), fără indicatori/recepții/plăți. Descrierea reală evită afișarea codului ca titlu în `PopulateTree`. Descărcarea integrală rămâne pe dreapta NODULUI.
 
 ---
 
@@ -37,12 +37,12 @@ Cifrele vin de la SERVER, nu se numără în client: arborele arată o singură 
 <Exit message="Angajamentul {{COD_ANGAJAMENT}} nu a fost găsit. Opresc execuția." />
 ```
 
-`WorkflowExecutor.ExecuteAsync` prindea `WorkflowExitException` ca oprire **grațioasă** și nu o mai spunea nimănui. `ForexeRunner.RunJobAsync` construia imediat după `JobResult{Success = True}`, cu zero tabele. Shell-ul ducea pachetul gol mai departe, la `DuLaIngestieAsync`, deci serverul Python primea o prelucrare fără nimic în ea. Operatorul vedea eroarea în consolă și, în paralel, o cerere spre server care nu avea ce să facă.
+`WorkflowExecutor.ExecuteAsync` absorbea grațios `WorkflowExitException`; `ForexeRunner.RunJobAsync` întorcea apoi `JobResult{Success = True}` fără tabele. Shell-ul trimitea pachetul gol la `DuLaIngestieAsync`, deși operatorul vedea eroarea în consolă.
 
 **Ce s-a făcut.**
 
-- `WorkflowExecutor` ține minte mesajul: câmpul `_exitMessage`, resetat la începutul fiecărui `ExecuteAsync` (o oprire a rulării precedente nu are voie să treacă drept a acesteia) și expus ca `ExitMessage`. Excepția tot NU iese din executor — un `<Exit>` e o oprire voită, nu o cădere, iar browserul trebuie să rămână deschis în urma ei.
-- `ForexeRunner.RunJobAsync` citește `ExitMessage` imediat după execuție și, dacă e plin, întoarce `Failed(mesaj)`. La fel în `RunAsync` (Conectare) — «Conectare» n-are `<Exit>` azi, dar cele două căi nu au voie să răspundă diferit dacă i se adaugă unul.
+- `WorkflowExecutor` expune `_exitMessage` prin `ExitMessage`, resetat la fiecare `ExecuteAsync`. `<Exit>` rămâne oprire intenționată, fără excepție propagată, păstrând browserul deschis.
+- `ForexeRunner.RunJobAsync` și `RunAsync` (Conectare) întorc `Failed(mesaj)` când `ExitMessage` este nevid. Conectarea nu are încă `<Exit>`, dar va respecta același contract dacă apare.
 - `ForexeController` capătă `LastFailure`: **de ce** s-a întors goală ultima intenție. Se golește la începutul fiecărei intenții și rămâne GOL când operatorul însuși a renunțat (a închis dialogul de certificat) — shell-ul arată casetă doar când e plin.
 - `MainForm.ShowForexeFailure` pune motivul în fața operatorului.
 
@@ -56,11 +56,11 @@ Nu exista nimic în K-BOT: doar sursa veche, `Surse/SURSA_FOREXE/Services/Forexe
 
 ### Împărțirea muncii — aceeași ca în Access
 
-Robotul descarcă PDF-urile și desface XML-ul din ele; **serverul** citește XML-ul și scrie tabelele. Exact ce făcea sistemul vechi: robotul împingea pe pipe trei câmpuri (`PdfFisier`, `DataFisier`, `XmlContent`), iar `mdl_FX_Extrase.FX_Extrase_Prelucrare` făcea toată prelucrarea. Citirea XML-ului cere nomenclatoare (`Clasificatii`, `Parteneri`, `Unitati`, `FX_Indicatori`) la care clientul nu are acces.
+Ca în Access, robotul descarcă PDF-urile și extrage XML-ul; serverul îl prelucrează și scrie tabelele. Pipe-ul vechi trimitea `PdfFisier`, `DataFisier`, `XmlContent` către `mdl_FX_Extrase.FX_Extrase_Prelucrare`. Nomenclatoarele necesare (`Clasificatii`, `Parteneri`, `Unitati`, `FX_Indicatori`) sunt inaccesibile clientului.
 
 ### Partea de robot
 
-- `KBot.Forexe/Services/ForexeSNM.vb` — nou. Nu e un workflow și nu are `.wfl`: cutia de mesaje FOREXE răspunde pe JSON (`ForexeSNM/messages/loadAll.do`), iar PDF-urile vin de pe a doua adresă (`downloadFile.do`). Ambele prin `page.EvaluateAsync` + `fetch(credentials: 'include')`, deci pe cookie-ul sesiunii pe care operatorul a autentificat-o deja. Față de original: `CancellationToken` real (butonul «Anulează» din consolă funcționează), eșecurile ies în sus în loc să fie înghițite, iar rezultatul e o listă de POCO-uri (`ExtrasDescarcat`), nu `JArray`.
+- Nou `KBot.Forexe/Services/ForexeSNM.vb`, fără `.wfl`: JSON `ForexeSNM/messages/loadAll.do` și PDF `downloadFile.do` prin `page.EvaluateAsync` / `fetch(credentials: 'include')`, folosind sesiunea autentificată. Față de original: `CancellationToken` funcțional («Anulează»), erori propagate și listă POCO `ExtrasDescarcat` în loc de `JArray`.
 - `IForexeRunner.DescarcaExtraseAsync` + implementarea din `ForexeRunner`: trece prin runner fiindcă runner-ul e singurul care ține o pagină vie, și ca descărcarea să intre în istoricul de lucrări ca oricare alta. **Aruncă** la eșec (n-are `JobResult` de întors).
 - `ForexeController.DownloadExtraseAsync`: cere data ultimului extras importat (punct de oprire al paginării), rulează robotul, raportează progresul pe ambele suprafețe.
 - `KBotPaths.FolderExtrase` + cheia de setare `Extrase`.
@@ -76,7 +76,7 @@ Portate ca atare: `FX_ParseDataExtraseF` (inclusiv numele de lună RO+EN), `Pars
 
 ## Ce s-a descoperit pe drum (și nu s-a inventat)
 
-- **`FX_Extrase.HASH` e GOL pe toate rândurile scrise de Access.** `Extrase_Add` calcula hash-ul, căuta după el cu `FindFirst`… și apoi **nu îl scria** în `rsEx!HASH`. Deci deduplicarea rândurilor de extras nu a funcționat niciodată în sistemul vechi. Se vede în `FX_System_Export/TABLES/FX_Extrase.md`, unde coloana e goală. Aici hash-ul SE SCRIE, dar deciziile rămân pe **cheia naturală** (D9, felia 0048) — coloana are nevoie de o rulare completă înainte să se sprijine cineva pe ea.
+- **`FX_Extrase.HASH` era gol pe toate rândurile Access** (`FX_System_Export/TABLES/FX_Extrase.md`): `Extrase_Add` îl calcula și căuta prin `FindFirst`, fără a-l scrie în `rsEx!HASH`; deduplicarea veche nu funcționa. Portul îl SCRIE, dar deciziile rămân pe cheia naturală (D9/0048); hash-ul cere o rulare completă înainte de a deveni bază de decizie.
 - **Cheia „IBAN" din hash-ul de operațiune intra mereu goală.** Se alimenta din `vIbanPlat`, o variabilă care nu e atribuită NICIODATĂ în acea procedură (IBAN-ul plătitorului stă în `vPlatitorIBAN`). S-a reprodus ca atare: un hash „reparat" ar fi un șir nou.
 - **`FX_Extrase.DataDoc` e TEXT, nu dată**, și poartă formatul scurt al mașinii românești (`30.12.2025` — confirmat în exportul tabelei). Se scrie în același format.
 - **`CStr(<Double>)` din VBA taie la 15 cifre semnificative.** `100 * Round(0.07, 2)` dă `7.000000000000001` în virgulă mobilă; VBA scrie `7`, Python `str()` scrie tot. Din 600 de valori de bani încercate, **48** ies diferit. `_cstr_double_vba` reproduce tăietura. `_vba_cstr` din `prelucrare_helpers` NU s-a atins: forma lui actuală e deja în date.
@@ -126,14 +126,14 @@ Cele trei teste `doar_noi` din `test_forexe_angajamente.py` au rulat **live pe `
 ## Ce a rămas NEVERIFICAT sau amânat
 
 1. **Nimic din felia asta nu s-a văzut pe ecran și nimic din SNM n-a rulat live.** Nu s-a deschis nicio sesiune FOREXE, nu s-a descărcat niciun extras, nu s-a apăsat niciun buton. Toate verdictele de mai sus sunt de compilare și de test.
-2. **`DefaSS` / `DefaSSS` nu există în schema din depozit** (`MariaDB_Schema/000_DEMO.sql`). Ele traduc primele 3 caractere ale contului (`21E`, `23A`, `01A`, `82E`) în sursa-sector (`02A`, `02E`), iar fără ele nu se poate afla unitatea unui cont. `docs/MAPARE_NOMENCLATOARE.md` pomenește `AVACONT_COMUN.DefaSursaSector`, dar perechea `DefaSS`/`DefaSSS` nu apare nicăieri. Ruta le citește exact cu interogarea din Access, iar când tabela lipsește pune un **avertisment cu numele ei** în răspuns și lasă `IdUnitate` NULL. NU s-a ghicit o mapare alternativă. **De confirmat pe baza live** înainte de prima rulare adevărată.
+2. **`DefaSS`/`DefaSSS` lipsesc din `MariaDB_Schema/000_DEMO.sql`.** Ele traduc prefixele contului (`21E`, `23A`, `01A`, `82E`) în sursa-sector (`02A`, `02E`) necesară unității. `docs/MAPARE_NOMENCLATOARE.md` menționează numai `AVACONT_COMUN.DefaSursaSector`. Ruta păstrează query-ul Access; lipsa tabelei produce avertisment cu numele și `IdUnitate = NULL`, fără mapare ghicită. **De confirmat live înaintea rulării reale.**
 3. ~~**`ClasificatiiV` nu există în schema din depozit** — aceeași tratare, `IdClsfV` rămâne NULL cu avertisment.~~ **REZOLVAT 09.09.2026, corecția 8:** tabela există acum, sub numele `Clasificatii_Venituri`, și e și migrată. Interogarea lui `FX_DicClsfV` s-a portat verbatim, cu `CONCAT_WS` în loc de `CONCAT` (coloanele sunt nulabile). Tot nerulată pe date reale.
 4. **`gUnitati.IdUnitatePentru(Sursa)` e o DEDUCȚIE.** `clsUnitati` nu e în exportul Access (s-au exportat doar modulele). S-a tradus ca `SELECT IdUnitate FROM Unitati WHERE SursaSector = %s`, sprijinit pe datele din `FX_Extrase_H.md` (contul `21E…` ▸ IdUnitate 77, `01A…` ▸ 76). Consistent, dar **neconfirmat**.
 5. **`FX_Extrase_H.IdClsf` primește `Clasificatii.IdClsfAcc`**, pe decizia blocată din STATUS («`FX_Indicatori.IdClsf` ține id-ul ACCESS»). Nu s-a verificat pe date reale pentru ACEASTĂ tabelă.
 6. **`AUTO_INCREMENT` pe cele trei chei primare** (`IDEXF`, `IDEXH`, `IDFXE`) — DDL-ul din depozit le arată `int(11) NOT NULL` simplu, dar rutele existente (`FX_Istoric`, `FX_Receptii_H`) folosesc `lastrowid`, deci baza live le are auto-increment. Ruta refuză ZGOMOTOS un `lastrowid = 0` în loc să lege rândurile copil de zero.
 7. **Ruta de import n-a fost rulată niciodată** — testele ei de rută sunt host-only și s-au sărit aici (4 sărite). S-au rulat doar funcțiile pure (24 trecute).
 8. **`SincronizeazaAsync`** (meniul de opțiuni) folosește în continuare upsert-ul plat, care REÎMPROSPĂTEAZĂ `Descriere`/`Stare`. E deliberat: butonul din subsol întreabă «ce e nou», meniul întreabă «adu tot la zi». Dacă operatorul vrea o singură semantică, se decide separat.
-9. **Folderul implicit al extraselor e `<AppDir>\Extrase`**, nu `C:\AVACONT\FOREXE\EXTRASE\` ca în Access. Motivul: `SetariFoldere.Valideaza` verifică la PORNIRE dreptul de scriere pe fiecare folder în care se scrie, iar o cale absolută sub `C:\AVACONT` ar putea opri lansarea aplicației pe o mașină care nu are acel drept — pentru o funcție pe care poate n-o folosește. Se poate muta din `settings.json`, iar calea folosită se scrie oricum per fișier în `FX_Extrase_F.CaleFisier`.
+9. **Folder implicit `<AppDir>\Extrase`**, față de `C:\AVACONT\FOREXE\EXTRASE\` în Access: `SetariFoldere.Valideaza` cere drept de scriere la pornire, iar calea absolută ar putea împiedica lansarea pentru o funcție nefolosită. Se poate schimba în `settings.json`; calea efectivă este păstrată per fișier în `FX_Extrase_F.CaleFisier`.
 10. **Cele 13 + 1 + 3 picări preexistente** (familia `DdfInfoTests.EtichetaRevizie_*` / `DdfXfaParser` / `IstoricView` / `DdfView` / `XfaXmlPreview` / `MainFormNavItemsTests.Designer_WroteLiteralDiacritics_NotEscapes`) nu au fost atinse. Sunt de dinaintea acestei felii — verificat prin `git stash` pe HEAD. Cine reia zona să înceapă cu ele; în special ultima, care păzește chiar regula de diacritice a casei.
 
 ---

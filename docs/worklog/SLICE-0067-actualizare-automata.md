@@ -4,16 +4,11 @@ Reunire documentară D001-25. Sistemul inițial din 18.09.2026 și instalatorul 
 
 [0067-actualizare](#slice-0067-baza) · [0067-01](#slice-0067-01)
 
-<a id="slice-0067-baza"></a>
-
-## SLICE-0067 — Actualizarea automată a aplicației (server Flask + `push-update.ps1` + `KBot.Updater`)
+## SLICE-0067 — Actualizarea automată a aplicației (server Flask + `push-update.ps1` + `KBot.Updater`) <a id="slice-0067-baza"></a>
 
 **Data:** 18.09.2026 **Cerere (operator):**
 
-> i need a system to update the app whenever i make changes. this will be a new slice. we can use
-> the python server for the updates. i also need a ps which i will run when i consider a viable
-> update exists and which will create and push the update file. any questions you have, ask me.
-> don't assume.
+> i need a system to update the app whenever i make changes. this will be a new slice. we can use the python server for the updates. i also need a ps which i will run when i consider a viable update exists and which will create and push the update file. any questions you have, ask me. don't assume.
 >
 > extra: don't edit either KbotForm or the LoginForm until everything is done and i accept!
 >
@@ -126,9 +121,7 @@ WinExe `net8.0-windows`, **zero referințe KBot** (rulează din `%TEMP%` cât ti
 
 ---
 
-<a id="slice-0067-01"></a>
-
-## SLICE 0067-01 — Instalatorul Inno: detectează versiunea instalată, permite doar actualizări, actualizează cu regulile sistemului de actualizare
+## SLICE 0067-01 — Instalatorul Inno: detectează versiunea instalată, permite doar actualizări, actualizează cu regulile sistemului de actualizare <a id="slice-0067-01"></a>
 
 **Data:** 20.09.2026 **Cererea operatorului:** «the inno installer must detect if a version of kbot is already installed and if so, only allow upgrades. if the version being installed is older than what's on the pc, it shouldn't allow the install. also, when upgrading, use logic from the update system (`src\KBot.App\Update\`)»
 
@@ -178,10 +171,7 @@ Cererea: «make the updater write DisplayVersion too». `src\KBot.Updater\Instal
 
 ### Fișiere atinse
 
-- `tools/KBotInstaller/KBot.iss` — antet, `MyAppId`/`MyDefaultDir`, `DisableDirPage=auto`, `[Dirs]`, `Excludes`, secțiunea `[Code]` (`TryParseVersion`, `ExeVersionIn`, `ReadRegString`, `DetectInstalled`, `CheckInstalledVersion`, `InitializeSetup` rescris, `InitializeWizard` nou).
-- `src/KBot.Updater/InstallRegistry.vb` (nou), `src/KBot.Updater/UpdaterForm.vb` (pașii 3 și 4b), `src/KBot.Updater/KBot.Updater.vbproj` (FileVersion 1.0.1.0).
-- `tests/KBot.Updater.Tests/InstallRegistryTests.vb` (nou; doar părțile pure — HKLM nu se atinge din teste).
-- `docs/worklog/SLICE-0067-01-instalator-doar-actualizari.md` (acesta), `docs/worklog/KBOT_STATUS.md`.
+`tools/KBotInstaller/KBot.iss` — antet, `MyAppId`/`MyDefaultDir`, `DisableDirPage=auto`, `[Dirs]`, `Excludes`, secțiunea `[Code]` (`TryParseVersion`, `ExeVersionIn`, `ReadRegString`, `DetectInstalled`, `CheckInstalledVersion`, `InitializeSetup` rescris, `InitializeWizard` nou). `src/KBot.Updater/InstallRegistry.vb` (nou), `src/KBot.Updater/UpdaterForm.vb` (pașii 3 și 4b), `src/KBot.Updater/KBot.Updater.vbproj` (FileVersion 1.0.1.0). `tests/KBot.Updater.Tests/InstallRegistryTests.vb` (nou; doar părțile pure — HKLM nu se atinge din teste). `docs/worklog/SLICE-0067-01-instalator-doar-actualizari.md` (acesta), `docs/worklog/KBOT_STATUS.md`.
 
 ### Rezultatele testelor
 
@@ -204,9 +194,7 @@ Focusul consemna «nimic comis» pentru implementarea inițială și «comis» p
 
 ---
 
-<a id="slice-0067-03"></a>
-
-## SLICE 0067-03 — «Caută actualizări» poate reinstala ultimul pachet chiar daca versiunea nu e mai mare
+## SLICE 0067-03 — «Caută actualizări» poate reinstala ultimul pachet chiar daca versiunea nu e mai mare <a id="slice-0067-03"></a>
 
 **Data:** 26.10.2026 **Cererea operatorului:** mici modificari publicate fara cresterea versiunii (pentru un singur utilizator); utilizatorul sa poata trage ultimul pachet din Setari chiar daca nu e mai nou. Operatorul a confirmat ca ceilalti primesc modificarile la urmatoarea lor actualizare normala.
 
@@ -218,8 +206,7 @@ Ajutor: `HelpContent\contabil\actualizare.md`, sectiunea «Oricând: Caută actu
 
 ### Fisiere atinse
 
-- `src\KBot.App\Update\AppUpdateService.vb`
-- `src\KBot.App\HelpContent\contabil\actualizare.md`
+`src\KBot.App\Update\AppUpdateService.vb`; `src\KBot.App\HelpContent\contabil\actualizare.md`
 
 ### Rezultate
 

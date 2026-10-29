@@ -18,15 +18,15 @@ Prima trecere din felia 0031 (vizualizator de jurnale), după `docs/PLAN_LogView
 
 #### 1. Un singur loc care spune unde stau jurnalele (`LogPaths`)
 
-`GlobalErrorLog` și `AdobeHostLog` compuneau FIECARE, prin cod duplicat, aceeași cale (`AppContext.BaseDirectory` + `Logs`). `TreeLogger` compunea alta — lângă executabil, **în afara** folderului `Logs\`. Un vizualizator are nevoie de un singur director de citit, deci calea se calculează acum într-un singur loc. Pentru primii doi scriitori calea rezultată e **identică** cu cea de dinainte; s-a verificat în fișier înainte de editare, cum cere planul.
+`GlobalErrorLog` și `AdobeHostLog` duplicau `AppContext.BaseDirectory` + `Logs`, iar `TreeLogger` scria lângă executabil, în afara `Logs\`. `LogPaths` centralizează directorul pentru vizualizator. Calea primilor doi rămâne identică, comparată în fișiere înainte de editare conform planului.
 
 #### 2. Rotația păstrează istoric (`LogRotation`)
 
 10 MB, cinci generații, exact politica pe care serverul o are deja prin `RotatingFileHandler` din `utils/logger.py` (verificat: `maxBytes=10*1024*1024, backupCount=5`) — o singură regulă peste ambele jumătăți ale sistemului. Doar redenumiri, niciodată citire-și-rescriere, deci costul nu depinde de mărimea fișierului. Consum maxim mărginit: 60 MB pe familie.
 
-Se cheamă **înainte** de fiecare adăugare, în cei patru scriitori — nu în vizualizator: un vizualizator ar aplica limita doar când îl deschide cineva, adică exact când nu mai contează.
+Rotația se cheamă înaintea fiecărei adăugări în cei patru scriitori; în vizualizator ar limita fișierele numai la deschiderea lui.
 
-`Roll` **nu aruncă niciodată**. Orice eșec (fișier blocat, drepturi, disc plin) pleacă pe `Trace` și întoarce `False`, ca linia care a declanșat verificarea să se scrie oricum. O problemă de rotație nu are voie să coste linia care a provocat-o. Fixat cu test pe fișier blocat exclusiv.
+`Roll` nu aruncă: eșecurile (fișier blocat, drepturi, disc plin) merg pe `Trace`, rezultatul este `False`, iar linia declanșatoare se scrie oricum. Comportamentul este fixat prin proba cu fișier blocat exclusiv.
 
 Două refuzuri explicite, ambele testate: `backupCount < 1` și `maxBytes <= 0` **nu ating nimic**. Un parametru greșit nu are voie să devină o distrugere de istoric.
 
@@ -34,7 +34,7 @@ Două refuzuri explicite, ambele testate: `backupCount < 1` și `maxBytes <= 0` 
 
 Fișierul trece de la directorul executabilului la `LogPaths.EnsureLogsDirectory()`. Numele (`log_{treeId}.txt`) și parametrul opțional de cale rămân neschimbate.
 
-Cele două `Catch`-uri goale (`Write`: «Eșec silențios la scriere»; `Init`: rezerva pe Temp) scriu acum motivul pe `Trace`. **Nu pot rearunca** — s-a verificat în cod, nu presupus: `AdvancedTreeControl` le cheamă din căi de desenare (`TooltipPopup.OnPaint`, `AdvancedTreeControl.Painting.DrawContent`), iar o excepție ieșită dintr-o scriere de jurnal în `OnPaint` omoară procesul. Deci același tratament ca `GlobalErrorLog` și `AdobeHostLog`: `Trace.WriteLine`, fără rearuncare. Diferența față de starea de dinainte nu e mică — înghițirea tăcută nu lăsa **nicio** urmă.
+Cele două `Catch`-uri (`Write`: «Eșec silențios la scriere»; `Init`: fallback Temp) scriu acum motivul pe `Trace`, fără rearuncare, ca `GlobalErrorLog` / `AdobeHostLog`. Citirea codului confirmă apeluri din `TooltipPopup.OnPaint` și `AdvancedTreeControl.Painting.DrawContent`; propagarea unei erori de jurnal din pictare ar opri procesul. Față de înghițirea anterioară, rămâne o urmă.
 
 #### 4. Citire, analiză, filtrare (`KBot.Common\Logging\`)
 
@@ -54,27 +54,27 @@ Niciuna tăcută. Toate au ieșit din citirea fișierului real, cum cere §0.
 
 Planul §1.4 cere corectarea, în STATUS, a unei linii care ar spune că sinkurile terminale ne-rearuncătoare sunt **exact trei**. Linia aceea **nu e în `KBOT_STATUS.md`** — s-a căutat în tot fișierul și în tot `docs/`. Singura formulare a regulii stă în `CLAUDE.md:43` și nu numără nimic: «`GlobalErrorLog.Write` is itself a terminal sink (never throws) — do not wrap calls to it.»
 
-Deci nu era ce corecta în STATUS. Nu s-a inventat o linie ca să fie apoi «corectată». Situația reală, scrisă aici și în STATUS: sinkurile terminale ne-rearuncătoare din soluție sunt acum **cinci** — `GlobalErrorLog.Write`, `AdobeHostLog.Write`, `HandleUiError` (scrierea în runlog), `TreeLogger.Write`, `TreeLogger.Init` — ultimele două adăugate de felia asta, documentate mai sus.
+Nu s-a inventat linia absentă din STATUS. Situația consemnată aici și acolo: cinci sinkuri terminale — `GlobalErrorLog.Write`, `AdobeHostLog.Write`, `HandleUiError` (runlog), plus noile `TreeLogger.Write` / `TreeLogger.Init`, descrise mai sus.
 
 #### B. Proba de potrivire a analizorului: pragul de 30% nu se aplică formatelor pe blocuri
 
 §5.5 cere ca analizorul ghicit să fie trecut peste primele 50 de linii neagole și, sub **30%** anteturi recunoscute, ghicirea să fie declarată greșită.
 
-Regula asta, aplicată literal, **strică exact fișierul care contează cel mai mult în felia asta**. Un `harness_errors.log` perfect sănătos e un antet urmat de zeci de linii de stivă: un bloc cu 20 de cadre dă 1/21 ≈ **4,8%** anteturi și ar fi declarat mereu «ghicire greșită», căzând pe alegerea per linie — unde `RunLogParser` ar rupe blocul, fiindcă prima linie a lui `ex.ToString()` (`System.InvalidOperationException: …`) nu e indentată și ar deveni intrare separată. Adică fix opusul testului 2 din plan, care cere ca antetul plus cinci linii de stivă să dea **o singură** intrare.
+Aplicarea literală respinge un `harness_errors.log` valid: antet + 20 cadre = 1/21 ≈ **4,8%** anteturi. Fallback-ul per linie prin `RunLogParser` ar separa prima linie neindentată `System.InvalidOperationException: …` de bloc, contrazicând testul 2 din plan (antet + cinci linii de stivă = o intrare).
 
-Corecția: `ILogEntryParser` capătă `ExpectsHeaderOnEveryLine`. Pragul procentual se aplică doar formatelor cu o intrare pe linie; pentru formatele pe blocuri proba cere **măcar un** antet recunoscut. Asta prinde tot ce trebuia să prindă (testul 5 — conținut adobe într-un fișier numit `harness_errors.log` — trece: zero anteturi recunoscute) fără să declare greșit un fișier normal. Ambele cazuri sunt fixate cu test, al doilea ca regresie explicită.
+`ILogEntryParser.ExpectsHeaderOnEveryLine` limitează pragul procentual la formatele per linie; pentru blocuri se cere măcar un antet recunoscut. Testul 5 trece: conținutul Adobe numit `harness_errors.log` are zero anteturi, deci ghicirea este respinsă; ambele cazuri au teste, ultimul ca regresie explicită.
 
 #### C. Rotația în constructorul lui `RunLogger` e, azi, cod fără efect
 
-Planul cere cablarea în constructor. S-a făcut. Dar ce face de fapt merită spus, nu ascuns: apelantul de azi (`DevHarnessForm.RunTestsAsync`) compune un nume **unic pe rulare**, cu milisecunde, și deschide cu `append:=False`. Fișierul nu există încă la momentul apelului, deci `Roll` întoarce `False` fără să facă nimic — **de fiecare dată**.
+Rotația este cablată în constructor, conform planului, dar apelantul actual `DevHarnessForm.RunTestsAsync` folosește nume unic cu milisecunde și `append:=False`. Fișierul încă nu există; `Roll` întoarce mereu `False`, fără efect.
 
-Nu s-a mutat pe cont propriu în `WriteLine` (ar fi o abatere tăcută, și ar costa un `FileInfo.Length` per linie). Rămâne în constructor fiindcă `RunLogger` primește o cale **arbitrară**: un apelant viitor care dă o cale fixă chiar e protejat. Pentru scenariul din plan — «o buclă scăpată de sub control într-un test» — garda asta **nu ajută**, fiindcă bucla scrie în fișierul deja deschis. Dacă operatorul vrea acoperirea aceea, e o decizie separată, cu un cost pe linie.
+Rotația rămâne în constructor: `RunLogger` acceptă cale arbitrară și ar proteja un viitor apelant cu nume fix. O buclă necontrolată în fișierul deja deschis rămâne neprotejată; mutarea în `WriteLine`, cu `FileInfo.Length` per linie, cere decizie separată.
 
 #### D. `TreeLogger` nu scrie nimic în aplicația construită
 
-`TreeLogger.Init` e apelat dintr-un **singur** loc în tot depozitul: `Surse/SURSA_TREE/Tree.vb:80`. `Surse/` nu e în `KBot.sln` (verificat) și, după `CLAUDE.md`, e o captură de sursă importată, nu cod construit. În solutia construită nimeni nu cheamă `Init`, deci `_initialized` rămâne `False` și `Write` iese pe prima linie.
+`TreeLogger.Init` are un singur apelant, `Surse/SURSA_TREE/Tree.vb:80`, în sursa importată exclusă din `KBot.sln` (verificat). În soluția construită `_initialized` rămâne `False`, iar `Write` iese imediat.
 
-Cu alte cuvinte: fișierele `log_{treeId}.txt` din tabelul §3 al planului **nu există azi** în aplicația livrată. Mutarea în `Logs\`, rotația și sinkurile terminale sunt corecte și ieftine, dar pân' când cineva cablează `Init`, sunt cod pregătit, nu cod care rulează. Analizorul e testat pe formatul real oricum — dacă `Init` se cablează vreodată, e gata.
+Prin urmare, `log_{treeId}.txt` din plan §3 nu există în aplicația livrată: mutarea, rotația și sinkurile sunt pregătite până la cablarea `Init`. Analizorul este totuși testat pe formatul real.
 
 #### E. Fișierul de rulare al bancului nu poartă marcaj de timp pe linie
 
@@ -196,7 +196,7 @@ Cererea, în cuvintele operatorului: «integrate the new logging system into mai
 
 Trei hotărâri de fond:
 
-- **Citirea nu stă niciodată pe firul UI.** Fișierele se citesc și se analizează pe un fir de fundal (un jurnal poate avea 5 MB), cu `BusyBar` aprins; **filtrarea e în memorie și sincronă** și nu recitește niciodată un fișier. De aceea căutarea are cronometrul de 250 ms cerut de plan — altfel fiecare literă ar reface filtrarea peste zeci de mii de intrări. O a doua selecție o **anulează** pe prima (`CancellationTokenSource`): operatorul a schimbat fișierul, răspunsul vechi n-are ce căuta în grilă.
+- **Citire/analiză în fundal**, până la 5 MB, cu `BusyBar`; filtrare sincronă în memorie, fără recitire. Căutarea are debounce 250 ms pentru zeci de mii de intrări. `CancellationTokenSource` anulează selecția anterioară, evitând răspunsul vechi în grilă.
 - **Coloana `Ora` arată ora CORECTATĂ, panoul de detaliu arată blocul BRUT.** Cine citește o urmă de stivă trebuie să vadă exact ce s-a scris în fișier, nu o versiune ajutată de noi. Fixat cu test.
 - **Culorile rândurilor vin din paletă**, prin `RowFormatting` (§1.1 din plan): `ErrorColor`, `WarningColor`, `TextDimColor`, `DisabledTextColor`. **`Info` nu se vopsește deloc** — e rândul obișnuit, iar a-l colora ar face din normal o excepție. `KBotDataView` nu a fost atins, iar instanța refolosită a argumentelor nu se reține.
 
@@ -206,7 +206,7 @@ Bara de stare spune tot ce ar putea altfel dispărea tăcut: câte intrări au i
 
 Grupul «Server» apare doar dacă fereastra a primit un `IApiClient`; fără el (bancul de probă) nu apare deloc — un grup care nu poate funcționa nu trebuie să existe. Lista se cere **la cerere**, dintr-un rând anume, nu la deschidere.
 
-**Rutele nu există încă**: sunt livrate de trecerea 0031-02, împreună cu `GetLogFilesAsync` / `GetLogTailAsync` de pe `ApiClient`. Astăzi `ApiClient.GetAsync(Of T)` e literalmente `Throw New NotImplementedException()`. Fereastra prinde exact excepția aia și scrie în `KBotNotice`: «Jurnalele de server nu sunt încă disponibile: ruta se livrează în trecerea 0031-02. Fișierele locale funcționează normal.» Nu o listă goală, nu un mesaj tehnic englezesc aruncat operatorului.
+**Rutele și `GetLogFilesAsync` / `GetLogTailAsync` urmează în 0031-02.** La acest reper, `ApiClient.GetAsync(Of T)` aruncă `NotImplementedException`; formularul o prinde explicit și afișează `KBotNotice`: «Jurnalele de server nu sunt încă disponibile: ruta se livrează în trecerea 0031-02. Fișierele locale funcționează normal.»
 
 DTO-urile (`LogFilesResponse` / `LogTailResponse`) sunt **private în formular**, scrise după contractul din planul §6.4. Când vine 0031-02, ele se mută pe `ApiClient` ca metode tipizate și dispar de aici. Probele 19–20 din plan aparțin acelei treceri și **nu au fost făcute**.
 
@@ -228,23 +228,23 @@ Soluția e o punte tipizată: `ILogViewerLauncher` în `KBot.DevHarness\Abstract
 
 #### 5. Meniul din bara de titlu + comutatorul intern (CERUT de operator)
 
-`capBar.OptionButtonClick` desfășoară un `CustomPopup` cu un singur rând, «&Arată jurnal». Aceleași decizii ca meniul de teme al aceleiași bare: garda `CustomPopup.ClosedJustNow` (fără ea, al doilea clic ar redeschide meniul instantaneu), ancorare pe `OptionButtonBounds`, fereastra arătată **nemodal** și **nu** într-un `Using`.
+`capBar.OptionButtonClick` deschide `CustomPopup` cu «&Arată jurnal», ancorat la `OptionButtonBounds`. `CustomPopup.ClosedJustNow` împiedică redeschiderea la al doilea clic, ca la meniul de teme. Formularul este nemodal, fără `Using`.
 
-Comutatorul intern e `FeatureSwitches.VizualizatorJurnaleActiv` (`KBot.Common`, modul nou) — **azi mereu `True`**, cum s-a cerut. Când devine `False`, meniul **nu se deschide deloc**: fiind singurul rând, un meniu cu el stins ar fi o fereastră goală agățată de buton. Locul din care se va citi cu adevărat (rol, manifest, configurare) se schimbă **în interiorul modulului**, fără să atingă apelanții — ăsta e tot rostul lui.
+`FeatureSwitches.VizualizatorJurnaleActiv` (`KBot.Common`, modul nou) este mereu `True` la acest reper, conform cererii. La `False`, meniul cu unicul rând nu se deschide, evitând popupul gol. Viitoarea sursă reală (rol/manifest/configurare) se schimbă numai în modul, fără modificarea apelanților.
 
 Fereastra e nemodală și una singură: dacă e deja deschisă, se aduce în față (ca `InternalInfoForm`).
 
 #### 6. Fereastra de pornire înlocuiește `MessageBox`-ul (CERUT de operator)
 
-`StartupLauncherForm`: `KBotCaptionBar` + `KBotNavList` cu trei porniri — **Aplicația** (autentificare → shell), **Banc de probă**, **Jurnale** (vizualizatorul singur, fără autentificare și fără shell). Un `MessageBox` cu două butoane putea purta exact două opțiuni, iar textul lor era «Da» și «Nu»; aici pornirile se citesc dintr-o privire, se adaugă altele fără să se schimbe nimic altceva, și fereastra e tematizată (dialogul de sistem nu era).
+`StartupLauncherForm`: `KBotCaptionBar` + `KBotNavList`, cu **Aplicația** (autentificare → shell), **Banc de probă** și **Jurnale** (singur, fără autentificare/shell). Înlocuiește MessageBox-ul de sistem cu doar «Da»/«Nu» printr-o fereastră tematizată, cu opțiuni denumite explicit și extensibile.
 
-Prima pornire e selectată din start: cine apasă Enter fără să citească primește **aplicația**, nu bancul. Renunțarea lasă `Alegere` gol, ca un apelant care se uită doar la proprietate să nu pornească ultima pornire survolată. Dispecerul din `Program.RunLauncher` **aruncă** pe o cheie necunoscută — o pornire adăugată în listă și uitată în dispecer trebuie să se vadă imediat.
+Enter selectează implicit aplicația. Renunțarea golește `Alegere`, evitând pornirea opțiunii survolate de un apelant care citește numai proprietatea. `Program.RunLauncher` aruncă pe cheie necunoscută, semnalând opțiunile adăugate dar nemapate.
 
 #### 7. Trecerea vizuală a operatorului, și ce a rupt pe drum
 
 Operatorul a deschis fereastra în designerul VS, a confirmat că **funcționează**, și a rearanjat așezarea: panourile andocate au fost înlocuite cu `TableLayoutPanel`-uri (`tlyMain`, `tlyFilter`, `tlyFilterActual`, `tlyFooter`) — «i want tly instead of those annoying panels where i have no real control» — apoi a cerut punerea la punct a plasării. Trei defecte reale găsite și reparate:
 
-1. **`btnGoleste` era DECLARAT, dar niciodată construit și niciodată adăugat undeva**, iar clauza `Handles` fusese scoasă din code-behind. Formularul compila, se deschidea, arăta bine — și singurul drum de ștergere pur și simplu **nu exista**. Reintrodus în `tlyFooter` (coloană nouă, lângă «Deschide dosarul»: amândouă lucrează cu fișierele, iar un buton distructiv n-are ce căuta lângă «Copiază»), cu `Handles` la loc. **Are acum test de regresie**: un câmp declarat nu e un control montat. E același tipar cu `LstValori_ItemCheck` din 0030 și cu `btnSortClear`.
+1. **`btnGoleste` era numai declarat**, neconstruit/nemontat, fără `Handles`: formularul compila și se deschidea, dar ștergerea lipsea. Reintrodus cu `Handles` în noua coloană `tlyFooter`, lângă «Deschide dosarul», separat de «Copiază». Testul de regresie verifică montarea, nu doar câmpul declarat, ca la `LstValori_ItemCheck` (0030) / `btnSortClear`.
 2. **`tlyMain.SetColumnSpan(tlyFooter, 4)` pe un tabel cu DOUĂ coloane** → 2.
 3. **`tlyFilter` avea trei rânduri de 60 + 80 + rest într-o celulă de 124 px**: suma depășea celula, iar un `TableLayoutPanel` nu strânge rândurile absolute ca să încapă, deci bara de jetoane era tăiată. Două rânduri acum (câmpuri fix, jetoane elastic), cu jetoanele pe `Dock = Fill`: bara își rupe rândurile după LĂȚIME, iar înălțimea i-o dă tabelul.
 

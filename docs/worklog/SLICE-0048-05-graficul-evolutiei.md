@@ -2,20 +2,13 @@
 
 Consolidare editorială D001-04, 24.10.2026. Identificatorii și probele istorice rămân distincte; starea din registru nu devine validare live. API-urile sunt în documentele controalelor; aici rămân integrarea, motivele, evoluția și probele. Secțiunile numerotate din fiecare intervenție păstrează contextul documentului original.
 
-<a id="slice-0048-05"></a>
-
-## SLICE-0048-05 — mesajul care nu se stingea + graficul evoluției (`KBotChartView`)
+## SLICE-0048-05 — mesajul care nu se stingea + graficul evoluției (`KBotChartView`) <a id="slice-0048-05"></a>
 
 **Cerut de operator, 31.08.2026, două lucruri într-o singură cerere:**
 
 > «1. apare corect mesajul de eroare, dar dacă selectez alt nod nu mai dispare - fă-l să dispară»
 >
-> «2. a rămas un loc liber (dreapta-sus). acolo aș vrea un grafic care să arate evoluția recepției
-> respective - cu popup pe hover per noduri din grafic sau, dacă se apasă un buton într-un custom
-> panel deasupra (cel care ține loc de tabcontrol) să apară graficul per tot angajamentul.
-> Controlul TREBUIE să fie custom, trebuie să fie abonat la theming, trebuie să expună toate
-> propr configurabile în IDE (în properties tab) și numele grupelor de proprietăți, ca și numele
-> variabilelor și explicațiile inline TREBUIE să fie în engleză.»
+> «2. a rămas un loc liber (dreapta-sus). acolo aș vrea un grafic care să arate evoluția recepției respective - cu popup pe hover per noduri din grafic sau, dacă se apasă un buton într-un custom panel deasupra (cel care ține loc de tabcontrol) să apară graficul per tot angajamentul. Controlul TREBUIE să fie custom, trebuie să fie abonat la theming, trebuie să expună toate propr configurabile în IDE (în properties tab) și numele grupelor de proprietăți, ca și numele variabilelor și explicațiile inline TREBUIE să fie în engleză.»
 
 **Două întrebări puse înainte de a scrie o linie, și răspunsurile operatorului:**
 
@@ -30,7 +23,7 @@ Consolidare editorială D001-04, 24.10.2026. Identificatorii și probele istoric
 
 ## 1. Mesajul care nu se stingea
 
-`ntfMesaj` e o casetă de notificare tranzitorie: o pune `ReincarcaAsync` (nu există instantanee / n-am putut citi), o pune `AratMeniul` (legătura e blocată, cu motivele), o pune `AplicaComandaDeMeniu` (comanda a eșuat) și o pune `btnSalveaza_Click` (rezultatul salvării). Nimeni nu o stingea în afară de `ReincarcaAsync`.
+`ntfMesaj` este tranzitoriu, pus de `ReincarcaAsync` (fără instantanee/eroare de citire), `AratMeniul` (blocare și motive), `AplicaComandaDeMeniu` (comandă eșuată), `btnSalveaza_Click` (rezultat). Numai `ReincarcaAsync` îl stingea.
 
 Efectul pe ecran: refuzul unui instantaneu rămânea sub cele două liste în timp ce operatorul lucra pe următorul, și **se citea ca și cum ar fi fost despre acela**.
 
@@ -42,7 +35,7 @@ ntfMesaj.Clear()
 
 Se stinge **înainte** de orice altceva, deci `AratMeniul` (clic-dreapta pe o legătură blocată) poate pune imediat mesajul lui la loc — ordinea contează, iar asta e ordinea care o dă.
 
-Alegerea unui alt rând înseamnă că operatorul a trecut mai departe, deci se sting **toate** felurile de mesaj, nu doar erorile — inclusiv «s-a salvat» și «angajamentul nu are niciun instantaneu». Un mesaj de succes care supraviețuiește următorului clic e la fel de mincinos ca unul de eroare.
+Alegerea altui rând stinge toate mesajele, inclusiv «s-a salvat» și «angajamentul nu are niciun instantaneu», pentru a nu le atribui noii selecții.
 
 ---
 
@@ -58,7 +51,7 @@ Regiunile pictate folosesc KBotToolTip.ShowAt cu cheia conținutului, fără rep
 
 ## 3. Ce desenează, concret
 
-- **Axa orizontală e timp REAL**, nu un index de sloturi: două instantanee la un minut distanță stau la un minut distanță. Contează exact aici — mai multe salvări ale aceleiași recepții pot cădea în aceeași zi, iar spațierea egală ar inventa un ritm pe care datele nu-l au.
+- **Axa orizontală este timp real:** un minut între instantanee înseamnă un minut pe axă. Mai multe salvări pot fi în aceeași zi; sloturile egale ar inventa ritmul.
 - **Axa valorii se rotunjește la trepte întregi** (`NiceNumber`: 1/2/5/10 × o putere a lui zece), deci o axă de 0 / 3.271 / 6.542 devine 0 / 1.000 / 2.000 / 3.000 / 4.000 — a doua se citește fără aritmetică.
 - **Un singur punct, sau mai multe în aceeași clipă**, dau o întindere zero. Nu e o eroare și nu se umflă: punctul se desenează în mijloc.
 - **Etichetele de timp sunt doar cele două capete.** O axă de timp reală nu e regulată, deci etichete egal spațiate în interior ar numi momente în care nu s-a întâmplat nimic.
@@ -72,7 +65,7 @@ Regiunile pictate folosesc KBotToolTip.ShowAt cu cheia conținutului, fără rep
 
 - **Fila «Recepția»** — o singură linie: lanțul recepției alese, `Emphasis` + `FillArea`. Fără recepție aleasă, `EmptyText` spune ce să facă operatorul.
 - **Fila «Tot angajamentul»** — câte o linie per recepție cu lanț nevid, plus **linia de total**, îngroșată. Recepția SELECTATĂ nu e cea accentuată aici, ci cea cu suprafața tentată: două linii accentuate ar face totalul doar încă un lanț, adică exact ce nu e.
-- **Totalul**, un punct per moment distinct: fiecare recepție contribuie cu valoarea ultimului ei instantaneu de până atunci (o valoare ține până o schimbă următorul instantaneu). **O recepție al cărei ultim instantaneu e rândul de ȘTERGERE contribuie cu valoarea aceea LA acel moment și cu zero după** — rândul de ștergere spune cât valora când a plecat, nu cât valorează în continuare. Cu un singur lanț, totalul nu se mai desenează: ar fi aceeași linie de două ori.
+- **Totalul:** un punct per moment distinct, însumând ultimul instantaneu al fiecărei recepții până atunci. Ultimul instantaneu de ștergere contribuie cu valoarea sa chiar la acel moment, apoi cu zero. Pentru un singur lanț totalul nu se desenează, fiind aceeași linie.
 - Graficul se reconstruiește **întreg**, din `Reconstruieste`, din același motiv pentru care arborii se reconstruiesc întregi: un grafic peticit punct cu punct și un arbore refăcut de la zero ajung, după câteva trageri, să spună lucruri diferite.
 - Eticheta unui punct e **același text** ca tooltip-ul rândului din arbore — punctul și rândul sunt același fapt văzut de două ori.
 
@@ -102,20 +95,11 @@ Controlul a fost desenat cu `DrawToBitmap` pe **toate cele trei scheme** (Classi
 
 **Adăugate**
 
-- `src/KBot.Controls/Chart/KBotChartEnums.vb`
-- `src/KBot.Controls/Chart/KBotChartPoint.vb`
-- `src/KBot.Controls/Chart/KBotChartSeries.vb`
-- `src/KBot.Controls/Chart/KBotChartTab.vb`
-- `src/KBot.Controls/Chart/KBotChartView.vb`
-- `src/KBot.Controls/Chart/KBotChartView.Painting.vb`
-- `tests/KBot.Controls.Tests/KBotChartViewTests.vb`
-- `docs/worklog/SLICE-0048-05-graficul-evolutiei.md` (fișierul ăsta)
+`src/KBot.Controls/Chart/KBotChartEnums.vb`; `src/KBot.Controls/Chart/KBotChartPoint.vb`; `src/KBot.Controls/Chart/KBotChartSeries.vb`; `src/KBot.Controls/Chart/KBotChartTab.vb`; `src/KBot.Controls/Chart/KBotChartView.vb`; `src/KBot.Controls/Chart/KBotChartView.Painting.vb`; `tests/KBot.Controls.Tests/KBotChartViewTests.vb`; `docs/worklog/SLICE-0048-05-graficul-evolutiei.md` (fișierul ăsta)
 
 **Modificate**
 
-- `src/KBot.App/Forexe/AsociereForm.Designer.vb` — `grafic` în `splitDreapta.Panel1`, cele două butoane ale benzii, `Panel1.SuspendLayout`/`ResumeLayout`, `BeginInit`/`EndInit`, antetul de comentariu (trei zone → patru).
-- `src/KBot.App/Forexe/AsociereForm.vb` — `ntfMesaj.Clear()` pe selecție; `_receptieSelectata` + `ReceptiaNodului`; secțiunea graficului (`Grafic_TabSelected`, `ReconstruiesteGrafic`, `ConstruiesteGraficReceptie`, `ConstruiesteGraficAngajament`, `ConstruiesteSeriaTotal`, `ValoareaLa`, `LantulReceptiei`, `CheiaSeriei`, `EtichetaReceptiei`, `AdaugaPunct`); `Reconstruieste` folosește acum `LantulReceptiei` în loc de interogarea repetată.
-- `docs/worklog/KBOT_STATUS.md` — rândul 0048-05.
+`src/KBot.App/Forexe/AsociereForm.Designer.vb` — `grafic` în `splitDreapta.Panel1`, cele două butoane ale benzii, `Panel1.SuspendLayout`/`ResumeLayout`, `BeginInit`/`EndInit`, antetul de comentariu (trei zone → patru). `src/KBot.App/Forexe/AsociereForm.vb` — `ntfMesaj.Clear()` pe selecție; `_receptieSelectata` + `ReceptiaNodului`; secțiunea graficului (`Grafic_TabSelected`, `ReconstruiesteGrafic`, `ConstruiesteGraficReceptie`, `ConstruiesteGraficAngajament`, `ConstruiesteSeriaTotal`, `ValoareaLa`, `LantulReceptiei`, `CheiaSeriei`, `EtichetaReceptiei`, `AdaugaPunct`); `Reconstruieste` folosește acum `LantulReceptiei` în loc de interogarea repetată. `docs/worklog/KBOT_STATUS.md` — rândul 0048-05.
 
 ---
 
@@ -134,16 +118,13 @@ Operatorul a văzut felia pe ecran și a raportat trei lucruri (31.08.2026):
 
 > 1. arborii din Asociere nu urmează culorile temei (doar corpul — antetul și subsolul sunt bune)
 > 2. banda din interiorul controlului nou (graficul) nu urmează culorile temei (corpul da)
-> 3. când am selectat în grafic doar H-ul curent, vreau ca fiecare nod al arborelui să fie
->    colorat cu culoarea punctului lui din grafic. Linia ia culoarea nodului din stânga. Dacă e
->    ales «tot angajamentul», atunci fiecare nod-rădăcină din arbore (asociat) primește culoarea
->    dată de punctele graficului. La fel și linia.
+> 3. când am selectat în grafic doar H-ul curent, vreau ca fiecare nod al arborelui să fie colorat cu culoarea punctului lui din grafic. Linia ia culoarea nodului din stânga. Dacă e ales «tot angajamentul», atunci fiecare nod-rădăcină din arbore (asociat) primește culoarea dată de punctele graficului. La fel și linia.
 
 ### 9.1 Corpul arborilor (1)
 
-Cauza nu era în control, ci în fișierul de designer al formularului: `treeLant.BackColor = Color.White` și `treeLibere.BackColor = Color.White`. Exact capcana descrisă în CLAUDE.md — o culoare scrisă în designer NU e `Color.Empty`, deci `_backColorPinned` e True și `ApplyTheme` o ocolește pentru totdeauna. Amândouă liniile s-au ȘTERS. Nu se mai întorc: `ShouldSerializeBackColor` răspunde din steagul de fixare, iar acum nimeni nu mai scrie proprietatea.
+Designerul fixa `treeLant.BackColor` și `treeLibere.BackColor` la `Color.White`: `_backColorPinned = True` excludea tema. Liniile sunt ȘTERSE; fără alte atribuiri, `ShouldSerializeBackColor` nu le mai emite.
 
-De ce antetul și subsolul erau bune, deși `HeaderBackColor = SystemColors.Control` e tot acolo: arborele are deja *excepția schemei întunecate* (`BandColorsFromThemeOnly`) — pe întuneric își ignoră culorile de bandă din designer. Corpul n-avea așa ceva, fiindcă e `Control.BackColor`. Liniile de antet s-au LĂSAT pe loc: sunt alegeri reale ale operatorului și excepția le ține deja în frâu acolo unde ar deranja.
+`HeaderBackColor = SystemColors.Control` rămâne alegerea operatorului: `BandColorsFromThemeOnly` ignoră deja culorile benzilor pe întuneric. Corpul, bazat pe `Control.BackColor`, nu avea această excepție.
 
 ### 9.2 Banda graficului (2)
 
@@ -156,16 +137,16 @@ Butoanele n-au avut nevoie de nimic: își luau deja fondul și textul din palet
 
 ### 9.3 Culoare comună grafic ▸ arbore (3)
 
-**În control** — `KBotChartPoint.PointColor` (`Color.Empty` = culoarea seriei), cu perechea `ShouldSerialize`/`Reset`. Numele NU e `Color`: VB e insensibil la majuscule și un membru umbrește un tip omonim, deci `Color.Empty` scris în clasă ar fi ajuns să însemne proprietatea. `DrawOneSeries` desenează acum segment cu segment: **segmentul ia culoarea punctului din STÂNGA lui** — cel din care pleacă, nu cel în care ajunge, fiindcă porțiunea de după un instantaneu e cât a valorat instantaneul acela până la următorul. Zona colorată de sub linie se taie la fel, o fâșie pe segment. Inelul de survolare urmează și el culoarea punctului. Când niciun punct nu-și numește culoarea, se desenează exact ce desena un singur `DrawLines`.
+**În control:** `KBotChartPoint.PointColor` (`Color.Empty` = seria), cu `ShouldSerialize` / `Reset`. Numele evită `Color`, care ar umbri tipul în VB insensibil la majuscule. `DrawOneSeries` colorează fiecare segment și fâșia de sub el după punctul din STÂNGA: valoarea acelui instantaneu până la următorul. Inelul hover folosește tot culoarea punctului. Fără culori pe puncte, rezultatul rămâne cel al unui singur `DrawLines`.
 
-`SeriesColor` s-a rupt în două, iar jumătatea care alege din paletă a devenit **publică**: `KBotChartView.AutoColor(index)`. Asta e cheia: gazda care colorează ceva din AFARA graficului trebuie să poată cere ACELEAȘI culori, nu să inventeze un set paralel care se rupe la prima schimbare de temă.
+`SeriesColor` este separat; alegerea din paletă devine publică prin `KBotChartView.AutoColor(index)`, astfel încât gazda să poată aplica ACELEAȘI culori în afara graficului, inclusiv după schimbarea temei.
 
 **În formular** — două dicționare (`_nodReceptie`, `_nodInstantaneu`) umplute în timp ce se construiesc arborii, și o singură trecere `SincronizeazaCulorile()`, chemată din `Finally`-ul lui `ReconstruiesteGrafic` — adică DUPĂ grafic, mereu, și nicăieri altundeva.
 
 - **Recepția**: fiecare punct primește `CuloarePunct(inst, i)`, iar rândul lui de instantaneu ia aceeași valoare.
-- **Tot angajamentul**: fiecare serie primește `AutoColor(index)` scris explicit (o culoare pe care n-o știe nimeni e o culoare despre care arborele nu poate fi anunțat), iar rândul-RĂDĂCINĂ al recepției o ia. Frunzele revin la text simplu — a le colora și pe ele ar pretinde o distincție pe care graficul n-o desenează.
+- **Tot angajamentul:** seria primește explicit `AutoColor(index)`, copiată pe rădăcina recepției. Frunzele revin la text simplu: graficul nu le distinge separat.
 - Se resetează TOT înainte de a se picta, nu se peticește: cele două vederi colorează rânduri diferite, deci orice comutare lasă rânduri în urmă.
-- Un instantaneu **blocat sau «fără schimbare»** păstrează griul lui și pe grafic, și în arbore (`CuloareDeBaza`, desprins din `ColoreazaInstantaneu`). Corespondența rămâne exactă, iar un rând scos din joc nu devine cel mai colorat lucru de pe ecran.
+- **Blocat / «fără schimbare»:** instantaneul rămâne gri în grafic și arbore prin `CuloareDeBaza`, extras din `ColoreazaInstantaneu`; corespondența rămâne exactă.
 - **Linia de total** ia `Palette.TextColor`, DINADINS nu o culoare din `AutoColor`: setul acela aparține recepțiilor, iar totalul nu e încă o recepție.
 - `AsociereForm.OnThemeChanged` reconstruiește graficul. Culorile copiate din paletă în serii, puncte și rânduri sunt VALORI, nu legături — nimeni nu se întoarce să le corecteze.
 
@@ -183,9 +164,7 @@ Butoanele n-au avut nevoie de nimic: își luau deja fondul și textul din palet
 
 Pașii 05-02 (setul de culori: gri scos din grafic, nuanțe mult mai depărtate, fără roșu) și 05-03 (clic pe un punct ▸ selectarea rândului din arbore) au plecat de aici într-o felie a lor: [0048-06](#slice-0048-06), absorbit în acest jurnal prin D001-04.
 
-<a id="slice-0048-06"></a>
-
-## SLICE-0048-06 — setul de culori al graficului + clic pe punct ▸ rândul din arbore
+## SLICE-0048-06 — setul de culori al graficului + clic pe punct ▸ rândul din arbore <a id="slice-0048-06"></a>
 
 Continuarea directă a feliei `SLICE-0048-05` (graficul `KBotChartView` din `AsociereForm`), după ce operatorul l-a văzut pe ecran. Două cereri, în două runde: mai întâi **culorile**, apoi **legarea clicului de arbore**. Codul graficului stă tot în `src/KBot.Controls/Chart/`, deci tot în engleză, inclusiv numele categoriilor din grila de proprietăți.
 
@@ -203,10 +182,9 @@ HueFirst=30° și HueLast=330° exclud pana roșie indiferent de temă; ErrorCol
 
 ## 2. Pasul 06-02 — clic pe punct ▸ rândul din arbore
 
-> când utilizatorul dă clic pe un nod din grafic, nodul corespunzător din arbore trebuie
-> selectat. ține referința nodurilor în proprietatea tag (părere, poți face cum vrei)
+> când utilizatorul dă clic pe un nod din grafic, nodul corespunzător din arbore trebuie selectat. ține referința nodurilor în proprietatea tag (părere, poți face cum vrei)
 
-Cealaltă jumătate a colorării. Punctul și rândul au deja aceeași culoare, deci operatorul le împerechează din ochi — dar pe un lanț lung rândul pe care tocmai l-a găsit în grafic poate fi ieșit din vizor sau sub o recepție strânsă. Selectarea e ce transformă «văd care e» în «pot lucra pe el».
+Culoarea comună identifică perechea punct/rând; selectarea trebuie și să dezvăluie rândul ieșit din vizor ori ascuns sub o recepție strânsă.
 
 ### 2.1 Ce era deja acolo
 
@@ -214,19 +192,19 @@ Cealaltă jumătate a colorării. Punctul și rândul au deja aceeași culoare, 
 
 ### 2.2 `AdvancedTreeControl.SelectAndReveal(node)` — nou, public
 
-`SelectedNode = nod` NU e de ajuns, și ăsta e tot rostul metodei: un nod aflat sub un părinte strâns nu e deloc în lista vizibilă, deci selecția e reală dar invizibilă — operatorul vede un clic care n-a făcut nimic. Metoda desface toți ascendenții, cheamă `RefreshScrollVisibility()` (desfacerea a schimbat înălțimea conținutului, iar `EnsureNodeVisible` măsoară față de bară, deci intervalul trebuie corect ÎNAINTE să fie întrebat) și abia apoi derulează minimul necesar.
+`SelectedNode = nod` poate selecta invizibil sub un părinte strâns. `SelectAndReveal` desface ascendenții, apelează `RefreshScrollVisibility()` pentru noua înălțime și intervalul corect al barei, apoi derulează minimul prin `EnsureNodeVisible`.
 
-**Nu ia focusul, dinadins.** Operatorul a dat clic în altă parte; tras aici, cursorul ar face ca următoarea săgeată să miște un arbore la care nu se uita. (`KBotChartView.OnMouseDown` cheamă `Focus()` pe el însuși, deci focusul rămâne unde a dat operatorul clic — pe grafic.)
+**Nu mută focusul:** următoarea săgeată trebuie să rămână la locul clicului. `KBotChartView.OnMouseDown` cheamă `Focus()`, deci focusul rămâne pe grafic.
 
 Un nod care nu e din arborele ăsta e no-op, nu eroare: apelantul potrivește două liste, iar «aici nu e» e un răspuns obișnuit.
 
-Metoda a intrat în `AdvancedTreeControl.API.vb`, nu în formular, fiindcă orice apelant din AFARA arborelui — un punct pe un grafic, un rezultat de căutare, un rând dintr-o listă alăturată — vrea exact aceleași două jumătăți, iar fiecare scriind aceleași trei linii e felul în care jumătățile ajung să se despartă.
+Metoda este în `AdvancedTreeControl.API.vb`, nu în formular: punctul grafic, rezultatul căutării sau lista alăturată au nevoie de aceeași dezvăluire și derulare, fără duplicarea celor trei linii.
 
 ### 2.3 Ce s-a schimbat în formular
 
-`_nodInstantaneu` ținea `TreeItem`. Un `TreeItem` nu-și cunoaște controlul, iar instantaneele sunt împărțite pe DOI arbori — legatele în stânga, cele libere în dreapta. Selectarea cere amândouă jumătățile, deci dicționarul ține acum `RandDeArbore` (arbore + nod), singura variantă care nu poate ajunge să ceară unui arbore să selecteze un rând al celuilalt. Recepțiile n-au nevoie de așa ceva: o rădăcină există doar în arborele din stânga, deci `_nodReceptie` rămâne pe `TreeItem`.
+`_nodInstantaneu` trece de la `TreeItem` fără control la `RandDeArbore` (arbore + nod): instantaneele legate sunt în stânga, cele libere în dreapta, iar selectarea cere ambele identități. `_nodReceptie` rămâne `TreeItem`, rădăcinile existând numai în arborele stâng.
 
-`Grafic_PointClicked` citește instantaneul din `Tag`, îl caută în dicționar și cheamă `SelectAndReveal`. Un punct FĂRĂ instantaneu e linia de total — o însumare a mai multor recepții, deci nu există un singur rând în spate și clicul e lăsat dinadins să nu facă nimic.
+`Grafic_PointClicked` ia instantaneul din `Tag`, îl găsește în dicționar și cheamă `SelectAndReveal`. Punctul fără instantaneu este totalul mai multor recepții: fără un rând unic, clicul este deliberat no-op.
 
 Nu se reconstruiește nimic aici: selectarea unui rând nu e o schimbare a tabloului, iar reconstruirea graficului din chiar clicul graficului ar fi o cale bună de inventat o buclă.
 
@@ -240,11 +218,7 @@ Nu se reconstruiește nimic aici: selectarea unui rând nu e o schimbare a tablo
 
 **Modificate**
 
-- `src/KBot.Controls/Chart/KBotChartView.Painting.vb` — `SeriesColor` simplificat; `AutoColor` rescris (public, nuanță pe fracția de aur între `HueFirst`/`HueLast`, ancorat în accentul schemei active, luminozitate în trei trepte, ridicat pe schemele întunecate); ajutoarele private noi `FromHsl` și `Channel`.
-- `src/KBot.Controls/Tree/AdvancedTreeControl.API.vb` — metoda publică nouă `SelectAndReveal`.
-- `src/KBot.App/Forexe/AsociereForm.vb` — `CuloarePunct` ȘTEARSĂ, punctele iau `grafic.AutoColor(i)`; `_nodInstantaneu` retipat pe `RandDeArbore`; `SincronizeazaCulorile` citește prin el; `Grafic_PointClicked` nou; clasa cuibărită `RandDeArbore` nouă.
-- `docs/worklog/SLICE-0048-05-graficul-evolutiei.md` — pașii ăștia doi erau descriși acolo ca §10 și §11; au fost scoși și mutați aici, cu o trimitere lăsată în locul lor.
-- `docs/worklog/KBOT_STATUS.md` — rândul 0048-06.
+`src/KBot.Controls/Chart/KBotChartView.Painting.vb` — `SeriesColor` simplificat; `AutoColor` rescris (public, nuanță pe fracția de aur între `HueFirst`/`HueLast`, ancorat în accentul schemei active, luminozitate în trei trepte, ridicat pe schemele întunecate); ajutoarele private noi `FromHsl` și `Channel`. `src/KBot.Controls/Tree/AdvancedTreeControl.API.vb` — metoda publică nouă `SelectAndReveal`. `src/KBot.App/Forexe/AsociereForm.vb` — `CuloarePunct` ȘTEARSĂ, punctele iau `grafic.AutoColor(i)`; `_nodInstantaneu` retipat pe `RandDeArbore`; `SincronizeazaCulorile` citește prin el; `Grafic_PointClicked` nou; clasa cuibărită `RandDeArbore` nouă. `docs/worklog/SLICE-0048-05-graficul-evolutiei.md` — pașii ăștia doi erau descriși acolo ca §10 și §11; au fost scoși și mutați aici, cu o trimitere lăsată în locul lor. `docs/worklog/KBOT_STATUS.md` — rândul 0048-06.
 
 ---
 
@@ -274,13 +248,11 @@ Setul de culori a fost verificat **prin calcul** (o simulare a aritmeticii din `
 
 - **`AsociereForm` tot NEVĂZUT** — nici pe ecran, nici în designerul VS. Operatorul a cerut explicit să nu se randeze nimic: testarea și randarea sunt ale lui. Prima verificare vizuală a culorilor și a clicului rămâne de făcut de el.
 - **Fără teste noi**, din același motiv.
-- `grid.BackColor = SystemColors.Window` din `AsociereForm.Designer.vb` — același defect de «proprietate fixată» ca la arbori, dar repararea cere întâi `ShouldSerializeBackColor` + un fanion de fixare pe `KBotDataView`, altfel linia ștearsă se rescrie la următoarea salvare din designer. Semnalat, necerut, neatins.
+- `grid.BackColor = SystemColors.Window` din `AsociereForm.Designer.vb` rămâne neatins: persistă limita din 0048-05 §9.4, care cere întâi `ShouldSerializeBackColor` și steag de fixare în `KBotDataView` pentru a evita rescrierea din designer.
 - Fonturile `Calibri 9` fixate din designer pe arbori și pe grafic — lăsate așa.
 - **Livrarea a luat cu ea și lucrul din arborele de lucru pe `AdvancedTreeControl`** (chei de pictogramă pe bandă, `TreeImageKeyConverter`, redenumirea categoriilor, `TooltipShowOnlyOnRightIcon`, exportatorul din `KBot.DevHarness`): nu e felia asta, dar `AsociereForm.Designer.vb` îl FOLOSEȘTE (`TooltipShowOnlyOnRightIcon` nu există fără el), deci un commit care l-ar fi lăsat afară n-ar fi compilat. A plecat într-un commit al lui, ÎNAINTEA acestuia, și **nu are worklog** — nu s-a putut stabili cărei felii îi aparține.
 
-<a id="slice-0048-07"></a>
-
-## SLICE-0048-07 — benzile de așezare, liniile în trepte, reperele plăților și retragerea lui F13
+## SLICE-0048-07 — benzile de așezare, liniile în trepte, reperele plăților și retragerea lui F13 <a id="slice-0048-07"></a>
 
 Continuarea directă a feliilor `SLICE-0048-04` … `SLICE-0048-06` (editorul de legături R ▸ H și graficul lui). Plan: `docs/PLAN_AsociereBenzi.md`, scris de operator pe 31.08.2026.
 
@@ -304,15 +276,13 @@ Continuarea directă a feliilor `SLICE-0048-04` … `SLICE-0048-06` (editorul de
 
 Operatorul a corectat pe 31.08.2026 un fapt pe care se sprijinea tot formularul:
 
-> `FX_Receptii_R.DataR` **nu** e momentul creării. E un câmp obișnuit, pe care omul îl tastează pe
-> site, și se poate schimba după creare.
+> `FX_Receptii_R.DataR` **nu** e momentul creării. E un câmp obișnuit, pe care omul îl tastează pe site, și se poate schimba după creare.
 
 Verificat în schemă: `FX_Receptii_R` e `IDRR, NRCRT, CodAngajament, Tip, DataR, SumaAntet, Descriere, HASH, TipReceptie, Incarcat, Preluat` (`MariaDB_Schema/000_DEMO.sql` și `FX_System_Export/TABLES/FX_Receptii_R.md`). **Nu există nicio coloană cu momentul creării în tabelul ăla.** Rândurile din eșantion poartă `dd.MM.yyyy` fără componentă de oră — adică exact cum arată o dată tastată.
 
 Deci **F13 se sprijinea pe nimic** și a ieșit. Iar fiindcă F13 era cea mai tare constrângere a formularului, ce a rămas — F14, F16, o singură ștergere per lanț, F15 ca semn — nu mai poate duce designul. Consecința nu e o funcție mai mică, ci alta:
 
-> Formularul nu mai poate **refuza** util o plasare. Trebuie în schimb să facă fiecare plasare
-> **ieftin de desfăcut și imediat vizibilă în consecințe.**
+> Formularul nu mai poate **refuza** util o plasare. Trebuie în schimb să facă fiecare plasare **ieftin de desfăcut și imediat vizibilă în consecințe.**
 
 Asta s-a construit.
 
@@ -347,10 +317,7 @@ AsociereBenziForm.{vb,Designer.vb}, KBotThemedForm modală maximizată, Lane doc
 ## 3. Fișiere atinse
 
 **Noi**
-- `src/KBot.Controls/Lane/KBotLaneEnums.vb`, `KBotLaneMarker.vb`, `KBotLane.vb`, `KBotLaneView.vb`, `KBotLaneView.Painting.vb`, `KBotLaneView.Drag.vb`, `KBotLaneView.md`
-- `src/KBot.Controls/Chart/KBotChartGuide.vb`, `KBotAutoPalette.vb`
-- `src/KBot.App/Forexe/AsociereBenziForm.vb`, `AsociereBenziForm.Designer.vb`
-- `docs/worklog/SLICE-0048-07-benzi-si-retragerea-f13.md` (fișierul ăsta)
+`src/KBot.Controls/Lane/KBotLaneEnums.vb`, `KBotLaneMarker.vb`, `KBotLane.vb`, `KBotLaneView.vb`, `KBotLaneView.Painting.vb`, `KBotLaneView.Drag.vb`, `KBotLaneView.md`; `src/KBot.Controls/Chart/KBotChartGuide.vb`, `KBotAutoPalette.vb`; `src/KBot.App/Forexe/AsociereBenziForm.vb`, `AsociereBenziForm.Designer.vb`; `docs/worklog/SLICE-0048-07-benzi-si-retragerea-f13.md` (fișierul ăsta)
 
 **Modificate**
 - `src/KBot.Controls/Chart/KBotChartEnums.vb` — `KBotChartLineMode`
@@ -383,15 +350,15 @@ AsociereBenziForm.{vb,Designer.vb}, KBotThemedForm modală maximizată, Lane doc
 
 ## 5. Ce s-a hotărât altfel decât în literă, și de ce
 
-**5.1 Ordinea lui `ReconstruiesteBenzi`.** Planul cerea «imediat după `ReconstruiesteGrafic()` și înainte de `SincronizeazaCulorile()`». Imposibil ca atare: `SincronizeazaCulorile` nu se cheamă din `Reconstruieste`, ci din coada lui `ReconstruiesteGrafic` — ca să prindă și schimbarea de filă, și cea de selecție, care nu ating benzile. Intenția (benzile există înainte ca pasul de culori să ruleze) s-a obținut punând benzile **înaintea** graficului. Comentat la fața locului.
+**5.1 `ReconstruiesteBenzi` rulează ÎNAINTE de grafic.** Planul îl cerea după `ReconstruiesteGrafic()` și înainte de `SincronizeazaCulorile()`, dar culorile sunt chemate chiar la finalul graficului, inclusiv la filă/selecție fără refacerea benzilor. Ordinea aleasă păstrează intenția: benzile există când se colorează. Comentată local.
 
-**5.2 Reperele: două obiecte, nu unul împărțit.** Planul spune «aceeași colecție `Guides`». Tipul CHIAR e împărțit — `KBotChartGuide` e desenat și de grafic, și de benzi, prin `IKBotGuideHost` — dar prima variantă punea același OBIECT în amândouă colecțiile, și acolo e o capcană: un reper are un singur câmp de proprietar (cel care îl repictează la schimbarea culorii), iar al doilea adăugat îl fura pe primul. Acum se construiesc două repere în ACEEAȘI buclă din aceeași plată. Garanția e la fel de tare — amândouă primesc `plata.DataPlata`, aceeași valoare, în același pas — fără obiect cu doi stăpâni.
+**5.2 Repere: două obiecte, tip comun.** Planul cere «aceeași colecție `Guides`». `KBotChartGuide` se desenează în grafic și benzi prin `IKBotGuideHost`. Același obiect în două colecții și-ar pierde primul proprietar (reperul are un singur câmp pentru repictare). Se construiesc două obiecte în aceeași buclă, din aceeași plată, cu același `plata.DataPlata`, păstrând corespondența cerută de plan fără doi proprietari.
 
-**5.3 `RangeStart`/`RangeEnd` există, dar `AsociereForm` NU le folosește.** Planul cere «margini comune cu graficul, ca un reper de plată să stea în aceeași poziție orizontală în amândouă controalele». Controlul are cu ce (`RangeStart`/`RangeEnd`, doar la rulare), dar formularul nu le fixează, **deliberat**: benzile arată și instantaneele NEAȘEZATE, iar graficul nu; fixate pe intervalul graficului, marcajele din afara lui n-ar mai fi desenate — adică suprafața al cărei rost e tocmai să arate instantaneele neașezate le-ar ascunde. Alinierea la pixel între cele două rămâne deci adevărată doar când amândouă arată același interval. **De verificat pe ecran de operator**; dacă vrea alinierea cu orice preț, unealta e deja acolo.
+**5.3 `RangeStart` / `RangeEnd` există la rulare, dar formularul nu le fixează.** Planul cere alinierea orizontală cu graficul; benzile includ însă instantanee NEAȘEZATE, absente din grafic. Folosirea intervalului graficului le-ar ascunde pe cele din afara lui. Alinierea la pixel rămâne valabilă numai la intervale egale, **de verificat vizual de operator**; proprietățile permit alegerea altei priorități.
 
-**5.4 `KBotAutoPalette`.** `AutoColor` era o metodă privată a graficului. Fiindcă acum și benzile trebuie să dea aceeași culoare aceluiași fapt, setul s-a mutat într-un modul `Friend` împărțit, iar `KBotChartView.AutoColor` doar deleagă. Două implementări s-ar fi potrivit în ziua în care au fost scrise și s-ar fi despărțit la prima schimbare de temă. Culorile ies bit cu bit aceleași — e aceeași aritmetică mutată, nu rescrisă.
+**5.4 `KBotAutoPalette`:** `AutoColor` era o metodă privată a graficului; aritmetica `AutoColor` se mută neschimbată într-un modul comun `Friend`; `KBotChartView.AutoColor` deleagă. Graficul și benzile folosesc astfel aceleași culori, inclusiv după schimbarea temei.
 
-**5.5 `AllowDrop` — capcana C4 pe o proprietate MOȘTENITĂ.** Prinsă măsurând, nu ghicind: un `KBotLaneView` proaspăt serializa `AllowDrop`, unde un `KBotChartView` proaspăt nu serializa nimic peste cele trei linii pe care Visual Studio le scrie pentru orice control (`Location`, `Name`, `TabIndex`). Constructorul îl aprinde fiindcă tot rostul controlului e să primească aruncări, dar `AllowDrop` poartă `DefaultValue(False)`, deci designerul ar fi scris `benzi.AllowDrop = True` în fiecare formular-gazdă. **Un `ShouldSerializeAllowDrop` NU merge** — și s-a încercat întâi: `TypeDescriptor` construiește descriptorul unei proprietăți moștenite pe tipul care o DECLARĂ, deci caută metoda pe `Control` și n-o vede niciodată pe a noastră. Soluția e cea deja consemnată în notele proiectului pentru cazul ăsta: se umbrește proprietatea și se marchează umbra, fiindcă umbrirea NU moștenește atributele de serializare ale bazei. Verificat empiric prin `TypeDescriptor.GetProperties(c)(name).ShouldSerializeValue(c)` — drumul pe care chiar merge Visual Studio — cu o sondă temporară, ștearsă după (§7).
+**5.5 `AllowDrop`, capcana C4 a proprietății MOȘTENITE.** Constructorul `KBotLaneView` o activează, dar `DefaultValue(False)` provoca serializarea `benzi.AllowDrop = True`; `KBotChartView` proaspăt emitea numai `Location`, `Name`, `TabIndex`. Încercarea `ShouldSerializeAllowDrop` nu funcționează: `TypeDescriptor` caută pe tipul declarant `Control`. Soluția umbrește proprietatea și marchează umbra, care nu moștenește atributele de serializare. Probat prin `TypeDescriptor.GetProperties(c)(name).ShouldSerializeValue(c)`, cu sondă temporară ștearsă după (§7).
 
 **5.6 Testele care codificau F13 au fost rescrise, nu șterse.** Trei bucăți (două în Python, una în `KBot.App.Tests`) verificau vetoul. Regula n-a dispărut, a coborât — deci testele au coborât cu ea și verifică acum semnul. Nu e «test nou»: e același test, pe regula corectată. Un test lăsat pe regula retrasă ar fi însemnat livrarea unei suite roșii.
 
@@ -457,9 +424,7 @@ Din §5 al planului, explicit în afara ariei:
 - **Semnul F13 pe date reale.** Comparația pe zi e argumentată, nu măsurată: nimeni n-a rulat-o peste un angajament viu ca să vadă câte semne se aprind.
 - **Ruta și clientul nu au rulat viu.** La fel ca toată familia 0048.
 
-<a id="slice-0048-08"></a>
-
-## SLICE-0048-08 — benzile citibile, eticheta care nu mai rămâne în urmă, și cele două vederi din dreapta sus
+## SLICE-0048-08 — benzile citibile, eticheta care nu mai rămâne în urmă, și cele două vederi din dreapta sus <a id="slice-0048-08"></a>
 
 Continuarea directă a feliei `SLICE-0048-07`. Cerută punct cu punct de operator pe 01.09.2026, după ce a privit prima oară benzile de așezare.
 
@@ -541,15 +506,11 @@ Prima sondă a scos și un defect al MĂSURĂTORII, nu al codului: `Form.DrawToB
 - **150% DPI.** Peniile se reconstruiesc acum la handle și la schimbarea de DPI, dar asta e argumentat, nu măsurat pe un ecran adevărat.
 - **Ruta și clientul nu au rulat viu**, ca toată familia 0048.
 
-<a id="slice-0048-09"></a>
-
-## SLICE-0048-09 — totalul recepțiilor scris chiar pe reperul plății
+## SLICE-0048-09 — totalul recepțiilor scris chiar pe reperul plății <a id="slice-0048-09"></a>
 
 Continuarea directă a feliei `SLICE-0048-08`. O singură cerere a operatorului, pe 01.09.2026, după ce a privit benzile de așezare în vederea «benzi»:
 
-> «când trec cu mausul peste o bandă verticală (plățile) vreau să văd în etichetă Totalul
-> Recepțiilor până la data aia (adică totalul ultimei stări a fiecărui R) și diferența dintre ele,
-> ca să văd ușor dacă H-urile sunt bine puse sau nu.»
+> «când trec cu mausul peste o bandă verticală (plățile) vreau să văd în etichetă Totalul Recepțiilor până la data aia (adică totalul ultimei stări a fiecărui R) și diferența dintre ele, ca să văd ușor dacă H-urile sunt bine puse sau nu.»
 
 **Stare:** cod verde — `dotnet build KBot.sln` **0 erori / 0 avertismente**. `KBot.App.Tests` **188 trecute / 13 picate** din 201; cele 13 roșii sunt **exact aceleași preexistente și străine** de felia asta (`DdfViewTests` 3, `DdfXfaParserTests` 2, `IstoricViewTests` 6, `MainFormNavItemsTests` 1, `XfaXmlPreviewTests` 1) — linia de plecare era 185/198, deci **cele 3 teste noi trec toate trei** și nimic nu s-a mișcat în rest. `KBot.Controls` neatins. Python neatins.
 

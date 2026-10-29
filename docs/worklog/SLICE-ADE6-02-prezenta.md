@@ -6,13 +6,7 @@ Repere comune pentru etapele indicate: 09.10.2026 — ADE6-08, ADE6-09, ADE6-22;
 
 Nota comună Rezolvat din 04/21/26: *Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.* Descrierile inițiale de predare sunt istorice; regulile operative sunt în [ghid](../../ADECHIT/UTILIZARE_WEB.md), inclusiv excepția ulterioară de editare a ultimei luni închise prin dreptul ME01.
 
-- [ADE6-02](#slice-ADE6-02)
-- [ADE6-04](#slice-ADE6-04)
-- [ADE6-08](#slice-ADE6-08)
-- [ADE6-09](#slice-ADE6-09)
-- [ADE6-21](#slice-ADE6-21)
-- [ADE6-22](#slice-ADE6-22)
-- [ADE6-26](#slice-ADE6-26)
+[ADE6-02](#slice-ADE6-02) · [ADE6-04](#slice-ADE6-04) · [ADE6-08](#slice-ADE6-08) · [ADE6-09](#slice-ADE6-09) · [ADE6-21](#slice-ADE6-21) · [ADE6-22](#slice-ADE6-22) · [ADE6-26](#slice-ADE6-26)
 
 ## SLICE-ADE6-02 — prezență <a id="slice-ADE6-02"></a>
 
@@ -26,10 +20,7 @@ Situația lunară afișează copilul, SID/SIC, prezența, valorile și mișcări
 
 ### Fișiere atinse
 
-- `PYTHON/routes/adechit/__init__.py`
-- `PYTHON/routes/adechit/service.py`
-- `PYTHON/static/js/adechit/app.js`
-- `PYTHON/tests/test_adechit.py`
+`PYTHON/routes/adechit/__init__.py`; `PYTHON/routes/adechit/service.py`; `PYTHON/static/js/adechit/app.js`; `PYTHON/tests/test_adechit.py`
 
 ### Verificări
 
@@ -74,10 +65,7 @@ Plătitori încarcă inițial numai grupele. Se cer copiii după IDG și persoan
 
 ### Fișiere
 
-- API: PYTHON/routes/adechit/__init__.py, repository.py, catalog_forms.py.
-- UI: PYTHON/static/js/adechit/app.js, payers.js, static/adechit.html și css/adechit.css.
-- Probe: PYTHON/tests/test_adechit.py, adechit_lazy.test.mjs.
-- Documentație: ADECHIT/UTILIZARE_WEB.md, ADECHIT_STATUS.md și registrul ADE0–ADE9.
+API: PYTHON/routes/adechit/__init__.py, repository.py, catalog_forms.py. UI: PYTHON/static/js/adechit/app.js, payers.js, static/adechit.html și css/adechit.css. Probe: PYTHON/tests/test_adechit.py, adechit_lazy.test.mjs. Documentație: ADECHIT/UTILIZARE_WEB.md, ADECHIT_STATUS.md și registrul ADE0–ADE9.
 
 ### Verificări efective
 
@@ -101,10 +89,7 @@ La încărcarea paginii se cer numai lunile celui mai recent an și se deschide 
 
 ### Fișiere atinse
 
-- PYTHON/static/js/adechit/app.js, payers.js, catalogs.js.
-- PYTHON/static/adechit.html: ajutor actualizat.
-- PYTHON/tests/adechit_lazy.test.mjs: adaptarea simulării DataGrid și a așteptărilor existente la ultimul an deschis. Testele: TESTAT, RULAT, PUBLICAT.
-- ADECHIT/UTILIZARE_WEB.md, ADECHIT_STATUS.md și registrul ADE0–ADE9.
+PYTHON/static/js/adechit/app.js, payers.js, catalogs.js. PYTHON/static/adechit.html: ajutor actualizat. PYTHON/tests/adechit_lazy.test.mjs: adaptarea simulării DataGrid și a așteptărilor existente la ultimul an deschis. Testele: TESTAT, RULAT, PUBLICAT. ADECHIT/UTILIZARE_WEB.md, ADECHIT_STATUS.md și registrul ADE0–ADE9.
 
 ### Verificări și predare
 
@@ -122,10 +107,7 @@ Logica este în chooseMonth, înaintea sincronizării selecției și încărcăr
 
 ### Fișiere atinse
 
-- PYTHON/static/js/adechit/app.js.
-- ADECHIT/UTILIZARE_WEB.md.
-- ADECHIT_STATUS.md și docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md.
-- Acest worklog.
+PYTHON/static/js/adechit/app.js. ADECHIT/UTILIZARE_WEB.md. ADECHIT_STATUS.md și docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md. Acest worklog.
 
 ### Rezultatele testelor
 

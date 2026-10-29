@@ -10,11 +10,11 @@
 
 ### 1. A treia numerotare: benzile
 
-Grila avea deja două numerotări, ținute separat cu grijă (slice 0028-03): *indici de MODEL* (ordinea de încărcare, pe care o vorbește tot API-ul public) și *poziții de VEDERE* (ordinea de pe ecran, după filtrare și sortare). Gruparea aduce a treia — *indici de BANDĂ*, adică rândurile DESENATE, printre care se numără și antetele/subsolurile de grup, care nu sunt rânduri de model deloc.
+Peste indicii de MODEL (ordinea încărcării, folosită de API) și pozițiile de VEDERE (după filtrare/sortare) din 0028-03, gruparea adaugă indicii de BANDĂ: rândurile desenate, inclusiv antetele/subsolurile de grup fără rând de model.
 
 Regula veche NU s-a mișcat: `Item(cheie, index)`, `CurrentRowIndex`, `CellClick`, `EnsureVisible` înseamnă azi exact ce însemnau înainte de felie. Ce s-a mutat e geometria, care lucrează acum în benzi.
 
-**`_view` a rămas neatinsă ca înțeles** — lista rândurilor de DATE care trec de filtre. Gruparea nu scoate nimic din ea, nici măcar rândurile unui grup strâns. De aici vine cea mai importantă proprietate a feliei: subsolul grilei și măsurarea coloanelor au continuat să lucreze pe același lucru ca înainte, fără o singură modificare.
+`_view` păstrează rândurile de DATE care trec filtrele, inclusiv cele ascunse de grupuri strânse. Subsolul general și măsurarea coloanelor lucrează astfel neschimbat.
 
 ### 2. Înălțimi variabile fără să se piardă virtualizarea
 
@@ -22,7 +22,7 @@ Virtualizarea se sprijinea pe o înmulțire: `poziție × RowHeight`. O bandă d
 
 Soluția: **offset-uri cumulate + căutare binară** (`BandIndexAtOffset`). Costul unei pictări rămâne al FERESTREI, nu al modelului — proba e în test: 5.000 de rânduri și 50 de grupuri pictează sub 40 de rânduri de date.
 
-**Calea negrupată n-a fost atinsă.** Fără niciun nivel activ, `IsGrouped` e False, tabloul de benzi nu se alocă deloc, iar geometria rămâne pe împărțire/înmulțire. Asta a fost o hotărâre, nu o optimizare de final: tabloul de benzi e O(rânduri vizibile), adică exact ce evita virtualizarea, și n-avea voie să fie plătit de cele șase vederi care nu grupează.
+**Calea negrupată rămâne neschimbată:** fără nivel activ, `IsGrouped = False`, nu se alocă benzi, geometria folosește împărțire/înmulțire. Cele șase vederi negrupate evită astfel costul O(rânduri vizibile) al tabloului de benzi.
 
 ### 3. Sortarea nu poate rupe gruparea — miezul feliei
 
@@ -33,7 +33,7 @@ Comparatorul compară întâi CHEILE DE GRUPARE, în ordinea nivelurilor, și ab
 > propriul antet și propriul total — o grilă în care «Total ianuarie» apare de patru ori, cu patru
 > sume diferite.
 
-**Al doilea caz, cel care ar fi fost ușor de ratat:** un click pe antetul unei coloane care e ea însăși cheie de grupare. Acolo nu se adaugă o sortare secundară — se schimbă SENSUL nivelului, iar sortarea de rând se ridică. E singurul lucru pe care îl poate însemna «sortează după lună» într-o grilă grupată pe lună: lunile sunt deja adunate, tot ce mai rămâne de ales e dacă merg în sus sau în jos. Ridicarea sortării de rând e ca antetul să nu poarte două semne de sortare deodată.
+Clicul pe antetul unei chei de grupare schimbă SENSUL nivelului, fără sortare secundară. Sortarea de rând se elimină, evitând două semne de sortare în antet.
 
 ### 4. Filtrarea schimbă totalurile, strângerea NU
 
@@ -42,13 +42,13 @@ Distincția asta e cea mai ușor de stricat și cea mai vizibilă când e strica
 - un **filtru** scoate rânduri din pagină → grupul rămas fără niciun rând dispare cu antet și subsol cu tot (nu rămâne un antet gol), iar totalurile scad, fiindcă pagina chiar s-a schimbat;
 - o **strângere** doar ascunde → totalul grupului și cel general rămân NESCHIMBATE. Dacă cele două s-ar purta la fel, un operator care închide o lună ar vedea totalul general mișcându-se singur sub ochii lui, ceea ce se citește ca o greșeală de calcul, nu ca o comoditate de afișare.
 
-Aceeași distincție se propagă în selecție, și acolo a cerut o hotărâre explicită: **un rând filtrat afară pierde selecția; unul închis într-un grup strâns NU o pierde.** Un filtru spune «rândul nu mai e în pagină» — n-ai la ce te întoarce. O strângere spune «nu acum», și e făcută ca să fie desfăcută: dacă selecția ar cădea, `Ctrl+Dreapta` n-ar mai putea redeschide ce tocmai a închis `Ctrl+Stânga`, fiindcă n-ar mai exista niciun rând despre care să întrebe. Rândul păstrează selecția, nu desenează nimic (n-are bandă) și se sprijină pe antetul grupului — `AnchorBandOfRow`. De acolo vine și purtarea corectă a săgeții în jos: pleacă de la antet, deci sare peste tot grupul, exact ca ochiul.
+**Rândul filtrat pierde selecția; cel ascuns într-un grup strâns o păstrează.** Astfel `Ctrl+Dreapta` poate redeschide grupul închis cu `Ctrl+Stânga`. Rândul fără bandă se ancorează pe antet prin `AnchorBandOfRow`; săgeata în jos pleacă de acolo și sare peste grup.
 
 ### 5. Agregatele: o singură definiție a lui «sumă»
 
-`ComputeAggregateText` a fost parametrizată pe un INTERVAL de poziții de vedere. Subsolul grilei o cheamă pe toată vederea, subsolul unui grup pe intervalul lui. Un grup e prin construcție un interval contiguu, deci agregatul de grup e chiar agregatul grilei calculat peste o felie — **nu o a doua formulă**, care s-ar fi putut contrazice cu prima.
+`ComputeAggregateText` primește un INTERVAL de poziții de vedere: întregul `_view` pentru subsolul general, intervalul contiguu al grupului pentru subsolul acestuia. Ambele folosesc aceeași formulă.
 
-Din același motiv nu există o proprietate `GroupAggregate` pe coloană: ce agregat aduce o coloană e `KBotDataColumn.Aggregate`, cel care alimentează deja subsolul. Un raport Access scrie `=Sum([x])` o dată și îl pune și în subsolul de grup, și în cel de raport. Ce se alege PE NIVEL e dacă agregatele se ARATĂ, nu care sunt.
+Agregatul coloanei rămâne `KBotDataColumn.Aggregate`, fără `GroupAggregate` separat. PE NIVEL se alege numai afișarea agregatelor, ca aceeași expresie `=Sum([x])` din subsolurile de grup și raport Access.
 
 Cache-ul e leneș, pe nod: o grilă cu zece mii de grupuri și cinci coloane agregate ar fi plătit cincizeci de mii de treceri la fiecare resortare, ca să arate douăzeci de benzi.
 
@@ -64,7 +64,7 @@ Peste asta, trei straturi de control, în ordinea puterii: culoarea/fontul fixat
 
 Fiecare proprietate de nivel care se poate seta din designer și nu poate purta `DefaultValue` (`Font`, `Color`, cele două înălțimi) are perechea `ShouldSerialize`/`Reset`, iar testele o verifică prin `TypeDescriptor`, adică pe drumul pe care merge chiar Visual Studio.
 
-**O asumpție a mea a picat aici, și e bine că a picat printr-un test:** scrisesem că `Groups` nu trebuie să se serializeze pe o grilă neatinsă. Fals — o colecție `Content` raportează ÎNTOTDEAUNA `True`, fiindcă designerul nu scrie proprietatea, ci coboară în ea și scrie elementele; goală, nu produce nicio linie oricum. Codul era corect (identic cu `Columns`, care face asta din 0025), testul era greșit. Înlocuit cu verificarea onestă: `Groups` se poartă exact ca `Columns`.
+**Corecție probată:** o colecție `Content` raportează ÎNTOTDEAUNA `True` la serializare; designerul scrie elementele, iar colecția goală nu produce linii. Codul era corect; testul care cerea neserializarea lui `Groups` pe grila neatinsă era greșit. Înlocuit cu verificarea că `Groups` se comportă ca `Columns` (0025).
 
 ---
 

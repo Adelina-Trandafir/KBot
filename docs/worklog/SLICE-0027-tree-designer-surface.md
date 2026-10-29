@@ -61,7 +61,7 @@ Corectura: `AdvancedTreeControl` **implementează acum `IThemedControl`** (parti
 **Contractul de culoare, nou:** `Color.Empty` = «auto, din temă»; orice culoare setată câștigă,
 definitiv. Fiecare culoare a primit `ShouldSerialize*`/`Reset*`.
 
-Perechea `ShouldSerialize`/`Reset` contează mai mult decât pare: **fără ea, VS serializa în `.Designer.vb` implicitul REZOLVAT**, iar acela devenea «alegere a operatorului». Așa ajunsese paleta luminoasă înghețată în cinci fișiere de designer — 13–14 linii de culoare pe fișier, pe care nimeni nu le alesese. Au fost scoase; singura păstrată e `SearchBoxBackColor` verde din `MainForm`, care chiar e o alegere.
+`ShouldSerialize`/`Reset` împiedică VS să serializeze implicitul rezolvat ca alegere. Paleta luminoasă rămăsese astfel fixată în cinci designere, câte 13–14 linii nealese; au fost eliminate, păstrând numai `SearchBoxBackColor` verde ales în `MainForm`.
 
 Câmpurile `_auto*` pornesc de la **exact** culorile hardcodate dinainte de tematizare, ca un host NEtematizat (bancul de probă, calea FOREXE/VBA) să arate neschimbat.
 
@@ -69,7 +69,7 @@ Câmpurile `_auto*` pornesc de la **exact** culorile hardcodate dinainte de tema
 
 Prima variantă a feliei a lăsat o portiță, semnalată de operator la recitire: suprafața și textul nodurilor sunt `Control.BackColor`/`ForeColor`, iar acolo **nu ajunge contractul `_auto*`** — controlul ținea doar steagurile `_backColorPinned`/`_foreColorPinned`, fără să suprascrie `ShouldSerializeBackColor`.
 
-De ce contează: `Control.ShouldSerializeBackColor` întoarce True de îndată ce proprietatea a fost SCRISĂ vreodată, iar arborele o scrie singur de două ori — în constructor (albul implicit) și în `ApplyTheme`. Visual Studio ar fi serializat deci un `tree.BackColor = <culoarea temei>` în designerul formularului gazdă, **pe care nimeni nu l-a ales**; la următoarea încărcare linia ar fi trecut prin setterul public, ar fi ridicat steagul de fixare, și arborele n-ar mai fi urmat niciodată tema. Adică exact bug-ul pe care felia îl repară, reintrodus pe ușa din dos — și e chiar mecanismul prin care `tree.BackColor = Color.White` ajunsese în toate cele cinci designere.
+`Control.ShouldSerializeBackColor` devine True după orice atribuire, inclusiv albul constructorului și culoarea din `ApplyTheme`. VS ar serializa tema; la reîncărcare setterul public ar fixa-o, blocând temele viitoare. Acesta este mecanismul consemnat pentru `tree.BackColor = Color.White` din cele cinci designere.
 
 Corectura: `ShouldSerializeBackColor`/`ShouldSerializeForeColor` suprascrise ca să răspundă din
 **steagul de fixare**, nu din punga de proprietăți a lui `Control`, plus `ResetBackColor`/
@@ -90,8 +90,7 @@ Aceeași întrebare, pusă empiric: **ce scrie designerul într-un formular gazd
 
 Cele cinci designere au fost curățate din nou (−4 linii fiecare; restul liniilor `tree.*` sunt acum verificat alegeri reale — antetul stilizat din `MainForm`, dimensiunile de iconițe din vederi).
 
-**Limită cunoscută, NU reparată aici — fontul nu se moștenește.** Steagul de fixare rezolvă doar
-SERIALIZAREA. Constructorul atribuie în continuare «Segoe UI, 9» explicit, deci arborele nu moștenește fontul ambiant, iar `ThemeManager.ApplyBaseFont` — care pune fontul schemei pe FORMULAR și se bazează pe moștenire — nu ajunge la el. Ar fi fost o linie de șters din constructor, dar `Me.Font` alimentează înălțimea benzii de căutare și `RecalculateItemHeight`, deci schimbarea se VEDE: după ce felia a primit verdict vizual, n-am schimbat unilateral cum arată. `ResetFont()` redă moștenirea pentru cine o vrea, iar testul `Fontul_implicit_e_explicit_iar_ResetFont_reda_mostenirea` fixează comportamentul REAL, ca nimeni să nu presupună mai mult. **De decis de operator.**
+**Limită nereparată — fontul nu se moștenește.** Steagul rezolvă numai serializarea: constructorul păstrează «Segoe UI, 9», deci fontul formularului din `ThemeManager.ApplyBaseFont` nu ajunge la arbore. Eliminarea atribuirii ar modifica vizibil banda de căutare și `RecalculateItemHeight`; după verdictul vizual, alegerea rămâne operatorului. `ResetFont()` redă moștenirea, iar `Fontul_implicit_e_explicit_iar_ResetFont_reda_mostenirea` fixează acest comportament real.
 
 ### 4. Antet
 
@@ -119,7 +118,7 @@ Capătul automat al degradeului se deduce din **luminanța** culorii de bază (B
 - **`NodeImages As ImageList`** — un `ImageList` obișnuit: se pune pe formular, se încarcă pozele prin editorul lui (care le scrie în `.resx`) și se leagă de arbore. Așa se «importă imagini prin designer» fără niciun editor propriu de tipuri. Arborele NU deține lista și n-o eliberează.
 - **`Nodes As TreeNodeDefinitionCollection`** — definiții **plate** (`TreeNodeDefinition`: `Key`, `Caption`, `ParentKey`, `ImageKey`, `OpenImageKey`, `RightImageKey`, `Tooltip`, `Tag`, `Expanded`, `HasCheckBox`, `LazyNode`), materializate în `Items` de `RebuildFromDefinitions`.
 
-Plat cu `ParentKey`, nu ierarhie de referințe, din **exact** motivul invocat de felia 0025 pentru `KBotNavItem`: o colecție ierarhică ar cere un editor propriu, iar un editor propriu ar cere un assembly de design-time compilat contra `Microsoft.WinForms.Designer.SDK`. Prețul nu se plătește nici aici.
+Definiții plate cu `ParentKey`, ca `KBotNavItem` din 0025: ierarhia de referințe ar cere editor propriu și assembly design-time cu `Microsoft.WinForms.Designer.SDK`, în afara scopului.
 
 Reguli: ordinea din colecție = ordinea între frați; un părinte declarat **mai jos** funcționează (treceri repetate); un `ParentKey` inexistent **urcă nodul la rădăcină**, ca greșeala să se vadă, nu să dispară în tăcere. **Definițiile sunt sursa DOAR cât timp colecția e nevidă** — vederile existente, care umplu arborele la rulare prin `AddItem`/XML, nu sunt niciodată golite de o colecție de designer neatinsă.
 
@@ -226,15 +225,15 @@ Sub-felie a lui 0027 (aceeași suprafață de control: proprietăți de designer
 
 ### 1. Un singur font
 
-Arborele avea DOUĂ fonturi. `TreeFont` (implicit `Consolas, 9`) desena nodurile; `Font` (implicit `Segoe UI, 9`, cu perechea `ShouldSerializeFont`/`ResetFont` adăugată în 0027) dădea înălțimea rândului (`RecalculateItemHeight` citea `Me.Font.Height`), fontul benzii de căutare și implicitul antetului. Două surse de adevăr pentru aceeași măsură — adică un arbore care putea desena text mai mare decât rândul care-l ținea.
+Arborele folosea `TreeFont` (`Consolas, 9`) pentru noduri, dar `Font` (`Segoe UI, 9`, cu `ShouldSerializeFont` / `ResetFont` din 0027) pentru `RecalculateItemHeight`, căutare și antetul implicit. Nodurile puteau astfel depăși înălțimea rândului.
 
 A rămas `Font`. Odată cu `TreeFont` au plecat și accesoriile ascunse `FontName`/`FontSize`, care nu erau decât «mută TreeFont» scris pe bucăți.
 
-Consecință de reținut: fontul IMPLICIT al nodurilor s-a mutat de la `Consolas, 9` la `Segoe UI, 9`. Nicio vedere nu se schimbă la ecran — cele trei care chiar desenau noduri (`Plati`/`Receptii`/`Rezervari`) își puneau explicit `FontName = "Segoe UI"` / `FontSize = 9`, iar `DdfView.Designer.vb` avea `tree.TreeFont = New Font("Segoe UI", 9F)`. Toate patru au fost ȘTERSE, nu traduse în `tree.Font = …`: valoarea e acum implicitul, iar scrisă explicit ar fi FIXAT fontul (`_fontPinned`) și l-ar fi făcut surd la `ThemeManager.ApplyBaseFont`.
+Implicitul nodurilor devine `Segoe UI, 9` în loc de `Consolas, 9`, fără schimbare vizuală în cele patru vederi: Plăți/Recepții/Rezervări fixau deja `FontName = "Segoe UI"` / `FontSize = 9`, iar DDF fixa `TreeFont = New Font("Segoe UI", 9F)`. Atribuirile sunt ȘTERSE, nu traduse în `Font`, pentru a evita `_fontPinned` și a permite `ThemeManager.ApplyBaseFont`.
 
 #### Defect prins pe drum: `ResetFont` nu reseta nimic
 
-Asertul nou din `O_alegere_reala_se_serializeaza` (`ResetFont()` ⇒ `ShouldSerializeFont() = False`) a picat pe cod NESCHIMBAT de mine. Cauza: `ResetFont` stingea steagul ÎNAINTE de `MyBase.ResetFont()`, iar `Control.ResetFont` scrie `Font = Nothing` prin setterul VIRTUAL — al nostru — care îl aprindea la loc. Reset-ul rămânea fără efect asupra serializării, adică exact capcana pe care 0027 o repara. Ordinea e acum «resetează baza, apoi stinge steagul», la fel în `ResetBackColor`/`ResetForeColor`.
+Asertul nou `O_alegere_reala_se_serializeaza` (`ResetFont()` ⇒ `ShouldSerializeFont() = False`) a găsit defectul preexistent: `ResetFont` stingea steagul înainte de `MyBase.ResetFont()`, al cărui setter virtual `Font = Nothing` îl reaprindea. Ordinea corectată este bază, apoi steag, și în `ResetBackColor` / `ResetForeColor`.
 
 ### 2. Banda de subsol
 
@@ -267,17 +266,17 @@ Subsolul iese din zona de noduri, nu peste ea. Atinse: clip-ul și bucla din `On
 
 #### Strângerea
 
-`Me.Width = MinimumCollapsedWidth`, cu lățimea desfășurată reținută la fiecare `OnResize` care NU e al nostru (`_applyingCollapseExtent`) — exact mecanismul din `KBotNavList`, din același motiv: altfel prima strângere ar deveni noua «lățime desfășurată» și arborele n-ar mai reveni. Setterul `Collapsed` ARUNCĂ pe strângere fără buton (regula casei: niciun no-op tăcut); `ToggleCollapse` nu aruncă — e apăsarea unui buton care oricum nu se desenează. Stingerea butonului cât arborele e strâns îl desface, ca să nu rămână îngust pe veci.
+`Me.Width = MinimumCollapsedWidth`; lățimea desfășurată se reține la `OnResize` extern (`_applyingCollapseExtent`), ca strângerea să nu o suprascrie, conform `KBotNavList`. Setterul `Collapsed` aruncă dacă se cere strângere fără buton; `ToggleCollapse` nu aruncă pentru butonul nedesenat. Dezactivarea butonului desface arborele strâns.
 
 Contractul cu gazda e cel de la `KBotNavList`: un arbore ancorat primește lățimea de la layout-ul formularului, iar gazda își mută splitter-ul ascultând `CollapsedChanged`.
 
 #### Nodul plutitor (d.III)
 
-`TreeNodeFlyout` e sora lui `KBotNavFlyout`, cu aceleași trucuri: `WS_EX_NOACTIVATE` + `ShowWithoutActivation`, `WS_EX_TOOLWINDOW`, `HTTRANSPARENT` pe `WM_NCHITTEST` (fereastra acoperă chiar rândul survolat — fără asta hover-ul s-ar pierde, eticheta s-ar ascunde, hover-ul ar reveni… la infinit) și colțuri tăiate din REGIUNE, nu doar din desen.
+`TreeNodeFlyout` preia de la `KBotNavFlyout` `WS_EX_NOACTIVATE`, `ShowWithoutActivation`, `WS_EX_TOOLWINDOW` și `HTTRANSPARENT` pe `WM_NCHITTEST`, prevenind oscilația hover-ului sub fereastra suprapusă. Colțurile sunt tăiate din REGIUNE, nu numai din desen.
 
-Ce o face să pară nodul care se desface, nu o etichetă lipită: pleacă exact din dreptunghiul rândului strâns, crește DOAR spre dreapta, iar iconița și textul se desenează la ACELAȘI X ca în arbore (`NodeTextStartX` / `NodeIconRect` repetă formula din `DrawContent`). Culorile vin din aceleași reguli ca `DrawSelection` (selectat → `SelectedBackColor` + `SelectedBorderColor`, altfel `HoverBackColor` + `LineColor`).
+Flyout-ul pornește din rândul strâns și crește numai spre dreapta; `NodeTextStartX` / `NodeIconRect` repetă `DrawContent` pentru același X al textului/pictogramei. Folosește regulile `DrawSelection`: selectat → `SelectedBackColor` / `SelectedBorderColor`, altfel `HoverBackColor` / `LineColor`.
 
-Decizia «pentru cine, cât de desfășurat, unde» stă în funcții pure, calculabile fără ecran — `CollapsedFlyoutTargetAt`, `FlyoutClientBounds`, plus cârligele `DebugFlyout*`. Lățimea completă se măsoară O DATĂ, la fixarea țintei; fără handle (banc de probă) măsurarea cade pe `TextRenderer`, care nu cere fereastră, iar diferența GDI↔GDI+ e de câțiva px ÎN PLUS, adică joc, nu text tăiat. Eticheta se retrage la derulare, la redimensionare, la desfășurare, la schimbarea temei și când cursorul intră în bandă.
+Ținta/geometria sunt funcții pure `CollapsedFlyoutTargetAt` / `FlyoutClientBounds`, cu `DebugFlyout*`. Lățimea se măsoară o singură dată la fixarea țintei; fără handle se folosește `TextRenderer`, cu câțiva pixeli GDI↔GDI+ în plus, fără tăiere. Retragere la derulare, redimensionare, desfășurare, schimbarea temei și intrarea cursorului în bandă.
 
 Caption-ul e desenat cu ACELEAȘI bucăți îmbogățite ca rândul (`ParseRichText`); separatorul `~~~` devine spațiu, fiindcă eticheta e exact atât de lată cât îi trebuie și n-are zonă dreaptă rezervată.
 
@@ -344,14 +343,14 @@ Raport de operator:
 > «something is wrong with the mainform: it collapses the tree then imediately it expands it again
 > so i never get to see it collapsed. in the playground is working»
 
-Diagnostic — și playground-ul era indiciul, nu contra-exemplul. În `MainForm` arborele e `Dock = Fill` în `pnlTree`, `pnlTree` e `Dock = Fill` în `split.Panel1`: lățimea lui o dă `split.SplitterDistance`, nu el. `ApplyCollapseExtent` scria `Me.Width = 100`, iar layout-ul formularului i-o dădea înapoi la următoarea trecere — de unde pâlpâirea. În playground arborele e docat `Left` într-o gazdă `Fill` (schimbare făcută tocmai ca proba să arate ceva), deci acolo `Width` chiar e al lui și totul funcționa.
+În `MainForm`, arborele și `pnlTree` sunt `Dock = Fill` în `split.Panel1`; lățimea vine din `split.SplitterDistance`. `ApplyCollapseExtent` scria `Me.Width = 100`, suprascrisă imediat de layout, provocând pâlpâirea. În playground, arborele `Dock = Left` în gazda `Fill` își deține lățimea; această schimbare făcea proba vizibilă.
 
 Contractul era deja scris în worklog («gazda ascultă `CollapsedChanged` și mută splitter-ul»), dar
 **nimeni nu-l implementa, iar controlul se bătea cu layout-ul în loc să tacă**. Ambele jumătăți au
 fost reparate:
 
-- **Control** — `HostOwnsWidth` (orice `Dock`, sau ancorare pe amândouă laturile) și `ExpandedWidth` (ultima lățime desfășurată, ca gazda să știe unde să se întoarcă). Când lățimea nu e a noastră, `ApplyCollapseExtent` NU mai scrie nimic: starea se schimbă, evenimentul pleacă, atât. O scriere acolo n-ar fi decât o pâlpâire.
-- **`MainForm`** — `tree_CollapsedChanged` mută `split.SplitterDistance` la `MinimumCollapsedWidth + split.Panel1.Padding.Left` (padding-ul e CITIT, nu presupus). `Panel1MinSize` era 240, adică peste ținta de 111, deci păzea și comanda, nu doar tragerea: se coboară cât ține starea strânsă și se pune la loc la desfacere. Cât e strâns, `IsSplitterFixed = True` — tras, splitter-ul n-ar duce decât la o lățime care nu e nici starea strânsă, nici cea desfășurată. `ClampSplitter` ține distanța în intervalul acceptat de `SplitContainer`, fiindcă altfel o fereastră îngustă ar transforma apăsarea butonului în `InvalidOperationException`.
+- **Control:** `HostOwnsWidth` (orice `Dock` sau ancorare pe ambele laturi) și `ExpandedWidth` (ultima lățime desfășurată). Dacă lățimea aparține gazdei, `ApplyCollapseExtent` schimbă numai starea și emite evenimentul, fără scrierea care provoca pâlpâirea.
+- **`MainForm`:** `tree_CollapsedChanged` mută `split.SplitterDistance` la `MinimumCollapsedWidth + split.Panel1.Padding.Left`, cu padding citit. `Panel1MinSize` (240, peste ținta 111) scade cât bara este strânsă și revine la desfacere. `IsSplitterFixed = True` împiedică lățimile intermediare; `ClampSplitter` respectă limitele `SplitContainer`, evitând `InvalidOperationException` în ferestre înguste.
 
 Două teste noi (428 în total): un arbore docat își schimbă starea și ridică evenimentul **fără** să-și atingă `Width`, iar `HostOwnsWidth` urmărește `Dock`-ul și ancorarea pe ambele laturi.
 
@@ -363,7 +362,7 @@ Raport de operator:
 > RESERVE THE SPACE! when hovered and the space is NOT reserved, the text of the node will become
 > narrower to fit the icon»
 
-`DrawContent` retrăgea marginea dreaptă a textului ori de câte ori nodul avea `RightIcon`, **fără să se uite dacă iconița e sau nu pe ecran**. Comentariul de lângă îi spunea «Varianta A»: text care nu sare la hover. Prețul, însă, era o fâșie goală pe FIECARE rând, pentru o iconiță pe care n-o vede nimeni până la survolare — adică exact ce anulează rostul lui `ShowRightIconOnHover`.
+`DrawContent` retrăgea textul pentru orice `RightIcon`, chiar invizibilă. Comentariul «Varianta A» evita saltul textului la hover, dar rezerva inutil o fâșie pe fiecare rând cu `ShowRightIconOnHover`.
 
 Regula acum, într-un singur loc (`RightIconGutter`):
 
@@ -392,7 +391,7 @@ Raport de operator:
 > thing! Only for the selected row. should be done through an option: flyoutselectednode = boolean
 > (exposed in the designer)»
 
-Nodul selectat e singurul pe care operatorul îl are deja în minte — l-a ales el. O etichetă care iese peste el nu-i spune nimic nou, dar acoperă vederea de alături exact în locul spre care se uită, și o face de fiecare dată când cursorul trece pe deasupra.
+Flyout-ul nodului selectat nu aduce informație nouă și acoperă vederea alăturată la fiecare survolare.
 
 `FlyoutSelectedNode` (Boolean, categoria «K-BOT Arbore - Subsol», **implicit False**) guvernează asta. Suprimarea e pe UN rând — cel selectat — nu o stingere a etichetei: vecinii lui ies în continuare, cum a și cerut («Only for the selected row»).
 
@@ -461,16 +460,9 @@ the tree's own default, written explicitly, which is the trap 0027-02 documented
 **2. `ConfigureTree()` is gone from all four.** It only ever set `RootExpander = True`, which
 is now a designer line. `DdfView`'s copy was already commented out; the dead block was removed rather than left as a comment.
 
-**3. The collapse button needed its host half.** The tree is `Dock = Fill` inside
-`split.Panel1` in every one of these views, so `HostOwnsWidth` is True and the control does not write `Width` at all — it flips state and raises `CollapsedChanged`, and the HOST moves its splitter (the 09.08.2026 correction in 0027-02). Without the handler the button would have been a visible dead control in four views. Each view therefore gained `tree_CollapsedChanged` + `ClampSplitter`, the same shape as `MainForm`: remember the splitter distance, drop `Panel1MinSize` for the duration (a min-size guards the DRAG, and collapsing is a command, not a drag), fix the splitter while collapsed, clamp the distance so a narrow view cannot turn a button press into `InvalidOperationException`.
+**3. The four hosts implement collapse.** Their trees are `Dock = Fill` in `split.Panel1`, so `HostOwnsWidth` leaves sizing to the host. Each gains `tree_CollapsedChanged` + `ClampSplitter`, following the 09.08.2026 `MainForm` correction in 0027-02 above: remember/restore distance, temporarily lower `Panel1MinSize`, fix the collapsed splitter and clamp narrow views. Without it the button was inert.
 
-**4. `DdfView`'s two sample designer nodes were removed.** `TreeNodeDefinition1/2` («Ianuarie
-~~~ 1.234.567,00», «01.01.2025 ~~~ 1.234.567,00») were left over from designer-surface
-experiments. `RebuildFromDefinitions` materializes them at RUNTIME too, and `DdfView`'s
-constructor only calls `ShowEmpty` (which does not clear the tree — `ClearAll` does), so the
-running app would have shown two fake revisions until the first selection. The
-`tree_image_list` binding (`NodeImages`) is kept — it is the designer's icon source, not a
-node source.
+**4. Sample designer nodes removed from `DdfView`:** `TreeNodeDefinition1/2` («Ianuarie ~~~ 1.234.567,00», «01.01.2025 ~~~ 1.234.567,00»). `RebuildFromDefinitions` also materializes them at runtime; the constructor calls `ShowEmpty`, which does not clear the tree (`ClearAll` does), leaving fake revisions until selection. `tree_image_list`/`NodeImages` remains the icon source, not a node source.
 
 ### Files touched
 

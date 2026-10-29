@@ -8,9 +8,7 @@ Regula limbii comentariilor din 0013 este istorică și nu înlocuiește instruc
 
 [0013](#slice-0013) · [0016](#slice-0016) · [0037](#slice-0037)
 
-<a id="slice-0013"></a>
-
-## SLICE-0013 — KBotDataView: auto-dimensionarea coloanelor + moduri de umplere
+## SLICE-0013 — KBotDataView: auto-dimensionarea coloanelor + moduri de umplere <a id="slice-0013"></a>
 
 Lățimile coloanelor veneau până acum exclusiv din ce pasa caller-ul la `AddColumn` (sau dintr-un drag manual). Slice-ul adaugă două comportamente grid-wide, aplicate ca O SINGURĂ trecere în `UpdateLayout`, înaintea offset-urilor și a barelor de derulare:
 
@@ -40,10 +38,10 @@ Cele patru cazuri din brief:
 
 #### Trecerea (`KBotDataView.AutoSize.vb`, nou)
 - `PerformAutoSize()` rulează din `UpdateLayout`: măsoară (ToContent, sărind coloanele `UserSized`) apoi fill/shrink. Gardă de reintrare `_inAutoLayout` + oprire dacă `_updateDepth > 0` (se rulează o singură dată din `EndUpdate`). Dacă `None` + `None`, iese imediat (Caz 3 = zero atingeri).
-- **Lățimea disponibilă** oglindește exact ce folosește `UpdateScrollBars` (`ClientSize.Width − bară verticală dacă e vizibilă`), deci un mod de umplere face totalul EGAL cu viewport-ul și bara orizontală nu apare. Vizibilitatea barei verticale depinde doar de numărul de rânduri și înălțimea corpului (niciodată de lățimi), deci se decide prima — fără dependență circulară.
+- **Disponibilul** este cel din `UpdateScrollBars`: `ClientSize.Width − bara verticală vizibilă`. Umplerea egalează viewport-ul, fără bară orizontală. Vizibilitatea barei verticale se decide prima numai din rânduri/înălțimea corpului, independent de lățimi, evitând circularitatea.
 - **Măsurare**: `TextRenderer.MeasureText` cu aceleași fonturi ca pictorul (antet semibold, corp ambient). Text/Combo/Button măsoară șirul FORMATAT (aplică `FormatString`); Combo adaugă zona de chevron; CheckBox/OptionButton folosesc cutia glifului + padding; ProgressBar păstrează lățimea caller-ului (antetul tot participă). Padding-ul e cel din pictură (6px corp, 8px antet, DPI-scalat).
-- **Proporțional**: `extra(i) = leftover · width(i) / total`; restul întreg din diviziune merge INTEGRAL la ultima coloană (totaluri exacte, fără gol de 1–2px la dreapta). O coloană plafonată de `MaxWidth` își pasează surplusul celor neplafonate într-o SINGURĂ trecere suplimentară (nu buclă la convergență).
-- **Micșorare** (depășire + mod de umplere): scade deficitul din coloanele încă peste `MinWidth`, proporțional cu lățimea curentă, cu podea la `MinWidth`. Bucla e mărginită (fiecare rundă fie converge, fie fixează încă o coloană la podea — cel mult `nrColoane` runde).
+- **Proporțional:** `extra(i) = leftover · width(i) / total`; restul întreg merge integral la ultima coloană, fără gol de 1–2px. Surplusul unei coloane plafonate la `MaxWidth` se redistribuie celor neplafonate într-o singură trecere suplimentară, fără buclă la convergență.
+- **Micșorare la depășire cu umplere:** deficitul scade proporțional cu lățimea curentă din coloanele peste `MinWidth`. Cel mult `nrColoane` runde: fiecare converge sau fixează încă o coloană la minim.
 
 #### Integrare
 - `UpdateLayout` cheamă `PerformAutoSize` înaintea `RecalcColumnLayout`/`UpdateScrollBars`.
@@ -53,14 +51,7 @@ Cele patru cazuri din brief:
 
 ### Fișiere atinse
 
-- `src/KBot.Controls/KBotAutoSizeMode.vb`, `KBotFillMode.vb` (noi — enum-uri)
-- `src/KBot.Controls/KBotDataView.AutoSize.vb` (nou — trecerea)
-- `src/KBot.Controls/KBotDataColumn.vb` — `MaxWidth`, `UserSized`, clamp `Width`/`MinWidth`
-- `src/KBot.Controls/KBotDataView.Layout.vb` — `PerformAutoSize` în `UpdateLayout`
-- `src/KBot.Controls/KBotDataView.Theming.vb` — `UpdateLayout` în `ApplyTheme`/`OnFontChanged`
-- `src/KBot.Controls/KBotDataView.Input.vb` — `UserSized = True` la drag
-- `tests/KBot.Controls.Tests/KBotDataViewAutoSizeTests.vb` (nou, 15 teste)
-- `tests/KBot.Controls.Tests/KBotDataModelTests.vb` — 4 teste (`MaxWidth`/`UserSized`)
+`src/KBot.Controls/KBotAutoSizeMode.vb`, `KBotFillMode.vb` (noi — enum-uri); `src/KBot.Controls/KBotDataView.AutoSize.vb` (nou — trecerea); `src/KBot.Controls/KBotDataColumn.vb` — `MaxWidth`, `UserSized`, clamp `Width`/`MinWidth`; `src/KBot.Controls/KBotDataView.Layout.vb` — `PerformAutoSize` în `UpdateLayout`; `src/KBot.Controls/KBotDataView.Theming.vb` — `UpdateLayout` în `ApplyTheme`/`OnFontChanged`; `src/KBot.Controls/KBotDataView.Input.vb` — `UserSized = True` la drag; `tests/KBot.Controls.Tests/KBotDataViewAutoSizeTests.vb` (nou, 15 teste); `tests/KBot.Controls.Tests/KBotDataModelTests.vb` — 4 teste (`MaxWidth`/`UserSized`)
 
 ### Rezultate teste
 
@@ -81,7 +72,7 @@ S-a adăugat proba `KBotDataView — proprietăți runtime (playground)` (Contro
 
 **Bug găsit și reparat la rulare (preexistent din 0010-05):** `ReadOnlyGrid` NU se aplica la comutarea bifelor / opțiunilor — `ActivateCell` verifica doar `IsCellEnabled`, nu și read-only. Fix: o comutare de valoare (CheckBox/OptionButton) e blocată când `ReadOnlyGrid` SAU `Column.ReadOnly` e adevărat (același contract ca editarea text/combo din `CanEdit`); un **Button rămâne activ** (e acțiune pură, fără valoare/dirty). 4 teste noi în `KBotDataViewInputTests.vb` (97 în `KBot.Controls.Tests`). Butonul de comandă ERA deja clicabil (ridica `ButtonClick`) — lipsea doar feedback-ul în playground; s-a adăugat un handler care scrie în info + log.
 
-**Al doilea bug de pictare (frozen column):** la derulare orizontală, conținutul benzii derulate «răzbătea» sub coloana înghețată — celulele înghețate se desenau PESTE cea derulată, dar doar TEXTUL (fără fundal opac), deci textul derulat rămas se vedea printre glife. Fix în `KBotDataView.Painting.vb`: banda înghețată (antet + fiecare rând) e re-pictată OPAC imediat înainte de celulele ei, garantând că coloana statică e mereu deasupra. 2 teste noi (`KBotDataViewFrozenColumnTests.vb`, 99 în total) — verifică headless că nicio culoare a benzii derulate nu apare în banda înghețată după `hScroll`.
+**Coloană înghețată:** la H-scroll, banda derulată răzbătea printre glife fiindcă peste ea se redesena numai textul înghețat. `KBotDataView.Painting.vb` repictează opac antetul/fiecare rând din banda înghețată, imediat înaintea celulelor. Două probe headless noi (`KBotDataViewFrozenColumnTests.vb`, 99 total) verifică lipsa culorilor benzii derulate după `hScroll`.
 
 ### Rămas / în afara scopului
 
@@ -89,9 +80,7 @@ S-a adăugat proba `KBotDataView — proprietăți runtime (playground)` (Contro
 - **Verdict vizual: ACCEPTAT de operator** în proba playground (Controls/UI) — vezi «Verificare în harness».
 - **Follow-up Sumar (nu în acest slice):** `SumarView` ar trebui să seteze `AutoSizeColumnsMode = ToContent` + `ColumnFillMode = LastColumn`/`Proportional` și să renunțe la lățimile hardcodate din `BuildColumns` (coloana Partener se scoate separat).
 
-<a id="slice-0016"></a>
-
-## SLICE-0016 — KBotDataView: coloane care se ascund automat (`Column.AutoHide`)
+## SLICE-0016 — KBotDataView: coloane care se ascund automat (`Column.AutoHide`) <a id="slice-0016"></a>
 
 O proprietate nouă pe coloană care o lasă să **dispară** când grila n-ar încăpea altfel fără scrollbar orizontal, plus interacțiunea cerută cu „coloana care se întinde” (`ColumnFillMode`).
 
@@ -121,12 +110,7 @@ Planul vorbea de „the property to stretch a column”. În cod NU există o pr
 
 ### Fișiere atinse
 
-- `src/KBot.Controls/KBotDataColumn.vb` — `AutoHide`, `AutoHidden`, `IsEffectivelyVisible`.
-- `src/KBot.Controls/KBotDataView.AutoSize.vb` — auto-hide în `PerformAutoSize`, `PerformAutoHide`, `FillTargetColumn`, `AnyColumnCanAutoHide`, `ClearAutoHiddenState`, `DistributeOrShrink(suppressShrink)`.
-- `src/KBot.Controls/KBotDataView.Layout.vb` + `.Input.vb` — cele două citiri de vizibilitate trec pe `IsEffectivelyVisible`.
-- `tests/KBot.Controls.Tests/KBotDataViewAutoHideTests.vb` (nou, 9 teste).
-- `src/KBot.DevHarness/Internal/DataViewHarnessForm.*` — checkbox «Ascunde coloane la nevoie».
-- `docs/worklog/KBOT_STATUS.md`.
+`src/KBot.Controls/KBotDataColumn.vb` — `AutoHide`, `AutoHidden`, `IsEffectivelyVisible`. `src/KBot.Controls/KBotDataView.AutoSize.vb` — auto-hide în `PerformAutoSize`, `PerformAutoHide`, `FillTargetColumn`, `AnyColumnCanAutoHide`, `ClearAutoHiddenState`, `DistributeOrShrink(suppressShrink)`. `src/KBot.Controls/KBotDataView.Layout.vb` + `.Input.vb` — cele două citiri de vizibilitate trec pe `IsEffectivelyVisible`. `tests/KBot.Controls.Tests/KBotDataViewAutoHideTests.vb` (nou, 9 teste). `src/KBot.DevHarness/Internal/DataViewHarnessForm.*` — checkbox «Ascunde coloane la nevoie». `docs/worklog/KBOT_STATUS.md`.
 
 ### Rezultate teste
 
@@ -141,9 +125,7 @@ Planul vorbea de „the property to stretch a column”. În cod NU există o pr
 - **Coloane înghețate:** o coloană `Frozen` marcată `AutoHide` poate dispărea (flagul decide, nu statutul de înghețare). Neobișnuit, dar permis; nefiltrat intenționat în v1.
 - **Ordinea de ascundere** e fixă (dreapta întâi). Un câmp de prioritate per-coloană ar putea urma dacă e nevoie.
 
-<a id="slice-0037"></a>
-
-## SLICE-0037 — Grila: coloana care se întinde poate fi ORICARE, nu doar prima sau ultima
+## SLICE-0037 — Grila: coloana care se întinde poate fi ORICARE, nu doar prima sau ultima <a id="slice-0037"></a>
 
 Cerere de operator:
 

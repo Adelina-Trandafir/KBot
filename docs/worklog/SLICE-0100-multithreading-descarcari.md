@@ -13,15 +13,15 @@ Branch: `SLICE-0100-Multithreading`. Help for this slice is recorded as **0000-3
 ### What changed and why
 
 **The robot (KBot.Forexe).**
-- `IForexeRunner.RunJobsParallelAsync` / `ForexeRunner.RunJobsParallelAsync`: up to `min(maxThreads, 10)` jobs run together, each in a FRESH tab of the SAME browser context (same login). The rest wait in a FIFO `ConcurrentQueue`; a worker that finishes takes the next job. Every answer — failures, `<Exit>`s and timeouts included — is appended to ONE list when ITS tab finishes (completion order); nothing is processed meanwhile; one tab giving up never stops the others (each job is caught inside `RunJobOnOwnTabAsync`). A cancel stops workers from taking new jobs; the ones left in the queue come back as «not started».
+- `IForexeRunner.RunJobsParallelAsync` / `ForexeRunner.RunJobsParallelAsync`: up to `min(maxThreads, 10)` fresh tabs share the browser context/login; workers pull jobs from a FIFO `ConcurrentQueue`. Answers (failures, `<Exit>`, timeouts included) enter one list in completion order and are processed only after all downloads. `RunJobOnOwnTabAsync` catches each job independently. Cancellation stops new dequeues; remaining jobs return «not started».
 - `WorkflowExecutor.OpenWorkerAsync` (a second executor that owns ONE tab; own variables / loop state / workflow; `CloseAsync` closes the tab only), `CloseOtherTabsAsync`, `AdoptTabAsync`.
-- **One tab left at the end** (operator, 01.10.2026): the tab of the LAST job that finished WITHOUT an error stays open; if the last one failed, the one before it, and so on (`ParallelRun.Keeper`: a failed job's tab closes at once, a successful one replaces the previous keeper; at most N + 1 tabs at any moment). The primary executor then ADOPTS that tab as its page (`AdoptTabAsync`: watcher / recorder / Wicket flags cleared, the in-page menu put back when it was running, the old main tab closed, "browser closed" notice muted for that). No job succeeded → the main tab stays and the others are closed.
+- **Last successful tab stays** (operator, 01.10.2026): `ParallelRun.Keeper` closes failed tabs immediately; each success replaces the previous keeper (at most N + 1 tabs). `AdoptTabAsync` makes it the primary page, clears watcher/recorder/Wicket flags, restores the in-page menu if running, and silently closes the old main tab. With no success, the main tab stays and all workers close.
 - One `JobHistoryManager` entry for the whole run (it keeps a single «current job»). Lines of each tab start with `[<cod>] ` (`RichTextBoxLogger.ScopeTag`, an `AsyncLocal`).
 - The main page is veiled / input-locked for the run (as `RunJobAsync` does).
 
-**The coordinator (KBot.App).** `ForexeController.DownloadNodesParallelAsync` (`ForexeController.Parallel.vb`): builds one job per angajament (forward / REVERSE from the local history, read BEFORE the gate closes), runs the batch gated, and when ALL downloads ended turns each answer into a saved local package, in finish order. Replay mode falls back to one-by-one. `Connected` event raised after a successful connect (after the busy flag drops).
+**Coordinator:** `ForexeController.DownloadNodesParallelAsync` (`ForexeController.Parallel.vb`) builds jobs forward/REVERSE using local history read BEFORE the gate closes. The gated batch downloads all jobs, then saves local packages in completion order. Replay runs one-by-one. Successful connect raises `Connected` after clearing busy.
 
-**The shell (KbotForm.Parallel.vb).** `ActualizeazaMaiMulteAsync`: ONE robot-queue task = pre-questions (`AsocierePermiteAsync`, reception picker) → the parallel download → the ingest of the answers ONE AT A TIME (`DuLaIngestieAsync`, same two-phase road) → ONE warning listing the failures (a good run is silent). Doors: tree menu row «Actualizează angajamente...» (`ActualizareMultiplaForm`, ticks, «Bifează cele neactualizate de N zile»); on connect (`Controller_Connected` → posted with `ExecutionContext.SuppressFlow`, so the queue does not take it for part of the connecting task); after the list refresh brought new angajamente in the tree, only in multi-thread mode: «Dorești actualizarea angajamentelor noi?».
+**Shell:** `KbotForm.Parallel.ActualizeazaMaiMulteAsync` queues one task: pre-questions (`AsocierePermiteAsync`, reception picker), parallel download, sequential `DuLaIngestieAsync` two-phase ingest, one failure warning (success silent). Entry points: «Actualizează angajamente...» (`ActualizareMultiplaForm`, ticks, «Bifează cele neactualizate de N zile»); connect (`Controller_Connected`, posted with `ExecutionContext.SuppressFlow` to avoid nesting in its queue task); and new angajamente from list refresh, only in multi-thread mode, after confirmation.
 
 **Data.** `FX_Angajamente.DataActualizare datetime NULL` (`sql/0100_fx_angajamente_data_actualizare.sql`, with slice comments), set to `NOW()` at the commit of the ingest (`prelucrare.py`; error 1054 tolerated until the DDL is applied), returned by `GET /api/forexe/tree` (`tree.py`; literal NULL where the column is missing), carried in `AngajamentTreeInfo.DataActualizare` and shown in the tree tooltip («Actualizat: …»).
 
@@ -102,7 +102,7 @@ Decisions taken (assumptions, no question asked — confidence above 75%):
 
 **Robot (`KBot.Forexe`).**
 - `ParallelRunHooks` (`JobModels.vb`): out — `JobStarted(job, worker)`, `JobProgress(job, step, steps)`; in — `StopJob(job)`. `IForexeRunner.RunJobsParallelAsync` gets a `hooks` parameter (may be Nothing).
-- `ForexeRunner.RunJobOnOwnTabAsync`: a per-job stop token, linked to the run's cancel token, goes to the worker (`OpenWorkerAsync(token, progressCallback)`); when the stop fires the runner **closes the worker's tab** (a step waiting on the page is cut short; a token is only looked at between steps). A job stopped while still waiting is skipped when its turn comes (no tab opened). A stopped job is `ParallelJobOutcome.StoppedByOperator`, never a failure; even a job that was about to succeed is discarded (never becomes the kept tab).
+- `ForexeRunner.RunJobOnOwnTabAsync`: per-job stop linked to run cancellation reaches `OpenWorkerAsync(token, progressCallback)`. Stop closes the worker tab, interrupting a waiting step (tokens alone are checked between steps). A waiting stopped job skips opening a tab. `ParallelJobOutcome.StoppedByOperator` is never a failure; even an almost-successful job is discarded and cannot become keeper.
 - `FakeForexeRunner` (bench) follows the same contract.
 
 **Shell.**
@@ -129,7 +129,7 @@ Decisions taken (assumptions, no question asked — confidence above 75%):
 
 ### Follow-up (03.10.2026): queue window placement
 
-Operator: the queue window opened a little to the right of the shell's right edge and, with the shell maximized, went off the screen. Cause: `ShowRobotQueue` computed the location from the window's width BEFORE `Show`, i.e. the designer's size, but the window is scaled to the screen's dpi only when its handle is created, so it ended wider than it was placed for. Fix: `KbotForm.RobotQueue.vb` — `Show` first, then the new `PlaceRobotQueue` (real size): right edge flush with the shell's client right edge, bottom edge just above the footer band, clamped to the screen's working area. Build clean (0 warnings); not seen on screen (maximized and normal shell, 100% / 150% dpi to try).
+Operator observed the queue window beyond the shell right edge, off-screen when maximized. `ShowRobotQueue` used designer width before DPI scaling at handle creation. Fix in `KbotForm.RobotQueue.vb`: `Show` first, then `PlaceRobotQueue` using actual size, flush with shell client right edge, bottom above footer, clamped to working area. Build clean (0 warnings); unseen after fix (normal/maximized shell, 100%/150% DPI pending).
 
 ### Follow-up 2 (03.10.2026): waiting list with X, window shrinks, no false «urmează ingestia»
 
@@ -141,7 +141,7 @@ Operator, after seeing the window (3 rows running, «Încă 3 în coadă.», an 
 
 ### Follow-up 3 (03.10.2026): grids too short, scroll bars
 
-Operator's screenshot: with 3 running + 3 waiting the third row of each grid was cut and both grids showed a vertical scroll bar. Cause: `FitWindow` sized the rows with `DeviceDpi / 96`, but the grid scales by its own factor (`AppScaling.FactorFor`, which follows the operator's text size / zoom) and has a frame. Now it uses `gridDescarcari.DpiScaleY`: row = `round(RowHeight * scale)`, frame = 2 × border + 2 px slack. Build clean; not seen on screen.
+Operator screenshot: with 3 running and 3 waiting, each third row was clipped with a vertical scrollbar. `FitWindow` used `DeviceDpi / 96`; the grid needs its own zoom (`AppScaling.FactorFor`) plus a frame. It now uses `gridDescarcari.DpiScaleY`, row `round(RowHeight * scale)`, frame `2 × border + 2 px slack`. Build clean; unseen after fix.
 
 ### Follow-up 4 (03.10.2026): one waiting grid instead of the list box
 
@@ -149,11 +149,11 @@ Operator: «avem și lstCoada — nu putem folosi gridAsteapta în locul lui?».
 
 ### Follow-up 5 (03.10.2026): columns editable in the designer
 
-The columns of `gridDescarcari` (`cod`, `prog`, `opreste`) and `gridAsteapta` (`cod`, `scoate`) were already declared in `RobotQueueForm.Designer.vb` (VS re-saved them with `HeaderTextAlign`). The only thing still fixed in code was the caption of the two X buttons (`"X"` written into every row). A Button cell shows its column's `HeaderText` when the cell has no text, so the caption now lives in the designer (`HeaderText = "X"` on both button columns; the headers are hidden by `ShowHeader = False`) and the code no longer writes it. Build clean.
+Both grids already declared columns in `RobotQueueForm.Designer.vb` (`gridDescarcari`: `cod`, `prog`, `opreste`; `gridAsteapta`: `cod`, `scoate`), VS-resaved with `HeaderTextAlign`. Only per-row X text remained in code. It now uses Button-column fallback `HeaderText = "X"` with empty cell text; `ShowHeader = False` keeps headers hidden. Build clean.
 
 ### Follow-up 6 (03.10.2026): icon on the X buttons (operator's new button properties)
 
-The operator set `ButtonImage` (`minus_red`) and `ButtonMargin` (0) in the designer, but on the TEXT column `cod` of the top grid (`KBotDataColumn3`), where they do nothing. Moved to its button column `opreste` (`KBotDataColumn5`) and applied the same to the waiting grid's button column `scoate` (`KBotDataColumn2`). With a picture an empty caption stays empty, so both columns' `HeaderText` went back to `""` (no «X» anywhere, code or designer; the caption can be set with `ButtonText`). Build clean; not seen.
+Operator-set `ButtonImage = minus_red` / `ButtonMargin = 0` were inert on top Text column `cod` (`KBotDataColumn3`). Moved to `opreste` (`KBotDataColumn5`) and copied to waiting `scoate` (`KBotDataColumn2`). With pictures, both `HeaderText` become `""`, removing X from code/designer; `ButtonText` can supply a caption. Build clean; unseen.
 
 ### Follow-up 7 (03.10.2026): playground for the queue window (DevHarness, Debug only)
 

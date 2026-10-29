@@ -19,9 +19,7 @@ Help (tag `0000-29`, `fara-felie`):
 
 ## Files touched
 
-- `src/KBot.App/KbotForm.Designer.vb`, `KbotForm.Chrome.vb`, `KbotForm.Nomenclatoare.vb`, `KbotForm.HelpCapture.vb`, `KbotForm.Console.vb`, `KbotForm.TreeOptions.vb` (comments)
-- `src/KBot.App/Setari/SetariAplicatieView.Designer.vb`, `SetariAplicatieView.vb`, `SetariForm.vb` (comment), `src/KBot.App/Views/LogViewerForm.vb` (comment), `src/KBot.Common/AppSettings.vb`, `FeatureSwitches.vb` (comments)
-- Help: files listed above; `docs/worklog/state/KBOT_STATUS_*.md`, `KBOT_STATUS.md`.
+`src/KBot.App/KbotForm.Designer.vb`, `KbotForm.Chrome.vb`, `KbotForm.Nomenclatoare.vb`, `KbotForm.HelpCapture.vb`, `KbotForm.Console.vb`, `KbotForm.TreeOptions.vb` (comments); `src/KBot.App/Setari/SetariAplicatieView.Designer.vb`, `SetariAplicatieView.vb`, `SetariForm.vb` (comment), `src/KBot.App/Views/LogViewerForm.vb` (comment), `src/KBot.Common/AppSettings.vb`, `FeatureSwitches.vb` (comments); Help: files listed above; `docs/worklog/state/KBOT_STATUS_*.md`, `KBOT_STATUS.md`.
 
 ## Test results
 

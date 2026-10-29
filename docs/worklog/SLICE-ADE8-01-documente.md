@@ -2,12 +2,7 @@
 
 01…04 păstrează contractele inițiale și taburile; 05 introduce listarea/PDF, excluse la checkpointul 02. AD11-01 păstrează separat anularea documentelor și vechea condiție AllowCancelDocuments; [ghidul actual](../../ADECHIT/UTILIZARE_WEB.md#anularea-unui-document) folosește ulterior dreptul AD_ANULARE și spune că setarea veche nu mai există. AD11 portal rămâne alt istoric, cu același număr reutilizat, fără renumerotare. Mailul chitanțelor rămâne inactiv. [Rapoartele](SLICE-ADE9-01-rapoarte.md) documentează ulterior viewerul comun. Nota Rezolvat din 04 și AD11-01: *Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.*
 
-- [ADE8-01](#slice-ADE8-01)
-- [ADE8-02](#slice-ADE8-02)
-- [ADE8-03](#slice-ADE8-03)
-- [ADE8-04](#slice-ADE8-04)
-- [ADE8-05](#slice-ADE8-05)
-- [AD11-01 — anulare](#slice-AD11-01-anulare)
+[ADE8-01](#slice-ADE8-01) · [ADE8-02](#slice-ADE8-02) · [ADE8-03](#slice-ADE8-03) · [ADE8-04](#slice-ADE8-04) · [ADE8-05](#slice-ADE8-05) · [AD11-01 — anulare](#slice-AD11-01-anulare)
 
 ## SLICE-ADE8-01 — documente și anulări <a id="slice-ADE8-01"></a>
 
@@ -29,9 +24,7 @@ Footerul are taburile Chitanțe, Alte plăți și Restituiri legate de copilul s
 
 ### Fișiere atinse
 
-- `PYTHON/static/adechit.html`
-- `PYTHON/static/css/adechit.css`
-- `PYTHON/static/js/adechit/app.js`
+`PYTHON/static/adechit.html`; `PYTHON/static/css/adechit.css`; `PYTHON/static/js/adechit/app.js`
 
 ### Verificări
 
@@ -39,7 +32,6 @@ Footerul are taburile Chitanțe, Alte plăți și Restituiri legate de copilul s
 - suită ADE: 9 teste trecute; sintaxa JavaScript și `git diff --check` au trecut.
 
 ### Neverificat sau amânat
-
 
 Configurația și numerotarea reală a chitanțelor necesită proba pe server. Pentru Alte plăți, interfața trimite automat tipul „Altă plată” și numărul „Fără număr”, deoarece cerința curentă lasă editabile numai data și valoarea. Anularea restituirii rămâne blocată de M03.
 
@@ -82,7 +74,6 @@ La cererea operatorului (10.10.2026): în taburile de documente ADECHIT, pe rân
 Nu s-au rulat teste (regula proiectului). Verificat doar: `node --check` pe `app.js` și `confirm-box.js`. `py_compile` pe `service.py`, `__init__.py`, `preview.py`. Testele existente de anulare (`test_adechit.py`) nu s-au rulat; ele depind de setarea pornită în `preview.py`, iar testul restituirii primește acum `true` din preview, deci rămâne la M03.
 
 ### Nerezolvat / amânat
-
 
 - Verificat în browser (aspectul casetei, dezactivarea butonului, reîncărcarea după anulare): TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 - Restituirile: decizia M03 (salvarea motivului) implementată.

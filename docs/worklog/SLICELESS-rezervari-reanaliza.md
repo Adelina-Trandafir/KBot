@@ -9,13 +9,7 @@ Unele randuri au ajuns gresit din Access in noul sistem: o rezervare nu si-a rec
 - In K-BOT: iconita din stanga subsolului arborelui Rezervari are mereu intrarea «Reanalizeaza rezervarile» (pe langa optiunea DDF, cand exista una).
 
 ## Fisiere
-- NOU `PYTHON/routes/forexe/rezervari_reanaliza.py` (+ import in `routes/forexe/__init__.py`)
-- NOU `src/KBot.Domain/RezervariReanalizaResult.vb`
-- `src/KBot.Domain/DdfSending.vb` (`RezervariMenuOption.Reanalizeaza`, eticheta)
-- `src/KBot.Api/IApiClient.vb`, `ApiClient.vb`, `UpsertAngajamenteRequest.vb` (DTO-uri)
-- `src/KBot.App/Views/RezervariView.vb` (icoana mereu vizibila, intrarea in meniu)
-- `src/KBot.App/KbotForm.Ddf.vb` (`ReanalizeazaRezervariAsync`)
-- 9 fake-uri `IApiClient` din `tests/KBot.App.Tests` (doar stub-ul, ca sa compileze)
+NOU `PYTHON/routes/forexe/rezervari_reanaliza.py` (+ import in `routes/forexe/__init__.py`); NOU `src/KBot.Domain/RezervariReanalizaResult.vb`; `src/KBot.Domain/DdfSending.vb` (`RezervariMenuOption.Reanalizeaza`, eticheta); `src/KBot.Api/IApiClient.vb`, `ApiClient.vb`, `UpsertAngajamenteRequest.vb` (DTO-uri); `src/KBot.App/Views/RezervariView.vb` (icoana mereu vizibila, intrarea in meniu); `src/KBot.App/KbotForm.Ddf.vb` (`ReanalizeazaRezervariAsync`); 9 fake-uri `IApiClient` din `tests/KBot.App.Tests` (doar stub-ul, ca sa compileze)
 
 ## Teste / verificare
 - `rezervari_reanaliza.py` parsat cu `.venv`. Nimic rulat pe MariaDB, nimic pe ecran, teste nerulate.

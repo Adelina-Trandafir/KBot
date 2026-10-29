@@ -29,8 +29,6 @@ See the [shared initial validation checkpoint](SLICE-KE01-modelul-legaturii-si-c
 ## SLICE-KE06 - "Receptie noua" from an invoice (16.10.2026) <a id="slice-KE06"></a>
 
 ### What changed and why
-Operator request (16.10.2026): link the received e-invoices to receptions and, later, to payments; plan in `docs/KE_PLAN.md`.
-
 - The flow of the button: the window (`KeLegaForm`, mode "noua": type Avans / Partial / Final, default "Final" like the site; date, default the invoice date; description, default "plata factura nr/data"; the value of each classification, default the rest of the invoice) > the server check (`verifica`: indicator exists, amounts fit; warnings asked as a question) > a K-BOT marker `(IDRH: n; IDR: m)` is reserved through the existing route and written at the end of the description > the robot adds the reception > ONLY when it is saved the links are written with those numbers (`EF_PrimiteReceptii.IDRH/IDR`), so the download that follows knows whose reception it is.
 - If the save cannot be confirmed (no success element and the read-back does not find the marker) nothing is linked and the accountant is told to look in FOREXE before trying again.
 
@@ -51,9 +49,7 @@ See the [shared initial validation checkpoint](SLICE-KE01-modelul-legaturii-si-c
 ## SLICE-KE07 - "Modifica receptia": finding the right reception and raising it (16.10.2026) <a id="slice-KE07"></a>
 
 ### What changed and why
-Operator request (16.10.2026): link the received e-invoices to receptions and, later, to payments; plan in `docs/KE_PLAN.md`.
-
-- New workflow `Workflows/Creare/adlop - Receptie Modificata.wfl`. The list of receptions gives only Tip, Data, Suma and the eye (the description is inside the form), so the candidates are the rows with the reception's DATE and TOTAL; each one is opened, its description is read and, when K-BOT knows a marker it wrote (pattern built from the snapshot numbers of the reception, no colon in it because `IfVar` splits on colons), the description must match; a candidate that does not match is left with the browser back button and the next is tried. With no marker known (an old reception) the first candidate is taken. If none matches NOTHING is saved (`GASITA` stays 0). The form is the same as "Adauga" (operator): the values of the indicator rows are rewritten and the new K-BOT marker is appended to the description already there.
+- New `Workflows/Creare/adlop - Receptie Modificata.wfl`: candidates match DATE/TOTAL from the list (Tip, Data, Suma, eye; description is inside the form). Each is opened; when a K-BOT marker is known, its snapshot-number pattern must match the description (no colon, because `IfVar` splits on it). A mismatch returns with browser Back and tries the next; with no marker, the first candidate wins. None found → `GASITA = 0`, nothing saved. The form matches «Adauga» per operator: indicator values are rewritten and the new marker appended to the existing description.
 - Server: `receptii_angajament` also answers `Idrhs` (the snapshot numbers of each reception); `verifica` for `modificata` gives the old and the new value of each row; `leaga` records the links on the reception (`IDRR`).
 
 ### Files touched

@@ -11,9 +11,7 @@ Construit si probat in `KBOT_TEST`, adus in `KBOT\src` la 13.10.2026 (doar clien
 4. **Lista in panoul lateral** (sectiunea «Actiuni recente», 0115): textul actiunii si ora (azi «HH:mm», altfel «dd.MM HH:mm»); tooltip cu data si ora intregi. Se reciteste la fiecare reimprospatare a panoului si **live**: `ServerGateHandler.WriteSucceeded` (eveniment Shared, dupa orice scriere reusita) porneste o citire la 2 s dupa ultima scriere dintr-o rafala (un singur GET). Randurile nu se pot apasa.
 
 ## Fisiere
-- NOU: `src/KBot.Common/RecentAction.vb`, `src/KBot.Api/IActionsApi.vb`, `src/KBot.Api/ApiClient.Actions.vb`.
-- Modificate: `src/KBot.Api/ServerGateHandler.vb` (`WriteSucceeded`), `src/KBot.App/KbotForm.Host.vb` (`GetRecentActionsAsync`), `src/KBot.App/AvacontMain.Sidebar.vb` (`LoadActionsAsync`, temporizatorul de 2 s).
-- Serverul: **doar in `KBOT_TEST\PYTHON`** (`routes/actiuni.py` nou + 2 linii in `main.py`). NU e in `KBOT\PYTHON` si nu e pe VPS (operatorul: nu se atinge PYTHON in aceasta unire).
+NOU: `src/KBot.Common/RecentAction.vb`, `src/KBot.Api/IActionsApi.vb`, `src/KBot.Api/ApiClient.Actions.vb`. Modificate: `src/KBot.Api/ServerGateHandler.vb` (`WriteSucceeded`), `src/KBot.App/KbotForm.Host.vb` (`GetRecentActionsAsync`), `src/KBot.App/AvacontMain.Sidebar.vb` (`LoadActionsAsync`, temporizatorul de 2 s). Serverul: **doar in `KBOT_TEST\PYTHON`** (`routes/actiuni.py` nou + 2 linii in `main.py`). NU e in `KBOT\PYTHON` si nu e pe VPS (operatorul: nu se atinge PYTHON in aceasta unire).
 
 ## Teste / verificare
 - Build-ul unirii: 0 erori, 0 avertismente (operator). Nimic rulat in aceasta sesiune.

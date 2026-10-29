@@ -14,8 +14,7 @@ Construit si probat in `KBOT_TEST`, adus in `KBOT\src` la 13.10.2026. Istoria: `
 7. Machetele unui angajament nou nesalvat (cod cu «!») nu se inregistreaza (`KbotForm.Recordable`, `NoteViewOpened`).
 
 ## Fisiere
-- NOU: `src/KBot.Common/Machete/MachetaRef.vb`, `MachetaHistory.vb`, `MachetaRegistry.vb`, `src/KBot.App/KbotForm.Machete.vb`.
-- Modificate: `KBot.App/Program.vb` (DI `MachetaHistory` + `MachetaRegistry`), `KbotForm.Views.vb` (`NoteViewOpened`), `KbotForm.Tree.vb` (`_treeNodes`), `KbotForm.Nomenclatoare.vb` (`MenuNou_ItemClicked` prin `OpenRegistered`).
+NOU: `src/KBot.Common/Machete/MachetaRef.vb`, `MachetaHistory.vb`, `MachetaRegistry.vb`, `src/KBot.App/KbotForm.Machete.vb`. Modificate: `KBot.App/Program.vb` (DI `MachetaHistory` + `MachetaRegistry`), `KbotForm.Views.vb` (`NoteViewOpened`), `KbotForm.Tree.vb` (`_treeNodes`), `KbotForm.Nomenclatoare.vb` (`MenuNou_ItemClicked` prin `OpenRegistered`).
 
 ## Teste / verificare
 - Build-ul unirii: 0 erori, 0 avertismente (operator). Nimic rulat in aceasta sesiune. Probat pe ecran in `KBOT_TEST`.

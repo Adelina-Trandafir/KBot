@@ -4,9 +4,7 @@ Cele două etape din 09.09.2026 rămân distincte. Prima repară cazuri demonstr
 
 [0058-asociere](#slice-0058) · [0058-02](#slice-0058-02)
 
-<a id="slice-0058"></a>
-
-## SLICE 0058 — Așezarea recepțiilor: cache la descărcare, buton de golire, tăcere pe dată, lag pe benzi
+## SLICE 0058 — Așezarea recepțiilor: cache la descărcare, buton de golire, tăcere pe dată, lag pe benzi <a id="slice-0058"></a>
 
 Șapte sesizări ale operatorului, toate din 09.09.2026, toate pe drumul «descărcare FOREXE ▸ propunere ▸ `AsociereForm` ▸ salvare».
 
@@ -14,7 +12,7 @@ Cele două etape din 09.09.2026 rămân distincte. Prima repară cazuri demonstr
 
 ### 1. Datele descărcate rămân în memorie și se pot refolosi
 
-**Ce se întâmpla.** Fiecare apăsare pe iconița de descărcare pornea robotul de la zero — browser, token, tot fluxul, minute bune. Dar a doua apăsare pe același angajament e aproape întotdeauna o RELUARE (s-a închis formularul fără salvare, s-a greșit ceva la așezat), nu o cerere de date mai proaspete.
+**Ce se întâmpla.** Fiecare apăsare relua robotul integral, inclusiv browserul/tokenul, deși a doua cerere pe același angajament era de obicei o reluare după renunțare sau o așezare greșită, nu o actualizare a datelor.
 
 **Ce s-a făcut.** `WorkflowResultStore` ținea deja pachetele în memorie (`_ultimulNod`) — nu s-a inventat niciun cache nou, s-a folosit cel care exista. S-au adăugat:
 
@@ -22,10 +20,9 @@ Cele două etape din 09.09.2026 rămân distincte. Prima repară cazuri demonstr
 - `NumaraRanduri(pachet)` — rânduri, nu tabele (fluxul întoarce cele cinci tabele ale lui și când toate sunt goale, deci `Tabele.Count` ar răspunde 5 pe un pachet gol);
 - `PachetBunDeRefolosit(cod)` — pachetul, DAR numai dacă e bun: există și are măcar un rând. Asta e «doar dacă sunt corect descărcate»: în depozit intră doar ce a raportat succes, iar un pachet fără rânduri nu se oferă fiindcă ingestia l-ar respinge oricum.
 
-`MainForm.IntreabaDacaRefolosescPachetul` (iconița nodului) și `IntreabaDacaRefolosescLista` (sincronizarea) pun întrebarea, cu ORA descărcării în ea — ăla e faptul din care operatorul poate hotărî. Da = din memorie, Nu = descărcare nouă. Dacă întrebarea însăși cade, se descarcă din nou; niciodată invers.
+`MainForm.IntreabaDacaRefolosescPachetul` (iconița nodului) / `IntreabaDacaRefolosescLista` (sincronizare) afișează ORA descărcării: Da refolosește memoria, Nu descarcă din nou. Eșecul întrebării descarcă din nou.
 
-Refolosirea e sigură prin construcție: contractul în două faze al ingestiei (felia
-0055) poartă ACELAȘI payload prin amândouă fazele, iar un pachet din memorie e chiar obiectul care ar fi ieșit dintr-o descărcare.
+Refolosirea e sigură prin construcție: contractul în două faze al ingestiei (felia 0055) poartă ACELAȘI payload prin amândouă fazele, iar un pachet din memorie e chiar obiectul care ar fi ieșit dintr-o descărcare.
 
 `ForexeController.SpuneStare` e nou și public: fără el consola ar fi arătat o ingestie fără descărcarea ei.
 
@@ -33,7 +30,7 @@ Refolosirea e sigură prin construcție: contractul în două faze al ingestiei 
 
 `btnReseteaza` («Golește așezările»), vizibil DOAR în modul propunere — în editorul de oricând nu există «pas curent», iar un buton care ar desprinde tot ar fi o unealtă de stricat.
 
-Linia de despărțire nu e o listă ținută pe lângă, e `InstantaneuLegat.Blocat`: serverul îl pune `True` pe tot contextul (ce e deja scris în bază) și `False` pe exact mulțimea de decis în rularea asta — aceeași linie pe care o citesc și `NehotarateleCount`, și `DeciziiDin`. Deci butonul nu poate crede altceva decât restul formularului.
+Limita este `InstantaneuLegat.Blocat`, comună cu `NehotarateleCount` și `DeciziiDin`: serverul blochează contextul deja scris și deblochează exact mulțimea de decis. Butonul folosește aceeași regulă ca formularul.
 
 Se golește la NEAȘEZAT, nu la sugestia automată: rostul e să șteargă tot ce s-a hotărât, iar o revenire la sugestie ar lăsa în urmă hotărâri pe care operatorul nu le-a luat. Cere confirmare — e o ștergere de muncă fără Undo.
 
@@ -52,15 +49,15 @@ Parametrul `rec` a ieșit din `CaptionInstantaneu` și `TooltipInstantaneu`: nu-
 
 **Două defecte, nu unul.**
 
-**(a) Numărul.** Același defect ca «Recepția 188 nu există pe acest angajament» din felia 0056: pe calea de ingestie, o recepție născută în rularea curentă își primește `IDRR` ÎNĂUNTRUL tranzacției, iar mesajele de validare îl scriau ca și cum ar fi un nume. `valideaza_plasarile` are acum `id_stabil`; `aplica_decizii` trece `False` și recepția se numește prin DATĂ și VALOARE — adică prin chiar textul rândului din formular (`CaptionReceptie`). Editorul de oricând trece implicit `True`: acolo `IDRR` e real.
+**(a) Numărul:** ca în 0056 («Recepția 188 nu există…»), `IDRR` creat în tranzacția ingestiei nu este nume stabil. `valideaza_plasarile.id_stabil` primește `False` din `aplica_decizii`, iar mesajul folosește DATA și VALOAREA din `CaptionReceptie`. Editorul de oricând păstrează implicit `True`, având IDRR real.
 
-**(b) Refuzul însuși.** Comparația de capăt de lanț era o dicționar-comprehensiune pe `cod_indicator`, deci o recepție cu MAI MULTE linii pe același indicator (alt `CodAI`, alt `CodSSI`) păstra doar ULTIMA — iar cele două laturi, citite din tabele diferite cu ordini diferite, puteau păstra linii diferite. Refuza atunci o plasare perfect corectă. `_valori_pe_indicator` adună pe indicator (bine definit indiferent de ordine; totalul pe antet e deja verificat mai sus) și scoate zerourile (F16 spune că un indicator poate cădea la zero, iar el apare pe o latură și lipsește de pe cealaltă). Mesajul spune acum și CARE indicator nu se potrivește.
+**(b) Refuzul:** dicționarul de capăt de lanț pe `cod_indicator` păstra numai ultima linie când același indicator avea alt `CodAI` / `CodSSI`. Ordini diferite pe cele două tabele puteau refuza o plasare corectă. `_valori_pe_indicator` însumează independent de ordine (totalul antetului este verificat anterior) și elimină zerourile, permise de F16 chiar când lipsesc pe cealaltă latură. Mesajul numește indicatorul diferit.
 
 ### 5. Arborii nu mai sar la primul rând după fiecare tragere
 
 `AdvancedTreeControl.Clear` pune derularea la zero — pe drept, e o golire — iar `AsociereForm.Reconstruieste` golește și reumple amândoi arborii la fiecare tragere. Rezultatul: operatorul era aruncat înapoi la primul rând, adică departe de recepția pe care tocmai lucra.
 
-`AdvancedTreeControl.ScrollOffsetY` (nou) se citește înainte și se scrie după. `AutoScrollPosition` NU era destul: după `Clear` cursa barei e zero și abia următoarea pictare o reface, deci o scriere directă s-ar fi tăiat la zero — exact defectul. Setter-ul cheamă întâi `RefreshScrollVisibility()`. Selecția NU se ține minte: are înțelesul ei aici (hrănește grila și graficul) și se schimbă oricum prin tragere.
+Noul `AdvancedTreeControl.ScrollOffsetY` se salvează înainte și se restaurează după reconstrucție. Setterul cheamă `RefreshScrollVisibility()` înainte: după `Clear`, cursa zero până la pictare ar limita `AutoScrollPosition` la zero. Selecția nu se păstrează; hrănește grila/graficul și se schimbă prin tragere.
 
 ### 6. Recepțiile noi se văd altfel
 
@@ -70,15 +67,15 @@ Eticheta plutitoare a unei recepții noi nu mai scrie numărul, ci «Recepție N
 
 ### 7. Lag pe machetele de distribuție
 
-**Dubla tamponare era deja pornită** (`OptimizedDoubleBuffer` din constructor) și nu ea era problema. Costul stătea în DESEN, nu în pâlpâire: o suprafață cu douăzeci de benzi a câte douăzeci de marcaje construia și elibera peste o mie de `Pen` și `SolidBrush` la FIECARE repictare — iar o repictare se face de câte ori cursorul trece peste o bandă, un marcaj sau un reper.
+**Dubla tamponare exista** (`OptimizedDoubleBuffer` în constructor). Costul era desenul: 20 de benzi × 20 de marcaje alocau și eliberau peste o mie de `Pen` / `SolidBrush` la fiecare repictare, inclusiv la trecerea cursorului peste bandă, marcaj sau reper.
 
 Ce s-a schimbat în `KBotLaneView`:
 
-- **Obiecte GDI+ de lucru**, reutilizate în loc de alocate: `_fillBrush`, `_backBrush`, `_edgePen`, `_detailPen`. Patru, nu unul, fiindcă unele forme se desenează cât timp alta e încă pregătită. Toți trec prin `ScratchPen`/`ScratchBrush`, care rescriu FIECARE proprietate — o capătă rotundă sau un stil punctat rămas de la forma dinainte ar fi un defect care iese la iveală trei forme mai încolo, în altă metodă.
+- **Obiecte GDI+ reutilizate:** `_fillBrush`, `_backBrush`, `_edgePen`, `_detailPen`. Sunt patru deoarece formele pot rămâne pregătite simultan; `ScratchPen`/`ScratchBrush` rescriu fiecare proprietate, evitând moștenirea capetelor rotunde sau a stilului punctat de la desenul precedent.
 - **`KBotLane.PlottedInOrder`**: marcajele desenate, deja sortate pe X, umplute de pasul de așezare. Înainte, `DrawLaneSegments` construia și sorta o listă PE BANDĂ, PE REPICTARE.
 - **`_px1` / `_px2` / `_px3`**, cele trei grosimi scalate la DPI, calculate cu așezarea: `ScaleDpi` era chemat de patru-cinci ori pe marcaj pentru trei numere care nu se pot schimba între două marcaje.
 - **`EffectivePlotBackColor()` citit o dată** pe pictare, nu de două-trei ori pe marcaj.
-- **`ControlStyles.Opaque`**: fără el WinForms ștergea tot dreptunghiul înainte de `OnPaint`, iar `OnPaint` începe cu `g.Clear(BackColor)` — aceeași suprafață umplută de două ori degeaba. Ieșirea devreme pe `_updateDepth > 0` curăță acum ea însăși suprafața, fiindcă nimeni n-o mai face în locul ei.
+- **`ControlStyles.Opaque`:** elimină ștergerea WinForms redundantă cu `g.Clear(BackColor)` de la începutul `OnPaint`. Ieșirea timpurie pe `_updateDepth > 0` curăță acum explicit suprafața.
 
 Amândouă suprafețele beneficiază: sunt același control (`benzi` din `AsociereForm` și `benziMari` din `AsociereBenziForm`).
 
@@ -98,9 +95,7 @@ Amândouă suprafețele beneficiază: sunt același control (`benzi` din `Asocie
 - `src/KBot.Controls/Lane/KBotLaneView.Painting.vb` — §7
 
 **Python**
-- `PYTHON/routes/forexe/prelucrare_asociere.py` — §3, §4
-- `PYTHON/routes/forexe/asociere.py` — nota din antet
-- `PYTHON/tests/test_forexe_prelucrare_asociere.py`, `PYTHON/tests/test_forexe_asociere.py`
+`PYTHON/routes/forexe/prelucrare_asociere.py` — §3, §4; `PYTHON/routes/forexe/asociere.py` — nota din antet; `PYTHON/tests/test_forexe_prelucrare_asociere.py`, `PYTHON/tests/test_forexe_asociere.py`
 
 ### Rezultatele rulărilor
 
@@ -118,9 +113,7 @@ Amândouă suprafețele beneficiază: sunt același control (`benzi` din `Asocie
 
 ---
 
-<a id="slice-0058-02"></a>
-
-## SLICE 0058-02 — Jurnalul asocierii (`asociere.log`), cu întrerupător în `main.py`
+## SLICE 0058-02 — Jurnalul asocierii (`asociere.log`), cu întrerupător în `main.py` <a id="slice-0058-02"></a>
 
 A doua trecere peste felia 0058. Prima a reparat două defecte ale verificării F15 (suma pe indicator, numele recepției) și a lăsat scris negru pe alb că **nu se știe dacă exact acela era cazul care refuza salvarea operatorului**. Rularea adevărată din 09.09.2026, ora 14:18, a răspuns: nu era.
 
@@ -132,13 +125,7 @@ cele ale recepției. Lanțul nu se închide.
 
 Linia asta e tot ce lasă în urmă o salvare refuzată — și nu spune nici ce lanț s-a format, nici ce cifre s-a uitat serverul la ele, nici ce a vrut operatorul să facă. Felia asta scrie exact ce lipsea.
 
-> **Observație despre linia de mai sus, nu o reparație a acestei felii.** Mesajul zice
-> «Recepția 247», adică `id_stabil=True`. Pe drumul de ingestie 0058 §4 a pus
-> `id_stabil=False` chiar în aceeași zi, deci serverul care a scris linia **rula codul
-> de dinaintea feliei 0058**. Reparația de la §4 (suma pe indicator — două linii RHR pe
-> același indicator păstrau doar ultima și comparația cădea pe date corecte) **nu era
-> pe server când a apărut respingerea**. Se verifică după ce se împinge codul; până
-> atunci, cazul rămâne deschis.
+> **Observație despre linia de mai sus, nu o reparație a acestei felii.** Mesajul zice «Recepția 247», adică `id_stabil=True`. Pe drumul de ingestie 0058 §4 a pus `id_stabil=False` chiar în aceeași zi, deci serverul care a scris linia **rula codul de dinaintea feliei 0058**. Reparația de la §4 (suma pe indicator — două linii RHR pe același indicator păstrau doar ultima și comparația cădea pe date corecte) **nu era pe server când a apărut respingerea**. Se verifică după ce se împinge codul; până atunci, cazul rămâne deschis.
 
 ---
 
@@ -231,12 +218,7 @@ Pentru cazul din 14:18 asta ar fi arătat, dintr-o privire: ce recepție, ce lan
 
 ### 3. Fișiere atinse
 
-- `PYTHON/utils/asociere_log.py` — **nou**, 316 rânduri.
-- `PYTHON/main.py` — importul, comutatorul `ASOCIERE_LOG_ENABLED` și predarea lui.
-- `PYTHON/routes/forexe/prelucrare_asociere.py` — importul + apelurile de jurnal (niciun rând de logică schimbat; singurul cod nou care nu e jurnal e `_ca_text`, un ajutor de formatare).
-- `PYTHON/routes/forexe/prelucrare.py` — decoratorul, antetul, capetele de drum.
-- `PYTHON/routes/forexe/asociere.py` — decoratoarele pe cele două rute, tabloul, comenzile, capetele de drum.
-- `PYTHON/tests/conftest.py` — `KBOT_ASOCIERE=0`.
+`PYTHON/utils/asociere_log.py` — **nou**, 316 rânduri. `PYTHON/main.py` — importul, comutatorul `ASOCIERE_LOG_ENABLED` și predarea lui. `PYTHON/routes/forexe/prelucrare_asociere.py` — importul + apelurile de jurnal (niciun rând de logică schimbat; singurul cod nou care nu e jurnal e `_ca_text`, un ajutor de formatare). `PYTHON/routes/forexe/prelucrare.py` — decoratorul, antetul, capetele de drum. `PYTHON/routes/forexe/asociere.py` — decoratoarele pe cele două rute, tabloul, comenzile, capetele de drum. `PYTHON/tests/conftest.py` — `KBOT_ASOCIERE=0`.
 
 ---
 

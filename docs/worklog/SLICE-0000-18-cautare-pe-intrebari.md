@@ -4,9 +4,7 @@ Etapele din 30.09.2026 sunt păstrate integral, cu propunerea în [planul iniți
 
 [0000-18](#slice-0000-18) · [0000-19](#slice-0000-19) · [0000-20](#slice-0000-20) · [0000-21](#slice-0000-21) · [0000-22](#slice-0000-22)
 
-<a id="slice-0000-18"></a>
-
-## SLICE-0000-18 — Search that understands a typed question (no model)
+## SLICE-0000-18 — Search that understands a typed question (no model) <a id="slice-0000-18"></a>
 
 Plan: `docs/PLAN_help_assistant.md` § 0000-18.
 
@@ -17,8 +15,7 @@ The old `HelpLibrary.Search` needed EVERY word of the query in a topic, matched 
 1. **Drops filler words** — one list, `HelpSearch.StopWords` (folded Romanian: cum, se, un, o, la, de, pot, sa, unde, ce, care, pentru, ...). Words of one letter are dropped too.
 2. **Matches stems** — folded (lower case, no diacritics, one character for one character), a common Romanian ending dropped (`-urilor`, `-ilor`, `-ului`, `-ii`, `-ea`, `-a`, `-e`, `-i`...), then cut to 5 letters: «trimit» and «trimiterea» both become «trimi», «plăți» and «plata» both «plat». A second, looser key (the first 4 letters of the stem) scores half, so «semnez» still meets «semnare».
 3. **Scores by how many words match**, not «all or nothing»: score = words matched × 100 + weight (capped at 99). Weights per word: title 10 / 5, keywords 6 / 3, section heading 8 / 4, section text 2 / 1 (full stem / first four letters). With three words or more a section must hold at least half of them; with one or two, one is enough.
-4. **Searches per SECTION** — the text before the first `## ` and each `## ` heading with its text. A hit = topic + section heading + a snippet (~170 characters around the first match)
-   + the section's anchor. A topic gives at most 3 hits, and its extra hits only for sections that match on their own (not just through the topic title).
+4. **Searches per SECTION** — the text before the first `## ` and each `## ` heading with its text. A hit = topic + section heading + a snippet (~170 characters around the first match) + the section's anchor. A topic gives at most 3 hits, and its extra hits only for sections that match on their own (not just through the topic title).
 5. `keywords:` is unchanged as the place for synonyms (content in 0000-19 / 0000-22).
 6. **Done once at load**: `HelpSearch.Index` (called from `HelpLibrary.Parse`) splits each topic into sections, folds and stems title, keywords, headings and text into hash sets. A query only folds its own words and looks them up. The reading order used to break ties is worked out once per part.
 
@@ -30,11 +27,7 @@ Result model: `HelpHit(TopicId, SectionAnchor, Title, SectionTitle, Snippet, Sco
 
 ### Files touched
 
-- `src/KBot.App/Help/HelpSearch.vb` (new): `HelpHit`, `HelpTermSet`, `HelpQueryTerm`, `HelpSection`, `HelpSearch` (fold, words, stop words, stem, plain text, anchors, index, search, snippet)
-- `src/KBot.App/Help/HelpTopic.vb`: `Sections`, `TitleTerms`, `KeywordTerms` (Friend)
-- `src/KBot.App/Help/HelpLibrary.vb`: `Parse` indexes; `Search` returns `List(Of HelpHit)`; old `Fold` removed (only the old search used it)
-- `src/KBot.App/Help/HelpHtml.vb`: `SearchPage(query, hits)`, heading anchors, `.hit` style, `topic:id#anchor` links
-- `src/KBot.App/Help/HelpForm.vb`: section in the page key, scroll to the section
+`src/KBot.App/Help/HelpSearch.vb` (new): `HelpHit`, `HelpTermSet`, `HelpQueryTerm`, `HelpSection`, `HelpSearch` (fold, words, stop words, stem, plain text, anchors, index, search, snippet); `src/KBot.App/Help/HelpTopic.vb`: `Sections`, `TitleTerms`, `KeywordTerms` (Friend); `src/KBot.App/Help/HelpLibrary.vb`: `Parse` indexes; `Search` returns `List(Of HelpHit)`; old `Fold` removed (only the old search used it); `src/KBot.App/Help/HelpHtml.vb`: `SearchPage(query, hits)`, heading anchors, `.hit` style, `topic:id#anchor` links; `src/KBot.App/Help/HelpForm.vb`: section in the page key, scroll to the section
 
 ### Test results
 
@@ -50,9 +43,7 @@ Result model: `HelpHit(TopicId, SectionAnchor, Title, SectionTitle, Snippet, Sco
 
 ---
 
-<a id="slice-0000-19"></a>
-
-## SLICE-0000-19 — `open:` actions on topics
+## SLICE-0000-19 — `open:` actions on topics <a id="slice-0000-19"></a>
 
 Plan: `docs/PLAN_help_assistant.md` § 0000-19. Engine + content, no UI (the buttons are drawn by the «?» popup and the help window's search list in 0000-20).
 
@@ -93,9 +84,7 @@ A topic could not name its screen, so a search result could only open the help p
 
 ---
 
-<a id="slice-0000-20"></a>
-
-## SLICE-0000-20 — The «?» popup
+## SLICE-0000-20 — The «?» popup <a id="slice-0000-20"></a>
 
 Plan: `docs/PLAN_help_assistant.md` § 0000-20.
 
@@ -140,9 +129,7 @@ The «?» of every caption bar used to open the help window, exactly like F1. It
 
 ---
 
-<a id="slice-0000-21"></a>
-
-## SLICE-0000-21 — Questions and ratings to the server
+## SLICE-0000-21 — Questions and ratings to the server <a id="slice-0000-21"></a>
 
 Plan: `docs/PLAN_help_assistant.md` § 0000-21 (+ the operator's decisions of 30.09.2026 at its end).
 
@@ -162,8 +149,7 @@ Every question typed in the help (the «?» popup and the help window) is kept, 
 
 #### Client (`KBot.App`, `KBot.Api`, `KBot.Controls`)
 
-- **Waiting list** (`HelpQuestionLog`): one small JSON file per question, named by its id, in `%APPDATA%\AVACONT\KBot\HelpOutbox\` (per user, survives updates). Written through a temp file
-  + rename, so a crash leaves a whole file; still there after an offline start. A later change (click, rating) rewrites the same file. Chosen over SQLite: nothing to open or migrate, one file = one row, and the upsert on the server makes a resend harmless.
+- **Waiting list** (`HelpQuestionLog`): one small JSON file per question, named by its id, in `%APPDATA%\AVACONT\KBot\HelpOutbox\` (per user, survives updates). Written through a temp file + rename, so a crash leaves a whole file; still there after an offline start. A later change (click, rating) rewrites the same file. Chosen over SQLite: nothing to open or migrate, one file = one row, and the upsert on the server makes a resend harmless.
 - **Sending**: in the background (`Task.Run`), batches of ≤ 50, oldest first: at start (what an earlier offline run left), every 3 minutes (timer), as soon as 10 wait, and at exit (`Application.ApplicationExit`, 3 seconds at most). Only while logged in (a token). A file is deleted only after the server's 200, and only if the question did not change while on the wire (a version counter per id). An unreadable file is removed (it would block the list). Failures go to `GlobalErrorLog` as type / HTTP status only — never the text. The POST passes through `ServerGate` like any write: while the robot runs it waits, which a background send can afford. `IHelpFeedbackApi` / `HelpFeedbackRow` / `HelpFeedbackResult` + `ApiClient.HelpFeedback.vb`, registered in `Program.vb` like `IMarcajApi`.
 - **What counts as a question** (`HelpSearchSession.TrackQuestion`): the text in the box (≥ 2 characters). Typing on = the same question. It is written to the waiting list when a hit is used (hit id + `open` / `tour` for a button — saved BEFORE the action runs), when it is rated, and when the box is emptied or the popup / window closes. After a click or a rating, a changed text is a new question; so is a text changed after a pause of 3 seconds (the old one is kept, with no click). A hit opened from the popup carries the SAME question into the help window (`Adopt`), so a rating there updates the popup's row.
 - **Rating** (`KBotHelpStars`, new): «A fost util răspunsul?» + five stars under the results, in the popup and in the help window's search list; shown only while the box has text; one rating per question, a click on the same star takes it back (NULL), a new one replaces it.
@@ -195,13 +181,7 @@ FROM FX_AjutorIntrebari;
 
 ### Files touched
 
-- `sql/0000_21_fx_ajutor_intrebari.sql` (new)
-- `PYTHON/routes/help_feedback.py` (new), `PYTHON/main.py` (import + register)
-- `src/KBot.Api/IHelpFeedbackApi.vb`, `src/KBot.Api/ApiClient.HelpFeedback.vb` (new)
-- `src/KBot.App/Program.vb` (DI), `src/KBot.App/Help/HelpQuestionLog.vb` (new: `HelpQuestion`, `HelpQuestionLog`), `HelpSearchSession.vb`, `HelpService.vb` (ctor, `SaveQuestion`, start / exit sends), `HelpForm.vb` (session made in the constructor, `TakeOverSearch` adopts), `HelpLibrary.vb` (`HelpVersion`)
-- `src/KBot.App/HelpContent/help-version.txt` (new)
-- `src/KBot.Controls/Popup/KBotHelpStars.vb` (new), `KBotHelpRow.vb` (`CurrentRating`), `KBotHelpSearchPanel.vb` / `.Designer.vb` (stars, hint), `KBotHelpPopup.md`
-- Rule 0 sweep in files touched: English comments instead of Romanian captions with diacritics in `HelpService.vb`, `HelpForm.vb`, `KbotForm.HelpCapture.vb`, `IHelpCaptureNavigator.vb`.
+`sql/0000_21_fx_ajutor_intrebari.sql` (new); `PYTHON/routes/help_feedback.py` (new), `PYTHON/main.py` (import + register); `src/KBot.Api/IHelpFeedbackApi.vb`, `src/KBot.Api/ApiClient.HelpFeedback.vb` (new); `src/KBot.App/Program.vb` (DI), `src/KBot.App/Help/HelpQuestionLog.vb` (new: `HelpQuestion`, `HelpQuestionLog`), `HelpSearchSession.vb`, `HelpService.vb` (ctor, `SaveQuestion`, start / exit sends), `HelpForm.vb` (session made in the constructor, `TakeOverSearch` adopts), `HelpLibrary.vb` (`HelpVersion`); `src/KBot.App/HelpContent/help-version.txt` (new); `src/KBot.Controls/Popup/KBotHelpStars.vb` (new), `KBotHelpRow.vb` (`CurrentRating`), `KBotHelpSearchPanel.vb` / `.Designer.vb` (stars, hint), `KBotHelpPopup.md`; Rule 0 sweep in files touched: English comments instead of Romanian captions with diacritics in `HelpService.vb`, `HelpForm.vb`, `KbotForm.HelpCapture.vb`, `IHelpCaptureNavigator.vb`.
 
 ### Test results
 
@@ -219,9 +199,7 @@ FROM FX_AjutorIntrebari;
 
 ---
 
-<a id="slice-0000-22"></a>
-
-## SLICE-0000-22 — Help content, docs and record for the help assistant
+## SLICE-0000-22 — Help content, docs and record for the help assistant <a id="slice-0000-22"></a>
 
 Plan: `docs/PLAN_help_assistant.md` § 0000-22. Closes 0000-18…0000-21.
 
@@ -258,9 +236,7 @@ The popup closes when the focus leaves it, so the capture tool's own «Fă poza�
 
 ### Files touched
 
-- `src/KBot.App/HelpContent/contabil/ajutor.md`, `director/index.md`, `tours/tur-fereastra.md`, `tours/tur-asocieri.md`
-- `docs/HELP_SYSTEM.md`, `docs/PLAN_help_assistant.md`
-- `docs/worklog/state/KBOT_STATUS_0000-0009.md`, `docs/worklog/KBOT_STATUS.md`
+`src/KBot.App/HelpContent/contabil/ajutor.md`, `director/index.md`, `tours/tur-fereastra.md`, `tours/tur-asocieri.md`; `docs/HELP_SYSTEM.md`, `docs/PLAN_help_assistant.md`; `docs/worklog/state/KBOT_STATUS_0000-0009.md`, `docs/worklog/KBOT_STATUS.md`
 
 ### Test results
 

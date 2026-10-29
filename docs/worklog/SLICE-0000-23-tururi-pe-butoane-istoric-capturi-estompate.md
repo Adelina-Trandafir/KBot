@@ -4,9 +4,7 @@
 
 [0000-23](#slice-0000-23) · [0000-24](#slice-0000-24) · [0000-27](#slice-0000-27) · [0000-30](#slice-0000-30) · [0000-31](#slice-0000-31) · [0000-32](#slice-0000-32) · [0000-34](#slice-0000-34)
 
-<a id="slice-0000-23"></a>
-
-## SLICE-0000-23 — Tururi cu vârf și pe butoane, fereastra de ajutor (istoric, mărime text, deasupra), capturi estompate
+## SLICE-0000-23 — Tururi cu vârf și pe butoane, fereastra de ajutor (istoric, mărime text, deasupra), capturi estompate <a id="slice-0000-23"></a>
 
 Operator, 30.09.2026 (felia 0000, ajutorul):
 
@@ -93,9 +91,7 @@ Convenția: un pas pentru controlul întreg, apoi câte unul pe parte, titlurile
 
 ---
 
-<a id="slice-0000-24"></a>
-
-## SLICE-0000-24 — tour bubble without a caption bar, section titles in the «?» menu
+## SLICE-0000-24 — tour bubble without a caption bar, section titles in the «?» menu <a id="slice-0000-24"></a>
 
 Operator request, 30.09.2026, with two screenshots:
 
@@ -116,11 +112,7 @@ Operator request, 30.09.2026, with two screenshots:
 
 ### Files touched
 
-- `src/KBot.App/Help/HelpTourBubble.Designer.vb` — capBar removed, fonts, sizes
-- `src/KBot.App/Help/HelpTourBubble.vb` — tour name in `lblPas`, `FitToText`, `PlainFrame` calls, comments
-- `src/KBot.App/Help/HelpWindowNative.vb` — `PlainFrame` (DWM corner + border)
-- `src/KBot.Controls/Popup/KBotHelpList.vb` — header air, accent title, rule
-- `src/KBot.App/HelpContent/contabil/ajutor.md` — «Meniul «?»» (titled parts) and «Tururile ghidate» (tour name + step at the top of the bubble), tags `0000-24`
+`src/KBot.App/Help/HelpTourBubble.Designer.vb` — capBar removed, fonts, sizes; `src/KBot.App/Help/HelpTourBubble.vb` — tour name in `lblPas`, `FitToText`, `PlainFrame` calls, comments; `src/KBot.App/Help/HelpWindowNative.vb` — `PlainFrame` (DWM corner + border); `src/KBot.Controls/Popup/KBotHelpList.vb` — header air, accent title, rule; `src/KBot.App/HelpContent/contabil/ajutor.md` — «Meniul «?»» (titled parts) and «Tururile ghidate» (tour name + step at the top of the bubble), tags `0000-24`
 
 KBot.Controls FileVersion was already bumped in the uncommitted work (1.57 → 1.58); not bumped again.
 
@@ -139,9 +131,7 @@ KBot.Controls FileVersion was already bumped in the uncommitted work (1.57 → 1
 
 ---
 
-<a id="slice-0000-27"></a>
-
-## SLICE-0000-27 — «?» popup tours: only the window whose «?» was pressed (and its views)
+## SLICE-0000-27 — «?» popup tours: only the window whose «?» was pressed (and its views) <a id="slice-0000-27"></a>
 
 Operator request, 01.10.2026: the guided tours listed in the «?» popup of a caption bar must show only what belongs to the window whose «?» was pressed; its views may share tours, any other window (with or without a parent) is not part of it.
 
@@ -153,9 +143,7 @@ Operator request, 01.10.2026: the guided tours listed in the «?» popup of a ca
 
 ### Files touched
 
-- `src/KBot.App/Help/HelpPopupTours.vb`, `src/KBot.App/Help/HelpService.vb`
-- `src/KBot.App/HelpContent/contabil/ajutor.md`, `docs/HELP_SYSTEM.md`
-- `docs/worklog/state/KBOT_STATUS_0000-0009.md`
+`src/KBot.App/Help/HelpPopupTours.vb`, `src/KBot.App/Help/HelpService.vb`; `src/KBot.App/HelpContent/contabil/ajutor.md`, `docs/HELP_SYSTEM.md`; `docs/worklog/state/KBOT_STATUS_0000-0009.md`
 
 ### Test results
 
@@ -169,9 +157,7 @@ Operator request, 01.10.2026: the guided tours listed in the «?» popup of a ca
 
 ---
 
-<a id="slice-0000-30"></a>
-
-## SLICE-0000-30 — guided tours show what the app hides, and say how to get it
+## SLICE-0000-30 — guided tours show what the app hides, and say how to get it <a id="slice-0000-30"></a>
 
 Operator request, 01.10.2026: «all elements hidden by various facts (switches, not being connected to FOREXE...) in the guided tour must become visible when the step talks about them and must mention how they can get visible; also this must happen in the help».
 
@@ -191,8 +177,7 @@ Help (all tagged `0000-30`): every step / section about something conditional no
 
 ### Files touched
 
-- Code: `src/KBot.Theming/KBotHelp.vb`, `src/KBot.App/Help/HelpTourRunner.vb`, `src/KBot.Controls/NavList/KBotNavList.HelpParts.vb`, `src/KBot.Controls/Tree/AdvancedTreeControl.HelpParts.vb`, `src/KBot.App/Views/RezervariView.vb`, `src/KBot.App/Views/PlatiView.vb`.
-- Help: files above under `src/KBot.App/HelpContent/`, `help-version.txt`.
+Code: `src/KBot.Theming/KBotHelp.vb`, `src/KBot.App/Help/HelpTourRunner.vb`, `src/KBot.Controls/NavList/KBotNavList.HelpParts.vb`, `src/KBot.Controls/Tree/AdvancedTreeControl.HelpParts.vb`, `src/KBot.App/Views/RezervariView.vb`, `src/KBot.App/Views/PlatiView.vb`. Help: files above under `src/KBot.App/HelpContent/`, `help-version.txt`.
 
 ### Test results
 
@@ -210,9 +195,7 @@ Help (all tagged `0000-30`): every step / section about something conditional no
 
 ---
 
-<a id="slice-0000-31"></a>
-
-## SLICE-0000-31 — MENIU opened by the tour, popups kept open during captures, help for the robot queue
+## SLICE-0000-31 — MENIU opened by the tour, popups kept open during captures, help for the robot queue <a id="slice-0000-31"></a>
 
 Operator request, 01.10.2026 (follow-up to 0000-30).
 
@@ -241,9 +224,7 @@ Compile check (`dotnet build ... -p:OutDir=<scratch>`): 0 warnings, 0 errors. Th
 
 ---
 
-<a id="slice-0000-32"></a>
-
-## SLICE-0000-32 — Help window: one continuous page, print, export by scope, and the freeze on «Exportă»
+## SLICE-0000-32 — Help window: one continuous page, print, export by scope, and the freeze on «Exportă» <a id="slice-0000-32"></a>
 
 Operator request, 01.10.2026. Reported: pressing «Exportă» in the help window froze K-BOT (Visual Studio: «The debugger timed out trying to pause process ... broken state»). Asked for: (1) scrolling in the help window goes through the whole contents, and the tree selects the topic reached; (2) the new `btnPrint` (added by the operator in `tlyBara`) prints, from a menu: everything (with «(!)» and a confirmation that recommends against it) / the current topic / everything of the parent topic; (3) the same menu on export. During the task the operator dropped the temporary PDF: «if we can print straight from the help window, let's do that, as long as it keeps the formatting and images».
 
@@ -270,13 +251,7 @@ Design choices (decided without asking, say if wrong):
 
 ### Files touched
 
-- `src/KBot.App/Help/HelpForm.vb` (rewritten in place), `HelpForm.Designer.vb` (`mnuPrint`, `mnuExport`, `tmrScroll`; `btnPrint.Visible = False` removed; tooltips of `btnPrint`, `btnManual`)
-- `src/KBot.App/Help/HelpHtml.vb` (`Book`, `Excerpt`, anchors, screen + paper CSS; `TopicPage`, `HomePage` removed)
-- `src/KBot.App/Help/HelpScope.vb` (new)
-- `src/KBot.App/Help/HelpService.vb` (`Export`), `HelpLibrary.vb` (`Branch`), `HelpWindowNative.vb` (`AnyEnabledWindow`)
-- `src/KBot.App/HelpContent/contabil/ajutor.md`
-- `docs/HELP_SYSTEM.md` (§1, engine table)
-- `docs/worklog/KBOT_STATUS.md`, `docs/worklog/state/KBOT_STATUS_0000-0009.md`, this file
+`src/KBot.App/Help/HelpForm.vb` (rewritten in place), `HelpForm.Designer.vb` (`mnuPrint`, `mnuExport`, `tmrScroll`; `btnPrint.Visible = False` removed; tooltips of `btnPrint`, `btnManual`); `src/KBot.App/Help/HelpHtml.vb` (`Book`, `Excerpt`, anchors, screen + paper CSS; `TopicPage`, `HomePage` removed); `src/KBot.App/Help/HelpScope.vb` (new); `src/KBot.App/Help/HelpService.vb` (`Export`), `HelpLibrary.vb` (`Branch`), `HelpWindowNative.vb` (`AnyEnabledWindow`); `src/KBot.App/HelpContent/contabil/ajutor.md`; `docs/HELP_SYSTEM.md` (§1, engine table); `docs/worklog/KBOT_STATUS.md`, `docs/worklog/state/KBOT_STATUS_0000-0009.md`, this file
 
 ### Test results
 
@@ -300,9 +275,7 @@ Design choices (decided without asking, say if wrong):
 
 ---
 
-<a id="slice-0000-34"></a>
-
-## SLICE-0000-34 — Help for slice 0100 + stale captures marked in red (operator request, 01.10.2026)
+## SLICE-0000-34 — Help for slice 0100 + stale captures marked in red (operator request, 01.10.2026) <a id="slice-0000-34"></a>
 
 Help work for feature slice **0100** (multi-thread downloads, branch `SLICE-0100-Multithreading`). Recorded as 0000-34 because all help work is slice 0000. The sections carry `<!-- slice: 0100 -->` as the rules ask.
 

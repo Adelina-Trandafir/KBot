@@ -2,8 +2,7 @@
 
 Decizii din 08.10.2026, păstrate succesiv: ADE0-06 lasă deschise M03/M06; ADE0-07 închide M06 și completează M03 prin MotivAnulare. Confirmarea comună a rubricilor de nevalidat/amânat din ADE0-06/07: *Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.* Limitele generatorului, codului, migrării și regulilor FK descriu checkpointurile respective.
 
-- [ADE0-06](#slice-ADE0-06)
-- [ADE0-07](#slice-ADE0-07)
+[ADE0-06](#slice-ADE0-06) · [ADE0-07](#slice-ADE0-07)
 
 ## SLICE-ADE0-06 — deciziile despre schema AD_ (prefix, chei străine, tabele și coloane scoase) <a id="slice-ADE0-06"></a>
 
@@ -32,10 +31,7 @@ Coloanele scoase sunt ignorate la import, ca un extras Access care le conține s
 
 ### Fișiere atinse
 
-- Generator și rezultat: `ADECHIT/tools/build_schema.py`, `sql/AD_01_schema.sql`, `sql/AD_02_chitante.sql` (redenumite din `ADE_…`), `PYTHON/routes/adechit/schema.json`.
-- Cod: `PYTHON/routes/adechit/{__init__,calculations,domain,importer,repository,service}.py`, `PYTHON/routes/schema_sync/schema_diff.py` (exclude `AD_` de la DROP), `PYTHON/static/js/adechit/app.js` (adăugarea unui copil nu mai caută taxa activă).
-- Unelte și teste: `ADECHIT/tools/{preview,verify_import}.py`, `PYTHON/tests/test_adechit.py`.
-- Documente: `ADECHIT/{PLAN_IMPLEMENTARE,MAPARE_ACCESS_WEB,INVENTAR_OBIECTE}.md`, `ADECHIT_STATUS.md`, `docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md`, `docs/worklog/SLICE-ADE1-01-implementare-partiala.md`, acest worklog.
+Generator și rezultat: `ADECHIT/tools/build_schema.py`, `sql/AD_01_schema.sql`, `sql/AD_02_chitante.sql` (redenumite din `ADE_…`), `PYTHON/routes/adechit/schema.json`. Cod: `PYTHON/routes/adechit/{__init__,calculations,domain,importer,repository,service}.py`, `PYTHON/routes/schema_sync/schema_diff.py` (exclude `AD_` de la DROP), `PYTHON/static/js/adechit/app.js` (adăugarea unui copil nu mai caută taxa activă). Unelte și teste: `ADECHIT/tools/{preview,verify_import}.py`, `PYTHON/tests/test_adechit.py`. Documente: `ADECHIT/{PLAN_IMPLEMENTARE,MAPARE_ACCESS_WEB,INVENTAR_OBIECTE}.md`, `ADECHIT_STATUS.md`, `docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md`, `docs/worklog/SLICE-ADE1-01-implementare-partiala.md`, acest worklog.
 
 ### Rezultatele verificărilor
 
@@ -75,8 +71,7 @@ Deciziile au fost luate de utilizator în conversație; ele închid M06 și comp
 
 ### Fișiere atinse
 
-- Nou: `sql/AD_03_schema_finala.sql` — schema finală completă (14 tabele de business + 5 tehnice = 19; împreună cu AVACONT_COMUN.Unitati_Chitante din AD_02 sunt 20, în ordinea dependențelor), pentru AVACONT_SURSA. Înlocuiește `AD_01_schema.sql` pe un server unde nu există tabele `AD_`; are ALTER-uri comentate pentru cazul în care AD_01 a fost deja rulat.
-- Documente: `ADECHIT/DECIZII_DESCHISE.md` (M06), `ADECHIT/PLAN_IMPLEMENTARE.md` (ADE6-03), acest worklog, `docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md`, `ADECHIT_STATUS.md`.
+Nou: `sql/AD_03_schema_finala.sql` — schema finală completă (14 tabele de business + 5 tehnice = 19; împreună cu AVACONT_COMUN.Unitati_Chitante din AD_02 sunt 20, în ordinea dependențelor), pentru AVACONT_SURSA. Înlocuiește `AD_01_schema.sql` pe un server unde nu există tabele `AD_`; are ALTER-uri comentate pentru cazul în care AD_01 a fost deja rulat. Documente: `ADECHIT/DECIZII_DESCHISE.md` (M06), `ADECHIT/PLAN_IMPLEMENTARE.md` (ADE6-03), acest worklog, `docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md`, `ADECHIT_STATUS.md`.
 
 ### Rezultatele verificărilor
 

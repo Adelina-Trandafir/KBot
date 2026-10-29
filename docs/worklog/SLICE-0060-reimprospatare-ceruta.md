@@ -23,13 +23,13 @@
 
 **Închiderea se face DOAR pe drumul reușit.** La eroare fereastra rămâne deschisă cu tot ce a așezat operatorul; altfel un 409 i-ar șterge munca de pe ecran și l-ar trimite să reia descărcarea de la capăt.
 
-**În modul «oricând» reîncărcarea de după salvare a RĂMAS**, deși fereastra se închide imediat — și nu e risipă: după `ReincarcaAsync` lista `Comenzi()` e goală, deci întrebarea din `AsociereForm_FormClosing` («ai schimbări nesalvate, le pierzi?») nu se mai pune. Fără ea, închiderea ar cere operatorului să confirme pierderea a ceea ce tocmai salvase.
+**În modul «oricând», `ReincarcaAsync` rămâne înainte de închidere:** golește `Comenzi()`, astfel încât `AsociereForm_FormClosing` să nu ceară confirmarea pierderii unor schimbări deja salvate.
 
 `TextDupaSalvare` a devenit `Friend Shared`: aceeași propoziție o arată acum și shell-ul, pe drumul fără machetă (§2). Două formulări ale aceluiași lucru l-ar face pe operator să creadă că s-au întâmplat două lucruri diferite.
 
 ## 2. Coșul gol = nicio întrebare (cererea 2)
 
-`MainForm.DuLaIngestieAsync` întreabă ÎNAINTE de a deschide fereastra, prin **aceeași funcție** pe care o folosește și formularul: `AsociereForm.NehotarateDin(instantanee, pozitie, ignorat)`, nouă, `Friend Shared`. `NehotarateleCount` (instanța) o cheamă acum pe ea, deci există o singură numărătoare. Două numărători scrise separat ar aluneca una față de alta, iar alunecarea s-ar vedea ca o **salvare tăcută acolo unde omul trebuia întrebat** — exact ce nu-și poate permite conducta asta.
+Înainte de deschidere, `MainForm.DuLaIngestieAsync` folosește noua funcție `Friend Shared AsociereForm.NehotarateDin(instantanee, pozitie, ignorat)`, chemată și de `NehotarateleCount`. Numărătoarea unică previne salvarea tăcută a unui caz care trebuia decis de operator.
 
 Zero de așezat ▸ `SalveazaFaraMachetaAsync`: `DeciziiDin` peste ACELEAȘI trei dicționare goale («nicio mutare, niciun ignorat, nicio ștergere pusă de operator» e chiar starea formularului în clipa în care se deschide), apoi `PrelucrareCoordinator.SalveazaAsync`. Nu e o scurtătură pe lângă om: mulțimea de hotărât e goală, deci lista conține exact rândurile pe care serverul însuși le-a așezat în faza întâi. Nu se inventează nicio alegere; se confirmă ce nu era de ales (F18).
 
@@ -51,7 +51,7 @@ Informația nodului se ia din bucla de construcție, **nu** prin `_treeInfos(cod
 
 `src/KBot.App/Forexe/SelectieReceptiiForm.vb` + `.Designer.vb` — `KBotThemedForm` + `KBotDataView` cu prima coloană `KBotColumnType.CheckBox`, toate controalele declarate în designer (convenția casei). Coloane: bifă · Nr. · Data · Valoare · Instantanee · Stare. Butoane: «Bifează tot» / «Debifează tot» / «Descarcă» / «Renunță».
 
-**Lista e cea LOCALĂ, și nu poate fi altfel.** Întrebarea se pune ÎNAINTE de descărcare, deci singurele recepții care se pot arăta sunt cele pe care K-BOT le are deja (`GET /api/forexe/receptii`). O recepție care există în FOREXE dar nu și aici NU e în listă și se descarcă întotdeauna — nu poți sări peste ceva ce nu știi că există. Scris pe ecran, în antetul machetei.
+**Lista este locală** (`GET /api/forexe/receptii`), deoarece precedă descărcarea. Recepțiile existente doar în FOREXE nu pot apărea în selecție și se descarcă întotdeauna; antetul machetei explică limita.
 
 **Recepția se numește prin DATA ei**, fiindcă exact așa o numește tot restul conductei: `step4b_receptii_prelucrare` potrivește un rând de sarcină utilă cu o recepție stocată pe `DATE(DataR) = %s AND Sters = 0` și ia **primul candidat**, iar felia 0058 o numește operatorului tot prin dată și valoare. De aici singura ciudățenie a machetei: **două recepții din aceeași zi nu se pot deosebi pe fir.** Dacă una e bifată și cealaltă nu, ziua se descarcă ÎNTREAGĂ, iar rândul de jos spune asta cu voce tare (`ZileAmestecate`). Direcția în care se greșește e aleasă: cealaltă ar sări peste o recepție pe care operatorul CHIAR a cerut-o, iar asta n-ar apărea nicăieri — ar arăta exact ca o descărcare reușită.
 
@@ -99,7 +99,7 @@ Două fișiere `.wfl` NOI, compuse din secțiunile fișierului complet — acele
 
 **Amândouă trec prin ACELEAȘI două faze** ca descărcarea unui nod întreg. Un flux parțial nu are voie să ocolească asta. La recepții istoricul lipsește, deci de obicei nu rămâne nimic de hotărât și salvarea se face singură (§2); la rezervări istoricul proaspăt POATE aduce instantanee de așezat, și atunci macheta se deschide, ca după orice descărcare.
 
-**Pachetele parțiale NU intră în memoria de reutilizare** (`WorkflowResultStore.SalveazaPartial` în loc de `SalveazaNod`). Acolo stă răspunsul la «angajamentul ăsta a fost deja descărcat?», iar `PachetBunDeRefolosit` l-ar oferi la următoarea apăsare a iconiței de nod ca pe o descărcare ÎNTREAGĂ — o reîmprospătare doar pe recepții n-are nici indicatori, nici istoric, deci ar duce ingestia să creadă că angajamentul nu mai are istoric deloc. Se scrie totuși pe disc, cu familia în nume.
+**Pachetele parțiale nu intră în memoria de reutilizare:** `WorkflowResultStore.SalveazaPartial` înlocuiește `SalveazaNod`. Altfel `PachetBunDeRefolosit` le-ar oferi ca descărcări întregi, deși pachetul numai cu recepții nu are indicatori sau istoric, inducând ingestiei absența istoricului. Se păstrează pe disc, cu familia în nume.
 
 **Cele două butoane erau moarte.** `ReceptiiView` și `RezervariView` aveau iconița din dreapta subsolului cu tot cu eticheta ei («Reîncarcă … de la server»), dar **niciun handler** — exact defectul (1) din felia 0057, pe alt arbore. Acum au `Tree_FooterRightIconClicked` și un `Action(Of String)` primit de la shell; fără el iconița **se stinge**, nu rămâne un buton care nu face nimic.
 

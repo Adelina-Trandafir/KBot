@@ -19,13 +19,13 @@ Jurnalele / textul exact al erorii **nu** au fost văzute (sunt pe alt PC; opera
 
 Fiecare încărcare trimite serverului `X-Sha-Precedent` = suma versiunii pe care clientul crede că o are serverul; dacă serverul are altceva → **409** și mesajul «Între timp altcineva a salvat pe server o altă versiune semnată a acestui document…» (`PdfSigningSession.UploadAsync`).
 
-`DdfView.EnsureSigning` (la fel `OrdView`, `NoteCabView`) **păstra sesiunea de semnare** ori de câte ori revizia și calea fișierului erau aceleași, fără să se uite dacă suma de pe server s-a schimbat. Calea fișierului din cache e aceeași înainte și după, deci:
+`DdfView.EnsureSigning`, ca `OrdView` și `NoteCabView`, păstra sesiunea dacă revizia și calea erau aceleași, fără compararea sumei serverului. Calea cache-ului rămânea aceeași:
 
 - semnat A → sesiunea încarcă, `ServerSha = shaA`;
 - «Generează PDF final» încarcă PDF-ul final peste el → pe server `shaFinal`; vederea se reîncarcă (`Reincarca`), rândul reviziei are `shaFinal`, fișierul din cache e înlocuit cu cel de pe server — dar sesiunea VECHE (cu `shaA`) e păstrată, fiindcă calea e aceeași;
 - semnat B → încărcare cu precedent `shaA`, serverul are `shaFinal` → **409**.
 
-Reparat: `PdfSigningSession.Matches(kind, id, path, serverSha)` — sesiunea e păstrată doar dacă și suma de pe server e cea de la care a pornit; altfel se închide și se pornește una nouă (cu baza de câmpuri semnate citită din fișierul nou). Aplicat în `DdfView`, `OrdView`, `NoteCabView`. După o încărcare proprie, vederea pune `r.PdfSha256 = NewSha`, deci sesiunea curentă rămâne (nu se reface degeaba).
+Reparat în cele trei vederi prin `PdfSigningSession.Matches(kind, id, path, serverSha)`: suma serverului trebuie să coincidă și ea, altfel sesiunea se recreează cu baza câmpurilor semnate din fișierul nou. După încărcarea proprie, `r.PdfSha256 = NewSha` păstrează sesiunea curentă.
 
 ### 1.2 Mesajul fals «nu era identic cu originalul» după «Generează PDF final»
 

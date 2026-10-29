@@ -299,12 +299,10 @@ Totul se ridică singur la sfârșitul lucrării.
 
 ### 7.5 Când intră stilurile și cum rămân (21.09.2026, felia 0073-01)
 
-Tot ce scrie scriptul în pagină stă în două elemente `<style>` (regulile + modul întunecat într-unul, încețoșarea în celălalt) și într-o clasă pe `<html>` (`kbot-busy`, cât lucrează robotul). Semnalate de operator: încețoșarea, culorile întunecate și bara de meniu ascunsă «reveneau abia după un moment». Cauza: pe un document nou scriptul rulează ÎNAINTE ca browserul să fi construit `<html>` — nu avea de ce să agațe foile, instalarea de la început eșua în tăcere și bătaia de 2 s era prima care le punea. (Clicul «Istoric» din jurnal se termina cu o redirecționare Wicket, deci un document nou, nu doar Ajax.)
+Scriptul folosește două elemente `<style>` (reguli+mod întunecat, respectiv încețoșare) și clasa `<html>.kbot-busy` cât lucrează robotul. Operatorul semnalase reapariția întârziată a încețoșării, culorilor și meniului ascuns. Pe document nou, scriptul rula înainte de construirea `<html>`: instalarea foilor eșua în tăcere, iar bătaia de 2 s le instala prima. Clicul «Istoric» termina prin redirecționare Wicket, deci document nou, nu doar Ajax.
 
-Acum:
+Corecția consemnată:
 
-- foile intră **în clipa în care apare `<html>`** (un observator pe document), cu mult înainte de prima afișare; la `DOMContentLoaded` se verifică din nou, și dacă ar fi intrat abia atunci consola K-BOT spune o singură dată «stilurile paginii au intrat abia la încărcarea completă» — mesaj care NU trebuie să apară;
-- după **fiecare apel Ajax Wicket** (`/ajax/call/complete`, `/dom/node/added`; pe Wicket vechi `registerPostCallHandler`) și la **orice schimbare pe `<html>` (clasa) sau în `<head>` (copiii)** foile, clasa, vălul și starea ascunsă a meniului K-BOT se repun pe loc, nu la următoarea bătaie; tot atunci se recalculează foaia regulilor, ca regulile legate de o pagină (§7.1, «Pagina») să vină și să plece cu adresa;
-- bătaia de 2 s rămâne doar ca ultimă plasă.
-
-Nimic pe partea .NET nu s-a schimbat pentru asta.
+- Observatorul pe document instalează foile imediat ce apare `<html>`, înainte de prima afișare. La `DOMContentLoaded` recontrolează; instalarea abia atunci produce o singură avertizare în consolă: «stilurile paginii au intrat abia la încărcarea completă». Mesajul nu trebuie să apară.
+- Fiecare Ajax Wicket (`/ajax/call/complete`, `/dom/node/added`, iar pe Wicket vechi `registerPostCallHandler`), modificare a clasei `<html>` sau a copiilor `<head>` reinstalează imediat foile, clasa, vălul și ascunderea meniului. Tot atunci recalculează regulile dependente de adresă (§7.1, «Pagina»).
+- Bătaia de 2 s rămâne ultima plasă. Partea .NET nu a fost schimbată pentru această corecție.

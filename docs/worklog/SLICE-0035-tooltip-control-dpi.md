@@ -45,7 +45,7 @@ Fiecare măsură are acum două valori:
 | `_itemHeightLogic`, `_rowHeightLogic`, … | ce a scris operatorul, px la 96 dpi | proprietatea publică, `.Designer.vb` |
 | `_itemHeight`, `_rowHeight`, … | aceeași măsură scalată | pictarea, hit-testul, așezarea |
 
-Dacă getter-ul ar întoarce valoarea scalată, designerul ar reciti 33 acolo unde s-a scris 22 și ar îngheța 33 — iar la următoarea deschidere s-ar scala încă o dată. E **aceeași capcană** pe care o descrie regula casei despre `ShouldSerialize` (valoarea rezolvată care se citește pentru totdeauna ca alegere a operatorului), doar că pe numere în loc de culori.
+Un getter scalat ar face designerul să serializeze 33 în locul celor 22 logici; următoarea deschidere ar scala din nou. Este capcana valorii rezolvate confundate cu alegerea operatorului din regula `ShouldSerialize`, aplicată numerelor în locul culorilor.
 
 **La design time nu se scalează nimic** (`KBotDesignTime.IsDesignTime`): suprafața Visual Studio desenează la 96 dpi, deci acolo se vede chiar valoarea tastată.
 
@@ -61,7 +61,7 @@ Dacă getter-ul ar întoarce valoarea scalată, designerul ar reciti 33 acolo un
 
 ## 2b. Lățimile de coloană (trecerea 0035-01)
 
-Prima livrare le lăsase deoparte. Erau ultimul lucru nescalat din grilă, deci ultimul care mai putea arăta urât la 150%: o coloană de 170 px rămânea 170 px, în timp ce textul din ea creștea cu jumătate — se tăia cu elipsă exact acolo unde operatorul o făcuse destul de largă.
+Prima livrare nu scalase lățimile: coloana de 170 px rămânea la fel, iar textul creștea cu 50% și ajungea tăiat cu elipsă.
 
 ### Prima încercare, greșită — și ce a arătat
 
@@ -80,7 +80,7 @@ Cele două scrieri care pornesc din pixeli de ECRAN se aduc înapoi în logic:
 
 ### O sursă de scară, nu două
 
-Scara nu mai e factorul cumulat primit de la `ScaleControl`, ci **`DeviceDpi / 96`**; `ScaleControl` (plus `OnHandleCreated` și `OnDpiChangedAfterParent`) rămâne doar declanșatorul. Motivul e concret: `AutoScaleMode.Font` dă raportul înălțimilor de font (~1,45 la 150%, nu 1,5), în timp ce toate constantele din pictură treceau deja prin `ScaleDpi`, care citește `DeviceDpi`. Cu două surse, **podeaua de lățime și desenul ar fi ieșit din două formule** și coloana s-ar fi putut strâmta cu câțiva pixeli sub ce se picta — chiar scăparea pe care o admitea, în scris, nota de DPI din `KBotDataView.HeaderIcons`. Nota aceea e acum rescrisă: mărimile de pictogramă se scalează, iar podeaua și desenul citesc același număr. Bonus: nu se mai acumulează rotunjiri dacă `ScaleControl` e chemat de două ori. Arborele a fost aliniat la fel.
+Scara devine **`DeviceDpi / 96`**; `ScaleControl`, `OnHandleCreated` și `OnDpiChangedAfterParent` sunt numai declanșatoare. `AutoScaleMode.Font` produce ~1,45 la 150%, față de 1,5 din `ScaleDpi`: două surse ar permite lățimi sub desen. Podeaua și pictarea folosesc acum aceeași valoare; nota `KBotDataView.HeaderIcons` este corectată pentru scalarea pictogramelor. Nu se mai acumulează rotunjiri la două apeluri `ScaleControl`; arborele este aliniat la fel.
 
 `OnHandleCreated` contează separat: până la handle, `DeviceDpi` întoarce 96 chiar și pe un ecran la 150%, deci un control construit din cod (nu din designer, deci fără autoscalare) ar fi rămas la scara 1.
 

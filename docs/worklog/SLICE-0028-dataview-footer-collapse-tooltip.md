@@ -4,15 +4,7 @@ Consolidare D001-10: baza și etapele 02…09 sunt reunite cronologic, cu contra
 
 Etapa 03 introduce meniul desenat și filtrarea pe coloană, 06 mută meniul în designer, 08 consemnează intervențiile operatorului. Acceptarea vizuală a operatorului din 08 nu se extinde la restul lucrării. Reguli istorice de sortare/validare nu înlocuiesc AGENTS actual.
 
-- [0028-baza](#slice-0028-baza)
-- [0028-02](#slice-0028-02)
-- [0028-03](#slice-0028-03)
-- [0028-04](#slice-0028-04)
-- [0028-05](#slice-0028-05)
-- [0028-06](#slice-0028-06)
-- [0028-07](#slice-0028-07)
-- [0028-08](#slice-0028-08)
-- [0028-09](#slice-0028-09)
+[0028-baza](#slice-0028-baza) · [0028-02](#slice-0028-02) · [0028-03](#slice-0028-03) · [0028-04](#slice-0028-04) · [0028-05](#slice-0028-05) · [0028-06](#slice-0028-06) · [0028-07](#slice-0028-07) · [0028-08](#slice-0028-08) · [0028-09](#slice-0028-09)
 
 ## SLICE-0028 — `KBotDataView`: subsol cu agregate pe tip, benzi tematizate, etichetă de celulă, buton de strângere <a id="slice-0028-baza"></a>
 
@@ -22,38 +14,37 @@ Cerere de operator (5 puncte), nu un plan preexistent. Numărul de felie: **0028
 
 #### 1. Agregate pe COLOANĂ, deschise după tipul VALORII
 
-`KBotAggregate` avea trei valori (Sum / Count / Average) și nicio noțiune de „ce fel de date ține coloana”: `KBotColumnType` spune doar cum se PICTEAZĂ celula (Text / Combo / CheckBox / …), iar coloanele de sume din DdfView și PlatiView sunt „Text”. Deci nimic nu împiedica un `Sum` pe o coloană de nume — s-ar fi calculat 0, tăcut.
+`KBotAggregate` avea Sum/Count/Average fără tipul valorii. `KBotColumnType` descrie numai pictarea (Text/Combo/CheckBox/…); sumele DdfView/PlatiView sunt „Text”. Astfel, `Sum` pe nume ar fi produs silențios 0.
 
 - **`KBotValueType`** (nou): `Text` / `Number` / `DateTime` / `Boolean`.
 - **`KBotAggregate`** lărgit la 12 valori: peste cele trei vechi — `Min`, `Max`, `CountDistinct`, `CountEmpty`, `CountTrue`, `CountFalse`, `First`, `Last`.
 - **`KBotAggregateRules`** (nou) — SINGURUL loc unde scrie ce se poate aduna și ce se poate doar număra. O citesc trei consumatori: setterul agregatului, convertorul de designer și calculul.
 - **`KBotAggregateConverter`** (nou) — grila de proprietăți din Visual Studio oferă DOAR agregatele valabile pentru `ValueType`-ul coloanei editate.
 - O pereche nepermisă **ARUNCĂ** `ArgumentException` (regula casei: niciun no-op tăcut), pe toate cele trei drumuri: setterul `Aggregate`, setterul `ValueType` (n-ar orfaniza agregatul curent) și intrarea unei coloane construite liber în grilă (`OnColumnsChanged`).
-- Verificarea se AMÂNĂ cât timp grila e în `BeginInit`/`EndInit` sau în designer: designerul emite proprietățile în ordinea lui, deci `Aggregate` poate ajunge înaintea lui `ValueType`, iar o excepție acolo ar însemna un formular care nu se mai deschide DELOC. Perechea așezată se verifică la `EndInit` (`ValidateColumns`).
+- Verificarea se amână în designer/`BeginInit`…`EndInit`: designerul poate emite `Aggregate` înaintea lui `ValueType`, iar o excepție ar bloca deschiderea formularului. Perechea completă se verifică la `EndInit` (`ValidateColumns`).
 - `Min`/`Max` compară în tipul coloanei (numeric vs. calendaristic), nu alfabetic. `CountDistinct` numără pe TEXTUL AFIȘAT, deci prin `FormatString` — două `DateTime` cu ore diferite, afișate `dd.MM.yyyy`, sunt o singură zi.
 - `Min`/`Max` NU se oferă la `Text`: „cel mai mic alfabetic” s-ar confunda cu `First`.
 
-**Redenumire (API vechi scos, cum s-a cerut):** `ShowTotalsRow` → **`FooterVisible`**,
-`TotalsRowHeight` → **`FooterHeight`**, `RecomputeTotals` → `RecomputeFooter`, `DebugTotalsText` → `DebugFooterText`, `KBotDataView.Totals.vb` → `KBotDataView.Footer.vb`. Vocabularul e acum același cu al subsolului arborelui (0027-02). Toate cele 5 locuri de apel au fost migrate.
+**Redenumire (API vechi scos, cum s-a cerut):** `ShowTotalsRow` → **`FooterVisible`**, `TotalsRowHeight` → **`FooterHeight`**, `RecomputeTotals` → `RecomputeFooter`, `DebugTotalsText` → `DebugFooterText`, `KBotDataView.Totals.vb` → `KBotDataView.Footer.vb`. Vocabularul e acum același cu al subsolului arborelui (0027-02). Toate cele 5 locuri de apel au fost migrate.
 
 #### 1b. `DecimalPlaces` pe coloanele numerice (cerere ulterioară, aceeași felie)
 
 `KBotDataColumn.DecimalPlaces` — câte zecimale se AFIȘEAZĂ. Implicit `-1` (`NoDecimalPlaces`) = nefixat, adică exact comportamentul de dinainte; plafon 15 (`MaxDecimalPlaces`, limita lui `Math.Round`), peste el `ArgumentOutOfRangeException`. Orice negativ se normalizează la -1, ca starea „gol” să aibă o singură formă.
 
-- **Rotunjire NORMALĂ, nu cea implicită din .NET.** `Math.Round(2.5)` dă **2**, fiindcă rotunjește „la par”. Aici se folosește `MidpointRounding.AwayFromZero`, deci 2,5 ⇒ 3 și −2,5 ⇒ −3 — ce învață omul la școală și ce se așteaptă într-o notă contabilă. E și motivul pentru care testul de mijloc de interval e cel mai important din suită: o implementare scrisă fără paramentrul acela trece toate celelalte teste și cade abia în fața operatorului.
+- **`MidpointRounding.AwayFromZero`:** 2,5 ⇒ 3 și −2,5 ⇒ −3, față de `Math.Round(2.5) = 2` implicit, la par. Proba mijlocului de interval este esențială: omiterea parametrului trece celelalte teste, dar produce rezultatul contabil neașteptat.
 - `Decimal` se rotunjește CA `Decimal` (nu prin `Double`): altfel s-ar pierde exact precizia pentru care cineva a ales `Decimal` la o coloană de bani.
 - Fără `FormatString`, numărul de zecimale devine ȘI formatul (`F2` ⇒ «2,50», nu «2,5»), altfel rotunjirea ar fi invizibilă. Cu `FormatString`, formatul rămâne al lui — dar vede valoarea deja rotunjită.
-- **Subsolul adună ce se VEDE.** Sum/Average/Min/Max lucrează pe valorile rotunjite, iar rezultatul se rotunjește și el. Trei celule afișate «0,34» dau în subsol **1,02**, nu 1,01 (suma brută a lui 0,338 × 3): un total care nu iese la adunare pe pagină e, pentru cine citește pagina, o greșeală de calcul — degeaba e „mai exact”. `CountDistinct` numără tot pe textul afișat, deci două valori care se rotunjesc la fel sunt una singură.
+- **Subsolul adună valorile afișate:** Sum/Average/Min/Max folosesc valorile rotunjite și rotunjesc rezultatul. Trei «0,34» dau **1,02**, nu 1,01 din 0,338 × 3. `CountDistinct` folosește textul afișat: valori rotunjite la fel sunt una singură.
 - **Valoarea STOCATĂ nu se atinge** — rotunjirea e o regulă de afișare, ca un commit spre server să nu trimită înapoi un număr ciuntit de grilă.
 - Se poate fixa doar pe `ValueType = Number`; altfel ARUNCĂ, pe aceleași trei drumuri ca perechea tip × agregat (setterul zecimalelor, setterul tipului, intrarea unei coloane libere în grilă) și cu aceeași amânare în designer/`BeginInit`.
 - **Niciuna dintre vederile existente nu a fost trecută pe `DecimalPlaces`** — proprietatea e opt-in, iar DdfView/PlatiView își păstrează `FormatString = "N2"`. Trecerea lor ar schimba semantica totalului (suma valorilor rotunjite), deci e o decizie de operator, nu una tehnică.
 
 #### 2. Benzile (antet + subsol) se tematizează cu adevărat
 
-- Fontul antetului era **scris în control** — `New Font("Segoe UI Semibold", …)` — deci schimbarea schemei nu ajungea la el. Acum fontul benzilor vine din `Style.BaseFontName`/`BaseFontSize` ale schemei active (Modern ⇒ «Segoe UI Variable Text» 9pt), în varianta semibold dacă familia are una INSTALATĂ. Verificarea se face în lista familiilor instalate, nu construind fontul și prinzând excepția: GDI+ nu aruncă pentru o familie necunoscută, ci cade tăcut pe alta.
+- Fontul fix `New Font("Segoe UI Semibold", …)` este înlocuit pentru benzi cu `Style.BaseFontName`/`BaseFontSize` (Modern: «Segoe UI Variable Text» 9pt), semibold numai dacă este instalat. Se consultă lista familiilor: construirea fontului nu probează existența, GDI+ alegând silențios altă familie.
 - Subsolul are **roluri proprii** de culoare (`_cFooter*`), nu mai împrumută sloturile antetului: fundalul lui e spălat spre accent, ca ochiul să vadă din prima că jos e altceva decât un rând.
 - **Degradeul benzilor** se aprinde din STILUL schemei (`ButtonRender = ModernOwnerDrawn` sau `CornerRadius > 0`), nu dintr-un `if Modern` scris în control.
-- Șase proprietăți noi de designer: `HeaderBackColor` / `HeaderForeColor` / `HeaderFont` și perechile lor de subsol. `Color.Empty` / `Nothing` = „din temă”; fiecare are perechea `ShouldSerialize`/`Reset`, altfel Visual Studio ar îngheța valoarea REZOLVATĂ în `.Designer.vb` și tema n-ar mai ajunge niciodată la bandă (capcana din regulile casei).
+- Șase proprietăți de designer: `HeaderBackColor` / `HeaderForeColor` / `HeaderFont` și perechile de subsol. `Color.Empty` / `Nothing` = temă; `ShouldSerialize`/`Reset` evită serializarea valorii rezolvate în `.Designer.vb`, care ar bloca schimbarea temei.
 
 #### 3. În subsol se despart doar coloanele agregate
 
@@ -62,7 +53,7 @@ Cerere de operator (5 puncte), nu un plan preexistent. Numărul de felie: **0028
 #### 4. Etichetă plutitoare pentru celulele al căror text nu încape
 
 - `KBotCellTooltipOptions` (public, expus prin `KBotDataView.CellTooltip`, editabil în grila de proprietăți) + `KBotCellTooltipWindow` (fereastra, `Friend`).
-- Fereastra e sora lui `TreeNodeFlyout`: `WS_EX_NOACTIVATE` + `ShowWithoutActivation`, `WS_EX_TOOLWINDOW`, `HTTRANSPARENT` pe `WM_NCHITTEST`. Ultima parte nu e cosmetică: eticheta poate atinge chiar celula peste care stă cursorul, deci fără ea hover-ul s-ar pierde când apare fereastra, ceea ce ar ascunde-o, ceea ce ar readuce hover-ul… la infinit.
+- Ca `TreeNodeFlyout`: `WS_EX_NOACTIVATE` + `ShowWithoutActivation`, `WS_EX_TOOLWINDOW`, `HTTRANSPARENT` pe `WM_NCHITTEST`. Transparența la hit-test împiedică alternarea infinită hover/ascundere când eticheta acoperă celula cursorului.
 - NU e un `ToolTip` WinForms: acela nu se poate tematiza, rotunji, și nu poate purta fontul celulei.
 - Apare **doar când chiar nu încape**: se măsoară textul deja formatat (prin aceeași trecere de `CellFormatting` ca pictarea, pe argumentele de interogare) cu fontul lui, față de lățimea utilă a celulei — minus zona chevronului la coloanele Combo.
 - Decizia e o funcție pură (`CellTooltipTextFor`), deci verificabilă fără ecran.
@@ -77,16 +68,13 @@ Regula gazdei se păstrează întocmai: dacă dimensiunea de pe axa aleasă nu e
 
 ### Fișiere atinse
 
-**Noi (`src/KBot.Controls/DataView/`):** `KBotValueType.vb`, `KBotAggregateRules.vb` (+ convertorul),
-`KBotCollapseDirection.vb`, `KBotFooterButtonPosition.vb`, `KBotCellTooltip.vb`, `KBotDataView.Footer.vb` (înlocuiește `.Totals.vb`), `KBotDataView.Collapse.vb`, `KBotDataView.Tooltip.vb`.
+**Noi (`src/KBot.Controls/DataView/`):** `KBotValueType.vb`, `KBotAggregateRules.vb` (+ convertorul), `KBotCollapseDirection.vb`, `KBotFooterButtonPosition.vb`, `KBotCellTooltip.vb`, `KBotDataView.Footer.vb` (înlocuiește `.Totals.vb`), `KBotDataView.Collapse.vb`, `KBotDataView.Tooltip.vb`.
 
-**Modificate:** `KBotAggregate.vb`, `KBotDataColumn.vb`, `KBotDataView.vb`, `.Theming.vb`,
-`.Painting.vb`, `.Layout.vb`, `.Input.vb`, `.AutoSize.vb`, `.Designer.vb` · `DdfView.vb`, `PlatiView.vb`, `DdfView.Designer.vb`, `SumarView.Designer.vb`, `PlatiView.Designer.vb`, `DdfFileBrowser.Designer.vb`, `XfaXmlPreview.Designer.vb` · `DataViewHarnessForm(.Designer).vb`.
+**Modificate:** `KBotAggregate.vb`, `KBotDataColumn.vb`, `KBotDataView.vb`, `.Theming.vb`, `.Painting.vb`, `.Layout.vb`, `.Input.vb`, `.AutoSize.vb`, `.Designer.vb` · `DdfView.vb`, `PlatiView.vb`, `DdfView.Designer.vb`, `SumarView.Designer.vb`, `PlatiView.Designer.vb`, `DdfFileBrowser.Designer.vb`, `XfaXmlPreview.Designer.vb` · `DataViewHarnessForm(.Designer).vb`.
 
 **Șters:** `KBotDataView.Totals.vb`.
 
-**Teste:** `KBotDataViewTotalsTests.vb` → `KBotDataViewFooterTests.vb` (redenumit + `ValueType`
-adăugat unde se cere `Sum`/`Average`); noi: `KBotDataViewAggregateRulesTests.vb`, `KBotDataViewCollapseTests.vb`, `KBotDataViewCellTooltipTests.vb`, `KBotDataViewBandThemingTests.vb`, `KBotDataViewDecimalPlacesTests.vb`. Actualizat: `KBotDataColumnDesignerTests.vb`.
+**Teste:** `KBotDataViewTotalsTests.vb` → `KBotDataViewFooterTests.vb` (redenumit + `ValueType` adăugat unde se cere `Sum`/`Average`); noi: `KBotDataViewAggregateRulesTests.vb`, `KBotDataViewCollapseTests.vb`, `KBotDataViewCellTooltipTests.vb`, `KBotDataViewBandThemingTests.vb`, `KBotDataViewDecimalPlacesTests.vb`. Actualizat: `KBotDataColumnDesignerTests.vb`.
 
 ### Rezultatele testelor
 
@@ -116,33 +104,30 @@ Al doilea pas al feliei 0028 (`KBotDataView`). Trei cereri ale operatorului, toa
 
 #### 1. Titlul din subsol (`FooterCaption` + pictogramă)
 
-Banda de subsol avea, în stânga, spațiu gol până la prima coloană agregată. Acolo intră acum un text și o pictogramă, cu același vocabular ca subsolul arborelui (`FooterCaption`, `FooterLeftIcon`, `FooterIconSize`), plus ce n-are arborele: pictograma se apasă (`FooterLeftIconClicked`) și are culoare de hover (`FooterLeftIconHoverColor`, gol = din temă).
+Spațiul din stânga primei coloane agregate primește `FooterCaption`, `FooterLeftIcon`, `FooterIconSize`, ca la arbore, plus `FooterLeftIconClicked` și `FooterLeftIconHoverColor` (gol = temă).
 
-**Unde se oprește zona** e singura regulă care contează: la PRIMA coloană agregată, niciodată mai
-departe. Un titlu care ar curge pe sub o sumă ar arăta ca eticheta acelei sume — adică ar spune altceva decât spune. Fără nicio coloană agregată, zona e toată banda. Colțul butonului de strângere rămâne al lui (zona pornește din `FooterContentRect`, care îl scade deja), deci cu butonul pus pe stânga titlul se mută singur după el, nu se așază sub el.
+**Zona se oprește la PRIMA coloană agregată**, evitând confundarea titlului cu eticheta unei sume; fără agregate ocupă toată banda. Pornește din `FooterContentRect`, care exclude deja colțul butonului de strângere, inclusiv când acesta este în stânga.
 
 Pictograma se desenează doar dacă încape ÎNTREAGĂ în zonă, și tot atunci se și apasă: ce nu se vede nu se poate apăsa.
 
 #### 2. Pictograme pe fiecare coloană, în antet (`HeaderLeftIcon` / `HeaderRightIcon`)
 
-Fiecare coloană poate purta o pictogramă la stânga titlului și una la dreapta lui, fiecare cu mărimea ei (`HeaderLeftIconSize` / `HeaderRightIconSize`, implicit 16×16). Cea din DREAPTA e cea care se apasă — `KBotDataView.HeaderRightIconClicked`, cu cheia coloanei ȘI dreptunghiul pictogramei în `KBotColumnEventArgs` (cazul de folosire e un meniu de filtru/sortare, care trebuie așezat SUB ea). Ea are și hover (`HeaderRightIconHoverColor`, gol = din temă); cea din stânga e un semn, nu un buton, deci n-are nici eveniment, nici hover — o evidențiere sub ceva inert ar promite o acțiune care nu există.
+Coloana are `HeaderLeftIcon` / `HeaderRightIcon`, cu `HeaderLeftIconSize` / `HeaderRightIconSize` (implicit 16×16). Numai dreapta este buton: `HeaderRightIconClicked` trimite cheia coloanei și dreptunghiul în `KBotColumnEventArgs`, pentru meniul de sub pictogramă; `HeaderRightIconHoverColor` gol folosește tema. Stânga este semn inert, fără eveniment sau hover.
 
-**Ordinea sacrificiului la îngustare** (cerută explicit): titlul se taie ÎNTÂI, cu elipsă, până la
-lățime zero; abia apoi cade pictograma din STÂNGA; cea din dreapta nu cade niciodată.
+**Ordinea sacrificiului la îngustare** (cerută explicit): titlul se taie ÎNTÂI, cu elipsă, până la lățime zero; abia apoi cade pictograma din STÂNGA; cea din dreapta nu cade niciodată.
 
-**Podeaua de lățime.** `KBotDataColumn.EffectiveMinWidth` = `max(MinWidth, HeaderIconsWidth)`, unde
-`HeaderIconsWidth` = `2×Pad + stânga + Gap + dreapta` (Pad 8, Gap 4, px logici). Ea limitează orice scriere în `Width` (`ClampWidth`) și o folosesc toate trecerile de auto-dimensionare (`MeasureColumnToContent`, `ShrinkToFit`). **Podeaua bate `MaxWidth`**: un plafon sub cât cer pictogramele e o cerere imposibilă, iar dacă ar câștiga plafonul, coloana ar picta piese suprapuse. Setarea unei pictograme re-limitează lățimea PE LOC, nu la următorul layout.
+**Podeaua:** `KBotDataColumn.EffectiveMinWidth = max(MinWidth, HeaderIconsWidth)`, cu `HeaderIconsWidth = 2×Pad + stânga + Gap + dreapta` (Pad 8, Gap 4, px logici). `ClampWidth`, `MeasureColumnToContent` și `ShrinkToFit` o respectă; bate `MaxWidth` pentru a evita suprapunerile. Setarea pictogramei limitează lățimea imediat.
 
 Așezarea celor trei piese stă într-o funcție pură, `KBotDataView.ComputeHeaderCellLayout`, pe care o cheamă și pictarea, și hit-testul, și testele — o a doua formulă ar însemna o pictogramă desenată unde nu se apasă.
 
 #### 3. `Format` — proprietatea numită, în stil Access
 
-`KBotDataColumn.Format` (enum `KBotFormat`) aduce lista Access: General Number, Currency, Euro, Fixed, Standard, Percent, Scientific, General/Long/Medium/Short Date, Long/Medium/Short Time, Yes/No, True/False, On/Off. Traducerea în text stă într-un singur loc, `KBotColumnFormat`, citit de AMÂNDOI consumatorii — pictarea celulelor și agregatele din subsol — ca un total să nu se scrie altfel decât coloana de deasupra lui.
+`KBotDataColumn.Format` (`KBotFormat`) oferă lista Access: General Number, Currency, Euro, Fixed, Standard, Percent, Scientific, General/Long/Medium/Short Date, Long/Medium/Short Time, Yes/No, True/False, On/Off. `KBotColumnFormat` traduce unic pentru celule și agregate, păstrând același format în coloană și subsol.
 
 Două lucruri deliberate:
 
 - **Formatul numit CITEȘTE valoarea**, nu doar o formatează: o coloană `ValueType.Text` care poartă numere (cazul DdfView/PlatiView) se scrie „Standard” corect. O valoare care nu se poate citi în tipul cerut cade pe calea obișnuită și tot se vede — nu se stinge într-o celulă goală.
-- **`Format` și `FormatString` nu se folosesc împreună** — sunt două fețe ale aceluiași lucru. Amândouă setate ARUNCĂ (`ArgumentException`), verificat amânat în blocul de inițializare al designerului și așezat la `EndInit`, exact ca perechea `ValueType × Aggregate`. Alternativa — una câștigând tăcut — ar lăsa în formular o proprietate care arată ca o setare activă și nu face nimic.
+- **`Format` / `FormatString` sunt exclusive:** setarea ambelor aruncă `ArgumentException`, amânată până la `EndInit` în inițializarea designerului, ca la `ValueType × Aggregate`. Nicio proprietate nu rămâne aparent activă dar ignorată.
 
 Câte zecimale scrie un format vine din `DecimalPlaces` când e fixat, altfel 2 (implicitul Access), deci cele două proprietăți nu se contrazic. `AggregateFormatString` rămâne deasupra tuturor.
 
@@ -152,24 +137,11 @@ Câte zecimale scrie un format vine din `DecimalPlaces` când e fixat, altfel 2 
 
 Noi:
 
-- `src/KBot.Controls/DataView/KBotFormat.vb` — enum-ul formatelor numite.
-- `src/KBot.Controls/DataView/KBotColumnFormat.vb` — traducerea lor în text (singurul loc).
-- `src/KBot.Controls/DataView/KBotDataView.HeaderIcons.vb` — așezare, hover, hit-test, eveniment.
-- `src/KBot.Controls/DataView/KBotDataView.FooterCaption.vb` — zona, pictograma, evenimentul.
-- `src/KBot.Controls/DataView/Events/KBotColumnEventArgs.vb` — cheie + dreptunghiul pictogramei.
-- `tests/KBot.Controls.Tests/KBotDataViewHeaderIconsTests.vb` (14 teste)
-- `tests/KBot.Controls.Tests/KBotDataViewColumnFormatTests.vb` (14 teste)
-- `tests/KBot.Controls.Tests/KBotDataViewFooterCaptionTests.vb` (14 teste)
+`src/KBot.Controls/DataView/KBotFormat.vb` — enum-ul formatelor numite. `src/KBot.Controls/DataView/KBotColumnFormat.vb` — traducerea lor în text (singurul loc). `src/KBot.Controls/DataView/KBotDataView.HeaderIcons.vb` — așezare, hover, hit-test, eveniment. `src/KBot.Controls/DataView/KBotDataView.FooterCaption.vb` — zona, pictograma, evenimentul. `src/KBot.Controls/DataView/Events/KBotColumnEventArgs.vb` — cheie + dreptunghiul pictogramei. `tests/KBot.Controls.Tests/KBotDataViewHeaderIconsTests.vb` (14 teste); `tests/KBot.Controls.Tests/KBotDataViewColumnFormatTests.vb` (14 teste); `tests/KBot.Controls.Tests/KBotDataViewFooterCaptionTests.vb` (14 teste)
 
 Modificate:
 
-- `KBotDataColumn.vb` — pictogramele + mărimile + culoarea de hover, `ClampWidth`, `HeaderIconsWidth`/`EffectiveMinWidth`, `Format`, `FormatString` devenit proprietate întreagă, `ValidateSettled`.
-- `KBotDataView.vb` — `OnColumnFormatChanged`, apelurile `ValidateSettled`.
-- `KBotDataView.Painting.vb` — `DrawHeaderCell` prin `DrawHeaderIcons`, titlul de subsol, `FormatValue` trece prin formatul numit; `ToBool` devenit `Friend`.
-- `KBotDataView.Footer.vb` — agregatele trec prin formatul numit; `TryNumeric`/`TryDate` `Friend`.
-- `KBotDataView.AutoSize.vb` — măsurarea adună pictogramele; podeaua e `EffectiveMinWidth`.
-- `KBotDataView.Input.vb` — apăsarea/hover-ul pictogramelor de antet, cursorul de mână.
-- `KBotDataView.Collapse.vb` — banda de subsol trimite apăsarea/hover-ul mai departe la pictogramă.
+`KBotDataColumn.vb` — pictogramele + mărimile + culoarea de hover, `ClampWidth`, `HeaderIconsWidth`/`EffectiveMinWidth`, `Format`, `FormatString` devenit proprietate întreagă, `ValidateSettled`. `KBotDataView.vb` — `OnColumnFormatChanged`, apelurile `ValidateSettled`. `KBotDataView.Painting.vb` — `DrawHeaderCell` prin `DrawHeaderIcons`, titlul de subsol, `FormatValue` trece prin formatul numit; `ToBool` devenit `Friend`. `KBotDataView.Footer.vb` — agregatele trec prin formatul numit; `TryNumeric`/`TryDate` `Friend`. `KBotDataView.AutoSize.vb` — măsurarea adună pictogramele; podeaua e `EffectiveMinWidth`. `KBotDataView.Input.vb` — apăsarea/hover-ul pictogramelor de antet, cursorul de mână. `KBotDataView.Collapse.vb` — banda de subsol trimite apăsarea/hover-ul mai departe la pictogramă.
 
 ### Rezultatele testelor
 
@@ -189,14 +161,8 @@ Modificate:
 
 Al treilea pas al feliei 0028 (`KBotDataView`). Două cereri ale operatorului:
 
-> 1. A property called `ShowColumnFilter` as an icon with exposed props: Size, Icon and HoverColor.
->    It should replicate the Access Filtering system on the native DataSheets (different options for
->    Number, String and Dates). When pressed a custom popup menu should appear which will allow the
->    user to filter the dgv. Also, like in Access the first options should be for Sorting. Should use
->    the Custom Theming System.
-> 2. The DGV should also use the theming system, but only for DarkMode. If DarkMode, it should ignore
->    the colors set by me manually in the designer and set the normal DarkMode colors for the DGV
->    (header, footer and cells). Also the scrollbars should use the Theming System.
+> 1. A property called `ShowColumnFilter` as an icon with exposed props: Size, Icon and HoverColor. It should replicate the Access Filtering system on the native DataSheets (different options for Number, String and Dates). When pressed a custom popup menu should appear which will allow the user to filter the dgv. Also, like in Access the first options should be for Sorting. Should use the Custom Theming System.
+> 2. The DGV should also use the theming system, but only for DarkMode. If DarkMode, it should ignore the colors set by me manually in the designer and set the normal DarkMode colors for the DGV (header, footer and cells). Also the scrollbars should use the Theming System.
 
 Trei decizii au fost puse operatorului înainte de a scrie cod (răspunsurile lui în paranteze): cine filtrează efectiv rândurile (**grila însăși**), cât de fidel e meniul față de Access (**paritate completă**, cu submeniu de condiții) și cum se colorează barele de derulare (**bare native + tema întunecată a Windows-ului**, nu un control desenat de noi).
 
@@ -213,22 +179,22 @@ Patru tipuri noi, fără nicio referință la pictare sau la vreun control — a
 
 Reguli care nu sunt evidente și de aceea sunt scrise în cod:
 
-- **Două feluri de valoare, dinadins.** Condițiile de TEXT se potrivesc pe textul **afișat** (ca operatorul să caute ce vede), cele de mărime pe valoarea **brută**, citită în tipul coloanei. Altfel «mai mic decât 10» ar fi alfabetic, unde «9» e mai mare decât «10».
-- **Un operand ilizibil face condiția INERTĂ, nu goală.** «Mai mic decât <text>» arată tot, nu nimic: o grilă golită arată ca un bug, un filtru care n-a înțeles ce i s-a scris nu.
-- **Goalele întâi, iar necitibilele la urmă.** `Nothing`, `""` și spațiile sunt aceeași stare. Pe o coloană numerică, o valoare care se citește ca număr stă mereu înaintea uneia care nu se citește — a le declara egale ar face sortarea instabilă tocmai pe rândurile ciudate, adică pe cele căutate.
+- **TEXT compară textul afișat**, pentru căutarea a ceea ce se vede; condițiile de mărime compară valoarea brută în tipul coloanei, evitând ordinea alfabetică «9» > «10».
+- **Operand ilizibil = condiție INERTĂ**, cu toate rândurile afișate: «Mai mic decât <text>» nu golește grila.
+- **Goalele întâi, necitibilele la urmă.** `Nothing`, `""` și spațiile sunt echivalente. Pe coloana numerică, numerele preced valorile necitibile, evitând egalități și sortare instabilă între cele două categorii.
 - **`SelectedValues = Nothing` ≠ mulțime goală.** Primul înseamnă «toate», al doilea «niciuna».
 - **Coloanele logice n-au submeniu de condiții** (`AllowedOperators` întoarce gol): două căsuțe în listă spun deja tot ce se poate spune despre o bifă.
 
 ### 2. Harta vedere ↔ model (`KBotDataView.Filtering.vb`)
 
-Aceasta e schimbarea cu adevărat invazivă, fiindcă până acum „indexul rândului” însemna un singur lucru. Acum sunt două numerotări, și **regula e că nu se amestecă niciodată**:
+Indicii de model și pozițiile de vedere sunt numerotări distincte, care nu se amestecă:
 
-- **API-ul public vorbește în indici de MODEL** — `Item(cheie, index)`, `CurrentRowIndex`, `CellClick`, `EnsureVisible`, `IsRowEnabled` înseamnă azi exact ce însemnau înainte. Vederile existente (Sumar, Istoric, Plăți…) își țin propriii indici de rând; o filtrare care i-ar renumerota le-ar corupe în tăcere. Un test dedicat păzește tocmai asta.
+- **API public = indici de MODEL:** `Item(cheie, index)`, `CurrentRowIndex`, `CellClick`, `EnsureVisible`, `IsRowEnabled` își păstrează sensul. Sumar/Istoric/Plăți păstrează acești indici; renumerotarea la filtrare i-ar corupe silențios. Există probă dedicată.
 - **Geometria lucrează în poziții de VEDERE** — `RowTop`, `FirstVisibleRow`, virtualizarea, hit-testul. `RowAtPoint` traduce o dată, la intrare; `RowTopForModel` traduce în sens invers pentru celule/editare/etichetă.
 
 Alte două alegeri:
 
-- **Reconstrucție LENEȘĂ** (`_viewDirty` + `EnsureView`), nu pe loc. O încărcare în masă între `BeginUpdate`/`EndUpdate` altfel ar lăsa harta în urma rândurilor, iar o pictare căzută la mijloc ar indexa în gol — genul de excepție care apare o dată la o mie de încărcări și nu se reproduce. De aceea `RecomputeFooter` s-a redenumit **`RecomputeDerived`** și marchează harta murdară ÎNAINTEA gărzii de `BeginUpdate`.
+- **Reconstrucție leneșă** (`_viewDirty` + `EnsureView`): în încărcarea `BeginUpdate`/`EndUpdate`, harta rămasă în urmă ar putea indexa în gol la o pictare intermediară. `RecomputeFooter` devine **`RecomputeDerived`** și marchează harta murdară înaintea gărzii `BeginUpdate`.
 - **Sortare stabilă**: `List.Sort` nu e stabilă, deci comparatorul cade la egalitate pe indexul de model. Fără asta, două rânduri egale și-ar schimba locul la fiecare resortare.
 
 Ce s-a mutat pe rândurile vizibile, și de ce:
@@ -246,12 +212,9 @@ Selecția: dacă rândul curent e filtrat afară, se abandonează editarea desch
 
 ### 3. Butonul de filtrare — **pe coloană** (`KBotDataColumn` + `KBotDataView.FilterIcon.vb`)
 
-Prima variantă a feliei avea steagul pe GRILĂ (`KBotDataView.ShowColumnFilter`) plus un comutator de excludere pe coloană. **Operatorul a cerut invers**: se hotărăște COLOANĂ CU COLOANĂ, în designer. Cele patru proprietăți stau acum pe `KBotDataColumn`, lângă celelalte pictograme de antet ale coloanei — `ShowColumnFilter` (implicit False), `ColumnFilterIcon`, `ColumnFilterIconSize` (16×16), `ColumnFilterHoverColor` — toate cu perechea `ShouldSerialize`/`Reset`, verificată în teste
-**prin `TypeDescriptor`**, calea pe care o ia chiar Visual Studio. `Filterable` și
-`FilterIconReserve` au DISPĂRUT: coloana știe acum totul singură, deci grila n-are ce să-i mai împingă.
+Prima variantă a feliei avea steagul pe GRILĂ (`KBotDataView.ShowColumnFilter`) plus un comutator de excludere pe coloană. **Operatorul a cerut invers**: se hotărăște COLOANĂ CU COLOANĂ, în designer. Cele patru proprietăți stau acum pe `KBotDataColumn`, lângă celelalte pictograme de antet ale coloanei — `ShowColumnFilter` (implicit False), `ColumnFilterIcon`, `ColumnFilterIconSize` (16×16), `ColumnFilterHoverColor` — toate cu perechea `ShouldSerialize`/`Reset`, verificată în teste **prin `TypeDescriptor`**, calea pe care o ia chiar Visual Studio. `Filterable` și `FilterIconReserve` au DISPĂRUT: coloana știe acum totul singură, deci grila n-are ce să-i mai împingă.
 
-**Interzis pe `Button` și `ProgressBar`.** Acelea nu poartă o valoare pe care s-o cauți — o celulă
-buton arată o comandă, una de progres o fracțiune desenată; o listă de valori distincte peste ele ar fi o listă de nimic, iar «sortează A → Z» n-ar avea ce ordona. Aprinderea **ARUNCĂ**, nu se stinge tăcut: un buton care nu apare unde a fost cerut e chiar no-op-ul tăcut interzis de regula casei. Perechea se apără din **amândouă** direcțiile (inclusiv la schimbarea tipului sub un filtru deja aprins), cu aceeași amânare în `BeginInit`/designer ca perechea `ValueType × Aggregate` — designerul emite proprietățile în ordinea LUI, iar o excepție în `InitializeComponent` ar închide formularul cu totul — și cu verificarea finală în `ValidateSettled`, la `EndInit`. `FilterEnabled` (steag ȘI tip) e ce citesc pictarea și hit-testul, ca în designer să nu se deseneze un buton pe care `EndInit` apoi îl refuză.
+**Interzis pe `Button` și `ProgressBar`.** Acelea nu poartă o valoare pe care s-o cauți — o celulă buton arată o comandă, una de progres o fracțiune desenată; o listă de valori distincte peste ele ar fi o listă de nimic, iar «sortează A → Z» n-ar avea ce ordona. Aprinderea **ARUNCĂ**, nu se stinge tăcut: un buton care nu apare unde a fost cerut e chiar no-op-ul tăcut interzis de regula casei. Perechea se apără din **amândouă** direcțiile (inclusiv la schimbarea tipului sub un filtru deja aprins), cu aceeași amânare în `BeginInit`/designer ca perechea `ValueType × Aggregate` — designerul emite proprietățile în ordinea LUI, iar o excepție în `InitializeComponent` ar închide formularul cu totul — și cu verificarea finală în `ValidateSettled`, la `EndInit`. `FilterEnabled` (steag ȘI tip) e ce citesc pictarea și hit-testul, ca în designer să nu se deseneze un buton pe care `EndInit` apoi îl refuză.
 
 - **Stă mereu în același loc** — capătul din dreapta al celulei de antet — iar `HeaderRightIcon` se mută la stânga lui. Niciunul dintre cele două nu se sacrifică la îngustare: amândouă se apasă.
 - **Podeaua de lățime**: `HeaderIconsWidth` numără acum trei piese și spațiile dintre ele, direct din starea coloanei.
@@ -283,7 +246,7 @@ Grila expune și `ColumnFilterOpening` (anulabil) plus `ShowColumnFilterMenu(che
 
 `KBotDataView.Theming.vb`:
 
-- Sub o schemă cu `IsDark`, `HeaderBackResolved` / `HeaderForeResolved` / `FooterBackResolved` / `FooterForeResolved` **ignoră culorile fixate în designer** și întorc culorile paletei (`DarkOverridesDesignerColors`). Regula obișnuită a casei e inversă — «cine a pus explicit o culoare câștigă» — și **rămâne inversă pe schemele luminoase**. Excepția e cerută de ce se întâmplă altfel: paleta de designer se autorează pe fundal deschis, iar o bandă lăsată albă peste un corp devenit aproape negru nu e „alegerea operatorului respectată”, e o grilă imposibil de citit. **Culorile nu se pierd**, doar se ignoră: ieșirea din schema întunecată le dă înapoi.
+- În `IsDark`, `HeaderBackResolved` / `HeaderForeResolved` / `FooterBackResolved` / `FooterForeResolved` folosesc paleta, ignorând culorile de designer (`DarkOverridesDesignerColors`) pentru lizibilitate. Pe scheme luminoase rămâne regula culorii explicite. Culorile sunt păstrate și revin la ieșirea din întuneric.
 - Se aplică numai CULORILOR. **Un font fixat rămâne al operatorului în orice schemă** — un font nu devine ilizibil pe fundal închis.
 - Celulele luau deja culorile din paletă în orice schemă (`_cRowBack` / `_cCellText`), deci acolo n-a fost nimic de schimbat.
 - Barele de derulare: `SetWindowTheme` cu «DarkMode_Explorer» / «Explorer», prin `NativeMethods.ApplyWindowTheme` — același truc pe care ThemeManager îl folosește deja pentru liste și pentru `KBotComboBox`. Se re-aplică la `OnHandleCreated`, fiindcă apelul cere un handle.
@@ -301,36 +264,29 @@ If themed IsNot Nothing Then
 End If
 ```
 
-Oprirea avea un motiv bun — regulile GENERICE pe tip n-au voie să intre în interiorul unui control auto-tematizat (ar repicta suprafața ca pe un `Panel` și ar strica `TextBox`-ul intern al lui `KBotTextField`). Dar **toate cele șase vederi reale sunt ele însele `IThemedControl` ȘI țin un `KBotDataView` înăuntru** (`Controls.Add(grid)`, direct pe vedere), deci grila din fiecare vedere nu primea schema de la nimeni și rămânea pe culorile ei implicite. Pe banc, unde aceeași grilă stă direct pe formular, se colora corect — de aceea simptomul arăta ca o problemă a vederii.
+Oprirea proteja interiorul unui control auto-tematizat de reguli GENERICE (`Panel`, `TextBox` intern din `KBotTextField`). Dar toate cele șase vederi reale implementează `IThemedControl` și conțin direct `Controls.Add(grid)`: grilele nu mai primeau schema și rămâneau implicite. Pe banc, grila direct pe formular primea tema, mascând cauza.
 
 Comentariul din `SumarView.ApplyTheme` chiar spunea premisa pe dos («grila NU se atinge aici: `ThemeManager.Traverse` ajunge la el»), ceea ce a ținut bug-ul ascuns.
 
-**Reparat la nivelul potrivit**, nu în fiecare vedere: `ThemeManager.ApplyToNestedThemed` coboară
-prin subarborele unui control auto-tematizat și PREDĂ schema doar altor `IThemedControl`, fără să aplice vreo regulă pe tip. Contractul vechi rămâne întreg — `TextBox`-ul intern al lui `KBotTextField` nu e `IThemedControl`, deci nu e atins. Un apel copiat în fiecare `ApplyTheme` de vedere ar fi mers și el, dar s-ar fi uitat exact la a șaptea vedere.
+**Reparație comună:** `ThemeManager.ApplyToNestedThemed` traversează subarborele și transmite schema numai copiilor `IThemedControl`, fără reguli generice pe tip. `TextBox` intern din `KBotTextField` rămâne neatins. Se evită apelurile duplicate în fiecare vedere și omiterea uneia viitoare.
 
 Patru teste noi (`NestedThemedControlTests`) fixează ambele jumătăți: copilul și nepotul tematizat PRIMESC schema, copilul simplu NU e atins, și fiecare control e aplicat exact o dată.
 
 ### Fișiere atinse
 
-**Noi (`src/KBot.Controls/DataView/`)**: `KBotSortDirection.vb`, `KBotFilterOperator.vb`,
-`KBotFilterEngine.vb`, `KBotColumnFilter.vb`, `KBotDataView.Filtering.vb`, `KBotDataView.FilterIcon.vb`, `Filter/KBotFilterPopup.vb`, `Filter/KBotFilterPopup.Painting.vb`, `Filter/KBotFilterConditionDialog.vb`, `Filter/KBotFilterConditionDialog.Designer.vb`.
+**Noi (`src/KBot.Controls/DataView/`)**: `KBotSortDirection.vb`, `KBotFilterOperator.vb`, `KBotFilterEngine.vb`, `KBotColumnFilter.vb`, `KBotDataView.Filtering.vb`, `KBotDataView.FilterIcon.vb`, `Filter/KBotFilterPopup.vb`, `Filter/KBotFilterPopup.Painting.vb`, `Filter/KBotFilterConditionDialog.vb`, `Filter/KBotFilterConditionDialog.Designer.vb`.
 
-**Modificate (`src/KBot.Controls/DataView/`)**: `KBotDataColumn.vb` (cele patru proprietăți de
-filtrare, `FilterEnabled`, interdicția pe Button/ProgressBar din ambele direcții, `HeaderIconsWidth` pe trei piese), `KBotDataView.vb`, `.HeaderIcons.vb` (slotul de filtru în `ComputeHeaderCellLayout`), `.Layout.vb` (poziții de vedere, `RowTopForModel`, `EnsureVisible`), `.Painting.vb` (`DrawRow` pe poziție de vedere), `.Input.vb` (`RowAtPoint`, `MoveRow`, hover/click de filtru), `.Footer.vb` (`RecomputeDerived`, agregate pe `ViewRows`), `.AutoSize.vb`, `.Editing.vb`, `.Tooltip.vb`, `.Theming.vb`.
+**Modificate (`src/KBot.Controls/DataView/`)**: `KBotDataColumn.vb` (cele patru proprietăți de filtrare, `FilterEnabled`, interdicția pe Button/ProgressBar din ambele direcții, `HeaderIconsWidth` pe trei piese), `KBotDataView.vb`, `.HeaderIcons.vb` (slotul de filtru în `ComputeHeaderCellLayout`), `.Layout.vb` (poziții de vedere, `RowTopForModel`, `EnsureVisible`), `.Painting.vb` (`DrawRow` pe poziție de vedere), `.Input.vb` (`RowAtPoint`, `MoveRow`, hover/click de filtru), `.Footer.vb` (`RecomputeDerived`, agregate pe `ViewRows`), `.AutoSize.vb`, `.Editing.vb`, `.Tooltip.vb`, `.Theming.vb`.
 
 **Motorul de teme**: `src/KBot.Theming/ThemeManager.vb` (`ApplyToNestedThemed`).
 
-**Aplicația**: `src/KBot.App/Views/SumarView.vb` (comentariul care spunea premisa pe dos),
-`src/KBot.App/Views/SumarView.Designer.vb` (filtrul mutat de pe grilă pe cele șapte coloane).
+**Aplicația**: `src/KBot.App/Views/SumarView.vb` (comentariul care spunea premisa pe dos), `src/KBot.App/Views/SumarView.Designer.vb` (filtrul mutat de pe grilă pe cele șapte coloane).
 
-**Bancul de probă**: `DataViewPlaygroundForm(.Designer).vb` — `ShowColumnFilter` în inspectorul de
-coloană (stins pentru Button/ProgressBar, ca bancul să arate regula, nu s-o descopere printr-o excepție) și butonul `ClearAllFilters()`.
+**Bancul de probă**: `DataViewPlaygroundForm(.Designer).vb` — `ShowColumnFilter` în inspectorul de coloană (stins pentru Button/ProgressBar, ca bancul să arate regula, nu s-o descopere printr-o excepție) și butonul `ClearAllFilters()`.
 
-**Versiuni**: `KBot.Controls` 1.13.0.0 → **1.14.0.0**; `KBot.Theming` 1.5.0.0 → **1.6.0.0**;
-`KBot.App` 1.0.12.0 → **1.0.13.0**; `KBot.DevHarness` 1.0.16.0 → **1.0.17.0**.
+**Versiuni**: `KBot.Controls` 1.13.0.0 → **1.14.0.0**; `KBot.Theming` 1.5.0.0 → **1.6.0.0**; `KBot.App` 1.0.12.0 → **1.0.13.0**; `KBot.DevHarness` 1.0.16.0 → **1.0.17.0**.
 
-**Teste noi**: `KBotFilterEngineTests.vb`, `KBotDataViewFilteringTests.vb`,
-`KBotDataViewFilterIconTests.vb`, `KBotFilterPopupTests.vb`, `tests/KBot.Theming.Tests/NestedThemedControlTests.vb`. Modificate: `KBotDataViewBandThemingTests.vb` (vezi mai jos) și `tests/KBot.App.Tests/DdfViewTests.vb` (`RunSta` folosește acum `ExceptionDispatchInfo.Capture(...).Throw()` în loc de `Throw failure` — altfel fiecare eșec din firul STA se raporta ca o excepție fără loc, ceea ce a costat un drum în plus la diagnosticarea eșecurilor preexistente de mai jos).
+**Teste noi**: `KBotFilterEngineTests.vb`, `KBotDataViewFilteringTests.vb`, `KBotDataViewFilterIconTests.vb`, `KBotFilterPopupTests.vb`, `tests/KBot.Theming.Tests/NestedThemedControlTests.vb`. Modificate: `KBotDataViewBandThemingTests.vb` (vezi mai jos) și `tests/KBot.App.Tests/DdfViewTests.vb` (`RunSta` folosește acum `ExceptionDispatchInfo.Capture(...).Throw()` în loc de `Throw failure` — altfel fiecare eșec din firul STA se raporta ca o excepție fără loc, ceea ce a costat un drum în plus la diagnosticarea eșecurilor preexistente de mai jos).
 
 ### Rezultatele testelor
 
@@ -352,8 +308,7 @@ Meniul se probează headless prin porțile `Debug*` (convenția casei): construc
 - Cele din `Domain`/`Api` (`EtichetaRevizie*`) eșuează identic pe arborele CURAT, la HEAD, cu felia scoasă cu `git stash`.
 - Din cele 8 din `App.Tests`, 2 eșuează la HEAD, iar restul de 6 vin din rescrierea **în lucru** a lui `DdfView` din arborele de lucru: testele ajung la handler prin reflecție (`GetMethod("tree_NodeMouseUp")`), iar declarația aceea nu mai există în `DdfView.vb` (e la HEAD linia 622, în arborele de lucru a rămas doar șirul din `GlobalErrorLog.Write`) — `GetMethod` întoarce `Nothing` și `m.Invoke` dă `NullReferenceException`.
 
-**Un test existent a fost REscris, nu reparat**:
-`KBotDataViewBandThemingTests.AColourSetByTheOperator_SurvivesAThemeSwitch` verifica exact regula pe care cererea 2 o răstoarnă — folosea schema **Dark** ca să demonstreze că o culoare de designer supraviețuiește. Acum se numește `…SurvivesASwitchBetweenLIGHTSchemes` și folosește Modern, iar regula nouă are trei teste proprii (suprascriere sub întuneric, culorile date înapoi la ieșire, fontul lăsat în pace).
+**Un test existent a fost REscris, nu reparat**: `KBotDataViewBandThemingTests.AColourSetByTheOperator_SurvivesAThemeSwitch` verifica exact regula pe care cererea 2 o răstoarnă — folosea schema **Dark** ca să demonstreze că o culoare de designer supraviețuiește. Acum se numește `…SurvivesASwitchBetweenLIGHTSchemes` și folosește Modern, iar regula nouă are trei teste proprii (suprascriere sub întuneric, culorile date înapoi la ieșire, fontul lăsat în pace).
 
 ### Rămase neverificate / amânate
 
@@ -372,21 +327,20 @@ Vederile existente pot aprinde acum `ShowColumnFilter = True` fără altă modif
 
 Al patrulea pas al feliei 0028 (`KBotDataView`). Cerere de operator, începută de el în cod și lăsată neterminată, cu TODO-ul scris chiar în capul fișierului de auto-dimensionare:
 
-> i started a new property per column (AutoSize) which takes precedence over the View's own
-> AutoSize. you need to finish the implementation in KBotDataView.AutoSize
+> i started a new property per column (AutoSize) which takes precedence over the View's own AutoSize. you need to finish the implementation in KBotDataView.AutoSize
 
-Ce exista deja în arborele de lucru: `KBotDataColumn.AutoSizeMode` (câmp + proprietate + `Owner?.OnColumnAutoSizeModeChanged()`, cu `KBotDataView.OnColumnAutoSizeModeChanged` care cere re-layout) și TODO-ul din `KBotDataView.AutoSize.vb`. Pasul de măsurare NU citea proprietatea: `PerformAutoSize` întreba în continuare doar `_autoSizeMode`, deci proprietatea era, până aici, un buton care nu era legat la nimic.
+Exista `KBotDataColumn.AutoSizeMode` (câmp, proprietate, `Owner?.OnColumnAutoSizeModeChanged()`), cu `KBotDataView.OnColumnAutoSizeModeChanged` cerând layout, plus TODO în `KBotDataView.AutoSize.vb`. Dar `PerformAutoSize` citea numai `_autoSizeMode`, ignorând proprietatea coloanei.
 
 ### 1. Decizia care trebuia luată înainte de cod: ce înseamnă „precedență”
 
-Proprietatea nouă pornea de la `KBotAutoSizeMode.None` ca implicit. **Precedență + implicit `None` = nicio coloană nu se mai măsoară**, oricât ar spune grila: `AutoSizeColumnsMode` este `ToContent` din construcție, iar cele cinci vederi/gazde care îl setează explicit (`DdfFileBrowser`, `XfaXmlPreview`, `Plati`, `Rezervari`, `Receptii`) și-ar fi pierdut dimensionarea în tăcere, în ziua în care cineva ar fi construit prima coloană. Un implicit care răstoarnă comportamentul întregii aplicații nu e un implicit, e o regresie cu întârziere.
+Implicitul inițial al coloanei, `KBotAutoSizeMode.None`, combinat cu precedența ar opri orice măsurare, deși grila are `AutoSizeColumnsMode = ToContent`. Cele cinci gazde care îl setează explicit (`DdfFileBrowser`, `XfaXmlPreview`, Plăți, Rezervări, Recepții) ar pierde dimensionarea fără altă schimbare.
 
-Așa că vocabularul a primit **al treilea membru, `KBotAutoSizeMode.Inherit = -1`**, care e acum implicitul COLOANEI: «n-am nicio părere, hotărăște grila». E același tipar cu `Color.Empty` = «din temă» de la arbore (felia 0027) — o valoare-santinelă pentru „nespus”, ca „setat explicit” să poată câștiga fără ca „neatins” să însemne ceva.
+**`KBotAutoSizeMode.Inherit = -1`** devine implicitul COLOANEI: hotărăște grila dacă nu există alegere explicită, ca sentinela `Color.Empty` pentru temă din 0027.
 
 Consecințe, toate deliberate:
 
-- **`Inherit` e doar al coloanei.** Pe `AutoSizeColumnsMode` (grila) valoarea **ARUNCĂ** `ArgumentException`: deasupra grilei nu e nimeni de la cine să moștenească, deci a o accepta ar însemna să o traducem tăcut în altceva — exact no-op-ul tăcut interzis de regula casei. Tot acolo se refuză și o valoare care nu e în enum (`[Enum].IsDefined`), pe amândouă proprietățile.
-- **Numerotarea veche a rămas neatinsă** (`None = 0`, `ToContent = 1`), fiindcă bancul de probă leagă `cboAutoSize.SelectedIndex` direct de valoarea enum-ului; de aceea `Inherit` e `-1` și nu `0`. Lista de pe COLOANĂ, care începe cu `Inherit`, are de aceea traducere proprie (`ColumnModeAt` / `IndexOfColumnMode`) — indexul ei nu mai e valoarea enum-ului.
+- **`Inherit` aparține numai coloanei.** Pe grilă (`AutoSizeColumnsMode`) aruncă `ArgumentException`, neavând sursă de moștenire. Ambele proprietăți resping valori din afara enum-ului prin `[Enum].IsDefined`.
+- **Enum-ul păstrează `None = 0`, `ToContent = 1`:** bancul leagă `cboAutoSize.SelectedIndex` direct de valoare, de aceea `Inherit = -1`. Lista coloanei începe cu `Inherit` și traduce indicii prin `ColumnModeAt` / `IndexOfColumnMode`.
 - `<DefaultValue(KBotAutoSizeMode.Inherit)>` pe proprietatea coloanei: designerul nu scrie nimic pentru o coloană neatinsă.
 
 ### 2. Pasul de măsurare (`KBotDataView.AutoSize.vb`)
@@ -406,11 +360,9 @@ Două schimbări în pas:
 - **Pasul 1 (măsurarea) întreabă per coloană**, nu o dată pe grilă. `If _autoSizeMode = ToContent` de dinaintea buclei a devenit un `If EffectiveAutoSizeMode(c) <> ToContent Then Continue For` ÎN buclă, lângă garda de `UserSized`.
 - **Poarta de la intrarea în `PerformAutoSize` s-a mutat de pe grilă pe coloane.** Înainte era «grila e pe None ȘI n-avem umplere ȘI n-avem auto-hide ⇒ ieși». Acum se întreabă și `AnyColumnSizesToContent()`, altfel o coloană care cere singură măsurarea, pe o grilă manuală, n-ar fi fost măsurată niciodată — adică fix aranjamentul pentru care există proprietatea. (Poarta ignoră coloanele ascunse și pe cele trase de operator: pe acelea pasul oricum nu le atinge, deci o pornire pentru ele ar fi muncă degeaba.)
 
-**Precedența acoperă DOAR măsurarea.** `ColumnFillMode` e alt buton și rămâne așa: umplerea /
-strâmtarea trec în continuare peste toate coloanele vizibile, inclusiv peste una fixată pe `None` — exact regula care se aplică deja unei coloane trase cu mouse-ul (`UserSized`), pe care măsurarea o sare, dar umplerea o mișcă. O coloană care nu are voie să se miște deloc se prinde în cuie cu `MinWidth = MaxWidth`, unde clamparea o ține. Regula asta e scrisă acum și în capul fișierului, în locul TODO-ului.
+**Precedența acoperă DOAR măsurarea.** `ColumnFillMode` e alt buton și rămâne așa: umplerea / strâmtarea trec în continuare peste toate coloanele vizibile, inclusiv peste una fixată pe `None` — exact regula care se aplică deja unei coloane trase cu mouse-ul (`UserSized`), pe care măsurarea o sare, dar umplerea o mișcă. O coloană care nu are voie să se miște deloc se prinde în cuie cu `MinWidth = MaxWidth`, unde clamparea o ține. Regula asta e scrisă acum și în capul fișierului, în locul TODO-ului.
 
-**Precedența e față de GRILĂ, nu față de operator**: `UserSized` bate în continuare tot, iar
-`ResetColumnSizing()` e cel care redă coloana măsurării.
+**Precedența e față de GRILĂ, nu față de operator**: `UserSized` bate în continuare tot, iar `ResetColumnSizing()` e cel care redă coloana măsurării.
 
 ### 3. Bancul de probă
 
@@ -453,9 +405,7 @@ Aceleași ca la 0028-03, verificate din nou **într-un worktree curat la HEAD**,
 
 Al cincilea pas al feliei 0028, pornit de la un raport de operator pe o vedere reală:
 
-> look at the IstoricView. I tried to make the first three columns NO Autosize and only the last
-> one to strech, but no matter what i do, the first column becomes huge. i want the first columns
-> to be 300px, the second and third 200px and the last one to fill the difference
+> look at the IstoricView. I tried to make the first three columns NO Autosize and only the last one to strech, but no matter what i do, the first column becomes huge. i want the first columns to be 300px, the second and third 200px and the last one to fill the difference
 
 „No matter what I do” era exact adevărul: **două defecte diferite** îi anulau, pe rând, fiecare încercare. Niciunul nu se vede citind vederea — se văd doar din numere.
 
@@ -474,25 +424,19 @@ KBotDataColumn3.Width    = 55
 KBotDataColumn4.Width    = 144
 ```
 
-`747 + 40 + 55 + 144 = 986`, adică **fix `grid.Size.Width` de pe suprafața de designer**. Nimeni nu tastează patru numere care să dea exact lățimea formularului: valorile alea sunt **ieșirea unei treceri de umplere**, scrise în fișier ca și cum le-ar fi ales operatorul. (Verificat, nu presupus: tiparul `40 = MinWidth` și restul până la suma exactă nu poate veni din altă parte.)
+`747 + 40 + 55 + 144 = 986 = grid.Size.Width` în designer. Suma exactă și `40 = MinWidth` identifică valorile drept ieșirea umplerii, serializată ca alegere a operatorului; constatarea este consemnată ca verificată.
 
 ### 2. Defectul 1 — trecerea de layout rula ÎN DESIGNER și-i autora fișierul
 
-`PerformAutoSize` scrie `Width`. Designerul serializează pe urmă ce găsește. Deci orice deschidere a formularului în Visual Studio putea îngheța în `.Designer.vb` lățimea calculată pentru suprafața aceea, la mărimea aceea — după care valoarea rămâne acolo pentru totdeauna, ca alegere a operatorului, și supraviețuiește layout-ului care a produs-o.
+`PerformAutoSize` scrie `Width`, apoi designerul serializează rezultatul în `.Designer.vb`: lățimea calculată pentru acea suprafață devine persistentă ca alegere a operatorului. Este capcana `ShouldSerialize*` aplicată ieșirii layout-ului, care nu trebuie să autoreze formularul.
 
-E aceeași capcană pe care regula casei o descrie pentru `ShouldSerialize*`, cu un etaj mai jos: acolo e vorba de valoarea implicită a unei proprietăți, aici de **ieșirea unei treceri de layout**, iar o trecere de layout n-are ce căuta autorând formularul.
-
-**Reparat:** `PerformAutoSize` iese imediat sub `KBotDesignTime.IsDesignTime(Me)`. În designer se
-văd lățimile **așa cum au fost autorate** (ceea ce, pentru autorare, e și mai onest); măsurarea și umplerea se întâmplă la rulare.
+**Reparat:** `PerformAutoSize` iese imediat sub `KBotDesignTime.IsDesignTime(Me)`. În designer se văd lățimile **așa cum au fost autorate** (ceea ce, pentru autorare, e și mai onest); măsurarea și umplerea se întâmplă la rulare.
 
 ### 3. Defectul 2 — strâmtarea era DISTRUCTIVĂ
 
-Al doilea, invizibil în fișier și cel care ar fi lovit imediat după prima reparație: `IstoricView` se construiește într-un `SplitContainer` îngust (≈690 px) și abia pe urmă ajunge la mărimea ferestrei. La 690 px, `ShrinkToFit` mușca din coloane (200 → 120), scriindu-le peste `Width`. Când grila se lărgea, `DistributeLeftover` putea crește **doar ținta umplerii**, deci cele două coloane rămâneau strâmtate **pentru tot restul sesiunii**. Operatorul cere 200 și vede 120: „proprietatea nu merge”.
+`IstoricView` se construiește într-un `SplitContainer` de ≈690 px, apoi se lărgește. `ShrinkToFit` suprascria `Width` (200 → 120); `DistributeLeftover` mărea numai ținta umplerii, lăsând cele două coloane strâmtate toată sesiunea. Trecerea își refolosea ieșirea, deci depindea de istoricul redimensionării, nu de cererea caller-ului.
 
-Cauza reală: trecerea își compunea propria ieșire — rezultatul depindea de cum se nimerise redimensionată fereastra, nu de ce ceruse caller-ul.
-
-**Reparat în model, nu în trecere:** `KBotDataColumn` ține acum, pe lângă `_width` (cea pictată),
-și `_authoredWidth` — lățimea CERUTĂ, scrisă doar de setterul public `Width` (designer, cod, sau tragerea operatorului). Trecerea scrie prin `SetLayoutWidth` (nu atinge lățimea cerută) și își începe fiecare rulare cu `RestoreAuthoredWidths()`, exact ca `ClearAutoHiddenState()` de alături. Deci **o trecere e o funcție de (lățimi cerute, spațiu disponibil)** și de nimic altceva.
+**Reparat în model:** `KBotDataColumn` separă `_width` pictată de `_authoredWidth` cerută, scrisă numai prin setterul public `Width` (designer/cod/tragere). Layout-ul scrie prin `SetLayoutWidth` și începe cu `RestoreAuthoredWidths()`, ca `ClearAutoHiddenState()`: rezultatul depinde numai de lățimile cerute și spațiul disponibil.
 
 O coloană trasă de operator e sărită de la restaurare: tragerea aceea E lățimea cerută de acum (setterul public), și ține până la `ResetColumnSizing()`.
 
@@ -542,9 +486,7 @@ Eșecurile din `Domain` (3), `Api` (1) și `App` (10) sunt aceleași dinainte de
 
 Cerere de operator:
 
-> i want the filtering form to be configed in the designer, not in normal code. of course, except
-> the dynamic "list" of values. that can also be configured in the designer, but the values in it
-> should remain filled at runtime
+> i want the filtering form to be configed in the designer, not in normal code. of course, except the dynamic "list" of values. that can also be configured in the designer, but the values in it should remain filled at runtime
 
 ### 1. De ce era desenat în cod, și de ce motivul acela a expirat
 
@@ -571,8 +513,7 @@ Ce a rămas neapărat la rulare, și de ce:
 - **textele care depind de tipul coloanei** — sortarea se numește «A → Z» pe text și «de la mic la mare» pe numere (`KBotFilterEngine.SortCaption`), iar «Șterge filtrul din «X»» poartă numele coloanei;
 - **activarea lui «Șterge filtrul»** (stins fără filtru) și **existența butonului de condiții** (coloanele logice n-au submeniu — butonul se ASCUNDE, nu se stinge, ca să nu rămână un rând care nu duce nicăieri).
 
-**Deciziile n-au fost atinse.** Filtrul se predă la OK dintr-o COPIE (`Clone`), sortarea se aplică
-imediat și închide meniul, «tot bifat» ≠ filtru, «(Selectează tot)» atinge doar rândurile ARĂTATE, golul se numește «(Necompletate)» dar rămâne text vid în model, iar `_suppressDeactivate` ține meniul deschis cât timp submeniul de condiții e sus. Vechiul `KBotFilterPopupTests` a trecut NESCHIMBAT — el fixează tocmai deciziile, care n-aveau voie să se miște fiindcă s-a schimbat felul în care e desenat meniul.
+**Deciziile n-au fost atinse.** Filtrul se predă la OK dintr-o COPIE (`Clone`), sortarea se aplică imediat și închide meniul, «tot bifat» ≠ filtru, «(Selectează tot)» atinge doar rândurile ARĂTATE, golul se numește «(Necompletate)» dar rămâne text vid în model, iar `_suppressDeactivate` ține meniul deschis cât timp submeniul de condiții e sus. Vechiul `KBotFilterPopupTests` a trecut NESCHIMBAT — el fixează tocmai deciziile, care n-aveau voie să se miște fiindcă s-a schimbat felul în care e desenat meniul.
 
 ### 3. Defect găsit pe drum: `KBotTextField` nu ridica niciodată `TextChanged`
 
@@ -618,15 +559,13 @@ Cele 9 teste noi: lista e declarată în designer și umplută la rulare, căuta
 
 Raport de operator, după ce a autorat singur meniul de filtrare în designer (felia 0028-06):
 
-> i adjusted the design and it looks ok, but on modern theme, it adds a lot of padding to the
-> buttons, so the text is not visible anymore. when the modern theme is applied, it should adjust
-> the height of the buttons to fit the new padding AND the text
+> i adjusted the design and it looks ok, but on modern theme, it adds a lot of padding to the buttons, so the text is not visible anymore. when the modern theme is applied, it should adjust the height of the buttons to fit the new padding AND the text
 
 ### 1. Ce se întâmpla
 
 `BuiltInSchemes.Modern()` cere `ControlPadding = (12, 8, 12, 8)`, iar `ModernRenderer.ApplyButton` o scrie în `Button.Padding`. Umplutura NU e desenată în afara butonului — ea micșorează suprafața în care încape textul. Pe un buton autorat la 32px rămâneau `32 − 8 − 8 = 16px` pentru un rând de text care cere ~15–20px: textul se tăia sau dispărea de tot.
 
-Al doilea capăt al aceleiași greșeli, invizibil până acum: **umplutura nu se dădea niciodată înapoi**. `DetachButton` (chemat la ieșirea din schema modernă, din amândouă ramurile lui `ThemeManager` — `StylePalette` și `StyleSystem`) scotea handler-ele și regiunea rotunjită, dar lăsa `Padding = (12,8,12,8)` pe buton. Adică schema modernă rescria PERMANENT designul: după o singură trecere prin ea, butonul rămânea altfel și în Classic.
+**Paddingul nu era restaurat:** la ieșirea din Modern, `ThemeManager.StylePalette` și `StyleSystem` chemau `DetachButton`, care elimina handler-ele/regiunea rotunjită, dar păstra `Padding = (12,8,12,8)`. Modificarea persista astfel și în Classic.
 
 ### 2. Regula pusă în loc
 
@@ -759,23 +698,17 @@ Common 14/14 · Xfa 39/39 · LocalStore 1/1
 
 Cerere de operator, după ce selectorul de teme a mers o felie întreagă din `MainForm`:
 
-> add a new button ThemeButton, right-to-left: just after the minimize/maximize buttons (if
-> available, else after the close button) and will be built in the captionbar. it will do what the
-> mainform option button does now, but with functions built in the captionbar system. […] there
-> will be only one option (true/false) to enable this button. […] there should be another new
-> option: "Show Theme Editor" which will show / hide the last button in the popup (the theme editor)
+> add a new button ThemeButton, right-to-left: just after the minimize/maximize buttons (if available, else after the close button) and will be built in the captionbar. it will do what the mainform option button does now, but with functions built in the captionbar system. […] there will be only one option (true/false) to enable this button. […] there should be another new option: "Show Theme Editor" which will show / hide the last button in the popup (the theme editor)
 
 ### 1. Ce se întâmpla
 
 Meniul de teme era ÎN GAZDĂ. `MainForm` avea ~130 de rânduri care știau de `ThemeManager`, de literele de acces, de pictogramele schemelor, de garda `CustomPopup.ClosedJustNow`, de `ThemeEditorForm` și de `capBar.OptionButtonBounds` — iar bara de titlu nu ținea decât butonul gol și evenimentul lui. Al doilea formular cu bară de titlu ar fi trebuit să COPIEZE tot.
 
-Și chiar exista: `LoginForm` are `ShowOptionsButton = True` cu pictograma `switch_theme` și
-**niciun handler** — un buton care arată exact ca selectorul de teme și nu face nimic la clic.
+Și chiar exista: `LoginForm` are `ShowOptionsButton = True` cu pictograma `switch_theme` și **niciun handler** — un buton care arată exact ca selectorul de teme și nu face nimic la clic.
 
 ### 2. Ce s-a construit
 
-**`KBotCaptionBar.ThemeButton.vb`** (partial nou, lângă `KBotCaptionBar.vb`) — butonul și tot ce
-ține de el. Bara își face SINGURĂ meniul: `ShowThemeMenu()` construiește `CustomPopup`-ul, îl ancorează pe `ThemeButtonBounds`, comută schema prin `ThemeManager.SetScheme` și deschide `ThemeEditorForm` pentru rândul «Stiluri...». `ThemeEditorForm` e în `KBot.Controls`, deci nimic nou nu s-a mutat pentru asta.
+**`KBotCaptionBar.ThemeButton.vb`** (partial nou, lângă `KBotCaptionBar.vb`) — butonul și tot ce ține de el. Bara își face SINGURĂ meniul: `ShowThemeMenu()` construiește `CustomPopup`-ul, îl ancorează pe `ThemeButtonBounds`, comută schema prin `ThemeManager.SetScheme` și deschide `ThemeEditorForm` pentru rândul «Stiluri...». `ThemeEditorForm` e în `KBot.Controls`, deci nimic nou nu s-a mutat pentru asta.
 
 Proprietăți (toate cu `<DefaultValue>`, deci **niciun implicit nu ajunge scris în formularul gazdă**):
 
@@ -789,22 +722,17 @@ Proprietăți (toate cu `<DefaultValue>`, deci **niciun implicit nu ajunge scris
 | `ThemeButtonBounds` / `ThemeButtonActive` | — | Doar rulare: `<Browsable(False)>` + serializare ascunsă. |
 | Evenimentul `ThemeSchemeChanged` | — | Ridicat DUPĂ ce s-a aplicat schema. Gazda **nu** trebuie să reaplice nimic (`SetScheme` difuzează peste toate formularele deschise) — evenimentul e pentru ce e în PLUS. |
 
-**Pictogramele meniului** vin acum din `KBot.Controls\Resources.resx` (`ThemeClassic` / `ThemeDark`
-/ `ThemeModern` / `ThemeColorful` / `ThemeEditor` / `switch_theme`), nu din resursele lui `KBot.App` — controlul nu poate depinde de gazdă.
+**Pictogramele meniului** vin acum din `KBot.Controls\Resources.resx` (`ThemeClassic` / `ThemeDark` / `ThemeModern` / `ThemeColorful` / `ThemeEditor` / `switch_theme`), nu din resursele lui `KBot.App` — controlul nu poate depinde de gazdă.
 
-**Cheia rândului de editor e `@ThemeEditor`, nu «Stiluri».** O schemă de utilizator chiar s-ar
-putea numi «Stiluri», iar atunci alegerea ei ar fi deschis editorul în loc să comute tema (era posibil în varianta din `MainForm`).
+**Cheia rândului de editor e `@ThemeEditor`, nu «Stiluri».** O schemă de utilizator chiar s-ar putea numi «Stiluri», iar atunci alegerea ei ar fi deschis editorul în loc să comute tema (era posibil în varianta din `MainForm`).
 
 ### 3. Cele trei lucruri care s-au rupt pe drum și au fost reparate
 
-**(a) Sloturile.** Butonul de opțiuni își calcula slotul cu propria numărătoare (`1 + min + max`).
-Al doilea buton pe aceeași formulă ar fi stat FIX PESTE el. Acum există o singură numărătoare — `ThemeButtonSlot()` — iar opțiunile citesc `ThemeButtonSlot() + If(ShowThemeButton, 1, 0)`. Ordinea dreapta→stânga e: închidere, maximizare, minimizare, **temă**, opțiuni. Exact ce cerea cererea: «just after the minimize/maximize buttons (if available, else after the close button)».
+**(a) Sloturile.** Butonul de opțiuni își calcula slotul cu propria numărătoare (`1 + min + max`). Al doilea buton pe aceeași formulă ar fi stat FIX PESTE el. Acum există o singură numărătoare — `ThemeButtonSlot()` — iar opțiunile citesc `ThemeButtonSlot() + If(ShowThemeButton, 1, 0)`. Ordinea dreapta→stânga e: închidere, maximizare, minimizare, **temă**, opțiuni. Exact ce cerea cererea: «just after the minimize/maximize buttons (if available, else after the close button)».
 
-**(b) Titlul curgea pe sub butoane.** `TitleRightLimit()` nu se uita deloc la butonul de opțiuni
-(defect vechi, invizibil cât timp titlul era scurt). Acum limita e marginea celui mai din stânga buton VIZIBIL, oricare ar fi el.
+**(b) Titlul curgea pe sub butoane.** `TitleRightLimit()` nu se uita deloc la butonul de opțiuni (defect vechi, invizibil cât timp titlul era scurt). Acum limita e marginea celui mai din stânga buton VIZIBIL, oricare ar fi el.
 
-**(c) Sinkul `IPopupAnchor` nu mai are un singur client.** Interfața primește un bit — «s-a
-deschis un meniu» — și nu spune CARE buton l-a desfășurat. Bara ridică `_themeMenuOpening` chiar înainte de `ShowBelow` și îl consumă în `SetPopupOpen`: meniul de temă aprinde butonul de temă, orice altă deschidere (venită de la gazdă, prin butonul de opțiuni) aprinde butonul de opțiuni. Închiderea le stinge pe amândouă — un buton rămas aprins ar arăta un meniu care nu mai există.
+**(c) Sinkul `IPopupAnchor` nu mai are un singur client.** Interfața primește un bit — «s-a deschis un meniu» — și nu spune CARE buton l-a desfășurat. Bara ridică `_themeMenuOpening` chiar înainte de `ShowBelow` și îl consumă în `SetPopupOpen`: meniul de temă aprinde butonul de temă, orice altă deschidere (venită de la gazdă, prin butonul de opțiuni) aprinde butonul de opțiuni. Închiderea le stinge pe amândouă — un buton rămas aprins ar arăta un meniu care nu mai există.
 
 Desenul celor două butoane a fost pus pe aceeași funcție (`DrawImageButton`): sunt același obiect vizual, iar două desene paralele s-ar fi despărțit la prima reglare de umplutură.
 

@@ -4,9 +4,7 @@ Repere comune pentru etapele indicate: 09.10.2026 — ADE6-15, ADE6-19, ADE6-20.
 
 15 păstrează perioadele lună/an și excepția taxelor migrate fără date; 19 restrânge lățimea ferestrei, iar 20 extinde Escape la întregul rând nou înainte de prima confirmare și întărește validarea. După prima celulă confirmată, Escape anulează numai celula. Anularea unui draft reface taxa anterior activă. Regula pentru educatorii noi din 20 rămâne parte a aceleiași extensii DataGrid; [catalogul](SLICE-ADE6-01-cataloage.md) o folosește.
 
-- [ADE6-15](#slice-ADE6-15)
-- [ADE6-19](#slice-ADE6-19)
-- [ADE6-20](#slice-ADE6-20)
+[ADE6-15](#slice-ADE6-15) · [ADE6-19](#slice-ADE6-19) · [ADE6-20](#slice-ADE6-20)
 
 ## SLICE-ADE6-15 — taxe cu perioade lună/an <a id="slice-ADE6-15"></a>
 
@@ -20,14 +18,11 @@ O taxă nouă este activă implicit și primește propunerea lunii curente sau a
 
 ### Date migrate
 
-Conform precizării explicite, taxele migrate NU au date. DeLa/PanaLa sunt nullable; nu se impune început pentru rândurile existente fără dată, nu se inventează date istorice și nu se modifică importul/calculul pentru a le cere. Rândurile existente se pot edita și folosi fără perioade. Începutul se cere numai la creare prin catalog. Importul folosește validate_values, nu comanda de creare din catalog, și acceptă câmpurile lipsă/NULL. Taxa migrată activă poate primi sfârșitul calculat atunci când este adăugată o taxă nouă; începutul său rămâne necunoscut.
+**Taxele migrate nu au date**, conform precizării utilizatorului: DeLa/PanaLa rămân nullable, fără date istorice inventate sau schimbarea importului/calculului. Rândurile existente pot fi editate/folosite fără perioade; începutul este obligatoriu numai la crearea prin catalog. Importul folosește `validate_values` și acceptă lipsă/NULL. Adăugarea taxei noi poate închide taxa migrată activă, păstrându-i începutul necunoscut.
 
 ### Fișiere
 
-- PYTHON/static/js/dgv/editing.js, datagrid.js, engine.js; css/dgv.css.
-- PYTHON/static/js/adechit/catalogs.js și adechit.html (ajutor și mesaj ascuns).
-- PYTHON/routes/adechit/domain.py, schema.json, service.py.
-- sql/AD_04_taxe_perioade.sql; statusul ADE și acest worklog.
+PYTHON/static/js/dgv/editing.js, datagrid.js, engine.js; css/dgv.css. PYTHON/static/js/adechit/catalogs.js și adechit.html (ajutor și mesaj ascuns). PYTHON/routes/adechit/domain.py, schema.json, service.py. sql/AD_04_taxe_perioade.sql; statusul ADE și acest worklog.
 
 ### Predare și limite
 

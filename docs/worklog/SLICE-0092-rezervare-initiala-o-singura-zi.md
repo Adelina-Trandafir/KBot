@@ -22,8 +22,7 @@ Rezervarea inițială se citește ca UN eveniment, pus pe ULTIMA zi inițială a
 
 ## Fișiere atinse
 
-- `src/KBot.App/Views/RezervariView.vb`
-- `PYTHON/routes/forexe/ddf_edit.py`
+`src/KBot.App/Views/RezervariView.vb`; `PYTHON/routes/forexe/ddf_edit.py`
 
 ## Teste
 

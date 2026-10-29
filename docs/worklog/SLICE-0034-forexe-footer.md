@@ -1,6 +1,6 @@
 # SLICE-0034 — descărcarea FOREXE: bandă de subsol + consolă + descărcări din arbore
 
-Prima suprafață prin care operatorul chiar **vede și comandă** robotul FOREXE. Până acum exista un singur buton (`btnSinc`), progresul nu avea unde să se arate, jurnalul mergea doar în fișier, iar descărcarea unui angajament anume nu exista deloc (era un `MsgBox` «într-o felie viitoare»).
+Felia adaugă controlul vizibil al robotului FOREXE. Înainte exista doar `btnSinc`, fără progres în UI, cu jurnal numai în fișier; descărcarea unui angajament afișa MsgBox «într-o felie viitoare».
 
 Regula de fond a feliei: **tot ce se descarcă rămâne LOCAL** (memorie + JSON). Singura scriere pe server rămâne vechiul upsert al listei, mutat în meniul butonului de opțiuni.
 
@@ -8,7 +8,7 @@ Regula de fond a feliei: **tot ce se descarcă rămâne LOCAL** (memorie + JSON)
 
 ### `ForexeController` (`src/KBot.App/Forexe/ForexeController.vb`) — coordonatorul
 
-Singleton în DI, **singurul** care vorbește cu `IForexeRunner`. Ține sesiunea, progresul, starea, anularea, certificatul ales și depozitul de rezultate. Cele două suprafețe de UI sunt PROASTE: se abonează la `StateChanged` / `ProgressChanged` / `StatusChanged` și cheamă intențiile `ConnectAsync` / `DownloadListaAsync` / `DownloadNodeAsync` / `Cancel` / `ShowBrowserAsync`.
+Singleton DI și singur apelant `IForexeRunner`: ține sesiunea, progresul, starea, anularea, certificatul și rezultatele. Cele două suprafețe UI se abonează la `StateChanged` / `ProgressChanged` / `StatusChanged` și cheamă `ConnectAsync` / `DownloadListaAsync` / `DownloadNodeAsync` / `Cancel` / `ShowBrowserAsync`.
 
 `MainForm` a pierdut `EnsureForexeSessionAsync`, `SelectCertificate`, `HasLiveForexeSession` și `UpdateForexeStatus` — toate au intrat aici.
 
@@ -37,7 +37,7 @@ Lipseau la începutul feliei; le-a pus operatorul după raportul de la pasul 0.
 - tabele: `TabelIndicatori`, `BugetIndicator`, `ListaReceptii`, `Detaliu`, `TabelIstoric`
 - scalari (`<Read saveTo>`): `CodAngajament`, `DataAngajament`, `DataInceputDerulare`, `UltimaModificare`, `DescriereAngajament`, `StareAngajament`, plus per-recepție `TipReceptie`, `DescriereReceptie`, `CodIndicator`
 
-De aceea sinkul salvează **întreg `JobResult`-ul**, nu un tabel: `Tables` structurat + DOAR cheile din `Data` care n-au devenit tabele. Fără filtrul ăsta fiecare tabel s-ar scrie de două ori — o dată structurat, o dată ca șirul JSON brut din care a fost parsat.
+Sinkul salvează întreg `JobResult`: `Tables` structurat și numai cheile din `Data` care nu au devenit tabele. Astfel tabelul nu apare și structurat, și ca JSON brut.
 
 Cele două fișiere diferă **doar** la `ScrapeTable`-ul final de istoric (Reverse: `startFromLast="true"`, `lastPageSelector="a.last"`, `prevPageSelector="a.prev"`, `exitIfCellEquals="Timp:~:^{{DATA_IESIRE}}"`). Secțiunile 0–2 se re-citesc INTEGRAL în ambele — reverse-ul **nu e incremental** decât pentru istoric.
 
@@ -61,7 +61,7 @@ Echivalentul K-BOT al lui `DMax`: `IApiClient.GetIstoricAsync(cod, ct)` → `Ist
 
 ## 3. `KBot.Controls` — `FooterLeftIconClicked` (adăugare, nu schimbare)
 
-Planul presupunea că iconița din stânga subsolului e deja un buton. **Nu era.** `FooterLeftIcon` exista și se DESENA, dar nu avea nici dreptunghi, nici survolare, nici eveniment — spre deosebire de sora ei din dreapta. Adăugat, oglindind exact fratele existent:
+`FooterLeftIcon` se desena, dar nu avea dreptunghi, hover sau eveniment, contrar planului. Completarea oglindește iconița din dreapta:
 
 - `FooterLeftIconClicked` în `.Events.vb`
 - `ComputeFooterLeftIconRect` + `FooterLeftIconRect` în `.Footer.vb` (aceeași funcție pură pentru desen și hit-test — o a doua formulă ar fi o iconiță care se desenează unde nu se apasă)
@@ -74,7 +74,7 @@ Când iconița se vede, butonul de strângere **nu** e pe stânga (`ShowFooterLe
 ## 4. `MainForm`
 
 - `pnlStatus`: `lblProgram`, `lblForexe` și `btnSinc` ȘTERSE; `forexeFooter` andocat `Fill`, `lblOperator` păstrat (`Left`). **CodProgram nu mai are etichetă** — rămâne pe sesiune, de unde îl citește `JobBuilder`.
-- **Strângerea arborelui a dispărut din shell**: `tree_CollapsedChanged`, `ClampSplitter` și cele două câmpuri de stare a splitter-ului, șterse. Din designer au plecat `FooterCollapseButtonPosition`, `FooterCollapse*Image` și `MinimumCollapsedWidth`. *Observație:* `FooterCollapseButton` nu era setat pe True niciodată, deci butonul nici nu se desena — colțul din stânga era deja liber. Arborii din VEDERI își păstrează strângerea; asta a fost doar a shell-ului.
+- **Strângerea dispare numai din shell:** șterse `tree_CollapsedChanged`, `ClampSplitter`, două câmpuri splitter și valorile designer `FooterCollapseButtonPosition`, `FooterCollapse*Image`, `MinimumCollapsedWidth`. `FooterCollapseButton` nu fusese activat, deci colțul stâng era deja liber. Arborii vederilor păstrează strângerea.
 - `tree.FooterLeftIcon` = `database` (nu există glifă de descărcare în resurse; iconița de refresh era deja luată de subsolul-dreapta) → `DownloadListaAsync`.
 - `tree.RightIconClicked` (exista deja, ducea la `MsgBox`-ul `RefreshAngajament`) → `DownloadNodeAsync`.
 - Meniul butonului de opțiuni are rândul nou «&Sincronizare (server)» = descărcare prin coordonator
@@ -85,9 +85,9 @@ Când iconița se vede, butonul de strângere **nu** e pe stânga (`ShowFooterLe
 
 `RichTextBoxLogger` cere `RichTextBox`-ul la construcție și **nu expune nici buffer public, nici eveniment pe linie** (bufferul e privat). Deci varianta «oglindește un RichTextBox ascuns» nu era disponibilă fără a modifica logger-ul.
 
-Ales: consola se construiește **o singură dată, în `MainForm_Load`** (`EnsureConsole`), ÎNAINTE de logger, și rămâne ascunsă până o cere operatorul. Închiderea ferestrei o **ascunde** (`OnFormClosing` anulează), nu o distruge — altfel logger-ul ar rămâne cu un control eliberat în mână. Fișierul din `<AppDir>\Logs` se scrie ca înainte, indiferent dacă fereastra s-a deschis vreodată.
+Consola se creează o singură dată în `MainForm_Load` (`EnsureConsole`), înainte de logger, apoi stă ascunsă. `OnFormClosing` ascunde fără distrugere, păstrând valid controlul logger-ului. Fișierul `<AppDir>\Logs` se scrie indiferent de afișarea consolei.
 
-Starea executorului mergea până acum doar în jurnal; `ForexeRunner.OnExecutorStatus` o trimite acum ȘI prin evenimentul nou `IForexeRunner.StatusUpdated` (ridicarea e păzită separat: un abonat care aruncă nu are voie să oprească robotul). Tot pe interfață au urcat `HasLiveSession` (gazdele făceau `DirectCast` la clasă) și `ShowBrowserAsync`.
+`ForexeRunner.OnExecutorStatus` transmite starea, anterior doar logată, și prin noul `IForexeRunner.StatusUpdated`. Abonatul care aruncă este izolat de robot. `HasLiveSession` și `ShowBrowserAsync` intră și ele în interfață, eliminând `DirectCast` din gazde.
 
 ## 6. Fișiere atinse
 
@@ -121,7 +121,7 @@ Steagurile pornesc din **constructor, nu din designer**: pe suprafața de proiec
 
 ### Consola a primit același control
 
-Doar schimbarea de tip, ca să nu existe o bară tematizată și una nu pentru **același progres**. Vizibilitatea ei a rămas neschimbată (permanentă): e o fereastră dedicată, nu o bandă de status.
+Consola folosește același control tematizat pentru același progres; vizibilitatea rămâne permanentă, fiind fereastră dedicată.
 
 **Observație:** `ForexeFooterView.Designer.vb` și `ForexeConsoleForm.Designer.vb` fuseseră între timp deschise în designerul VS și **re-serializate** (dimensiuni, margini, `AutoScaleDimensions`) — adică dus-întorsul din §DoD 14 s-a făcut și **au supraviețuit**. Schimbările de aici sunt peste forma re-serializată de designer.
 

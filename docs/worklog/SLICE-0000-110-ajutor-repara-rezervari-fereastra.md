@@ -2,10 +2,7 @@
 
 68 documentează reparația inițială și ștergerea ultimei luni din istoric; 110 descrie previzualizarea; 120 adaugă legăturile greșite, poarta și tooltipul, iar 121 păstrează separat în același istoric regula programului și a treia nuanță de roșu. Cerințele diferite ale capturilor și limitele fiecărei etape sunt păstrate.
 
-- [0000-68](#slice-0000-68)
-- [0000-110](#slice-0000-110)
-- [0000-120](#slice-0000-120)
-- [0000-121](#slice-0000-121)
+[0000-68](#slice-0000-68) · [0000-110](#slice-0000-110) · [0000-120](#slice-0000-120) · [0000-121](#slice-0000-121)
 
 ## SLICE-0000-68 - help for the repair button, the red reservation rows and the history-month delete (12.10.2026) <a id="slice-0000-68"></a>
 
@@ -21,8 +18,7 @@ Work: see `SLICE-0092-01-rezervari-gresite-sterge-luna.md`.
 The «Repara...» button of the Rezervari view now opens a window with what was detected and what will be written. Help updated to say so.
 
 ### Files touched
-- `src/KBot.App/HelpContent/contabil/vederi/rezervari.md`, section «Rezervari gresite si repararea lor»: the bullet on «Repara...» describes the window (two tables, «Repara» / «Renunta»). Tag `0114-25, 0000-110`.
-- `src/KBot.App/HelpContent/tours/tur-rezervari.md`, step «Ribbon > Repara...»: same sentence. Same tag.
+`src/KBot.App/HelpContent/contabil/vederi/rezervari.md`, section «Rezervari gresite si repararea lor»: the bullet on «Repara...» describes the window (two tables, «Repara» / «Renunta»). Tag `0114-25, 0000-110`. `src/KBot.App/HelpContent/tours/tur-rezervari.md`, step «Ribbon > Repara...»: same sentence. Same tag.
 
 ### Test results
 `tools\HelpCheck\Check-Help.ps1`: the only message for these files was «0000-110 not in KBOT_STATUS» before the status row was added.
