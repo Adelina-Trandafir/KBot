@@ -38,8 +38,8 @@ Cele patru cazuri din brief:
 
 #### Trecerea (`KBotDataView.AutoSize.vb`, nou)
 - `PerformAutoSize()` rulează din `UpdateLayout`: măsoară (ToContent, sărind coloanele `UserSized`) apoi fill/shrink. Gardă de reintrare `_inAutoLayout` + oprire dacă `_updateDepth > 0` (se rulează o singură dată din `EndUpdate`). Dacă `None` + `None`, iese imediat (Caz 3 = zero atingeri).
-- **Disponibilul** este cel din `UpdateScrollBars`: `ClientSize.Width − bara verticală vizibilă`. Umplerea egalează viewport-ul, fără bară orizontală. Vizibilitatea barei verticale se decide prima numai din rânduri/înălțimea corpului, independent de lățimi, evitând circularitatea.
-- **Măsurare**: `TextRenderer.MeasureText` cu aceleași fonturi ca pictorul (antet semibold, corp ambient). Text/Combo/Button măsoară șirul FORMATAT (aplică `FormatString`); Combo adaugă zona de chevron; CheckBox/OptionButton folosesc cutia glifului + padding; ProgressBar păstrează lățimea caller-ului (antetul tot participă). Padding-ul e cel din pictură (6px corp, 8px antet, DPI-scalat).
+- **Disponibil** ca în UpdateScrollBars: ClientSize.Width − bara verticală vizibilă. Umplerea egalează viewport-ul fără bară orizontală. Bara verticală se decide întâi numai din rânduri/înălțimea corpului, independent de lățimi, evitând circularitatea.
+- **Măsurare:** TextRenderer.MeasureText cu fonturile pictorului (antet semibold/corp ambient). Text/Combo/Button folosesc șirul formatat prin FormatString; Combo adaugă chevron, CheckBox/OptionButton glif+padding. ProgressBar păstrează lățimea callerului, dar măsoară și antetul. Padding DPI-scalat din pictură: corp 6px, antet 8px.
 - **Proporțional:** `extra(i) = leftover · width(i) / total`; restul întreg merge integral la ultima coloană, fără gol de 1–2px. Surplusul unei coloane plafonate la `MaxWidth` se redistribuie celor neplafonate într-o singură trecere suplimentară, fără buclă la convergență.
 - **Micșorare la depășire cu umplere:** deficitul scade proporțional cu lățimea curentă din coloanele peste `MinWidth`. Cel mult `nrColoane` runde: fiecare converge sau fixează încă o coloană la minim.
 
@@ -61,10 +61,10 @@ Cele patru cazuri din brief:
 
 ### Compromisuri și limitări (de reținut)
 
-- **Eșantionare (`AutoSizeSampleRows`, implicit 200; 0 = toate):** măsurarea a 5.000×20 celule ar fi ~100k măsurători și ar rupe promisiunea O(viewport). Se măsoară antetul + primele `AutoSizeSampleRows` rânduri; o valoare mai lată mai jos va fi tăiată cu «…». Compromis deliberat — cine vrea exactitate pe grile mici setează 0 (Sumar are ~10 rânduri, deci 0 e gratis acolo).
+- **AutoSizeSampleRows**, implicit 200, 0=toate: antet + primele N rânduri. O valoare mai lată ulterior primește «…». 5.000×20 ar însemna ~100k măsurători, încălcând O(viewport); 0 oferă exactitate pe grile mici, gratuit pentru ~10 rânduri Sumar.
 - **`CellFormatting` NU se ridică la măsurare** (ar fi scump și reintrant). Consecință: un handler care rescrie `Text` poate produce un șir mai lat decât lățimea măsurată, care va ellipsiza.
 - **Fallback-ul onest la depășire:** dacă `sum(MinWidth) > available`, coloanele nu încap. Se micșorează tot la `MinWidth` și se arată TOTUȘI bara orizontală — textul care dispare complet e mai rău decât o bară pe care caller-ul n-a cerut-o.
-- **Fără back-reference coloană→grilă:** `KBotDataColumn` e un model „prost”, fără pointer la control, deci o schimbare programatică de `Width`/`MinWidth`/`MaxWidth`/`Visible`/`FormatString` DUPĂ încărcare nu declanșează singură o trecere. `AddColumn` declanșează; drag-ul declanșează; în rest caller-ul cheamă `AutoSizeColumns()` (sau se prinde la următorul eveniment de layout — resize/temă/EndUpdate). În practică coloanele se configurează complet imediat după `AddColumn`, deci punctele de declanșare reale sunt acoperite.
+- **Fără referință coloană→grilă:** schimbările Width/MinWidth/MaxWidth/Visible/FormatString după încărcare nu declanșează layout. AddColumn și dragul îl declanșează; altfel callerul cere AutoSizeColumns() sau așteaptă resize/temă/EndUpdate. În practică, configurarea completă imediat după AddColumn acoperă declanșările necesare.
 
 ### Verificare în harness (playground)
 

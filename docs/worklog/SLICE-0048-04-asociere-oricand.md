@@ -119,13 +119,13 @@ F13, F14 și F16 rămân vetouri în AMÂNDOUĂ căile: sunt absolute.
 * `GET /api/forexe/asociere?cod=…` — tabloul citit DIRECT din bază: amprentă, TOATE recepțiile, TOATE instantaneele (asociate, neașezate și marcate `Sters`), fiecare cu `blocat` + `motive`, plus plățile ca context.
 * `POST /api/forexe/asociere` — aplică un set **PARȚIAL** de comenzi, o singură fază, o singură tranzacție. Amprenta rămâne (două sesiuni pot edita același angajament).
 
-**Ancora e `IDRH`, nu `rand_istoric`.** Ingestia ancorează pe indicele din `TabelIstoric` (F24), deoarece id-urile propunerii dispar la rollback. Editorul nu are sarcină utilă sau rollback de propunere și folosește cheia reală.
+**Editor: IDRH real.** Ingestia folosește rand_istoric, indicele TabelIstoric (F24), fiindcă rollbackul propunerii invalidează ID-urile; editorul nu are payload/rollback de propunere.
 
 **Acoperirea NU e obligatorie**: o comandă omisă păstrează legătura. În ingestie, omiterea ar ascunde o alegere.
 
-A cincea acțiune, **`desprins`**, există doar aici: în ingestie nimic nu e încă atașat, deci nu e nimic de desprins. `ApiClient.CatreFir` o refuză explicit pe calea de ingestie, cu un mesaj care spune DE CE.
+**desprins**, a cincea acțiune, există numai aici: ingestia nu are încă legături de desprins. ApiClient.CatreFir o refuză explicit pe calea ingestiei, cu motiv.
 
-Cod nou: **409 `INSTANTANEU_BLOCAT`**. Cererea are formă validă, dar tabloul clientului poate fi învechit ori o ordonanțare poate apărea înaintea salvării. SERVERUL verifică blocajele chiar dacă formularul le cunoaște.
+**409 INSTANTANEU_BLOCAT:** cerere validă, dar tablou învechit/ordonanțare apărută înaintea salvării. Serverul reverifică blocajele, chiar dacă formularul le știe.
 
 Refolosite neschimbate din `prelucrare_asociere.py`: `amprenta`, `citeste_receptii`, `verifica_etichetele`, `materializeaza_reconstituite`, `valideaza_plasarile`, `recalculeaza_final`, `marcheaza_reconstituirile_nesigure`. Aliasul `rand_istoric = idrh` pe fiecare comandă e ce le face refolosibile fără să fie atinse.
 
@@ -147,8 +147,8 @@ D-K: tragerea aparține arborelui. `NodeDragOver` transmite acceptarea sau motiv
 
 * `DragEnabled` (implicit **False**, deci cele nouă vederi existente nu capătă comportament nou), `DragHighlightColor` / `DragForbiddenColor` (`Color.Empty` = din temă, cu perechea `ShouldSerialize`/`Reset` — altfel VS ar îngheța culoarea rezolvată în fiecare formular gazdă).
 * Trei evenimente: `NodeDragStarting` (gazda oprește rândurile care nu se mută), `NodeDragOver` (**`Allow` implicit False — refuzul e implicitul**), `NodeDropped`.
-* Se folosește `DoDragDrop` din WinForms: bucla modală dă gratis cursorul «nu se poate» și oprește corect la ESC. Efect secundar binevenit — `MouseUp` nu mai ajunge la control după o tragere, deci `ClickDelayTimer` nu pornește și aruncarea nu se mai citește ȘI ca un clic.
-* **Nodul tras se ia din OBIECTUL DE DATE, nu din câmpul propriu.** La tragerea între doi arbori, `_dragSource` e completat doar pe controlul care a pornit tragerea; ținta e altul și l-ar vedea gol. A fost prima greșeală a implementării, prinsă înainte de a fi scrisă în teste.
+* DoDragDrop WinForms oferă bucla modală, cursorul interzis și oprirea ESC. MouseUp nu mai ajunge după drag, deci ClickDelayTimer nu pornește și dropul nu devine și clic.
+* **Sursa din obiectul de date:** _dragSource aparține arborelui sursă și rămâne gol în țintă la drag între controale. Această primă greșeală a fost prinsă înainte de teste.
 * Controlul **NU mută nodul** — ridică evenimentul și atât. Arborele e o proiecție a datelor; o frunză mutată local ar arăta o legătură pe care nimeni nu a scris-o.
 * Chenarul se desenează și la REFUZ, deliberat: un rând care nu răspunde deloc s-ar citi ca «arborele nu m-a văzut».
 
@@ -162,7 +162,7 @@ dreapta sus   instantaneele neașezate          (Access: _LISTA_HN)
 dreapta jos   liniile rândului selectat        (Access: _LISTA_RH)
 ```
 
-Combo-ul de așezare din `_LISTA_HN` și butonul de desprindere din `_LISTA_HA` se contopesc într-o singură mișcare: tragi la stânga ca să așezi, tragi la dreapta ca să desprinzi. Meniul contextual poartă cele două marcaje pe care tragerea nu le poate exprima (F17 «nu consemnează nicio schimbare» și F21 «este rândul de ștergere»).
+Combo _LISTA_HN și desprinderea _LISTA_HA devin drag: stânga așază, dreapta desprinde. Meniul păstrează gesturile neexprimabile prin drag: F17 «nu consemnează nicio schimbare», F21 «este rândul de ștergere».
 
 **O singură salvare, la sfârșit** (D-H): tragerile schimbă doar tabloul local, iar `Comenzi()` trimite DOAR ce diferă de ce s-a citit. Închiderea cu modificări nesalvate cere confirmare (D-D).
 
@@ -170,7 +170,7 @@ Arborele se reconstruiește după fiecare mișcare din tabloul local; mutarea se
 
 ### 3.6 Legarea — `ReceptiiView` + `MainForm`
 
-Iconița din **antetul** arborelui de recepții (`HeaderRightIcon`, liberă până acum — subsolul avea deja reîncărcarea la dreapta și strângerea la stânga), cu etichetă românească autorată în `.Designer.vb`. `MainForm.DeschideLegaturileReceptiilor` o deschide **modal** (D-I) și reîncarcă recepțiile după o salvare.
+HeaderRightIcon liber din antetul recepțiilor primește etichetă românească în Designer (subsolul avea refresh dreapta/strângere stânga). MainForm.DeschideLegaturileReceptiilor deschide modal (D-I) și reîncarcă după salvare.
 
 `ReceptiiView` primește acțiunea ca parametru **opțional**; când lipsește, iconița se STINGE, nu rămâne un buton care nu face nimic.
 

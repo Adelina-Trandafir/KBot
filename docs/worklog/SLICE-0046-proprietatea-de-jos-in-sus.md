@@ -13,9 +13,7 @@ Fișierul viu are **9 FX_DDF**, citite de două ori pentru cele două unități 
 
 ### Cele două defecte, amândouă confirmate în sursă
 
-**Defectul A — poarta părintelui nu s-a armat niciodată.** `PrimaryKeyColumn` întoarce `Nothing`
-când cheia primară are mai multe coloane. `FX_DDF` era `PRIMARY KEY (IDDF, CUAL)`, deci `RecordPrimaryKey` cădea pe `If String.IsNullOrEmpty(primaryKey) Then Return` și nu înregistra nimic; `WrittenKeys.Tracks("FX_DDF")` rămânea `False`; iar prima linie din `ParentsTravelled` — `If Not _written.Tracks(link.ParentTable) Then Continue For` — arunca legătura spre `FX_DDF` pentru **fiecare** copil care arată spre el: `FX_DDF_REV`, `FX_ORD`, `tblDocFund_Revizii_Clsf`. `FX_DDF_REV_SA` și `_SB` au scăpat doar fiindcă 0045-07 le dăduse un `OwnedVia` explicit.
-**Tăcerea era defectul, nu `Nothing`-ul.**
+**Defectul A — poarta părintelui inertă.** Pentru PK compus (FX_DDF: IDDF,CUAL), PrimaryKeyColumn dă Nothing; RecordPrimaryKey iese prin `If String.IsNullOrEmpty(primaryKey) Then Return`. WrittenKeys.Tracks("FX_DDF") rămâne False, iar ParentsTravelled sare legătura prin `If Not _written.Tracks(link.ParentTable) Then Continue For`: afectate FX_DDF_REV, FX_ORD, tblDocFund_Revizii_Clsf. FX_DDF_REV_SA/_SB aveau OwnedVia explicit din 0045-07. **Defectul era tăcerea, nu Nothing.**
 
 **Defectul B — calea „coloană nulabilă" număra o golire pe care n-o făcea.** În `ParentsTravelled`:
 
@@ -51,16 +49,13 @@ Citirea folosește coloane numite prin noul `AccessSchema.OpenKeyReader`, evitâ
 
 **O trecere/fișier:** 11/13 rânduri cai indică același FX_2026.accdb, anterior recitit pentru fiecare unitate bifată. Apartenența la mulțimea selectată se decide o dată/rând; dispare și dubla RowsWritten rămasă din 0045-07.
 
-**Nomenclatoarele NU se grupează**, deliberat. Fiecare unitate are propriul `baza2026.accdb`
-(verificat pe registrul viu: treisprezece unități, treisprezece căi distincte, niciuna comună), iar rândurile alea n-au deloc `IdUnitate` — **fișierul E unitatea**. Dacă două rânduri `cai` ar arăta vreodată spre UN singur fișier de nomenclatoare, gruparea le-ar lăsa fără unitate și ar opri rularea, unde scrierea acelorași clasificații o dată per unitate e o citire apărabilă și e comportamentul tuturor feliilor de până acum. Negruparea nu costă nimic — căile sunt oricum distincte — și refuză să transforme o formă neprobată într-un refuz.
+**Nomenclatoarele nu se grupează:** fișierul baza2026.accdb este unitatea, fără IdUnitate pe rând. Registrul viu a confirmat 13 unități/13 căi distincte. Dacă două cai ar indica același fișier, gruparea ar pierde unitatea și ar opri rularea; citirea/scrierea clasificațiilor per unitate păstrează comportamentul anterior. Pe căile distincte nu costă suplimentar și nu refuză o configurație neprobată.
 
 #### Cele două porți noi
 
-**`CHEIE_PARINTE_NEURMARITA` (Blocant, D13).** Pentru fiecare tabel din setul de scriere care e
-părintele altuia din același set, cheia pe care o va înregistra trebuie să fie determinabilă. Dacă nu e, rularea se oprește **numind amândouă tabelele și constrângerea**. Poarta asta ar fi prins defectul A înainte de primul rând scris, și rămâne folositoare după schimbarea de schemă.
+**CHEIE_PARINTE_NEURMARITA (Blocant, D13):** fiecare părinte din setul de scriere trebuie să aibă cheia înregistrabilă determinabilă; altfel oprire cu ambele tabele și constrângerea numite. Ar fi prins defectul A înaintea scrierii; protecția rămâne după schimbări de schemă.
 
-**`COD_FISCAL_LIPSA` (Blocant, D15).** Extrasele se aleg pe codul fiscal din numele fișierului
-(D8), citit din registrul VBA per DC (D9). Lipsă din registry **și** casetă goală = oprire, cu DC-ul numit. Potrivirea tăcută a nimicului ar arăta exact ca „fișierul n-are extrase pentru noi".
+**COD_FISCAL_LIPSA (Blocant, D15):** codul fiscal pentru alegerea extraselor după nume (D8) vine din registry VBA per DC (D9). Absent și casetă goală → oprire cu DC-ul numit, evitând falsul „fișierul n-are extrase pentru noi”.
 
 #### `ParentsTravelled` chiar golește acum (D14)
 
@@ -150,9 +145,9 @@ D15: DC fără cod fiscal + casetă goală ▸ **Blocant**, 0 extrase. D16: acee
 
 ### Abateri de la plan, și de ce
 
-1. **`OwnershipPlan` se construiește în `Verifier` și se PREDĂ lui `TransferRunner`**, care îl cere în constructor și refuză `Nothing`. Planul (§5.4) cere un singur loc de construcție; asta îl dă literal, și în plus dă garanția din §3 — „selecția se rezolvă o dată și se refolosește neschimbată" — fiindcă ce i s-a arătat operatorului e chiar ce se scrie. Merge fiindcă «Transferă» e activat doar de o verificare trecută. `MigratorForm` golește planul de fiecare dată când «Transferă» se dezactivează, ca unul învechit să nu supraviețuiască verificării care l-a justificat.
-2. **`selected` = unitățile BIFATE**, nu toate unitățile DC-ului. Pseudocodul din §3 scrie „every IdUnitate of the DC being written", dar citirea aia intră în conflict cu decizia D2 din 0045 („operatorul alege unitatea") și s-ar auto-sabota: rândurile `FX_ORD_TBL` sunt toate ale unității 76, deci cu doar 75 bifată ar călători și n-ar avea nomenclator pe care să-și rezolve `IdClsf` — Blocant garantat. Titlul lui D4 („o bază ține toate unitățile DC-ului") e o observație despre **țintă**, iar consecința cerută — colapsarea buclei — se obține întreg cu bifele.
-3. **O constatare în plus, neceruta de plan:** cod fiscal setat care nu potrivește **niciun** fișier ▸ `COD_FISCAL_LIPSA` la **Atenție**. E chiar raționamentul lui D15 cu un pas mai departe: 0 din 72 arată identic cu „n-avem extrase aici", iar operatorul nu poate distinge. Atenție și nu Blocant, fiindcă un fișier care chiar ține extrasele altcuiva e o formă reală.
+1. **OwnershipPlan construit în Verifier, predat TransferRunner**, obligatoriu în constructor (Nothing refuzat). Respectă construcția unică §5.4 și selecția calculată o dată/refolosită neschimbată §3: planul arătat operatorului este cel scris. Transferă se activează numai după verificare trecută; MigratorForm golește planul la dezactivare, evitând reutilizarea unuia învechit.
+2. **selected = unitățile BIFATE**, potrivit D2 din 0045, deși pseudocodul §3 spune «every IdUnitate of the DC being written». Cu numai 75 selectată, interpretarea tuturor unităților ar trimite FX_ORD_TBL ale lui 76 fără nomenclator pentru IdClsf, garantând Blocant. D4 «o bază ține toate unitățile DC-ului» descrie ținta; colapsarea buclei funcționează integral cu selecția bifată.
+3. **Constatare suplimentară planului:** cod fiscal completat fără niciun fișier potrivit → COD_FISCAL_LIPSA, Atenție. Zero din 72 ar părea lipsa extraselor (rațiunea D15), dar nu este Blocant: fișierul poate conține realmente extrasele altcuiva.
 4. **`OwnershipPlan.NameCarriesCodFiscal` e `Public`, nu `Friend`.** E toată decizia D8 într-o funcție pură, fără stare și fără fișier în spate — singura bucată verificabilă separat, și primul lucru pe care ar trebui să-l fixeze un proiect de teste.
 
 ### Neverificat / amânat

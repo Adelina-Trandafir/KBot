@@ -194,8 +194,8 @@ Indicii de model și pozițiile de vedere sunt numerotări distincte, care nu se
 
 Alte două alegeri:
 
-- **Reconstrucție leneșă** (`_viewDirty` + `EnsureView`): în încărcarea `BeginUpdate`/`EndUpdate`, harta rămasă în urmă ar putea indexa în gol la o pictare intermediară. `RecomputeFooter` devine **`RecomputeDerived`** și marchează harta murdară înaintea gărzii `BeginUpdate`.
-- **Sortare stabilă**: `List.Sort` nu e stabilă, deci comparatorul cade la egalitate pe indexul de model. Fără asta, două rânduri egale și-ar schimba locul la fiecare resortare.
+- **Leneș, `_viewDirty`/EnsureView:** harta veche poate indexa în gol la pictare între BeginUpdate/EndUpdate. RecomputeFooter devine RecomputeDerived și marchează harta murdară înaintea gărzii BeginUpdate.
+- **Stabilitate:** Comparatorul rupe egalitățile prin indexul de model, deoarece List.Sort nu este stabilă; rândurile egale păstrează ordinea la resortare.
 
 Ce s-a mutat pe rândurile vizibile, și de ce:
 
@@ -208,17 +208,17 @@ Ce s-a mutat pe rândurile vizibile, și de ce:
 | Săgețile sus/jos | pas în model | pas în vedere („rândul desenat sub acesta”) |
 | `KBotAggregate.Last` | ultimul din model | ultimul de pe ecran (sub o sortare nu mai e același) |
 
-Selecția: dacă rândul curent e filtrat afară, se abandonează editarea deschisă și selecția cade (`DropSelectionIfHidden`) — o selecție pe un rând invizibil ar muta săgețile și editarea în gol.
+DropSelectionIfHidden anulează editarea și selecția rândului filtrat afară, evitând navigarea/editarea pe rând invizibil.
 
 ### 3. Butonul de filtrare — **pe coloană** (`KBotDataColumn` + `KBotDataView.FilterIcon.vb`)
 
-Prima variantă a feliei avea steagul pe GRILĂ (`KBotDataView.ShowColumnFilter`) plus un comutator de excludere pe coloană. **Operatorul a cerut invers**: se hotărăște COLOANĂ CU COLOANĂ, în designer. Cele patru proprietăți stau acum pe `KBotDataColumn`, lângă celelalte pictograme de antet ale coloanei — `ShowColumnFilter` (implicit False), `ColumnFilterIcon`, `ColumnFilterIconSize` (16×16), `ColumnFilterHoverColor` — toate cu perechea `ShouldSerialize`/`Reset`, verificată în teste **prin `TypeDescriptor`**, calea pe care o ia chiar Visual Studio. `Filterable` și `FilterIconReserve` au DISPĂRUT: coloana știe acum totul singură, deci grila n-are ce să-i mai împingă.
+Operatorul a inversat prima variantă (steag ShowColumnFilter pe grilă și excludere per coloană). Acum KBotDataColumn deține ShowColumnFilter (False implicit), ColumnFilterIcon, ColumnFilterIconSize (16×16), ColumnFilterHoverColor, lângă iconițele antetului; fiecare cu ShouldSerialize/Reset, verificat prin TypeDescriptor ca în VS. Filterable/FilterIconReserve sunt eliminate: fără împingere din grilă.
 
-**Interzis pe `Button` și `ProgressBar`.** Acelea nu poartă o valoare pe care s-o cauți — o celulă buton arată o comandă, una de progres o fracțiune desenată; o listă de valori distincte peste ele ar fi o listă de nimic, iar «sortează A → Z» n-ar avea ce ordona. Aprinderea **ARUNCĂ**, nu se stinge tăcut: un buton care nu apare unde a fost cerut e chiar no-op-ul tăcut interzis de regula casei. Perechea se apără din **amândouă** direcțiile (inclusiv la schimbarea tipului sub un filtru deja aprins), cu aceeași amânare în `BeginInit`/designer ca perechea `ValueType × Aggregate` — designerul emite proprietățile în ordinea LUI, iar o excepție în `InitializeComponent` ar închide formularul cu totul — și cu verificarea finală în `ValidateSettled`, la `EndInit`. `FilterEnabled` (steag ȘI tip) e ce citesc pictarea și hit-testul, ca în designer să nu se deseneze un buton pe care `EndInit` apoi îl refuză.
+**Filtru interzis pe Button/ProgressBar:** comenzile/progresul desenat nu oferă valori distincte de căutat/sortat. Activarea aruncă, fără dezactivare tăcută; protecția funcționează și la schimbarea tipului cu filtru activ. Ca ValueType × Aggregate, BeginInit/designer amână excepția până la ValidateSettled/EndInit, respectând ordinea proprietăților emise. Desenul și hit-testul folosesc FilterEnabled (steag ȘI tip), fără buton care ar fi refuzat la EndInit.
 
 - **Stă mereu în același loc** — capătul din dreapta al celulei de antet — iar `HeaderRightIcon` se mută la stânga lui. Niciunul dintre cele două nu se sacrifică la îngustare: amândouă se apasă.
 - **Podeaua de lățime**: `HeaderIconsWidth` numără acum trei piese și spațiile dintre ele, direct din starea coloanei.
-- **Fără imagine dată, se DESENEAZĂ**: o pâlnie trasată din culoarea temei, **plină și în accent cât timp coloana chiar e filtrată**, doar conturată altfel. Așa antetul spune dintr-o privire care coloane sunt filtrate — jumătate din rostul semnului — fără nicio resursă imagine.
+- **Fără imagine:** pâlnie desenată în culoarea temei; plină/accent numai cu filtru activ, contur altfel, indicând starea fără resursă imagine.
 
 `SumarView.Designer.vb` fusese deja autorat în designerul VS cu forma veche (`grid.ShowColumnFilter = True` + `grid.ColumnFilterIcon = My.Resources.Resources.filter`); a fost mutat pe cele șapte coloane ale vederii, păstrând exact comportamentul autorat.
 
@@ -233,9 +233,9 @@ Prima variantă a feliei avea steagul pe GRILĂ (`KBotDataView.ShowColumnFilter`
 
 Alegeri deliberate:
 
-- **Sortarea se aplică IMEDIAT și închide meniul; filtrul se predă abia la OK.** Sortarea e o comandă, nu o alegere de confirmat — exact ca în Access. Popup-ul lucrează pe o COPIE a filtrului (`Clone`), deci «Anulează» și Esc nu lasă nimic în urmă.
+- **Sortare imediată, cu închiderea meniului; filtru numai la OK**, ca Access. Clone păstrează modificările locale până la confirmare; Anulează/Esc le abandonează.
 - **«Toate bifate» = nicio restricție** (`SelectedValues` rămâne `Nothing`), altfel filtrul ar rămâne activ pentru totdeauna și antetul ar arăta coloana ca filtrată degeaba.
-- **Lista distinctă se calculează peste rândurile care trec de filtrele CELORLALTE coloane**, dar ignoră filtrul coloanei ÎNSEȘI: altfel, odată bifată o valoare, celelalte ar dispărea din listă și nimeni nu s-ar mai putea răzgândi.
+- **Valorile distincte** respectă filtrele celorlalte coloane, nu pe cel propriu: toate alternativele rămân accesibile după o bifare.
 - **Golul are eticheta lui**, «(Necompletate)», dar în model rămâne textul vid — o etichetă strecurată în model ar filtra la fel și o coloană care chiar conține textul acela.
 - Singurul control-copil adevărat e caseta de căutare (`KBotTextField`, `IThemedControl`), fiindcă text tastat cere un control care știe să primească taste. Popup-ul e el însuși `IThemedControl`, deci traversarea temei nu-i calcă interiorul — regula care a mușcat deja de două ori.
 - `_suppressDeactivate` cât timp submeniul e sus: pierderea activării atunci nu înseamnă «s-a dat clic în altă parte», înseamnă «se uită la copil».
@@ -264,7 +264,7 @@ If themed IsNot Nothing Then
 End If
 ```
 
-Oprirea proteja interiorul unui control auto-tematizat de reguli GENERICE (`Panel`, `TextBox` intern din `KBotTextField`). Dar toate cele șase vederi reale implementează `IThemedControl` și conțin direct `Controls.Add(grid)`: grilele nu mai primeau schema și rămâneau implicite. Pe banc, grila direct pe formular primea tema, mascând cauza.
+Oprirea proteja controalele interne de reguli generice (Panel/TextBox din KBotTextField), dar toate cele șase vederi reale IThemedControl conțin direct Controls.Add(grid). Grila nu mai primea tema; pe banc, găzduirea directă în formular masca defectul.
 
 Comentariul din `SumarView.ApplyTheme` chiar spunea premisa pe dos («grila NU se atinge aici: `ThemeManager.Traverse` ajunge la el»), ceea ce a ținut bug-ul ascuns.
 
@@ -333,7 +333,7 @@ Exista `KBotDataColumn.AutoSizeMode` (câmp, proprietate, `Owner?.OnColumnAutoSi
 
 ### 1. Decizia care trebuia luată înainte de cod: ce înseamnă „precedență”
 
-Implicitul inițial al coloanei, `KBotAutoSizeMode.None`, combinat cu precedența ar opri orice măsurare, deși grila are `AutoSizeColumnsMode = ToContent`. Cele cinci gazde care îl setează explicit (`DdfFileBrowser`, `XfaXmlPreview`, Plăți, Rezervări, Recepții) ar pierde dimensionarea fără altă schimbare.
+Precedența ar transforma implicitul coloanei None în oprirea măsurării chiar cu grila ToContent. Cele cinci gazde care setează explicit ToContent (DdfFileBrowser, XfaXmlPreview, Plăți, Rezervări, Recepții) ar pierde dimensionarea fără altă schimbare.
 
 **`KBotAutoSizeMode.Inherit = -1`** devine implicitul COLOANEI: hotărăște grila dacă nu există alegere explicită, ca sentinela `Color.Empty` pentru temă din 0027.
 
@@ -358,9 +358,9 @@ End Function
 Două schimbări în pas:
 
 - **Pasul 1 (măsurarea) întreabă per coloană**, nu o dată pe grilă. `If _autoSizeMode = ToContent` de dinaintea buclei a devenit un `If EffectiveAutoSizeMode(c) <> ToContent Then Continue For` ÎN buclă, lângă garda de `UserSized`.
-- **Poarta de la intrarea în `PerformAutoSize` s-a mutat de pe grilă pe coloane.** Înainte era «grila e pe None ȘI n-avem umplere ȘI n-avem auto-hide ⇒ ieși». Acum se întreabă și `AnyColumnSizesToContent()`, altfel o coloană care cere singură măsurarea, pe o grilă manuală, n-ar fi fost măsurată niciodată — adică fix aranjamentul pentru care există proprietatea. (Poarta ignoră coloanele ascunse și pe cele trase de operator: pe acelea pasul oricum nu le atinge, deci o pornire pentru ele ar fi muncă degeaba.)
+- **Garda PerformAutoSize** nu mai iese la grilă None/fără umplere/fără auto-hide dacă AnyColumnSizesToContent() găsește o coloană, permițând coloanei ToContent să fie măsurată pe grilă manuală. Ignoră ascunsele și UserSized, pe care măsurarea oricum nu le atinge.
 
-**Precedența acoperă DOAR măsurarea.** `ColumnFillMode` e alt buton și rămâne așa: umplerea / strâmtarea trec în continuare peste toate coloanele vizibile, inclusiv peste una fixată pe `None` — exact regula care se aplică deja unei coloane trase cu mouse-ul (`UserSized`), pe care măsurarea o sare, dar umplerea o mișcă. O coloană care nu are voie să se miște deloc se prinde în cuie cu `MinWidth = MaxWidth`, unde clamparea o ține. Regula asta e scrisă acum și în capul fișierului, în locul TODO-ului.
+**Precedență numai la măsurare.** ColumnFillMode păstrează umplerea/strâmtarea tuturor coloanelor vizibile, inclusiv None/UserSized, sărite numai de măsurare. MinWidth = MaxWidth fixează complet coloana prin clampare. Regula înlocuiește TODO-ul din antet.
 
 **Precedența e față de GRILĂ, nu față de operator**: `UserSized` bate în continuare tot, iar `ResetColumnSizing()` e cel care redă coloana măsurării.
 

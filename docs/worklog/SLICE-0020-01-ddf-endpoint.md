@@ -108,16 +108,16 @@ Each has a test pinning it.
 
 ## SLICE-0020-03 — client: two DDF preview surfaces <a id="slice-0020-03"></a>
 
-Pass 3 of slice 0020 (vederea DDF), per `PLAN_DdfView.md` §6 and §11. **Both** preview implementations are built here; neither is dead code that "will be finished later". Selection is one compile-time constant in `DdfPreviewFactory` — deliberately **no runtime switch**.
+Pass 3, PLAN_DdfView §6/§11: both preview implementations are complete here. DdfPreviewFactory selects through one compile-time constant, deliberately without runtime switching.
 
 ### What changed and why
 
 - **`IDdfPreview`** (contract): `Surface`, `ShowDocument(pdfPath, exists)`, `Clear()`, `GenerateRequested`. `DdfView` knows nothing about Adobe, XFA, or window handles.
 - **`DdfPreviewMode` + `DdfPreviewFactory`**: `Private Const Mode = DdfPreviewMode.XfaXml` (default) and a `Select Case`. Change the constant, rebuild — §11 to the letter.
-- **`XfaXmlPreview`** (default, option C): renders from the XFA XML — sibling `.xml` first (`Path.ChangeExtension(pdf, ".xml")`), else `PdfXmlExtractor.TryExtract` on the PDF (which already handles raw and `FlateDecode`). Three states: content (a header of antet fields, a `KBotDataView` of section-A lines, a note), the missing-document surface, and a message. Not pixel-identical to the printed PDF — the accepted trade (§6), the only option that needs no second process.
-- **`DdfXfaModel` + `DdfXfaParser`** (pure, testable): parse the `form1` tree namespace-agnostically (by local-name), so it reads both the bare `form1` the builder emits and the `xdp:xdp/xfa:data/form1` embedded in a PDF. It skips the dummy first `Row1` exactly as the Access machete's JS does. **This is the one part of the pass that can be unit-tested.**
-- **`ReaderHostPreview`** (backup, option A): `Process.Start` the PDF, poll `EnumWindows` for a top-level Adobe window (class contains `Acrobat`) whose title contains the file's base name, bounded by an 8 s timeout, then `SetParent` it into a host panel with `WS_CAPTION`/ `WS_THICKFRAME`/`WS_POPUP` cleared and `WS_CHILD` set, re-laid on resize. On dispose and on every document change it restores the original parent/style and closes the process it started, so no orphaned Reader is left. If the window is not found in time it falls back to a plain `Process.Start` and says so. `GetWindowLongPtr`/`SetWindowLongPtr` are dispatched 32/64-bit-safe.
-- **`DdfView`** mounts `DdfPreviewFactory.Create()` into `pnlPreview`, subscribes `GenerateRequested`, cascades the theme to the surface, and `Clear()`s the preview on a root click / on context clear.
+- **XfaXmlPreview**, default C: sibling XML (`Path.ChangeExtension(pdf, ".xml")`), otherwise PdfXmlExtractor.TryExtract from PDF (raw/FlateDecode). States: content (antet header, section-A KBotDataView, note), missing document, message. Accepted §6 trade: not print-identical, but requires no second process.
+- **DdfXfaModel/DdfXfaParser**, pure: local-name parsing accepts bare builder form1 and embedded xdp:xdp/xfa:data/form1, skipping dummy first Row1 like the Access machete JS. Recorded as this pass only unit-testable part.
+- **ReaderHostPreview**, backup A: Process.Start PDF; EnumWindows polls ≤8s for top-level class containing Acrobat/title containing file basename. SetParent into panel, clear WS_CAPTION/WS_THICKFRAME/WS_POPUP, set WS_CHILD; relayout on resize. Dispose/document change restores parent/style and closes the started process, avoiding orphaned Reader. Timeout falls back to plain Process.Start with explanation. GetWindowLongPtr/SetWindowLongPtr dispatch safely on 32/64 bits.
+- **DdfView:** mounts DdfPreviewFactory.Create() in pnlPreview, subscribes GenerateRequested, cascades theme; root/context clear calls preview.Clear().
 
 #### The DDF element set was derived from the module source, not the repo sample
 
@@ -146,9 +146,9 @@ Pass 3 of slice 0020 (vederea DDF), per `PLAN_DdfView.md` §6 and §11. **Both**
 Two operator requests on the DDF view:
 
 1. **Selecting a file in «Fișiere» no longer reverts to «Vizualizare».** That page is the XFA-XML *reconstruction*, not the chosen file — jumping there on a file click was confusing.
-2. **A dedicated tab shows the actual PDF.** Added a fourth sub-nav page **«Document»** (order: Valori · Vizualizare · Document · Fișiere) hosting a **`ReaderHostPreview`** instance (`_pdfPreview`) — always the real-PDF surface, independent of the compile-time `DdfPreviewFactory` (which still drives «Vizualizare» = `XfaXmlPreview`). So both preview surfaces now coexist as separate tabs, neither dead code.
+2. **Actual PDF tab:** fourth sub-nav page Document, order Valori · Vizualizare · Document · Fișiere. It hosts ReaderHostPreview `_pdfPreview` independently of DdfPreviewFactory, which still selects XfaXmlPreview for Vizualizare. Both surfaces coexist, neither dead.
 
-Flow: `OnFileActivated` routes the real PDF to «Document» and switches to it (not «Vizualizare»); a leaf click in the tree sets the «Document» target too. **Lazy by design** — `ShowPdfSurface` mounts the PDF (and possibly launches Adobe) **only when «Document» is the visible page**, guarded by `_pdfShownPath` so switching pages doesn't re-embed the same file. `SetPdfTarget`/`ClearPdfTarget` carry the current path + on-disk existence; generation forces a re-mount (existence changed). `ClearAll`, root-node clicks and the theme cascade all reach `_pdfPreview`.
+OnFileActivated routes PDF to Document and switches there; tree leaf also sets its target. Lazy ShowPdfSurface mounts/possibly launches Adobe only while Document is visible; `_pdfShownPath` prevents repeated embedding. SetPdfTarget/ClearPdfTarget carry path/existence; generation forces remount after existence changes. ClearAll/root clicks/theme cascade also reach `_pdfPreview`.
 
 Tests: `View_MountsFileBrowser_AndBothPreviews` (now also asserts a `ReaderHostPreview` is mounted) and `FileActivated_RoutesToDocumentPage_NotVizualizare` (was `…RoutesToPreview_AndSwitchesToVizualizarePage`). A missing file shows `ReaderHostPreview`'s "document lipsă" state without launching Adobe, so the STA tests stay headless-safe. Full .NET suite 436 green.
 

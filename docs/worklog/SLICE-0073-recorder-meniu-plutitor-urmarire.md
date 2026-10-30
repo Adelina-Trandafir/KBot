@@ -15,20 +15,20 @@ Gazdele și andocarea sunt în [0053/0070/0074](SLICE-0053-recorder.md). Legarea
 #### 1. Cele două moduri ale recorderului (`RecorderForm`)
 
 - `ViewOnly = True` («Arată browserul») **strânge** panoul din dreapta (`splitMain.Panel2Collapsed`), nu-l mai dezactivează: pagina are toată fereastra. `ViewOnly = False` («Recorder») îl desface. Comutarea cere o resincronizare a browserului andocat (`ScheduleResync`), fiindcă strângerea nu ridică `SplitterMoved`.
-- Toate butoanele din panoul din dreapta, la orice adâncime (`ButtonsUnder`), primesc **butonul implicit al temei**: `ButtonStyles.ApplyDefault` (nou în `KBot.Theming`) — exact regula generică a lui `ThemeManager` pentru un `Button` (sloturile ButtonBack / ButtonText / ButtonBorder, colțuri moderne când schema le cere), dar aplicată explicit, deci și sub o schemă care păstrează culorile de sistem. Se reaplică la fiecare `ThemeChanged`.
+- ButtonsUnder parcurge toată adâncimea panoului drept și aplică noul KBot.Theming.ButtonStyles.ApplyDefault: regula generică ThemeManager pentru Button (ButtonBack/ButtonText/ButtonBorder, colțuri moderne când schema cere). Explicit, funcționează și cu culori sistem păstrate; reaplicat la ThemeChanged.
 
 #### 2. Meniul plutitor din pagină (`Services/JavaScripts/ForexeWatch.js`, resursă embedată)
 
-- Un panou fix, jos-dreapta, mutabil cu mouse-ul (poziția rămâne în `localStorage`): **−, +, 100 %** (zoom CSS pe `documentElement`, meniul contra-scalat ca să-și țină mărimea; factorul rămâne în `localStorage`, deci supraviețuiește navigărilor), linia de stare a urmăririi și trei butoane manuale: **▶ Începe, ■ Gata, ✕**.
+- Panou fix jos-dreapta, mutabil cu mouse-ul, poziție în localStorage. −/+ /100% controlează zoom CSS documentElement, cu meniu contra-scalat; factorul persistă în localStorage peste navigări. Include starea urmăririi și ▶ Începe/■ Gata/✕.
 - Se instalează ca `Recorder.js`: `AddInitScriptAsync` (navigările viitoare) + `EvaluateAsync` (pagina de pe ecran), gardat împotriva dublei instalări. Un temporizator îl repune dacă dispare.
 - **Urmărirea operațiunilor** — reguli `OPS`, toate cu selectori copiați din `.wfl`-urile din `Workflows\Creare` (aceiași pe care îi apasă robotul):
   - `angajament`: start `a:has-text('Angajament nou')`; final = **prima** `button.btn-success` din `.form-group` (salvarea FINALĂ; a doua e cea intermediară «încă un rând» — deci «multiplu» dă o singură operațiune, la salvarea finală).
   - `rezervare` (doar cu `li.tab0.active`): start «Adaug…» (`button.btn-default.btn-small`) sau ochiul unui rând (`table.table-striped a:has(.glyphicon-eye-open)`); final `button.btn-success.btn-small:nth-child(1)` sau «Continuă» din modalul motivului (`div.modal-footer button.btn-success`).
   - `receptie` (doar cu `li.tab1.active`): start `button` «Adaugă»; final «Salvează» din `form.form-horizontal`.
   - **`receptie-modificare`: TODO** — fluxul nu e cunoscut; nu există reguli, doar butoanele manuale.
-- După apăsarea salvării, scriptul **așteaptă să se așeze pagina** (sondaj la 400 ms, cel mult 30 s): `#animlogo` ocupat sau modal deschis → așteaptă; `.feedbackPanelERROR` / `.alert-danger` → salvare respinsă, operațiunea rămâne în curs; testul `done` al operațiunii (codul din `.well.well-small h4 span:nth-child(2)` prezent + starea paginii) → **finished**. Starea trece prin `sessionStorage`, deci o salvare care navighează e confirmată de pagina următoare.
+- După Salvare: polling 400 ms, max 30 s. #animlogo ocupat/modal deschis → așteaptă; .feedbackPanelERROR/.alert-danger → refuz, operațiunea rămâne în curs; done (cod prezent în `.well.well-small h4 span:nth-child(2)` + starea paginii) → finished. sessionStorage transportă starea pentru confirmare pe pagina următoare după navigare.
 - Evenimente către .NET prin `_kbotWatchCallback`: `started / finished / cancelled / info`, cu `op, label, cod, codAtStart, startedAt, finishedAt, url, message`.
-- **Suspendare cât rulează robotul**: `ForexeRunner.RunJobAsync` cheamă `SetWatchSuspendedAsync(True/False)` în jurul lui `ExecuteAsync` — clicurile robotului ar arma operațiuni (Creare Angajament.wfl apasă chiar «Angajament nou»), iar meniul ar sta peste țintele lui Playwright. Suspendarea se ține și în `sessionStorage`, pentru navigările robotului.
+- **Suspendare robot:** ForexeRunner.RunJobAsync înconjoară ExecuteAsync cu SetWatchSuspendedAsync(True/False). Evită armarea OPS la clicurile robotului (inclusiv Angajament nou în Creare Angajament.wfl) și meniul peste țintele Playwright. Starea persistă în sessionStorage peste navigări.
 
 #### 3. Conducta .NET
 
@@ -40,7 +40,7 @@ Gazdele și andocarea sunt în [0053/0070/0074](SLICE-0053-recorder.md). Legarea
   - `rezervare / receptie / manual`: codul din pagină (la sfârșit, altfel la început), în lipsă nodul selectat în arbore (spus pe consolă); apoi **`DownloadNodeAsync`** (fără întrebarea recepțiilor de sărit — totul e proaspăt) + **`DuLaIngestieAsync`** (aceleași două faze ca iconița nodului) + fereastra de istoric.
   - `angajament`: întâi **sincronizarea listei** (drumul iconiței din subsol, fără caseta de mesaj), codurile noi = cele care nu erau în arbore + codul citit din pagină; fiecare e descărcat și ingerat pe rând, cu fereastra lui de istoric.
   - o singură operațiune în lucru la un moment dat; a doua e anunțată și lăsată pe iconița nodului.
-- **`IstoricIntervalForm`** (nou, `KBotShellForm`): găzduiește `IstoricView`-ul real, încărcat cu `SetContextInterval(cod, deLa, panaLa)` — un segment nou de dată **cu oră** (`IstoricFilter.SetDataFxRange`), aplicat imediat după `ClearAll()`-ul obligatoriu din `LoadAsync`. Intervalul e lărgit cu **±2 minute** (`MarjaMinute`): momentele vin din ceasul mașinii, `DataFX` din ceasul serverului FOREXE. «Tot istoricul» scoate limita; «TOATE» din meniul de dată și «Reset» fac același lucru.
+- **IstoricIntervalForm**, nou KBotShellForm cu IstoricView real: SetContextInterval(cod,deLa,panaLa) aplică segmentul de dată/oră IstoricFilter.SetDataFxRange imediat după ClearAll obligatoriu din LoadAsync. Interval lărgit cu ±2 minute (MarjaMinute): momentele vin din ceasul PC, DataFX din cel FOREXE. Tot istoricul/TOATE din meniul de dată/Reset elimină limita.
 
 ### Fișiere atinse
 

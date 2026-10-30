@@ -93,7 +93,7 @@ Branch: `SLICE-0108-credit-pe-clasificatie` (work tree shared with other slices)
 
 ### What changed and why
 
-The operator wants the «Coada robotului» window, when several angajamente are downloaded at once, to show **every running download on its own row**: a progress bar filled per angajament, an **X** that stops ONLY that download (and closes its tab), and at the bottom how many are still waiting for a tab. A row that ends leaves the grid and the next waiting angajament takes its place. **One angajament alone gets no grid** (operator's answer: «la un singur angajament NU arătăm fereastra»).
+Operator request: Coada robotului shows each parallel download as a row with per-angajament progress and X (stops only it/closes its tab), plus waiting-for-tab count below. Completed rows leave, replaced by the next waiting job. One angajament gets no grid/window («la un singur angajament NU arătăm fereastra»).
 
 Decisions taken (assumptions, no question asked — confidence above 75%):
 - **Progress = main-flow steps** (operator's answer: «bara după pași»). The executor already reported `_progressCallback(step, steps)` for the main flow; the worker tabs just never passed a callback. The bar is coarse (the receptions and history sections are few big steps) but never goes backwards.
@@ -108,7 +108,7 @@ Decisions taken (assumptions, no question asked — confidence above 75%):
 **Shell.**
 - `ParallelDownloadBoard` (new, `KBot.App/Forexe`): what the window draws — the running rows (code, percent, «stopping»), the waiting count; thread-safe; events `Changed`, `Started` (only for 2+). One per `ForexeController` (`ParallelBoard`), filled by `DownloadNodesParallelAsync` (`Begin` / `JobEnded` / `Finish`).
 - `ProceseazaRaspunsul`: a stopped outcome returns `ParallelNodeResult.Stopped` before any dump / store; the shell (`KbotForm.Parallel.vb`) skips it silently (only a note if captures were taken) and the final «X din Y nu s-au actualizat» list neither lists nor counts it.
-- `RobotQueueForm` (+ Designer): `pnlDescarcari` (`gridDescarcari` — a `KBotDataView`, columns `cod`, `prog` (ProgressBar), `opreste` (Button «X»), no header, not selectable — and `lblInCoada`). Shown only for a run of 2+; the window grows by the panel's height while it is shown (upwards, it sits above the footer) and shrinks back. Only the bars are rewritten when the rows did not change (no flicker).
+- RobotQueueForm (+ Designer): pnlDescarcari contains nonselectable/headerless KBotDataView gridDescarcari (cod, prog ProgressBar, opreste Button X) and lblInCoada. Visible only for 2+ jobs; window grows upward above footer by panel height, then shrinks back. Unchanged rows update only bars, avoiding flicker.
 - `KbotForm.RobotQueue.vb`: `ParallelBoard.Started` opens the window (no steal of focus).
 
 ### Files touched
@@ -145,7 +145,7 @@ Operator screenshot: with 3 running and 3 waiting, each third row was clipped wi
 
 ### Follow-up 4 (03.10.2026): one waiting grid instead of the list box
 
-Operator: «avem și lstCoada — nu putem folosi gridAsteapta în locul lui?». Done: `lstCoada` (ListBox) and the «Scoate» button (`btnScoate`, which worked on the selected list item) are gone from `RobotQueueForm`. `gridAsteapta` now fills the middle of the window ALWAYS and shows what waits: the angajamente of a multi-thread run still without a tab (Tag = code) and then the robot tasks of the queue («1. label   (hh:mm:ss)», Tag = id), each with an X (angajament → `ParallelDownloadBoard.RemoveWaiting`, task → `RobotQueue.Cancel`). `pnlDescarcari` is now the Fill panel holding `gridDescarcari` (running, Top, hidden outside a multi run), `lblInCoada` («În așteptare (N):», or «(nicio sarcină în așteptare)» outside a multi run when nothing waits) and `gridAsteapta`. In a multi run with nothing waiting the label and the grid are hidden and the window shrinks (as before). «Golește coada» and «Oprește curenta» stay. Help: `coada.md` (list rows have an X, «Scoate» point removed), `tur-coada.md` (list step now targets `lblInCoada` — the grid is hidden when nothing waits —, «Scoate» step removed). Build clean (0 warnings). Not seen on screen. Designer edited by hand again (controls removed, `pnlDescarcari.Dock = Fill`).
+Operator: «avem și lstCoada — nu putem folosi gridAsteapta în locul lui?». Removed ListBox lstCoada/selected-row btnScoate. gridAsteapta always occupies the middle: first multi-run angajamente waiting for a tab (Tag=code; X → ParallelDownloadBoard.RemoveWaiting), then queued robot tasks («1. label   (hh:mm:ss)», Tag=id; X → RobotQueue.Cancel). Fill pnlDescarcari holds running gridDescarcari (Top, hidden outside multi-run), lblInCoada («În așteptare (N):»; outside multi-run with no tasks, «(nicio sarcină în așteptare)») and gridAsteapta. Multi-run with nothing waiting hides label/grid and shrinks as before; Golește coada/Oprește curenta remain. Help coada.md replaces Scoate with row X; tur-coada.md removes Scoate and targets lblInCoada for list (grid hides when empty). Build clean (0 warnings). Not seen on screen. Designer edited by hand again (controls removed, pnlDescarcari.Dock = Fill).
 
 ### Follow-up 5 (03.10.2026): columns editable in the designer
 

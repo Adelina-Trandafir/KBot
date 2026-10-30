@@ -6,7 +6,7 @@
 
 ## Ce s-a schimbat și de ce
 
-`MainForm.CreateView("rezervari")` întorcea `New PlaceholderView(key, "Rezervări")`. Acum întoarce un `RezervariView` real — **a doua dintre cele nouă vederi** care nu mai e un placeholder. Structura oglindește `frmFX_MAIN_REZ`: un **master/detail** cu un arbore de rezervări la stânga (foldere pe lună + frunze pe (dată, tip)) și o grilă continuă la dreapta cu detaliul clasificațiilor.
+MainForm.CreateView("rezervari") înlocuiește PlaceholderView(key,"Rezervări") cu RezervariView: a doua vedere reală din nouă, după modelul frmFX_MAIN_REZ. Master/detail: arbore stânga cu luni/frunze (dată,tip), grilă continuă dreapta cu detaliul clasificațiilor.
 
 Read-only în această felie: generarea DDF declanșată de «+» este migration-plan item 7 (`IncarcaRezervare` / `mdl_FX_Rezervari` / `QFX_DDF_REZERVARI` ca driver cu stare) — o felie ulterioară. Aici «+» doar **ridică un eveniment** (`AdaugaDdfCerut`); handler-ul nu e conectat.
 
@@ -37,11 +37,11 @@ Read-only în această felie: generarea DDF declanșată de «+» este migration
 
 **Clasificația urmează Sumar 0011-03:** prin `FX_Indicatori` pe `CodAI`, ca în `qFX_REZERVARI_TREE` (RZ INNER JOIN indicatori, apoi Clasificatii). `I.IdClsf` este verificat live drept id Access (`Clasificatii.IdClsfAcc`); direcția `FX_Rezervari.IdClsf` nu este verificată, deci nu furnizează eticheta. Subinterogare scalară `LIMIT 1` evită fan-out-ul duplicatelor `(IdClsfAcc, IdUnitate)`. Predicatul `IdUnitate` rămâne: eliminarea lui privește numai tabelele FX_.
 
-**`LEFT JOIN FX_Indicatori`** (Access folosește INNER): o rezervare nu are voie să DISPARĂ pentru că îi lipsește indicatorul/eticheta — ar dispărea bani din arbore fără urmă. În practică există FK-ul `FX_Indicatori__FX_Rezervari` (CodAI), deci INNER și LEFT dau același rezultat; LEFT e centura de siguranță (Clsf gol dacă indicatorul lipsește).
+**LEFT JOIN FX_Indicatori**, față de INNER în Access: rezervările fără indicator rămân vizibile cu Clsf gol. FK FX_Indicatori__FX_Rezervari pe CodAI face cele două joinuri echivalente în practică; LEFT protejează împotriva dispariției sumelor.
 
 **Endpoint = cititor brut, fără pre-formarea arborelui.** Aceeași listă de rânduri hrănește și arborele și grila; o modelare pe server ar duplica-o pe fir. Serverul trimite un rând per `FX_Rezervari`; clientul grupează (lună / (dată,tip)) și filtrează.
 
-**Fără filtru pe `R_Valoare`** (spre deosebire de `qFX_REZERVARI_TREE`, care are `R_Valoare<>0`): endpoint-ul întoarce rândurile brute; filtrarea/gruparea e a clientului. Un rând cu `R_Valoare=0` nu schimbă totalul lunar (adaugă 0). **Divergență documentată:** clientul NU replică filtrul de frunză `R_Valoare<>0` din Access — o frunză cu valoare 0 ar apărea (rar). De adăugat dacă apar frunze-zero pe date reale.
+**Endpoint brut, fără filtrul Access R_Valoare<>0** din qFX_REZERVARI_TREE; clientul grupează/filtrează. Zero nu schimbă totalul lunar. **Divergență:** nici clientul nu replică filtrul frunzei; pot apărea rar frunze-zero. De adăugat dacă apar pe date reale.
 
 **Iconițe GDI (`RezervariIcons`):** Inițială «=», Mărire «▲», Micșorare «▼» și «+», din paletă, cu cache (fel, culoare, dimensiune) și retintare la temă. PNG-urile Access `imgDic("Marire"/"Micsorare"/"Initiala"/"Plus"/"Plus_Green")` lipsesc din K-BOT; formele sunt deterministe/tematizabile. «+» este verde la operația inițială (`Plus_Green`), altfel accent.
 

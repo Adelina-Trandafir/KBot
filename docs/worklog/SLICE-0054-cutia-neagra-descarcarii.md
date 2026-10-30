@@ -41,7 +41,7 @@ Treapta care scrie pe server există întreagă, dar **nu o cheamă nimeni**:
 
 `grep` peste `src/` pe `TrimiteAsync` / `CerePropunereAsync` / `PrelucrareCoordinator` întoarce **numai teste** în afara claselor de mai sus. Chiar și comentariul clasei o spune: «ATENȚIE — în felia 0048-02 NIMIC nu cheamă încă această clasă… Legarea în `ForexeController.DownloadNodeAsync` (§9 din plan) vine odată cu restul pașilor.»
 
-Deci: **descărcarea nu e stricată, e neterminată.** Pachetul ajunge pe disc și acolo rămâne. Legarea propriu-zisă (faza «propunere» → `AsociereForm` → faza «salvare») e restul feliei 0048-04 și **nu** face parte din felia asta.
+**Descărcare neterminată:** pachetul rămâne pe disc; legarea propunere → AsociereForm → salvare aparține restului 0048-04, în afara acestei felii.
 
 ### Ce s-a schimbat
 
@@ -57,15 +57,15 @@ Felia 0054 instrumentează descărcarea pentru diagnostic la distanță: rularea
    | `mapped.json` | forma mapată, când apelantul a ajuns până acolo |
    | `forexe.log` | jurnalul întreg al lucrării, din `JobHistoryManager` |
 
-   Se scrie **oricum s-ar termina**: reușit, workflow eșuat, tabel lipsă, ocupat, fără sesiune, excepție. Asta e toată ideea — `WorkflowResultStore` scrie doar calea fericită, deci exact rularea care n-a adus nimic era și cea care nu lăsa nimic în urmă.
+   Scriere indiferent de rezultat: reușit, workflow eșuat, tabel lipsă, ocupat, fără sesiune, excepție. WorkflowResultStore păstra numai reușitele, lăsând tocmai eșecul fără diagnostic.
 
 2. **`ForexeController.DownloadNodeAsync` / `DownloadListaAsync`** — deschid jurnalul înainte de orice ieșire și îl scriu pe fiecare ramură. Cele două ieșiri mute de dinainte (`If _busy Then Return Nothing`, sesiune nedeschisă) **spun acum de ce** pe consolă, în loc să pară că nu s-a apăsat nimic.
 
-3. **Calea folderului se anunță pe consolă** după fiecare descărcare (`ScrieJurnal`), tocmai ca operatorul să nu fie nevoit să-l caute. Dacă scrierea jurnalului eșuează, se spune și asta — un jurnal lipsă nu are voie să treacă neobservat.
+3. **ScrieJurnal anunță folderul pe consolă** după fiecare descărcare; anunță și eșecul scrierii, pentru ca lipsa jurnalului să fie vizibilă.
 
-4. **Descărcarea unui nod spune acum negru pe alb unde se oprește robotul:** «descărcarea s-a încheiat — pachetul e local; urmează ingestia». Un flux care raportează numai succes, când de fapt s-a oprit la jumătatea drumului, e mai rău decât unul care eșuează. *(În felia asta linia suna «scrierea pe server nu e încă legată de acest buton», fiindcă atunci chiar nu era. Felia 0055 a legat-o și a rescris linia.)*
+4. **Frontiera descărcare/ingestie apare pe consolă:** «descărcarea s-a încheiat — pachetul e local; urmează ingestia». Istoric, în 0054 mesajul era «scrierea pe server nu e încă legată de acest buton»; 0055 a legat ingestia și l-a înlocuit.
 
-Politica de erori a cutiei negre: `Save` loghează și întoarce `Nothing` în loc să arunce. Un diagnostic stricat nu are voie să omoare descărcarea pe care o descrie; eșecul nu e înghițit — merge în `GlobalErrorLog` **și** pe consola operatorului.
+Politica Save: loghează în GlobalErrorLog ȘI consola operatorului, returnează Nothing fără excepție, păstrând descărcarea funcțională când diagnosticul eșuează.
 
 ### Fișiere atinse
 

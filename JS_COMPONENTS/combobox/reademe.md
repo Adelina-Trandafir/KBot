@@ -27,16 +27,11 @@
 
 ## Overview
 
-**Combobox** is a production-ready, modular autocomplete component designed for enterprise applications. Built with a mixin-based architecture, it provides seamless integration with the project's **ListenerTracker** system for automatic memory management and leak prevention.
+**Combobox** is a modular autocomplete component with ListenerTracker integration for automatic listener cleanup and leak prevention.
 
 ### Key Characteristics
 
-- **Modular Design**: Split into 5 specialized mixins for separation of concerns
-- **Memory Safe**: Automatic listener cleanup via ListenerTracker integration
-- **Flexible**: Supports both static and dynamic (async) data sources
-- **Responsive**: Elastic width with viewport-aware positioning
-- **Accessible**: Full keyboard navigation with highlight tracking
-- **Performance**: Debounced search, lazy rendering, optimized DOM operations
+The five-module design is described in [Architecture](#architecture); interaction/data options in [Features](#features), elastic sizing in [Responsive Design](#responsive-design), and debounce/lazy rendering/DOM optimizations in [Performance Considerations](#performance-considerations).
 
 ---
 
@@ -64,20 +59,15 @@
 
 |Mixin|File|Responsibility|
 |----------|--------------------|-----------------------------------------------------|
-|**State**|`combobox-state.js`|Internal state management, result tracking|
-|**UI**|`combobox-ui.js`|DOM creation, rendering, positioning|
-|**Events**|`combobox-events.js`|Event binding, keyboard navigation, user interactions|
-|**Search**|`combobox-search.js`|Search logic (static/dynamic), result handling|
-|**Core**|`combobox.js`|Component orchestration, lifecycle management|
+|**State**|`combobox-state.js`|State initialization, results and selection tracking|
+|**UI**|`combobox-ui.js`|DOM creation, rendering, positioning, visual state updates|
+|**Events**|`combobox-events.js`|ListenerTracker event binding, keyboard navigation, user interactions|
+|**Search**|`combobox-search.js`|Static/dynamic search, async operations, result processing|
+|**Core**|`combobox.js`|Instance creation/initialization, ListenerTracker application, mixin orchestration, lifecycle (init/destroy)|
 
 ### ListenerTracker Integration
 
-The component leverages the project's **ListenerTracker** mixin for automatic memory management:
-
-- All event listeners are tracked automatically
-- Cleanup happens via `cleanupAllListeners()` on destroy
-- Prevents memory leaks in SPA contexts
-- Provides debugging capabilities for listener inspection
+ListenerTracker tracks every listener, calls cleanupAllListeners() on destroy to prevent SPA leaks, and supports listener inspection; see [destroy](#destroy) and [Debugging Tools](#debugging-tools).
 
 ---
 
@@ -85,16 +75,7 @@ The component leverages the project's **ListenerTracker** mixin for automatic me
 
 ### Core Features
 
-- ✅ **Autocomplete Search** - Real-time filtering with highlight
-- ✅ **Static & Dynamic Data** - Supports pre-loaded arrays or async fetch
-- ✅ **Keyboard Navigation** - Arrow keys, Enter, Escape, Tab
-- ✅ **Readonly Mode** - Click-to-open dropdown without typing
-- ✅ **Debounced Search** - Configurable delay to reduce API calls
-- ✅ **Min Search Length** - Trigger search only after N characters
-- ✅ **Max Results** - Limit displayed results for performance
-- ✅ **Match Highlighting** - Visual emphasis on matching text
-- ✅ **Viewport Awareness** - Auto-position above/below based on space
-- ✅ **Loader Indication** - Visual feedback during async operations
+Real-time autocomplete supports preloaded static arrays or async fetch, with keyboard navigation/highlight (arrows, Enter, Escape, Tab). The [configuration table](#configuration-options) defines readonly click-to-open, debounce, minimum query length, result limit, match highlighting and loader options. [UI Positioning](#ui-positioning) defines automatic placement above/below the input.
 
 ### Advanced Features
 
@@ -307,17 +288,15 @@ onSelect: (value, text) => {
 
 ## Module Structure
 
-### Core Module (`combobox.js`)
+Responsibilities are defined once in [Mixin Responsibilities](#mixin-responsibilities); module methods and state are detailed below.
 
-**Responsibilities:** Instance creation and initialization; ListenerTracker application; Mixin orchestration; Lifecycle management (init, destroy)
+### Core Module (`combobox.js`)
 
 **Key Methods:** `constructor(container, options)`; `init()`; `destroy()`
 
 ---
 
 ### State Mixin (`combobox-state.js`)
-
-**Responsibilities:** Internal state initialization; Result management; Selection tracking
 
 **State Properties:**
 
@@ -338,8 +317,6 @@ onSelect: (value, text) => {
 
 ### UI Mixin (`combobox-ui.js`)
 
-**Responsibilities:** DOM element creation; Rendering and positioning; Visual state updates
-
 **Key Methods:**
 
 - `createOverlayElement()`: Creates fixed overlay element
@@ -358,8 +335,6 @@ onSelect: (value, text) => {
 
 ### Events Mixin (`combobox-events.js`)
 
-**Responsibilities:** Event listener binding (via ListenerTracker); User interaction handling; Keyboard navigation
-
 **Key Methods:**
 
 - `bindEvents()`: Binds all event listeners
@@ -377,8 +352,6 @@ onSelect: (value, text) => {
 ---
 
 ### Search Mixin (`combobox-search.js`)
-
-**Responsibilities:** Search execution (static/dynamic); Async operation handling; Result processing
 
 **Key Methods:** `performSearch(query)`: Executes search and updates UI
 

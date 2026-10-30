@@ -192,29 +192,29 @@ Cererea, în cuvintele operatorului: «integrate the new logging system into mai
 
 #### 1. `LogViewerForm` — fereastra propriu-zisă
 
-`src/KBot.App/Views/`, `Inherits KBotShellForm`, toate controalele declarate în `.Designer.vb`. Fereastra **nu analizează nimic**: tot ce ține de citit și de înțeles un jurnal stă în nucleul pur din `KBot.Common\Logging` (trecerea 01) — `LogPaths`, `LogFileLoader`, `LogFilter`, `ServerClock`. Aici se leagă doar nucleul acela de controalele casei.
+`src/KBot.App/Views/`, Inherits KBotShellForm, controale în Designer. Fereastra leagă controalele la nucleul din KBot.Common/Logging, trecerea 01 (LogPaths, LogFileLoader, LogFilter, ServerClock); nu citește/analizează singură jurnalele.
 
 Trei hotărâri de fond:
 
 - **Citire/analiză în fundal**, până la 5 MB, cu `BusyBar`; filtrare sincronă în memorie, fără recitire. Căutarea are debounce 250 ms pentru zeci de mii de intrări. `CancellationTokenSource` anulează selecția anterioară, evitând răspunsul vechi în grilă.
-- **Coloana `Ora` arată ora CORECTATĂ, panoul de detaliu arată blocul BRUT.** Cine citește o urmă de stivă trebuie să vadă exact ce s-a scris în fișier, nu o versiune ajutată de noi. Fixat cu test.
-- **Culorile rândurilor vin din paletă**, prin `RowFormatting` (§1.1 din plan): `ErrorColor`, `WarningColor`, `TextDimColor`, `DisabledTextColor`. **`Info` nu se vopsește deloc** — e rândul obișnuit, iar a-l colora ar face din normal o excepție. `KBotDataView` nu a fost atins, iar instanța refolosită a argumentelor nu se reține.
+- **Ora corectată în coloană, blocul BRUT în detaliu**, păstrând exact urma de stivă scrisă. Fixat prin test.
+- **RowFormatting din paletă:** ErrorColor, WarningColor, TextDimColor, DisabledTextColor (§1.1); Info rămâne rând normal, nevopsit. KBotDataView neschimbat; argumentul reutilizat nu se reține.
 
-Bara de stare spune tot ce ar putea altfel dispărea tăcut: câte intrări au intrat, câte se văd, cât s-a citit, dacă fereastra de citire a tăiat coada, decalajul ceasului de server și — obligatoriu — **câte intrări au fost excluse fiindcă n-au dată**, când e pus un capăt de interval.
+Status: intrări citite/vizibile, volum citit, coadă tăiată de fereastra de citire, decalaj server și, la interval limitat, numărul intrărilor excluse fără dată.
 
 #### 2. Serverul: cablat, opțional, și ONEST că încă nu există
 
-Grupul «Server» apare doar dacă fereastra a primit un `IApiClient`; fără el (bancul de probă) nu apare deloc — un grup care nu poate funcționa nu trebuie să existe. Lista se cere **la cerere**, dintr-un rând anume, nu la deschidere.
+Grupul Server există numai cu IApiClient, deci lipsește în banc. Lista se cere din rândul dedicat, fără încărcare la deschidere.
 
-**Rutele și `GetLogFilesAsync` / `GetLogTailAsync` urmează în 0031-02.** La acest reper, `ApiClient.GetAsync(Of T)` aruncă `NotImplementedException`; formularul o prinde explicit și afișează `KBotNotice`: «Jurnalele de server nu sunt încă disponibile: ruta se livrează în trecerea 0031-02. Fișierele locale funcționează normal.»
+**Rutele/GetLogFilesAsync/GetLogTailAsync urmează în 0031-02.** Acum ApiClient.GetAsync(Of T) aruncă NotImplementedException, prins explicit prin KBotNotice: «Jurnalele de server nu sunt încă disponibile: ruta se livrează în trecerea 0031-02. Fișierele locale funcționează normal.»
 
-DTO-urile (`LogFilesResponse` / `LogTailResponse`) sunt **private în formular**, scrise după contractul din planul §6.4. Când vine 0031-02, ele se mută pe `ApiClient` ca metode tipizate și dispar de aici. Probele 19–20 din plan aparțin acelei treceri și **nu au fost făcute**.
+LogFilesResponse/LogTailResponse sunt DTO-uri private ale formularului după plan §6.4; 0031-02 le va înlocui cu metode ApiClient tipizate. Probele 19–20 aparțin acelei etape și nu au fost făcute.
 
 #### 3. `LogClearDialog` — singurul drum distructiv
 
-Doi pași, fiindcă nu există «înapoi»: întâi lista fiecărui fișier local cu mărimea și numărul de intrări, **nimic bifat** la deschidere; apoi o confirmare care NUMEȘTE fișierele și totalul.
+Doi pași: lista fișierelor locale cu mărime/număr intrări, nimic bifat inițial; apoi confirmare cu numele fișierelor și totalul, fără revenire.
 
-- Fișierul ținut deschis de rularea curentă se **arată**, dar șters și nebifabil. Se întreabă EMPIRIC (o deschidere exclusivă de o clipă), nu după o listă de nume ținută pe de rost, care ar rămâne în urmă la primul scriitor nou.
+- Fișierul rulării curente apare estompat/nebifabil. Identificare empirică prin deschidere exclusivă scurtă, fără listă de nume care ar deveni incompletă la un scriitor nou.
 - `File.Delete`; pe `IOException` fișierul se **golește** în loc să fie șters. Dacă nici asta nu merge, apare pe nume, cu motivul, iar restul continuă. Nimic nu eșuează tăcut.
 - **Jurnalele de server nu se ating de aici, niciodată.**
 
@@ -230,13 +230,13 @@ Soluția e o punte tipizată: `ILogViewerLauncher` în `KBot.DevHarness\Abstract
 
 `capBar.OptionButtonClick` deschide `CustomPopup` cu «&Arată jurnal», ancorat la `OptionButtonBounds`. `CustomPopup.ClosedJustNow` împiedică redeschiderea la al doilea clic, ca la meniul de teme. Formularul este nemodal, fără `Using`.
 
-`FeatureSwitches.VizualizatorJurnaleActiv` (`KBot.Common`, modul nou) este mereu `True` la acest reper, conform cererii. La `False`, meniul cu unicul rând nu se deschide, evitând popupul gol. Viitoarea sursă reală (rol/manifest/configurare) se schimbă numai în modul, fără modificarea apelanților.
+`FeatureSwitches.VizualizatorJurnaleActiv` (modul nou KBot.Common) este constant True la acest reper, conform cererii. False oprește meniul cu un singur rând, fără popup gol. Viitoarea sursă rol/manifest/configurare se schimbă numai în modul, nu la apelanți.
 
-Fereastra e nemodală și una singură: dacă e deja deschisă, se aduce în față (ca `InternalInfoForm`).
+Instanță nemodală unică; redeschiderea o aduce în față, ca InternalInfoForm.
 
 #### 6. Fereastra de pornire înlocuiește `MessageBox`-ul (CERUT de operator)
 
-`StartupLauncherForm`: `KBotCaptionBar` + `KBotNavList`, cu **Aplicația** (autentificare → shell), **Banc de probă** și **Jurnale** (singur, fără autentificare/shell). Înlocuiește MessageBox-ul de sistem cu doar «Da»/«Nu» printr-o fereastră tematizată, cu opțiuni denumite explicit și extensibile.
+`StartupLauncherForm`: KBotCaptionBar/KBotNavList, cu Aplicația (login → shell), Banc de probă și Jurnale (fără login/shell). Înlocuiește MessageBox Da/Nu cu opțiuni tematizate, denumite și extensibile.
 
 Enter selectează implicit aplicația. Renunțarea golește `Alegere`, evitând pornirea opțiunii survolate de un apelant care citește numai proprietatea. `Program.RunLauncher` aruncă pe cheie necunoscută, semnalând opțiunile adăugate dar nemapate.
 
@@ -244,9 +244,9 @@ Enter selectează implicit aplicația. Renunțarea golește `Alegere`, evitând 
 
 Operatorul a deschis fereastra în designerul VS, a confirmat că **funcționează**, și a rearanjat așezarea: panourile andocate au fost înlocuite cu `TableLayoutPanel`-uri (`tlyMain`, `tlyFilter`, `tlyFilterActual`, `tlyFooter`) — «i want tly instead of those annoying panels where i have no real control» — apoi a cerut punerea la punct a plasării. Trei defecte reale găsite și reparate:
 
-1. **`btnGoleste` era numai declarat**, neconstruit/nemontat, fără `Handles`: formularul compila și se deschidea, dar ștergerea lipsea. Reintrodus cu `Handles` în noua coloană `tlyFooter`, lângă «Deschide dosarul», separat de «Copiază». Testul de regresie verifică montarea, nu doar câmpul declarat, ca la `LstValori_ItemCheck` (0030) / `btnSortClear`.
+1. **btnGoleste numai declarat**, fără construire/montare/Handles: formularul se deschidea fără comanda de ștergere. Reintrodus cu Handles în noua coloană tlyFooter, lângă Deschide dosarul, separat de Copiază. Regresia verifică montarea, nu doar declarația, ca LstValori_ItemCheck (0030)/btnSortClear.
 2. **`tlyMain.SetColumnSpan(tlyFooter, 4)` pe un tabel cu DOUĂ coloane** → 2.
-3. **`tlyFilter` avea trei rânduri de 60 + 80 + rest într-o celulă de 124 px**: suma depășea celula, iar un `TableLayoutPanel` nu strânge rândurile absolute ca să încapă, deci bara de jetoane era tăiată. Două rânduri acum (câmpuri fix, jetoane elastic), cu jetoanele pe `Dock = Fill`: bara își rupe rândurile după LĂȚIME, iar înălțimea i-o dă tabelul.
+3. **tlyFilter: 60 + 80 + rest în 124px** tăia bara de jetoane, deoarece TableLayoutPanel nu micșorează rândurile absolute. Acum două rânduri: câmpuri fixe, jetoane elastice Dock Fill; lățimea decide împachetarea, tabelul dă înălțimea.
 
 Au fost șterse și trei declarații moarte (`pnlCard`, `pnlActiuni`, `pnlStare`) — controale care nu mai există nicăieri în formular.
 

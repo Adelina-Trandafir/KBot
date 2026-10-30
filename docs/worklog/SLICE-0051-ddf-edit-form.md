@@ -108,7 +108,7 @@ Delivered as `sql/0051_ddf_rev_att_img.sql`, shaped exactly like the ORD equival
 
 ### 3. The server module
 
-`PYTHON/routes/forexe/ddf_edit.py`, sixteen routes, every one `@require_session` (bearer — this is a K-BOT client, not the VBA/FOREXE legacy path). The database name comes from `g.session.db_name`; no route accepts one from the caller. Every response is dumped with `ensure_ascii=False`; every refusal message is Romanian with diacritics.
+PYTHON/routes/forexe/ddf_edit.py: sixteen require_session bearer routes for K-BOT, separate from VBA/FOREXE legacy. Database only from g.session.db_name, never caller input. All responses ensure_ascii=False; refusals Romanian with diacritics.
 
 ```
 POST   /api/forexe/ddf/genereaza
@@ -147,8 +147,8 @@ So the generation queries join `Clasificatii C ON C.IdClsfAcc = I.IdClsf AND C.I
 Each of these is a place where the port does **not** do what the Access original did. They are choices, not accidents.
 
 1. **Validation checks every row.** `msgEroare` in Access examined only the first row of each section before returning. The port checks all of them and lists every reason at once.
-2. **Deleting a document releases every revision's reservations.** The Access `FX_Stergere_DDF` released only the reservations of one revision, leaving the rest of the document's reservations marked as used against a document that no longer existed. The port releases all of them. This is a bug fix, and if the old behaviour was load-bearing somewhere it will show up here first.
-3. **The source of the generated lines is chosen from the data** (decision D5) rather than from a form's state as Access did. `_alege_sursa()` looks at what actually exists — reservations or indicators — and **refuses loudly, naming both conditions**, when it cannot tell. It never guesses.
+2. **Delete releases reservations from ALL revisions.** Access FX_Stergere_DDF released one revision only, leaving reservations attached to a deleted document. This fixes that bug; any dependency on the old behaviour remains a first-live-run risk.
+3. **Source from data, D5:** _alege_sursa chooses existing reservations/indicators, replacing Access form-state selection. Ambiguity is refused, naming both conditions; no guessing.
 4. **The `IdUnitate` predicate is kept** in the generation queries. Access omitted it in places; `Clasificatii` and the other nomenclature tables are unit-scoped, so omitting it returns another unit's rows on a multi-unit database.
 5. **The `PrtScr` filter was not ported.** It filtered the Access screen; it has no meaning in the K-BOT editor.
 6. **Section B copies the partner from section A.** Access wrote `NULL` there. The B rows are derived from the A rows, and a derived row with no partner cannot be reconciled afterwards.
@@ -164,7 +164,7 @@ Phase-two failure rolls back nothing; the operator receives the failed-file list
 
 #### 3.4 The number lock
 
-`FX_NumberLock`, TTL 60 minutes, heartbeat every 5. Allocation is `GREATEST(<max in use>, <max locked>) + 1`, with the floor at 0 for CUAL and **-1** for `NumarRev` so that the first revision of a document is numbered 0. Expired locks are swept on every reserve. The lock is consumed inside the save transaction (`_consuma_lacatul`), so a form that saved no longer holds it and does not try to release it on the way out.
+FX_NumberLock: TTL 60 min, heartbeat 5 min. Allocation `GREATEST(<max in use>, <max locked>)+1`, floor 0 for CUAL, -1 for NumarRev (first revision 0). Reserve sweeps expired locks. _consuma_lacatul consumes inside save transaction, so the saved form neither retains nor releases the lock on exit.
 
 This is deliberately unlike slice 0049, which guessed the next number ("probabil N") and hoped.
 
@@ -190,15 +190,15 @@ The classification list is the three-part list Access built (on this angajament 
 
 `MainForm.ExecutaComandaDdf` executes them.
 
-**`Adauga` / `AdaugaRevizieInitiala` originate at the RESERVATIONS leaf `+`.** `RezervariView.Tree_RightIconClicked` passes the command to `MainForm.ExecutaComandaDdf`, matching Access `frmFX_MAIN_REZ.mcTree_RightIconClick` → `AdaugaRevizie(CBool(cNode.Value2))` → `FX_Adaugare_DDF`. Reservation `EInitiala` chooses the action, as `cNode.Value2` did; the server rejects either action when document state contradicts it, with Romanian feedback.
+**Adauga/AdaugaRevizieInitiala start at the RESERVATIONS leaf +:** RezervariView.Tree_RightIconClicked → MainForm.ExecutaComandaDdf, matching Access frmFX_MAIN_REZ.mcTree_RightIconClick → AdaugaRevizie(CBool(cNode.Value2)) → FX_Adaugare_DDF. EInitiala selects the action like cNode.Value2; server rejects state contradictions with Romanian feedback.
 
-`DdfView`'s context menu still has no «add» entry, deliberately: one trigger, in the one place the operator already knows. The commands had no caller only for as long as slice 0051 itself lasted (decision D20).
+DdfView deliberately has no add menu item: the reservations + is the single familiar trigger. Commands lacked callers only during 0051 itself (D20).
 
-This replaces dormant `RezervariView.AdaugaDdfCerut` (0014) with the same optional `Action(Of DdfComanda)` seam as `DdfView` / `PlatiView`. Without a delegate, read-only use remains and `+` explains the limitation.
+Dormant RezervariView.AdaugaDdfCerut (0014) is replaced by optional Action(Of DdfComanda), as in DdfView/PlatiView. Missing delegate preserves readonly use; + explains the limitation.
 
 #### 4.4 The rich-text editor
 
-`KBotRichTextEditor` (bold / italic / underline / text colour / background colour / font family / font size over a `RichTextBox`) is new in `KBot.Controls/RichText/`. Its attachment buttons were **not** ported: the «Fișiere» page owns attachments now, and a second half-wired attachment path would be worse than none.
+`KBotRichTextEditor`, new in KBot.Controls/RichText/: bold/italic/underline, text/background colour, font family/size over RichTextBox. Attachment buttons are not ported: Fișiere owns attachments, avoiding a second incomplete path.
 
 `KBotTextField` re-raises `TextChanged` but **not** `Leave`. Anywhere the editor needs a `Leave`, it is hooked on `InnerTextBox`. This has bitten before.
 
@@ -213,21 +213,21 @@ Operator rule narrowing D8: only section A can be editable, but a DDF generated 
 How it is decided (`DdfDraft.DinRezervari`, in the domain so the client and any later caller read one copy of the rule):
 
 * `sursa` from the server — `_alege_sursa`'s answer, decision D5 — is now carried into the domain instead of being dropped at the wire. `"rezervari"` locks the grid.
-* That alone is not enough: `GET /draft/{iddf}/{idrev}` answers `"existent"` for EVERY revision read back, whatever it was generated from, so a REOPENED document would have looked editable. What survives the round trip is `GrpIdrz`, the `IDRZ` list a line was generated from, empty on a line that came from `FX_Istoric` or that the operator added. Any line carrying one locks the grid too.
+* Reopened revisions return sursa = existent from GET /draft/{iddf}/{idrev}, regardless of origin. GrpIdrz survives: the source IDRZ list is empty for FX_Istoric/operator-added lines; any line carrying it also locks A, preventing reopened reservation documents from appearing editable.
 
-`DdfEditSectiuneaAPage.AplicaModulDeEditare` sets `grd.ReadOnlyGrid`, disables both buttons, closes Partener regardless of `PartAng`, skips the unusable classification fetch, and changes that column from `Combo` to `Text`. It runs BEFORE filling, since column type changes require an empty grid.
+DdfEditSectiuneaAPage.AplicaModulDeEditare sets ReadOnlyGrid, disables both buttons, closes Partener regardless of PartAng, skips classification fetch and changes Combo to Text. Runs BEFORE filling: type changes require an empty grid.
 
 #### 4.7 `ButtonImageLayout` — one property for the toolbar's pictures
 
 Toolbar buttons are 30x30; native `Button.Image` uses natural size, leaving space around 16x16 icons and cropping 64x64. One toolbar-wide `KBotRichTextEditor.ButtonImageLayout` («K-BOT Icons», default `Original`) takes `RichTextImageLayout`: `Original`, `Stretch`, `Zoom`, `Tile`, fitting the single operator-bound icon set consistently.
 
-`Original` passes the picture to `MyBase.Image`, preserving framework rendering. For `Stretch` / `Zoom` / `Tile`, `KBotNoFocusButton.OnPaint` draws after the base flat background, border and text; no image-only skip hook exists, so the base receives `Nothing`. Shadowed `Image` (`Browsable(False)`, serialization hidden) stores one picture for both paths; `ApplyIcon` still assigns `btn.Image`.
+Original uses MyBase.Image/framework rendering. Stretch/Zoom/Tile draw in KBotNoFocusButton.OnPaint after the flat background/border/text; base Image gets Nothing because no image-only skip hook exists. Shadowed Image (Browsable False, hidden serialization) stores the common picture; ApplyIcon still sets btn.Image.
 
 Three details that are not obvious:
 
 * The picture is fitted inside what the flat border and `ButtonPadding` leave, not inside the whole button — otherwise a `Stretch` would slide under its own border.
-* A disabled toolbar (`Editabil = False`, a read-only description) greys the picture through an `ImageAttributes` colour matrix. `ControlPaint.DrawImageDisabled` draws at natural size only, which is no use once the point is that the size changed.
-* `Tile` shifts the brush to the content box's origin; without it the pattern starts at the CONTROL's origin and the first tile is cut by the border instead of sitting against it.
+* Disabled toolbar (Editabil = False, readonly description) greys through an ImageAttributes colour matrix; ControlPaint.DrawImageDisabled only supports natural size.
+* Tile offsets the brush to the content origin; control-origin tiling would cut the first tile at the border.
 
 The lettered glyphs (B / I / U / A / ▨ / ▴ / ▾) are TEXT and are untouched: with no picture bound there is nothing to lay out.
 

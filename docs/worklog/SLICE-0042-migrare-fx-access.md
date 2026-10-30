@@ -12,16 +12,16 @@ Doi pași separați: VBA exportă JSON, iar utilitarul VB.NET îl trimite rutelo
 
 ### Partea A — `mdl_FX_ExportSeed` (VBA)
 
-`Surse/VBA_MIGRARE/mdl_FX_ExportSeed.bas`. Modul NOU, separat; `mdl_FX_ExportMD` rămâne neatins și nu e apelat de nicăieri. L-am citit pentru stilul casei și apoi l-am lăsat în pace — pentru o migrare e descalificat pe patru puncte, fiecare dintre ele pierzând sau stricând date: trunchiază Memo la `Left(s,5) & "..." & Right(s,5)`, colapsează NULL la `""` prin `Nz`, scoate fiecare valoare ca șir cu ghilimele în locale românesc, și recursează câte o interogare pe rând-părinte.
+Surse/VBA_MIGRARE/mdl_FX_ExportSeed.bas este nou/separat. mdl_FX_ExportMD, citit pentru stil, rămâne neatins și neapelat: nepotrivit migrării deoarece trunchiază Memo la `Left(s,5) & "..." & Right(s,5)`, colapsează NULL la șir gol prin Nz, serializează toate valorile ca șiruri în locale românesc și recursează o interogare per rând-părinte.
 
 Ce face cel nou:
 
-- **Listă fixă de 16 tabele**, în ordinea părinți-înainte-de-copii. Nicio descoperire prin `DB.Relations`, niciun potrivit de prefix — descoperirea e exact ce cade azi. Un tabel din listă absent din `TableDefs` e eroare dură, cu numele lui.
+- **16 tabele fixe**, părinți înaintea copiilor; fără DB.Relations/potrivire de prefix, descoperirea fiind cea care cade azi. Absența din TableDefs e eroare dură cu numele tabelului.
 - **`[Cai]` din `cale.accdb`** → `Cai.json`, cu toate coloanele. `IdUnitate → DC` e cheia de rutare de care depinde toată migrarea, iar migratorul nu are voie să deschidă Access.
 - **Chunk-uri**: 500 de rânduri/fișier, **50** pentru cele grele la Memo (`FX_Receptii_IMG`, `FX_Rezervarii_IMG`, `FX_Extrase_F`, `FX_Istoric`, `FX_Receptii`). Forma fișierului e exact cea pe care `POST /api/forexe/seed/rows` o acceptă deja: tablouri poziționale + o listă de coloane comună.
 - **Conversia valorilor** — partea care contează cel mai mult. `Null → null` (niciun `Nz` în tot modulul); `dbBoolean → 0/1` (Access are `True = -1`, care nu are ce căuta pe fir); `dbDate → "yyyy-mm-dd hh:nn:ss"` cu separatorii **escapați** (`\:` — în VBA `:` e substituentul separatorului de oră din locale, nu un literal); numeric prin `Str$`, singurul formatator independent de locale (`CStr` pe o stație românească scoate virgulă și ar corupe fiecare sumă); text/Memo **întreg, fără trunchiere**; șirul gol rămâne șir gol, distinct de NULL.
 - **UTF-8 real** prin `ADODB.Stream` (late-bound, deci fără referință ADO), cu BOM-ul scos copiind într-un al doilea stream binar de la poziția 3. Diacriticele pleacă ca ele însele, niciodată ca `\uXXXX`.
-- **Scriere direct în stream**, niciodată acumulare într-un `String`: concatenarea VBA e pătratică și `FX_Istoric` are singur în jur de 24.000 de rânduri. Un `dbOpenSnapshot` forward-only pe tabel, `SELECT *` fără `WHERE` și fără `ORDER BY`.
+- **Scriere în stream**, fără String acumulat: concatenarea VBA e pătratică, iar FX_Istoric are circa 24.000 rânduri. Un dbOpenSnapshot forward-only per tabel, SELECT * fără WHERE/ORDER BY.
 - `manifest.json` se scrie **ultimul**, fiindcă abia atunci se știu numerele de rânduri.
 
 Două lucruri prinse la scris, care ar fi produs JSON invalid:
@@ -65,9 +65,9 @@ Detalii care merită ținute minte:
 - **Valorile nu se re-tipizează niciodată pe drum.** Celulele se păstrează ca `JsonElement` clonate și se scriu înapoi cu `WriteTo`. Un `Decimal(28,6)` trecut printr-un `Double` .NET s-ar rotunji tăcut, iar o migrare n-are voie să schimbe nicio valoare.
 - **Două treceri de rutare, memorie mărginită.** Verificarea rutează o dată ca să numere și să culeagă id-urile DDF, apoi uită rândurile; transferul recitește fișierele. Altfel `FX_Istoric` + `FX_Extrase_F` ar trebui ținute întregi în memorie.
 - **`FX_Extrase_F` se multiplică intenționat.** Un fișier de extras poate purta linii pentru mai multe unități, deci același rând aparține legitim mai multor baze. Contorul `Duplicated` ține copiile suplimentare, ca socoteala de la pasul 7 să închidă exact.
-- **Cei doi părinți care nu sunt de acord opresc rularea.** La `FX_Receptii_IMG` și `FX_Receptii_Plati` se încearcă primul părinte cu retragere pe al doilea; dacă amândoi sunt prezenți și duc la DC-uri diferite, e eroare dură, nu retragere — a alege unul ar fi o ghiceală care mută date în baza greșită.
+- **Părinți contradictorii:** FX_Receptii_IMG/FX_Receptii_Plati încearcă primul părinte, apoi al doilea ca retragere. Ambii prezenți cu DC diferite opresc rularea; alegerea unuia ar muta date în baza greșită.
 - **Orfanii nu se pierd.** Un rând a cărui cheie de rutare nu se rezolvă nu se scrie și nu dispare: pleacă în CSV-ul de respinse cu cheia primară și motivul, iar rularea continuă.
-- **`ExportArtifacts/`, nu `Artifacts/`:** regula `.gitignore:66` pentru `artifacts/` potrivește și majusculele pe Windows. Cele cinci fișiere fuseseră omise de `git add -A`, deși build-ul local reușea; o clonă nu ar fi compilat. Redenumirea, în loc de `git add -f`, protejează și fișierele adăugate ulterior.
+- **ExportArtifacts/, nu Artifacts/:** .gitignore:66 artifacts/ ignoră și majusculele pe Windows. Cinci fișiere omise de git add -A permiteau build local, dar nu pe clonă. Redenumirea evită git add -f și protejează adăugările viitoare.
 
 - **Nimic nu creează sau modifică vreun tabel.** O coloană prezentă în export și absentă pe țintă oprește tabelul cu numele ei; un tabel inexistent oprește tabelul. Schema se instalează separat, prin `AVACONT_COMUN`.
 

@@ -29,13 +29,13 @@ Un singur drum dus-întors, două tablouri:
 2. **`ClasificatiiG` nu există în MariaDB** — nu se atinge deloc.
 3. **Inversiunea `IdClsf`.** În `FX_ORD_TBL`, MariaDB `IdClsf` e FK-ul către `Clasificatii` (id global/PY) și `IdClsfAcc` e id-ul Access — documentat în `routes/ord/sync_mdb_acc.py` liniile 6-8 și confirmat de `sync_acc_mdb.py`. Invers față de `FX_Indicatori`.
 
-**`CodAngajament` se filtrează direct pe `FX_ORD`.** Access folosea `FX_ORD.IDDF = FX_DDF.IDDF` (`qFX_ORD_TREE`); ambele migrări MariaDB scriu însă direct codul cu `_strict_str_nonempty` (`commit.py:85`, `sync_acc_mdb.py:80`). Se evită și fan-out-ul prin PK compus `FX_DDF(IDDF, CUAL)`.
+**CodAngajament direct în FX_ORD:** ambele migrări îl scriu prin _strict_str_nonempty (commit.py:85, sync_acc_mdb.py:80). Înlocuiește joinul Access FX_ORD.IDDF=FX_DDF.IDDF din qFX_ORD_TREE și evită fan-out-ul PK compus FX_DDF(IDDF,CUAL).
 
-**Clasificația: două drumuri prin `COALESCE`.** Alegerea cerută de plan după probă live rămâne neconfirmată. Se încearcă `Clasificatii.IDClsf = t.IdClsf`, documentat de sync-ul ORD și folosit de DDF SA; la NULL/gol, fallback-ul verificat în 0011-03, `FX_Indicatori.CodAI` → `Clasificatii.IdClsfAcc + IdUnitate`, ca în Plăți/Recepții. Evită ghicirea care produsese Clsf gol în 0011-03/0015. `FX_ORD_TBL` nu are `Clsf` denormalizat (`routes/ord/tbl.py`), deci nu există al treilea drum. `descriere` citește `Clasificatii.Denumire` prin același `COALESCE`.
+**Clasificație COALESCE, alegere live cerută de plan încă neconfirmată:** întâi Clasificatii.IDClsf=t.IdClsf, documentat de sync ORD/folosit DDF SA. La NULL/gol, fallback verificat 0011-03: FX_Indicatori.CodAI → Clasificatii.IdClsfAcc+IdUnitate, ca Plăți/Recepții, evitând Clsf gol din 0011-03/0015. Fără al treilea drum: FX_ORD_TBL nu are Clsf denormalizat (routes/ord/tbl.py). descriere folosește Clasificatii.Denumire prin același COALESCE.
 
 **`total_ord` folosește subinterogare scalară**, evitând `JOIN … GROUP BY` peste `FX_ORD_PART`, care în Access umfla totalul la mai mulți beneficiari (`aggOrd` / `aggRev`). `linii` se filtrează tot fără multiplicare, prin `IN (SELECT …)`.
 
-**`pdf`, abatere de la plan:** coloana este `CalePDF`, nu `FX_ORD.PDF` (Access: `ArePDF` / `CalePDF`), și nicio migrare nu o scrie, ca la cele patru coloane PDF DDF. Existența MariaDB nu poate fi confirmată offline; se probează o dată prin `information_schema`, memorat per bază, evitând 500 pentru coloană absentă. Câmpul este valoarea când există, altfel `None`; rămâne doar semnal, clientul calculând și verificând propria cale locală.
+**pdf, abatere:** coloana CalePDF, fără FX_ORD.PDF (Access ArePDF/CalePDF); nicio migrare nu o scrie, ca cele patru câmpuri PDF DDF. Existența MariaDB rămâne neconfirmabilă offline; probă information_schema o dată per bază, memorată, evită 500 când lipsește. Răspuns: valoarea coloanei sau None; numai semnal, clientul calculează/verifică propria cale locală.
 
 `part_ang` / `nume_partener` vin din `FX_DDF` prin `o.IDDF`, ca subinterogări scalare cu `LIMIT 1` (PK compus → un join ar dubla ordonanțarea). Nu se afișează: compun folderul PDF-ului.
 
@@ -50,8 +50,8 @@ Un singur drum dus-întors, două tablouri:
 
 ### 3. Vederea + paginile
 
-* `Views\OrdView.vb` / `.Designer.vb` / `.resx` — `split` (Panel1 = `tree`, Panel2 = `pnlPages` + `navSub`), un `image_list` legat prin `tree.NodeImages`, `lblEmpty`. Încărcare cu un singur `GetOrdAsync` prin `WithReauth`, cu stale-guard pe `_requestedCod`; arbore lună → ordonanțare; click pe nod = filtrare locală + `PushToActivePage`; `Tree_CollapsedChanged` + `ClampSplitter` copiate din `RezervariView`.
-* `Views\Ord\IOrdPage.vb` — contractul, **mai subțire** decât `IDdfPage`: ORD e read-only în felia asta, deci nicio pagină n-are ce ridica spre părinte (fără `GenerateRequested`, fără `FileActivated`). Când vine generarea, acolo se adaugă.
+* Views/OrdView.vb + Designer/resx: split.Panel1 tree, Panel2 pnlPages/navSub, image_list în NodeImages, lblEmpty. Un GetOrdAsync/WithReauth, stale-guard _requestedCod; arbore lună→ordonanțare, clic→filtru local/PushToActivePage. Tree_CollapsedChanged/ClampSplitter copiate RezervariView.
+* Views/Ord/IOrdPage.vb: contract readonly mai mic decât IDdfPage, fără GenerateRequested/FileActivated spre părinte. Vor fi adăugate la generare.
 * `Views\Ord\OrdPageContext.vb`, `OrdVizualizarePage` (grilă, șase coloane autorite în designer), `OrdDocumentPage` (PDF real, montare leneșă cu gardă pe perechea `(cale, existență)`), `OrdPdfLocator`.
 * `MainForm.CreateView("ord")` → `New OrdView(...)`. Intrarea de navigare era deja poartată de `AreORD` (felia 0008) — nimic de schimbat acolo.
 

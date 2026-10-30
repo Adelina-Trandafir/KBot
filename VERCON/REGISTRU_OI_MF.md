@@ -59,7 +59,7 @@ VBA-ul disponibil în repository scria `IDBC=0` la predare și transfer. Acest f
 
 Dacă `IDBC` este deja nenul la predare/transfer, trebuie să fie egal cu marcajul corespunzător. O contradicție nu se ignoră și nu se repară automat. Clarificarea de business a utilizatorului are prioritate față de vechea interpretare dedusă numai din VBA.
 
-## Regula de migrare
+## Regula de migrare <a id="identitate-migrare"></a>
 
 ID-urile interne ale bonurilor P/T/C se alocă dintr-o **singură secvență pe gestiune**. Identitatea sursă rămâne delimitată prin sursă, familie și ID-ul vechi; același număr sursă din două familii nu le face același bon.
 
@@ -78,7 +78,7 @@ Acum `GroupNumber` păstrează mapările sursă pe familie, dar folosește conto
 
 **Acestea sunt ID-uri interne, nu numerele afișate ale bonurilor.** Numerele BP/BT/BS au serii separate și nu se schimbă prin această corecție. Nu se recalculează cantitățile, prețurile, valorile sau semnele istorice.
 
-## Regula aplicației
+## Regula aplicației <a id="regula-aplicatiei"></a>
 
 `oi_custody.py` centralizează familia bonului, citirea registrului, construirea referințelor rândurilor noi și identificarea loturilor. `oi.py` folosește aceeași logică la salvare, reîncărcare, modificare și anulare. La ștergerea rândurilor unei casări se cer și `IDBP`/`IDBT` goale/0; filtrarea numai prin `IDBC` ar putea afecta alt tip de bon.
 
@@ -86,7 +86,7 @@ Acum `GroupNumber` păstrează mapările sursă pe familie, dar folosește conto
 
 Predarea oferă produse cu stoc pozitiv în magazie; transferul și casarea oferă loturi cu disponibil pozitiv la predător. Data bonului, celelalte rânduri din ciornă și mișcările ulterioare limitează disponibilul.
 
-## Contul de folosință se păstrează până la casare
+## Contul de folosință se păstrează până la casare <a id="cont-folosinta"></a>
 
 Regulă confirmată de utilizator la **18.10.2026**, după diagnosticul BP 27 / BS 5 pentru BADEA ION, CALCULATOR PORTABIL ASUS: contul lotului este cel din primirea inițială BP în registru. Transferul și casarea îl moștenesc prin `IDBO`; un BT primit continuă același cont pentru următorul deținător. `IDM` dintr-o poziție TC și `IdMasina` din linia TC nu pot muta produsul pe alt cont. Nu se elimină contul din identitatea primirilor BP distincte.
 
@@ -102,7 +102,7 @@ Mesajul vechi «O poziție din registrul OI nu identifică un singur document» 
 
 Erorile actuale indică poziția `IDOI` și referința contradictorie/lipsă. Datele deja migrate cu maparea veche nu sunt remapate retroactiv prin actualizarea codului. Recuperarea de mai sus se aplică numai importului din sursa Access, nu citirii datelor existente în MariaDB. Repararea acestora cere analiză separată a documentelor și a mapărilor sursă; nu se golește automat `IDBP`, `IDBT`, `IDBC` sau `IDBO`.
 
-## ToolVersion și schema
+## ToolVersion și schema <a id="toolversion"></a>
 
 La 18.10.2026 utilizatorul a raportat rollback în `000_DEMO`, la crearea contextului, cu `Data too long for column 'ToolVersion' at row 1`. `VC_Imports.ToolVersion` primea `VRC.Migrator ` concatenat cu identificatorul lung al regulilor. Acum primește versiunea executabilului din `FileVersionInfo`: **0.3.7.0** pentru această revizie.
 
@@ -130,13 +130,13 @@ Reper 18–19.10.2026, fără probe noi. Regula primirii BP în migrator a fost 
 
 1. Scriptul manual sql/VC_DIAG_disponibil_transfer.sql a fost pregătit pentru cazul BADEA ION / CALCULATOR PORTABIL ASUS. Cere context/variantă explicite, fără alegerea primei potriviri; arată documentele cu semnele așteptate, registrul brut pentru toți deținătorii și cheia lot/proveniență–variantă–cont–preț cu sold la data bonului. Inițial cauza era nedemonstrată; fără corecții automate sau calcul paralel care ocolește registrul.
 2. Rezultatele furnizate de operator: 000_DEMO, subunitate 10, gestiune 8, exercițiu 9, deținător 164, variantă 3878; BP ID 12 și BS ID 38 au sold net 0 în bonuri. Registrul are lot 12/preț 4408,1600, dar IDOI 1821 este +1 pe IDM 34 (MF ÎN FOLOSINȚĂ), IDOI 1848 este −1 pe IDM 33 (MF ÎN MAGAZIE). Gruparea separa conturile: +1 rămânea eligibil, grupul −1 fără intrare era omis de batches. Acesta era mecanismul imediat demonstrat; proveniența Access vs migrare rămânea încă nedemonstrată. Scriptul a primit secțiunea 6 cu ambele conturi BP și mapările ROW ale liniilor/conturilor, fără schimbarea cheii sau datelor înaintea comparației.
-3. Ulterior, utilizatorul a confirmat eroarea de cont din Access și a cerut ambele corecții. Contul efectiv se moștenește recursiv prin BP/BT, pe variantă/preț, cu memoizare/cicluri/ambiguități verificate; IDM brut rămâne separat. TC se reîncarcă din registru cu cantitate/preț din linie; contul clientului nu schimbă lotul. Evidența/rapoartele păstrează cantitățile/datele sursei configurate și actualizează încadrarea/numele contului; citirea nu execută UPDATE. Migratorul indexează primiri/linii TC per sursă și convertește IDM/IdMasina înaintea remapării, fără rescriere Access; N13 păstrează original/țintă/cont, X16 blochează lipsa/ciclul/ambiguitatea. Pentru BS38/IDOI1848, contul 34 în loc de 33 și +1−1=0 este rezultat de design, nu rulare; diagnosticul continuă să arate cheile BRUTE.
+3. Ulterior, utilizatorul a confirmat eroarea de cont din Access și a cerut ambele corecții: [regula contului moștenit](#cont-folosinta), cu memoizare, IDM brut separat și TC reîncărcat din registru cu cantitate/preț din linie. Evidența/rapoartele păstrează cantitățile/datele sursei configurate, actualizând încadrarea/numele contului, fără UPDATE la citire. Migratorul indexează primiri/linii TC per sursă; N13 consemnează original/țintă/cont. Pentru BS38/IDOI1848, 34 în loc de 33 și +1−1=0 rămâne rezultat de design, nerulat; diagnosticul arată cheile BRUTE.
 
 ### Identitate, implementare și proveniență documentară
 
-- Alocarea comună P/T/C păstrează maparea sursei după fișier/familie; documentele, marcajele IDBP/IDBT, IDBC și IDBO folosesc aceeași mapare. Resolverul IDBC verifică documentul sursă și completează 0 la BP/BT din marcaj; contradicțiile numesc IDOI/valorile, fără reparație tacită. import_map.js păstrează oi_document/origin și versiunea regulilor planului.
-- oi_custody centralizează citirea și rândurile noi, familia și lotul primit prin transferul curent; protecția dependentelor folosește evenimente normalizate/IDBO și exclude propriul document prin familie+ID. Ștergerea este delimitată pe familie. Rapoartele stoc/amortizare citesc tabelele P/T/C cu cheile proprii și nu au cerut schimbări pentru semantica IDBC din registru.
-- Corecția ToolVersion a urmat rollbackului la crearea contextului, înaintea migrării; nu trunchiază RuleVersion și cere recompilare. La documentarea din 18.10 nu exista confirmare de import reușit după corecție. Modificate atunci numai Markdown: acest contract, DICTIONAR_DATE, PLAN_IMPLEMENTARE, VERCON_STATUS, README VRC și CODEX_SCHIMBARI_MIGRATOR_2026-10-18. Celelalte cerințe istorice nu au fost declarate rezolvate prin documentare.
+- [Identitatea comună P/T/C](#identitate-migrare) și compatibilitatea IDBC sunt definite mai sus. Resolverul verifică documentul sursă; contradicțiile numesc IDOI/valorile, fără reparație tacită. import_map.js păstrează oi_document/origin și versiunea regulilor planului.
+- [oi_custody și loturile](#regula-aplicatiei): protecția dependentelor folosește evenimente normalizate/IDBO și exclude propriul bon prin familie+ID; ștergerea rămâne delimitată pe familie. Rapoartele stoc/amortizare citesc P/T/C cu cheile proprii, fără schimbări pentru semantica IDBC.
+- [Corecția ToolVersion](#toolversion) urmează rollbackului la crearea contextului, înaintea migrării; la 18.10 nu exista confirmarea importului reușit. Modificate atunci numai Markdown: acest contract, DICTIONAR_DATE, PLAN_IMPLEMENTARE, VERCON_STATUS, README VRC și CODEX_SCHIMBARI_MIGRATOR_2026-10-18. Celelalte cerințe istorice nu sunt declarate rezolvate prin documentare.
 - Recuperarea 0.3.9.0 folosește același snapshot în BuildRow și OiAccounts; X17 raportează imposibilitatea înaintea conversiilor rândului. Citirea cazului real a fost read-only, la cererea utilizatorului; algoritmul nou nu a fost executat și nu remapează retroactiv importurile existente.
 
 Fișiere ale etapelor de identitate/cont: VERCON/VRC.Migrator/{VrcRunner,VrcRunner.Oi,VrcRunner.OiAccounts,VrcImportMap,VrcPlan}.vb, import_map.json, VRC.Migrator.vbproj, README; VERCON/tools/import_map.js; PYTHON/routes/vercon/{oi,oi_custody,oi_accounts,stock_source,report_data,report_oi}.py; SQL-ul de diagnostic și acest contract. Recuperarea adaugă VrcRunner.OiOrigins.vb și atinge și VrcRun.vb. ToolVersion atingea VrcRunner.vb și proiectul VRC. Nu s-au executat teste, build, import, HTTP, SQL sau modificări de schemă/date în aceste corecții; executabilul necesita recompilare.

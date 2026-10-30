@@ -18,21 +18,21 @@ Cele două etape din 09.09.2026 rămân distincte. Prima repară cazuri demonstr
 
 - `MomentLista` — când s-a descărcat lista (pachetele de nod își poartă singure `Moment`);
 - `NumaraRanduri(pachet)` — rânduri, nu tabele (fluxul întoarce cele cinci tabele ale lui și când toate sunt goale, deci `Tabele.Count` ar răspunde 5 pe un pachet gol);
-- `PachetBunDeRefolosit(cod)` — pachetul, DAR numai dacă e bun: există și are măcar un rând. Asta e «doar dacă sunt corect descărcate»: în depozit intră doar ce a raportat succes, iar un pachet fără rânduri nu se oferă fiindcă ingestia l-ar respinge oricum.
+- PachetBunDeRefolosit(cod): oferă numai pachet existent cu măcar un rând. Depozitul acceptă numai succesul, iar ingestia ar refuza oricum pachetul gol: acesta este criteriul «corect descărcat».
 
 `MainForm.IntreabaDacaRefolosescPachetul` (iconița nodului) / `IntreabaDacaRefolosescLista` (sincronizare) afișează ORA descărcării: Da refolosește memoria, Nu descarcă din nou. Eșecul întrebării descarcă din nou.
 
-Refolosirea e sigură prin construcție: contractul în două faze al ingestiei (felia 0055) poartă ACELAȘI payload prin amândouă fazele, iar un pachet din memorie e chiar obiectul care ar fi ieșit dintr-o descărcare.
+Refolosirea păstrează contractul 0055: același payload traversează ambele faze, iar pachetul memorat este obiectul descărcat.
 
 `ForexeController.SpuneStare` e nou și public: fără el consola ar fi arătat o ingestie fără descărcarea ei.
 
 ### 2. Buton de golire a așezărilor pasului curent
 
-`btnReseteaza` («Golește așezările»), vizibil DOAR în modul propunere — în editorul de oricând nu există «pas curent», iar un buton care ar desprinde tot ar fi o unealtă de stricat.
+btnReseteaza «Golește așezările» apare numai în propunere; editorul de oricând nu are pas curent, deci nu oferă desprinderea tuturor legăturilor.
 
 Limita este `InstantaneuLegat.Blocat`, comună cu `NehotarateleCount` și `DeciziiDin`: serverul blochează contextul deja scris și deblochează exact mulțimea de decis. Butonul folosește aceeași regulă ca formularul.
 
-Se golește la NEAȘEZAT, nu la sugestia automată: rostul e să șteargă tot ce s-a hotărât, iar o revenire la sugestie ar lăsa în urmă hotărâri pe care operatorul nu le-a luat. Cere confirmare — e o ștergere de muncă fără Undo.
+Resetarea trece la NEAȘEZAT, fără revenire la sugestiile automate pe care operatorul nu le-a ales. Cere confirmare: pierde munca fără Undo.
 
 ### 3. Niciun avertisment despre data recepției — nicăieri
 
@@ -55,13 +55,13 @@ Parametrul `rec` a ieșit din `CaptionInstantaneu` și `TooltipInstantaneu`: nu-
 
 ### 5. Arborii nu mai sar la primul rând după fiecare tragere
 
-`AdvancedTreeControl.Clear` pune derularea la zero — pe drept, e o golire — iar `AsociereForm.Reconstruieste` golește și reumple amândoi arborii la fiecare tragere. Rezultatul: operatorul era aruncat înapoi la primul rând, adică departe de recepția pe care tocmai lucra.
+AdvancedTreeControl.Clear resetează legitim derularea; AsociereForm.Reconstruieste golea/reumplea ambii arbori la fiecare drag, întorcând operatorul la primul rând, departe de recepția curentă.
 
 Noul `AdvancedTreeControl.ScrollOffsetY` se salvează înainte și se restaurează după reconstrucție. Setterul cheamă `RefreshScrollVisibility()` înainte: după `Clear`, cursa zero până la pictare ar limita `AutoScrollPosition` la zero. Selecția nu se păstrează; hrănește grila/graficul și se schimbă prin tragere.
 
 ### 6. Recepțiile noi se văd altfel
 
-Toate rădăcinile erau aldine, deci aldinul singur nu deosebea nimic. Recepțiile născute de descărcarea curentă sunt acum **aldine + cursive**; cele venite de pe server rămân doar aldine. Semnul e `ReceptiePropusa.RandReceptie` — serverul îl pune EXACT pe recepțiile create în rularea curentă (felia 0056), Nothing pentru toate celelalte.
+Rădăcinile noi primesc aldin+cursiv, cele de server rămân aldine. ReceptiePropusa.RandReceptie marchează exact recepțiile create în descărcarea curentă (0056), Nothing pentru celelalte; aldinul singur nu le distingea.
 
 Eticheta plutitoare a unei recepții noi nu mai scrie numărul, ci «Recepție NOUĂ, din descărcarea curentă»: numărul de acum nu e cel de după salvare (vezi §4a).
 
@@ -71,7 +71,7 @@ Eticheta plutitoare a unei recepții noi nu mai scrie numărul, ci «Recepție N
 
 Ce s-a schimbat în `KBotLaneView`:
 
-- **Obiecte GDI+ reutilizate:** `_fillBrush`, `_backBrush`, `_edgePen`, `_detailPen`. Sunt patru deoarece formele pot rămâne pregătite simultan; `ScratchPen`/`ScratchBrush` rescriu fiecare proprietate, evitând moștenirea capetelor rotunde sau a stilului punctat de la desenul precedent.
+- **GDI+ reutilizat:** _fillBrush/_backBrush/_edgePen/_detailPen, patru obiecte pentru forme pregătite simultan. ScratchPen/ScratchBrush rescriu toate proprietățile, fără capete rotunde/stil punctat moștenite din desenul precedent.
 - **`KBotLane.PlottedInOrder`**: marcajele desenate, deja sortate pe X, umplute de pasul de așezare. Înainte, `DrawLaneSegments` construia și sorta o listă PE BANDĂ, PE REPICTARE.
 - **`_px1` / `_px2` / `_px3`**, cele trei grosimi scalate la DPI, calculate cu așezarea: `ScaleDpi` era chemat de patru-cinci ori pe marcaj pentru trei numere care nu se pot schimba între două marcaje.
 - **`EffectivePlotBackColor()` citit o dată** pe pictare, nu de două-trei ori pe marcaj.
@@ -133,7 +133,7 @@ Linia asta e tot ce lasă în urmă o salvare refuzată — și nu spune nici ce
 
 #### `PYTHON/utils/asociere_log.py` (nou)
 
-Un jurnal separat, construit după tiparul lui `utils/timing.py`: logger propriu (`kbot.asociere`), fișier propriu (`asociere.log`), handler propriu și `propagate = False`, deci **nicio linie nu ajunge în `api_server.log`**.
+Jurnal separat după utils/timing.py: logger kbot.asociere, asociere.log și handler proprii, propagate=False; fără linii în api_server.log.
 
 Un **bloc pe cerere**, ținut în memorie și scris întreg la sfârșit — două cereri simultane nu-și pot amesteca liniile. Blocul poartă, în ordinea în care le face codul:
 
@@ -175,8 +175,8 @@ Fișierul se mută cu `KBOT_ASOCIERE_LOG` în mediu sau `ASOCIERE_LOG_PATH` în 
 - `pas4c_automat` — candidații după sumă, apoi fiecare potrivire și fiecare ratare, pe ture (tura 1 = de la nou la vechi, tura 2 = restul).
 - `verifica_acoperirea` — câte hotărâri pentru câte instantanee, câte lipsesc.
 - `materializeaza_reconstituite` — ce recepție se naște din ce lanț și din ce rânduri.
-- `valideaza_plasarile` — **partea care contează**: pentru fiecare lanț, recepția cu sumele ei, tabelul lanțului întreg, apoi F14 / F16 pe fiecare instantaneu și F15 cu **amândouă tablourile de valori scrise unul sub altul**. Trec și verdictele bune, nu doar cel care refuză: «F15 trece» spune la fel de mult ca «F15 cade».
-- `aplica_decizii` — hotărârile ca tabel, ancorele pasului 4b, apoi «ce vrea să facă rularea» rând cu rând, **inclusiv instantaneele deja legate pe care le trage în lanț** (F15 și F16 se uită la lanțul întreg, deci o respingere poate veni dintr-un rând pe care operatorul nu l-a atins — până acum asta nu se vedea de nicăieri).
+- valideaza_plasarile: per lanț, recepția/sumele, întregul tabel, F14/F16 per instantaneu și F15 cu ambele tablouri de valori alăturate vertical. Jurnalizează atât trecerea, cât și refuzul fiecărei reguli.
+- aplica_decizii: tabelul hotărârilor, ancorele 4b și intenția rulării per rând, inclusiv instantaneele deja legate atrase în lanț. F15/F16 pot refuza dintr-un rând neatins de operator, deoarece verifică lanțul întreg; acum acel rând devine vizibil.
 - `recalculeaza_final`, `marcheaza_reconstituirile_nesigure` — trecerile `Final`/`Partial` și marcajul F28.
 
 **`routes/forexe/prelucrare.py`** — `@journal.traced("prelucrare")` sub `@timing.timed`, antetul (`dc`, `user`, `cod`, `mod`, rândurile sosite pe tabel), sfârșitul fiecărei căi: amprentă nepotrivită, alegere de unitate, decizii respinse, sarcină de nefolosit, eroare MariaDB, rollback-ul propunerii, commit-ul salvării.

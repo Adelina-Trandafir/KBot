@@ -84,11 +84,11 @@ Continuarea feliei 0053 ([SLICE-0053-recorder.md](#slice-0053-baza)), care lăsa
 IForexeRunner:  Sub ShowRecorder(owner As IWin32Window)
 ```
 
-`ForexeRunner` construiește formularul la prima cerere, îl ține (modeless) și îl leagă la executorul CURENT la fiecare deschidere — o reconectare înseamnă alt executor, deci legarea nu se poate face o singură dată. `FormClosed` anulează referința, așa că închiderea de către operator lasă loc unui formular nou.
+ForexeRunner creează formularul nemodal la prima cerere și îl leagă la executorul CURENT la fiecare deschidere: reconectarea schimbă executorul. FormClosed golește referința, permițând o instanță nouă după închidere.
 
 Fără sesiune vie `ShowRecorder` **aruncă**, nu tace: exact tiparul lui `ShowBrowserAsync`.
 
-`DisposeExecutorAsync` cheamă `DetachRecorder()` ÎNAINTE de a închide executorul — altfel recorderul ar rămâne cu un executor mort în mână și cu butoanele de andocare aprinse degeaba. Desprinderea se marșalează pe firul de UI (`BeginInvoke`), fiindcă închiderea sesiunii vine de pe firul robotului.
+DisposeExecutorAsync cheamă DetachRecorder() ÎNAINTE de închiderea executorului, evitând referința moartă și butoanele de andocare active. BeginInvoke mută detașarea pe UI, deoarece închiderea sesiunii vine de pe firul robotului.
 
 #### Butonul din consolă
 
@@ -98,15 +98,15 @@ Fără sesiune vie `ShowRecorder` **aruncă**, nu tace: exact tiparul lui `ShowB
 - `ActualizeazaStarea` îl stinge când nu există sesiune (ca `btnAfiseazaBrowser`);
 - `OnThemeChanged` îi aplică `ButtonStyles.ApplySecondary`, ca celorlalte trei.
 
-Proprietarul ferestrei e `ForexeController.Owner` (shell-ul), nu consola: consola se ascunde la închidere, iar un recorder deținut de ea ar dispărea odată cu ea.
+Proprietar: ForexeController.Owner (shell), fără consola care se ascunde la închidere și ar ascunde și recorderul deținut de ea.
 
 #### Monitorul Wicket în recorder
 
 Buton nou `btnMonitor` pe bara de înregistrare (pozițiile celorlalte trei rămân neatinse; `374,6` × `74,28`, dreapta la 448 într-un panou de 454 — verificat pe ecran).
 
-`BtnMonitor_Click` pornește întâi `StartWicketMonitoringAsync` dacă nu rulează deja: `WicketMonitorForm` se hrănește exclusiv din `OnWicketStateChange`, deci fără asta fereastra s-ar deschide goală și ar părea stricată. Apoi creează monitorul o singură dată, îl leagă la același executor și îl arată; la a doua apăsare doar îl aduce în față (și îl restaurează dacă e minimizat).
+BtnMonitor_Click pornește StartWicketMonitoringAsync când monitorizarea nu rulează: WicketMonitorForm primește exclusiv OnWicketStateChange. Apoi creează o singură instanță pe același executor; redeschiderea o aduce în față/restaurează din minimizare, fără fereastră goală.
 
-La închiderea de către operator, monitorul anulează `FormClosing` și se ascunde. Numai `RecorderForm.Dispose` îl distruge, prin `Dispose` direct, care ocolește acel eveniment.
+Monitorul anulează FormClosing și se ascunde la închiderea operatorului; numai RecorderForm.Dispose îl distruge prin Dispose direct, ocolind evenimentul.
 
 `AttachExecutor` / `DetachExecutor` din recorder duc mai departe schimbarea și către monitor, ca să nu rămână legat de un executor pe care recorderul l-a lăsat deja.
 
@@ -134,26 +134,26 @@ Trei observații ale operatorului după prima încercare de a folosi recorderul 
 
 **Simptom:** cu browserul NEandocat, orice clic pe recorder trimitea fereastra Chromium în spatele lui.
 
-Era exact ce trebuia să se întâmple: nimic nu ținea browserul deasupra. Calea andocată avea deja linia care rezolvă asta — `SyncDockedBoundsAsync` cheamă `SetWindowPos(hwnd, ownerHandle, …, NOACTIVATE)`, adică «pune browserul imediat deasupra formularului gazdă, fără să-i dai focusul». Nedocat, `ScheduleResync` ieșea din prima linie (`If Not _executor.IsDocked Then Return`), deci nu se întâmpla nimic.
+Nedocat, ScheduleResync ieșea prin `If Not _executor.IsDocked Then Return`, fără menținerea z-order. Andocat, SyncDockedBoundsAsync chema deja `SetWindowPos(hwnd, ownerHandle, …, NOACTIVATE)`, deasupra gazdei fără focus.
 
 Acum:
 
 - `WorkflowExecutor.RaiseBrowserAboveAsync(owner)` — perechea nedocată a acelei linii de z-order, fără CDP și fără mutarea ferestrei. `owner.Handle` se citește ÎNAINTE de `Await`: după el continuarea poate să nu mai fie pe firul de UI.
 - `RecorderForm.ScheduleResync` nu mai iese când e nedocat, atâta timp cât există browser; `TmrResync_Tick` se ramifică — andocat resincronizează marginile, nedocat doar ridică browserul deasupra.
 
-Temporizatorul era deja acolo pentru amortizarea tragerilor, deci nu s-a adăugat niciun mecanism nou: aceleași evenimente (`Move`, `Resize`, `Activated`, mutarea splitterului) duc acum la două acțiuni diferite, după starea de andocare.
+Timerul existent amortiza tragerile; aceleași Move/Resize/Activated/mutare splitter aleg acum una dintre cele două acțiuni după andocare, fără mecanism nou.
 
-**Consecință de spus cu voce tare:** nedocat, browserul stă acum DEASUPRA recorderului și îl poate acoperi complet (fereastra detașată e pusă la `100,100` × `1400×900`). Recorderul rămâne cel activ pentru tastatură, dar poate fi nevoie să fie mutat browserul ca să se vadă lista de pași. Andocat, nu se schimbă nimic — panoul e tocmai locul făcut pentru browser.
+**Nedocat, browserul poate acoperi recorderul:** fereastră detașată la 100,100, 1400×900, deasupra lui. Recorderul rămâne activ pentru tastatură; browserul poate necesita mutare pentru lista pașilor. Andocat, panoul păstrează comportamentul.
 
 ### 2. Viewportul emulat, la andocare
 
-Playwright desenează pagina într-un viewport EMULAT — contextul se creează în `WorkflowExecutor.Browser.vb` fără `ViewportSize`, deci implicit 1280×720 — iar viewportul acela NU urmează fereastra. Andocarea redimensionează fereastra la panoul gazdă, deci pagina rămânea desenată la dimensiunea veche, cu chenar gol în jur.
+Contextul din WorkflowExecutor.Browser.vb, fără ViewportSize, folosește implicit viewport emulat 1280×720, independent de fereastră. Andocarea redimensiona fereastra, lăsând pagina la vechea mărime și chenar gol.
 
-`DockBrowserToAsync` cheamă `ClearEmulatedViewportAsync()` după prima sincronizare a marginilor. Dacă `_page.ViewportSize` este activ, o sesiune CDP trimite `Emulation.clearDeviceMetricsOverride`, urmărind fereastra reală. Este modul Playwright «no viewport», aplicat după crearea contextului, când API-ul .NET nu-l mai poate elimina direct.
+DockBrowserToAsync cheamă ClearEmulatedViewportAsync după prima sincronizare. Cu `_page.ViewportSize` activ, CDP trimite Emulation.clearDeviceMetricsOverride pentru fereastra reală: no viewport după crearea contextului, când API-ul .NET nu-l mai elimină direct.
 
 Viewportul nu revine la detașare: pagina urmează fereastra în ambele stări; restaurarea 1280×720 ar lăsa spațiu gol într-o fereastră de 1400×900.
 
-Eșecul se STRIGĂ în jurnal (`LogWarning`), nu pică andocarea: o pagină desenată la dimensiunea veche e urâtă, nu un motiv să refuzi andocarea pe care operatorul tocmai a cerut-o.
+Eșecul ajunge în LogWarning, fără refuzul andocării cerute: pagina poate rămâne la vechea dimensiune.
 
 ### 3. Conectare fără token, doar în Debug
 
@@ -191,34 +191,34 @@ Operatorul: «andocarea tot nu merge». Și: «fă un banc de probă care deschi
 
 ### 1. De ce nu mergea andocarea: fereastra nu era găsită
 
-`GetOrRefreshBrowserHwndAsync` căuta fereastra plimbând TOATE procesele mașinii și comparând `Process.MainWindowTitle` cu marcajul unic `WF_BROWSER_<guid>`. Marcajul se scrie o singură dată, în `document.title`, pe `about:blank`, la pornirea browserului.
+GetOrRefreshBrowserHwndAsync scana toate procesele, comparând Process.MainWindowTitle cu `WF_BROWSER_<guid>`, scris o singură dată în document.title pe about:blank la pornire.
 
-**Prima navigare reală șterge marcajul.** Titlul ferestrei devine titlul sitului, iar căutarea nu mai găsește nimic: 20 de încercări × 250 ms = cinci secunde de scanat procese, apoi `IntPtr.Zero`, apoi excepția «Nu am găsit fereastra browserului. Andocarea nu poate continua.» Handle-ul nu era pus în cache la pornire decât pe calea *stealth* (`ApplyStealthWindowStyle`), deci în mod normal nu exista niciun handle memorat care să salveze situația.
+**Prima navigare reală șterge marcajul**, înlocuit cu titlul sitului: 20 × 250 ms de căutare, apoi IntPtr.Zero și «Nu am găsit fereastra browserului. Andocarea nu poate continua.» Numai calea stealth (ApplyStealthWindowStyle) memora handle-ul la pornire.
 
 Acum:
 
 - handle-ul se rezolvă **la pornire**, cât timp marcajul e încă pe pagină — o singură dată, în `LaunchAndPositionBrowserAsync`, imediat după ce se scrie titlul;
-- dacă totuși cache-ul e gol mai târziu, căutarea **repune marcajul** în `document.title`, găsește fereastra, apoi **pune titlul real la loc** (operatorul nu rămâne cu o fereastră numită `WF_BROWSER_<guid>`);
-- căutarea folosește `EnumWindows` + filtru pe clasa `Chrome_WidgetWin_1`, nu `Process.MainWindowTitle`: vede fereastra chiar dacă nu e fereastra principală a procesului, nu plimbă toate procesele, și nu prinde din greșeală ferestrele-ajutor invizibile pe care Chromium le atârnă de același titlu — o astfel de fereastră mutată prin ecran arată exact ca o andocare care nu face nimic.
+- cu cache gol ulterior, căutarea repune marcajul în document.title și restaurează titlul real după găsire;
+- EnumWindows cu filtrul Chrome_WidgetWin_1 găsește și ferestre secundare, fără scanarea proceselor sau selectarea ferestrelor-ajutor invizibile cu același titlu, a căror mutare părea o andocare fără efect.
 - `GetBrowserHwndAsync`, geamănul mort al funcției (nechemat de nimeni), a fost șters.
 
 ### 2. Andocare adevărată: `SetParent`
 
-Regula «fereastra Chromium nu se reparentează» a căzut la cererea operatorului, iar odată cu ea a căzut și tot mecanismul construit ca s-o ocolească.
+La cererea operatorului, reparentarea Chromium înlocuiește mecanismul care o evita.
 
-Înainte: fereastra rămânea de nivel superior, era ținută peste panou cu CDP `Browser.setWindowBounds` (coordonate fizice → DIP cu `* 96 / DeviceDpi`) și împinsă imediat deasupra formularului cu `SetWindowPos`, la fiecare mutare, redimensionare și activare. Două lucruri se rupeau constant: găsirea ferestrei (§1) și cursa de z-order cu fiecare activare a formularului gazdă.
+Anterior, fereastra de nivel superior urma panoul prin CDP Browser.setWindowBounds (pixel fizic → DIP: * 96 / DeviceDpi) și SetWindowPos deasupra gazdei la mutare/redimensionare/activare. Eșuau găsirea ferestrei (§1) și z-order la activarea gazdei.
 
 Acum, în `DockBrowserToAsync`:
 
 1. se rețin stilurile, părintele și dreptunghiul ferestrei, ca detașarea să le poată da înapoi;
 2. `ShowWindow(SW_RESTORE)` — o fereastră maximizată se luptă cu dimensiunea primită;
 3. stilurile devine de copil: fără `WS_CAPTION`, `WS_THICKFRAME`, `WS_SYSMENU`, butoanele de minimizare/maximizare și `WS_POPUP`; cu `WS_CHILD` și `WS_VISIBLE`; scoasă din bara de activități;
-4. `SetParent(hwnd, panou)`. **Rezultatul lui `SetParent` nu spune nimic** — întoarce părintele ANTERIOR, care e null și pentru o fereastră de nivel superior, și null și la eșec — deci se întreabă `GetParent` cine e părintele acum. Dacă nu e panoul: stilurile se pun la loc și se aruncă. O fereastră rămasă fără stiluri e mai rea decât o andocare care n-a avut loc;
-5. `AttachBrowserInput` leagă coada de intrare a firului UI de cea a firului ferestrei browserului. Fără asta, un copil Chromium reparentat primește mouse-ul dar **nu** și tastatura: focusul urmează fereastra de prim-plan, care e a firului formularului. Best effort — o tastare capricioasă nu e motiv să refuzi andocarea cerută;
+4. `SetParent(hwnd, panou)`, confirmat prin GetParent: rezultatul SetParent este părintele ANTERIOR, null atât pentru nivel superior, cât și la eșec. Dacă părintele actual nu e panoul, se restaurează stilurile și se aruncă;
+5. AttachBrowserInput leagă cozile firelor UI/browser pentru tastatură: copilul reparentat primea numai mouse, focusul urmând fereastra de prim-plan a formularului. Best effort, fără refuzul andocării la eșec;
 6. viewportul emulat se elimină ca înainte (`Emulation.clearDeviceMetricsOverride`).
 
 `SyncDockedBoundsAsync` s-a redus la un `MoveWindow(hwnd, 0, 0, latime, inaltime, True)`: coordonatele unui copil sunt pixelii CLIENT ai părintelui, adică exact ce raportează WinForms.
-**Nicio conversie DPI, niciun drum prin CDP, niciun z-order de întreținut** — un copil nu poate cădea în spatele propriului părinte. Funcția nu mai e `Async` de fapt; întoarce `Task` ca să nu se schimbe niciun apelant.
+Fără conversii DPI/CDP sau întreținere z-order: copilul nu cade în spatele părintelui. Funcția nu mai e Async, dar păstrează Task pentru apelanți.
 
 `UndockBrowserAsync` face drumul invers: dezleagă cozile de intrare, `SetParent` la părintele dinainte, repune stilurile și dreptunghiul (sau `100,100 × 1400×900` dacă cel memorat nu era folosibil), `SWP_FRAMECHANGED`.
 
@@ -226,7 +226,7 @@ Acum, în `DockBrowserToAsync`:
 
 #### Prețul, spus cu voce tare
 
-Fereastra browserului aparține acum panoului. **Eliberarea panoului sau închiderea formularului gazdă fără detașare distruge fereastra Chromium și, cu ea, sesiunea.** De-aia `RecorderForm` și bancul de probă detașează în `FormClosing`, înaintea oricărei eliberări. Comentariul-antet din `RecorderForm.vb`, care spunea exact pe dos («browserul nu e reparentat»), a fost măturat.
+**Eliberarea panoului/închiderea gazdei fără detașare distruge Chromium și sesiunea.** RecorderForm și bancul detașează în FormClosing, înaintea eliberării. Antetul RecorderForm.vb care nega reparentarea a fost eliminat.
 
 ### 3. Bancul de probă: `BrowserDockHarnessForm`
 
@@ -263,21 +263,21 @@ Pe pagina publică FOREXE **fluxul `[WICKET]` rămâne tăcut**: `#statlogo` / `
 
 ### Adăugire — bara browserului ascunsă în panou
 
-Cerință: cât timp e andocat, browserul nu trebuie să-și arate **banda de file** și **bara de adrese**. Nu se face cu un argument de Chromium (`--app` / `--kiosk` se bat cu felul în care Playwright deschide paginile și cu dimensionarea panoului), ci prin **poziționare**:
+Cerință: ascunderea filelor și adresei cât timp browserul e andocat. Poziționarea evită --app/--kiosk, incompatibile cu deschiderea paginilor Playwright și dimensionarea panoului:
 
 - fereastra primește un `Top` negativ, exact cât banda ei de sus, și o înălțime mai mare cu aceeași valoare — zona paginii cade fix peste panou, iar banda rămâne deasupra marginii de sus a panoului;
 - o fereastră-copil e decupată de părinte, deci banda nu se desenează și nu se poate apăsa;
 - fereastra rămâne neatinsă: la detașare, sau cu `HideChromeWhenDocked = False`, bara revine.
 
-**Se compensează DOAR partea de sus.** Prima variantă compensa și stânga, dreapta și jos, cu aceeași măsurătoare — și operatorul a rămas fără **barele de derulare** ale paginii: fereastra copilului de randare nu le acoperă, așa că lărgirea le împingea dincolo de marginile panoului. O bordură reală rămasă pe laturi înseamnă câțiva pixeli morți; o bară de derulare lipsă înseamnă o pagină pe care nu o mai poți citi.
+**Compensare numai SUS.** Prima variantă extindea și stânga/dreapta/jos după aceeași măsurătoare, împingând barele de derulare în afara panoului: copilul de randare nu le include. Se acceptă câțiva pixeli de bordură laterală, păstrând pagina navigabilă.
 
-Banda e **măsurată, nu presupusă**: pagina se desenează într-o fereastră-copil de clasă `Chrome_RenderWidgetHostHWND`, iar distanța de la marginea de sus a cadrului la ea dă înălțimea reală, oricare ar fi DPI-ul, tema sau bara de marcaje. O cifră neverosimilă (peste 400 px) e respinsă; dacă măsurarea eșuează se folosește ultima bună, iar dacă nu există niciuna bara rămâne vizibilă și jurnalul o spune **o singură dată** pe andocare. Valoarea măsurată e scrisă în jurnal la fiecare schimbare, ca o bandă greșită să se vadă în cifre, nu doar în imagine.
+**Banda măsurată:** distanța sus cadru → copil Chrome_RenderWidgetHostHWND, independentă de DPI/temă/bookmarks. Peste 400px se respinge; eșecul păstrează ultima valoare bună. Fără valoare anterioară, bara rămâne vizibilă cu mesaj unic per andocare. Fiecare schimbare a măsurii se jurnalizează pentru diagnostic.
 
 `WorkflowExecutor.HideChromeWhenDocked` (implicit `True`) comută starea, cu efect imediat pe un browser deja andocat. Bancul are bifa «Ascunde bara browserului», ca ambele stări să poată fi văzute fără repornire.
 
 #### Viewport: contextul se creează cu `NoViewport`
 
-Cu bara ascunsă a ieșit la iveală un defect mai vechi: **pagina nu urma dimensiunea panoului**, așa că barele ei de derulare cădeau în afara lui. Vinovat e viewport-ul implicit al Playwright — 1280x720 **emulat**, împins cu `Emulation.setDeviceMetricsOverride` — care nu urmează fereastra. Andocat, fereastra e panoul, iar pagina continua să se așeze la lățimea veche.
+Cu bara ascunsă, vechiul viewport emulat 1280×720 (Emulation.setDeviceMetricsOverride) menținea pagina independentă de panou/fereastră și îi scotea barele de derulare în afară (§2 al etapei 03).
 
 Ștergerea override-ului la andocare (`ClearEmulatedViewportAsync`) **nu e de ajuns**: Playwright îl pune la loc. Reparația stă la crearea contextului:
 

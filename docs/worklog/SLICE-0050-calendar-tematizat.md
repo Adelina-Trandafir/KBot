@@ -35,7 +35,7 @@ Plus documentația de familie: `Calendar/KBotCalendar.md` și `Calendar/KBotDate
 
 ## 2. De ce nu s-au folosit `MonthCalendar` și `DateTimePicker`
 
-Amândouă sunt ferestre native pictate de Windows, exact cazul pentru care s-au scris `KBotComboBox` și `CustomPopup`: `BackColor`/`ForeColor` ajung doar pe o parte din ele, antetul rămâne în culorile sistemului, iar pe o schemă întunecată rămân cartonașe albe în mijlocul formularului.
+MonthCalendar/DateTimePicker sunt pictate nativ de Windows, ca vechile ComboBox/meniuri înlocuite de KBotComboBox/CustomPopup: BackColor/ForeColor controlează doar parțial aspectul; antetul sistemului lasă suprafețe albe în tema întunecată.
 
 Peste asta, fiecare are un defect propriu care contează aici:
 
@@ -44,14 +44,14 @@ Peste asta, fiecare are un defect propriu care contează aici:
 
 ## 3. Deciziile care nu se citesc din cod
 
-1. **Două evenimente, nu unul.** `ValueChanged` se ridică la fiecare mișcare (inclusiv săgeți), `DateSelected` doar la o alegere adevărată (clic pe zi, Enter, rândul «Astăzi»). Fereastra desfășurată se închide pe al doilea; dacă s-ar închide pe primul, prima săgeată ar stinge calendarul.
+1. **ValueChanged** la orice mișcare, inclusiv săgeți; **DateSelected** numai la clic pe zi/Enter/Astăzi. Popupul se închide la DateSelected, evitând închiderea la prima săgeată.
 2. **`CultureName = ro-RO` implicit**, pentru luni/zile românești pe orice stație, independent de cultura mașinii. Proprietatea rămâne configurabilă. Numai textele ecranului («Astăzi: …») și excepțiile sunt românești; restul familiei este ASCII engleză (C9, RULE 0).
 3. **Culoarea de weekend se DERIVĂ din paletă**, nu se inventează: `Blend(ErrorColor, InputBack, 0.25)`. O coloană întreagă în roșul de eroare s-ar citi ca o coloană de erori.
 4. **Poziționare reutilizată:** `KBotCalendarPopup` apelează `CustomPopup.FitToWorkArea` (`Friend Shared`, același assembly), cu aceeași întoarcere deasupra/aliniere dreapta ca meniul. Garda `ClosedJustNow` de 250 ms împiedică redeschiderea la al doilea clic care tocmai închisese fereastra.
 5. **Fereastra se activează**, fără `WS_EX_NOACTIVATE`, pentru focus și navigare cu săgeți. Bara gazdei apare inactivă cât calendarul este deschis.
 6. **Text invalid → ultima valoare bună**, fără salvarea unei date parțiale. Ordinea citirii: `Format`, apoi `2.9.26`/`02092026`/`2/9/2026`/`2026-09-02`, apoi cultura.
 7. **Câmpul gol există doar cu `AllowEmpty`** — coloana de dată neumplută din Access. `ClearValue()` fără permisiunea asta ARUNCĂ `InvalidOperationException`, nu tace (C3).
-8. **`DefaultSize` suprascris, `Size` NEscris în constructor.** `Control.ShouldSerializeSize` se compară cu `DefaultSize`; dacă mărimea s-ar fi pus în constructor, orice control proaspăt pus pe formular ar fi scris o linie `Size` în `.Designer.vb`-ul gazdei (C4).
+8. **DefaultSize suprascris, fără Size în constructor.** Control.ShouldSerializeSize compară cu DefaultSize; atribuirea Size ar serializa o linie în fiecare gazdă nouă (C4).
 
 ## 4. Convențiile casei, punct cu punct
 
@@ -118,7 +118,7 @@ Regula de bază: fiecare padding e un `Padding` întreg (stânga/sus/dreapta/jos
 Două decizii care nu se citesc din cod:
 
 - **`GridPadding` se ia O SINGURĂ DATĂ**, înainte de desprinderea fâșiei cu numele zilelor. Dacă s-ar lua separat pe fiecare, capetele de coloană și coloanele de dedesubt s-ar tăia din lățimi diferite și s-ar decala între ele.
-- **`Padding`-ul moștenit a rămas moștenit**, nu umbrit (`Shadows`) ca să intre în categoria noastră. Umbrindu-l s-ar rupe legătura cu `ShouldSerializePadding`-ul cadrului, iar un padding pe care nu l-a pus nimeni ar începe să fie scris în `.Designer.vb`-ul formularului-gazdă (C4). Apare în grila de proprietăți la *Layout* — locul lui obișnuit — și e onorat în `EnsureLayout` plus `OnPaddingChanged`. `CellPadding = 2` reproduce exact retragerea fixă de dinainte, deci aspectul implicit nu s-a schimbat.
+- **Padding rămâne moștenit**, la Layout: Shadows pentru recategorizare ar rupe ShouldSerializePadding și ar serializa implicitul neales în gazdă (C4). EnsureLayout/OnPaddingChanged îl respectă. CellPadding=2 reproduce retragerea fixă anterioară, fără schimbarea aspectului implicit.
 
 `NaturalSize` numără acum aerul exterior și `GridPadding`: altfel fereastra desfășurată ar fi ieșit strâmtată exact cu cât s-a cerut să rămână gol.
 
@@ -131,9 +131,9 @@ dtpData.GlyphColor = SystemColors.ActiveCaptionText   ' negru
 dtpData.HoverColor = SystemColors.ButtonFace
 ```
 
-O culoare fixată explicit bate tema și continuă s-o bată la fiecare schimbare de schemă (C1) — asta e regula casei și e corectă. Numai că `ActiveCaptionText` e negru, iar fondul de input al schemei întunecate e `#1C1C1C`: negru pe negru. Cele două linii au fost **șterse** din designer, deci câmpul revine la temă.
+Culorile explicite prevalează la fiecare schemă (C1). ActiveCaptionText negru pe input întunecat #1C1C1C ascundea glifa. Ștergerea celor două linii restabilește tema.
 
-Ca să nu se mai poată întâmpla din temă, `EffectiveGlyphColor` **nu mai citește un slot de culoare**. Se derivă din perechea cu care e pictat efectiv câmpul: `ForeColor` tras o treime spre `BackColor`. Un gri stocat e „șters" doar față de fondul pentru care a fost ales; derivat așa, desenul se mișcă odată cu câmpul, oricum ar fi pictat câmpul. Pe schema întunecată: `#D2D2D2` peste `#1C1C1C` la 0,3 ⇒ `#9B9B9B` — se vede. (Aritmetică, nu captură de ecran.)
+EffectiveGlyphColor se derivă din ForeColor tras o treime spre BackColor, fără slot separat ales pentru alt fundal. Exemplu întunecat: #D2D2D2 peste #1C1C1C la 0,3 → #9B9B9B. Vizibilitate argumentată aritmetic, fără captură.
 
 `GlyphColor` fixat de operator câștigă în continuare.
 
@@ -144,7 +144,7 @@ Ca să nu se mai poată întâmpla din temă, `EffectiveGlyphColor` **nu mai cit
 - `Format` primește parte de oră — `dd.MM.yyyy HH:mm`, `dd.MM.yyyy HH:mm:ss` — și câmpul devine câmp de dată-oră: ora se scrie, se tastează și se citește înapoi.
 - Lista de scurtături are acum și tipare cu oră, puse ÎNAINTEA celor fără: un tipar doar-dată refuză oricum un text cu oră în el.
 - `MinDate`/`MaxDate` nu mai taie ora; implicitul de sus e **ultima clipă** a zilei (`31.12.2100 23:59:59`), nu miezul nopții — altfel s-ar refuza fiecare oră a ultimei zile.
-- **Regula care ține treaba cinstită: câmpul nu distruge niciodată o parte a valorii pe care n-o arată.** Cu format fără oră, alegerea unei zile din calendar sau retastarea datei **păstrează** ora dinainte. Cu format CU oră, ce s-a tastat aia e — inclusiv miezul nopții. Testul din spate e `FormatHasTime(format)`, funcție pură, cu sărirea peste literalii ghilimelați și peste `\`, ca `dd.MM.yyyy 'ora'` să nu fie luat drept oră.
+- **Păstrează partea neafișată:** format fără oră → zi aleasă/retastată păstrează ora veche; format cu oră → valoarea tastată, inclusiv miezul nopții. FormatHasTime(format), pură, ignoră literalii ghilimelați și escape-ul \, astfel dd.MM.yyyy 'ora' nu indică timp.
 - Calendarul din fereastra desfășurată **rămâne o suprafață de ZI** — n-are ceas. Dă înapoi o zi, iar câmpul îi pune ora la loc.
 
 Adăugat și `DropDownCalendar` (read-only, ne-serializat): calendarul viu din fereastra deschisă, pentru gazda care vrea să-i regleze aerul sau culorile din `DropDownOpened`.

@@ -13,20 +13,20 @@ Jurnalul lipit de operator (o conectare cu certificat indisponibil) avea 33 de l
 
 ### 1. Filtrul de verbozitate — `RichTextBoxLogger.VerboseLogging` (numele rezervat)
 
-- `Public Shared Property VerboseLogging As Boolean` pe `RichTextBoxLogger`. Pornește **True în Debug, False în Release** (`#If DEBUG` în `InitialVerbosity()`). **Acesta e steagul pe care îl va folosi felia viitoare** (un comutator «jurnal detaliat» pentru operator): setarea lui la rulare re-desenează toate consolele deschise din buffer, deci felia aceea nu are decât să-l seteze.
+- `Public Shared Property VerboseLogging As Boolean` pe `RichTextBoxLogger`: True Debug/False Release, #If DEBUG în InitialVerbosity(). Steagul rezervat viitorului comutator «jurnal detaliat» redesenează la schimbare toate consolele din buffer; viitoarea felie trebuie numai să-l seteze.
 - Regula (`ShouldDisplay`): o linie ajunge pe consolă dacă `VerboseLogging` **sau** e scrisă pentru operator (`operatorFacing`) **sau** e de nivel `Error`. Restul — Info, Action, Success, Warning, Debug, Normal fără steag — stau ascunse.
 - **Fișierul-jurnal (`Logs\Log_*.txt`) și istoricul lucrărilor NU sunt filtrate**: primesc fiecare linie ca înainte. Filtrul e doar pe ce vede operatorul; nimic nu se pierde pentru citit mai târziu.
-- Bufferul de re-desenare ține acum și steagul (`(Level, Msg, OperatorFacing)`), ca `RedrawAll` (la schimbarea temei SAU a verbozității) să aplice aceeași regulă. `SetColorScheme` și noul setter folosesc același `RefreshAllInstances`.
+- Buffer (Level,Msg,OperatorFacing): RedrawAll aplică aceeași regulă la temă/verbozitate. SetColorScheme și noul setter cheamă RefreshAllInstances.
 - `Log(message, level, operatorFacing:=False)` primește parametrul opțional; `LogOperator(message, level)` e scurtătura. `Separator()` se arată doar în modul detaliat.
 
 ### 2. Ce e «pentru operator»
 
 - `<Log>` (`ExecuteLog`) — nivelul din atribut se păstrează (success/warning/error/info/normal), dar linia merge prin `LogOperator`, deci apare mereu.
-- `LogValue` de pe orice acțiune (`LogStep`) — tot `LogOperator`. **Presupunere declarată:** operatorul a cerut «only the LOG action», dar `LogValue` există exact ca să pună pe consolă «textul frumos din XML» în locul detaliului tehnic («Deschid fereastra de autentificare»), deci l-am tratat ca text pentru operator. Dacă nu trebuie, e o singură linie de întors în `LogStep`.
+- LogValue din orice acțiune (LogStep) folosește LogOperator. **Presupunere declarată:** «only the LOG action» a inclus textul XML destinat operatorului («Deschid fereastra de autentificare»), fără detalii tehnice. Dacă nu este dorit, se inversează o singură linie LogStep.
 
 ### 3. Eroarea scrisă o singură dată
 
-Locul unic e **`ForexeRunner`** (`RunAsync` / `RunJobAsync`): el prinde și ce vine din executor, și ce vine dinaintea lui (lansarea browserului, parsarea), și știe faza («Eroare conectare», «Eroare rulare 'X'»). Restul straturilor nu mai scriu la nivel Error:
+Frontieră Error unică: ForexeRunner.RunAsync/RunJobAsync prinde executorul și erorile anterioare (browser/parsare), cunoscând faza «Eroare conectare»/«Eroare rulare 'X'». Celelalte straturi renunță la Error:
 - `ExecuteAuthClickAsync`: cele două `LogError` de dinaintea `Throw` scoase (mesajul călătorește în excepție). Mesajul de timeout a rămas fără «EROARE CRITICĂ» și fără `[Auth]` — prefixul «Eroare conectare:» îl pune runner-ul.
 - `WorkflowExecutor.ExecuteAsync`: `LogException` → `LogDebug("Eroare la executare workflow: …")`.
 - `ForexeRunner`: `[DIAG]` (tip + mesaj, dublura a treia) scos; `[DIAG][STACK]` (stiva completă, singura informație nouă) → `LogDebug`, deci în fișier și în modul detaliat.
@@ -68,7 +68,7 @@ Santinelele de eșec de pe `<AuthClick>` (`failUrl` / `failSelector` / `failMess
 - `Log_20260919_180148.txt`: conectarea a eșuat corect, santinela a vorbit la o secundă după click.
 - `Log_20260919_180320.txt` și `Log_20260919_180944.txt`: ultima linie a robotului e «Deschid fereastra de autentificare»; `[Auth] Aștept navigarea către…` — linie care merge în fișier oricum, fără filtru — **nu mai apare**. Deci firul executorului s-a oprit ÎNTRE cele două, adică în `LogStep`, înainte de click. Browserul nu «nu navighează»: nimeni n-a mai apucat să dea click.
 
-**Cauza:** consola ascunsă (`MainForm.EnsureConsole`) nu avea handle, iar `InvokeRequired` este False înainte de crearea lui. Înaintea filtrului, «Lansare browser…» din `ForexeRunner.RunAsync` îl crea pe UI, înainte de `Await Task.Run`. În Release filtrat, prima linie afișată (`<Log>Încep workflow FOREXEBUG`) venea din pool și crea handle-ul acolo; următoarea («Deschid fereastra…»), după `Await`, făcea `Invoke` către un fir fără pompă de mesaje și bloca execuția. Rularea 18:01 avea consola deja deschisă pe UI; în Debug toate liniile rămân vizibile, deci prima este tot cea de pe UI.
+**Cauza:** consola MainForm.EnsureConsole fără handle întorcea InvokeRequired=False. Anterior, Lansare browser… din RunAsync crea handle pe UI înaintea Await Task.Run. Filtrul Release ascundea acea linie; primul `<Log>Încep workflow FOREXEBUG` din pool crea handle acolo. După Await, Deschid fereastra… făcea Invoke către fir fără pompă și bloca. În 18:01 consola era deja deschisă pe UI; Debug afișează toate liniile, deci începe tot pe UI.
 
 **Ce s-a schimbat (`RichTextBoxLogger`):**
 - `UiReady()` = cutia există, nu e dispusă **și are handle**. Toate atingerile UI (`WriteInternal`, `RefreshDisplay`, `Clear`) trec pe aici; fără handle, linia rămâne în buffer și fișierul/istoricul o primesc oricum. Niciodată nu mai creăm handle-ul dintr-un fir de lucru.

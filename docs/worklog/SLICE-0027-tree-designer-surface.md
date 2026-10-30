@@ -32,7 +32,7 @@ Arborele era ultimul control K-BOT rămas în afara convențiilor casei: netemat
 
 ### 1. De ce nu se vedea banda de căutare
 
-`SearchShow = True` era **o proprietate moartă pe calea designerului**. Singurul cod care deschidea banda trăia în `ResolveHeaderIcons` (`AdvancedTreeControl.Search.vb`), adică pe calea constructorului XML FOREXE (`Tree.Builder`). Un formular autorit în designer nu cheamă niciodată acea metodă, deci `tree.SearchShow = True` din `MainForm.Designer.vb` scria un câmp și atât.
+`SearchShow = True` doar scria câmpul din MainForm.Designer.vb: banda se deschidea numai prin ResolveHeaderIcons (AdvancedTreeControl.Search.vb), chemat de constructorul XML FOREXE Tree.Builder, niciodată de formularul autorat în designer.
 
 Corectura:
 
@@ -43,39 +43,35 @@ Corectura:
 
 ### 2. Banda desenată la design-time
 
-`DrawSearchBarPreview` desenează banda întreagă — eticheta cu fontul ei, caseta în `SearchBoxBackColor`, placeholder-ul, butonul ✕ (glifă sau imagine) — urmând pas cu pas geometria din `PositionSearchTextBox`, ca trecerea design-time → runtime să nu mute nimic.
+DrawSearchBarPreview reproduce geometria PositionSearchTextBox: etichetă/font, SearchBoxBackColor, placeholder, ✕ ca glifă/imagine. Trecerea designer → runtime nu schimbă pozițiile.
 
-În designer NU se creează controale copil reale: un `TextBox` viu pe suprafața de design fură click-urile și apare ca element ne-selectabil. Detecția folosește `KBotDesignTime.IsDesignTime` (ajutorul casei din felia 0025), nu `Control.DesignMode` — pe `net8.0-windows` designerul rulează
-**în alt proces** (`DesignToolsServer.exe`), iar un control imbricat nici măcar nu e «sitat».
+Fără TextBox copil real în designer, unde ar fura clickuri și ar apărea neselectabil. KBotDesignTime.IsDesignTime (0025) înlocuiește Control.DesignMode: net8.0-windows folosește DesignToolsServer.exe separat, iar controlul imbricat nu este nici sitat.
 
 ### 3. De ce culorile din designer nu se aplicau — două cauze, ambele structurale
 
-**Cauza 1 (cea ascunsă).** `ThemeManager.Traverse` **recurge în copiii** oricărui control care nu e
-`IThemedControl`. Copiii interni ai benzii de căutare cădeau pe regulile generice pe tip — `TextBox → InputBackColor`, `Label → TextColor`/Transparent — deci `SearchBoxBackColor` era șters la **fiecare** aplicare de temă. Exact capcana descrisă în comentariul lui `IThemedControl`, care lovise deja `TextBox`-ul intern din `KBotTextField`.
+**Cauza 1:** ThemeManager.Traverse parcurge copiii unui control care nu implementează IThemedControl. Regulile generice TextBox → InputBackColor, Label → TextColor/Transparent ștergeau SearchBoxBackColor la fiecare temă, ca TextBoxul intern KBotTextField; capcană documentată în IThemedControl.
 
 **Cauza 2.** `MainForm.OnThemeChanged` și cele patru vederi împingeau explicit culorile paletei
 peste cele din designer.
 
-Corectura: `AdvancedTreeControl` **implementează acum `IThemedControl`** (partiala nouă `.Theming`), deci traversarea se oprește la el, iar toate împingerile manuale au dispărut din `MainForm` și din cele patru vederi. CLAUDE.md spunea că arborele e deliberat netematizat și că retrofitul e amânat — felia asta îl face, pentru că era singurul mod de a onora cererea.
+Corectura: AdvancedTreeControl implementează IThemedControl (partiala nouă .Theming), oprind traversarea; MainForm și cele patru vederi nu mai impun culorile manual. Retrofitul amânat în CLAUDE.md, care numea arborele deliberat netematizat, este făcut aici pentru cerere.
 
 **Contractul de culoare, nou:** `Color.Empty` = «auto, din temă»; orice culoare setată câștigă,
 definitiv. Fiecare culoare a primit `ShouldSerialize*`/`Reset*`.
 
 `ShouldSerialize`/`Reset` împiedică VS să serializeze implicitul rezolvat ca alegere. Paleta luminoasă rămăsese astfel fixată în cinci designere, câte 13–14 linii nealese; au fost eliminate, păstrând numai `SearchBoxBackColor` verde ales în `MainForm`.
 
-Câmpurile `_auto*` pornesc de la **exact** culorile hardcodate dinainte de tematizare, ca un host NEtematizat (bancul de probă, calea FOREXE/VBA) să arate neschimbat.
+`_auto*` păstrează exact vechile culori hardcodate, astfel încât gazdele netematizate (banc, FOREXE/VBA) să arate neschimbat.
 
 #### 3.1 `BackColor`/`ForeColor` — gaura care mai rămăsese
 
-Prima variantă a feliei a lăsat o portiță, semnalată de operator la recitire: suprafața și textul nodurilor sunt `Control.BackColor`/`ForeColor`, iar acolo **nu ajunge contractul `_auto*`** — controlul ținea doar steagurile `_backColorPinned`/`_foreColorPinned`, fără să suprascrie `ShouldSerializeBackColor`.
+Operatorul a semnalat portița: suprafața/textul nodurilor folosesc Control.BackColor/ForeColor, în afara `_auto*`; prima variantă avea numai `_backColorPinned`/`_foreColorPinned`, fără ShouldSerializeBackColor suprascris.
 
 `Control.ShouldSerializeBackColor` devine True după orice atribuire, inclusiv albul constructorului și culoarea din `ApplyTheme`. VS ar serializa tema; la reîncărcare setterul public ar fixa-o, blocând temele viitoare. Acesta este mecanismul consemnat pentru `tree.BackColor = Color.White` din cele cinci designere.
 
-Corectura: `ShouldSerializeBackColor`/`ShouldSerializeForeColor` suprascrise ca să răspundă din
-**steagul de fixare**, nu din punga de proprietăți a lui `Control`, plus `ResetBackColor`/
-`ResetForeColor` care coboară steagul și reaplică valoarea din temă (câmpurile noi `_autoNodeBack` /`_autoNodeFore`).
+ShouldSerializeBackColor/ShouldSerializeForeColor răspund acum din steagul de fixare, nu din proprietățile Control. ResetBackColor/ResetForeColor coboară steagul și reaplică tema din noile `_autoNodeBack`/`_autoNodeFore`.
 
-Verificat că restul controalelor tematizate NU au aceeași gaură: niciunul nu scrie `BackColor`/`ForeColor` în `ApplyTheme` — se pictează singure din paletă în `OnPaint`. Arborele era expus tocmai fiindcă moștenește o suprafață pictată real (`e.Graphics.Clear(Me.BackColor)`).
+Celelalte controale tematizate nu scriu BackColor/ForeColor în ApplyTheme, ci pictează paleta în OnPaint; verificat fără aceeași portiță. Arborele era expus prin suprafața reală `e.Graphics.Clear(Me.BackColor)`.
 
 #### 3.2 Restul zgomotului din designere
 
@@ -90,7 +86,7 @@ Aceeași întrebare, pusă empiric: **ce scrie designerul într-un formular gazd
 
 Cele cinci designere au fost curățate din nou (−4 linii fiecare; restul liniilor `tree.*` sunt acum verificat alegeri reale — antetul stilizat din `MainForm`, dimensiunile de iconițe din vederi).
 
-**Limită nereparată — fontul nu se moștenește.** Steagul rezolvă numai serializarea: constructorul păstrează «Segoe UI, 9», deci fontul formularului din `ThemeManager.ApplyBaseFont` nu ajunge la arbore. Eliminarea atribuirii ar modifica vizibil banda de căutare și `RecalculateItemHeight`; după verdictul vizual, alegerea rămâne operatorului. `ResetFont()` redă moștenirea, iar `Fontul_implicit_e_explicit_iar_ResetFont_reda_mostenirea` fixează acest comportament real.
+**Fontul nu se moștenește, limită nereparată:** steagul rezolvă numai serializarea; constructorul Segoe UI 9 împiedică moștenirea fontului formularului din ThemeManager.ApplyBaseFont. Eliminarea lui ar schimba vizibil banda/RecalculateItemHeight și rămâne decizia operatorului după verdictul vizual. ResetFont() redă moștenirea; Fontul_implicit_e_explicit_iar_ResetFont_reda_mostenirea fixează comportamentul real.
 
 ### 4. Antet
 
@@ -102,7 +98,7 @@ Cele cinci designere au fost curățate din nou (−4 linii fiecare; restul lini
 | `HeaderGradientEndColor` | Gol = **automat**: spre alb dacă baza e deschisă, spre negru dacă e închisă |
 | `HeaderLeftIcon` / `HeaderRightIcon` / `HeaderSearchIcon` | Devenite `Browsable` + serializabile — se aleg din selectorul standard de imagini (designerul le pune în `.resx`) |
 
-Capătul automat al degradeului se deduce din **luminanța** culorii de bază (BT.601), nu din temă: așa arborele dă «spre alb pe temă luminoasă, spre negru pe temă întunecată» fără să știe ce temă rulează. Cheile `*IconKey` supraviețuiesc și se rezolvă din `NodeImages`.
+BT.601 calculează capătul degradeului din luminanța culorii de bază: alb la deschis/negru la închis, fără cunoașterea temei. Cheile *IconKey rămân, rezolvate din NodeImages.
 
 ### 5. Banda de căutare
 
@@ -111,7 +107,7 @@ Capătul automat al degradeului se deduce din **luminanța** culorii de bază (B
 - **ESC** golește caseta; pe o casetă deja goală închide banda, dar `CloseSearchMode` e no-op pentru banda permanentă, deci acolo ESC doar golește;
 - `SearchBarLabelFont` și `SearchBarFont` — fonturi întregi, **în locul** lui `SearchBarLabelBold`/`SearchBarLabelItalic`, care s-au **șters** (cerere explicită).
 
-`SearchBarFontName`/`SearchBarFontSize` NU s-au șters: au devenit accesori `Browsable(False)` peste `SearchBarFont` — exact tiparul deja folosit în acest control de `FontName`/`FontSize` peste `TreeFont` — ca aplicatorul XML (`Tree.Builder`/`TreeXmlAppliers`) și fișierele de designer existente să compileze neatinse.
+SearchBarFontName/SearchBarFontSize rămân accesori Browsable(False) ai SearchBarFont, ca FontName/FontSize peste TreeFont, păstrând compatibilitatea Tree.Builder/TreeXmlAppliers și a designerelor existente.
 
 ### 6. Colecțiile din designer
 
@@ -120,7 +116,7 @@ Capătul automat al degradeului se deduce din **luminanța** culorii de bază (B
 
 Definiții plate cu `ParentKey`, ca `KBotNavItem` din 0025: ierarhia de referințe ar cere editor propriu și assembly design-time cu `Microsoft.WinForms.Designer.SDK`, în afara scopului.
 
-Reguli: ordinea din colecție = ordinea între frați; un părinte declarat **mai jos** funcționează (treceri repetate); un `ParentKey` inexistent **urcă nodul la rădăcină**, ca greșeala să se vadă, nu să dispară în tăcere. **Definițiile sunt sursa DOAR cât timp colecția e nevidă** — vederile existente, care umplu arborele la rulare prin `AddItem`/XML, nu sunt niciodată golite de o colecție de designer neatinsă.
+Ordinea colecției dă ordinea fraților; trecerile repetate admit părinte declarat ulterior. ParentKey inexistent mută nodul la rădăcină, făcând eroarea vizibilă. Numai colecția nevidă este sursă: AddItem/XML din vederile existente nu sunt golite de colecția designerului neatinsă.
 
 ### 7. Bancul de probă
 

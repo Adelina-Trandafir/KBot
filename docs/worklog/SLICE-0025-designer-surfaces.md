@@ -527,7 +527,7 @@ Pasul 8 al feliei 0025. Continuă direct [0025-07](#slice-0025-07) (eticheta plu
 
 #### 1.1 Gradientul stă în MOTOR, nu în control
 
-Cererea „also it should use the theming system" s-a citit ca o cerință de arhitectură, nu doar de culori: umplerea nouă e o funcție PUBLICĂ în `KBot.Theming`, nu cod de pictură ascuns în bară.
+„also it should use the theming system” a fost interpretată arhitectural: umplere PUBLICĂ în KBot.Theming, fără pictură privată în bară.
 
 ```vb
 ' src/KBot.Theming/ThemeShapes.vb
@@ -543,7 +543,7 @@ Două decizii de aspect, amândouă cu motiv:
 - **Asimetrie:** jos se închide cu 3/4 din cât se deschide sus, sugerând lumină de sus; simetria ar arăta ca buton Windows XP, fără aspectul modern urmărit.
 - **`strength = 0` ⇒ umplere PLATĂ**, pe drumul `SolidBrush`, fără alocare de gradient — deci «bit cu bit ca înainte» rămâne disponibil și e ce se picta până acum.
 
-Zona gradientului se umflă cu un pixel sus și jos: `LinearGradientBrush` pictează primul/ultimul rând cu culoarea capătului opus (artefact vechi de rotunjire), iar așa rândurile stricate cad în afara căii.
+Gradientul depășește calea cu 1px sus/jos: LinearGradientBrush pictează marginile cu capătul opus, artefact de rotunjire scos astfel din zona vizibilă.
 
 **E singura bucată din familia asta de felii care se poate proba HEADLESS pe bune**: un bitmap spune dacă sus e mai deschis decât jos. Patru teste fac exact asta, inclusiv pe o culoare de schemă întunecată.
 
@@ -556,9 +556,9 @@ Zona gradientului se umflă cu un pixel sus și jos: `LinearGradientBrush` picte
 
 **Per bară**, cerut explicit, ca IconSize: butoane cu formă uniformă. Testul refuză o rază pe KBotNavItem, cerând reconsiderarea conștientă a deciziei.
 
-**-1 = ThemeStyleOptions.CornerRadius**, implicit: Classic/Dark 0, Modern 8. Bara neatinsă arată ca înainte și urmează comutarea temei. Orice valoare ≥0 suprascrie, inclusiv 0 = colț drept peste schemă rotunjită; fiind valoare reală, 0 nu poate fi sentinel.
+**-1 = ThemeStyleOptions.CornerRadius**, implicit: Classic/Dark 0, Modern 8, păstrând aspectul anterior și comutarea temei. Orice ≥0 suprascrie, inclusiv 0=drept peste temă rotunjită; 0 este valoare reală, fără rol de sentinel.
 
-Sub `-1` se limitează la `-1`, iar gradientul la `[0,100]`: un setter de dimensiune care aruncă ar rupe `InitializeComponent` la o valoare greșită din designer (aceeași regulă ca la `IconSize` / `ItemWidth` / `ItemPadding`).
+Raza sub -1 se limitează la -1, gradientul la [0,100], ca IconSize/ItemWidth/ItemPadding. Excepția setterului la o valoare greșită din designer ar rupe InitializeComponent.
 
 ItemRadius() rezolvă raza pentru butoane/buton colț/flyout; toate trei folosesc și ThemeShapes.FillModern, evitând forme/gradiente divergente.
 
@@ -589,8 +589,8 @@ ItemRadius() rezolvă raza pentru butoane/buton colț/flyout; toate trei foloses
 
 - **Tot nimic pe ecran.** Testele de pixeli probează că `FillModern` face ce spune, NU că 14 e intensitatea potrivită, că 8 px de rază arată bine pe un rând de 36, sau că gradientul se citește la fel pe Dark și pe Modern. Alegerea implicitelor e o judecată, nu o măsurătoare.
 - **`Region`-ul ferestrei taie colțurile rotunjite drept, fără antialiasing** — pe o rază mare colțurile etichetei pot ieși zimțate. Nu se poate vedea headless; alternativa (fereastră stratificată cu alfa) e mult mai scumpă și nu s-a cerut.
-- **Restul schemelor nu au fost atinse.** `FillModern` e disponibilă acum pentru orice control, dar o folosește DOAR `KBotNavList` (+ eticheta). `KBotDataView`, `KBotCaptionBar`, `KBotBusyBar`, `KBotNotice`, `KBotTextField` și butoanele din `ModernRenderer` rămân pe umplere plată — s-a cerut bara de navigație, iar o trecere generală la gradient e o decizie de aspect pe toată aplicația, nu un efect colateral al acestei felii.
-- **`ThemeStyleOptions` NU a primit un flag de gradient.** Intensitatea stă pe control, nu pe schemă. Dacă gradientul se generalizează (punctul de mai sus), locul lui firesc e o proprietate nouă în `ThemeStyleOptions`, serializată în JSON ca restul — moment în care implicitul `ItemGradient` ar trebui să devină un sentinel «ia din schemă», ca `ItemCornerRadius` azi.
+- **Restul schemelor neatinse.** Numai KBotNavList/flyout folosesc FillModern. KBotDataView/KBotCaptionBar/KBotBusyBar/KBotNotice/KBotTextField și butoanele ModernRenderer rămân plate; generalizarea gradientului cere decizie de aspect pentru aplicație, depășind cererea barei.
+- **Fără flag gradient în ThemeStyleOptions:** intensitatea aparține controlului. O generalizare viitoare ar cere proprietate de schemă serializată JSON și implicit ItemGradient sentinel, după modelul ItemCornerRadius.
 - Firele (a)–(p) ale feliilor 0025 / 0026 rămân toate deschise.
 
 ## SLICE-0025-09 — `KBotNavList`: latura butonului de strângere, expusă <a id="slice-0025-09"></a>

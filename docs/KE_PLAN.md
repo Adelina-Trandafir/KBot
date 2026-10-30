@@ -6,7 +6,7 @@ Scris 16.10.2026, la cererea operatorului. Ce e verificat (citit într-un fișie
 
 **Decizie 16.10.2026 (recepții în aceeași zi):** K-BOT nu interzice a doua recepție în aceeași zi pe un angajament. Ce scrie K-BOT poartă marcajul `(IDRH; IDR)`, care îl identifică, deci ziua nu contează; departajarea după `RangZi` nu se construiește (rămâne doar pentru recepții vechi, fără marcaj, dacă va fi nevoie). Blocarea este **opțională**: setarea «La o factură primită, nu permite a doua recepție nouă în aceeași zi» din «Setări» › «Aplicație» (oprită implicit), verificată în fereastra «Recepție nouă».
 
-Felia **KE** e o familie nouă, în K-BOT (nu registru separat ca VC / ADE): rânduri în indexul din `docs/worklog/KBOT_STATUS.md`, detalii într-un fișier propriu din `docs/worklog/state/` (`KBOT_STATUS_KE.md`, ca `KBOT_STATUS_SLICELESS.md`), worklog-uri `SLICE-KEnn-…`. Numerotare KE01, KE02… Combină E-Factura cu Recepțiile și Plățile, dar rămâne K-BOT.
+**KE**, familie nouă în K-BOT, combină E-Factura/Recepții/Plăți: KE01, KE02…; index `docs/worklog/KBOT_STATUS.md`, detalii `docs/worklog/state/KBOT_STATUS_KE.md` (ca KBOT_STATUS_SLICELESS), jurnale SLICE-KEnn-…. Nu este registru separat ca VC/ADE.
 
 Evoluția documentată după acest plan: [clasificații și vedere KE02/03 → 00EF-39](worklog/SLICE-KE02-angajament-si-clasificatii-pe-linii.md), [legare/creare/modificare KE04/06/07/10](worklog/SLICE-KE04-legare-de-receptie-existenta.md), [robot KE05 → corecția KE09](worklog/SLICE-KE05-robotul-si-receptie-noua-in-forexe.md). Alegerea automată a unicului indicator nu exista la checkpointul 00EF-39; este introdusă ulterior de KE12-06, în [evoluția paginii](worklog/SLICE-KE12-receptii-pagina-in-ribbon.md#slice-KE12-02).
 
@@ -47,7 +47,7 @@ Legarea de **plăți** și ordinele de plată vin după (KE08). Acum doar factur
 | Adăugare recepție în FOREXE | `Workflows/Creare/adlop - Rezervare si Receptie.wfl`, liniile 80–113 | tab «Recepții» → «Adaugă» → tip, dată, descriere, valoare pe fiecare indicator (după «Sector - Sursa - Indicator») → captură → «Salvează». **Nu așteaptă mesajul de reușită.** Nu e în `WorkflowCatalog`, nu rulează din K-BOT, nu e verificat. Primele 78 de linii fac rezervare, nu intră în KE |
 | Modificare recepție | `Receptie Editata.wfl` (doar citire, ochiul rândului) | formularul de scriere = același ca «Adaugă» (operatorul), dar fără flux înregistrat |
 
-**Tipul recepției:** «Avans», «Partial», «Final» (preselectat «Final») — HTML-ul `select` dat de operator. Mesajul de succes: același element ca la orice salvare corectă (operatorul).
+Tipul recepției (HTML dat de operator) și confirmarea salvării sunt detaliate la [deciziile 2/3](#7-decizii-deschise).
 
 ## 4. Model de date (KE01)
 
@@ -69,7 +69,7 @@ Plus două coloane noi pe `EF_PrimiteLinii`:
 - `IdClsf` — alegerea operatorului pe linie, NULL = nealeasă;
 - `CotaTVA` — cota liniei, citită din XML-ul facturii (`InvoiceLine/Item/ClassifiedTaxCategory/Percent`, presupus, de verificat pe cele 3 XML-uri reale din 00EF-17). Cititorul UBL (`primite_ubl.py`) nu o păstrează azi; facturile deja sincronizate trebuie recitite din XML-ul stocat (vederea «XML Factura» arată că XML-ul se păstrează).
 
-**Valoarea unei linii cu TVA** (`ValoareCuTVA`) se calculează pe server, nu se stochează: `Valoare × (1 + CotaTVA / 100)`, rotunjită la 2 zecimale pe linie. Diferența de rotunjire față de TVA-ul facturii pe cota respectivă (`EF_PrimiteTVA.TVA`) se pune pe ultima linie a cotei, ca suma pe cote să iasă exact și suma totală să fie `Total`. **Exemplu verificat pe XML-ul Digi** (`FDB26 78290032`, 06.10.2026): linia 1.1 are baza 53,31, linia 1.2 are baza 10,66, ambele la 21%; TVA-ul facturii e 13,43, iar `Total` 77,40. Pe linie: 53,31 + 11,20 = 64,51 și 10,66 + 2,24 = 12,90, adică 77,41, cu un ban peste. Regula de mai sus mută banul pe ultima linie: 12,89. Rezultat: 64,51 + 12,89 = 77,40 = `Total`. Cele două linii au același CPV (64200000-8), dar CPV nu este clasificația bugetară: aceasta o alege operatorul pe linie (KE02).
+**ValoareCuTVA**, calculată pe server, nestocată: `Valoare × (1 + CotaTVA / 100)`, rotunjire la 2 zecimale/linie. Diferența față de EF_PrimiteTVA.TVA se pune pe ultima linie a cotei, pentru egalitate exactă pe cote și cu Total. **XML Digi verificat:** FDB26 78290032, 06.10.2026: bazele liniilor 1.1/1.2 sunt 53,31/10,66, cota 21%, TVA factură 13,43, Total 77,40. Rotunjirea pe linii dă 53,31 + 11,20 = 64,51 și 10,66 + 2,24 = 12,90, total 77,41. Ultima linie devine 12,89: 64,51 + 12,89 = 77,40. Ambele au CPV 64200000-8, care nu este clasificația bugetară; operatorul o alege per linie în KE02.
 
 Dacă o linie nu are cotă în XML: se folosește singura cotă a facturii, iar dacă sunt mai multe, TVA-ul cotelor se împarte proporțional cu baza și linia se marchează «cotă dedusă» în interfață.
 
@@ -102,20 +102,20 @@ Fiecare felie: worklog `SLICE-KEnn-…`, rând în status, ajutor (`0000-NN` cu 
 ## 6. Identificarea recepției pe care apăsăm ochiul (KE07)
 
 1. **Recepție salvată prin K-BOT** (are marcaj `(IDRH; IDR)` în Descriere): robotul caută pe site rândul a cărui descriere conține marcajul. Sigur, indiferent de dată.
-2. **Recepție creată prin KE05:** marcajul e pus de KE05 din start (aceeași rută de rezervare), deci cazul 1 se aplică și aici, iar legătura cu factura se poate scrie *înainte* de descărcare.
-3. **Recepție fără marcaj** (veche, creată pe site): se caută ca la descărcare, cu `NrCrtForexe` și `RangZi` din `FX_Receptii_R` (cititura de la ultima descărcare), `DataR` și `SumaAntet`. Dacă citirea e veche, se face întâi o descărcare a angajamentului. `DataR` singură nu identifică.
-4. **Plasa de siguranță (ambele cazuri):** după ce ochiul deschide formularul, robotul citește tipul, data, descrierea și valorile și le compară cu ce știe K-BOT. **Dacă nu coincid, nu salvează**: iese cu mesaj «Nu am găsit recepția sigur», fără nicio modificare pe site.
+2. **KE05** pune marcajul din start, prin aceeași rută de rezervare: se aplică cazul 1 și legătura facturii se poate scrie înainte de descărcare.
+3. **Fără marcaj** (veche, creată pe site): potrivire ca la descărcare, cu NrCrtForexe/RangZi din ultima citire FX_Receptii_R, DataR și SumaAntet. Citirea veche cere întâi descărcarea angajamentului; DataR singură nu identifică.
+4. **Control în ambele cazuri:** după ochi, robotul compară tipul/data/descrierea/valorile formularului cu datele K-BOT. Neconcordanță → «Nu am găsit recepția sigur», fără salvare sau altă modificare pe site.
 
 Atenție la regula din `asociere.py`: legăturile instantaneelor nu se mai pot edita după o ordonanțare din ziua instantaneului. Nu e o piedică pentru o modificare nouă (creează un instantaneu nou), dar KE07 trebuie să citească ce spune FOREXE despre recepții deja ordonanțate.
 
 ## 7. Decizii deschise
 
-1. ~~TVA pe linie~~ — **decis 16.10.2026: recepția se face cu TVA** (suma de plată). Verificat pe un XML real (factura Digi, 77,40 lei): fiecare linie are `Item/ClassifiedTaxCategory/Percent`, deci cota pe linie se poate citi. Rămâne un singur lucru de verificat: facturile cu **reducere sau majorare pe toată factura** (în UBL, un `AllowanceCharge` în afara liniilor, cu bază și TVA proprii). La ele, suma liniilor nu mai dă `Total`. Dacă apare așa ceva, diferența se arată ca «rest nealocat» pe factură și operatorul o vede; nu o împărțim pe linii pe ascuns. XML-ul Digi nu are așa ceva.
-2. ~~Tipul recepției~~ — **decis 16.10.2026.** `select[name='receptie']` are trei opțiuni (HTML dat de operator): «Avans», «Partial», «Final», cu valori GUID; pe site e preselectat «Final». **K-BOT propune implicit «Final»**, la fel ca site-ul; operatorul poate schimba în dialog. Fluxul alege după **text** (`Select text=`), nu după GUID, deci TIP_RECEPTIE ia exact una dintre cele trei denumiri.
-3. ~~Mesajul de reușită~~ — **decis 16.10.2026:** e același element ca la orice salvare corectă (`.alert.alert-success`, ca în celelalte fluxuri). KE05 / KE07 așteaptă acel element, fără text. **După fiecare salvare, apare sau nu mesajul, fluxul citește istoricul** angajamentului ca să preia rândurile nou adăugate. **Doar dacă mesajul NU a apărut**, fluxul face în plus o recitire a listei de recepții și caută recepția (după marcaj) ca să afle dacă s-a salvat totuși. Legătura cu factura se scrie numai dacă recepția a apărut (mesaj văzut, sau găsită la recitire). Dacă mesajul lipsește și recepția nu se găsește, nu se scrie nimic și operatorul primește mesajul «Nu s-a putut confirma salvarea recepției».
+1. ~~TVA pe linie~~ — **decis 16.10.2026: recepție cu TVA**. XML Digi real, 77,40 lei, confirmă Item/ClassifiedTaxCategory/Percent pe fiecare linie. Rămân de verificat reducerile/majorările globale (UBL AllowanceCharge în afara liniilor, cu bază/TVA proprii), absente în Digi: suma liniilor nu mai dă Total. Diferența devine rest nealocat vizibil operatorului, fără repartizare ascunsă pe linii.
+2. ~~Tipul recepției~~ — **decis 16.10.2026**. HTML operator: `select[name='receptie']` oferă Avans/Partial/Final, cu valori GUID și Final preselectat. K-BOT propune tot Final, schimbabil în dialog; fluxul folosește `Select text=`, deci TIP_RECEPTIE este una dintre cele trei denumiri, fără GUID.
+3. ~~Mesajul de reușită~~ — **decis 16.10.2026**: KE05/KE07 așteaptă `.alert.alert-success`, ca celelalte salvări corecte, fără text. După fiecare salvare citește istoricul, indiferent de mesaj. Numai dacă acesta lipsește, recitește și lista recepțiilor pentru marcaj. Legătura se scrie doar la confirmare prin mesaj sau recepție găsită; dacă lipsesc ambele: fără scriere și «Nu s-a putut confirma salvarea recepției».
 4. **Factură pe mai multe angajamente** (rar): permisă de model (`CodAngajament` pe rândul legăturii), dar interfața din KE02 începe cu un angajament pe factură. De confirmat.
 5. **Rezervare insuficientă pentru o clasificație existentă:** trimite spre revizie de rezervare (0081). K-BOT nu face revizia automat din KE.
-6. ~~Cine poate lega~~ — **decis 16.10.2026: doar rolul `Contabil`** (`Unitati_Utilizatori.Rol`). Cine nu e `Contabil` (de ex. `Director`, `Administrator`) vede legăturile, restul de alocat și recepțiile din factură, dar **nu poate** lega, crea sau modifica recepții: butoanele nu apar. Regula se aplică și **pe server**, în fiecare rută de scriere din KE (un client modificat nu o ocolește). **Neverificat:** cum ajunge rolul în sesiune (`SessionContext` / `require_session`) — se citește la KE01; dacă sesiunea nu îl poartă, se adaugă acolo, nu se citește din altă parte.
+6. ~~Cine poate lega~~ — **decis 16.10.2026: numai Contabil** (Unitati_Utilizatori.Rol). Celelalte roluri (Director/Administrator) văd legături/rest/recepții, fără butoane de legare/creare/modificare. Fiecare rută KE de scriere impune aceeași regulă, inclusiv clientului modificat. **Neverificat:** rolul în SessionContext/require_session; KE01 îl citește și îl adaugă în sesiune dacă lipsește, fără altă sursă de citire.
 
 ## 8. Riscuri
 

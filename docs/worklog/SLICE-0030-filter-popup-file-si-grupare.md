@@ -19,11 +19,11 @@ Clauza e la loc, cu un comentariu care spune ce se rupe fără ea, și cu un tes
 
 ## b. Corpul nu urma fereastra
 
-`pnlCorp` nu era andocat: stătea la `Location = 1,1` cu `Size = 310×581`, scris de designer. Orice re-măsurare pe înălțime schimba `ClientSize` și lăsa corpul unde era — banda goală de sub controale. Acum e `Dock = Fill`, iar rama de 1px vine din `Padding`-ul formularului, cum spunea deja rezumatul fișierului.
+pnlCorp avea Location=1,1/Size=310×581 din designer, fără andocare. Ajustarea ClientSize lăsa corpul fix și o bandă goală. Dock=Fill, cu rama 1px din Padding-ul formularului, respectă rezumatul existent.
 
-A doua jumătate: `AjusteazaInaltimea` citea `lstValori.Height` **înainte** de vreun layout, deci măsura ce scrisese designerul, nu ce era pe ecran. Acum formula e una singură pentru toate cele trei file — *rama corpului* (navigație + linie + bara de butoane + margini) plus *cât cere fila activă* — și se aplică după un `PerformLayout`.
+AjusteazaInaltimea citea lstValori.Height înainte de layout, măsurând designerul. Acum, după PerformLayout, toate trei filele folosesc rama corpului (navigație+linie+butoane+margini) + cererea filei active.
 
-Și: fereastra se re-verifică **o dată după `Show()`**, fiindcă tema se aplică abia în `KBotThemedForm.OnLoad` — pe Modern meniul poate ieși mai înalt decât cel așezat cu două rânduri mai sus, iar un meniu care iese pe sub marginea ecranului nu se mai poate citi până la capăt.
+Reîncadrare o dată după Show(): tema se aplică abia în KBotThemedForm.OnLoad; Modern poate mări meniul după așezarea inițială, depășind ecranul.
 
 ## c. `ThemeTableFit` — rândurile fixe pe măsura schemei
 
@@ -41,7 +41,7 @@ Trei lucruri au ieșit din implementare și merită reținute:
 
 ## d. Trei file, și fila de grupare
 
-Bara e un `KBotNavList` orizontal (`Sortare` / `Filtrare` / `Grupare`); fiecare filă e un `Panel` andocat `Fill` peste același loc. Pe suprafața de proiectare stau una peste alta — ca să lucrezi la una îi pui `Visible = True` din grila de proprietăți, exact ca la paginile unui `TabControl`, doar că fără `TabControl`-ul netematizabil.
+KBotNavList orizontal Sortare/Filtrare/Grupare; panouri Fill suprapuse. În designer se lucrează la fila dorită cu Visible=True din proprietăți, ca pagini TabControl, evitând controlul netematizabil.
 
 **Bara OK / Anulează e a FILTRULUI** și se ascunde pe celelalte două file. Asta nu e cosmetică, e consecința celor trei feluri de a preda o hotărâre:
 
@@ -53,7 +53,7 @@ Bara e un `KBotNavList` orizontal (`Sortare` / `Filtrare` / `Grupare`); fiecare 
 
 Gruparea rămâne deschisă fiindcă are șapte opțiuni: o filă care s-ar închide la prima bifă ar trebui redeschisă de șase ori. Operatorul vede grila rearanjându-se în spate.
 
-**„Dinamic din ce e în grilă”** înseamnă: controalele sunt ale designerului (regula casei), dar NIMIC din ce scrie pe ele nu e — titlul («Grupează după «Luna»»), starea celor șapte opțiuni, ierarhia de niveluri cu coloana curentă marcată, toate se citesc din `KBotDataView.Groups` la deschidere. E aceeași împărțire ca la lista de valori de la 0028-06.
+**Dinamic** înseamnă controale declarate în Designer, conținut din KBotDataView.Groups la deschidere: titlul «Grupează după «Luna»», cele șapte opțiuni și ierarhia cu nivelul curent marcat. Același model ca lista de valori 0028-06.
 
 **Nivelul existent se refolosește**, păstrând culorile/fonturile autorate (`HeaderBackColor`, `FooterFont`…). `SetColumnGroupLevel` înlocuiește la aceeași poziție: schimbarea opțiunilor nu mută nivelul 1 la final și nu schimbă ierarhia.
 
@@ -64,8 +64,8 @@ Gruparea rămâne deschisă fiindcă are șapte opțiuni: o filă care s-ar înc
 ## Ce s-a mai schimbat pe drum
 
 - `btnSortClear` (adăugat de operator în designer) **nu avea niciun handler** — era un buton mort. Acum resetează sortarea și e stins cât timp coloana nu e sortată.
-- Cele două linii despărțitoare erau `Label`-uri cu `SystemColors.ControlLight` scris în designer. Sub o schemă cu paletă, regula generică de `Label` pune `BackColor = Transparent` — adică o linie de 1px care nu se mai vede deloc. Sunt `Panel`-uri acum, colorate din `p.BorderColor`.
-- Fonturile «Segoe UI, 9 Bold/Italic» pinuite pe rândurile de meniu au fost **șterse, nu rescrise** — aceeași hotărâre ca la arbore (0027-02): un font scris explicit bate `ApplyBaseFont`, deci schema n-ar mai avea ce schimba. `Consolas` de pe lista de valori a rămas: acolo e o alegere deliberată (cifrele se aliniază), nu o inerție.
+- Separatoarele Label cu SystemColors.ControlLight deveneau invizibile în schemele cu paletă: regula generică Label seta BackColor=Transparent pe linia de 1px. Înlocuite cu Panel colorat din p.BorderColor.
+- Fonturile Segoe UI 9 Bold/Italic fixate pe comenzile meniului sunt șterse, fără înlocuire, ca în 0027-02: explicitul bate ApplyBaseFont. Consolas rămâne pe lista valorilor, alegere deliberată pentru alinierea cifrelor.
 - Ancora submeniului de condiții se traduce acum prin ecran: butonul stă cu trei părinți mai jos decât `pnlCorp`, deci `Bounds`-ul lui nu mai era în coordonatele corpului.
 - Bancul de probă (`DataViewPlaygroundForm`) are `EnableGrouping = True`, ca fila să se poată vedea.
 

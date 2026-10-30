@@ -29,9 +29,9 @@ Două lucruri, una singură ca miez:
 
 `Automatic` calculează exact ce se calcula înainte, deci **implicitul e comportamentul dinaintea feliei**, bit cu bit.
 
-`AppScaling.Broadcast` parcurge ferestrele deschise și cheamă noul `IDpiScaledControl.RefreshDpiMetrics` (`KBot.Theming`), implementat de arbore/grilă pentru măsurile memorate în câmpuri. Constantele `OnPaint` trec deja prin `ScaleDpi` la fiecare pictare și cer numai invalidare. Spre deosebire de culorile din `ThemeManager.Traverse`, difuzarea scării continuă și sub `IThemedControl`.
+AppScaling.Broadcast cheamă IDpiScaledControl.RefreshDpiMetrics (KBot.Theming) pe ferestrele deschise, actualizând câmpurile arborelui/grilei. Constantele OnPaint folosesc deja ScaleDpi și cer numai invalidare. Traversarea continuă sub IThemedControl, spre deosebire de culorile ThemeManager.Traverse.
 
-Evenimentul `ScalingChanged` există, dar difuzarea **nu** merge pe el — un eveniment de modul ar fi ținut referințe tari la controale și le-ar fi scurs.
+ScalingChanged există, dar nu transportă difuzarea: un eveniment de modul ar reține controalele prin referințe tari.
 
 #### (b) Onestitatea celor două comutatoare
 
@@ -39,13 +39,13 @@ Evenimentul `ScalingChanged` există, dar difuzarea **nu** merge pe el — un ev
 
 Singurul comutator care dă proporții IDENTICE cu proiectarea e `DpiUnaware`, fiindcă acolo întinde Windows toată fereastra ca bitmap; costul e textul mai moale. De aceea sunt **două** setări.
 
-Nota din felia 0035 spunea că a face aplicația surdă la scalare «ar înrăutăți». Rămâne adevărată ca implicit — de aceea bifa e **stinsă** din start și poartă avertismentul ei; dar operatorul a cerut-o explicit ca opțiune, iar alegerea e a lui.
+Avertismentul 0035 despre dezavantajul ignorării DPI rămâne valabil pentru implicit; bifa cerută explicit de operator pornește stinsă, cu avertisment.
 
 `Program.Main` citește setarea **înaintea** lui `SetHighDpiMode`, fiindcă modul DPI al unui proces nu se mai poate schimba după prima fereastră — de aici «necesită repornire» din UI.
 
 #### (c) `ThemeOptionsForm` — opțiunile SCHEMEI
 
-Fereastră nouă în `KBot.Controls/ThemeOptions/` (unde stă și `ThemeEditorForm`, aceeași precedență). Un `PropertyGrid` pe categorii, hrănit de `SchemeOptionsProxy`: **cele 23 de sloturi de culoare ale paletei** (ca `Color`, deci cu selectorul de culoare, nu ca șiruri `#RRGGBB`) plus **toate opțiunile de stil** — culori de sistem, păstrează culorile din designer, controale plate, randarea butoanelor, raza colțului, accent pe focus, bară de titlu întunecată, desenează filele, font de bază (listă derulantă cu fonturile instalate), dimensiune font, spațiere internă.
+ThemeOptionsForm nou în KBot.Controls/ThemeOptions/, lângă ThemeEditorForm, cu aceeași precedență. PropertyGrid pe categorii din SchemeOptionsProxy: 23 sloturi paletă ca Color (selector, fără șiruri #RRGGBB) și toate stilurile: culori sistem/păstrarea culorilor designerului, controale plate, randare butoane, rază colț, accent focus, titlu întunecat, file, font de bază din lista instalată, mărime font și padding.
 
 Trei reguli scrise în ea:
 
@@ -55,9 +55,9 @@ Trei reguli scrise în ea:
 
 #### (d) Suprascrierea schemelor built-in
 
-`ThemeManager.AvailableSchemes` înlocuiește schema built-in cu fișierul omonim, păstrând poziția. Concatenarea veche ar duplica «Modern», iar `ResolveByName` ar alege prima variantă, needitată, făcând salvarea aparent fără efect.
+ThemeManager.AvailableSchemes înlocuiește built-in-ul cu fișierul omonim în aceeași poziție. Vechea concatenare duplica Modern; ResolveByName alegea prima variantă needitată, ascunzând efectul salvării.
 
-`ThemeStore` adaugă `SaveScheme`/`DeleteScheme`/`SchemeFilePath`. Toate scrierile `theme.json` sunt citire-modificare-scriere: schema activă și scara, modificate separat, nu trebuie să se șteargă reciproc. Fișierul vechi fără câmpurile noi primește implicitele.
+ThemeStore: SaveScheme/DeleteScheme/SchemeFilePath. Scrierile theme.json sunt citire-modificare-scriere, păstrând reciproc schema și scara editate separat. Configul vechi primește implicitele câmpurilor noi.
 
 #### (e) Meniul butonului de temă
 

@@ -49,11 +49,11 @@ Info vine din bucla de construcție, nu `_treeInfos(codSelectat)`: dicționarul 
 
 ## 4. Macheta de alegere a recepțiilor (cererea 3)
 
-`src/KBot.App/Forexe/SelectieReceptiiForm.vb` + `.Designer.vb` — `KBotThemedForm` + `KBotDataView` cu prima coloană `KBotColumnType.CheckBox`, toate controalele declarate în designer (convenția casei). Coloane: bifă · Nr. · Data · Valoare · Instantanee · Stare. Butoane: «Bifează tot» / «Debifează tot» / «Descarcă» / «Renunță».
+src/KBot.App/Forexe/SelectieReceptiiForm.vb + Designer: KBotThemedForm/KBotDataView, controale declarate în designer. Coloane bifă (KBotColumnType.CheckBox), Nr., Data, Valoare, Instantanee, Stare; butoane Bifează tot/Debifează tot/Descarcă/Renunță.
 
 **Lista este locală** (`GET /api/forexe/receptii`), deoarece precedă descărcarea. Recepțiile existente doar în FOREXE nu pot apărea în selecție și se descarcă întotdeauna; antetul machetei explică limita.
 
-**Identitate prin dată**, ca în conductă: `step4b_receptii_prelucrare` caută `DATE(DataR) = %s AND Sters = 0` și ia primul candidat; 0058 arată dată/valoare. Două recepții în aceeași zi sunt indistincte pe fir: dacă bifele diferă, se descarcă întreaga zi și se explică prin `ZileAmestecate`. Alternativa ar omite tăcut o recepție cerută, sub aparența succesului.
+**Identitate prin zi:** step4b_receptii_prelucrare ia primul DATE(DataR)=%s AND Sters=0; 0058 afișează dată/valoare. Recepțiile aceleiași zile sunt indistincte pe fir. Cu bife diferite se descarcă ziua întreagă, explicat prin ZileAmestecate, evitând omiterea tăcută a unei recepții cerute.
 
 **Parametru:** `FeatureSwitches.ReceptiiBifateLaDeschidere`, deocamdată constant `True`, lângă celelalte comutatoare și motivul său. Sursa viitoare se schimbă în proprietate, fără schimbarea apelantului.
 
@@ -78,9 +78,9 @@ Info vine din bucla de construcție, nu `_treeInfos(codSelectat)`: dicționarul 
 </IfVar>
 ```
 
-**Cele patru goliri sunt necesare:** `BuildCollectedRow` ia câmpul lipsă din variabila omonimă, iar lista `SetVariable` oferă ultima valoare; fără golire s-ar trimite `Detaliu` al recepției vecine. `Detaliu = "[]"`, nu `""`: `cere_lista` refuză șirul gol.
+**Patru goliri necesare:** BuildCollectedRow ia câmpurile lipsă din variabilele omonime, iar lista SetVariable păstrează ultima valoare; altfel ar trimite Detaliu al vecinei. Detaliu="[]", deoarece cere_lista refuză șirul gol.
 
-**Filtrare suplimentară în client:** `WorkflowResultStore.FaraReceptiileSarite` elimină din `ListaReceptii` rândurile sărite înainte de trimitere. Workflowul omite numai detaliul costisitor; rândul `ScrapeTable` ar trimite suma nouă/detaliu gol, iar `_R_UPDATE_SUMA_SQL` ar schimba antetul fără linii, stricând egalitatea. Eliminarea rândului îl lasă neatins în pasul 4b, care procesează rând cu rând.
+**WorkflowResultStore.FaraReceptiileSarite** elimină rândurile sărite din ListaReceptii înainte de trimitere. Workflowul evită doar citirea detaliului; ScrapeTable ar trimite suma nouă/detaliu gol, iar _R_UPDATE_SUMA_SQL ar modifica antetul fără linii. Eliminarea păstrează rândul neatins de procesarea individuală 4b.
 
 **Un rând a cărui dată NU se poate citi RĂMÂNE.** «Nu știu care e» nu are voie să devină «sigur nu e bifată».
 
@@ -95,7 +95,7 @@ Două fișiere `.wfl` NOI, compuse din secțiunile fișierului complet — acele
 | `adlop - Receptii Angajament.wfl` | 0 (antet) + 2 (recepții, cu selecție) | butonul din subsolul arborelui de recepții cere recepțiile |
 | `adlop - Rezervari Angajament.wfl` | 0 + 1 (indicatori + buget) + 4 (istoric) | `FX_Rezervari` se scrie pe server **din `FX_Istoric`** (pașii 3c/3d), deci istoricul E sursa rezervărilor |
 
-**Pachete parțiale acceptate fără Python modificat:** lectura `routes/forexe/prelucrare.py` arată `tabele.get(...) or []`, deci lipsa tabelului nu scrie; pasul 4b folosește `read_indicatori` din BAZĂ, fără a cere indicatorii în payload.
+**Pachete parțiale, fără modificare Python:** citirea prelucrare.py confirmă tabele.get(...) or [], deci tabelul absent nu scrie. 4b folosește read_indicatori din BAZĂ, fără indicatori necesari în payload.
 
 **Ambele păstrează cele două faze** ale nodului întreg. Recepțiile fără istoric de obicei nu cer decizie și se salvează direct (§2); rezervările cu istoric nou pot avea instantanee de așezat, deschizând macheta ca orice descărcare.
 

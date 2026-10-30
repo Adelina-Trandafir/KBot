@@ -148,9 +148,9 @@ New Font("Calibri", 9) resolves to ... "Calibri" (present)
 
 Locul UNIC în care se decide fontul de bază. `BaseFontName = "Calibri"`, `BaseFontSize = 9.0F`, plus `Base As Font` și `IsFallback As Boolean`.
 
-Rezolvarea VERIFICĂ numele întors, nu doar că nu s-a aruncat: GDI substituie tăcut un font lipsă și întoarce un obiect perfect valid cu numele altcuiva, deci constructorul care reușește nu dovedește nimic. La substituire: se cade pe `SystemFonts.DefaultFont`, se aprinde `IsFallback` și se scrie motivul în `GlobalErrorLog`.
+Rezolvarea verifică numele fontului: GDI poate substitui tăcut unul lipsă, întorcând obiect valid cu alt nume. Substituirea folosește SystemFonts.DefaultFont, setează IsFallback și jurnalizează motivul în GlobalErrorLog; constructorul reușit nu dovedește prezența fontului.
 
-Fontul NU se eliberează niciodată, deliberat — copiii care moștenesc fontul ambiental împart aceeași instanță cu formularul, deci un `Dispose` la momentul greșit ar arunca dintr-un `OnPaint` (aceeași alegere ca în `FontBaseline`).
+Fontul comun nu se eliberează: copiii cu font ambiental împart instanța formularului; Dispose prematur ar produce excepție în OnPaint, ca la FontBaseline.
 
 Mesajul către operator, arătat o singură dată la pornire din `Program.Main` (`KBot.App` și `KBot.Migrator`), niciodată din inițializatorul de câmp:
 
@@ -160,8 +160,8 @@ Mesajul către operator, arătat o singură dată la pornire din `Program.Main` 
 ### 3.2 Fontul, pus într-un singur loc per tip de bază
 
 * `KBotThemedForm` — constructor nou, `Font = KBotFonts.Base`.
-* `KBotShellForm` — **fără constructor propriu**, moștenește de la `KBotThemedForm`. Planul cerea unul pe fiecare; a doua scriere ar fi spus același lucru de două ori și ar fi invitat la derivă.
-* `KBotThemedUserControl` (nou) — un `UserControl` e `ContainerControl`, deci are ștampila LUI și rulează `PerformAutoScale` singur, independent de formularul care-l găzduiește. Fără fontul din constructor se măsura de două ori: o dată la construire, pe fontul implicit, și încă o dată când era adăugat pe un formular cu alt font.
+* `KBotShellForm` moștenește constructorul KBotThemedForm, fără cel separat cerut de plan: a doua scriere ar duplica definiția și ar permite divergența.
+* `KBotThemedUserControl` (nou): UserControl este ContainerControl, cu ștampilă și PerformAutoScale proprii. Fontul în constructor evită măsurarea inițială pe implicit și a doua măsurare la găzduirea într-un formular cu alt font.
 
 Constructorul de bază pune fontul înainte de `InitializeComponent` din clasa derivată, deci înainte de `AutoScaleDimensions` / `AutoScaleMode.Font`. Visual Studio instanțiază tot tipul de bază pentru formularul derivat: și designerul vede Calibri.
 
@@ -171,7 +171,7 @@ Constructorul de bază pune fontul înainte de `InitializeComponent` din clasa d
 
 ### 3.3 Cele patru scheme
 
-Toate poartă acum `KBotFonts.BaseFontName` / `BaseFontSize` (constantele, nu literali — un literal aici ar lăsa o schemă să se despartă tăcut de restul aplicației, adică exact defectul reparat).
+Toate schemele folosesc constantele KBotFonts.BaseFontName/BaseFontSize, fără literali care ar permite divergența; definiția rămâne în §3.1.
 
 Un bloc de comentariu în capul fișierului spune pe față care le citesc:
 
@@ -181,13 +181,13 @@ Un bloc de comentariu în capul fișierului spune pe față care le citesc:
 | Classic | `StyleSystem` (n-are cod de font deloc) | nu |
 | Colorful | `PreserveDesigner` (repune fontul din designer) | nu |
 
-Valorile se scriu oricum, ca intenție declarată a schemei; comportamentul e identic în ambele feluri, fiindcă formularul poartă deja Calibri 9 din constructor înainte să se aplice vreo schemă. `StyleSystem` NU a primit o scriere de font (decizia 4).
+Valorile declară intenția inclusiv în schemele care nu le citesc: constructorul pune deja Calibri 9 înaintea schemei (§3.2), păstrând același rezultat. StyleSystem nu primește scriere de font (decizia 4).
 
 ### 3.4 Comutatorul «Font din temă»
 
-* `ThemeStore` — câmp nou `themeWritesFormFont` în `theme.json`, implicit `True`; `SaveThemeWritesFormFont` / `LoadThemeWritesFormFont`, cu aceeași citire-modificare-scriere ca `SaveActive` și `SaveScaling`, ca cele trei să nu se calce. Un fișier vechi, fără câmp, primește implicitul.
-* `ThemeManager.WritesFormFont` — proprietate publică, citită de `ApplyBaseFont` care iese devreme când e stinsă. Setterul persistă ȘI repune pe loc fontul din designer (`DesignerBaseline.Restore` pe fiecare fereastră deschisă, apoi `Apply`, care rescrie culorile schemei și lasă mărirea textului la urmă, în ordinea documentată). Fără `Restore`, comutatorul ar fi părut că nu face nimic până la repornire.
-* Bara de titlu — rând bifabil «Font din temă», sub cursorul «Mărime text» și deasupra separatorului care precedă schemele. Bifa e desenată (16×16, în culoarea textului din schema activă) fiindcă `CustomPopupItem` n-are stare de bifare: are exact trei roluri, normal / separator / cursor. Stins, rândul n-are imagine, iar slotul rămâne gol — alinierea coloanei de pictograme nu se strică.
+* `ThemeStore`: themeWritesFormFont nou în theme.json, implicit True și pentru fișiere vechi fără câmp; SaveThemeWritesFormFont/LoadThemeWritesFormFont folosesc citire-modificare-scriere ca SaveActive/SaveScaling, fără suprascriere reciprocă.
+* `ThemeManager.WritesFormFont`, public: ApplyBaseFont iese când este False. Setterul persistă, apoi DesignerBaseline.Restore pe toate ferestrele deschise și Apply: culori, mărire text la urmă, în ordinea documentată. Restore aplică imediat fontul designerului; fără el schimbarea ar părea inertă până la restart.
+* Bara de titlu: Font din temă sub Mărime text, deasupra separatorului schemelor. Bifă desenată 16×16, culoarea textului activ: CustomPopupItem are numai normal/separator/cursor, fără stare bifabilă. False lasă gol slotul imaginii, păstrând alinierea coloanei.
 * Cursorul de mărime se ascunde pe `_showTextScaleSlider AndAlso ThemeManager.WritesFormFont`: mărirea textului trece tocmai prin scrierea fontului pe formular.
 
 **Rolul comutatorului.** Cu același font în ambele locuri, scrierea temei este un no-op. Operatorul poate proba asta și o poate opri dintr-un clic dacă o mașină măsoară Calibri diferit; redimensionarea la schimbarea temei ar indica astfel cauza.

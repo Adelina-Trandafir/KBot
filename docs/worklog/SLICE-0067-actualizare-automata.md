@@ -50,7 +50,7 @@ Două rute **publice**:
 - `GET /api/update/latest` → `{version, minimum, file, size, sha256, published_utc, notes}` citit din `<UPDATE_DIR>/latest.json`; **404** `NO_UPDATE_PUBLISHED` când nu s-a publicat nimic; **500** `LATEST_INVALID` când fișierul e stricat (validare: chei obligatorii, versiuni `x.x.x.x`, `file` doar nume simplu — niciodată o cale, `size` întreg, `sha256` 64 hex).
 - `GET /api/update/download` → pachetul numit în `latest.json`, `send_file(conditional=True)` (Range merge), antete `X-KBot-Version` / `X-KBot-Sha256`; **500** `PACKAGE_MISSING` dacă `latest.json` arată spre un fișier absent.
 
-`UPDATE_DIR` = `getattr(config, "UPDATE_DIR", <PYTHON>/updates)`. `config.py` e doar pe server (nu se împinge), de aceea implicitul stă în cod. Fără cache: fișierul e mic și se recitește la fiecare cerere, deci un push se vede **fără restart**.
+`UPDATE_DIR = getattr(config, "UPDATE_DIR", <PYTHON>/updates)`: config.py rămâne numai pe server, implicitul e în cod. latest.json mic se recitește fără cache la fiecare cerere, deci push-ul devine vizibil fără restart.
 
 #### 1.2 `push-update.ps1` (nou, la rădăcina soluției)
 
@@ -68,18 +68,18 @@ Două rute **publice**:
 WinExe `net8.0-windows`, **zero referințe KBot** (rulează din `%TEMP%` cât timp `C:\KBOT` se suprascrie). Publicat **single-file** de `publish-release.ps1` (pas nou 4c2) și pus lângă `KBot.App.exe`; semnat (a cincea confirmare SimplySign). Instalatorul Inno îl ia cu `*`.
 
 - `UpdaterArgs` — linia de comandă (`--zip --target --wait --restart --sha256 --version --elevated`), validată; `ToArgumentList` pentru relansarea cu drepturi.
-- `UpdateApplier` — inima: scoate folderul de sus al zip-ului (`KBot_Release_<stamp>/`), **sare peste `Logs\`**, scrie fiecare fișier ca `*.kbot-new` și îl mută peste cel vechi (un fișier e ori cel vechi, ori cel nou), reîncearcă un fișier ocupat (10 × 1 s), gardă zip-slip, **nu șterge nimic** din ce nu e în pachet — deci `Asociere\`, `WorkflowResults\`, `Extrase\`, `kbot_paths.json` supraviețuiesc. Un DLL scos din produs rămâne orfan, inofensiv.
-- `UpdaterForm` — titlu, o linie de stare, `ProgressBar`; firul de lucru: așteaptă PID-ul aplicației (max 60 s), verifică SHA-256, probează scrierea în țintă (`IsWritable`) și dacă n-are drept **se relansează singur prin UAC** (`--elevated`, o singură dată), aplică, pornește aplicația (când e elevat, prin `explorer.exe`, ca aplicația să NU ruleze ca administrator), șterge zip-ul. Orice eșec = o casetă cu calea jurnalului + cod 1.
+- **UpdateApplier**: elimină folderul superior `KBot_Release_<stamp>/`, sare Logs, scrie `*.kbot-new` apoi mută peste fișierul vechi (înlocuire atomică per fișier), reîncearcă ocuparea 10 × 1 s și blochează zip-slip. Nu șterge fișiere absente din pachet: Asociere/WorkflowResults/Extrase/kbot_paths.json rămân, inclusiv DLL-uri orfane inofensive.
+- **UpdaterForm**: titlu/stare/ProgressBar; așteaptă PID-ul aplicației max 60 s, verifică SHA-256 și IsWritable pe țintă. Fără drept, se relansează o singură dată prin UAC (--elevated); aplică, repornește aplicația (prin explorer.exe dacă elevat, pentru a evita administratorul), șterge zip-ul. Eșec: casetă cu jurnalul, cod 1.
 - `UpdaterLog` — `<țintă>\Logs\updater.log` (folderul păstrat), cu cădere pe `%TEMP%\KBot\updater.log`.
 - `app.manifest` — `asInvoker` (UAC doar unde chiar trebuie).
 
 #### 1.4 `KBot.Domain\Update\` — `UpdateInfo`, `UpdateDecision`, `UpdatePolicy`
 
-`UpdatePolicy.Decide(current, latest, minimum)` e **singura** comparație, pură: sub `minimum` → `Required`; sub `latest` → `Available`; altfel `UpToDate`. `Normalize` umple la patru părți — `System.Version` pune -1 pe partea lipsă, deci fără ea `"1.0.30" < "1.0.30.0"` și clientul ar fi fost trimis să instaleze exact versiunea pe care o are. Versiune care nu se parsează = excepție, nu «la zi».
+UpdatePolicy.Decide(current, latest, minimum), unica comparație pură: sub minimum → Required; sub latest → Available; altfel UpToDate. Normalize completează patru părți: System.Version atribuie -1 părții lipsă, deci "1.0.30" < "1.0.30.0" ar cere reinstalarea aceleiași versiuni. Versiunea neparsabilă aruncă, fără «la zi».
 
 #### 1.5 `KBot.Api` — `IUpdateApi` / `UpdateApi`
 
-`GetLatestAsync` (404 → `Nothing`, nu excepție; 200 cu chei lipsă → `LATEST_INVALID`) și `DownloadAsync(cale, shaAșteptat, progres, ct)`: **streaming** pe disc (nu se bufferizează 40 MB), SHA-256 calculat pe aceeași trecere, la nepotrivire fișierul se **șterge** și iese `ApiException(SHA_MISMATCH)` — un pachet corupt nu ajunge niciodată la updater. Niciun antet `Authorization` pe niciunul din apeluri.
+GetLatestAsync: 404 → Nothing; 200 cu chei lipsă → LATEST_INVALID. DownloadAsync(cale, shaAșteptat, progres, ct) face streaming pe disc fără buffer de 40 MB, calculând SHA-256 în aceeași trecere. Nepotrivire: șterge fișierul și aruncă ApiException(SHA_MISMATCH), înainte de updater. Ambele apeluri fără Authorization.
 
 #### 1.6 `KBot.App\Update\` — `AppUpdateService`, `UpdateProgressForm`
 
@@ -87,7 +87,7 @@ WinExe `net8.0-windows`, **zero referințe KBot** (rulează din `%TEMP%` cât ti
 - `CheckAsync` → decizie + info. `RunStartupCheck()` (sincron, înainte de bucla de mesaje): server de nepătruns = **jurnal + merge la login**, nu blochează; `RunManualCheckAsync(owner)` (butoanele): fiecare rezultat se spune, inclusiv «Aveți ultima versiune». Amândouă întorc `True` = **procesul trebuie să iasă** (updater pornit, sau actualizare obligatorie refuzată).
 - Oferta: opțional = Da/Nu («Nu» = mai târziu); obligatoriu = OK/Anulare (Anulare = aplicația se închide; descărcare anulată/eșuată pe obligatoriu = tot se închide, cu o propoziție). Textul include notele din `latest.json` și mărimea.
 - `UpdateProgressForm` (`KBotThemedForm`, tot în Designer, `KBotProgressBar`, `KBotCaptionBar`, `KBotToolTip`): descarcă modal; X-ul din bara de titlu / Esc / «Renunță» = anulare (închiderea e refuzată cât timp descarcă, tokenul se anulează, `DownloadAsync` închide dialogul).
-- Predarea: `KBot.Updater.exe` se **copiază** din folderul aplicației într-un folder proaspăt `%TEMP%\KBot\update\<guid>\` (e el însuși în pachetul care se înlocuiește), se pornește cu `--zip --target --wait <pid> --restart <exe> --sha256 --version`, se scrie în `mesaje_operator.log` prin `OperatorLog`, și apelantul iese. Lipsa updater-ului lângă aplicație (instalare mai veche) se spune pe nume.
+- Predare: copiază KBot.Updater.exe din folderul aplicației în `%TEMP%\KBot\update\<guid>\`, evitând suprascrierea lui din pachet. Pornește cu `--zip --target --wait <pid> --restart <exe> --sha256 --version`, consemnează prin OperatorLog în mesaje_operator.log, apoi apelantul iese. Lipsa updaterului din instalări vechi este numită explicit.
 - `Program.vb`: DI (`IUpdateApi`, `AppUpdateService`) + în ramura `#Else` (Release): `If ...RunStartupCheck() Then Return` **înaintea** lui `RunShellWithLogin`. Debug nu verifică.
 
 #### 1.7 Ce s-a lăsat deliberat pentru DUPĂ acceptare (cererea operatorului)
@@ -129,7 +129,7 @@ WinExe `net8.0-windows`, **zero referințe KBot** (rulează din `%TEMP%` cât ti
 
 - **Numărul feliei: 0067-01** — instalatorul Inno n-are rând propriu în STATUS (a intrat cu commit-ul `a15cc7c`, fără felie); cererea e o a doua trecere peste sistemul de actualizare (0067), al cărui contract îl copiază. «Next free» rămâne 0073.
 - **Aceeași versiune ≠ actualizare.** Cererea spune «only allow upgrades»; interactiv, operatorul e totuși ÎNTREBAT dacă rescrie aceeași versiune (o reparație e un lucru legitim, iar un instalator refăcut fără bump ar fi altfel de neinstalat); în mod silențios (`/SILENT`, `/VERYSILENT`) regula strictă se aplică și aceeași versiune e refuzată.
-- **Versiunea care contează e `FileVersion` din `KBot.App.exe` instalat**, nu `DisplayVersion` din registru: `KBot.Updater` rescrie fișierele fără să atingă «Programe și caracteristici», deci registrul rămâne în urmă după prima actualizare automată. Registrul e doar rezervă, pentru un folder înregistrat al cărui exe a dispărut.
+- **Versiune: FileVersion din KBot.App.exe instalat.** În acest checkpoint KBot.Updater nu scria registrul, deci DisplayVersion rămânea în urmă. Registrul este rezervă numai pentru folderul înregistrat cu exe absent.
 - **Versiune instalată care nu se poate citi** (exe fără resursă de versiune ȘI registru gol) = «nu e instalat» → instalare proaspătă peste folder. Un build real K-BOT poartă întotdeauna `FileVersion`, deci cazul e teoretic; se scrie în jurnalul Setup-ului.
 
 ### Ce s-a schimbat și de ce
@@ -138,11 +138,11 @@ Un singur fișier: `tools\KBotInstaller\KBot.iss`.
 
 #### 1. Detectarea instalării existente (`DetectInstalled`)
 
-Ordinea: (a) exe-ul din folderul înregistrat (`InstallLocation` din cheia de dezinstalare `HKLM\…\Uninstall\{AppId}_is1`, vederea pe 64 de biți, apoi pe 32); (b) exe-ul din `C:\KBOT` (instalările de dinaintea instalatorului Inno — SFX-ul — n-au cheie în registru; **exact cazul acestui PC**: nicio cheie, `C:\KBOT\KBot.App.exe` = 1.0.19.0); (c) `DisplayVersion` din registru. Sursa («exe» / «registry») se scrie în jurnalul Setup-ului.
+DetectInstalled caută: (a) exe în InstallLocation din HKLM\…\Uninstall\{AppId}_is1, 64 apoi 32 biți; (b) C:\KBOT, pentru vechiul SFX fără registru (acest PC: fără cheie, KBot.App.exe 1.0.19.0); (c) DisplayVersion din registru. Jurnal Setup: sursa «exe»/«registry».
 
 #### 2. Compararea — oglinda lui `UpdatePolicy`
 
-`TryParseVersion` taie «a.b.c.d» în cel mult patru părți numerice și **umple lipsurile cu 0** (`UpdatePolicy.Normalize`: altfel «1.0.31» < «1.0.31.0»), apoi `PackVersionComponents` + `ComparePackedVersion` (Inno 6.1+; scriptul cere 6.5+). Pachetul mai vechi → **refuzat** (`InitializeSetup` întoarce False, caseta spune versiunile și folderul; drumul spre versiunea veche = dezinstalare din «Programe și caracteristici», spus pe nume). Egal → întrebare (implicit «Nu»). Mai nou → actualizare. `AppVersion` care nu se parsează = `RaiseException` (defect de build, nu de operator).
+TryParseVersion: cel mult patru componente numerice, lipsuri completate cu 0 ca UpdatePolicy.Normalize (altfel 1.0.31 < 1.0.31.0); PackVersionComponents/ComparePackedVersion din Inno 6.1+, scriptul cere 6.5+. InitializeSetup întoarce False pentru pachetul mai vechi, numind versiunile, folderul și dezinstalarea din «Programe și caracteristici» ca drum spre downgrade. Egal: întrebare, implicit Nu; mai nou: actualizare. AppVersion neparsabil → RaiseException, defect de build.
 
 #### 3. Actualizarea cu regulile lui `UpdateApplier`
 
@@ -162,10 +162,10 @@ Ordinea: (a) exe-ul din folderul înregistrat (`InstallLocation` din cheia de de
 
 Cererea: «make the updater write DisplayVersion too». `src\KBot.Updater\InstallRegistry.vb` (nou):
 
-- **Găsește intrarea** `HKLM\…\Uninstall\{AppId}_is1` (vederea pe 64, apoi pe 32) și o atinge DOAR dacă `InstallLocation` e chiar folderul actualizat (`SameFolder`: fără majuscule, fără bara finală) — o a doua copie a aplicației, pusă cu mâna în alt folder, nu rescrie versiunea instalării înregistrate.
+- Găsește HKLM\…\Uninstall\{AppId}_is1, 64 apoi 32 biți; scrie numai când SameFolder confirmă InstallLocation = folder actualizat, ignorând cazul literelor și bara finală. O copie manuală în alt folder nu schimbă instalarea înregistrată.
 - **Scrie** `DisplayVersion`, `VersionMajor`/`VersionMinor` (DWORD, ca Inno) și sufixul de versiune din `DisplayName` («K-BOT 1.0.30.0» → «K-BOT 1.0.31.0»; un nume care nu se termină cu versiunea veche rămâne neatins — nu se ghicește niciun nume).
 - **Versiunea scrisă = `FileVersion` din `KBot.App.exe` proaspăt aplicat** (același număr pe care îl compară instalatorul), cu `--version` doar ca rezervă.
-- **Drepturi.** HKLM cere administrator. `UpdaterForm` pasul 3 cere acum relansarea prin UAC și când doar intrarea din registru nu e scriibilă (`InstallRegistry.NeedsElevation`). Diferența față de folderul nescriibil: dacă operatorul REFUZĂ promptul și folderul e scriibil, fișierele se actualizează oricum și doar intrarea rămâne în urmă (jurnal). Iar o eroare la scrierea în registru după ce fișierele au fost aplicate **nu e fatală** — fișierele SUNT actualizate, o casetă de eroare ar minți.
+- **HKLM cere administrator.** UpdaterForm pasul 3 cere UAC și pentru registru nescriibil (InstallRegistry.NeedsElevation). Dacă operatorul refuză dar folderul e scriibil, fișierele se actualizează, registrul rămâne vechi, consemnat în jurnal. Eroarea de registru după aplicarea fișierelor nu este fatală.
 - Consecință de spus: pe un PC obișnuit (utilizator cu UAC), **fiecare actualizare automată va cere o dată confirmarea UAC** dacă aplicația a fost instalată prin Setup. Fără cheie în registru (SFX-ul vechi, copie de mână) nu se cere nimic.
 - `KBot.Updater` `FileVersion` 1.0.0.0 → **1.0.1.0**. Capcana VB de umbrire: parametrul `version` a ascuns `System.Version` (`Version.TryParse` → BC30456); redenumit `newVersion`.
 

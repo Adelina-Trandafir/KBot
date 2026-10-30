@@ -13,10 +13,10 @@ PDF-urile **semnate** (revizii DDF, ordonanțări ORD) nu mai trăiesc doar pe d
 Trei reguli au condus toată implementarea, fiindcă un PDF semnat digital trebuie să se întoarcă de pe server **bit cu bit**:
 
 1. **Octeți bruți pe fir.** `application/octet-stream` la încărcare, `application/pdf` la descărcare. Niciodată JSON, niciodată base64, niciun pas prin mod text.
-2. **SHA-256 verificat la amândouă capetele, în amândouă sensurile.** La încărcare serverul recalculează suma peste corpul primit și respinge cu 400 la nepotrivire (nu scrie nimic); la descărcare trimite suma stocată ca `ETag`, iar clientul o recalculează peste octeții primiți și refuză să scrie cache-ul dacă nu corespunde.
-3. **Concurență optimistă.** `X-Sha-Precedent` poartă suma pe care clientul a văzut-o ultima dată (`-` = «cred că nu există rând»). Dacă rândul de pe server are altă sumă → 409, nu se scrie nimic. Nicio semnătură a altcuiva nu se suprascrie tăcut.
+2. **SHA-256 la ambele capete/sensuri:** serverul recalculează suma corpului primit, respinge nepotrivirea cu 400 fără scriere; la descărcare trimite suma stocată ca ETag. Clientul recalculează octeții primiți și scrie cache-ul numai dacă suma corespunde.
+3. **Concurență optimistă:** X-Sha-Precedent conține ultima sumă văzută de client (`-` = rând presupus absent). Altă sumă pe server → 409 fără scriere, protejând semnătura altcuiva de suprascriere tăcută.
 
-Decizii de plan reținute ca atare: se stochează **doar semnate** (cele nesemnate sunt artefacte derivate, se regenerează local), **fără istoric** (cheie unică → re-semnarea înlocuiește rândul), **fără coloană `Semnat`** (existența rândului ESTE semnalul), **`LONGBLOB` nu `MEDIUMBLOB`** (plafonul de 16 MB al lui MEDIUMBLOB cade exact pe estimarea maximă), **fără compresie de blob** în v1.
+Decizii de plan: numai semnate (nesemnatele se regenerează local), fără istoric (cheia unică permite înlocuirea la re-semnare), fără coloană Semnat (rândul e semnalul), LONGBLOB (MEDIUMBLOB plafonat la 16 MB coincide cu estimarea maximă), fără compresie blob în v1.
 
 PDF-urile nesemnate folosesc separat `<AppDir>\TempPdf\`, golit la fiecare pornire. Cache-ul semnat nu se golește în bloc: se înlocuiește numai la nepotrivirea sumei.
 
@@ -61,10 +61,10 @@ Ce **NU** s-a schimbat, deși ar fi fost tentant: convențiile de nume și de fo
 
 ## 3. Abateri de la plan (toate deliberate, niciuna tăcută)
 
-1. **`MAX_CONTENT_LENGTH` — globală, cum a cerut operatorul.** Planul cerea 17 MB; `main.py` avea deliberat `None` («pentru imagini mari»). I s-a semnalat Adelinei că o limită globală atinge **toate** rutele, nu doar cele de PDF, iar decizia a fost: **globală, dar cu un mesaj clar când plafonul nu e de ajuns**. Deci: 17 MB global + handler `413` care spune plafonul și ce e de făcut. **Consecință de acceptat conștient:** încărcările mari existente (atașamente base64, capturi de ecran, upload FTP) primesc de acum 413 peste 17 MB. Capturile trebuie comprimate la generare.
-2. **Nu exista niciun „catch-all Flask error handler".** Planul (§4, §5) presupunea unul. `main.py` n-avea niciunul, iar Werkzeug taie cererea prea devreme ca vreo rută să o vadă — fără handler, clientul ar fi primit pagina HTML implicită și operatorul un mesaj gol. S-a adăugat handler-ul de 413, cu corp JSON românesc și `reason: PAYLOAD_TOO_LARGE`.
+1. **MAX_CONTENT_LENGTH globală:** planul cerea 17 MB; main.py avea None «pentru imagini mari». Adelina, avertizată că plafonul atinge toate rutele, a ales 17 MB global + handler 413 cu plafon și remediu. Consecință de acceptat conștient: atașamentele base64, capturile și uploadul FTP peste 17 MB primesc 413; capturile trebuie comprimate la generare.
+2. **Handler Flask catch-all absent**, deși planul §4/§5 îl presupunea. Werkzeug respinge înaintea rutei; fără handler clientul primea HTML implicit, operatorul mesaj gol. Adăugat handler 413 cu JSON românesc și reason: PAYLOAD_TOO_LARGE.
 3. **`_iso_dt` în loc de `_iso`** pentru `DataModif`: `_iso` taie ora (`.date()`), ceea ce ar face două semnări din aceeași zi să arate identic.
-4. **Plafonul se verifică și în rută**, nu doar global: `MAX_PDF_BYTES` în `pdf.py` dă un 413 cu mesaj propriu. Redundant azi (limita globală taie mai devreme), dar ruta nu are voie să depindă de o valoare de config pe care altcineva o poate schimba.
+4. **Plafon și în rută:** MAX_PDF_BYTES din pdf.py produce propriul 413. Redundant cu limita globală actuală, dar independent de o configurare ce poate fi schimbată.
 5. **DDL-ul e livrat NEVERIFICAT**, cu proba în cap. Vezi §4.
 
 ---

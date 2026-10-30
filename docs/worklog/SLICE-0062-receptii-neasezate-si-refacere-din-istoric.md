@@ -21,17 +21,17 @@ S-a ales vederea Recepții pentru amândouă: acolo e simptomul (lista goală) �
 
 `GET /api/forexe/receptii` porta literal `qFX_MAIN_REC_TREE`: `FX_Receptii_R INNER JOIN FX_Receptii_H ON H.IDRR = R.IDRR`. Anteturile cu `IDRR NULL` dispăreau; dacă erau toate neașezate, rezultatul `receptii: []` producea «Angajamentul nu are recepții».
 
-**Schimbarea:** rădăcina interogării e acum `FX_Receptii_H`, cu `LEFT JOIN FX_Receptii_R` și `WHERE H.CodAngajament = %s`. Un antet neașezat vine cu toate câmpurile de recepție `NULL` (`idrr: null`, `data_r: null`, `suma_antet: 0.0`, steagurile `false`). Restul rămâne: `LEFT JOIN FX_Receptii`, `LEFT JOIN FX_Indicatori`, subinterogările scalare pe `Clasificatii`, aceeași ordine (`R.NRCRT, R.DataR, H.NrCrt, H.DataH, Rc.IDR` — NULL-urile lui R vin primele în MariaDB, dar clientul oricum grupează). O recepție FĂRĂ niciun antet nu apare — nici în Access nu apărea.
+**Interogare:** FX_Receptii_H rădăcină, LEFT JOIN FX_Receptii_R, WHERE H.CodAngajament=%s. Neașezate: idrr/data_r null, suma_antet 0.0, steaguri false. Neschimbate LEFT JOIN FX_Receptii/FX_Indicatori, subinterogările scalare Clasificatii și ordinea R.NRCRT,R.DataR,H.NrCrt,H.DataH,Rc.IDR (R NULL întâi în MariaDB; clientul grupează). Recepția fără antet lipsește și aici, ca în Access.
 
 **Pe fir:** `GetReceptieRow.idrr` devine `Integer?`, evitând eșecul deserializării pentru JSON `null`. `ReceptieRow.Idrr` rămâne `Integer`, cu **0 = neașezat**, ca `AsociereInfo.idrr = 0`.
 
-**În arbore (`ReceptiiView.BuildTree`):** rândurile așezate (`Idrr > 0`) alimentează lunile și tooltip-urile de reconciliere; neașezatele fără `DataR` nu intră în cumul. Ultimul dosar, **«Instantanee neașezate»**, însumează `Total` pe antete distincte și are câte un `h_{IDRH}` (`DataH`, descriere, `Total`, iconiță după semn). Clicul umple grila cu liniile dosarului/antetului. Tooltip-ul dă numărul și indică editorul din antetul arborelui; `asociere.py.citeste_instantanee` citea deja toate antetele, cu `idrr = 0` pentru cele fără recepție.
+**ReceptiiView.BuildTree:** Idrr>0 formează lunile/tooltipurile de reconciliere; neașezatele fără DataR nu intră în cumul. Ultimul dosar Instantanee neașezate însumează Total pe antete distincte; nod h_{IDRH} cu DataH/descriere/Total/icon după semn. Clicul arată liniile dosarului/antetului; tooltip: număr și editorul din antet. asociere.py.citeste_instantanee citea deja toate antetele, idrr=0 fără recepție.
 
 ### 2. Refacerea din istoric (cererea 2)
 
 #### 2.1 Ce e sursa de adevăr
 
-`IDH = FX_Istoric.ID` leagă antetele și liniile, verificat în `TABLES/FX_Receptii_H.md` / `FX_Receptii.md` prin coloana și relațiile `FX_IstoricFX_Receptii_H` / `FX_IstoricFX_Receptii`. Algoritmul există în Access `mdl_FX_Istoric.FX_Istoric_Populeaza_ Receptii` (export 529–652) și în portul `prelucrare_pasi.step4a_populeaza_receptii` (0048-03): istoric de recepție în ordinea `ID`, tampon cu `Val_Receptie <> 0`, golit sub primul `(activ:true)` din `Observatii`. Antetul primește `IDH = ID`, `DataH = DataFX`, `Total = Val_Receptie`, descrierea dintre «Receptie: » și virgulă.
+IDH=FX_Istoric.ID leagă antete/linii, verificat în TABLES/FX_Receptii_H.md și FX_Receptii.md, coloana și relațiile FX_IstoricFX_Receptii_H/FX_IstoricFX_Receptii. Algoritm: mdl_FX_Istoric.FX_Istoric_Populeaza_ Receptii (export 529–652) și prelucrare_pasi.step4a_populeaza_receptii (0048-03). Istoric de recepție în ordinea ID; tampon Val_Receptie<>0 golit la primul (activ:true) în Observatii. Antet: IDH=ID, DataH=DataFX, Total=Val_Receptie, descriere între «Receptie: » și virgulă.
 
 #### 2.2 Ruta nouă: `POST /api/forexe/receptii/refacere`
 
@@ -39,7 +39,7 @@ S-a ales vederea Recepții pentru amândouă: acolo e simptomul (lista goală) �
 
 * **Peste rândurile `Prelucrat = 1`**, nu `= 0`. Cele neprelucrate aparțin următoarei descărcări; 4a le va construi atunci și NU verifică `IDH`-ul, deci dacă le-am construi și aici ar ieși două H pentru același rând de istoric.
 * **Scrie numai ce lipsește.** Antet: dacă există deja un H cu acel `IDH`, i se refolosește `IDRH`-ul; altfel se inserează cu `_H_INSERT_SQL` din 4a (`IDRR NULL`, `NrCrt` continuă de la maxim, `EsteStergere` din descriere). Linie: lipsește după `IDH` ▸ `_REC_INSERT_SQL`; există dar `IDRH IS NULL` (orfană) ▸ `UPDATE FX_Receptii SET IDRH = %s` — relegată, nu dublată; există și e legată ▸ nu se atinge.
-* **Nu ridică pentru un indicator lipsă.** 4a ridică `ValueError` (o ingestie nu are voie să continue cu o linie fără indicator). La refacere, o asemenea linie ar opri tot angajamentul; se sare, se numără în `linii_sarite` și se spune în `avertismente`.
+* **Indicator lipsă:** la refacere se sare linia, crește linii_sarite și apare avertismente, evitând oprirea întregului angajament. 4a aruncă ValueError pentru aceeași situație, interzicând ingestia fără indicator.
 
 Trei lucruri se **semnalează** fără să se înghită: liniile rămase fără antet la sfârșit (tamponul nevidat), liniile sărite, și anteturile existente care au linii cu `IDH NULL` (la ele nu se poate judeca ce lipsește, deci liniile lor nu se ating și se spune de ce).
 
@@ -188,9 +188,9 @@ Două defecte, fără legătură între ele, ambele confirmate pe cod.
 
 `'rand_istoric'` este un `KeyError` din Python, ajuns la operator prin ramura `except Exception` a lui `post_asociere` (500, `Eroare la salvarea asocierii: {e}`).
 
-Editorul de oricând (`routes/forexe/asociere.py`) folosește `idrh`, fără payload/indice de rând. `normalizeaza_comenzi` adăuga aliasul `rand_istoric = idrh` numai COMENZILOR, nu și `citeste_instantanee` INSTANTANEELOR. `asociere.log` din 0058, prin `journal.table(...)`, citea `i["rand_istoric"]` în `valideaza_plasarile`; argumentele se evaluează inclusiv cu jurnalul oprit, deci orice salvare atingând un lanț cu instantanee rămase cădea. Și `materializeaza_reconstituite` (F26) ar fi eșuat pe aceeași cheie.
+Editorul de oricând (`routes/forexe/asociere.py`) folosește idrh, fără payload/indice. normalizeaza_comenzi punea rand_istoric = idrh numai pe comenzi, nu pe instantaneele citeste_instantanee. În valideaza_plasarile, journal.table(...) din asociere.log (0058) evalua `i["rand_istoric"]` inclusiv cu jurnalul oprit: orice salvare cu instantanee rămase cădea. Și materializeaza_reconstituite (F26) ar fi eșuat la aceeași cheie.
 
-**Fix:** `citeste_instantanee` din `asociere.py` pune `"rand_istoric": idrh` pe fiecare instantaneu, exact ca pe comenzi. Un rând, plus docstring. Clientul VB citește GET-ul prin `GetAsociereInstantaneu`, care nu are câmpul, deci îl ignoră — nimic de schimbat în VB.
+**Fix:** citeste_instantanee din asociere.py adaugă `"rand_istoric": idrh` fiecărui instantaneu, ca pe comenzi: un rând și docstring. GetAsociereInstantaneu ignoră câmpul absent din model; fără schimbare VB.
 
 ### 2. Antetele fără linii — F32
 
@@ -199,7 +199,7 @@ Editorul de oricând (`routes/forexe/asociere.py`) folosește `idrh`, fără pay
 Singurul antet fără linii care E instantaneu: rândul de ștergere (F21). Rămâne.
 
 **Criteriul, o singură dată** (`prelucrare_helpers.py`):
-* `is_header_only_snapshot(este_stergere, line_rows_seen)` — pentru cele două plimbări peste istoric. Numără RÂNDURILE-LINIE văzute de la antetul precedent, nu liniile construite: o linie cu indicator necunoscut în `FX_Indicatori` (refacerea o sare și o spune) tot face antetul un instantaneu adevărat, ca ancora să rămână și linia să se poată atașa la o refacere ulterioară.
+* `is_header_only_snapshot(este_stergere, line_rows_seen)`, în ambele parcurgeri: numără rândurile-linie de la antetul precedent, nu liniile construite. Indicatorul necunoscut în FX_Indicatori, sărit cu diagnostic de refacere, păstrează totuși instantaneul/ancora pentru atașarea liniei la o refacere ulterioară.
 * `SNAPSHOT_COUNTS_SQL` — predicatul de citire: `(COALESCE(H.EsteStergere,0) <> 0 OR EXISTS (SELECT 1 FROM FX_Receptii L WHERE L.IDRH = H.IDRH))`, cu tabelul aliasat `H`.
 
 **Unde se aplică:**
@@ -217,7 +217,7 @@ Singurul antet fără linii care E instantaneu: rândul de ștergere (F21). Răm
 | `tree._SELECT` (`AreReceptii`) | un angajament cu numai antete goale nu aprinde steagul |
 | `docs/FUNDAMENT_Asociere_Receptii.md` | **F32** + linia de revizie din antet (F31 și F32) |
 
-**Neatinse, deliberat:** `_AMPRENTA_SQL` (`hc`/`hm`/`hn`) — amprenta e un hash comparat între GET și POST ale aceluiași cod, deci filtrul nu-i schimbă rostul; `_BLOCAJE_SQL` — un antet gol niciodată returnat nu poate fi comandat; `_R_DEMARCHEAZA_SQL` — privește doar rândurile de ștergere; `ord_edit._SQL_REC_ANT` și `_DIF_R_SQL` — pornesc din LINII, deci antetele goale nu contribuiau oricum. Nicio linie VB schimbată.
+**Neatinse:** `_AMPRENTA_SQL` (hc/hm/hn compară hashul aceluiași cod între GET/POST); `_BLOCAJE_SQL` (antetul nereturnat nu poate fi comandat); `_R_DEMARCHEAZA_SQL` (numai ștergeri); ord_edit._SQL_REC_ANT și `_DIF_R_SQL` (pornesc din linii, fără contribuția antetelor goale). Fără schimbări VB.
 
 ### 3. Teste
 
@@ -231,7 +231,7 @@ PYTHON (`.venv`, `KBOT_ASOCIERE=0`): suita întreagă **546 trecute / 26 sărite
 
 * **Nimic n-a rulat pe MariaDB.** Că `EXISTS (SELECT 1 FROM FX_Receptii L WHERE L.IDRH = H.IDRH)` e ieftin pe volumul real nu s-a măsurat; `FX_Receptii.IDRH` e FK, deci ar trebui indexat.
 * **Salvarea din AsociereForm nu s-a apăsat pe ecran** după fix; drumul e acoperit cap la cap doar de testul cu falsul de conexiune.
-* **Antetele goale deja în bază rămân în `FX_Receptii_H`**, nevăzute. Nu se șterg: un `DELETE` ar trebui să se uite la `FX_ORD.IDRH` și la orice altceva îi ține cheia. Refacerea le numește în avertismente, ca operatorul să știe că sunt.
+* **Antetele goale existente rămân în FX_Receptii_H, ascunse**, cu IDRH în avertismentele refacerii, conform [F32 de mai sus](#slice-0064-02). Ștergerea ar cere examinarea FX_ORD.IDRH și a tuturor celorlalte referințe.
 * **Instantaneele ingerate înainte de F31 ale căror singure linii erau zerouri** arată, în `FX_Receptii`, exact ca un antet gol și sunt ascunse de același filtru până la «Refacere din istoric» — reparația pe care 0064 o cerea deja. Până n-o apasă operatorul, pe angajamentele vechi pot lipsi din editor instantanee reale «fără schimbare».
 
 ---
@@ -257,11 +257,11 @@ Numărul feliei: 0065 = «Next free» din STATUS. Presupunere, nu confirmare —
 
 ### 1. Cauza lui (4): pasul 4d nu rula după salvarea din editor
 
-În JSON-ul operatorului (`AAB2KRCC64T`, `027_SCGM`), antetul `IDRH 242` (recepția `IDRR 187`) are `DIFH NULL`, iar liniile lui 476/477 au `DIF NULL`. Celelalte șase recepții au `DIFH = 4.235`. Tooltip-ul din Recepții însuma `DIFH` pe anteturi (`qFX_MAIN_REC_TT_DIFH`), iar `qFX_ORD_REC_ANT` (ordonanțarea) însumează `DIF` pe linii: `NULL` -> 0 pe amândouă drumurile, deci 6 × 4.235 = 25.410.
+JSON operator: AAB2KRCC64T, 027_SCGM. IDRH 242 / IDRR 187 are DIFH NULL, liniile 476/477 au DIF NULL; celelalte șase recepții au DIFH = 4.235. Tooltipul qFX_MAIN_REC_TT_DIFH însuma DIFH pe antete, ordonanțarea qFX_ORD_REC_ANT însuma DIF pe linii. NULL → 0 dădea în ambele 6 × 4.235 = 25.410.
 
-`DIFH` / `DIF` sunt calculate local de 4d (`step4d_calculeaza_dif`), conform retragerii F20. Ingestia îl chema după 4c (`_pas4d_pe_receptiile_atinse`), refacerea 0062 după scriere. **`asociere.py.aplica_comenzi` recalcula numai Final/Partial și F28**, lăsând fără diferențe instantaneele așezate în editor și recepțiile create acolo (0059). `IDRR 187`, cu `Incarcat NULL`, avea acest indiciu de origine și lipsea din ambele totaluri.
+4d (`step4d_calculeaza_dif`) calculează local DIFH/DIF după retragerea F20: ingestia îl apela după 4c (`_pas4d_pe_receptiile_atinse`), refacerea 0062 după scriere. asociere.py.aplica_comenzi recalcula numai Final/Partial/F28, lăsând fără diferențe instantaneele plasate și recepțiile create în editor (0059). IDRR 187 cu Incarcat NULL avea acest indiciu de origine și lipsea din ambele totaluri.
 
-**Fix:** `aplica_comenzi` cheamă `step4d_calculeaza_dif(cursor, cod, idrr)` pentru fiecare lanț atins (`de_recalculat`), după `recalculeaza_final`. Datele deja stricate se repară de la sine la următoarea salvare din editor pe acel angajament, la orice «Reîmprospătare» (ingestia rulează 4d pe TOATE recepțiile angajamentului) sau la «Refacere din istoric» pe lanțurile atinse.
+**Fix:** aplica_comenzi apelează `step4d_calculeaza_dif(cursor, cod, idrr)` pe fiecare lanț de_recalculat, după recalculeaza_final. Corectează și datele vechi la următoarea salvare din editor pe angajament, la Reîmprospătare (4d pe TOATE recepțiile lui) sau Refacere din istoric pe lanțurile atinse.
 
 ### 2. Vederea Recepții — o recepție VALOREAZĂ ultimul ei instantaneu
 
@@ -277,7 +277,7 @@ F3: fiecare instantaneu în ordinea `DataH` exprimă valoarea ÎNTREGII recepți
 | 3 | Rândul «Descriere» în tooltip-ul de recepție: `R.Descriere` (nou pe fir, `descriere_r`), altfel `Descriere` al ultimului antet. |
 | 4 | Cumulul «Recepții cumulate» = suma rulantă a `ValoareaReceptiei`, nu a `DIFH` (`SumDistinctAntetDifh` scos). Pe lanț complet cele două coincid; pe `DIFH NULL` doar a doua e adevărată — 29.645 pe JSON-ul operatorului. `Difh` rămâne pe `ReceptieRow`, necitit de vedere. |
 
-Rândul de ștergere (F21) e ultimul antet al unei recepții șterse și nu are linii: totalul lui e valoarea recepției la ștergere (deci cumulul nu se schimbă față de înainte), liniile se iau din ultimul antet care are, iar eticheta R primește «[ștearsă]» (`este_stergere` nou pe fir). F22 («ascunsă din arbore») rămâne neimplementată ca înainte — nu s-a cerut aici.
+F21: ultimul antet de ștergere nu are linii; totalul păstrează valoarea recepției la ștergere, deci cumulul anterior. Liniile vin din ultimul antet cu linii, R primește [ștearsă] prin noul este_stergere. F22 (ascunderea din arbore) rămâne neimplementată, necerută aici.
 
 Pe fir (`receptii.py`): `descriere_r` (`R.Descriere`) și `este_stergere` (`COALESCE(H.EsteStergere,0)`); `GetReceptieRow`, `ApiClient.GetReceptiiAsync`, `ReceptieRow` (`DescriereR`, `EsteStergere`) le poartă.
 
@@ -287,7 +287,7 @@ Pe fir (`receptii.py`): `descriere_r` (`R.Descriere`) și `este_stergere` (`COAL
 
 * candidații din coș: neașezate, neblocate, nemarcate «fără schimbare», nu rânduri de ștergere;
 * recepțiile: cele neșterse pe site;
-* valoarea rotunjită la ban; se ia o pereche NUMAI când valoarea apare pe un singur instantaneu din coș ȘI pe o singură recepție (`SumaAntet`). Valoarea nu e cheie (F5) — de aceea unicitatea pe amândouă laturile, nu potrivirea: șapte recepții de 4.235 cu două instantanee de 4.235 nu se ating;
+* Valoare rotunjită la ban, unică pe ambele laturi: un instantaneu în coș ȘI o recepție cu SumaAntet egală. F5 nu permite valoarea ca cheie; șapte recepții de 4.235 și două instantanee de 4.235 rămân neatinse;
 * vetourile F14/F16 se aplică prin `MotivulRefuzului`, ca la o tragere;
 * rezultatul e o MUTARE LOCALĂ (`_pozitie`), nesalvată: intră în `Comenzi()`, se vede în arbore, se poate trage înapoi. Banda spune câte s-au așezat (`TextAsezareAutomata`) și cere verificarea.
 
@@ -330,8 +330,8 @@ Neatinse deliberat: `ord_edit._SQL_REC_ANT` (rămâne `SUM(DIF)`, ca în Access 
 
 Descărcarea `AAB2KPRT2EB` (workflow `PrelucrareCompletaReverse`) a salvat cu avertismentul «1 instantanee neasociate nu au rândul lor de istoric în această descărcare și nu pot fi rezolvate acum». Două cauze, una peste alta:
 
-1. **Ancora F24 nu acoperă rândurile vechi sub fluxul REVERSE.** `citeste_instantanee` punea un instantaneu neașezat în tabloul de decis DOAR dacă `IDH`-ul lui era în `TabelIstoric` din sarcina utilă (indicele rândului e ancora deciziei). Dar `adlop - Prelucrare Completa Reverse.wfl` merge înapoi prin paginile de istoric și se oprește la `DATA_IESIRE` (`exitIfCellEquals`, `startFromLast` în `WorkflowExecutor.Actions.ScrapeTable.vb`), deci `TabelIstoric` e o DIFERENȚĂ, nu istoricul întreg — presupunerea din docstring-ul pasului 3a («FOREXE trimite istoricul intreg la fiecare descarcare») era adevărată doar la prima descărcare. Orice instantaneu rămas neașezat dintr-o rulare mai veche era, prin construcție, de nerezolvat din descărcare; editorul de oricând îl vedea fiindcă ancorează pe `IDRH`.
-2. **Un rând de istoric cu `Prelucrat = 0` care nu a fost inserat de rularea curentă nu era marcat niciodată.** Interogarea operatorului a arătat rândul `IDH 5786` (recepția 27.07.2026) cu `Prelucrat = 0`, restul 1 — venit pe altă cale (migrare). Pasul 4a îl citea la fiecare descărcare și îi năștea un `FX_Receptii_H` nou, neașezat (`FX_Receptii_H: 2` în mesaj, cu un singur antet în payload), iar cauza 1 îl făcea de neașezat din descărcare.
+1. **F24 nu acoperea istoricul vechi în REVERSE:** citeste_instantanee oferea instantaneul neașezat numai cu IDH prezent în TabelIstoric, indicele payloadului fiind ancora. `adlop - Prelucrare Completa Reverse.wfl` citește înapoi până la DATA_IESIRE (exitIfCellEquals/startFromLast, WorkflowExecutor.Actions.ScrapeTable.vb): payloadul este diferență. Docstringul 3a afirma istoric întreg la fiecare descărcare, adevărat numai la prima. Instantaneul neașezat dintr-o rulare veche nu se putea rezolva din descărcare; editorul îl vedea prin ancora IDRH.
+2. **Prelucrat = 0 nemarcat dacă rândul nu era nou:** interogarea operatorului arată IDH 5786 (27.07.2026), venit prin migrare, cu 0, restul 1. 4a îl recitea și crea alt FX_Receptii_H neașezat: mesajul avea FX_Receptii_H: 2 pentru un antet în payload. Cauza 1 împiedica așezarea din descărcare.
 
 ### Ce s-a schimbat și de ce
 
