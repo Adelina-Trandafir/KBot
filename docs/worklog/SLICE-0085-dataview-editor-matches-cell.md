@@ -17,18 +17,18 @@ Operator request, 26.09.2026, slice dedicated to the custom grid (`KBot.Controls
 
 **Editor placement (`PlaceEditor`, new).** The text editor is now `BorderStyle.None`, `AutoSize = False` (Designer). On every open and on every layout pass (`UpdateLayout` → resize, column width, theme change, DPI change via `ApplyMetricScale` → `LayoutChanged`) it is:
 
-- dressed with the cell's *resolved* look: `ResolveCellLook` runs the same chain as the painter (normal / alternating / selected row colours → `RowFormatting` → `CellFormatting`) with fresh argument instances, so font, back colour, fore colour and horizontal alignment are exactly what `DrawCell` would use;
+- styled through ResolveCellLook, matching DrawCell: normal/alternating/selected row colours → RowFormatting → CellFormatting, with fresh args; resolved font/background/foreground/horizontal alignment;
 - placed in the cell's content rectangle (`CellContentRect`, i.e. the cell minus `CellPadding` scaled by `ScaleDpi`), full content width, one text line high;
-- given edit-control margins (`EM_SETMARGINS`) equal to TextRenderer's glyph padding, measured on the grid's own device context (`MeasureTextPadding`: total from `MeasureText` with and without `NoPadding`, split left = ceil(h/6), rest right). Measured in device pixels, so it follows the DPI with no extra scaling;
+- EM_SETMARGINS uses grid-device-context glyph padding: MeasureTextPadding compares TextRenderer.MeasureText with/without NoPadding, left = ceil(h/6), remainder right. Device pixels already follow DPI, without extra scaling;
 - vertically centred like `TextFormatFlags.VerticalCenter`, rounding the spare height up (GDI does; plain integer division left the editor 1 px high — measured, see test results).
 
-The painter (`DrawCell`) skips the text of the cell being edited (`IsEditingCell`), so the old value never shows around the caret. The combo editor keeps the whole cell (a ComboBox fixes its own height from its font) and only takes the cell's font and colours.
+DrawCell skips IsEditingCell text, preventing the old value around the caret. Combo keeps the full cell (native height follows font), adopting only its font/colours.
 
-**Single-click editing.** `OnMouseDown`, after selecting the cell, opens the editor when the cell is editable and puts the caret where the click landed (`PlaceCaretAt`). A click inside the cell already being edited (its padding around the one-line editor) keeps the edit and only moves the caret (`HandleMouseDownOnEditingCell`, checked before the grid takes focus). F2 and double click still open the editor; double click no longer re-opens an editor already open on that cell. The two hosts with `CellDoubleClick` handlers (`DdfEditSectiuneaAPage` «Clsf», `AlegereUnitateForm`) use read-only columns, so a single click never opens an editor there and their double click still reaches the grid.
+**Single click:** OnMouseDown selects/opens editable cells and PlaceCaretAt follows the click. HandleMouseDownOnEditingCell, before grid focus, keeps the edit/moves caret for padding clicks. F2/double-click still open, without reopening the same active cell. DdfEditSectiuneaAPage Clsf and AlegereUnitateForm use readonly columns: no editor on single click, existing CellDoubleClick handlers still receive double click.
 
-**Unchanged commit writes nothing.** `CommitEdit` closes without validation, `IsDirty` or `CellValueChanged` when `EditorUnchanged` finds the original text. Single-click editing otherwise made merely passing through a cell (including an arrow press) mark the row edited and raise the event.
+**Unchanged commit:** CommitEdit closes without validation, IsDirty or CellValueChanged when EditorUnchanged finds the original text. This prevents single-click/arrow traversal alone from marking untouched cells edited.
 
-**Up/Down.** `MoveEditVertical` / `NextEditableRow` (Friend) find the nearest editable cell in the same column, in DRAWN order. They skip disabled/non-editable rows and group bands; collapsed rows have no band, and the grid footer is outside the bands. At the boundary or on a single row, nothing commits or moves: the editor/caret stay. Previously a disabled target dropped the edit back to the grid.
+**Up/Down:** Friend MoveEditVertical/NextEditableRow find the nearest editable cell in the same column, DRAWN order, skipping disabled/noneditable rows/group bands. Collapsed rows have no band; footer is outside bands. Boundary/single row keeps editor/caret without commit/move; previously a disabled target dropped edit to grid.
 
 **Rule 0 sweep.** `KBotDataView.Editing.vb` (all comments, the two designer `Description`s and the `ArgumentException` text) and `KBotDataView.Designer.vb` are now English/ASCII, plus the comments of the `OnMouseDown` / `OnMouseDoubleClick` blocks touched in `KBotDataView.Input.vb`.
 
@@ -56,7 +56,7 @@ The painter (`DrawCell`) skips the text of the cell being edited (`IsEditingCell
 ### Pass 2 (operator follow-up, 26.09.2026)
 
 1. **A click selects the whole text** (not a caret at the click point). `BeginEdit` already selects all; the click path no longer moves the caret, and a click in the padding of the cell already being edited also re-selects the whole text. `PlaceCaretAt` was removed.
-2. **The edited cell does NOT take the selected-row colour.** `ResolveCellLook` now always resolves the UNSELECTED look (normal / alternating row colour, then `RowFormatting` / `CellFormatting`), and the painter fills the whole edited cell (padding included) with that colour (`_editBackColor`), so the cell being edited stands out from the selected row. Columns have no colour of their own, so "the column's default cell colour" = the unselected row colour after the formatting handlers.
+2. **Unselected edit colours:** ResolveCellLook now uses normal/alternating → RowFormatting/CellFormatting regardless of selection; painter fills the whole edited cell/padding with `_editBackColor`, distinct from selected row. Columns have no colour, so column default means this formatted unselected look.
 3. **I-beam cursor** over every cell a click would edit (`CanEdit`); read-only / disabled cells keep the arrow. Set in `OnMouseMove` after the resize-edge / icon / group-band checks.
 
 Pass 2 checks (same off-screen scratch program, 144 dpi): the edited cell's region is pixel-identical to the same cell drawn on an UNSELECTED row (0 differing pixels, five cells); its padding pixel = row colour (248,248,248) while the rest of the selected row is (203,225,242); click → `SelectionStart = 0`, `SelectionLength = TextLength`; cursor = IBeam over the editable column, Default over the read-only one. Builds: Controls and App 0 / 0.

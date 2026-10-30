@@ -490,9 +490,9 @@ Cerere de operator:
 
 ### 1. De ce era desenat în cod, și de ce motivul acela a expirat
 
-`KBotFilterPopup` s-a născut în 0028-03 ca **fereastră desenată integral de noi**: ~400 de linii de pictură (`.Painting.vb`) plus tot atâtea de geometrie și hit-test în fișierul principal. Motivul era scris acolo și era corect atunci: «un `ContextMenuStrip` cu un `CheckedListBox` în el ar rămâne două dreptunghiuri albe sub o schemă întunecată».
+`KBotFilterPopup` din 0028-03 picta integral meniul: ~400 linii .Painting.vb și tot atâtea de geometrie/hit-test. Motivul inițial: ContextMenuStrip + CheckedListBox ar fi rămas două dreptunghiuri albe în dark.
 
-Între timp motivul a dispărut, tot în felia 0028: `ThemeManager` are reguli pe tip pentru `CheckedListBox`, `ListBox`, `CheckBox`, `Button` și `Panel` — inclusiv tema NATIVĂ a barelor de derulare (`DarkMode_Explorer` / `Explorer`) — iar `KBotThemedForm` le aplică singur, la încărcare și la fiecare comutare de schemă. Adică exact ce lipsea în 0028-03 există acum.
+Între timp ThemeManager a primit reguli pentru CheckedListBox/ListBox/CheckBox/Button/Panel și scrollbars native DarkMode_Explorer/Explorer. KBotThemedForm le aplică la încărcare/schimbarea schemei, eliminând lipsa care justificase pictura din 03.
 
 Deci meniul a fost **rescris ca formular obișnuit al casei**, cu regula casei aplicată la literă: toate controalele în `KBotFilterPopup.Designer.vb`.
 
@@ -513,11 +513,11 @@ Ce a rămas neapărat la rulare, și de ce:
 - **textele care depind de tipul coloanei** — sortarea se numește «A → Z» pe text și «de la mic la mare» pe numere (`KBotFilterEngine.SortCaption`), iar «Șterge filtrul din «X»» poartă numele coloanei;
 - **activarea lui «Șterge filtrul»** (stins fără filtru) și **existența butonului de condiții** (coloanele logice n-au submeniu — butonul se ASCUNDE, nu se stinge, ca să nu rămână un rând care nu duce nicăieri).
 
-**Deciziile n-au fost atinse.** Filtrul se predă la OK dintr-o COPIE (`Clone`), sortarea se aplică imediat și închide meniul, «tot bifat» ≠ filtru, «(Selectează tot)» atinge doar rândurile ARĂTATE, golul se numește «(Necompletate)» dar rămâne text vid în model, iar `_suppressDeactivate` ține meniul deschis cât timp submeniul de condiții e sus. Vechiul `KBotFilterPopupTests` a trecut NESCHIMBAT — el fixează tocmai deciziile, care n-aveau voie să se miște fiindcă s-a schimbat felul în care e desenat meniul.
+**Decizii păstrate:** OK transmite Clone; sortarea imediată închide meniul; tot bifat ≠ filtru; Selectează tot afectează numai rândurile afișate; Necompletate rămâne text vid în model; `_suppressDeactivate` păstrează meniul cât condițiile sunt deschise. KBotFilterPopupTests a trecut neschimbat, fixând aceleași decizii indiferent de randare.
 
 ### 3. Defect găsit pe drum: `KBotTextField` nu ridica niciodată `TextChanged`
 
-Primul `Handles txtCauta.TextChanged` scris în noul formular n-a rulat niciodată. Cauza: `KBotTextField.Text` e delegat la `TextBox`-ul intern, deci textul se schimba fără ca evenimentul CADRULUI să se ridice vreodată — până acum toți consumatorii se legau la `InnerTextBox.TextChanged` și nimeni n-a observat. Pentru un formular autorat în designer asta e o capcană curată: legi evenimentul în designer și nu se întâmplă nimic, tăcut.
+`Handles txtCauta.TextChanged` nu primea evenimentul: KBotTextField.Text delega inputului intern fără ridicarea TextChanged pe cadru. Consumatorii anteriori foloseau InnerTextBox.TextChanged; legarea normală în designer eșua tăcut.
 
 Reparat în control: `_inner.TextChanged` → `OnTextChanged(EventArgs.Empty)` + `Invalidate()` (placeholder-ul oricum se redesena la fel).
 
@@ -627,15 +627,15 @@ Cele 6 teste noi: butonul scund crește cât umplutura + textul, cel destul de �
 
 ## SLICE-0028-08 — Trecerea OPERATORULUI peste cele două ferestre de filtrare (+ ce a rupt designerul pe drum) <a id="slice-0028-08"></a>
 
-Felie de **livrare**, nu de proiectare: operatorul a lucrat singur în designerul Visual Studio peste ce a lăsat 0028-06/07 și a cerut ca tot ce era necomis să intre, «even the work you didn't do». Fișierul acesta scrie ce a intrat, ca peste o lună să se poată citi de ce arată așa.
+**Livrare:** operatorul a modificat singur designerul VS după 0028-06/07 și a cerut includerea tuturor modificărilor necomise, «even the work you didn't do». Se consemnează proveniența celor incluse.
 
 ### 1. Meniul de filtrare — rândurile de meniu (autor: operatorul)
 
-`KBotFilterPopup.vb` a primit `AplicaRandDeMeniu`, chemată din `OnThemeChanged` pentru cele patru comenzi de sus. Ele nu mai sunt butoane, ci **rânduri**: plate, fără chenar, în culoarea suprafeței pe care stau, scoase în relief doar de hover — ca într-un meniu de sistem.
+`KBotFilterPopup.vb` adaugă `AplicaRandDeMeniu`, apelată din OnThemeChanged pentru patru comenzi de sus: rânduri plate, fără chenar, culoarea suprafeței, relief numai la hover, ca meniul de sistem.
 
-Motivul e scris în cod și merită repetat aici, fiindcă e o interacțiune fină între două lucruri corecte fiecare în parte: schema **Modern** randează orice `Button` owner-drawn, adică îi taie colțurile cu un `Region` de rază 8 și-i pune fundalul de buton. Pe un rând lat cât meniul, prin cele patru decupaje se vedea suprafața de dedesubt — meniul arăta ca patru pastile gri lipite pe o foaie albă. `ModernRenderer.DetachButton` scoate `Region`-ul și, pe drumul deschis în 0028-07, redă și marginea și înălțimea AUTORATE. Apelul e idempotent și pe celelalte scheme (care oricum nu rotunjesc nimic), deci rândul iese la fel peste tot.
+Modern desena orice Button cu Region de rază 8/fundal de buton; pe rândurile late, decupajele arătau suprafața de dedesubt ca patru pastile gri pe alb. `ModernRenderer.DetachButton` elimină Region și restaurează marginea/înălțimea autorate, pe calea din 07. Idempotent și în schemele fără rotunjire, păstrând rândul uniform.
 
-Tot aici: roșul lui «Șterge filtrul» vine acum din **paletă** (`ErrorColor`), nu din `Firebrick`-ul scris o dată în designer — adică se schimbă odată cu schema, ca orice altă culoare a casei.
+Șterge filtrul folosește acum ErrorColor din paletă în locul Firebrick din designer, urmărind schema.
 
 **Două defecte reparate în același drum**, amândouă în deschiderea submeniului de condiții:
 
@@ -646,11 +646,11 @@ Tot aici: roșul lui «Șterge filtrul» vine acum din **paletă** (`ErrorColor`
 
 `KBotFilterConditionDialog` stătea pe `Location`/`Size` absolute. Acum totul e într-un `tlyMAIN` (două coloane, șase rânduri), deci se poate rearanja în designer fără să se recalculeze poziții.
 
-Consecința în cod: ascunderea celei de-a doua casete (există doar la «Între…») nu se mai face mutând butoanele cu mâna, ci **strângând la zero rândurile** pe care stau cele două controale, iar fereastra se scurtează cu exact cât s-a strâns. `StrangeRandul` **citește** rândul din tabel (`tlyMAIN.GetRow`) în loc să scrie un indice fix — altfel prima reordonare în designer, adică exact rostul pentru care s-a trecut la tabel, ar fi stricat socoteala în tăcere. Constructorul a primit și `Try/Catch` cu re-aruncare (regula casei pentru un punct de intrare): un dialog pe jumătate așezat e mai rău decât unul care nu s-a deschis.
+A doua casetă, numai la Între…, se ascunde prin rânduri strânse la zero și scurtarea corespunzătoare a ferestrei, fără mutarea manuală a butoanelor. `StrangeRandul` citește tlyMAIN.GetRow, fără indice fix care ar ceda la reordonarea în designer. Constructorul primește Try/Catch cu re-aruncare: dialogul incomplet nu este acceptat.
 
 ### 3. Ce a rupt designerul pe drum: `PlatiView` (reparat aici)
 
-Deschiderea vederii în designerul VS a ȘTERS bucla care adăuga cele nouă rânduri `AutoSize` din `detailTable` — designerul nu poate reciti cod pe care nu l-a scris el, așa că l-a rescris fără ea. A rămas o singură linie, `RowStyles.Add(Percent 100)`, iar **stilurile sunt POZIȚIONALE**: ea nimerea pe rândul 0, deci «Nr. document» absorbea tot spațiul în locul lui «Explicații», care e rândul 9. Simptomul ar fi fost un panou de detaliu cu primul rând uriaș și restul înghesuite.
+VS a șters bucla celor nouă AutoSize din detailTable, nerecitibilă de designer. A rămas RowStyles.Add(Percent 100), aplicat pozițional rândului 0 (Nr. document), în loc de 9 (Explicații). Ar fi produs primul rând uriaș/restul înghesuite.
 
 Reparat scriind cele nouă rânduri **unul câte unul** — pe acelea designerul le poate reciti, deci nu le mai pierde.
 
@@ -702,13 +702,13 @@ Cerere de operator, după ce selectorul de teme a mers o felie întreagă din `M
 
 ### 1. Ce se întâmpla
 
-Meniul de teme era ÎN GAZDĂ. `MainForm` avea ~130 de rânduri care știau de `ThemeManager`, de literele de acces, de pictogramele schemelor, de garda `CustomPopup.ClosedJustNow`, de `ThemeEditorForm` și de `capBar.OptionButtonBounds` — iar bara de titlu nu ținea decât butonul gol și evenimentul lui. Al doilea formular cu bară de titlu ar fi trebuit să COPIEZE tot.
+MainForm ținea ~130 linii pentru ThemeManager, litere de acces, pictograme, CustomPopup.ClosedJustNow, ThemeEditorForm și capBar.OptionButtonBounds; captionbar avea numai buton/eveniment. Orice altă gazdă ar fi copiat logica.
 
 Și chiar exista: `LoginForm` are `ShowOptionsButton = True` cu pictograma `switch_theme` și **niciun handler** — un buton care arată exact ca selectorul de teme și nu face nimic la clic.
 
 ### 2. Ce s-a construit
 
-**`KBotCaptionBar.ThemeButton.vb`** (partial nou, lângă `KBotCaptionBar.vb`) — butonul și tot ce ține de el. Bara își face SINGURĂ meniul: `ShowThemeMenu()` construiește `CustomPopup`-ul, îl ancorează pe `ThemeButtonBounds`, comută schema prin `ThemeManager.SetScheme` și deschide `ThemeEditorForm` pentru rândul «Stiluri...». `ThemeEditorForm` e în `KBot.Controls`, deci nimic nou nu s-a mutat pentru asta.
+**`KBotCaptionBar.ThemeButton.vb`**, partial nou lângă KBotCaptionBar.vb: `ShowThemeMenu()` construiește CustomPopup, ancorat la ThemeButtonBounds, comută prin ThemeManager.SetScheme și deschide ThemeEditorForm la Stiluri…. Editorul exista deja în KBot.Controls, fără mutare nouă.
 
 Proprietăți (toate cu `<DefaultValue>`, deci **niciun implicit nu ajunge scris în formularul gazdă**):
 
@@ -724,21 +724,21 @@ Proprietăți (toate cu `<DefaultValue>`, deci **niciun implicit nu ajunge scris
 
 **Pictogramele meniului** vin acum din `KBot.Controls\Resources.resx` (`ThemeClassic` / `ThemeDark` / `ThemeModern` / `ThemeColorful` / `ThemeEditor` / `switch_theme`), nu din resursele lui `KBot.App` — controlul nu poate depinde de gazdă.
 
-**Cheia rândului de editor e `@ThemeEditor`, nu «Stiluri».** O schemă de utilizator chiar s-ar putea numi «Stiluri», iar atunci alegerea ei ar fi deschis editorul în loc să comute tema (era posibil în varianta din `MainForm`).
+**Cheie editor `@ThemeEditor`:** evită confundarea cu o schemă de utilizator numită Stiluri, care în vechiul MainForm ar fi deschis editorul în locul comutării.
 
 ### 3. Cele trei lucruri care s-au rupt pe drum și au fost reparate
 
-**(a) Sloturile.** Butonul de opțiuni își calcula slotul cu propria numărătoare (`1 + min + max`). Al doilea buton pe aceeași formulă ar fi stat FIX PESTE el. Acum există o singură numărătoare — `ThemeButtonSlot()` — iar opțiunile citesc `ThemeButtonSlot() + If(ShowThemeButton, 1, 0)`. Ordinea dreapta→stânga e: închidere, maximizare, minimizare, **temă**, opțiuni. Exact ce cerea cererea: «just after the minimize/maximize buttons (if available, else after the close button)».
+**(a) Sloturi:** formula proprie a opțiunilor `1 + min + max` ar fi suprapus tema. Acum ThemeButtonSlot() numără o dată; opțiunile folosesc `ThemeButtonSlot() + If(ShowThemeButton, 1, 0)`. Dreapta→stânga: închidere, maximizare, minimizare, temă, opțiuni, inclusiv fără min/max conform cererii.
 
 **(b) Titlul curgea pe sub butoane.** `TitleRightLimit()` nu se uita deloc la butonul de opțiuni (defect vechi, invizibil cât timp titlul era scurt). Acum limita e marginea celui mai din stânga buton VIZIBIL, oricare ar fi el.
 
-**(c) Sinkul `IPopupAnchor` nu mai are un singur client.** Interfața primește un bit — «s-a deschis un meniu» — și nu spune CARE buton l-a desfășurat. Bara ridică `_themeMenuOpening` chiar înainte de `ShowBelow` și îl consumă în `SetPopupOpen`: meniul de temă aprinde butonul de temă, orice altă deschidere (venită de la gazdă, prin butonul de opțiuni) aprinde butonul de opțiuni. Închiderea le stinge pe amândouă — un buton rămas aprins ar arăta un meniu care nu mai există.
+**(c) IPopupAnchor** transmite numai bitul meniu deschis, fără buton. `_themeMenuOpening`, pus înainte de ShowBelow și consumat în SetPopupOpen, aprinde tema; alte deschideri de la gazdă aprind opțiunile. Închiderea le stinge pe ambele, evitând butonul aprins fără meniu.
 
 Desenul celor două butoane a fost pus pe aceeași funcție (`DrawImageButton`): sunt același obiect vizual, iar două desene paralele s-ar fi despărțit la prima reglare de umplutură.
 
 ### 4. `MainForm` a rămas cu 9 rânduri
 
-`capBar.ShowThemeButton = True` în designer, în locul celor trei rânduri de buton de opțiuni. Au DISPĂRUT din `MainForm.vb`: `CapBar_OptionButtonClick`, `OnThemePicked`, `CuLiteraDeAcces`, `GetThemeIcon` (~130 de rânduri) și câmpul `_suppressThemeEvents` — care, verificat, nu era ridicat NICĂIERI, deci garda lui era o minciună. A rămas `CapBar_ThemeSchemeChanged`, care doar scrie în jurnal: restul shell-ului se re-tematizează singur.
+`capBar.ShowThemeButton = True` înlocuiește trei rânduri de opțiuni în designer. MainForm.vb elimină CapBar_OptionButtonClick/OnThemePicked/CuLiteraDeAcces/GetThemeIcon (~130 linii) și `_suppressThemeEvents`, verificat niciodată ridicat. Rămâne CapBar_ThemeSchemeChanged pentru jurnal; shellul se retematizează singur.
 
 ### Fișiere atinse
 

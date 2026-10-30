@@ -4,11 +4,11 @@ Cerere: implementarea predării, transferului, casării și evidenței/rapoartel
 
 ## Documente
 
-BP alege explicit contul din magazie și contul în folosință, independent. Sursa este oferită dintre conturile cu recepții în context; destinația este aleasă din nomenclatorul de conturi activ. Nu se inventează o clasificare după prefix și nu se impune un singur cont în întreaga gestiune. Un BP are o pereche sursă–destinație; alte perechi se folosesc în alte BP, pe modelul antetului existent. Dacă selectorul are mai multe conturi, rămâne activ.
+BP alege independent contul de magazie (dintre cele cu recepții în context) și contul de folosință (din nomenclatorul activ), fără clasificare după prefix sau cont unic pe gestiune. Un BP păstrează o pereche sursă–destinație în antet; alte perechi cer alte BP. Selectorul cu mai multe conturi rămâne activ.
 
-BT și BS aleg produse numai din loturile predătorului. Cheia de lot include documentul de proveniență, varianta, contul în folosință și prețul. Un bon poate conține loturi de pe conturi diferite; contul și prețul sunt păstrate pe fiecare linie. Prețul trimis de client identifică lotul, dar valoarea salvată este întotdeauna cea citită de server din lotul eligibil.
+BT/BS aleg numai loturile predătorului, identificate prin documentul de proveniență, variantă, cont de folosință și preț. Un bon admite conturi diferite, păstrate cu prețul pe fiecare linie. Prețul clientului identifică lotul; serverul salvează valoarea citită din lotul eligibil.
 
-Disponibilul folosește data documentului, exclude documentul editat și respectă și ieșirile ulterioare. La salvare se validează din nou în tranzacția existentă; cronologia se urmărește pe deținător/lot/cont/preț. Anularea și editarea documentelor care au alimentat alte documente rămân protejate. Registrul cu proveniențe/date incoerente primește diagnostic, fără reparații tacite. Predarea păstrează ieșirea unică de magazie și încărcarea registrului; transferul păstrează cele două sensuri, cu efect net zero.
+Disponibilul la data documentului exclude documentul editat și respectă ieșirile ulterioare; salvarea îl revalidează tranzacțional, cu cronologie pe deținător/lot/cont/preț. Dependențele protejează anularea/editarea; proveniențele/datele incoerente primesc diagnostic, fără reparare tacită. BP păstrează ieșirea unică de magazie și încărcarea registrului; BT, cele două sensuri cu net zero.
 
 Editorul OI este în pagină, cu arbore ascuns și spațiul folosit integral. Grilele au footer pentru adăugare și totaluri; BT/BS aleg prin arbore cont–lot/produs/preț. Casarea nu are primitor. Ciornele OI calculează valorile prin întregi BigInt, la patru zecimale de stocare și rotunjirea ZEC, iar serverul păstrează Decimal. Denumirile conturilor/deținătorilor inactivi rămân disponibile în consultarea documentului istoric.
 
@@ -16,15 +16,15 @@ Fișiere: `PYTHON/routes/vercon/oi.py`, `oi_custody.py`, `doc_routes.py`, `proto
 
 ## Evidență și rapoarte
 
-Stocul în folosință folosește contul fiecărei mișcări, cu gruparea deținător–cont–variantă. Nu mai moștenește contul de magazie al produsului. Grila și selecția mișcărilor păstrează identitatea contului. Adunarea cantităților afișate folosește utilitarul decimal comun pentru a suporta valori cu un număr diferit de zecimale în același răspuns.
+Stocul în folosință se grupează deținător–contul mișcării–variantă, fără moștenirea contului de magazie. Grila/selecția păstrează identitatea contului; utilitarul decimal comun adună cantități cu precizii diferite în același răspuns.
 
-Rapoartele OI sunt disponibile în meniul aplicației și în catalog: bonuri BP/BT/BS, centralizatoare, balanță, stocuri pe deținător/produs, situații/fișe și liste de inventariere. Selecția contului de folosință este independentă de arborele produselor și de contul lor de magazie. Arborele perioadei cuprinde anii de la primul NIR/BP până la ultimul an relevant, cu numai ultimul an expandat inițial; intervalele pot traversa anii.
+Meniul/catalogul OI oferă BP/BT/BS, centralizatoare, balanță, stocuri pe deținător/produs, situații/fișe și inventariere. Contul de folosință se selectează independent de arborele produselor și contul lor de magazie. Perioada acoperă primul NIR/BP–ultimul an relevant, numai ultimul expandat inițial; admite intervale între ani.
 
 Bonurile păstrează valorile istorice ale liniilor. Balanțele și fișele sunt evaluate la prețul curent, cu notă explicită. Soldurile inițiale preced intervalul, iar predările/transferurile/casările includ ambele capete. Totalurile pe produse păstrează conturile distincte. Inventarierea lasă goale câmpurile pentru constatarea faptică; nu inventează diferențe.
 
-Patru surse SELECT suplimentare sunt configurabile în KBotAdmin: `oi_documents`, `custody_ledger`, `oi_accounts`, `oi_holders`. Se folosesc modelul comun de raport, snapshoturile, PDF și infrastructura comună de lățimi Excel. Preview-ul unui bon OI salvat folosește raportul oficial; ciornele/anulate și cititorii fără drept separat de raport păstrează preview-ul local. Rapoartele MF rămân în starea lor anterioară, amânată.
+KBotAdmin configurează patru surse SELECT: `oi_documents`, `custody_ledger`, `oi_accounts`, `oi_holders`. Se reutilizează modelul comun de raport, snapshoturile, PDF și lățimile Excel. Preview oficial pentru bon OI salvat; local pentru ciorne/anulate și cititori fără drept separat de raport. MF rămâne amânat, ca anterior.
 
-S-a corectat și mascarea funcției `selected` printr-o variabilă locală în calculul balanței magaziei, deoarece aceasta împiedica folosirea filtrării comune în rapoartele de magazie disponibile și în gestiunea OI.
+Corectată mascarea funcției `selected` de variabila locală din balanța magaziei, care bloca filtrarea comună a rapoartelor de magazie, inclusiv în OI.
 
 Fișiere: `PYTHON/routes/vercon/stock_source.py`, `stock.py`, `capabilities.py`, `report_catalog.py`, `report_data.py`, `report_oi.py`, `report_routes.py`, `report_service.py`, `report_layouts.py`, `report_body.py`, `report_store.py`; `PYTHON/routes/admin_cli/vercon_reports.py`; `PYTHON/static/js/vercon/stock.js`, `reports.js`, `report-selection.js`, `report-result.js`, `document-report.js`; cele patru fișiere SQL din `PYTHON/reports/vercon/queries/` și README-ul lor.
 
@@ -46,49 +46,49 @@ Etapele de mai jos revizuiesc editorul din 17.10: arborele BP rămâne vizibil/d
 
 ### Bonuri OI/MF: arbore direct și conturi BP
 
-Arborii BP/BT/BS afișează direct deținătorul și bonurile, fără nivelul lunii. BT se grupează după primitor; BS după predător, fiind document fără primitor. Gruparea folosește identitatea deținătorului, iar bonurile sunt ordonate după număr descrescător, apoi dată și ID, cu număr și valoare în nod. În BP, contul de folosință este sub contul de magazie, în aceeași coloană. Listele țin cont de TIP OIM/OIF sau MFM/MFF; conturile neclasificate (NULL) rămân eligibile conform regulilor existente. Un singur cont eligibil este selectat automat și controlul este disabled, prin mecanismul comun existent.
+Arborii BP/BT/BS au deținător → bonuri, fără lună: BT după primitor, BS după predător (fără primitor). Grupare după identitatea deținătorului; bonuri după număr descrescător, apoi dată și ID, cu număr/valoare în nod. BP pune contul de folosință sub cel de magazie, în aceeași coloană. Listele respectă TIP OIM/OIF sau MFM/MFF și eligibilitatea existentă a conturilor NULL. Mecanismul comun selectează automat unicul cont eligibil și dezactivează controlul.
 
 <a id="d001-09-etapa-16"></a>
 
 ### Bonuri MF/OI: grupare opțională după dată
 
-Sub arborele bonurilor BP/BT/BS apare checkboxul Ordoneaza dupa Dată, bifat implicit la deschiderea paginii. Bifat: rădăcini lună în română/an, în ordine cronologică descrescătoare, cu TOTAL pe lună; bonurile copil arată tip/număr, dată și valoare și sunt sortate descrescător după dată, apoi după număr și identitate. Totalurile însumează exact valorile bonurilor neanulate; bonurile anulate rămân vizibile cu marcajul existent. Înregistrările fără dată sunt grupate separat la sfârșit.
+Checkboxul Ordoneaza dupa Dată, sub arborele BP/BT/BS, este bifat implicit: lună în română/an descrescător, TOTAL lunar exact din bonurile neanulate; copii cu tip/număr, dată, valoare, descrescători după dată, apoi număr și identitate. Anulatele rămân marcate; cele fără dată formează ultimul grup separat.
 
-Debifat: se reutilizează gruparea existentă pe gestionar, cu aceleași etichete și ordonare ca înainte. Comutarea reface numai arborele și păstrează documentul selectat. Checkboxul este sub zona derulabilă a arborelui și urmează ciclul de viață al controalelor paginii.
+Debifat: gruparea, etichetele și ordonarea existente pe gestionar. Comutarea reface numai arborele, păstrând documentul selectat. Checkboxul stă sub zona derulabilă și urmează ciclul de viață al paginii.
 
 <a id="d001-09-etapa-17"></a>
 
 ### Bonuri MF/OI: număr implicit separat P/T/C și produse cu disponibil pozitiv
 
-La adăugarea BP/BT/BS, Număr este completat cu următorul număr din seria proprie tipului de bon. Propunerea ia maximul numerelor existente și al contorului acelei serii, inclusiv documentele anulate. Numărul este verificat la părăsirea câmpului și la salvare; același număr poate exista pe tipuri diferite de bon, dar nu pe două bonuri ale aceluiași tip în aceeași gestiune. Propunerea este doar citire; contorul avansează în tranzacția salvării, sub blocarea contextului existentă. Numerotarea comună internă a identităților PTC se păstrează separat de numărul afișat al fiecărui tip.
+La adăugare BP/BT/BS, Număr propune următorul din seria tipului: maximul numerelor existente (inclusiv anulate) și al contorului. Se verifică la ieșirea din câmp și la salvare; unic pe tip/gestiune, admis pe tipuri diferite. Propunerea doar citește; contorul avansează tranzacțional sub blocarea contextului. Identitățile interne PTC păstrează numerotarea comună, distinctă de numărul afișat pe tip.
 
-Clarificare explicită a utilizatorului: la predare se filtrează stocul din magazie; la transfer/casare, stocul rămas la predător. Selectorul Produs include numai disponibil pozitiv la data bonului. La modificare se exclude mișcarea proprie a bonului (BC-ul asociat pentru BP, documentul TC în registrul deținătorului). Se scad și cantitățile din celelalte rânduri ale ciornei, păstrând disponibilul rândului editat. Produsele/loturile cu 0 nu mai apar și nu generează categorii goale în arbore. BP preîncarcă stocul la deschiderea editorului și îl reîncarcă la schimbarea datei; verificările tranzacționale de stoc și cronologie rămân obligatorii la salvare.
+Clarificarea utilizatorului: BP filtrează stocul magaziei; BT/BS, pe cel al predătorului. Produs oferă numai disponibil pozitiv la data bonului, excluzând la editare mișcarea proprie (BC asociat BP, document TC în registru). Scade celelalte rânduri ale ciornei, păstrând disponibilul celui editat. Loturile/produsele cu 0 și categoriile astfel goale dispar. BP încarcă stocul la deschiderea editorului și schimbarea datei; salvarea păstrează verificările tranzacționale de stoc/cronologie.
 
-Logica UI a numerotării a fost separată din docs.js într-un modul dedicat, păstrând și comportamentul NIR/FCS, pentru dimensiunea și responsabilitățile modulului comun de documente.
+Numerotarea UI a trecut din docs.js într-un modul dedicat pentru delimitarea responsabilităților/dimensiunii, cu comportamentul NIR/FCS păstrat.
 
 <a id="d001-09-etapa-18"></a>
 
 ### Bonuri PTC: editare ca la BC și mini-fișe TC
 
-La adăugare/modificare BP/BT/BS, bara de acțiuni are Renunță în stânga, mesajele în centru și Salvează bonul în dreapta, fără previzualizare. Grilele păstrează permanent rândul gol de adăugare și nu mai afișează butonul Adaugă rând. Rândul gol nu intră în documentul trimis la salvare; schimbarea predătorului nu mai cere confirmare pentru un simplu rând gol.
+La adăugare/editare BP/BT/BS: Renunță stânga, mesaje centru, Salvează bonul dreapta, fără preview. Grilele au permanent rând gol, fără Adaugă rând; acesta nu se salvează și nu cere confirmare la schimbarea predătorului.
 
-La BP, arborele rămâne vizibil și este dezactivat în timpul editării, inclusiv adăugarea și ordonarea. În PTC, arborele și checkboxul folosesc aceleași rânduri de layout ca grila și bara de acțiuni: arborele se termină la baza zonei grilei, iar checkboxul rămâne în stânga, centrat pe verticală în rândul de jos.
+BP păstrează arborele vizibil/dezactivat în editare, inclusiv adăugarea și ordonarea. În PTC, arborele se aliniază cu zona grilei; checkboxul rămâne stânga, centrat vertical în rândul barei de acțiuni.
 
-La BT/BS dispar din grilă coloanele Cont în folosință și Lot proveniență, iar disponibilul se numește Disponibil. Identitatea lotului și contul sunt păstrate în ciornă și în validarea de stoc. În editare, coloana din stânga afișează fișa predătorului, fișa primitorului numai la BT și mișcările produsului selectat. Istoricul include BP/BT/BS cu număr, dată și valoare, iar pentru produs și cantitatea și traseul predător–primitor. Fișele deținătorilor semnează negativ ieșirile și pozitiv intrările.
+BT/BS ascund coloanele Cont în folosință/Lot proveniență și denumesc disponibilul Disponibil; identitățile lotului/contului rămân în ciornă și validarea stocului. În editare, stânga: fișa predătorului, a primitorului numai la BT, mișcările produsului selectat. Istoricul BP/BT/BS arată număr/dată/valoare; la produs, și cantitatea/traseul predător–primitor. Fișele semnează ieșirile negativ și intrările pozitiv.
 
-Citirea fișelor este exclusiv read-only, delimitată de subunitate, gestiune, exercițiu și data bonului; bonurile anulate și ciorna nesalvată nu sunt incluse. Cererile depășite sunt ignorate la schimbarea selecției/contextului. Editorul sub-numărului NIR/FCS a fost separat într-un modul dedicat pentru a păstra dimensiunea modulului comun de documente.
+Fișele se citesc read-only pe subunitate/gestiune/exercițiu/data bonului, fără anulate sau ciorna nesalvată; ignoră cererile depășite la schimbarea selecției/contextului. Sub-numărul NIR/FCS are editor separat, pentru dimensiunea modulului comun.
 
 <a id="d001-09-etapa-19"></a>
 
 ### Bon transfer: Primitor și Predător diferiți
 
-Selectoarele bonului de transfer exclud reciproc deținătorul ales în celălalt câmp, la fiecare căutare, atât la adăugare, cât și la modificare. Alegerea aceleiași persoane este respinsă și la schimbarea câmpului; validarea locală marchează ambele câmpuri și blochează salvarea unei asemenea ciorne. Validarea existentă pe server continuă să respingă transferurile către sine. Adaptorul comun de câmpuri acceptă opțiuni calculate din starea curentă; listele statice își păstrează comportamentul.
+În adăugare/editare BT, fiecare căutare exclude deținătorul celuilalt câmp. Aceeași persoană este respinsă și la schimbarea câmpului: validarea locală marchează ambele câmpuri și blochează salvarea; serverul păstrează refuzul transferului către sine. Adaptorul comun admite opțiuni calculate din starea curentă, cu listele statice neschimbate.
 
 <a id="d001-09-etapa-20"></a>
 
 ### Mini-fișele transfer/casare în dreapta
 
-Corecție de poziționare cerută de utilizator: toate mini-fișele BT/BS sunt în coloana din dreapta, cu formularul și grila în stânga. Se păstrează ordinea predător, primitor (numai BT), mișcări produs. Ordinea DOM urmează formularul, apoi panourile. Pe ecrane înguste se păstrează așezarea sub formular.
+Corecția utilizatorului: mini-fișele BT/BS trec în dreapta, formularul/grila în stânga. Ordine: predător, primitor (numai BT), mișcări produs; DOM: formular, apoi panouri. Pe ecrane înguste rămân sub formular.
 
 ### Fișiere pe etapă
 

@@ -514,11 +514,11 @@ Adăugat după eșecul `FX_Rezervari` de pe 21.08 (`1452`, `FX_Rezervari__FX_DDF
 
 #### Schema se mișcă — nu se mai scrie de mână ce spune ea deja
 
-Copia veche de `000_DEMO.sql` arăta `FX_Rezervari` **fără nicio cheie străină**. Constrângerea care a picat rularea a fost adăugată după ce s-a luat acea copie. De aceea tot ce se putea citi din `information_schema` la rulare **se citește**, nu se scrie în `tables.py`. Listele de mai jos sunt starea de pe 22.08 și sunt acolo ca să verific rezultatul, nu ca să fie tastate.
+Vechea copie `000_DEMO.sql` nu avea FK pe FX_Rezervari; constrângerea eșuată a apărut ulterior. De aceea schema disponibilă la rulare se citește din information_schema, fără duplicare în tables.py. Listele de mai jos sunt reperele din 22.08 pentru comparație, fără tastarea lor în cod.
 
 #### (a) Ordinea de scriere
 
-O cheie străină cere rândul părinte **prezent la INSERT**. Golirea părintelui întâi, în «Înlocuiește tot», nu relaxează nimic: face eșecul **sigur**, nu îl evită. `FX_Istoric` scrisese 3246 de rânduri cu o secundă mai devreme, cu propria lui coloană `IDREV`, numai fiindcă `FX_Istoric.IDREV` **nu poartă** constrângere.
+FK cere părintele la INSERT; golirea lui înainte în Înlocuiește tot garantează eșecul. Cele 3246 rânduri FX_Istoric cu IDREV s-au scris cu o secundă înainte numai pentru că FX_Istoric.IDREV nu are FK.
 
 Printre cele 27 de tabele migrate, ordinea veche din `tables.ALL` încălca **exact una** dintre cele 95 de constrângeri:
 
@@ -540,28 +540,28 @@ poziția 4  FX_Rezervari.IDREV -> FX_DDF_REV  (scris pe poziția 14)
  9 FX_Receptii_H      18 FX_DDF_REV_PRT      27 FX_Receptii_Plati
 ```
 
-Și **verificarea care face ordinea verificabilă**, ca ordinea implicită să fie un punct de plecare bun, nu o promisiune pe care se sprijină codul: `validate.order_findings(schema, chosen_names, db_name)` citește constrângerile dintre tabelele bifate din `information_schema.KEY_COLUMN_USAGE` (le are deja `TargetSchema`) și compară pozițiile în aranjarea **operatorului**. Un copil înaintea părintelui lui e o constatare `ORDINE_TABELE`, clasă **BLOCANT**:
+**Validare dinamică:** `validate.order_findings(schema, chosen_names, db_name)` folosește KEY_COLUMN_USAGE din TargetSchema pentru tabelele bifate și compară ordinea operatorului, fără a garanta numai ordinea implicită. Copil înainte de părinte → ORDINE_TABELE, **BLOCANT**:
 
 ```
 «FX_Rezervari» se scrie înaintea lui «FX_DDF_REV», dar depinde de el prin
 «FX_Rezervari__FX_DDF_REV» (IDREV). Mută-l după el în lista de tabele.
 ```
 
-Se sare peste o cheie pe care tabelul o are pe **el însuși** (nu se poate rearanja) și peste una al cărei părinte **nu e bifat** (nu se scrie în rularea asta; rândurile lui se verifică față de țintă așa cum e). `execute.run()` face aceeași verificare încă o dată, pe ordinea pe care a trimis-o chiar cererea de rulare — analiza a măsurat o aranjare, dar nimic nu oprea alta să ajungă la `rulare`.
+Se exclud autoreferințele (nereordonabile) și părinții nebifați (nemodificați, referințe verificate în țintă). `execute.run()` repetă validarea pe ordinea cererii de rulare, care poate diferi de cea analizată.
 
 #### (b) Familia ORD: id-urile din Access SUNT id-urile de pe MariaDB
 
-Confirmat de operator (22.08). Pe MariaDB cheile familiei sunt coloanele cu `P` la coadă și sunt `AUTO_INCREMENT`, dar auto-increment-ul pornește **doar când coloana lipsește din `INSERT`**. Scrisă explicit, valoarea din Access intră cum e — exact ce fac deja `FX_DDF.IDDF` și `FX_DDF_REV.IDREV`, tot `AUTO_INCREMENT` amândouă, și de-aia ține lanțul DDF și nu ținea cel ORD. Fără hartă de id-uri, fără `lastrowid`, fără a doua trecere.
+Operator, 22.08: cheile ORD țintă au sufix P și AUTO_INCREMENT, folosit numai când coloana lipsește din INSERT. Valoarea Access explicită se păstrează, ca FX_DDF.IDDF/FX_DDF_REV.IDREV, reparând lanțul fără hartă/lastrowid/a doua trecere.
 
 Cinci corelații noi în `tables.COLUMN_RENAMES`, lângă perechea `IdClsf`: `IDORD→IDORDP`, `IDORDPART→IDORDPARTP`, `IDORDTBL→IDORDTBLP`, `IDORDDOC→IDORDDOCP`, `IDORDATT→IDORDATTP`. Regula veche de siguranță e neschimbată: o corelație se aplică **doar unde ținta chiar are coloana pe care o numește**, deci fiecare atinge exact tabelul ei.
 
-**O reparație pe care planul o cerea implicit și pe care mecanismul n-o avea:** `default_rename_map` **eliberează acum potrivirea după nume pe care o înlocuiește**. Fără asta, Access `IDORD` și Access `IDORDP` ajungeau amândouă pe `IDORDP`, iar `insert_columns` oprea totul cu «două coloane din Access corelate cu aceeași coloană». Așa se împlinește promisiunea planului că **cele 144 de zerouri (`IDORDP` în Access, măsurat 144/144) nu mai călătoresc deloc**: coloana rămâne pur și simplu necorelată. Coloana care e ea însăși SURSA unei corelații e lăsată în pace — `IdClsf` e și revendicat (de `IdClsfPY`), și redenumit (în `IdClsfAcc`), iar o ștergere naivă i-ar fi anulat propria regulă. Efect secundar, corect și verificat: pe un tabel al cărui MariaDB are `IdClsf` dar nu și `IdClsfAcc`, Access `IdClsf` rămâne acum **necorelat** în loc să se ciocnească de `IdClsfPY` pe aceeași țintă.
+**`default_rename_map` eliberează potrivirea după nume înlocuită:** altfel IDORD și IDORDP Access vizau ambele IDORDP, blocate de insert_columns. Cele 144/144 zerouri IDORDP Access rămân necorelate, fără transfer. Nu se eliberează o coloană care este ea însăși sursă de redenumire: IdClsf este revendicat de IdClsfPY și redenumit IdClsfAcc. Verificat și cazul țintei cu IdClsf fără IdClsfAcc: IdClsf Access rămâne necorelat, fără coliziune cu IdClsfPY.
 
-`SeedTable.primary_key` al celor cinci tabele devine numele **țintei** (`IDORDP`, `IDORDPARTP`, `IDORDTBLP`, `IDORDDOCP`, `IDORDATTP`). Cu asta începe să funcționeze upsert-ul lui `FX_ORD`: până acum `tables.py` declara cheia `IDORD`, cea de pe MariaDB e `IDORDP`, iar `IDORD` n-are index unic — deci a doua rulare «Adaugă/actualizează» ar fi inserat din nou toate cele 38 de ordine în loc să le actualizeze.
+`SeedTable.primary_key` devine numele țintă: IDORDP, IDORDPARTP, IDORDTBLP, IDORDDOCP, IDORDATTP. Astfel funcționează upsert FX_ORD; vechea cheie declarată IDORD, fără index unic în țintă, ar fi reinserat cele 38 ordine la a doua rulare Adaugă/actualizează.
 
-**`key_column` NU s-a schimbat** (verificat pe diff: fiecare valoare e neatinsă). Rutarea citește rândul cu numele lui din **Access**, înaintea oricărei corelații. Planul avertiza că ăsta e locul cel mai probabil de defect tăcut, și chiar era unul: `TableSelector.primary_key_of` citea `table.primary_key` **dintr-un rând Access**. Cu cheia mutată pe numele țintei, ar fi raportat fiecare rând ORD sub coloana Access `IDORDP` — adică `0`, pe toate. De aceea `SeedTable` a căpătat **`access_key`** (implicit egal cu `primary_key`), iar `primary_key_of` citește de acolo.
+**key_column neschimbat**, verificat pe diff: rutarea citește numele Access înaintea corelației. `TableSelector.primary_key_of` citea însă primary_key din rândul Access și ar fi etichetat toate ORD cu IDORDP = 0. Noul `SeedTable.access_key` (implicit primary_key) separă lectura sursei de cheia țintei; primary_key_of îl folosește.
 
-Al doilea loc cu aceeași boală, găsit tot așa: în `migrare.tabele_fisier`, steagul «cheie» al grilei de coloane compara numele **Access** cu cheia primară a **țintei**. Pe familia ORD ar fi bifat exact coloana greșită — cea care în Access e numai zerouri. Se judecă acum pe **ținta corelației**.
+Și steagul cheie din grila `migrare.tabele_fisier` compara numele Access cu PK țintă, marcând zerourile ORD. Acum judecă ținta corelației.
 
 #### (c) Un orfan pe o coloană care acceptă NULL călătorește ca NULL
 
@@ -570,11 +570,11 @@ Decizia operatorului (22.08), care înlocuiește convenția «se sare rândul» 
 * **acceptă NULL** → rândul se **scrie**, cu coloana aceea golită. Rândul se păstrează; se pierde doar legătura. Constatare **FORȚABIL**, cu valoarea aruncată; o linie pe tabel în jurnalul lucrării — `«FX_Rezervari»: 3 valori IDREV fără corespondent, scrise ca NULL.` — și aceeași linie în `_99_final.txt` din dosarul de la §1.6;
 * **`NOT NULL`** → NULL nu e disponibil, deci rândul nu poate fi nici scris, nici golit: constatare nouă **`CHEIE_STRAINA_OBLIGATORIE`**, clasă **BLOCANT**, cu coloana numită, și nu se scrie nimic.
 
-Un **`0`** e orfan oriunde cheia părintelui e `AUTO_INCREMENT`: un asemenea rând nu poate exista. Ca să știe asta, `TargetSchema` mai face o trecere prin `information_schema.COLUMNS` pentru tabelele către care **arată** cheile — inclusiv cele din afara setului migrat, ale căror coloane nu se încarcă altfel (`referenced` + `referenced_is_auto`). Necunoscut răspunde `False`: nu inventăm un orfan. (Măsurat pe `FX_Rezervari.IDREV`: 125 NULL, 0 zerouri, 34 reale — deci după (a) asta ar trebui să atingă puține rânduri sau niciunul, dar regula trebuie să existe.)
+**0 este orfan pentru părinte AUTO_INCREMENT.** TargetSchema citește suplimentar information_schema.COLUMNS pentru toți părinții FK, inclusiv externi setului migrat (`referenced`, `referenced_is_auto`); necunoscut → False, fără orfan inventat. Măsurat FX_Rezervari.IDREV: 125 NULL, 0 zerouri, 34 reale; după (a), efect așteptat mic/nul, fără renunțarea la regulă.
 
-Pe partea de scriere, `execute._null_orphans(row, nullable)` golește valorile **înainte** ca rândul să fie judecat (coloana acceptă NULL, deci trece de `check_value` pe propriile ei condiții) și întoarce coloanele golite; numărarea se face **abia după** `_row_is_blocked`, altfel un rând sărit din alt motiv ar fi raportat drept «scris cu coloana golită», ceea ce ar fi o minciună.
+`execute._null_orphans(row, nullable)` golește valorile înainte de judecarea rândului (`check_value` acceptă NULL conform coloanei) și întoarce coloanele golite. Numără numai după `_row_is_blocked`, evitând raportarea unui rând omis din alt motiv ca scris cu NULL.
 
-`Report.add` a căpătat un `count` (implicit 1): cheile străine adună valori **distincte**, dar operatorul are nevoie să citească pe câte **rânduri** apare fiecare. Exemplul rămâne cheia primului rând, cea pe care merită s-o caute. `report.null_fk` e geamănul lui `report.missing_fk` și cele două nu se suprapun niciodată.
+`Report.add` primește `count` (implicit 1), distingând valorile FK distincte de numărul rândurilor afectate; exemplul păstrează cheia primului rând. `report.null_fk` și `report.missing_fk` sunt categorii disjuncte.
 
 #### (d) Cheile străine din afara setului migrat
 
@@ -587,7 +587,7 @@ FX_DDF_REV_PRT  IdClsf -> Clasificatii
 FX_ORD_TBL      IdPartener -> Parteneri   IdClsf -> Clasificatii   IdUnitate -> Unitati
 ```
 
-**Nu a fost nevoie de cod nou.** `_check_foreign_keys` întreabă ținta pentru FIECARE cheie străină a tabelului, oricare ar fi părintele; `incoming` (rândurile scrise în aceeași rulare) e pur și simplu `None` pentru ele, fiindcă nu există «se va scrie în rularea asta» de adăugat. Ce s-a schimbat pentru ele e regula de la (c): `FX_ORD_TBL.IdClsf` acceptă NULL, deci o clasificație nepotrivită devine NULL — rândul supraviețuiește, legătura nu, și **apare în raport**, nu doar într-o linie de jurnal. Aici trebuie să fie corectă perechea `IdClsf`/`IdClsfPY`; e următorul `1452` care așteaptă.
+**Fără cod nou pentru FK externe:** `_check_foreign_keys` verifică fiecare părinte în țintă; incoming = None pentru cei nescriși în lot. Regula (c) permite FX_ORD_TBL.IdClsf NULL: clasificația nepotrivită pierde legătura, păstrează rândul și apare în raport, nu numai în jurnal. Perechea IdClsf/IdClsfPY trebuie corectă pentru evitarea următorului 1452.
 
 #### (e) `FX_ORD_TBL.IdUnitate`
 

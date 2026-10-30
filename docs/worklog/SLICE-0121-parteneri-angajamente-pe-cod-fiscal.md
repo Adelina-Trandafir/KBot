@@ -9,7 +9,7 @@ Planul și șase etape implementate documentar sunt reunite. Dependențele sunt 
 **Checkpoint 19.10.2026:** DDL 01 și interogarea 07 scrise, nerulate; 02…05 construite, nepornite/netestate. Închiderea 06 rămâne la cuvântul operatorului. Numărul 0121 a fost ales ca următorul liber (operator, 19.10.2026); fiecare punct are subfelia `0121-NN`.
 
 ### Why
-Operator (19.10.2026), page «Recepții» (KE16): an angajament picked for a supplier belongs to the SUPPLIER, never to the invoice. Today the pick lives only in memory (`KeLegaForm._added`, per supplier since KE16) and the durable partner data (`Parteneri`, `Parteneri_Coduri`) is per unit/SS (`IdUnitate`, `CodPartener`), so a partner would have to exist in every unit an angajament touches. Decision: keep `Parteneri` as it is, and key the NEW links by the normalized **CodFiscal** (one DC database = several units; a table keyed by CUI is DC-wide by construction).
+Operator, 19.10.2026, «Recepții» (KE16): the chosen angajament belongs to the supplier, not the invoice. `_added` (`KeLegaForm`) keeps it only in memory per supplier; durable `Parteneri`/`Parteneri_Coduri` are per unit/SS (`IdUnitate`/`CodPartener`), requiring the partner in every affected unit. Decision: leave `Parteneri` and key NEW links by normalized **CodFiscal**, DC-wide across its units.
 
 ### Decisions (all from the operator, 19.10.2026)
 - `Parteneri` is NOT altered (no ALTER, indexes untouched). Partners without a CodFiscal (Access has some) are never linked to angajamente, invoices or reports; they stay in `Parteneri` and just have no rows in the new tables. They are counted and listed by the Migrator, none is lost.
@@ -52,10 +52,10 @@ One new script, `sql/P121_01_parteneri_angajamente.sql`, with two new tables. `P
 | `Parteneri_Angajamente_Indicatori` | the indicators of a link, with `ContBancar` (NULL = none) | PK `IdLegInd`; unique `(IdLegAng, CodAI)`; index on `CodAI`; FK `IdLegAng` -> link, ON DELETE/UPDATE CASCADE |
 
 Choices (all from the plan, plus the ones I made):
-- `CodFiscal` holds the normalized CUI (DDF rule `primite_ubl.normalize_cui`); the pair `(CodFiscal, CodAng)` allows several angajamente of one supplier on the same classification, which the old `(IdPartener, IdClsf)` key forbade.
+- The keys above implement the [plan decisions](#slice-0121-plan): normalized CUI by `primite_ubl.normalize_cui`, multiple angajamente per supplier/classification, unlike old `(IdPartener, IdClsf)`.
 - No per-unit `IdClsf`: `CodAI` -> `FX_Indicatori.IdClsf` gives it.
-- **No foreign key to `FX_Angajamente` / `FX_Indicatori`** (my choice, same reasoning as `EF_PrimiteReceptii`): the pick may come before the angajament is synchronised, a deleted angajament must not silently take the supplier's links with it, and the Migrator report (0121-02) has to be able to show a `CodAI` missing in `FX_Indicatori`. The only FK is indicator -> link.
-- All text columns `utf8mb3` / `utf8mb3_general_ci`; `varchar(255)` on `CodFiscal`, `CodAng`, `CodAI` so the Migrator never meets a truncation on odd legacy values (largest unique key: 255 x 3 + 255 x 3 = 1530 bytes, under the InnoDB limit of 3072).
+- **No FK to `FX_Angajamente`/`FX_Indicatori`** (model choice, as `EF_PrimiteReceptii`): links may precede sync, deleting an angajament must not delete supplier links, and 0121-02 must report missing CodAI. Only indicator → link has FK.
+- Text: `utf8mb3`/`utf8mb3_general_ci`; `CodFiscal`/`CodAng`/`CodAI` varchar(255) to avoid truncating odd legacy values. Largest unique key: 255×3 + 255×3 = 1530 bytes < InnoDB 3072.
 - Date columns follow `Parteneri_Coduri` (`DataAdugare`, `DataModificare`).
 - `CREATE TABLE IF NOT EXISTS`: safe to run twice.
 
@@ -74,7 +74,7 @@ Nothing run: the DDL has not been executed anywhere (the operator runs it by han
 ## SLICE-0121-02 - Migrator: `ParteneriAng` -> supplier <-> angajament links by CodFiscal (19.10.2026) <a id="slice-0121-02"></a>
 
 ### What changed and why
-Access `ParteneriAng` no longer goes into `Parteneri_Coduri`. It becomes two tables keyed by the supplier's normalized CodFiscal, so the partner no longer has to exist in the unit on the server.
+Access `ParteneriAng` now writes the two CodFiscal-keyed tables of [01](#slice-0121-01), replacing `Parteneri_Coduri`; the partner need not exist in the server unit.
 
 - **Source of the CodFiscal:** the unit's own Access `Parteneri` (by `CodPartener`), normalized with `EfCui.Normalize` (the same rule as the DDF's `normalize_cui`). Not read from the target.
 - **What is written:**
@@ -114,13 +114,13 @@ Access `ParteneriAng` no longer goes into `Parteneri_Coduri`. It becomes two tab
 The window's «Coduri angajament» no longer read or write `Parteneri_Coduri`; they belong to the supplier's normalized CodFiscal (`Parteneri_Angajamente` / `Parteneri_Angajamente_Indicatori`).
 
 Server:
-- New `PYTHON/routes/forexe/partner_links.py`: `normalize_cui` (a copy of the DDF rule, on purpose - importing the efactura package would pull its blueprint), `read_links` (one query: link LEFT JOIN indicators LEFT JOIN `FX_Indicatori` LEFT JOIN `Clasificatii`, so the classification is only shown, by CodAI) and `save_codes`.
-- `save_codes` in the caller's transaction: removes the deleted indicators / empty links (checked against the CodFiscal), validates every row (`Cod ang.` required, no repeated `CodAng`+`CodInd`), removes the old identity of rows that change it BEFORE writing (two rows may swap codes), then upserts link and indicator (`CodAI = CodAng-CodInd`; the window is the authority, so it overwrites `CodInd`/`ContBancar`). A link left with no indicator is deleted unless a row of the grid still names it. An id of another supplier is refused (rows) or ignored (deletes).
-- `parteneri_edit.py`: reads/saves through it; wire adds `id_leg` per row and `legaturi_sterse`; `id_clsf` may be null; the old `Parteneri_Coduri` SQL and the refresh of its `CodPartener` are gone; the 1062 message names the new key. A save with codes for a partner without a CodFiscal is refused. Deleting a partner leaves the links (they belong to the CodFiscal).
+- New `PYTHON/routes/forexe/partner_links.py`: deliberately copies DDF `normalize_cui` to avoid importing the efactura blueprint; `read_links` uses one link LEFT JOIN indicators LEFT JOIN `FX_Indicatori` LEFT JOIN `Clasificatii` (classification display by CodAI); `save_codes` writes.
+- `save_codes`, in the caller transaction: delete removed indicators/empty links after CodFiscal check; require Cod ang./unique CodAng+CodInd; remove changed identities BEFORE writing to allow code swaps; upsert link/indicator with CodAI = CodAng-CodInd, overwriting CodInd/ContBancar from the authoritative window. Delete an indicatorless link unless still named by a grid row. Foreign-supplier ids are refused in rows, ignored in deletes.
+- `parteneri_edit.py` uses the service; wire adds `id_leg`/row and `legaturi_sterse`, permits null `id_clsf`. Removes old SQL/CodPartener refresh; 1062 names the new key. Codes without CodFiscal are refused; partner deletion preserves fiscal-code-owned links.
 
 Client:
 - Domain `PartenerCod` (`IdLeg`, nullable `IdClsf`), `PartenerSaveRequest.LegaturiSterse`; `ApiClient.Nomenclatoare` wire.
-- `ParteneriForm`: «Clasificație» is read-only text (no combo, `ClsfChoice` removed); hidden column `id_leg`; `ReadCodes` requires «Cod ang.» and refuses a repeated pair; a deleted row goes to `CoduriSterse` (indicator) or `LegaturiSterse` (angajament without indicator); the grid is disabled with a hint in the title while no fiscal code is typed, or while a saved partner's code was changed and not saved (`CodesAllowed` / `UpdateCodesState`); the delete-partner question says the codes stay.
+- `ParteneriForm`: Clasificație readonly text, no combo/`ClsfChoice`; hidden `id_leg`. `ReadCodes` requires Cod ang./unique pair. Deleted indicator → `CoduriSterse`; angajament without indicator → `LegaturiSterse`. `CodesAllowed`/`UpdateCodesState` disable the grid with title hint for missing fiscal code or an unsaved change to a saved partner code; deletion question says links remain.
 - Help 0000-113 (separate worklog).
 
 ### Files touched
@@ -137,15 +137,15 @@ Client:
 - Server files go to the VPS by the operator's hand (never by Claude).
 
 ### Corrective 20.10.2026 - compatibility with the deployed client (App 1.1.2.4)
-Operator: the version in use is 1.1.2.4 (before 0121); it must keep working against the new server files. Read from the code: that client reads each code's `id_clsf` into a plain `Integer`, so the `null` the new server sent (link with no indicator, or a CodAI unknown to `FX_Indicatori`) would make the whole partner list fail to load. `partner_links.read_links` now sends `id_clsf: 0` (= unknown); the new client does not use the value. Remaining difference for 1.1.2.4: a code row with no «Cod ang.» is refused with a message (the link is keyed by CodAng). Not run against a database; `py_compile` OK.
+Operator requires deployed App 1.1.2.4 compatibility. It reads `id_clsf` as Integer; null for indicatorless/unknown CodAI links would break the whole partner list. `partner_links.read_links` now sends `id_clsf: 0` (unknown), unused by the new client. In 1.1.2.4, a row without Cod ang. is still refused explicitly because CodAng keys the link. `py_compile` OK; no database run.
 
 ## SLICE-0121-04 - Hooks: partner <-> DDF / angajament association fills the supplier's link (19.10.2026) <a id="slice-0121-04"></a>
 
 ### What changed and why
-When a supplier is associated with a document, its link with the document's angajament - and the angajament's indicators - are written if missing, so the operator does not have to type them in the «Parteneri» window.
+Saving a supplier/document association inserts its missing angajament link and indicators, avoiding manual entry in Parteneri.
 
 - `partner_links.py`:
-  - `ensure_link(cursor, cod_fiscal, cod_angajament)`: finds or inserts the link `(normalized CodFiscal, CodAng)`, then inserts every indicator of `FX_Indicatori.CodAngajament` that the link does not hold (`CodAI`, `CodInd = CodIndicator`, no bank account). **Insert only**: an existing link/indicator is never changed (the `ContBancar` and `CodInd` the operator saved stay), nothing is deleted.
+  - `ensure_link(cursor, cod_fiscal, cod_angajament)`: find/insert normalized `(CodFiscal, CodAng)`; insert missing `FX_Indicatori.CodAngajament` indicators (`CodAI`, `CodInd = CodIndicator`, no bank account). **Insert only:** preserve existing links, CodInd/ContBancar; delete nothing.
   - `ensure_for_partners(cursor, db_name, cod_angajament, cods_fiscale)`: the DDF hook; skips silently (a warning in the log) when the database has no link tables, so a DDF save never depends on 0121-01 being deployed.
   - `tables_present`: positive-only cache, like `FX_DDF_Parteneri`'s probe.
   - New route `POST /api/forexe/parteneri/angajament {cod_fiscal, cod_angajament}` -> `{id_leg, legatura_noua, indicatori_adaugati}` (400 no fiscal code / tables missing - names the SQL file, 404 unknown angajament): the save the page «Recepții» will call in 0121-05. Journalled in `actiuni.py` («Legat un furnizor de un angajament»).
@@ -167,15 +167,15 @@ When a supplier is associated with a document, its link with the document's anga
 ## SLICE-0121-05 - Page «Recepții» (KE16): the supplier's angajamente from the new tables, the pick saved (19.10.2026) <a id="slice-0121-05"></a>
 
 ### What changed and why
-An angajament picked in the table «Angajamente» of the page belongs to the SUPPLIER (operator, 19.10.2026) and is now kept durably, by the supplier's normalized tax code.
+The Angajamente pick now persists by normalized supplier tax code, implementing the [19.10 operator decision](#slice-0121-plan).
 
 Server:
-- `primite_ke.py` `_angajamente_candidate`: also reads `Parteneri_Angajamente` WHERE `CodFiscal = invoice.CuiNormalizat` and offers those angajamente with the source **«furnizor»** (after the DDF ones, so a DDF angajament keeps «ddf»; a linked one stays «legatura»). A database without the table keeps working (`_are_legaturi_furnizor`, a probe on `DATABASE()`). Because the bulk-link proposals (`_facturi_neasociate`) already take their angajamente from `_angajamente_candidate`, **the proposals now read the supplier's angajamente from the new tables** with no change in `primite_ke_propuneri.py`.
+- `primite_ke.py` `_angajamente_candidate` adds `Parteneri_Angajamente` WHERE `CodFiscal = invoice.CuiNormalizat`, source **furnizor**, after DDF (keeps ddf) and preserving legatura for a linked one. `_are_legaturi_furnizor` probes `DATABASE()` to tolerate absent tables. Bulk `_facturi_neasociate` already uses these candidates, so proposals gain supplier links without changing `primite_ke_propuneri.py`.
 - `partner_links.py`: new `POST /api/forexe/parteneri/angajament/scoate {cod_fiscal, cod_angajament}` -> `{sterse}` (deletes the link, its indicators go by cascade); the save is the route of 0121-04. Journalled in `actiuni.py`.
 
 Client:
 - `IEFacturaApi` / `ApiClient.EFactura.Ke.vb`: `LinkSupplierAngajamentAsync`, `UnlinkSupplierAngajamentAsync` (paths under `/api/forexe/parteneri/angajament`).
-- `KeLegaForm`: `_added` and `AddedForContext` are **retired**. `BeginAddAngajament` saves the pick for every supplier of the context (ticked invoices, else the one pressed) with its tax code (`SupplierCui`); a supplier with no tax code on the invoice gets a notice and no link; then the states of that supplier's invoices are dropped and the ones on screen read again (`RefreshContextStatesAsync`, new `_browsedId`) and the table is rebuilt from the server. «Elimină asociere» on a «furnizor» row asks, then removes the link for those suppliers. `KePropuneriForm` is given an empty list of picked codes (the server finds them); the `angajamente` field of the two KE16 routes stays for older clients.
+- `KeLegaForm` retires `_added`/`AddedForContext`. `BeginAddAngajament` saves by `SupplierCui` for each context supplier (ticked invoices, otherwise clicked invoice); missing tax code gives notice/no link. `RefreshContextStatesAsync`/new `_browsedId` discard that supplier invoice states, reread visible ones and rebuild from server. Elimină asociere confirms/removes furnizor links for those suppliers. `KePropuneriForm` gets an empty picked-code list (server resolves); both KE16 routes retain `angajamente` for old clients.
 - Help 0000-114 (separate worklog).
 
 ### Files touched

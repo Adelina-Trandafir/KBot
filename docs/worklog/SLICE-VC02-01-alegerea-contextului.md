@@ -26,17 +26,17 @@ Regulile de mai jos sunt revizii ulterioare implementării inițiale: alegerea e
 
 ### Meniu: selecție progresivă Subunitate / Gestiune / An
 
-La deschiderea paginii, dintre selectorii contextului se afișează doar Subunitate. Endpoint-ul context cere alegerea explicită a subunității, inclusiv când există una singură; celelalte apeluri păstrează comportamentul anterior al resolverului. După alegerea subunității, o gestiune unică se selectează automat pe server și selectorul ei rămâne ascuns. Selectorul Gestiune apare numai pentru subunități cu mai multe gestiuni. Anul apare după stabilirea gestiunii, cu ultima valoare disponibilă selectată conform regulii existente; operațiile continuă să provină din contextul serverului.
+Inițial se afișează numai Subunitate; endpoint-ul context cere alegerea explicită chiar pentru una singură, fără schimbarea resolverului celorlalte apeluri. După alegere, serverul autoselectează gestiunea unică și îi ascunde selectorul; Gestiune apare numai pentru opțiuni multiple. Anul apare după gestiune, cu ultima valoare disponibilă conform regulii existente. Operațiile provin în continuare din contextul serverului.
 
-Gestiunea și anul sunt ascunse și în HTML-ul inițial, înaintea încărcării JavaScript. Controalele ascunse sunt dezactivate, iar resetarea contextului golește opțiunile vechi. Ajutorul din aplicație descrie noua succesiune. Se păstrează confirmarea modificărilor nesalvate la schimbarea contextului.
+Gestiune/An sunt ascunse și în HTML înainte de JS, cu controalele disabled. Resetarea golește opțiunile vechi; schimbarea contextului păstrează confirmarea modificărilor nesalvate. Ajutorul descrie succesiunea.
 
 <a id="d001-09-etapa-2"></a>
 
 ### Meniu comun și Fluxuri / Mișcări pentru OI/MF
 
-Configurări, Intrări și Rapoarte sunt comune tuturor tipurilor de gestiune. Intrări grupează NIR și Factură Stornare pentru toate tipurile, cu deschiderea paginii de consultare. Ieșiri apare la Alimente/Materiale cu Bon Consum și Bon Retur; Lista Alimente rămâne exclusiv la Alimente. OI/MF primesc Fluxuri / Mișcări cu Bon Predare, Bon Transfer și Bon Casare; MF adaugă Amortizare și Registru MF. Grupurile folosesc disponibilitatea și motivul dezactivării primite de la server; verificarea la deschiderea directă păstrează aceleași reguli de tip, drepturi și ocupare.
+Comune tuturor gestiunilor: Configurări, Intrări, Rapoarte. Intrări deschide consultarea NIR/Factură Stornare. Alimente/Materiale au Ieșiri: Bon Consum/Retur; numai Alimente are Lista Alimente. OI/MF au Fluxuri / Mișcări: Bon Predare/Transfer/Casare; MF adaugă Amortizare/Registru MF. Grupurile folosesc disponibilitatea/motivul serverului; accesul direct verifică aceleași tipuri/drepturi/ocupare.
 
-Rapoartele MF nu mai sunt excluse global din catalog și din formular. Pentru raportul Amortizare se reutilizează proiecția existentă depreciation_read, cu întregul istoric până la data calculului, filtre de variante și observații pe activ. Macheta implicită are coloane de durate, valori și stare, fără totalizarea implicită a activelor neeligibile. Opțiunea Amortizare din meniu deschide direct acest raport, cu un singur câmp La data și exporturile comune PDF/Excel. Din Rapoarte, calculul folosește data de sfârșit a perioadei, explicată în notele raportului. Exportul Excel păstrează modulul comun de lățimi. Rapoartele de deținere MF sunt grupate în arbore sub Mijloace fixe.
+MF reintră în catalog/formularul Rapoarte. Amortizare reutilizează `depreciation_read`: istoric integral până la data calculului, filtre de variante, observații pe activ. Macheta implicită are durate/valori/stare, fără totalizarea implicită a neeligibilelor. Meniul deschide direct raportul cu La data și export PDF/Excel; din Rapoarte folosește sfârșitul perioadei, explicat în note. Excel păstrează lățimile comune; rapoartele de deținere MF sunt sub Mijloace fixe.
 
 ### Fișiere pe etapă
 

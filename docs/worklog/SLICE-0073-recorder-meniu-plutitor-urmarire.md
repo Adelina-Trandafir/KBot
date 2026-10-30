@@ -83,18 +83,18 @@ Jurnalul monitorului Wicket dat de operator pentru clicul pe «Istoric» se term
 19.228  #animlogo → none
 ```
 
-Ultimele două linii sunt exact raportul inițial pe care `WicketMonitor.js` îl face la `DOMContentLoaded` (`#statlogo` întâi, apoi `#animlogo`) — adică un **document nou**: apelul Ajax s-a încheiat cu o redirecționare Wicket, o navigare completă, nu doar o re-randare.
+Ultimele două linii sunt raportul inițial `WicketMonitor.js` la `DOMContentLoaded` (`#statlogo`, apoi `#animlogo`): apelul Ajax s-a terminat prin redirecționare Wicket într-un document nou, nu prin re-randare.
 
 Pe document nou, `AddInitScriptAsync` rulează înainte de `<html>`: `head` și `documentElement` sunt null, iar inserarea stilului cade în `catch (ignored)`. `boot()` nu instala foile; abia bătaia `MENU_KEEPALIVE_MS` de 2 s instala `kbot-watch-style` (reguli + dark) și `kbot-watch-busy-style`. Aceeași lipsă explica toate cele trei simptome; punctul 4 ar fi mascat cauza, nu era necesar după corecție.
 
-Presupunere marcată ca atare: că `documentElement` e `null` în init script-ul Playwright pe Chromium nu a fost măsurat pe FOREXE (nu s-a atins un browser real); e comportamentul cunoscut al `Page.addScriptToEvaluateOnNewDocument` și se potrivește cu toate simptomele. Dacă totuși foile ar intra târziu, scriptul spune acum în consolă, o singură dată pe document: «stilurile paginii au intrat abia la încărcarea completă».
+Presupunere, nemăsurată pe FOREXE/browser real: `documentElement` null în init script-ul Playwright pe Chromium, conform comportamentului cunoscut al `Page.addScriptToEvaluateOnNewDocument` și simptomelor. Dacă foile intră totuși târziu, consola anunță o dată pe document: «stilurile paginii au intrat abia la încărcarea completă».
 
 ### Ce s-a schimbat
 
 Secțiunea nouă **11** în antetul scriptului. Concret:
 
 - `sheetParent()` — `<head>`, altfel `<html>`, altfel `null`; `installStyles()` / `installBusyStyle()` nu mai creează un `<style>` fără părinte și întorc `true/false`. `installStyles` rescrie `textContent` doar când s-a schimbat.
-- `whenRootExists(fn)` — rulează imediat dacă `<html>` există, altfel un `MutationObserver` pe `document` (`childList`) prinde momentul în care parserul inserează `<html>`, cu mult înainte de prima afișare; `DOMContentLoaded` e rezerva. La start: `whenRootExists(earlyInstall)`.
+- `whenRootExists(fn)` rulează imediat dacă există `<html>`; altfel, `MutationObserver` pe `document` (`childList`) îi prinde inserarea înaintea primei afișări, cu rezervă `DOMContentLoaded`. Pornire: `whenRootExists(earlyInstall)`.
 - `resync()` — într-o singură trecere: cele două foi, clasa `kbot-busy` de pe `<html>`, vălul, starea ascunsă a meniului; `scheduleResync()` o amână cu `setTimeout(0)` ca o rafală de mutații să dea o singură rulare.
 - `hookWicket()` — `Wicket.Event.subscribe('/ajax/call/complete' | '/dom/node/added')` (Wicket 6+) sau `Wicket.Ajax.registerPostCallHandler` (versiuni vechi); reîncercat din bătaie până când scriptul Wicket e în pagină. Versiunea Wicket a FOREXE nu e cunoscută din depozit, de aceea ambele.
 - `watchRootAndHead()` — observatoare pe `<html>` (`class`, copii) și pe `<head>` (copii): o foaie scoasă sau clasa pierdută revine în același tick.
@@ -150,7 +150,7 @@ Răspunsurile operatorului la cele trei întrebări puse înainte de scris: **(a
 
 #### 1. Două fluxuri noi, fără preambul (`Workflows\`)
 
-- **`adlop - Receptie Editata.wfl`**: antetul (.well), tabul Recepții, `ScrapeTable` pe listă, apoi `ForEachVar` care deschide **numai** rândul-țintă: `{{RECEPTIE_TINTA}}` = `ULTIMA` (recepție nouă → `[[R.IsLast]]`) sau data `zz/ll/aaaa` (recepție editată → `[[R.Data]]`). Fiecare rând poartă în `collectFields` și **`Citita`** (1 / 0). Pe ramura necitită se golesc cele patru variabile, ca în fluxul complet (altfel rândul ar lua `Detaliu`-ul vecinului). Apoi tab0 → «Istoric» → citire **de la ultima pagină înapoi** până la `{{DATA_IESIRE}}` (exact `Istoric Angajament REVERSE.wfl`) → «Înapoi» → **înapoi pe tabul Recepții**.
+- **`adlop - Receptie Editata.wfl`**: antet `.well` → tab Recepții → `ScrapeTable` → `ForEachVar` numai pe țintă: `{{RECEPTIE_TINTA}}` = `ULTIMA` (`[[R.IsLast]]`, recepție nouă) sau `zz/ll/aaaa` (`[[R.Data]]`, editată). `collectFields` include `Citita` (1/0); ramura necitită golește cele patru variabile ca fluxul complet, evitând `Detaliu` de la vecin. Apoi tab0 → «Istoric» → citire de la ultima pagină înapoi până la `{{DATA_IESIRE}}`, ca `Istoric Angajament REVERSE.wfl` → «Înapoi» → tab Recepții.
 - **`adlop - Rezervari Editate.wfl`**: antetul + istoricul REVERSE + «Înapoi». Indicatorii NU se citesc: vin din memorie (§3).
 - **`DATA_IESIRE` fără istoric local** = `(?!)` (`WorkflowCatalog.DataIesireNiciuna`), un tipar care nu se potrivește cu nimic, deci se citește tot istoricul. Gol ar fi fost invers: `^` se potrivește cu orice rând, deci citirea s-ar fi oprit la primul.
 - **`adlop - Receptii Angajament.wfl`**: preambulul comentat de operator (V.3) **pus la loc**, cu nota V.4 — fișierul e rulat și de iconița din subsolul arborelui de recepții, care se apasă cu browserul oriunde (decizia (c)).
@@ -158,11 +158,11 @@ Răspunsurile operatorului la cele trei întrebări puse înainte de scris: **(a
 
 #### 2. Pagina (`ForexeWatch.js`, secțiunile 12 și 13)
 
-- **`receptie-modificare` are reguli** (nu mai e TODO): pornește la ochiul unui rând din tabul Recepții (`li.tab1.active`, același ochi pe care îl apasă «Prelucrare Completa»), se salvează cu același «Salvează». La clic se reține **data rândului** (`rowDate`), la salvare **data din formular** (`formDate`, `input[name='data']`, normalizată la `zz/ll/aaaa`); evenimentul `finished` duce `data.dataReceptie` = data din formular, altfel cea a rândului.
-- **Rezervarea**: la pornire se citește lista indicatorilor din tab0 (`rezBefore`) și, la ochi, codul rândului (`rezIndicator`); la clicul pe salvare se citește **tabelul de buget** de pe pagina de editare (exact tabelul pe care îl răzuiește fluxul complet în spatele ochiului); la confirmare, pe tab0, se citește **rândul indicatorului** (după cod; la «Adaugă» — rândul al cărui cod nu era în listă). `data = {indicator, indicatorCod, buget}`.
+- **`receptie-modificare` are reguli**, înlocuind TODO: ochiul rândului din `li.tab1.active` (același din «Prelucrare Completa») reține `rowDate`; «Salvează» reține `formDate` din `input[name='data']`, normalizată `zz/ll/aaaa`. La `finished`, `data.dataReceptie` este data formularului, altfel a rândului.
+- **Rezervarea**: la start citește indicatorii din tab0 (`rezBefore`), la ochi codul rândului (`rezIndicator`), la salvare tabelul de buget din editare (cel citit de fluxul complet în spatele ochiului), iar la confirmare rândul din tab0 după cod; pentru «Adaugă», codul absent din lista inițială. `data = {indicator, indicatorCod, buget}`.
 - Tabelele se citesc cu o **copie** a lui `ScrapeTableExtract.js` (`scrapeTable`), ca rândul să aibă exact cheile dintr-un pachet descărcat (`Indicator_ang`, …, `Col_12`).
-- **Formular închis fără salvare** («Înapoi» al paginii, alt tab): la următoarea bătaie de 2 s operațiunea se încheie ca la «Renunță» (`checkAbandoned`, după ce formularul a fost văzut o dată). Altfel o recepție doar deschisă pentru privit ar fi blocat orice pornire ulterioară.
-- **Marcajele**: clicul pe «Continuă» din modalul motivului / pe «Salvează» din formularul recepției e **ținut** (după gardianul salvărilor fără modificări, înaintea urmăririi), pagina cere marcajul prin `_kbotWatchCallback` (`event: 'marcaj'`), .NET răspunde cu `window._kbotWatch.setMarcaj(id, text, motiv)`, marcajul se pune la sfârșitul textului (**înlocuind** unul mai vechi — o recepție editată își păstrează descrierea) și clicul e **reluat**. Fără răspuns în 8 s, sau cu eroare, salvarea pleacă **fără** marcaj și consola spune de ce: munca operatorului nu e niciodată ținută ostatică.
+- **Formular închis fără salvare** («Înapoi»/alt tab): `checkAbandoned`, după prima vedere a formularului, încheie ca «Renunță» la următoarea bătaie de 2 s; simpla vizualizare nu mai blochează pornirile următoare.
+- **Marcajele**: «Continuă» din modalul motivului / «Salvează» din recepție este reținut după gardianul salvărilor fără modificări, înaintea urmăririi. `_kbotWatchCallback` (`event: 'marcaj'`) cere marcajul; .NET răspunde prin `window._kbotWatch.setMarcaj(id, text, motiv)`. Marcajul înlocuiește unul vechi la sfârșitul textului, păstrând descrierea recepției editate, apoi clicul se reia. Eroare sau 8 s fără răspuns: salvare fără marcaj, cu motiv în consolă, fără blocarea operatorului.
 
 #### 3. .NET
 
@@ -189,7 +189,7 @@ Răspunsurile operatorului la cele trei întrebări puse înainte de scris: **(a
 
 #### 5. O reparație găsită pe drum (felia 0060)
 
-`WorkflowResultStore.FaraReceptiileSarite` tăia doar `ListaReceptii`, dar serverul citește **`ListaReceptii_results`** — deci recepțiile nebifate ajungeau totuși la pasul 4b cu `Detaliu` gol, adică exact recepția pe jumătate actualizată pe care tăietura trebuia s-o împiedice. Acum se taie ambele tabele.
+`WorkflowResultStore.FaraReceptiileSarite` tăia numai `ListaReceptii`; serverul citește `ListaReceptii_results`, deci recepțiile nebifate ajungeau la 4b cu `Detaliu` gol și se actualizau pe jumătate. Acum taie ambele tabele.
 
 ### Fișiere atinse
 

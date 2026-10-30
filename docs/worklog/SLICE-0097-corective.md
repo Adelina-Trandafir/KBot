@@ -116,9 +116,9 @@ Seven operator requests (six in one message, the seventh added while the work wa
 - Only the main window; the director's window is untouched.
 
 #### 7. A second reception on the same date
-- `ForexeWatch.js` section 17. When «Adaugă» starts a new reception, the dates of the receptions already in the list are read **from the page** (`receptionDates`: the table `table.table-striped.table-bordered.table-condensed`, column «Data» — the one «Receptii Angajament.wfl» scrapes) and kept with the operation (`state.recDates`, in sessionStorage, so a navigation to the form keeps them).
-- When the date in the form is one of them, K-BOT asks, in the same box as the save-without-changes message (now with two buttons): «Angajamentul are deja o recepție cu data …» / «NU este recomandat să aveți mai multe recepții pe aceeași dată.» / «Continuați cu această dată?» — «Nu, schimb data» (default; Esc and Enter) puts the cursor back in the date field, «Da, continui» remembers the answer for that date (`state.recAck`).
-- Asked twice at most: 250 ms after the date field is left / its value committed (`focusout`, `change`), and in any case at the «Salvează» click, which is held and replayed on «Da» (after the form guard, before the marker). A date already agreed to is not asked again.
+- `ForexeWatch.js` §17: Adaugă recepție reads existing dates from the PAGE (`receptionDates`, Data column of `table.table-striped.table-bordered.table-condensed`, as Receptii Angajament.wfl) into `state.recDates`/sessionStorage, surviving navigation to the form.
+- Duplicate date: the save-without-changes box now has two buttons and asks «Angajamentul are deja o recepție cu data …» / «NU este recomandat să aveți mai multe recepții pe aceeași dată.» / «Continuați cu această dată?». Default «Nu, schimb data» (Esc/Enter) refocuses the date; «Da, continui» stores that date in `state.recAck`.
+- Asked at most twice: 250ms after focusout/change and at Salvează, held/replayed on Da after the form guard and before the marker. An acknowledged date is not asked again.
 - New receptions only; editing an existing reception is not checked.
 
 ### Files touched
@@ -166,14 +166,14 @@ The operator asked for three things:
 2. the **source / sector** selector («Sursă/Sector», the old `cboSs`) moves there too;
 3. both are **removed from KbotForm** (the header band under the caption).
 
-- `KBotCaptionBar` now has **three painted selectors**, addressed by name: `SelectorUnit` (0097, unchanged behaviour: drawn only with two or more units), `SelectorYear`, `SelectorSector` (drawn with one or more choices). They sit after the title: «K-BOT — [Unit ▾]   An Date [2026 ▾]   Sursă/Sector [02A ▾]»; the year and sector ones carry a dim text label before the box. A selector that does not fit is simply not drawn.
-  - New API: `SetSelectorItems(selector, items, key)`, `ClearSelector(selector)`, `GetSelectorKey`, `SetSelectorKey` (no event), `SetSelectorShown` (the host hides the sector selector when the tree is sorted by date). The unit overloads without a name still work.
+- `KBotCaptionBar` paints three named selectors after the title: SelectorUnit (0097, unchanged, ≥2 units), SelectorYear/SelectorSector (≥1 choice). Layout: «K-BOT — [Unit ▾]   An Date [2026 ▾]   Sursă/Sector [02A ▾]»; year/sector have dim labels before their boxes. Selectors that do not fit are omitted.
+  - API: SetSelectorItems(selector, items, key), ClearSelector(selector), GetSelectorKey, SetSelectorKey (no event), SetSelectorShown (host hides sector for date-sorted tree). Unnamed unit overloads remain compatible.
   - `SelectorChanged` now carries `Selector` + `Key` (`CaptionSelectorChangedEventArgs(selector, key)`).
   - Help parts: `year`, `ss` added next to `unit` (`HelpPartBounds`); only the unit's text is blurred in captures (the year / sector are not sensitive).
   - `KBotCaptionBar.UnitSelector.vb` is replaced by `KBotCaptionBar.Selectors.vb` (the code of the old file, generalised from one selector to a small `TitleSelector` per name).
-- `KbotForm`: the controls `cboAn`, `cboSs`, `lblAn`, `lblSs` are gone from the Designer; `tlyHeader` is now two columns (MENIU button + operator label). `KbotForm.Periods.vb` reads / writes the bar (`AnulAles()`, `SsAles()`); the old `SelectedIndexChanged` handlers became one `CapBar_PeriodChanged` on `capBar.SelectorChanged` (the unit handler ignores the other two). The `_suppressPeriodEvents` flag is gone: setting a key from code never raises the event. `KbotForm.Tree/TreeOptions/Units/Chrome/vb` follow.
-- **Behaviour kept:** highest year first; SS from `LastSS`; year change rebuilds the SSs and re-reads the tree; SS change is remembered on the server and re-reads the tree; unit switch clears both selectors then reloads them; sorted by date the sector selector hides and the tree asks for every source.
-- **Behaviour that changed:** when the periods cannot be read (or the unit has none) the selectors are **absent** from the bar, where the old combos were shown disabled. The old tooltips on the two combos («An», «Sursă / sector») are gone: the painted selectors have no tooltip, and each carries its label instead.
+- `KbotForm` removes cboAn/cboSs/lblAn/lblSs from Designer; tlyHeader keeps MENIU/operator label columns. KbotForm.Periods.vb uses the bar through AnulAles()/SsAles(); CapBar_PeriodChanged on capBar.SelectorChanged replaces SelectedIndexChanged handlers, while the unit handler ignores year/sector. No `_suppressPeriodEvents`: setting keys emits no event. KbotForm.Tree/TreeOptions/Units/Chrome/vb follow.
+- **Preserved:** highest year first, LastSS; year rebuilds SS/reloads tree; SS persists server-side/reloads tree; unit clears/reloads both selectors; date sorting hides sector and requests all sources.
+- **Changed:** unreadable/absent periods omit selectors instead of disabled combos. Painted selectors have labels instead of the former An/Sursă / sector tooltips.
 
 ### Files touched
 

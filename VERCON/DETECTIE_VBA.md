@@ -2,7 +2,7 @@
 
 ## Scop și mod de lucru
 
-Analiză solicitată la 11.10.2026 a directorului `VERCON_ACCESS`. Documentul este actualizat pe etape, înainte de încheierea analizei, pentru a permite continuarea cu alt model. Nu implementez modificări în aplicație în această etapă; consemnez observații și propuneri bazate pe surse.
+Analiză solicitată la 11.10.2026 pentru `VERCON_ACCESS`, consemnată incremental pentru predarea către alt model. Etapa documentează observații/propuneri din surse, fără implementare în aplicație.
 
 Etichete: **confirmat** = vizibil în fișiere; **ipoteză** = necesită verificare suplimentară; **propunere** = pas recomandat, încă neimplementat.
 
@@ -14,7 +14,7 @@ Etichete: **confirmat** = vizibil în fișiere; **ipoteză** = necesită verific
 - [x] Etapa 3: integrări, actualizare, siguranță și riscuri tehnice (analiză statică).
 - [x] Etapa 4: priorități și plan verificabil de implementare.
 
-**Stare finală a acestei runde:** analiza inițială este încheiată; implementarea nu a început. Primul pas recomandat pentru următoarea rundă este pachetul P0-01 de mai jos, apoi P0-02/P0-03. Marcajele bifate de aici indică analiza, nu repararea problemelor.
+**Starea finală a rundei inițiale:** analiza inițială încheiată, implementare neîncepută. Reluare recomandată: P0-01, apoi P0-02/P0-03. Bifele atestă analiza, fără repararea problemelor.
 
 ### Etapa 0 — inventar inițial
 
@@ -26,17 +26,17 @@ Etichete: **confirmat** = vizibil în fișiere; **ipoteză** = necesită verific
 
 ### Etapa 1 — arhitectură și completitudinea materialului
 
-**Confirmat:** `INDEX.md` și `export.log` descriu exportul din `C:\vercon\Vercon.accdb`, efectuat la 11.10.2026, 14:54. Sunt 109 tabele, 80 interogări, 53 formulare, 61 rapoarte, 44 module, 27 clase și 3 macrocomenzi: 377 obiecte. Jurnalul raportează 0 erori și 0 excluderi. Acest lucru confirmă succesul operației de export raportate, nu faptul că pachetul poate reconstrui integral o aplicație executabilă.
+**Confirmat:** `INDEX.md`/`export.log`, export `C:\vercon\Vercon.accdb` la 11.10.2026, 14:54: 109 tabele, 80 queries, 53 formulare, 61 rapoarte, 44 module, 27 clase, 3 macrocomenzi = 377 obiecte, 0 erori/excluderi raportate. Dovedește exportul raportat reușit, fără garanția reconstrucției unei aplicații executabile complete.
 
-**Confirmat:** 40 dintre cele 109 descrieri de tabele sunt legături: 5 către `cale.accdb`, 35 către baza anuală `14\tz_2024.accdb`. Restul sunt locale în frontend. Fișierele din `Databases` nu sunt inventariate în `INDEX.md`. La inventarul inițial existau trei baze de gestiune; în timpul analizei a apărut și `Databases/cale.accdb` (modificat la 15:34). Frontendul original și backendul anual cu numele/calea din legături nu sunt în directorul analizat. Cele trei baze denumite pe domenii au însă date efective, vezi etapa 2C.
+**Confirmat:** 40/109 tabele sunt legate: 5 spre `cale.accdb`, 35 spre `14\tz_2024.accdb`; restul, locale frontend. `INDEX.md` nu inventariază `Databases`: inițial trei baze de gestiune, apoi și `Databases/cale.accdb` (modificat 15:34). Lipsesc frontendul original/backendul anual din căile legate; cele trei baze denumite pe domenii au date efective (etapa 2C).
 
 **Confirmat:** aplicația este un frontend Access cu backend-uri selectate dinamic. `mdl_Autoexec.bas.txt:Aexec` inițializează componente, loguri și FTP, încearcă actualizarea șabloanelor/imaginilor/frontendului, șterge legăturile, repară/conectează `cale.accdb`, citește separatoarele regionale și deschide `VaerCon`. `mdl_LegTabele.bas.txt:CnnTbl_2022` leagă tabelele din `_TBLS_` după `DB_INDEX`. Există infrastructură proprie de descriere/reparare a schemei (`_TBLS_`, `_Struct_`, `_IDX_`, `_REL_`, `SQL_FIX_BD`, `clsDatabase`).
 
-**Limită importantă:** macrocomanda exportată se numește `Autoexec_`, nu `AutoExec`. Conține `Productie(true)` și `AExec()`, dar nu am confirmat că rulează automat la pornire. Există și ruta `modStartup:StartUp`, care verifică/creează `ufTreeView`. Fișierele aferente userformului MSForms nu apar în inventar. Ribbonul `Vercon` este declarat în proprietățile bazei, dar nu apare un export `USysRibbons`/XML de ribbon. Trebuie identificate punctul real de pornire și resursele de UI lipsă.
+**Limită:** macrocomanda exportată `Autoexec_`, nu `AutoExec`, conține `Productie(true)`/`AExec()`, fără pornire automată confirmată. `modStartup:StartUp` verifică/creează `ufTreeView`, ale cărui fișiere MSForms lipsesc din inventar. Ribbonul `Vercon` este declarat în proprietățile bazei, fără export `USysRibbons`/XML. De identificat pornirea reală/resursele UI lipsă.
 
 **Confirmat:** `vba-references.md` nu raportează referințe defecte pe mașina de export. Referințele includ DAO, ADO/ADOX, Office, Scripting, VBIDE, MSForms și `WinSCPnet` din `C:\AVACONT\RES\WinScpNet.tlb`. Codul poate extrage `RegExpWrapper32.dll`/`RegExpWrapper64.dll` din `tblFiles`. Nu rezultă că aceste dependențe sunt disponibile pe orice stație; descrierile de tabele nu includ payloadurile binare.
 
-**Confirmat:** `relationships.md` arată doar 6 relații ale metadatelor locale. Descrierile tabelelor legate arată și indici FOREIGN ai datelor de gestiune (`Intrari`, de exemplu). Nu se poate concluziona că backendul nu are integritate referențială doar din acest fișier.
+**Confirmat:** `relationships.md` conține numai 6 relații ale metadatelor locale; tabelele legate (ex. `Intrari`) descriu și indici FOREIGN business. Absența din acest fișier nu dovedește lipsa integrității backendului.
 
 **Impresie inițială:** aplicație matură de gestiune, cu multe funcții utile și infrastructură proprie, dar strâns dependentă de Access, starea formularelor, fișiere externe și configurația stației. O rescriere ori integrare cere mai întâi recuperarea regulilor existente și a unui mediu de referință reproductibil.
 
@@ -54,11 +54,11 @@ Etichete: **confirmat** = vizibil în fișiere; **ipoteză** = necesită verific
 | Alimente | `ListaAlimente`, `LABC`, `Retetar`, `FeluriMancare`, `MicDejun`/`Dejun`/`Cina`, legături cu bonul de consum; există salvare tranzacțională în `ListaAlimente:2311`. |
 | Situații și închidere an | `SFP`, `tmpSFP`, `tmp_Balanta`, variante de balanță, fișă de magazie, inventar, amortizare; `IA:905` creează anul următor prin copiere și curățare a bazei. |
 
-**Confirmat:** numele `Masini`/`IdMasina` este folosit și pentru cont/categorie de gestiune, nu doar pentru vehicule (mesaje și surse de selecție în `FC`). O viitoare schemă trebuie să păstreze semantica reală, nu să traducă mecanic numele.
+**Confirmat:** `Masini`/`IdMasina` înseamnă și cont/categorie de gestiune (mesaje/selecții `FC`), nu numai vehicule; schema viitoare păstrează semantica, fără traducerea mecanică a numelor.
 
-**Confirmat:** interogările depind puternic de `Forms!...` și `TempVars!Zec`; procedura `RC2QC` completează parametrii prin `Eval`. Starea UI și tabelele temporare sunt parte din calcul. Backendul nu poate fi mutat fără extragerea explicită a parametrilor unitate/an/categorie/data/document curent/precizie.
+**Confirmat:** queries folosesc `Forms!...`/`TempVars!Zec`, iar `RC2QC` completează parametrii prin `Eval`. UI/temporarele participă la calcul; mutarea backendului cere parametri expliciți unitate/an/categorie/data/document curent/precizie.
 
-**Confirmat:** `QBC` calculează disponibilul ca intrări + retururi − ieșiri − cantități din bonul în lucru − storno, exclude bonul curent din ieșiri și returnează doar stocuri pozitive. Intrările, ieșirile și retururile au filtre de dată; ramura storno nu are un filtru de dată echivalent (`queries/QBC.sql:16`). **Risc de verificat pe exemplu:** un storno ulterior poate modifica disponibilul afișat pentru o dată anterioară.
+**Confirmat:** `QBC` = intrări + retururi − ieșiri − cantitățile bonului în lucru − storno; exclude bonul curent din ieșiri și oferă numai stoc pozitiv. Primele trei ramuri au filtru de dată, storno nu (`queries/QBC.sql:16`). **Risc de verificat:** storno ulterior poate modifica disponibilul unei date anterioare.
 
 **Confirmat:** `Balanta22` calculează stoc inițial, intrări, ieșiri și stoc final din `QSFP_BL`, pe `IdProdus`, categorie și interval. `Amortizare` folosește `DateDiff("m",...)`, durată normală, durată folosită și valoarea lunară rotunjită la 2 zecimale. În `OI_Union_Balanta`, predările includ capetele intervalului, dar casările din interval folosesc `>`/`<`. **Risc concret:** casările chiar în prima/ultima zi pot fi omise din rulaj; necesită reconciliere cu raportul folosit efectiv.
 
@@ -66,12 +66,12 @@ Etichete: **confirmat** = vizibil în fișiere; **ipoteză** = necesită verific
 
 ### Etapa 2B — constatări tehnice cu impact asupra datelor
 
-1. **Identificatori concurenți.** `FC:4027`, `BC:2332`, `BR:2168`, `OI_Predare:2437`, `OI_Transfer:2157`, `OI_Casare:2081` aleg ID-uri cu `DMax + 1`, înainte de salvare. Cheile primare previn duplicate în unele tabele, dar doi utilizatori pot alege același ID și unul poate eșua. Propunere: alocare atomică în backend; separat număr document afișat și cheie tehnică. Nu este o dovadă că aplicația este folosită multiuser astăzi.
-2. **Tranzacții existente, acoperire neuniformă.** Salvările FC/BC/BR/OI/ListaAlimente folosesc begin/commit/rollback: lucru util de păstrat. În `FC:4303`, commitul precede actualizarea codurilor MF și ștergerea variantelor fără intrări (`4308–4310`). Dacă acea parte eșuează, documentul este deja salvat. Multe `Execute` din salvări nu folosesc `dbFailOnError`; verificați comportamentul la o linie respinsă, nu presupuneți că orice eroare ajunge la rollback.
-3. **Ștergere BC în mai multe operații.** `BC:2467` poate șterge `LABC`, `LegBCLA` și antetul în afara unei tranzacții. Ștergerea liniilor poate depinde de cascadele backendului, care nu sunt descrise integral în exportul local. Propunere: operație atomică și verificarea relațiilor reale înainte de modificare.
-4. **Validare NIR copiată greșit.** `FC:4816–4818` repetă verificarea `DataNIR`, dar mesajul vorbește despre valoarea facturii. Confirmat în cod; validați efectiv `Valoare` și linii selectate/nevid înainte de salvare. `VerificariSalvare` permite explicit, după confirmare în UI, diferență între suma calculată și valoarea introdusă; această regulă trebuie păstrată sau schimbată conștient.
-5. **Închidere an vulnerabilă la întreruperi.** `IA:905` poate suprascrie `tz_<an>.accdb`, apoi execută multe ștergeri/inserări și înregistrează noul an în `cale`, fără o tranzacție/global rollback sau publicare finală a unei copii validate. Propunere: construire într-un fișier temporar, verificare solduri, backup și înlocuire doar după validare. Nu rulați rutina pe datele originale pentru a o testa.
-6. **Precizie și parsare dependente de stație.** Cantități, prețuri și valori sunt predominant `Double`; rotunjirile folosesc `Zec()` (implicit 4), unele calcule MF folosesc 2 zecimale, iar SQL concatenează `CDate('...')` și texte. Apostrofurile în explicații/facturi pot rupe SQL (`BC:2438–2441`, `FC:4522`), iar interpretarea datei depinde de format. Propunere: QueryDef cu parametri și o politică numerică documentată, validată pe exemple existente.
+1. **Identificatori concurenți:** `FC:4027`, `BC:2332`, `BR:2168`, `OI_Predare:2437`, `OI_Transfer:2157`, `OI_Casare:2081` aleg `DMax + 1` înaintea salvării. PK împiedică unele duplicate, dar doi utilizatori pot alege același ID și unul eșuează. Propusă alocare atomică backend, cu număr afișat distinct de cheia tehnică; nu dovedește utilizarea multiuser actuală.
+2. **Tranzacții neuniforme:** FC/BC/BR/OI/ListaAlimente folosesc begin/commit/rollback, de păstrat. În `FC:4303`, commit precede codurile MF/ștergerea variantelor fără intrări (`4308–4310`): eșecul ulterior lasă documentul salvat. Multe `Execute` nu folosesc `dbFailOnError`; de verificat linia respinsă, fără presupunerea rollbackului oricărei erori.
+3. **Ștergere BC:** `BC:2467` poate șterge `LABC`/`LegBCLA`/antet în afara tranzacției; liniile pot depinde de cascadele backendului, incomplet exportate. Propusă operație atomică după verificarea relațiilor reale.
+4. **Validare NIR greșită:** `FC:4816–4818` repetă `DataNIR` cu mesaj despre valoarea facturii. De validat `Valoare` și selecția/liniile nevide. `VerificariSalvare` permite explicit diferența sumă calculată/valoare introdusă după confirmarea UI; regula se păstrează ori se schimbă conștient.
+5. **Închidere an vulnerabilă:** `IA:905` poate suprascrie `tz_<an>.accdb`, apoi șterge/inserează și înscrie anul în `cale`, fără tranzacție/global rollback sau publicarea finală a copiei validate. Propus fișier temporar, verificare solduri, backup, înlocuire după validare. Fără probarea rutinei pe originale.
+6. **Precizie/parsare pe stație:** predominant `Double`, rotunjire prin `Zec()` (implicit 4), unele calcule MF la 2; SQL concatenează `CDate('...')`/texte. Apostrofurile pot rupe SQL (`BC:2438–2441`, `FC:4522`), datele depind de format. Propuse QueryDef parametrizat și politică numerică validată pe exemple existente.
 
 **Punct de reluare:** fluxurile au fost analizate static în procedurile principale; nu s-au verificat încă toate ramurile de storno/retur, liste de alimente și rapoarte. Urmează integrările și verificarea read-only a celor trei `.accdb`, dacă motorul DAO este disponibil. Se vor nota doar schema și numărători, nu datele personale sau parolele.
 
@@ -99,9 +99,9 @@ Motorul `DAO.DBEngine.120` este disponibil. Cele patru baze au fost deschise cu 
 
 **Confirmat după separare:** în baza OI sunt 40 intrări cu `Cant = 0` și 0 cu `Cant < 0`; în celelalte două ambele numărători sunt 0. Nu se clasifică drept eroare fără identificarea regulii de import.
 
-**Incident de verificare, ulterior rezolvat:** două verificări inițiale de totaluri au eșuat în motorul DAO standalone (expresiile foloseau `Nz`). Au fost reformulate fără funcții dependente de Access; rezultatele valide sunt în etapa 2D. Eșecul inițial al verificării nu era o constatare despre corectitudinea datelor.
+**Incident rezolvat:** două controale de total au eșuat în DAO standalone din cauza `Nz`; reformulate fără funcții Access, au rezultatele valide din 2D. Eșecul verificării nu dovedea date incorecte.
 
-**Defect static suplimentar:** `queries/OI_Balanta.sql:4` aliasă `Sum(V2)` ca `CCOut` (cantitate) și `Sum(C2)` ca `VCOut` (valoare), deși `OI_Union_Balanta` definește `V2` din valoare și `C2` din cantitate. Apoi scade aceste coloane din stocul/valoarea finală. Este o inversare vizibilă în SQL. Bazele furnizate nu au casări, deci nu oferă un exemplu real care să o manifeste; testați o casare sintetică de 2 bucăți × 100 lei.
+**Defect static:** `queries/OI_Balanta.sql:4` numește `Sum(V2)` cantitate `CCOut` și `Sum(C2)` valoare `VCOut`, invers față de `OI_Union_Balanta`, apoi le scade din stoc/valoare. Fără casări în bazele primite, lipsește exemplul real; propusă probă sintetică 2 bucăți × 100 lei.
 
 ### Etapa 2D — rezultatele rundei suplimentare
 
@@ -117,26 +117,26 @@ Verificările de total au fost reformulate fără `Nz` și au rulat cu succes. P
 
 **Interpretare:** baza MF necesită reconciliere document cu document; codul permite anumite diferențe la NIR, iar unele documente sunt istorice. Nu ajustați automat antetele pentru a obține zero diferențe.
 
-**Confirmat:** `Setari.FIFO=-1` în toate trei, `MF=-1` doar în MF, `OBINV=-1` doar în OI. Baza Alimente are `Ver=4`, MF `Ver=124`, iar OI nu are tabelul `Ver`. Prin urmare, există configurații și versiuni foarte diferite. Eticheta `FIFO` din setări nu demonstrează că algoritmul legacy `IntrariIesiriTotal` este ruta reală de consum; formularul curent citește `QBC`.
+**Confirmat:** `Setari.FIFO=-1` în toate trei, `MF=-1` numai în MF, `OBINV=-1` numai în OI. `Ver=4` în Alimente, `124` în MF, tabel absent în OI: configurații/versiuni diferite. FIFO nu dovedește folosirea legacy `IntrariIesiriTotal`; formularul curent citește `QBC`.
 
 **Defecte/riscuri suplimentare confirmate în surse:**
 
 - `FCS:2708` salvează antetul storno și liniile fără begin/commit/rollback. O eroare între operații poate lăsa date parțiale.
-- `tables/IntrariStorno.md` definește `PUTVA` ca `Long`, în timp ce prețul cu TVA al variantei este `Double`. `FCS` inserează prețul din `TmpFact`. Este un risc de pierdere a fracțiunii; verificați folosirea efectivă a acestui câmp înainte de migrare/corecție.
-- `BC:2558` verifică stocul cu rotunjire la 2 zecimale, deși liniile și disponibilul folosesc `TempVars!Zec` (de obicei 4). Exemplu de test: disponibil 1,0000 și consum 1,0040. La salvare, `BC` nu recalculează explicit disponibilul pentru fiecare linie; verificarea este în evenimentele UI, insuficientă pentru concurență sau editări care o ocolesc.
-- `BC:2570` testează `.RecordCount <= 0` pentru `SELECT Count(1)`. O interogare agregată întoarce un rând chiar dacă numărul calculat este zero; trebuie citită valoarea agregatului. Mai există verificări similare de revizuit (`VaerCon` folosește `SELECT Max` pentru ultimul backup).
+- `tables/IntrariStorno.md`: `PUTVA` Long față de Double la variantă; `FCS` inserează din `TmpFact`. Risc de pierdere a fracțiunii, cu folosirea efectivă a câmpului de verificat înainte de migrare/corecție.
+- `BC:2558` verifică stocul la 2 zecimale, față de `TempVars!Zec` (uzual 4) pentru linii/disponibil; probă propusă: disponibil 1,0000, consum 1,0040. Salvarea nu recalculează explicit disponibilul fiecărei linii; verificarea UI nu acoperă concurența/editările care o ocolesc.
+- `BC:2570`: `.RecordCount <= 0` pentru `SELECT Count(1)` verifică rândul agregat mereu prezent, fără citirea valorii zero. De revizuit și similarele (`VaerCon`: `SELECT Max` pentru ultimul backup).
 
 ### Etapa 3A — actualizare, migrări, backup
 
-**Confirmat:** `mdl_2024:Repara2024` compară versiunea backendului cu `VEROFFLINE`, citește schema țintă și cere `Fix_Database`/`Fix_Queries`. Totuși returnează `True` necondiționat după încercare, chiar dacă acestea au returnat `False`. Eticheta `EROARE` nu are `On Error GoTo EROARE` activ în funcție. În plus, getterul `clsDatabase.Version` poate crea tabelul `Ver` dacă lipsește: nici citirea proprietății nu este read-only. Nu utilizați clasele aplicației pentru audit read-only.
+**Confirmat:** `mdl_2024:Repara2024` compară backendul cu `VEROFFLINE`, citește schema țintă, cere `Fix_Database`/`Fix_Queries`, dar întoarce True chiar după False. Eticheta `EROARE` nu are `On Error GoTo EROARE` activ. Getterul `clsDatabase.Version` poate crea `Ver` lipsă: nu este read-only; clasele aplicației nu se folosesc pentru audit read-only.
 
-**Confirmat:** `clsDatabase:Fix_Database` are tranzacții în două workspace-uri. Poate continua după `Fix_Fields`/`Fix_Indexes`/`Fix_Relations` nereușite pe un tabel și nu condiționează commitul de rezultatul `Run_SQL_After_Update`. Propunere: rezultate explicite pe pas, invarianta „totul validat înainte de commit”, diagnostic de schemă separat de reparare și backup înainte de DDL. Valoarea `Repara2024=True` nu trebuie folosită drept dovadă a reușitei.
+**Confirmat:** `clsDatabase:Fix_Database` tranzacționează în două workspace-uri, poate continua după `Fix_Fields`/`Fix_Indexes`/`Fix_Relations` eșuate și nu condiționează commit de `Run_SQL_After_Update`. Propuse rezultate explicite pe pas, validare integrală înainte de commit, diagnostic separat de reparare, backup înainte de DDL. `Repara2024=True` nu dovedește reușita.
 
 **Confirmat:** `mdl_UpdateFE:DescarcaFrontEnd` descarcă `VER.txt` și `vercon.zip`, dezarhivează, creează un BAT și rulează `taskkill /IM msaccess.exe`, apoi `xcopy /i /e /y`. Nu am găsit aici verificare de semnătură/hash autenticat sau rollback al frontendului. Comanda poate afecta toate procesele Access ale utilizatorului. Șabloanele/imaginile sunt comparate numai după mărime, apoi fișierul local este șters înainte de descărcare (`mdl_Autoexec:RefreshTemplates/RefreshImages`). Fișiere diferite, dar de aceeași mărime, nu sunt actualizate.
 
-**Confirmat:** `mdl_siguranta:SalvezSiguranta` face cel mult un ZIP local pe zi, în `C:\SIG\VERCON`, dintr-o copie a backendului deschis. `frmMail` încarcă ultima arhivă locală prin WinSCP și marchează succesul în `Trimis`. Nu am verificat restaurarea, consistența copiei în timpul scrierilor ori retenția backupurilor. Backupul local este apelat după `Repara2024` în `VaerCon`, deci nu protejează automat starea dinaintea migrării.
+**Confirmat:** `mdl_siguranta:SalvezSiguranta` face maximum un ZIP local/zi în `C:\SIG\VERCON`, din backendul deschis; `frmMail` trimite ultima arhivă prin WinSCP și marchează `Trimis`. Restaurarea/consistența la scrieri/retenția sunt neverificate. Apelul din `VaerCon`, după `Repara2024`, nu protejează automat starea premigrare.
 
-**Defect important:** `mdl_ExecWait:ExecWait` setează `True` inclusiv când `CreateProcess` returnează 0; nu citește codul de ieșire al procesului și nu închide handle-urile `PI.hProcess`/`PI.hThread` pe ruta normală. `UnZip7` se bazează pe acest rezultat pentru a raporta succes. `STARTUPINFO` păstrează câmpuri de pointer/handle ca `Long`; simpla adăugare `PtrSafe` nu verifică dimensiunea structurii pe 64 biți. Propunere: reparare și probă cu executabil absent, exit code nenul, arhivă invalidă, Office 32/64 biți.
+**Defect:** `mdl_ExecWait:ExecWait` întoarce True și la `CreateProcess=0`, nu citește exit code și nu închide `PI.hProcess`/`PI.hThread` pe ruta normală; `UnZip7` se bazează pe acest succes. Pointerii/handle-urile `STARTUPINFO` sunt Long; `PtrSafe` singur nu validează structura pe 64 biți. Propuse reparare și probe: executabil absent, exit nenul, arhivă invalidă, Office 32/64 biți.
 
 ### Etapa 3B — integrări și securitatea configurației
 
@@ -144,23 +144,23 @@ Verificările de total au fost reformulate fără `Nz` și au rulat cu succes. P
 
 **Confirmat:** informațiile de firmă folosesc două endpointuri ANAF diferite (v9 și v8); mesageria folosește token Bearer din registry. Analiza se referă la URL-urile din surse; nu s-au făcut apeluri către ANAF și nu s-a verificat contractual actualitatea lor. `TrimiteMesajFactura` poate întoarce `True` chiar după status HTTP diferit de 200 ori eroare ANAF afișată. Inserarea în `EFT_M` referă un tabel absent din export și din `cale.accdb` furnizat.
 
-**Defect static de autentificare/configurare:** `Forms/UNIT` salvează/citește cheile cu prefixul `VERCON_EFAUTH_` + DC (cu underscore), în timp ce `mdl_EFactura` citește `VERCON_EFAUTH` + DC (fără underscore). Diferența este confirmată. Denumirea `TempVars("SepData")` a fost verificată și este aceeași în inițializare și consum; nu reprezintă un defect constatat. Nu presupuneți că tokenul lipsă este exclusiv o problemă ANAF.
+**Defect static:** `Forms/UNIT` scrie/citește prefixul `VERCON_EFAUTH_` + DC, `mdl_EFactura` citește `VERCON_EFAUTH` + DC, fără underscore. `TempVars("SepData")` coincide în inițializare/consum, fără defect constatat. Lipsa tokenului nu se atribuie exclusiv ANAF.
 
 **Confirmat:** codul descarcă și salvează executabil RustDesk și componente TreeView dintr-un server extern. Nu am executat sau descărcat aceste fișiere. Operațiile de actualizare, suport și backup sunt cuplate cu pornirea/lucrul aplicației; un mediu de verificare trebuie să le poată dezactiva explicit și să păstreze funcționarea locală.
 
 **Completitudine e-Factura:** o căutare statică a procedurilor și bindingurilor UI găsește referințe fără definiție în export: `Popup_EFactura_IncarcaXML`, `EF_ORD`, `EF_ANG`, `EF_PROP`, `EF_OP`, `EF_GRUP_ANG`, `EF_GRUP_PROP`, `RAP_EF`. Formularul `EFACTURA` are doar declarații în code-behind și delegă în subformular/popup. Aceste proceduri pot proveni din componente lipsă sau pot fi rămășițe nefolosite; nu declarați integrarea completă fără verificare. Rutinele legacy apelează și `EdCod()` fără definiție găsită. **Clarificare după verificarea documentației:** `Produse.ID=GenUniqueID()` este o valoare specială a motorului DAO pentru generarea unui identificator aleator și nu necesită o funcție VBA în export; nu este o dependență lipsă. [Referință Microsoft](https://learn.microsoft.com/en-us/office/client-developer/access/desktop-database-reference/field2-defaultvalue-property-dao).
 
-**Confirmat:** există duplicate de proceduri globale în module standard: `ChangeProperty` și `SetBypassProperty` în `Utile` și `mdl_siguranta`, `Compact_DB` în `Utile` și `mdl_compact&repair` (public explicit, respectiv implicit). Duplicatele din ramuri `#If/#Else` ori metodele din clase nu trebuie tratate automat ca defecte. Compilarea proiectului real va clarifica ambiguitățile și dependențele lipsă.
+**Confirmat:** duplicate globale în module standard: `ChangeProperty`/`SetBypassProperty` în `Utile` și `mdl_siguranta`, `Compact_DB` în `Utile` și `mdl_compact&repair` (public explicit/implicit). Ramurile `#If/#Else` și metodele claselor nu sunt automat defecte; compilarea proiectului real va clarifica ambiguitățile/dependențele.
 
 **Punct de reluare:** analiza statică și read-only a datelor este făcută; nu s-a compilat și nu s-a pornit frontendul. Urmează ordonarea constatărilor în pași mici, criterii de acceptare și lista elementelor încă neverificate.
 
 ### Etapa 3C — verificări finale și exemple de reconciliere
 
-**Confirmat:** în toate cele trei baze, `IntrariStorno.PUTVA.Type=4` (DAO Long). În Alimente, toate cele 8 linii storno au preț stocat diferit de `ProduseP.PUTVA` curent, cu prag 0,0001; în MF și OI numărul este 0. Acest rezultat confirmă diferența între câmpuri, nu cauza istorică exactă. Calculele curente consultate pot folosi prețul din `ProduseP`, deci nu rezultă automat că toate totalurile de storno sunt greșite.
+**Confirmat:** toate trei au `IntrariStorno.PUTVA.Type=4` (DAO Long). În Alimente, cele 8 linii storno diferă de `ProduseP.PUTVA` curent la prag 0,0001; MF/OI: 0. Confirmă diferența câmpurilor, fără cauza istorică. Calculele consultate pot citi `ProduseP`; nu dovedește că toate totalurile storno sunt greșite.
 
-**Exemple MF pentru continuare:** NIR `IdIntrare=1` are valoarea de antet 0 și suma liniilor 1.262.155,34; bonul `IdBonConsum=7` are antet 843.762,24 și suma liniilor 843.275,53, diferență 486,71. Mai există un NIR cu valoare NULL. Identificatorii sunt locali acestei baze; verificați istoricul/importul și documentele originale înainte de orice corecție.
+**Exemple MF:** NIR `IdIntrare=1`: antet 0, linii 1.262.155,34; bon `IdBonConsum=7`: antet 843.762,24, linii 843.275,53, diferență 486,71; încă un NIR cu valoare NULL. ID-uri locale bazei; înainte de corecție se verifică istoricul/importul și originalele.
 
-**Confirmat:** afișarea rapoartelor în `SFP` este dinamică: `MODEL` și metadatele nodului TreeView determină raportul și interogarea `QSFP_<I>`. `IA` folosește explicit `Balanta22_IA`. Nu am demonstrat că toate interogările de balanță exportate sunt accesibile în meniul curent. Pentru orice defect SQL identificat, legați și raportul/opțiunea reală care îl folosește.
+**Confirmat:** `SFP` alege dinamic raportul/`QSFP_<I>` prin `MODEL` și metadatele TreeView; `IA` folosește `Balanta22_IA`. Nu este demonstrată accesibilitatea tuturor balanțelor exportate din meniul curent; fiecare defect SQL trebuie legat de raportul/opțiunea reală.
 
 **Defect static în fișa pe furnizor:** `mdl_AdaugStocFM:AdaugaStoc_Furnizor` ordonează după `IDF, CodP, Data, Id`, dar resetează acumularea doar când se schimbă simultan furnizorul și produsul. Când se schimbă produsul în interiorul aceluiași furnizor, soldul anterior continuă în noul produs; când se schimbă furnizorul și produsul rămâne același, soldul continuă și el. Se apelează din `SFP:1730` pentru fișa cu `Furn=True`. Propunere: resetarea la schimbarea oricărei componente a cheii `(IDF,CODP)`; test cu două produse pentru un furnizor și același produs pentru doi furnizori.
 

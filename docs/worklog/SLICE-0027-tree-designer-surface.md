@@ -343,14 +343,14 @@ Raport de operator:
 > «something is wrong with the mainform: it collapses the tree then imediately it expands it again
 > so i never get to see it collapsed. in the playground is working»
 
-În `MainForm`, arborele și `pnlTree` sunt `Dock = Fill` în `split.Panel1`; lățimea vine din `split.SplitterDistance`. `ApplyCollapseExtent` scria `Me.Width = 100`, suprascrisă imediat de layout, provocând pâlpâirea. În playground, arborele `Dock = Left` în gazda `Fill` își deține lățimea; această schimbare făcea proba vizibilă.
+MainForm tree/pnlTree sunt Fill în split.Panel1, cu lățime din SplitterDistance; ApplyCollapseExtent scria Width = 100, imediat suprascris de layout, provocând pâlpâirea. Playground Left în gazdă Fill deține lățimea și făcea proba vizibilă.
 
 Contractul era deja scris în worklog («gazda ascultă `CollapsedChanged` și mută splitter-ul»), dar
 **nimeni nu-l implementa, iar controlul se bătea cu layout-ul în loc să tacă**. Ambele jumătăți au
 fost reparate:
 
 - **Control:** `HostOwnsWidth` (orice `Dock` sau ancorare pe ambele laturi) și `ExpandedWidth` (ultima lățime desfășurată). Dacă lățimea aparține gazdei, `ApplyCollapseExtent` schimbă numai starea și emite evenimentul, fără scrierea care provoca pâlpâirea.
-- **`MainForm`:** `tree_CollapsedChanged` mută `split.SplitterDistance` la `MinimumCollapsedWidth + split.Panel1.Padding.Left`, cu padding citit. `Panel1MinSize` (240, peste ținta 111) scade cât bara este strânsă și revine la desfacere. `IsSplitterFixed = True` împiedică lățimile intermediare; `ClampSplitter` respectă limitele `SplitContainer`, evitând `InvalidOperationException` în ferestre înguste.
+- **MainForm:** tree_CollapsedChanged setează SplitterDistance la MinimumCollapsedWidth + split.Panel1.Padding.Left, citit. Panel1MinSize 240 (peste ținta 111) scade la strângere/revine la desfacere; IsSplitterFixed = True exclude intermediarele, ClampSplitter respectă limitele SplitContainer în ferestre înguste, evitând InvalidOperationException.
 
 Două teste noi (428 în total): un arbore docat își schimbă starea și ridică evenimentul **fără** să-și atingă `Width`, iar `HostOwnsWidth` urmărește `Dock`-ul și ancorarea pe ambele laturi.
 
@@ -362,7 +362,7 @@ Raport de operator:
 > RESERVE THE SPACE! when hovered and the space is NOT reserved, the text of the node will become
 > narrower to fit the icon»
 
-`DrawContent` retrăgea textul pentru orice `RightIcon`, chiar invizibilă. Comentariul «Varianta A» evita saltul textului la hover, dar rezerva inutil o fâșie pe fiecare rând cu `ShowRightIconOnHover`.
+DrawContent retrăgea textul pentru orice RightIcon, inclusiv invizibilă; „Varianta A” evita saltul la hover, dar consuma o fâșie pe fiecare rând ShowRightIconOnHover.
 
 Regula acum, într-un singur loc (`RightIconGutter`):
 
@@ -377,7 +377,7 @@ Regula acum, într-un singur loc (`RightIconGutter`):
 **Banda de coloane rămâne DELIBERAT ne-condiționată de hover** (`ReservedRightIconWidth`): o
 geometrie pe tot controlul care se re-așază la fiecare trecere a cursorului ar fi de nefolosit. Doar textul de nod se îngustează. Cele două funcții stau una lângă alta, cu motivul scris între ele.
 
-Prins alături, în zona de clic a iconiței (`OnMouseDown`): marginea era scrisă `6`, adică implicitul lui `RightIconRightPadding` — deci zona de clic se despărțea de cea desenată de îndată ce cineva atingea proprietatea. Acum se citește proprietatea.
+OnMouseDown folosea margine 6 în loc de RightIconRightPadding; schimbarea proprietății despărțea hit-testul de desen. Acum citește proprietatea.
 
 În playground, `RightIconRightPadding` era activat doar când spațiul era rezervat; padding-ul POZIȚIONEAZĂ iconița, deci contează oricând e desenată. Gating scos.
 
@@ -393,12 +393,12 @@ Raport de operator:
 
 Flyout-ul nodului selectat nu aduce informație nouă și acoperă vederea alăturată la fiecare survolare.
 
-`FlyoutSelectedNode` (Boolean, categoria «K-BOT Arbore - Subsol», **implicit False**) guvernează asta. Suprimarea e pe UN rând — cel selectat — nu o stingere a etichetei: vecinii lui ies în continuare, cum a și cerut («Only for the selected row»).
+`FlyoutSelectedNode` (Boolean, „K-BOT Arbore - Subsol”, implicit False) suprimă numai rândul selectat; vecinii păstrează flyout, conform cererii.
 
 Trei căi, ca eticheta să nu rămână agățată:
 
 - `CollapsedFlyoutTargetAt` sare nodul scutit, deci nu mai iese deloc;
-- `EnsureCollapsedFlyoutStillAllowed` retrage eticheta DEJA ieșită când rândul de sub ea devine selectat — cazul obișnuit, «survolez, iese, dau clic»; chemată din `OnMouseDown`, din setterul `SelectedNode` (selecție din cod / din shell) și din setterul proprietății, ca stingerea opțiunii cât eticheta e afară s-o retragă pe loc;
+- EnsureCollapsedFlyoutStillAllowed retrage flyoutul deja deschis când rândul devine selectat (hover → click); apel din OnMouseDown, setter SelectedNode pentru cod/shell și setterul opțiunii, cu retragere imediată la dezactivare;
 - `RenderCollapsedFlyout` re-verifică la fiecare cadru, fiindcă selecția se poate muta din tastatură chiar cât desfășurarea e în curs.
 
 Patru teste noi (438 în total): nodul selectat tace iar vecinul lui iese, `FlyoutSelectedNode = True` o readuce, selectarea rândului survolat retrage eticheta deja ieșită, iar stingerea opțiunii la fel. În playground, `chkFlyoutSelected`, activat doar când nodul plutitor e pornit.
@@ -415,7 +415,7 @@ Cerere de operator:
 **Regula de capăt e acum SIMETRICĂ și scrisă o singură dată** (`ButonPeLatura`): latura pe care
 stă butonul de strângere îi aparține, iar iconița de acolo nu se mai desenează. Până acum exista doar jumătatea din stânga, cu regula împrăștiată în `DrawFooter`; s-a mutat în `ShowFooterLeftIcon` / `ShowFooterRightIcon`, care spun ce e pe ecran ACUM și sunt publice (le citește și playground-ul ca să-și stingă comutatoarele fără să reproducă regula).
 
-Dreptunghiul iconiței vine din `ComputeFooterRightIconRect`, funcție pură folosită și de desen și de hit-test — a doua oară în felia asta când se aplică lecția butonului: o geometrie publicată de desen ar face apăsarea să depindă de o repictare anterioară. `FooterRightIconRect` o expune, ca `FooterCollapseButtonRect`.
+ComputeFooterRightIconRect este geometria pură comună desenului/hit-testului, independentă de repictarea anterioară. FooterRightIconRect o expune, ca FooterCollapseButtonRect.
 
 Iconița suprimată de buton nu e doar invizibilă, e și **inapăsabilă**: altfel ar fi rămas o zonă de clic fantomă exact peste buton. Are test.
 
@@ -460,9 +460,9 @@ the tree's own default, written explicitly, which is the trap 0027-02 documented
 **2. `ConfigureTree()` is gone from all four.** It only ever set `RootExpander = True`, which
 is now a designer line. `DdfView`'s copy was already commented out; the dead block was removed rather than left as a comment.
 
-**3. The four hosts implement collapse.** Their trees are `Dock = Fill` in `split.Panel1`, so `HostOwnsWidth` leaves sizing to the host. Each gains `tree_CollapsedChanged` + `ClampSplitter`, following the 09.08.2026 `MainForm` correction in 0027-02 above: remember/restore distance, temporarily lower `Panel1MinSize`, fix the collapsed splitter and clamp narrow views. Without it the button was inert.
+**3. Four collapse hosts:** trees are Fill in split.Panel1, so HostOwnsWidth delegates sizing. Each adds tree_CollapsedChanged/ClampSplitter per the 09.08 MainForm correction in 0027-02: save/restore distance, lower Panel1MinSize temporarily, fix collapsed splitter, clamp narrow views. This activates the formerly inert button.
 
-**4. Sample designer nodes removed from `DdfView`:** `TreeNodeDefinition1/2` («Ianuarie ~~~ 1.234.567,00», «01.01.2025 ~~~ 1.234.567,00»). `RebuildFromDefinitions` also materializes them at runtime; the constructor calls `ShowEmpty`, which does not clear the tree (`ClearAll` does), leaving fake revisions until selection. `tree_image_list`/`NodeImages` remains the icon source, not a node source.
+**4. DdfView sample nodes removed:** TreeNodeDefinition1/2 („Ianuarie ~~~ 1.234.567,00”, „01.01.2025 ~~~ 1.234.567,00”) were materialized at runtime by RebuildFromDefinitions. Constructor ShowEmpty does not clear the tree (ClearAll does), leaving fake revisions until selection. tree_image_list/NodeImages remains an icon source only.
 
 ### Files touched
 

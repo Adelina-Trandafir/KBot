@@ -381,7 +381,7 @@ btn.BackColor = p.ButtonBackColor
 ...
 ```
 
-Bucla ocolea `ModernRenderer`: pe `Modern`, `ButtonStyles.ApplyPrimary` / `ApplySecondary` cheamă `ModernRenderer.ApplyButton` pentru `Region` rotunjit și umplutură. DDF afișa dreptunghiuri plate fără accent, spre deosebire de ORD: «Adaugă» și «Șterge» arătau la fel, conform reclamației.
+Bucla ocolea ModernRenderer: pe Modern, ApplyPrimary/ApplySecondary folosesc ModernRenderer.ApplyButton pentru Region rotunjit/umplutură. DDF rămânea plat, fără accent, cu Adaugă/Șterge identice, spre deosebire de ORD și conform reclamației.
 
 #### Ce e acum
 
@@ -395,9 +395,9 @@ Bucla ocolea `ModernRenderer`: pe `Modern`, `ButtonStyles.ApplyPrimary` / `Apply
 
 Aceeași repartiție ca în `OrdAtasamentePage` / `OrdDocumentePage`: acțiunea poartă accentul, iar butonul distructiv rămâne secundar.
 
-În subsol, `btnRenunta` și `btnSalveaza` sunt direct pe formular: `MyBase.OnThemeChanged` → `ThemeManager` aplicase deja regula generică, inclusiv `ModernRenderer`; repictarea elimina rotunjirea. Ca `OrdEditForm`, `DdfEditForm.OnThemeChanged` nu mai repictează butoanele.
+Subsolul btnRenunta/btnSalveaza primea deja regula generică, inclusiv ModernRenderer, prin MyBase.OnThemeChanged → ThemeManager; repictarea elimina rotunjirea. DdfEditForm.OnThemeChanged nu mai repictează butoanele, ca OrdEditForm.
 
-Paginile implementează `IThemedControl`, iar `ThemeManager.Traverse` nu aplică regulile generice copiilor lor (`ThemeManager.vb`, 304–321). De aceea aplicarea explicită rămâne pe pagini, cu explicația la ambele locuri.
+ThemeManager.Traverse nu aplică regulile generice copiilor paginilor IThemedControl (ThemeManager.vb:304–321); aplicarea explicită pe pagini rămâne necesară, explicată în ambele locuri.
 
 ### 2. Grilele nu mai arată dezactivate
 
@@ -406,7 +406,7 @@ Paginile implementează `IThemedControl`, iar `ThemeManager.Traverse` nu aplică
 Două urmări, nu una:
 
 1. **Aspectul.** Exact ce a semnalat operatorul. Nicio grilă din `OrdEditForm` nu folosește `Enabled = False`; toate spun `ReadOnly = True`.
-2. **Funcțional.** Cele cinci coloane pe care clasa le declară EDITABILE (clasificația, elementul de fundamentare, parametrii, partenerul, valoarea curentă) erau și ele inerte, deci deblocarea din `AplicaModulDeEditare` — pentru un DDF construit manual — nu putea debloca nimic. Rândurile 1005–1018 din `KBotDataColumn.vb`: `Enabled` bate `ReadOnly`, iar `KBotDataView.EsteCelulaActiva` iese pe `Not col.Enabled` înainte de orice altceva.
+2. **Funcțional:** clasificația, elementul de fundamentare, parametrii, partenerul și valoarea curentă, declarate editabile, erau tot inerte în DDF manual. AplicaModulDeEditare nu le putea debloca: Enabled prevalează asupra ReadOnly (KBotDataColumn.vb:1005–1018), iar KBotDataView.EsteCelulaActiva iese întâi pe Not col.Enabled.
 
 Toate cele zece linii au fost scoase. Refuzul editării rămâne unde îi e locul și unde era deja:
 
@@ -422,20 +422,20 @@ Niciunul dintre cele trei nu atinge pictura. Regula e scrisă acum în capul des
 
 #### 3.1 `cmbComp` — compartimentul tastat nu ajungea nicăieri (funcțional, blocant)
 
-0051-02 a introdus `Editable = True` / `LimitToList = False`, lăsând unificarea `txtComp` / `cmbComp` restantă. `txtComp` a dispărut ulterior din designer, dar legarea valorii nu s-a mutat pe combo: rămăseseră cinci linii comentate. Urmări:
+0051-02 adăugase Editable = True/LimitToList = False, amânând unificarea txtComp/cmbComp. După eliminarea txtComp din designer, legarea rămăsese în cinci linii comentate:
 
-- `_draft.Comp` se scria numai la alegerea din listă (`CmbComp_SelectedIndexChanged`). Textul tastat nu ajungea în schiță; `MotiveDeRefuz` răspundea «Compartimentul lipsește» deși câmpul părea completat.
-- Lista goală, normală pe o unitate fără DDF anterior și fără nomenclator de compartimente, declanșa `cmbComp.Enabled = False` în `IncarcaListeleAsync`; la fel ramura `Catch`. Singura intrare rămasă era astfel dezactivată, blocând salvarea pe baza nouă.
-- La încărcare, `cmbComp.SelectedItem = _draft.Comp`: pentru o valoare care nu e în listă — cazul frecvent — atribuirea e un no-op tăcut, deci compartimentul documentului dispărea din antet.
+- Numai CmbComp_SelectedIndexChanged scria `_draft.Comp`; textul tastat lipsea din schiță și MotiveDeRefuz spunea «Compartimentul lipsește» cu câmpul aparent complet.
+- Lista goală (unitate fără DDF anterior/nomenclator compartimente) ori Catch din IncarcaListeleAsync dezactiva cmbComp, unica intrare rămasă, blocând salvarea pe baza nouă.
+- `cmbComp.SelectedItem = _draft.Comp` la încărcare ignora tăcut valoarea absentă din listă, frecventă, golind compartimentul din antet.
 - Sfatul de pe ecran spunea «Alegerea unuia îl scrie în caseta din stânga» și «Scrie compartimentul în caseta din stânga». Nu mai există nicio casetă în stânga.
 
-Acum `PreiaCompartimentul()` cheamă idempotent `cmbComp.CommitText()` (0051-02) și copiază `cmbComp.Text.Trim()` în schiță la `cmbComp.Leave` și la `BtnSalveaza_Click` (salvare fără părăsirea câmpului). `SelectedIndexChanged` actualizează imediat alegerea. Lista goală/cererea eșuată schimbă numai sfatul, nu dezactivează câmpul. Textul se restaurează sub `_seIncarca` după reumplerea listei, care îl golește.
+`PreiaCompartimentul()` face idempotent cmbComp.CommitText() (0051-02) și copiază cmbComp.Text.Trim() în schiță la Leave și BtnSalveaza_Click, inclusiv fără blur. SelectedIndexChanged actualizează imediat. Lista goală/eroarea schimbă numai sfatul; după reumplerea care golește textul, acesta revine sub `_seIncarca`.
 
 Cele cinci linii comentate `txtComp` și nota din capul designerului care descria perechea au fost șterse; nota descrie acum un singur control.
 
 #### 3.2 `DdfEditFisierePage` construia coloanele în cod
 
-`ConstruiesteColoanele()` din constructor era singura excepție a celor două editoare de la declararea în `.Designer.vb` (convenția formularelor și §4.5): grila rămânea goală la design time. Cele patru coloane sunt acum în designer, cu font, aliniere, `ReadOnly` și umplere pe `cale_fisier`, ca în `OrdAtasamentePage`.
+`ConstruiesteColoanele()` era unica excepție a celor două editoare de la Designer (convenția/§4.5), lăsând grila goală la proiectare. Cele patru coloane trec în Designer cu font/aliniere/ReadOnly și umplere pe cale_fisier, ca OrdAtasamentePage.
 
 #### 3.3 `DdfEditSectiuneaBPage` era îmbrăcată altfel decât sora ei
 

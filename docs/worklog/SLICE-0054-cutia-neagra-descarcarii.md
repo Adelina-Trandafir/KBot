@@ -98,9 +98,9 @@ Pachetul descărcat pe 07.09.2026 (`AAB2MAACHXB`, trimis de operator) a fost ver
 
 ### Două constatări care au decis forma feliei
 
-**(1) Exista un apel care ar fi MINȚIT despre salvare.** `ApiClient.TrimitePrelucrareAsync` (folosit de `PrelucrareCoordinator.TrimiteAsync`) nu punea deloc câmpul `mod`. Serverul citește lipsa lui ca «propunere» — deliberat: «Tăcerea nu are voie să însemne „salvează"» —, rulează toți pașii și face `conn.rollback()`. Clientul citea acel 200 ca `PrelucrareStare.Salvat` și raporta o salvare care nu se întâmplase. **Retras**, cu tot cu declarația din `IApiClient` și cu `TrimiteAsync` din coordonator.
+**(1) Fals succes retras:** `ApiClient.TrimitePrelucrareAsync`, prin `PrelucrareCoordinator.TrimiteAsync`, omitea mod. Serverul îl interpreta propunere, rula toți pașii și făcea `conn.rollback()`, dar clientul marca 200 ca `PrelucrareStare.Salvat`. Retrase metoda, declarația IApiClient și TrimiteAsync: implicitul sigur al serverului nu echivala cu salvare.
 
-**(2) Nu există scurtătură pe lângă operator.** `verifica_acoperirea` respinge salvarea cu 400 dacă fie și un singur instantaneu lipsește din `decizii`, iar trecerea automată poate așeza doar ULTIMUL instantaneu al unui lanț (F9) — deci restul ajung la om **prin construcție**, nu ca excepție. O listă goală sau parțială de decizii nu e o opțiune.
+**(2) Decizie pentru fiecare instantaneu:** `verifica_acoperirea` refuză cu 400 orice lipsă din decizii; automatul așază numai ultimul din lanț (F9), deci restul cer operatorul prin construcție. Deciziile goale/parțiale nu sunt opțiune.
 
 ### Ce s-a schimbat
 
@@ -118,19 +118,19 @@ La alegerea explicită a operatorului, `AsociereForm` primește un al doilea con
 
 Funcția pură `AsociereStare.DinPropunere` (`KBot.Domain`, fără fereastră) adaptează propunerea la tabloul existent. Indicele rândului ocupă `Idrh` ca reper stabil pentru dicționarele editorului și revine la salvare ca `rand_istoric`, fără a deveni cheie. Tabloul provine exclusiv din propunere sau din bază; cele două numerotări nu se amestecă.
 
-Sugestia automată a serverului devine **poziția de plecare**, nu o hotărâre luată în locul omului: se vede pe ecran, iar apăsarea butonului o confirmă (F18 — trecerea automată poate fi și greșită, nu doar incompletă). Serverul ignoră complet automatul în faza a doua, deci ce nu pleacă din formular nu se aplică.
+Sugestia serverului este poziția inițială vizibilă, confirmată prin buton (F18: automatul poate greși, pe lângă a fi incomplet). Faza doi ignoră automatul și aplică numai ce trimite formularul.
 
 #### 2. Butonul de descărcare merge acum până la capăt
 
-`MainForm.Tree_RightIconClicked` ▸ `DuLaIngestieAsync`: descărcare ▸ `PrelucrareCoordinator.CerePropunereAsync` (care deschide singur dialogul de alegere a unității ori de câte ori serverul cere, până la `MaxRunde`) ▸ `AsociereForm` în mod propunere ▸ salvare. După o salvare reușită se recitesc arborele (steagurile `Are*` se schimbă: apar istoricul, recepțiile, plățile) și vederea deschisă.
+`MainForm.Tree_RightIconClicked` → `DuLaIngestieAsync`: descărcare → `PrelucrareCoordinator.CerePropunereAsync` (dialogul de unitate repetat la cererea serverului, până la MaxRunde) → `AsociereForm` propunere → salvare. La succes recitește arborele (Are* pentru istoric/recepții/plăți) și vederea activă.
 
-Pachetul se ține în viață între faze și se **retrimite neschimbat**, împreună cu alegerile de unitate deja făcute: `rand_istoric` e un indice în payload, nu o cheie, iar bifa «nu mă mai întreba» s-a scris înăuntrul tranzacției propunerii și s-a derulat înapoi odată cu ea.
+Pachetul se păstrează/retrimite neschimbat între faze, cu alegerile unității: rand_istoric este indice în payload, iar „nu mă mai întreba” s-a derulat înapoi în tranzacția propunerii.
 
-**Și faza a doua are buclă de întrebări** (`PrelucrareCoordinator.SalveazaAsync`, nou). Prins la recitire, înainte de a rula ceva: `SalveazaAsociereaAsync` poate întoarce un răspuns cu `Stare = AlegereUnitate`, fiindcă pașii rulează DIN NOU la salvare și o clasificație nouă apărută între faze cere iar o alegere. Prima variantă a formularului chema clientul direct și ar fi luat acel răspuns drept succes — **exact minciuna pentru care s-a retras `TrimiteAsync`**, reintrodusă la doi pași distanță. Acum salvarea trece prin coordonator, unde bucla există deja.
+**Faza doi repetă alegerea unității** prin noul `PrelucrareCoordinator.SalveazaAsync`: `SalveazaAsociereaAsync` poate întoarce Stare = AlegereUnitate dacă o clasificație apărută între faze o cere la rerularea pașilor. Găsit prin recitire înaintea execuției: apelul direct din prima variantă a formularului ar fi tratat răspunsul drept succes, ca TrimiteAsync retras. Coordonatorul păstrează bucla existentă.
 
 #### 3. Mesajele spun ce se pierde
 
-Închiderea în mod propunere nu mai folosește formula obișnuită: faza întâi a derulat tranzacția înapoi, deci fără salvare **nu rămâne în bază nici recepțiile, nici plățile, nici istoricul**. Iar cât timp mai sunt rânduri neașezate, mesajul le numără, în loc ca operatorul să afle din eroarea serverului de ce nu i se aprinde butonul.
+Închiderea propunerii explică pierderea întregii descărcări: rollbackul fazei întâi nu lasă recepții/plăți/istoric în bază. Mesajul numără rândurile neașezate, explicând butonul inactiv înaintea erorii serverului.
 
 ### Fișiere atinse
 
@@ -156,7 +156,7 @@ Pachetul se ține în viață între faze și se **retrimite neschimbat**, împr
 ### Ce rămâne neverificat / amânat
 
 - ⚠⚠ **Nimic din felia asta n-a atins un server viu și nu s-a văzut pe ecran.** Formularul în modul propunere n-a fost desenat nici cu `DrawToBitmap`, iar drumul întreg — descărcare ▸ propunere ▸ așezare ▸ salvare — n-a rulat niciodată cap-coadă. Calculatorul cu FOREXE și cu tokenul e altul; aici nu se poate reproduce.
-- ⚠ **RECONSTITUIREA nu se poate cere din formular.** `ActiuneAsociere.Reconstituire` și `receptie_noua` există în amândouă contractele, dar editorul nu a avut niciodată o comandă care să le producă — nici înainte, în modul de oricând. În modul propunere lipsa doare mai tare: un instantaneu al unei recepții create ȘI șterse înainte ca K-BOT să fi descărcat vreodată angajamentul (F26) nu are unde fi așezat, iar «ignorat» ar fi un răspuns greșit (scrie `Sters = 1`). Până la o comandă de «recepție nouă», un asemenea rând **blochează salvarea**. Nu s-a introdus aici ca să nu se adauge o formă nouă de UI nevăzută pe ecran în aceeași felie.
+- ⚠ **Reconstituire fără comandă UI:** `ActiuneAsociere.Reconstituire`/`receptie_noua` există în ambele contracte, dar editorul nu le producea nici în modul oricând. F26 (recepție creată/ștearsă înaintea primei descărcări) nu are țintă; ignorarea ar scrie greșit Sters = 1, deci rândul blochează salvarea până la comanda recepție nouă. Amânată pentru a nu adăuga încă o formă de UI nevăzută în aceeași felie.
 - ⚠ **Plățile lipsesc din tabloul de propunere** (propunerea nu le poartă), deci reperele de plată nu apar pe benzi și în grafic în timpul ingestiei. Apar după salvare, în editorul de oricând. Dacă se dovedește că operatorului îi trebuie acolo, e o adăugare pe rută, nu o rescriere aici.
 - ⚠ **`sql/0048_alegeri_unitate.sql`**: operatorul confirmă că e aplicată pe server, și în sursă și în baza de lucru. Nu s-a verificat din repo — nu s-a atins nicio bază de aici.
 - După salvare formularul NU se reîncarcă în modul de oricând: propunerea e consumată, iar o a doua citire ar cere celălalt mod. Corecturile se fac redeschizând editorul de oricând.

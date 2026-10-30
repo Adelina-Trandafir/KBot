@@ -9,7 +9,7 @@
 
 O rulare pe `000_DEMO` s-a oprit cu `1452` scriind `FX_DDF_REV` (IDREV 41 ▸ IDDF 30). Datele Access sunt corecte și relațiile din Access sunt intacte. `FX_DDF` raporta *citite 18, scrise 4, altă unitate 14*.
 
-Cele două cifre spun singure toată felia: fișierul viu are **nouă** rânduri `FX_DDF`, nu optsprezece. Optsprezece = nouă citite **de două ori**, o dată pentru fiecare unitate bifată. Și cele paisprezece „ale altei unități" erau rânduri picate pe `FX_DDF.IdUnitate`, coloană pe care operatorul a declarat-o relicvă — IDDF 30 era printre ele, iar copilul lui nu a fost oprit fiindcă `FX_DDF_REV` n-are `IdUnitate`, deci depindea în întregime de o poartă care era **inertă**.
+Fișierul viu are **9 FX_DDF**, citite de două ori pentru cele două unități bifate. Cele 14 „altă unitate” picau pe IdUnitate, relicvă declarată de operator; IDDF 30 era între ele. Copilul FX_DDF_REV, fără IdUnitate, depindea exclusiv de poarta inertă și nu fusese oprit.
 
 ### Cele două defecte, amândouă confirmate în sursă
 
@@ -26,7 +26,7 @@ If link.ChildColumnIsNullable Then
 End If
 ```
 
-Incrementa contorul și mergea mai departe. `BuildValues` n-are ramură de orfan — `ForcedNull` e o mapare **declarată**, nu o decizie de orfan — deci nimic nu scria vreodată `DBNull` în coloana aceea, iar valoarea orfană pleca la server neatinsă. Decizia operatorului din 22.08 („coloană nulabilă ▸ rândul se scrie cu acea coloană golită") **nu se întâmplase niciodată**, iar numărul raportat era o minciună.
+Contorul creștea fără scriere DBNull: BuildValues nu trata orfanul, iar ForcedNull era mapare declarată, nu decizie de orfan. Valoarea pleca neatinsă, deși raportul afirma golirea coloanei nulabile cerută de operator la 22.08.
 
 ### Ce s-a schimbat
 
@@ -34,7 +34,7 @@ Incrementa contorul și mergea mai departe. `BuildValues` n-are ramură de orfan
 
 Unitatea DDF este în `FX_DDF_REV_SA`, iar cea ORD în `FX_ORD_TBL`, scrise după antete din cauza FK. `WrittenKeys`, umplut în timpul scrierii, nu poate decide selecția antetului; aceasta se calculează o dată, prin citire separată Access, apoi se refolosește neschimbată.
 
-Săgeata proprietății s-a **întors**. 0045-07 o avea invers: SA întreba `FX_DDF` al cui e. Citirea aia a murit cu D1 — `FX_DDF.IdUnitate` e relicvă, nu se citește niciodată, și **un IDDF poate servi mai multe unități**, deci n-ar fi putut răspunde cinstit nici acolo unde era completată.
+**Proprietate inversată față de 0045-07:** SA nu mai întreabă FX_DDF al cui este. D1 exclude lectura relicvei FX_DDF.IdUnitate; un IDDF poate servi mai multe unități, deci nici valoarea completată nu putea răspunde corect.
 
 | ce citește | ce construiește |
 |---|---|
@@ -45,11 +45,11 @@ Săgeata proprietății s-a **întors**. 0045-07 o avea invers: SA întreba `FX_
 
 Citirea folosește coloane numite prin noul `AccessSchema.OpenKeyReader`, evitând `SELECT *` și Memo-ul cu XML semnat din `FX_Extrase_F` pentru numai 72 de nume.
 
-`Decide(map, reader, passUnits)` e **singura** funcție întrebată, identic, de verificator și de scriitor. Familiile rutate stau într-un tabel scurt și explicit (`Routes`) — care coloană numește subarborele e un fapt despre **fișierul Access**, iar cheile țintei au fost redenumite pe dedesubt (`IDORD` ▸ `IDORDP`), deci nu se poate deduce din cheile străine. Restul celor șaptesprezece tabele `FX_*` cad pe regula generică.
+`Decide(map, reader, passUnits)` servește identic verificatorul/scriitorul. Tabelul explicit Routes numește subarborele prin coloana Access, fără deducere din FK țintă redenumite (IDORD → IDORDP). Celelalte 17 tabele FX_* folosesc regula generică.
 
 #### Bucla pe unități a dispărut din `WriteTable` (D4)
 
-O trecere pe **fișier**, nu pe unitate. Unsprezece din treisprezece rânduri `cai` numesc ACELAȘI `FX_2026.accdb`, deci bucla însemna citirea aceluiași fișier o dată pentru fiecare unitate bifată. Întrebarea a devenit **apartenența la mulțimea selectată**, pusă o dată pe rând. Numărătoarea dublă a lui `RowsWritten`, lăsată deschisă de 0045-07, dispare odată cu a doua trecere.
+**O trecere/fișier:** 11/13 rânduri cai indică același FX_2026.accdb, anterior recitit pentru fiecare unitate bifată. Apartenența la mulțimea selectată se decide o dată/rând; dispare și dubla RowsWritten rămasă din 0045-07.
 
 **Nomenclatoarele NU se grupează**, deliberat. Fiecare unitate are propriul `baza2026.accdb`
 (verificat pe registrul viu: treisprezece unități, treisprezece căi distincte, niciuna comună), iar rândurile alea n-au deloc `IdUnitate` — **fișierul E unitatea**. Dacă două rânduri `cai` ar arăta vreodată spre UN singur fișier de nomenclatoare, gruparea le-ar lăsa fără unitate și ar opri rularea, unde scrierea acelorași clasificații o dată per unitate e o citire apărabilă și e comportamentul tuturor feliilor de până acum. Negruparea nu costă nimic — căile sunt oricum distincte — și refuză să transforme o formă neprobată într-un refuz.
@@ -64,7 +64,7 @@ părintele altuia din același set, cheia pe care o va înregistra trebuie să f
 
 #### `ParentsTravelled` chiar golește acum (D14)
 
-Pune `DBNull` în dicționarul de valori al rândului înainte să meargă mai departe, deci `ValuesNulled` nu mai minte. De asta a primit `values` ca parametru. Sub D5 niciun rând DDF sau ORD nu ajunge pe calea asta — subarborii lor rămân în urmă întregi — deci reparația servește celelalte familii (`FX_Rezervari.IDREV` și restul).
+ParentsTravelled primește values și pune DBNull în dicționar înainte de continuare, făcând ValuesNulled real. Sub D5, subarborii DDF/ORD rămân integral în urmă; golirea servește celorlalte familii, inclusiv FX_Rezervari.IDREV.
 
 #### Comentariile răsturnate, rescrise
 
@@ -190,7 +190,7 @@ Dim raw = reader.ValueOrMissing(link.AccessColumn)
 If _written.Contains(link.ParentTable, raw) Then Continue For
 ```
 
-Pe capătul celălalt, `WrittenKeys` pentru `Clasificatii` ține **id-urile atribuite de MariaDB** (`RecordAssignedId` ▸ `_written.Add(map.TargetTable, assigned)`), adică `1..101` pe o bază goală. Coloana Access `IdClsf` ține id-ul Access — `92, 123, 128, 138, 143, 144, 145, 146, 154, 158` pe angajamentul din sesizare. Comparația întreba, așadar, **„id-ul Access 123 se află printre id-urile atribuite?"** și răspundea din întâmplare: adevărat pentru orice valoare care nimerea în `1..101`, fals pentru restul.
+`WrittenKeys` Clasificatii conține ID-uri MariaDB atribuite prin `RecordAssignedId` → `_written.Add(map.TargetTable, assigned)`, 1..101 pe baza goală. Access IdClsf pe angajamentul sesizat: 92, 123, 128, 138, 143, 144, 145, 146, 154, 158. Poarta compara aceste două domenii: adevărat întâmplător pentru ID Access în 1..101, fals în rest.
 
 Se verifică pe cifre, exact:
 
@@ -201,9 +201,9 @@ Se verifică pe cifre, exact:
 | `FX_ORD_TBL` | acolo `IdClsf` e nulabil ▸ rândul se scrie, dar **golit**: 383 din 461 de rânduri au ajuns pe server **fără clasificație**. 383 + 461 de `IdPartener` (`ForcedNull`, declarat) = **844**, chiar „valori golite" din jurnal |
 | `Parteneri_Coduri` | `ParteneriAng.IdPartener` din Access ține `7605+`, id-uri ale serverului vechi, iar `Parteneri` are atribuite `1..291` ▸ 31 din 36 cad |
 
-Rezoluția în sine **funcționase tot timpul**. Rândul care a trecut poartă `IdClsfAcc = 92, IdClsf = 51`, iar 51 e într-adevăr al 51-lea `Clasificatii` scris (47 pentru unitatea 75, apoi `79 ▸ 48`, `84 ▸ 49`, `90 ▸ 50`, `92 ▸ 51` pentru unitatea 76). `ClasificatiiMap` și `ParteneriMap` au dat mereu răspunsul bun, iar `BuildValues` îl punea în `values`. **Numai poarta se uita în altă parte** — și îl arunca.
+**Rezoluția era corectă:** rândul trecut are IdClsfAcc = 92, IdClsf = 51, al 51-lea scris: 47 pentru unitatea 75, apoi 79→48, 84→49, 90→50, 92→51 pentru 76. ClasificatiiMap/ParteneriMap și BuildValues puneau valoarea bună în values; numai poarta o ignora și respingea rândul.
 
-Aceeași nepotrivire stătea ascunsă în spatele fiecărei redenumiri: `FX_ORD_TBL.IDORDP` e numele ȚINTEI pentru Access `IDORD`, iar Access are **propria** coloană `IDORDP` cu id-urile serverului vechi (117..123). Comentariul de pe `ParentLink.AccessColumn` susținea că „numele copilului e și numele coloanei Access pentru orice legătură pe care filtrul o poate folosi, iar cititorul răspunde «nu există coloana» pentru rest". Nu răspunde: **există**, și înseamnă altceva.
+La redenumiri, FX_ORD_TBL.IDORDP țintă vine din IDORD Access; sursa are și propria IDORDP cu ID-uri server vechi 117..123. Comentariul ParentLink.AccessColumn presupunea nume copil = nume Access ori coloană absentă. Coloana exista, cu alt sens.
 
 ### Leacul
 
@@ -214,9 +214,9 @@ Dim outgoing As Object = Nothing
 If Not values.TryGetValue(link.ChildColumn, outgoing) Then Continue For
 ```
 
-`values` E rândul așa cum va fi scris, iar `RecordPrimaryKey` umple `WrittenKeys` **din același dicționar** — deci comparația e singura citire în care cele două capete înseamnă același lucru. Parametrul `reader` a dispărut din semnătură: funcția nu mai are de unde să citească greșit.
+`values` conține rândul de scris și alimentează WrittenKeys prin RecordPrimaryKey, unificând sensul comparației. Parametrul reader dispare, eliminând lectura greșită posibilă.
 
-O legătură a cărei coloană nu se scrie deloc nu trimite niciun id și deci **nu poate atârna în gol** — se sare peste ea, nu se ghicește. Dacă acea coloană ar fi `NOT NULL` fără implicit, MariaDB oprește tranzacția pe față, ceea ce e răspunsul corect.
+Coloana nescrisă nu trimite ID, deci legătura se omite fără presupuneri. Pentru NOT NULL fără implicit, MariaDB oprește explicit tranzacția.
 
 `ParentLink.AccessColumn` s-a redenumit `ChildColumn` (era deja expusă și așa, ca proprietate derivată). E un nume de ȚINTĂ și nimic altceva.
 

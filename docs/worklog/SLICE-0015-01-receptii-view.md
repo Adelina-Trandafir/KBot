@@ -14,24 +14,24 @@ Reunire documentară D001-26. 03 înlocuiește arborele recepție→antet cu lun
 
 ### Ce s-a schimbat și de ce
 
-`MainForm.CreateView("receptii")` întorcea `New PlaceholderView(key, "Recepții")`. Acum întoarce un `ReceptiiView` real — **a treia dintre cele nouă vederi** care nu mai e un placeholder. Structura oglindește `frmFX_MAIN_REC`: un **master/detail** cu un arbore de recepții pe **2 niveluri** la stânga (rădăcină = recepția `R`/`IDRR`, nod = antetul `H`/`IDRH`) și o grilă continuă (LISTA) la dreapta cu detaliul pe clasificații al antetului selectat.
+`MainForm.CreateView("receptii")` înlocuiește `New PlaceholderView(key, "Recepții")` cu `ReceptiiView`, a treia vedere reală din nouă, după `frmFX_MAIN_REC`: arbore stânga R/IDRR → H/IDRH, LISTA dreapta cu detaliul clasificațiilor antetului selectat.
 
 Construit ca Rezervări (0014): un singur endpoint cititor brut, `WithReauth(Of T)` + stale-guard pe client, grila = `KBotDataView` read-only, arborele = `AdvancedTreeControl`, iconițe GDI tematizabile (nu resurse binare).
 
 #### Decizii cheie (din sursa Access, nu ghicite)
 
-- **Arbore 2 niveluri, NU 3.** `qFX_MAIN_REC_TREE` = `R INNER JOIN H ON IDRR`, coloane R+H. În `frmFX_MAIN_REC.Show_Receptii` linia care ar umple frunzele pe clsf (`AggregateRow nodeAgg, Mid(RC!clsf,7), …`) e **comentată**, împreună cu acumularea `valAsoc`. Deci frunzele pe clsf și tabelele-tooltip de nod/frunză sunt dormante — replicăm arborele viu pe 2 niveluri. Nicio frunză pe clsf.
-- **Detaliul clsf trăiește în LISTA, nu în arbore** (`qFX_MAIN_REC_LISTA_IND`): un `UNION ALL` de un rând-total sintetic (`IDR=-1`, `Valoare = Sum(FX_Receptii.DIF)` pe antet) + rânduri per clsf (`Sum(Valoare)` grupat pe clsf, cu `FX_Indicatori.NrCrt` + eticheta clasificației). LISTA e condusă de **selecția unui antet**; pe rădăcină se **golește** grila (Access conduce LISTA doar la nivel de antet — `mcTree_Click` cu `IDRH=-1`).
+- **Arbore R → H**, ca `qFX_MAIN_REC_TREE` (`R INNER JOIN H ON IDRR`). În `frmFX_MAIN_REC.Show_Receptii`, `AggregateRow nodeAgg, Mid(RC!clsf,7), …` și acumularea `valAsoc` sunt comentate: fără frunze clsf sau tabele-tooltip de nod/frunză, dormante în sursă.
+- **LISTA** (`qFX_MAIN_REC_LISTA_IND`): `UNION ALL` între total sintetic (`IDR=-1`, `Valoare = Sum(FX_Receptii.DIF)` pe antet) și `Sum(Valoare)` per clsf, cu `FX_Indicatori.NrCrt`/eticheta clasificației. Selecția H o umple; rădăcina o golește (`mcTree_Click`, `IDRH=-1`), ca Access.
 - **Iconița rădăcinii reflectă starea** (finding 5): `Incarcat` → „sus", altfel `Preluat` → „jos", altfel „neutru" (Access `REV_SUS`/`REV_JOS`/`REV_NOT`). Anteturile n-au iconiță.
-- **Clasificația — același drum ca Sumar 0011-03**, NU se reghicește: prin `FX_Indicatori` (`LEFT JOIN` pe `CodAI`), `Clsf` prin **subinterogare scalară `LIMIT 1`** cheiată pe `I.IdClsf` (= id Access) + `I.IdUnitate` (nomenclatorul are duplicate reale → un join ar fan-out-a). `NrCrt` = `FX_Indicatori.NrCrt`.
+- **Clasificația, drumul 0011-03:** `LEFT JOIN FX_Indicatori` pe `CodAI`, Clsf prin scalară `LIMIT 1` pe `I.IdClsf` (ID Access) + `I.IdUnitate`. Duplicate reale în nomenclator exclud joinul cu fan-out; `NrCrt = FX_Indicatori.NrCrt`.
 - **`LEFT JOIN FX_Receptii`** (nu INNER): un antet fără linii nu are voie să dispară din arbore (qFX_MAIN_REC_TREE nu depinde de FX_Receptii). Vine cu un rând având `idr` NULL; clientul îl ține în arbore, iar grila lui arată doar randul-total.
-- **Un singur endpoint** întoarce `receptii` + `plati` într-un răspuns; clientul modelează arborele, LISTA (și, în 0015-02, tooltip-ul). `plati` (`qFX_MAIN_REC_TT_PLATI`: `Data_plata, Suma WHERE CodAngajament=cod`, fără alt filtru — confirmat în export) e trimis deja din 0015-01 ca jumătatea de client să fie **un singur apel**.
+- **Un endpoint** livrează `receptii` + `plati` pentru arbore/LISTA și viitorul tooltip 0015-02. `qFX_MAIN_REC_TT_PLATI`: `Data_plata, Suma WHERE CodAngajament=cod`, fără alte filtre, confirmat în export; plățile sunt incluse deja pentru un singur apel client.
 
 #### Devieri față de schița planului (documentate)
 
 - **Chei de fir snake_case**, nu PascalCase-ul din schița JSON a planului — pentru consistență cu `/sumar` și `/rezervari` (același `PropertyNamingPolicy=Nothing`, „snake_case se oprește la fir").
-- **Coloana „Descriere" a grilei = Descrierea ANTETULUI** (`FX_Receptii_H.Descriere`), „Toți indicatorii" pe randul-total. Planul spunea vag „Descriere from the indicator"; sursa citată (`qFX_MAIN_REC_LISTA_IND`: `Nz([HH]![Descriere],'Toți indicatorii')`, HH = FX_Receptii_H) arată clar că e descrierea antetului. Am purtat `descriere_h` în rând.
-- **Am adăugat `sters_h` în rând** (antetul), pentru cumulul DIFH din tooltip-ul 0015-02 (`qFX_MAIN_REC_TT_DIFH` filtrează `Sters=False`, deși arborele NU filtrează Sters). E o coloană brută, nu pre-modelare; se trimite din 0015-01 ca 0015-02 să nu ceară alt câmp.
+- **Descriere = antet** (`FX_Receptii_H.Descriere`), „Toți indicatorii” la total. Planul vag „Descriere from the indicator” este infirmat de `qFX_MAIN_REC_LISTA_IND`: `Nz([HH]![Descriere],'Toți indicatorii')`, HH = FX_Receptii_H. Rândul transmite `descriere_h`.
+- **`sters_h` brut** vine din 0015-01 pentru cumulul DIFH al tooltipului 02: `qFX_MAIN_REC_TT_DIFH` filtrează `Sters=False`, spre deosebire de arbore. Evită adăugarea unui câmp în pasul următor, fără pre-modelare.
 - **Randul-total al grilei apare PRIMUL** (decizie blocată a planului), deși Access îl împinge la coadă cu trucul `Nz(HH.DataH, #12/31/2100#)`. Restul grupurilor: pe NrCrt (DataH e constant pe un antet).
 
 ### Fișiere atinse
@@ -78,7 +78,7 @@ Construit ca Rezervări (0014): un singur endpoint cititor brut, `WithReauth(Of 
 
 ### Ce s-a schimbat și de ce
 
-Am adăugat **tooltip-ul de recepție** pe rădăcinile arborelui (`ReceptiiView`), oglindind `NewRootPlatiTooltip` din `frmFX_MAIN_REC`. E singura agregare vie din formul Access (frunzele pe clsf și tabelele-tooltip de nod/frunză sunt cod comentat — vezi 0015-01).
+Tooltipul pe rădăcinile `ReceptiiView` reproduce `NewRootPlatiTooltip` din `frmFX_MAIN_REC`, unica agregare vie; frunzele clsf/tooltipurile nodurilor rămân dormante, ca în [01](#slice-0015-01).
 
 Per recepție (`IDRR`), în ordinea `DataR`, un tabel cu patru rânduri:
 
@@ -91,14 +91,14 @@ Per recepție (`IDRR`), în ordinea `DataR`, un tabel cu patru rânduri:
 
 #### Fidelitate față de sursă (finding 3, verificat în export)
 
-- **`difhCum`**: `DIFH` e per antet, deci se însumează **anteturile DISTINCTE** ale recepției (o dată per `IDRH`), apoi se cumulează pe recepții în ordinea `DataR`. **Anteturile șterse sunt EXCLUSE** — `qFX_MAIN_REC_TT_DIFH` filtrează `Sters=False`, deși arborele (qFX_MAIN_REC_TREE) NU filtrează Sters. De aceea `sters_h` a fost purtat în rând din 0015-01.
+- **`difhCum`**: `Sum(DIFH)` pe anteturi DISTINCTE (`IDRH`) ale recepției, apoi cumul după `DataR`. Exclude anteturile șterse (`qFX_MAIN_REC_TT_DIFH`, `Sters=False`), fără filtrarea lor în arbore; acesta este motivul câmpului `sters_h` din 01.
 - **`platiCum`**: cumulativ, **fără limită inferioară** — toate plățile cu `DataPlata ≤ MaxDataH` al recepției curente (`MaxDataH` = max `DataH` pe anteturile recepției). Sursa plăților (`qFX_MAIN_REC_TT_PLATI`) nu filtrează nimic în plus.
 - **`valAsoc` NU e folosit** — linia care l-ar acumula (`sAsocR`) e comentată în Access; `NewRootPlatiTooltip` are doar patru rânduri și ignoră `asocCum`.
 - Anteturile și grila NU primesc tooltip în această pasă (tabelele de nod/frunză sunt dormante în Access).
 
 #### Cum e randat
 
-Tooltip-ul se construiește ca **XML `<table>`** (același contract pe care Access îl emitea cu `clsTT_Table.ToXml`) și se pune pe `TreeItem.Tooltip`. La hover, `AdvancedTreeControl` detectează `IsTableXml` și îl randează cu `TooltipTableParser` + `TooltipPopup` (header „Data recepție / Valoare" + 4 rânduri). Culoarea diferenței = `#CC0000` / `#0033CC` (roșu/ albastru), format acceptat de `AdvancedTreeControl.ParseColor`. Textul e XML-escapat.
+XML `<table>` pe `TreeItem.Tooltip`, ca `clsTT_Table.ToXml` Access; la hover `AdvancedTreeControl` detectează `IsTableXml` și randează prin `TooltipTableParser`/`TooltipPopup`, header „Data recepție / Valoare” și 4 rânduri. Diferență `#CC0000`/`#0033CC`, acceptate de `AdvancedTreeControl.ParseColor`; text XML-escapat.
 
 Nu există endpoint nou: totul se calculează din `_rows` + `_plati` deja încărcate. Reconstrucția pe schimbarea temei (`ApplyTheme` → `BuildTree` → `ComputeRootTooltips`) reface și tooltip-urile.
 
@@ -142,15 +142,15 @@ Operatorul a cerut trei modificări după ce a văzut structura din 0015-01/02:
 
 #### Decizie explicită (aprobată de operator): coloana „Descriere" = Denumirea clasificației
 
-Pentru că grila agregă acum peste mai multe anteturi (a căror descriere diferă), coloana „Descriere" arată **`Clasificatii.Denumire`** (bine definită per clsf la orice nivel), nu descrierea unui antet. Am adăugat `denumire` la endpoint (aceeași subinterogare scalară ca la Clsf — drumul 0011-03). `descriere_h` (antetul) rămâne pe fir ca rând brut, dar grila nu îl mai folosește.
+Agregarea anteturilor cu descrieri diferite cere **`Clasificatii.Denumire`** per clsf, la orice nivel. Endpointul adaugă `denumire` prin aceeași scalară ca Clsf (0011-03); `descriere_h` rămâne brut pe fir, fără folosire în grilă.
 
 #### Semantica tooltip-ului (per lună, cronologic pe DataR)
 
-- `difhCum` = sumă rulantă a `Sum(DIFH)` pe recepție (anteturi DISTINCTE, EXCLUZÂND cele șterse — `qFX_MAIN_REC_TT_DIFH` filtrează `Sters=False`). **Recepția** = cumul până la ea; **luna** = cumul până la ULTIMA recepție a lunii.
+- `difhCum` păstrează cumulul anteturilor DISTINCTE/neșterse din [02](#slice-0015-02), cronologic pe `DataR`: recepția până la ea, luna până la ultima ei recepție.
 - `platiCum(lună M)` = `Sum(Suma)` peste plăți cu `DataPlata < DataR`-ul primei recepții din luna următoare (barieră exclusivă). Toate recepțiile aceleiași luni împart aceeași fereastră. Ultima lună → toate plățile.
 - `Diferență = difhCum − platiCum`, roșu dacă <0, albastru dacă >0. Randat ca `<table>` XML pe `TreeItem.Tooltip` (folderul de lună are eticheta „Lună"/„Ianuarie/2026", recepția „Data recepție"/dată).
 
-**Efectul fix-ului:** înainte, o plată din 25.01 (după antetul din 19.01) nu se număra la recepția din Ianuarie (fereastra se oprea la `MaxDataH`), deci Diferența arăta ~valoarea recepției. Acum acea plată intră în fereastra lunii Ianuarie (e înainte de prima recepție din Februarie), deci Diferența reflectă golul real recepții−plăți.
+**Exemplu:** plata 25.01, după antetul 19.01, era exclusă de `MaxDataH`, lăsând diferența ~valoarea recepției. Fereastra până la prima recepție din Februarie o include acum în Ianuarie, reflectând diferența reală recepții−plăți.
 
 ### Fișiere atinse
 

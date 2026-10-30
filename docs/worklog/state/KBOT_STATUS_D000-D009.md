@@ -309,9 +309,12 @@ Continuare după D002-99, în același domeniu. Stare comună: aplicat local; nu
 | D003-75 | Tabel comun al cheilor și explicații Sumar scurtate; etape păstrate. | [D003-75](../SLICE-D003-01-continuare-documentara.md#slice-d003-75) |
 | D003-76 | Explicații Designer/NavList scurtate, cu cicluri și probe distincte. | [D003-76](../SLICE-D003-01-continuare-documentara.md#slice-d003-76) |
 | D003-77 | Explicații istorice condensate; inventar Calendar unic, condiții și probe păstrate. | [D003-77](../SLICE-D003-01-continuare-documentara.md#slice-d003-77) |
+| D003-78 | Redundanțe și explicații tehnice condensate, cu stările istorice păstrate. | [D003-78](../SLICE-D003-01-continuare-documentara.md#slice-d003-78) |
 
 ### Continuare D003
 
-Progres curent D003: [D003-77](../SLICE-D003-01-continuare-documentara.md#slice-d003-77); bilanț propriu D003-31…77: 1146 rânduri mai puțin net, cu jurnal/registre/index și SLICELESS-rezervari-reanaliza incluse. Checkpointul D003-30 rămâne istoric. Stage selectiv final; curățarea proiectului nu este terminată; fără commit/push.
+Progres curent D003: [D003-78](../SLICE-D003-01-continuare-documentara.md#slice-d003-78); bilanț propriu D003-31…78: 1139 rânduri mai puțin net, cu jurnal/registre/index și SLICELESS-rezervari-reanaliza incluse. Checkpointul D003-30 rămâne istoric. Stage selectiv final; curățarea proiectului nu este terminată; fără commit/push.
 
-Următoarea subfelie D003: **SLICE-D003-78**. Următorul număr principal documentar liber: **D004**. Registrul numeric K-BOT rămâne neschimbat.
+Următoarea subfelie D003: **SLICE-D003-79**. Următorul număr principal documentar liber: **D004**. Registrul numeric K-BOT rămâne neschimbat.
+
+D003-78, față de HEAD 52a3d31b: economie netă de 50677 caractere; 7 rânduri în plus cu evidența. Index gol la pornire, stage final selectiv; fără commit/push, teste/builduri/verificatoare, aplicații sau SQL. Modificările independente rămân în afară.

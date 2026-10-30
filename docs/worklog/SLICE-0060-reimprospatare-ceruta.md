@@ -19,19 +19,19 @@
 
 `AsociereForm.SpuneSiInchide` — o singură cale, folosită de amândouă modurile (propunere și oricând).
 
-**Prin casetă, nu prin banda de mesaje.** Banda trăiește cât fereastra, iar fereastra tocmai se închide: propoziția care spune CE s-a scris (tabelele și cifrele întoarse de server) ar sclipi și ar dispărea. `KBotMessage.Show` o ține pe ecran până când omul apasă și o scrie în `Logs\mesaje_operator.log`, deci nu se pierde nici după aceea.
+**Mesaj prin `KBotMessage.Show`:** banda dispare la închiderea ferestrei; caseta păstrează până la confirmare propoziția cu tabelele/cifrele serverului și o scrie în `Logs\mesaje_operator.log`.
 
-**Închiderea se face DOAR pe drumul reușit.** La eroare fereastra rămâne deschisă cu tot ce a așezat operatorul; altfel un 409 i-ar șterge munca de pe ecran și l-ar trimite să reia descărcarea de la capăt.
+**Închidere numai la succes.** Eroarea păstrează fereastra/munca operatorului; altfel un 409 ar cere reluarea descărcării.
 
 **În modul «oricând», `ReincarcaAsync` rămâne înainte de închidere:** golește `Comenzi()`, astfel încât `AsociereForm_FormClosing` să nu ceară confirmarea pierderii unor schimbări deja salvate.
 
-`TextDupaSalvare` a devenit `Friend Shared`: aceeași propoziție o arată acum și shell-ul, pe drumul fără machetă (§2). Două formulări ale aceluiași lucru l-ar face pe operator să creadă că s-au întâmplat două lucruri diferite.
+`TextDupaSalvare`, acum `Friend Shared`, dă și shell-ului aceeași propoziție pe drumul fără machetă (§2), evitând aparența a două operații diferite.
 
 ## 2. Coșul gol = nicio întrebare (cererea 2)
 
-Înainte de deschidere, `MainForm.DuLaIngestieAsync` folosește noua funcție `Friend Shared AsociereForm.NehotarateDin(instantanee, pozitie, ignorat)`, chemată și de `NehotarateleCount`. Numărătoarea unică previne salvarea tăcută a unui caz care trebuia decis de operator.
+`MainForm.DuLaIngestieAsync` și `NehotarateleCount` folosesc aceeași numărătoare `Friend Shared AsociereForm.NehotarateDin(instantanee, pozitie, ignorat)`, evitând salvarea tăcută a unui caz care cere decizia operatorului.
 
-Zero de așezat ▸ `SalveazaFaraMachetaAsync`: `DeciziiDin` peste ACELEAȘI trei dicționare goale («nicio mutare, niciun ignorat, nicio ștergere pusă de operator» e chiar starea formularului în clipa în care se deschide), apoi `PrelucrareCoordinator.SalveazaAsync`. Nu e o scurtătură pe lângă om: mulțimea de hotărât e goală, deci lista conține exact rândurile pe care serverul însuși le-a așezat în faza întâi. Nu se inventează nicio alegere; se confirmă ce nu era de ales (F18).
+Zero de așezat → `SalveazaFaraMachetaAsync`: `DeciziiDin` folosește aceleași trei dicționare goale de la deschiderea formularului (fără mutare/ignorat/ștergere ale operatorului), apoi `PrelucrareCoordinator.SalveazaAsync`. Se confirmă numai rândurile așezate de server în faza întâi, fără alegere inventată sau ocolirea unei decizii necesare (F18).
 
 Drumul e complet: 409 ALEGERE_UNITATE trece tot prin coordonator, iar o renunțare la alegere întoarce False și **nu** reîncarcă arborele.
 
@@ -39,13 +39,13 @@ Drumul e complet: 409 ALEGERE_UNITATE trece tot prin coordonator, iar o renunța
 
 `LoadTreeAsync(Optional pastreazaSelectia As Boolean = False)` ▸ `PopulateTree(rows, Optional codSelectat As String = Nothing)`.
 
-Codul se citește **înainte** de cerere: `PopulateTree` golește `_currentInfo`, deci după el nu mai există de unde afla ce era selectat. Selecția se pune înapoi la sfârșit, cu tot ce atârnă de ea — poarta vederilor (`ApplyViewGating`), contextul vederii active, fereastra de informații —, adică exact ce face un clic pe nod (`Tree_NodeMouseUp`).
+Codul selectat se citește **înainte** de cerere: `PopulateTree` golește `_currentInfo`. La sfârșit se refac selecția, `ApplyViewGating`, contextul vederii active și fereastra de informații, ca la `Tree_NodeMouseUp`.
 
-`SelectAndReveal`, nu `SelectedNode`: scrisă singură, selecția ar fi reală și INVIZIBILĂ, iar operatorul ar vedea o listă întoarsă la primul rând.
+`SelectAndReveal` restabilește și vizibilitatea selecției; `SelectedNode` singur ar lăsa lista la primul rând, cu nodul selectat invizibil.
 
-Informația nodului se ia din bucla de construcție, **nu** prin `_treeInfos(codSelectat)`: dicționarul e pe comparație exactă, iar potrivirea e fără litere mari/mici, deci o cheie care diferă doar prin caz ar fi aruncat `KeyNotFoundException`.
+Info vine din bucla de construcție, nu `_treeInfos(codSelectat)`: dicționarul este case-sensitive, potrivirea nu, deci diferența de caz ar produce `KeyNotFoundException`.
 
-`DeschideLegaturileReceptiilor` reîncarcă acum arborele cu nodul păstrat în loc să cheme `ReceptiiView.Reincarca()`: o legătură mutată poate aprinde sau stinge steagurile `Are*` ale nodului, iar reîncărcarea arborelui împinge singură contextul nou în vederea deschisă. ⚠ `ReceptiiView.Reincarca` a rămas în cod, dar **nu mai e chemată de nicăieri**; e păstrată pentru simetrie cu `PlatiView` / `RezervariView`, care încă o folosesc.
+`DeschideLegaturileReceptiilor` reîncarcă arborele cu selecția păstrată, propagând steagurile `Are*` schimbate/contextul în vederea activă. `ReceptiiView.Reincarca()` rămâne fără apelant, numai pentru simetrie cu metodele încă folosite din `PlatiView`/`RezervariView`.
 
 ## 4. Macheta de alegere a recepțiilor (cererea 3)
 
@@ -53,17 +53,17 @@ Informația nodului se ia din bucla de construcție, **nu** prin `_treeInfos(cod
 
 **Lista este locală** (`GET /api/forexe/receptii`), deoarece precedă descărcarea. Recepțiile existente doar în FOREXE nu pot apărea în selecție și se descarcă întotdeauna; antetul machetei explică limita.
 
-**Recepția se numește prin DATA ei**, fiindcă exact așa o numește tot restul conductei: `step4b_receptii_prelucrare` potrivește un rând de sarcină utilă cu o recepție stocată pe `DATE(DataR) = %s AND Sters = 0` și ia **primul candidat**, iar felia 0058 o numește operatorului tot prin dată și valoare. De aici singura ciudățenie a machetei: **două recepții din aceeași zi nu se pot deosebi pe fir.** Dacă una e bifată și cealaltă nu, ziua se descarcă ÎNTREAGĂ, iar rândul de jos spune asta cu voce tare (`ZileAmestecate`). Direcția în care se greșește e aleasă: cealaltă ar sări peste o recepție pe care operatorul CHIAR a cerut-o, iar asta n-ar apărea nicăieri — ar arăta exact ca o descărcare reușită.
+**Identitate prin dată**, ca în conductă: `step4b_receptii_prelucrare` caută `DATE(DataR) = %s AND Sters = 0` și ia primul candidat; 0058 arată dată/valoare. Două recepții în aceeași zi sunt indistincte pe fir: dacă bifele diferă, se descarcă întreaga zi și se explică prin `ZileAmestecate`. Alternativa ar omite tăcut o recepție cerută, sub aparența succesului.
 
-**Parametrul de aplicație:** `FeatureSwitches.ReceptiiBifateLaDeschidere`, azi mereu `True`. Comutatorul stă acolo unde stau toate celelalte, cu de ce-ul scris lângă el; când se decide de unde vin cu adevărat, se schimbă implementarea proprietății, nu apelantul.
+**Parametru:** `FeatureSwitches.ReceptiiBifateLaDeschidere`, deocamdată constant `True`, lângă celelalte comutatoare și motivul său. Sursa viitoare se schimbă în proprietate, fără schimbarea apelantului.
 
-**Citirea listei care eșuează NU oprește descărcarea** (`AlegeReceptiileDeSaritAsync`): fără listă nu se poate întreba, iar întrebarea e o economie de timp, nu o condiție — se descarcă tot și se spune de ce pe consolă. Niciodată invers: o sărire tăcută după o citire eșuată ar fi exact hotărârea pe care mașina nu are voie s-o ia. Un angajament fără nicio recepție locală nu deschide nimic.
+**Listă necitită** (`AlegeReceptiileDeSaritAsync`): se descarcă tot și se explică în consolă, selecția fiind doar economie de timp. Fără listă nu se poate omite tăcut o recepție. Fără recepții locale, nu se deschide macheta.
 
 **Renunțarea la machetă e renunțarea la descărcare**, nu o descărcare implicită (`Nothing` ▸ `Return`).
 
 ## 5. Selecția în workflow — și de ce nu e destulă singură
 
-`{{RECEPTII_SARITE}}` = datele nebifate, `zz/ll/aaaa` separate prin virgulă. GOL = nu se sare peste niciuna, adică **exact comportamentul dinainte**. Parametrul se trimite ÎNTOTDEAUNA, chiar gol (`JobBuilder.PuneReceptiileSarite`): un placeholder nesubstituit ar ajunge la `IfVar` ca text literal `{{RECEPTII_SARITE}}`, ceea ce se întâmplă să fie sigur (nu se potrivește cu nicio dată, deci se descarcă tot) — dar din întâmplare.
+`{{RECEPTII_SARITE}}`: date nebifate `zz/ll/aaaa`, separate prin virgulă; gol = nimic sărit, ca anterior. `JobBuilder.PuneReceptiileSarite` îl trimite și gol: literalul nesubstituit ar ajunge la `IfVar` și nu ar potrivi nicio dată, descărcând tot numai întâmplător sigur.
 
 În `.wfl`, în bucla recepțiilor:
 
@@ -78,9 +78,9 @@ Informația nodului se ia din bucla de construcție, **nu** prin `_treeInfos(cod
 </IfVar>
 ```
 
-**Cele patru golirii sunt obligatorii, nu igienă.** `BuildCollectedRow` citește un câmp lipsă din variabila cu ACELAȘI nume, iar `SetVariable` adaugă într-o listă din care se ia ULTIMA valoare — deci fără golire, recepția sărită ar pleca spre server cu **`Detaliu`-ul vecinei ei**. `"[]"` pentru `Detaliu`, nu `""`: serverul cere o listă acolo (`cere_lista`), iar un șir gol e refuzat.
+**Cele patru goliri sunt necesare:** `BuildCollectedRow` ia câmpul lipsă din variabila omonimă, iar lista `SetVariable` oferă ultima valoare; fără golire s-ar trimite `Detaliu` al recepției vecine. `Detaliu = "[]"`, nu `""`: `cere_lista` refuză șirul gol.
 
-**Și tot nu e destul — de aceea taie și clientul.** `WorkflowResultStore.FaraReceptiileSarite` scoate rândurile sărite din `ListaReceptii` înainte de trimitere. Workflow-ul sare peste DETALIU (acolo sunt minutele), dar rândul fusese deja citit de `ScrapeTable` și ar pleca cu suma proaspătă de pe site și cu detaliul gol; serverul ar actualiza atunci antetul (`_R_UPDATE_SUMA_SQL`) fără să-i atingă liniile, adică ar lăsa în bază **o recepție a cărei sumă nu mai dă suma liniilor ei**. Un rând SCOS nu e atins de nimeni: pasul 4b lucrează rând cu rând.
+**Filtrare suplimentară în client:** `WorkflowResultStore.FaraReceptiileSarite` elimină din `ListaReceptii` rândurile sărite înainte de trimitere. Workflowul omite numai detaliul costisitor; rândul `ScrapeTable` ar trimite suma nouă/detaliu gol, iar `_R_UPDATE_SUMA_SQL` ar schimba antetul fără linii, stricând egalitatea. Eliminarea rândului îl lasă neatins în pasul 4b, care procesează rând cu rând.
 
 **Un rând a cărui dată NU se poate citi RĂMÂNE.** «Nu știu care e» nu are voie să devină «sigur nu e bifată».
 
@@ -95,13 +95,13 @@ Două fișiere `.wfl` NOI, compuse din secțiunile fișierului complet — acele
 | `adlop - Receptii Angajament.wfl` | 0 (antet) + 2 (recepții, cu selecție) | butonul din subsolul arborelui de recepții cere recepțiile |
 | `adlop - Rezervari Angajament.wfl` | 0 + 1 (indicatori + buget) + 4 (istoric) | `FX_Rezervari` se scrie pe server **din `FX_Istoric`** (pașii 3c/3d), deci istoricul E sursa rezervărilor |
 
-**Serverul acceptă pachete parțiale fără nicio modificare** — verificat citind `routes/forexe/prelucrare.py`: fiecare tabel se citește cu `tabele.get(...) or []`, deci pasul lui nu scrie nimic; iar pasul 4b are nevoie de indicatori **din BAZĂ** (`read_indicatori`), nu din sarcina utilă. Nicio linie de Python atinsă în felia asta.
+**Pachete parțiale acceptate fără Python modificat:** lectura `routes/forexe/prelucrare.py` arată `tabele.get(...) or []`, deci lipsa tabelului nu scrie; pasul 4b folosește `read_indicatori` din BAZĂ, fără a cere indicatorii în payload.
 
-**Amândouă trec prin ACELEAȘI două faze** ca descărcarea unui nod întreg. Un flux parțial nu are voie să ocolească asta. La recepții istoricul lipsește, deci de obicei nu rămâne nimic de hotărât și salvarea se face singură (§2); la rezervări istoricul proaspăt POATE aduce instantanee de așezat, și atunci macheta se deschide, ca după orice descărcare.
+**Ambele păstrează cele două faze** ale nodului întreg. Recepțiile fără istoric de obicei nu cer decizie și se salvează direct (§2); rezervările cu istoric nou pot avea instantanee de așezat, deschizând macheta ca orice descărcare.
 
-**Pachetele parțiale nu intră în memoria de reutilizare:** `WorkflowResultStore.SalveazaPartial` înlocuiește `SalveazaNod`. Altfel `PachetBunDeRefolosit` le-ar oferi ca descărcări întregi, deși pachetul numai cu recepții nu are indicatori sau istoric, inducând ingestiei absența istoricului. Se păstrează pe disc, cu familia în nume.
+**Fără reutilizarea parțialelor ca nod întreg:** `WorkflowResultStore.SalveazaPartial` înlocuiește `SalveazaNod`; altfel `PachetBunDeRefolosit` ar oferi recepțiile fără indicatori/istoric drept pachet complet, inducând absența istoricului la ingestie. Rămân pe disc, cu familia în nume.
 
-**Cele două butoane erau moarte.** `ReceptiiView` și `RezervariView` aveau iconița din dreapta subsolului cu tot cu eticheta ei («Reîncarcă … de la server»), dar **niciun handler** — exact defectul (1) din felia 0057, pe alt arbore. Acum au `Tree_FooterRightIconClicked` și un `Action(Of String)` primit de la shell; fără el iconița **se stinge**, nu rămâne un buton care nu face nimic.
+**Butoane legate:** `ReceptiiView`/`RezervariView` aveau iconița/eticheta footer dreapta «Reîncarcă … de la server», fără handler, ca defectul (1) din 0057 pe alt arbore. Acum folosesc `Tree_FooterRightIconClicked` și `Action(Of String)` de la shell; fără el iconița se dezactivează.
 
 ---
 

@@ -19,7 +19,7 @@ Operatorul a renunțat («am apăsat pe renunță»), a deschis editorul de oric
 
 > receptiile vechi NU mai vin in macheta de asociere! ele trebuie sa vina TOATE impreuna cu cele noi - nu doar cele noi. si se vor salva DOAR cele modificate sau noi - NU TOATE din nou!
 
-**Sunt două defecte, și amândouă sunt ale tabloului pe care îl trimite faza întâi.** Al doilea îl explică pe primul: dacă pe ecran nu se vede decât ce a adus descărcarea asta, atunci fiecare tragere a operatorului a căzut, prin construcție, pe o recepție nou-nouță — adică exact pe categoria de recepții al cărei număr nu supraviețuiește până la salvare.
+**Două defecte în tabloul fazei întâi:** fără recepțiile vechi vizibile, fiecare plasare cădea pe recepție nouă, exact categoria al cărei număr nu supraviețuiește salvării.
 
 ---
 
@@ -27,17 +27,17 @@ Operatorul a renunțat («am apăsat pe renunță»), a deschis editorul de oric
 
 #### Ce se întâmplă
 
-`step4b_receptii_prelucrare` inserează în `FX_Receptii_R` recepțiile din `ListaReceptii` care nu se potrivesc cu niciun rând existent, și ia `cursor.lastrowid` ca `IDRR`. Faza «propunere» face asta **înăuntrul tranzacției pe care o derulează apoi înapoi, necondiționat** — asta e chiar contractul. Dar:
+`step4b_receptii_prelucrare` inserează recepțiile ListaReceptii fără corespondent în FX_Receptii_R și ia cursor.lastrowid ca IDRR, în tranzacția propunerii derulată necondiționat înapoi. Dar:
 
 > **Contorul `AUTO_INCREMENT` al InnoDB NU se derulează înapoi cu tranzacția.**
 
-Deci recepția care în propunere s-a numit 188 se naște, la salvare, cu alt număr. Decizia care o numea prin `idrr` cade la `_tinta`, cu mesajul de mai sus. Și cade **de fiecare dată** când descărcarea aduce o recepție nouă — nu e un caz-limită, e drumul obișnuit al unei prime descărcări.
+Recepția 188 din propunere primește alt ID la salvare; decizia idrr este respinsă în `_tinta`. Afectează fiecare descărcare cu recepție nouă, inclusiv prima, fără a fi caz-limită.
 
 Fișierul își spunea singur regula, la instantanee, și nu o aplicase și la recepții:
 
 > `citeste_instantanee`: «id-urile atribuite in timpul propunerii dispar la rollback si nu se intorc identice, dar indicele e stabil prin constructie, fiindca AMBELE faze poarta acelasi payload.»
 
-Instantaneele erau ancorate pe `rand_istoric`, indicele rândului în `TabelIstoric` (F24). Recepțiile — nu. Recepțiile *reconstituite* aveau deja tratamentul corect (eticheta `receptie_noua`, fiindcă nu există încă); recepțiile *descărcate* au căzut între cele două cazuri.
+Instantaneele aveau rand_istoric, indice stabil în TabelIstoric (F24); reconstituitele aveau receptie_noua, pentru cele inexistente. Recepțiile descărcate rămăseseră fără ancoră stabilă.
 
 #### Ce s-a schimbat
 
@@ -51,9 +51,9 @@ Instantaneele erau ancorate pe `rand_istoric`, indicele rândului în `TabelIsto
 
 Serverul cere **exact una** dintre cele trei pentru `asociat` / `stergere`, niciuna pentru `ignorat`, doar eticheta pentru `reconstituire` — 400 la orice altă combinație, ca înainte.
 
-`step4b_receptii_prelucrare` întoarce acum și **ancorele**: `{indice în ListaReceptii → IDRR}`, doar pentru rândurile a căror recepție s-a născut în rularea curentă. «Născută acum» se măsoară **pe IDRR, nu pe ramura care a rulat**: două rânduri de payload din aceeași zi se potrivesc pe același rând, deci al doilea poate ajunge, prin potrivire, pe o recepție pe care primul tocmai a inserat-o — și `IDRR`-ul ei e la fel de trecător. E scris ca test.
+`step4b_receptii_prelucrare` întoarce `{indice ListaReceptii → IDRR}` pentru recepțiile născute în rulare. Identificarea se face pe IDRR, fără dependență de ramură: al doilea rând de payload din aceeași zi poate potrivi recepția inserată de primul, la fel de temporară. Caz fixat prin test.
 
-Clientul nu alege: `AsociereForm.DeciziiDin` primește acum **și recepțiile** (parametru OBLIGATORIU, nu opțional — aici s-a greșit o dată, iar un implicit tăcut ar reînvia greșeala) și pune `RandReceptie` dacă recepția are unul, `Idrr` altfel. Niciodată amândouă.
+`AsociereForm.DeciziiDin` primește obligatoriu și recepțiile, fără implicit care ar repeta greșeala; transmite RandReceptie dacă există, altfel Idrr, niciodată ambele.
 
 ---
 
@@ -82,7 +82,7 @@ Propunerea poartă acum, pe lângă rândurile de decis:
 
 **Contextul este complementul mulțimii de decis.** `citeste_instantanee_context` îl calculează pe `IDRH` în Python, astfel încât niciun rând nu lipsește din ambele liste, inclusiv cele al căror istoric nu apare în descărcarea curentă și care înainte produceau doar avertisment.
 
-**Se arată, nu se mișcă.** Toate ies cu `blocat = True`. Nu e o alegere de aspect: acoperirea cerută de `verifica_acoperirea` e exact mulțimea de decis, iar o decizie pentru un rând din afara ei e respinsă cu 400 — și pe drept, altfel fiecare descărcare ar rescrie tăcut legături vechi. Asta e chiar a doua jumătate a cerinței operatorului: **«se vor salva DOAR cele modificate sau noi — NU TOATE din nou!»** Corectarea unei legături vechi rămâne treaba editorului de oricând, care e la un clic distanță și există exact pentru asta.
+**Context inițial blocat:** toate au blocat = True; verifica_acoperirea cere exact mulțimea de decis, iar corecția exterioară ei primește 400. Aceasta păstrează cerința de a salva numai modificate/noi, fără rescrierea tuturor legăturilor vechi; corectarea lor era rezervată editorului de oricând, la un clic.
 
 Motivul afișat spune care dintre cele două cazuri e:
 
@@ -91,7 +91,7 @@ Motivul afișat spune care dintre cele două cazuri e:
 | are legătură (`IDRR`) | «Legătura este deja scrisă. Se corectează în editorul de asociere…» |
 | n-are (`IDRR` gol) | «Rândul lui de istoric nu este în această descărcare…» |
 
-**Formularul n-a avut nevoie de cod nou ca să le arate cum trebuie.** `Blocat` era deja onorat în toate cele șase locuri: lacătul din arbore, culoarea stinsă, stilul marcajului de pe bandă, pornirea tragerii din arbore, pornirea tragerii de pe bandă și meniul contextual.
+**Afișare fără cod nou:** Blocat era respectat în șase locuri: lacăt arbore, culoare stinsă, stil marker bandă, pornire drag din arbore/bandă și meniu contextual.
 
 **Chei negative pentru context.** Rândurile de decis folosesc indicii 0, 1, 2…, iar contextul folosește chei reale `IDRH`; ambele intră în `_pozitie` și dicționarele formularului. `AsociereStare.DinPropunere` reprezintă contextul prin `-IDRH`, evitând coliziunea cheii 5 cu indicele 5. Negarea este reversibilă, deoarece cheia primară Access începe de la 1, și identifică rândurile fără hotărâre.
 
@@ -151,7 +151,7 @@ Slice number: recorded as the second pass of 0056 («Tabloul întreg al propuner
 
 In proposal mode every snapshot written before the download arrived with `blocat = True`, whatever the ordonantari said (`citeste_instantanee_context`, and again in `AsociereStare.DinPropunere`). The reason given at the time: the server asks for a decision on exactly the rows to place, and a decision for any other row was refused.
 
-The pasted log (014_SCSV, AAB2HFBEEAF, run 9) shows what that costs. The download moved the value 1723.58 onto reception 33, where snapshot 63 (398.39, placed earlier) is the newest. The two snapshots to place (61, 62, 1723.58) belong on 33, but with 63 still on it the chain ends on 398.39, F15 refuses the save, and 63 could not be moved from this window. The download could not be saved at all without closing the window and going through the anytime editor first.
+Operator log: 014_SCSV, AAB2HFBEEAF, run 9. Download assigns 1723.58 to reception 33, whose newest snapshot 63 is 398.39. Snapshots 61/62 (1723.58) belong there, but retaining 63 leaves the chain at 398.39 and F15 refuses. Frozen 63 could only be moved after closing this window and opening the anytime editor, blocking the download save.
 
 ### What changed
 

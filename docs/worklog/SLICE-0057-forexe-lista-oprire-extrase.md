@@ -177,45 +177,45 @@ Ce s-a verificat, punct cu punct:
 
 ## 3. Pachet gol ▸ nu se mai atinge serverul
 
-`MainForm.DuLaIngestieAsync` numără acum RÂNDURILE pachetului înainte de orice cerere și, la zero, spune atât operatorului și se oprește. Se numără rândurile, nu tabelele: workflow-ul întoarce cele cinci tabele și când sunt toate goale, deci `Tabele.Count` ar fi 5 pentru un pachet fără nimic în el (aceeași socoteală ca `total` din `DownloadNodeAsync`).
+`MainForm.DuLaIngestieAsync` numără rândurile înaintea oricărei cereri; la zero anunță operatorul și se oprește. Tabele.Count nu este suficient: workflowul întoarce cinci tabele chiar goale, ca în calculul total din DownloadNodeAsync.
 
 ## 4. Orice mesaj arătat operatorului intră și în jurnal
 
-Regulă nouă a casei, cerută de operator. Nu s-a rezolvat cu o linie de `Write` lipită lângă fiecare casetă — primul apel nou scris fără ea ar fi rupt regula în tăcere — ci făcând din cele două lucruri UNUL:
+Regula cerută de operator unește afișarea cu jurnalizarea, evitând omiterea unui Write la un apel viitor:
 
-- **`KBot.Common\Logging\OperatorLog.vb`** (nou) — scriitorul: `<AppDir>\Logs\mesaje_operator.log`, o intrare pe linie, sink terminal ca `GlobalErrorLog` (dacă nu se poate scrie, mesajul pleacă pe `Trace` — o casetă nu are voie să pice fiindcă n-a mers jurnalul).
-- **`KBot.Common\Logging\Parsers\OperatorLogParser.vb`** (nou) + înregistrarea în `LogFileLoader` — fișierul se citește în vizualizatorul de jurnale, cu nivel și sursă. Analizorul stă ÎNAINTEA lui `AdobeHostParser`: amândouă încep cu același marcaj de timp urmat de două spații, iar cel permisiv ar fi înghițit liniile celuilalt.
-- **`KBot.Theming\KBotMessage.vb`** (nou) — poarta unică. Se apelează exact ca `MessageBox.Show` / `MsgBox` și întoarce același lucru. Sursa (`NumeFișier.Metodă`) NU se scrie la apel: vine din `<CallerFilePath>` + `<CallerMemberName>`, deci e compusă la COMPILARE — nu se poate greși, nu costă nimic la rulare și nu depinde de o stivă care poate fi optimizată. În KBot.Theming fiindcă e stratul WinForms cel mai de jos: îl au deja toate proiectele care arată casete, deci regula intră fără nicio referință nouă și fără ciclu. Nu e un control.
+- **`KBot.Common\Logging\OperatorLog.vb`** (nou): o intrare/linie în `<AppDir>\Logs\mesaje_operator.log`, sink terminal ca GlobalErrorLog. Eșecul scrierii merge pe Trace, fără să oprească afișarea casetei.
+- **`KBot.Common\Logging\Parsers\OperatorLogParser.vb`** (nou), înregistrat în LogFileLoader: nivel/sursă în vizualizator. Precede AdobeHostParser, care ar absorbi liniile cu același timestamp urmat de două spații.
+- **`KBot.Theming\KBotMessage.vb`** (nou), poarta unică, nu control: apel/rezultat ca MessageBox.Show/MsgBox. Sursa NumeFișier.Metodă vine din CallerFilePath/CallerMemberName la compilare, fără text manual, cost runtime sau dependență de stiva optimizată. Theming este cel mai jos strat WinForms deja referit de toate proiectele cu mesaje: fără referință nouă/ciclu.
 - **Măturare: 34 de fișiere, toate cele ~190 de apeluri** din `src/` (fără `_reference/`). `KBot.App`, `KBot.Forexe`, `KBot.Migrator` și `KBot.DevHarness` au primit `<Import Include="KBot.Theming" />` la nivel de proiect, ca regula să fie disponibilă în ORICE fișier fără să depindă de lista de `Imports` a fiecăruia.
 
 Trei lucruri ieșite la iveală în măturare:
 
-1. **`KBotMessage` nu are supraîncărcare cu UN singur argument.** Ar fi ambiguă cu `Show(text, caption)` — parametrii de apelant sunt tot `String` și opționali. Regula VB care ar fi decis e prea subțire ca să sprijini pe ea fiecare casetă din aplicație.
+1. **KBotMessage fără supraîncărcare cu un argument:** ar fi ambiguă cu Show(text, caption), deoarece parametrii caller sunt tot String opționali. Regula de rezoluție VB era prea fragilă pentru toate casetele.
 2. **Două casete de depanare uitate în cod**, `AdvancedTreeControl.Popup.vb`: `MessageBox.Show("OnActivated fired")` și `("OnGotFocus fired")` — pe activarea și pe focusul popup-ului de tooltip al arborelui. Nu sunt mesaje pentru operator; **s-au șters**.
-3. **O singură casetă NU trece prin poartă**, și e scris de ce chiar acolo: `WorkflowExecutor.Browser.vb` (promptul UAC pentru politica de certificate) folosește `MessageBox` din **WPF** (`Imports System.Windows`, proiectul are `UseWPF`), cu alte tipuri de argumente. KBot.Theming n-are WPF și n-are de ce să capete doar ca să acopere un apel. Regula e respectată cu mâna: `OperatorLog.Write` chiar înaintea afișării.
+3. **Excepție unică:** promptul UAC pentru politica certificatelor din WorkflowExecutor.Browser.vb folosește MessageBox WPF (Imports System.Windows, UseWPF), cu alte tipuri. Fără adăugarea WPF în KBot.Theming; OperatorLog.Write precede manual afișarea, cu motivul documentat.
 
 Efect colateral util: `LoginForm` chema `Write(...)` NECALIFICAT (mergea fiindcă `GlobalErrorLog` era singurul modul cu `Write`). Cele două apeluri s-au calificat — `GlobalErrorLog.Write` —, ca în restul soluției.
 
 ## 5 + 6. Variabilele executorului se adunau peste rulări — UN singur defect, două simptome
 
-**Ce s-a văzut.** La reîmprospătarea unui angajament, pachetul pleca spre server cu scalarii ca LISTE: `CodAngajament` = `["AAB3TTGSA3T","AAB4SN5DKFN","AAB4SN5DKFN"]` — primul cod fiind al unui angajament descărcat cu totul altă dată. Serverul respingea, corect, `DataAngajament` cu «Data invalidă (așteptat zz.ll.aaaa)». În același pachet apărea și `ListaAngajamente` cu 39 de rânduri, rămasă de la o apăsare pe iconița de listă.
+**Observat la refresh:** CodAngajament devenea lista `["AAB3TTGSA3T","AAB4SN5DKFN","AAB4SN5DKFN"]`, primul cod din altă descărcare. Serverul refuza corect DataAngajament: «Data invalidă (așteptat zz.ll.aaaa)». Pachetul păstra și ListaAngajamente cu 39 rânduri de la iconița listei.
 
-**De ce.** `WorkflowExecutor.SetVariable` **ADAUGĂ** într-o listă per nume, iar `GetAllVariables` împachetează o listă cu mai multe valori într-un `JArray`. Sesiunea FOREXE ține UN SINGUR executor pentru toate lucrările ei, iar `_variables` nu se golea niciodată: `ExecuteAsync` reseta doar `_exitMessage` (felia 0057), nu și memoria. Trei apăsări = trei valori. `PopulateResult` citește exact același dicționar, de-aia și tabelul altei lucrări călătorea mai departe.
+**Cauză:** WorkflowExecutor.SetVariable adaugă în lista pe nume; GetAllVariables transformă valorile multiple în JArray. Executorul unic al sesiunii nu golea `_variables`: ExecuteAsync reseta numai `_exitMessage` (0057), deci trei apăsări acumulau trei valori. PopulateResult folosește același dicționar, păstrând și tabelul altei lucrări.
 
 `KBOT_IPC` făcea curat — `ResetVariables()` după fiecare flux și `ClearAllVariables()` în `Finally` (`_reference/KBOT_IPC.WorkFlow.vb:116,363`) — și golirea s-a pierdut la portare.
 
 **Ce s-a făcut.** `ForexeRunner.RunJobAsync` cheamă `_executor.ClearAllVariables()` înaintea fiecărei lucrări. Două alegeri, scrise și în cod:
 
-- **ÎNAINTE, nu după:** o rulare care a murit cu excepție sau a fost anulată n-apucă să curețe după ea, iar lucrarea următoare tot cu memoria goală trebuie să pornească.
-- **În runner, nu în `ExecuteAsync`:** parametrii JSON ai lucrării intră tot prin `SetVariable`, chiar înaintea execuției — o golire din executor i-ar șterge pe cei tocmai puși.
+- **Înainte:** excepția/anularea poate împiedica cleanupul final, dar următoarea lucrare trebuie să înceapă goală.
+- **În runner:** parametrii JSON intră prin SetVariable chiar înaintea execuției; golirea în ExecuteAsync i-ar șterge.
 
 `RunAsync` (Conectare) nu are nevoie: își construiește executorul de la zero.
 
 ## 7. Un angajament selectat își arată datele chiar dacă n-a fost descărcat
 
-Un angajament adus doar de iconița din dreapta subsolului are antet și atât — deci n-are indicatori, deci `GET /api/forexe/sumar` nu întoarce antet, deci `SumarView` rămânea complet goală: nici măcar codul pe care tocmai îl selectase operatorul.
+Angajamentul adus numai din iconița dreaptă a footerului are antet, fără indicatori; GET /api/forexe/sumar nu întoarce antet, lăsând SumarView goală, inclusiv codul selectat.
 
-`SumarView.SetContext` umple acum antetul din RÂNDUL DE ARBORE înainte de orice apel de rețea — cod, descriere, stare, `DataCreare`, `DataDefinitivare`, încărcat/preluat, toate deja pe `AngajamentTreeInfo` —, iar `LoadAsync` nu mai golește antetul nici când serverul n-are nimic, nici pe calea de eroare: angajamentul selectat e tot acela.
+`SumarView.SetContext` umple întâi antetul din AngajamentTreeInfo, fără rețea: cod, descriere, stare, DataCreare, DataDefinitivare, încărcat/preluat. LoadAsync îl păstrează la răspuns gol/eroare pentru același angajament.
 
 Nimic nu se inventează: **`DataFX` e singurul câmp de antet pe care arborele nu-l are** și rămâne gol până răspunde serverul. Starea goală a grilei spune acum «Angajamentul nu are indicatori. Se arată doar datele din listă.»
 

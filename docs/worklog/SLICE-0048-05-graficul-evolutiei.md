@@ -340,9 +340,9 @@ AsociereBenziForm.{vb,Designer.vb}, KBotThemedForm modală maximizată, Lane doc
 ## 4. Corecturile din fundament (§2 din plan)
 
 - **F13 — RETRAS.** Textul e tăiat, nu șters, cu motivul complet și cu nota că a rămas SEMN pe amândouă căile și că se măsoară pe zi.
-- **F25 — AMENDAT, și cheia numită corect.** Documentul (și citirea din care venea) spunea că pasul 4b se potrivește pe hash-ul de antet. **Nu.** Verificat în `Receptii_Prelucrare` real: `rsTmpR_Snap.FindFirst "CLng(DataR)=" & CLng(dtDataR)`. `sHashIdent` se CALCULEAZĂ în `ObtineDateHeader` și se SCRIE în `tmpFX_Receptii_R!HASH` la inserare, dar **nu se citește niciodată pentru potrivire**. Regula lui F25 rămâne întreagă.
+- **F25 amendat:** potrivirea pe hash declarată anterior era greșită. `Receptii_Prelucrare` real folosește `rsTmpR_Snap.FindFirst "CLng(DataR)=" & CLng(dtDataR)`. `sHashIdent` se calculează în ObtineDateHeader și se scrie în tmpFX_Receptii_R!HASH la inserare, fără citire la potrivire. Restul F25 rămâne.
 - **F29 — NOU.** `DataR` e editabil de operator, inclusiv după creare, și tabelul nu are momentul creării. Nicio regulă nu are voie să-l trateze ca pe un fapt despre când a apărut recepția.
-- **F30 — NOU, consemnat ca HAZARD, NEREPARAT aici.** Fiindcă 4b se potrivește pe `CLng(DataR)` cu `FindFirst`, două recepții cu același `DataR` se ciocnesc la fiecare descărcare de după prima: a doua o suprascrie pe prima și niciun rând nou nu se inserează. La PRIMA descărcare amândouă se inserează — de-aia perechi din astea ajung să existe (`AAB2HFBEEAF`, rândurile 268 și 269, ambele 16.01.2026, cu `HASH` identic, deci nici hash-ul n-ar discrimina). Editarea lui `DataR` pe site (F29) dă defectul oglindă: cheia se mută, 4b nu mai recunoaște recepția, se inserează un duplicat. Operatorul spune că n-a văzut niciodată editarea în practică și că purtarea pe aceeași zi «nu e bună tot timpul, dar merge în mare». **Consemnat, deliberat nereparat.**
+- **F30 nou, hazard nereparat:** după prima descărcare, `CLng(DataR)`/FindFirst face ca a doua recepție cu aceeași dată s-o suprascrie pe prima, fără rând nou. Prima le inserează pe ambele: AAB2HFBEEAF, rânduri 268/269, 16.01.2026, HASH identic (nici acesta nu distinge). Editarea datei (F29) schimbă cheia și produce duplicat. Operatorul nu a observat editarea în practică și descrie comportamentul aceleiași zile ca „nu e bună tot timpul, dar merge în mare”.
 - **§1.5 rescris** — «regula datei» e tăiată și înlocuită cu semnul; propoziția-cheie a designului («nu mai poate refuza util, deci trebuie să facă plasarea ieftin de desfăcut») e scrisă acolo.
 - **Partea 5** — **O2 închis** (F23 a fost retras pe 26.08 și F24 l-a înlocuit; contractul în două faze e construit pe F24, nu se datorează nimic). **O7 adăugat**, arătând spre F30 ca hazard acceptat, nu ca decizie deschisă.
 
@@ -350,15 +350,15 @@ AsociereBenziForm.{vb,Designer.vb}, KBotThemedForm modală maximizată, Lane doc
 
 ## 5. Ce s-a hotărât altfel decât în literă, și de ce
 
-**5.1 `ReconstruiesteBenzi` rulează ÎNAINTE de grafic.** Planul îl cerea după `ReconstruiesteGrafic()` și înainte de `SincronizeazaCulorile()`, dar culorile sunt chemate chiar la finalul graficului, inclusiv la filă/selecție fără refacerea benzilor. Ordinea aleasă păstrează intenția: benzile există când se colorează. Comentată local.
+**5.1 ReconstruiesteBenzi înaintea graficului**, în loc de după ReconstruiesteGrafic și înainte de SincronizeazaCulorile: culorile se aplică la sfârșitul graficului, inclusiv la filă/selecție fără refacerea benzilor. Ordinea aleasă asigură existența benzilor la colorare; motiv comentat local.
 
-**5.2 Repere: două obiecte, tip comun.** Planul cere «aceeași colecție `Guides`». `KBotChartGuide` se desenează în grafic și benzi prin `IKBotGuideHost`. Același obiect în două colecții și-ar pierde primul proprietar (reperul are un singur câmp pentru repictare). Se construiesc două obiecte în aceeași buclă, din aceeași plată, cu același `plata.DataPlata`, păstrând corespondența cerută de plan fără doi proprietari.
+**5.2 Două repere, tip comun:** KBotChartGuide se desenează în grafic/benzi prin IKBotGuideHost, dar are un singur proprietar pentru repictare. În locul obiectului comun cerut în Guides, aceeași buclă creează două din aceeași plată/DataPlata, păstrând corespondența fără pierderea proprietarului inițial.
 
-**5.3 `RangeStart` / `RangeEnd` există la rulare, dar formularul nu le fixează.** Planul cere alinierea orizontală cu graficul; benzile includ însă instantanee NEAȘEZATE, absente din grafic. Folosirea intervalului graficului le-ar ascunde pe cele din afara lui. Alinierea la pixel rămâne valabilă numai la intervale egale, **de verificat vizual de operator**; proprietățile permit alegerea altei priorități.
+**5.3 RangeStart/RangeEnd disponibile la rulare, nefixate în formular:** benzile includ neașezate absente din grafic; intervalul acestuia le-ar ascunde pe cele externe. Alinierea cerută la pixel este valabilă numai la intervale egale, de verificat vizual de operator; proprietățile permit altă prioritate.
 
 **5.4 `KBotAutoPalette`:** `AutoColor` era o metodă privată a graficului; aritmetica `AutoColor` se mută neschimbată într-un modul comun `Friend`; `KBotChartView.AutoColor` deleagă. Graficul și benzile folosesc astfel aceleași culori, inclusiv după schimbarea temei.
 
-**5.5 `AllowDrop`, capcana C4 a proprietății MOȘTENITE.** Constructorul `KBotLaneView` o activează, dar `DefaultValue(False)` provoca serializarea `benzi.AllowDrop = True`; `KBotChartView` proaspăt emitea numai `Location`, `Name`, `TabIndex`. Încercarea `ShouldSerializeAllowDrop` nu funcționează: `TypeDescriptor` caută pe tipul declarant `Control`. Soluția umbrește proprietatea și marchează umbra, care nu moștenește atributele de serializare. Probat prin `TypeDescriptor.GetProperties(c)(name).ShouldSerializeValue(c)`, cu sondă temporară ștearsă după (§7).
+**5.5 AllowDrop moștenit (C4):** constructorul Lane îl activează, dar DefaultValue(False) serializa benzi.AllowDrop = True; Chart proaspăt emitea numai Location/Name/TabIndex. ShouldSerializeAllowDrop nu funcționa deoarece TypeDescriptor caută pe tipul declarant Control. Soluție: umbrire cu atribute proprii, fără moștenirea serializării. Probat temporar prin `TypeDescriptor.GetProperties(c)(name).ShouldSerializeValue(c)`; sonda ștearsă (§7).
 
 **5.6 Testele care codificau F13 au fost rescrise, nu șterse.** Trei bucăți (două în Python, una în `KBot.App.Tests`) verificau vetoul. Regula n-a dispărut, a coborât — deci testele au coborât cu ea și verifică acum semnul. Nu e «test nou»: e același test, pe regula corectată. Un test lăsat pe regula retrasă ar fi însemnat livrarea unei suite roșii.
 
@@ -366,11 +366,11 @@ AsociereBenziForm.{vb,Designer.vb}, KBotThemedForm modală maximizată, Lane doc
 
 ## 6. Punctele de «oprește-te și raportează» (§4 din plan) — ce a ieșit
 
-**6.1 Plățile în sarcina utilă — NU s-a declanșat.** `GET /api/forexe/asociere` întoarce deja `plati: [{data_plata, suma, nr_op}]` (`asociere.py`, `_PLATI_SQL`), `AsociereStare.Plati` există în `KBot.Domain/AsociereStare.vb` ca `List(Of PlataAsociere)`, iar `ApiClient.CitesteAsociere` o umple deja. Nu s-a atins nicio rută și niciun tabel.
+**6.1 Plăți — fără oprire:** GET /api/forexe/asociere avea `plati: [{data_plata, suma, nr_op}]` (`asociere.py`, `_PLATI_SQL`); `AsociereStare.Plati As List(Of PlataAsociere)` în KBot.Domain/AsociereStare.vb era umplut de ApiClient.CitesteAsociere. Fără modificare de rută/tabel.
 
-**6.2 Aspectul din designer — NU s-a declanșat.** `docs/kbot-forms-ui-convention.md` §5, §6 și §8 **nu** rezervă aspectul operatorului: rezervă aspectul **fișierului `.Designer.vb`**, spre deosebire de codul de rulare. §6 e explicită — «dacă o schimbare aparține Designerului — mutare/re-părintare/ re-docare, redimensionare, adăugare de control — fă-o **direct în `*.Designer.vb`**». Deci restructurarea s-a făcut acolo, direct. §7 respectată: **niciun comentariu nou** în `.Designer.vb` (cele existente în `AsociereForm.Designer.vb` sunt dinainte, neatinse).
+**6.2 Designer — fără oprire:** convenția docs/kbot-forms-ui-convention §5/6/8 rezervă layoutul fișierului Designer, fără exclusivitate a operatorului; §6 cere mutare/reparentare/redocare/redimensionare/adăugare direct în *.Designer.vb. Restructurat acolo, cu §7 păstrat: fără comentarii noi, cele existente în AsociereForm.Designer.vb rămân.
 
-**6.3 Canalul de avertismente al serverului — NU s-a declanșat.** Există deja: `aplica_comenzi` primește `avertismente: list`, `POST /api/forexe/asociere` îl întoarce ca `"avertismente"`, iar clientul îl citește deja în `AsociereRezultat.Avertismente`. Pe calea de ingestie echivalentul e `warnings`, pe care `aplica_decizii` îl primea deja pentru altceva. Nu s-a inventat nicio a doua formă de răspuns.
+**6.3 Avertismente — canal existent:** aplica_comenzi primea avertismente: list, POST /api/forexe/asociere returna avertismente, clientul citea AsociereRezultat.Avertismente. Ingestia avea warnings transmis deja lui aplica_decizii pentru alt scop. Fără a doua formă de răspuns.
 
 **6.4 Unde trăia F13 — NU s-a declanșat.** F13 era un bloc `if` distinct în `valideaza_plasarile`, nu împletit cu F14/F16. Coborârea lui nu atinge purtarea celorlalte două, iar testele lor trec neschimbate.
 
@@ -398,9 +398,9 @@ Operatorul a dat VBA-ul real pe 31.08.2026 și l-a descris ca «nu e bun tot tim
 
 1. **`CLng(DataR)` e cheia de identitate** (§4). Granularitate de zi, `FindFirst`, prima potrivire câștigă. Consecințele sunt F30.
 2. **`rsTmpR_Snap` e un instantaneu luat ÎNAINTE de buclă.** Recepțiile inserate în timpul rulării sunt invizibile iterațiilor următoare ale aceleiași rulări. De-aia două recepții din aceeași zi se inserează amândouă la prima descărcare și se ciocnesc la următoarele.
-3. **Un `cReceptii` gol întoarce `False`.** `If cReceptii Is Nothing Then Exit Function` și `If cReceptii.Count <= 0 Then Exit Function` cad amândouă pe valoarea implicită a funcției. Dacă apelantul citește `False` ca eroare, un angajament fără recepții e raportat ca eșec. De verificat pe partea apelantului; nu e evident greșit, doar ambiguu.
+3. **cReceptii gol → False implicit:** `If cReceptii Is Nothing Then Exit Function` sau Count <= 0 ies fără alt rezultat. Dacă apelantul interpretează False ca eroare, angajamentul fără recepții eșuează. Ambiguitate de verificat la apelant, fără defect cert.
 4. **`Nz(DMax("NRCRT", "tmpFX_Receptii_R"), 0)`** — `Nz` e interzis în cod K-BOT nou. Consemnat pentru portare, nu pentru original.
-5. **`NRCRT` e atribuit de K-BOT**, nu de FOREXE (`DMax + 1`). Confirmat de operator: nu înseamnă nimic dinspre site. Nicio regulă nu are voie să-l trateze ca ordine de creare — de-aia constrângerea de ordonare avută în vedere mai devreme în design a fost lăsată deoparte.
+5. **NRCRT este atribuit de K-BOT**, DMax + 1, fără sens furnizat de FOREXE, confirmat de operator. Nu dovedește ordinea creării; constrângerea de ordonare considerată anterior a fost abandonată.
 
 ---
 

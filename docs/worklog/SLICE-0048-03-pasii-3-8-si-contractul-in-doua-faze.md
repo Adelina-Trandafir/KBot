@@ -47,11 +47,11 @@ Pașii 3a–3e, 4a, 4b, 4d, 5 și 7, portați din sursa VBA reală, funcție cu 
 
 Ce merită știut înainte de a-l citi:
 
-- **3b cheamă `CalculeazaValRezervareDif`**, pe care planul nu o numește deloc. Fără ea toate valorile `TipRand` de rezervare (`Rez_Initiala`, `Rez_Definitiva`, `Rez_Influenta`, `Rez_Zero` și cele trei cu `+`) ar rămâne goale, iar pașii 3c/3d — care filtrează pe ele — ar scrie zero rezervări. E portată integral.
-- **3a întoarce `indice payload ▸ FX_Istoric.ID` pentru toate rândurile**, inclusiv cele existente: deciziile folosesc indicele `rand_istoric` (F24), iar D-F permite asocierea acum a instantaneelor rămase neașezate din rulări anterioare.
-- **Două rânduri identice din același payload se colapsează într-unul.** `FX_Istoric.HASH` are index UNIQUE; fără colapsare, al doilea `INSERT` l-ar lovi. Access făcea la fel, fiindcă `rcHis.FindFirst` mergea peste un recordset care creștea cu fiecare `AddNew`.
+- **3b portează integral `CalculeazaValRezervareDif`**, absentă din plan: fără ea, `TipRand` (`Rez_Initiala`, `Rez_Definitiva`, `Rez_Influenta`, `Rez_Zero`, cele trei cu +) ar rămâne gol, iar filtrarea 3c/3d ar scrie zero rezervări.
+- **3a întoarce `indice payload ▸ FX_Istoric.ID` inclusiv pentru existente**: F24 folosește `rand_istoric`, D-F permite asocierea instantaneelor neașezate din rulări anterioare.
+- **Dublurile aceluiași payload se colapsează**, evitând UNIQUE `FX_Istoric.HASH` la al doilea INSERT, ca Access `rcHis.FindFirst` pe recordsetul crescut prin AddNew.
 - **4a păstrează calea normală a ștergerii:** `Descriere = "Stergere receptie"` cu `(activ:true)` produce instantaneu `EsteStergere = 1`. Nu produce linii, deoarece istoricul nu are rânduri pe indicator pentru el (F21), fără suprimare specială.
-- **4b are regula F25 în SQL**, cu comentariul la fața locului. Potrivirea Access e pe `CLng(DataR)` — **granularitate de ZI** —, deci fără `Sters = 0` în interogarea de candidați o recepție creată în aceeași zi calendaristică în care fusese creată una ștearsă în martie s-ar potrivi peste aceea și i-ar suprascrie tăcut valorile.
+- **4b/F25 în SQL**, comentată: Access potrivește pe `CLng(DataR)`, la ZI; fără `Sters = 0`, o recepție nouă din aceeași zi calendaristică cu una ștearsă în martie s-ar potrivi pe ea și i-ar suprascrie valorile.
 - **4d folosește `DataH`, nu `IDRH`** (F2): comentariul Access «autonumber = ordine cronologică în tmp» nu mai ține la plasarea manuală a unui instantaneu din ianuarie după unul din mai. Pentru plasarea automată ordinea coincide, fără schimbarea datelor deja produse.
 - **5: `Data_plata` ia `FX_Istoric.DataFX`, nu data din Observații.** Contraintuitiv, dar e ce face `mdl_FX_Plati`: `data:` e parsată doar ca să fie VALIDATĂ (una neparsabilă sare rândul). Portat fidel, comentat la fața locului.
 
@@ -61,8 +61,8 @@ Singurul loc în care cele două faze diferă, plus tot ce ține de contract: am
 
 - **Faza unu** rulează trecerea automată ca VBA-ul (două treceri, LIFO, fiecare recepție consumată o dată) și o raportează ca `sugestie_idrr` / `sugestie_automata` — **nu scrie niciun `IDRR`**. Un test verifică asta direct: toate interogările emise sunt `SELECT`.
 - **Faza doi** aplică `decizii`, fără repetarea trecerii automate ale cărei sugestii le-a văzut operatorul.
-- **`Final` = cel mai TÂRZIU instantaneu după `DataH`**, recalculat per recepție o singură dată după aplicarea tuturor deciziilor. `AsociazaFinal` făcea `Final` orice tocmai atașase — cu plasare manuală, regula aceea ar lăsa un instantaneu din februarie să devină `Final` pe o recepție care are deja unul din mai. `HASH` se rescrie doar când `TipReceptie` se schimbă.
-- **Recepțiile ȘTERSE nu sunt candidate ale trecerii AUTOMATE.** Nimic nu se mai poate adăuga pe site unei recepții șterse, deci o potrivire automată pe ea ar fi mereu o coliziune — același raționament ca F25. Plasarea MANUALĂ pe una ștearsă rămâne permisă: vetoul e pe dată (F13), nu pe steag, iar un instantaneu dinaintea ștergerii îi aparține pe drept.
+- **Final = ultimul după DataH**, recalculat o dată/recepție după toate deciziile. `AsociazaFinal` marca ultimul atașat: manual, februarie putea deveni Final deși exista mai. HASH se rescrie numai la schimbarea TipReceptie.
+- **Ștersele sunt excluse automat**, ca F25: pe site nu mai pot primi date, deci potrivirea ar fi coliziune. Manual rămân permise: F13 vetează data, fără veto pe steag; un instantaneu anterior ștergerii le poate aparține.
 
 ### 1.3 Ruta — `routes/forexe/prelucrare.py`
 
@@ -379,11 +379,11 @@ UPDATE FX_Extrase E INNER JOIN FX_Plati P ON E.ReferintaDest = P.Referinta_TREZO
    SET E.CodAI = P.CodAI WHERE E.CodAI IS NULL
 ```
 
-- **Ordinea nu e o întâmplare și cele două nu se contopesc într-una cu `OR`.** Amândouă filtrează pe `CodAI IS NULL`, deci a doua trebuie să vadă rândurile pe care prima le-a completat deja. Contopite, `Referinta` și `ReferintaDest` ar concura pe același rând și ar câștiga oricare, tăcut.
-- **Necondiționat**, la coada pașilor 1–7, în aceeași tranzacție. Nu se pazește cu niciun steag `are` și nu se sare când pasul 5 n-a scris nimic — exact ca originalul Access. `FX_Extrase` poate purta restanțe din rulări mai vechi, iar filtrul `CodAI IS NULL` face ca fiecare trecere să le recupereze.
+- **Ordine păstrată, fără OR:** ambele filtrează `CodAI IS NULL`; a doua trebuie să vadă completările primei. Contopirea ar lăsa Referinta/ReferintaDest să concureze tăcut pentru același rând.
+- **Necondiționat după 1–7**, în aceeași tranzacție ca Access, fără steag are sau dependență de scrierile pasului 5. `CodAI IS NULL` recuperează și restanțele vechi din FX_Extrase.
 - **Rulează în amândouă fazele**, fiindcă amândouă parcurg același drum; în propunere se derulează înapoi cu restul. **Rezultatul lui NU se raportează în propunere**: nu e ceva despre care operatorul are de decis, e o legătură mecanică între extrase și plăți. La salvare iese sub `scrise.FX_Extrase`.
 - **Avertismentul care spunea că pasul 8 nu rulează a fost șters**, împreună cu `MESAJ_PAS8` și cu testul care îl pinuia.
-- Comentariul la fața locului consemnează ce s-a cântărit: dacă două rânduri `FX_Plati` ar împărți o `Referinta_TREZOR`, MariaDB alege unul fără să spună care — aceeași purtare ca Access. Pasul 5 deduplică plățile chiar pe `Referinta_TREZOR`, deci nu ar trebui să apară.
+- Comentariul documentează alegerea nedeterminată MariaDB/Access dacă două FX_Plati au aceeași Referinta_TREZOR; pasul 5 deduplică pe această cheie, deci cazul nu ar trebui să apară.
 
 `PLAN_ForexeIngest.md` §12 e amendat: `FX_Extrase` rămâne în afara scopului **cu excepția** acestor două instrucțiuni. §13 punctul 3 e închis.
 
@@ -393,17 +393,17 @@ UPDATE FX_Extrase E INNER JOIN FX_Plati P ON E.ReferintaDest = P.Referinta_TREZO
 
 **F20 retrasă prin raționament, fără măsurătoare:** FOREXE nu trimite `DIFH`; `FX_CalculeazaDIF_Receptii_Tmp` o calculează după asociere, deci lipsește când s-ar decide schimbarea. **O3 se închide prin retragere, nu confirmare**; nu mai este datorată o interogare live, iar cea din 0048-03 §5.3 nu se rulează.
 
-Ce s-a schimbat în cod: **nimic de șters, fiindcă nimic nu citea `DIFH` ca să decidă ceva.** Căutat peste tot Python-ul și tot `src/`: singurii cititori sunt calea de AFIȘARE din Recepții (felia 0015-02, eticheta plutitoare), care e un consumator legitim al unei cifre calculate, nu o clasificare. Se consemnează ca fapt verificat, nu ca presupunere.
+**Nimic de șters în cod:** căutarea în tot Python/src nu găsește DIFH folosit la decizie, numai la afișarea tooltipului Recepții 0015-02, consum legitim al valorii calculate. Fapt verificat, fără presupunere.
 
 `step4d_calculeaza_dif` **rulează acum în amândouă fazele**, prin `_pas4d_pe_receptiile_atinse`, exact unde îl cheamă Access — după 4c. Înainte rula doar la salvare, ceea ce însemna o ramură care nu se testa decât la salvare.
 
-**F17 e amendată:** nu există clasificare automată de „salvare fără schimbare", în niciun punct. Două blocuri cu aceleași cifre pot fi o salvare care n-a schimbat nimic, sau o modificare reală pe **altă** recepție care se întâmplă să aibă aceeași sumă — mașina nu le poate deosebi, omul da. Formularul (0048-04) arată «identic cu instantaneul dinainte în acest lanț» ca **informație**, recalculată la fiecare drag, care nu scrie niciodată nimic. Marcajul e o **acțiune a operatorului**, pe `FX_Receptii_H.Sters` — vezi §0.3.
+**F17 amendată:** fără clasificare automată „salvare fără schimbare”. Cifre identice pot fi o salvare neschimbată ori altă recepție modificată cu aceeași sumă; numai operatorul le distinge. În 0048-04, „identic cu instantaneul dinainte în acest lanț” este informație recalculată la fiecare drag, fără scriere; marcajul `FX_Receptii_H.Sters` este acțiunea operatorului (§0.3).
 
 <a id="completare-13-structura-călătorește-de-la-site-până-în-baza-de-date-3-decizia-d-n"></a>
 
 #### 1.3 Structura călătorește, de la site până în baza de date (§3, decizia D-N)
 
-**Ce e imbricat NU s-a ghicit.** Enumerat din definițiile de workflow, din sarcina utilă reală și din codul executorului. Tiparul e: un `ForEachVar` al cărui `collectFields` numește un câmp pe care un `ScrapeTable` **interior** îl scrie cu `saveTo`. Peste toate cele șase `.wfl` din `src/KBot.Forexe/Workflows/` sunt **exact două**:
+**Imbricări enumerate** din workflowuri, payload real și executor: `ForEachVar.collectFields` colectează câmpul scris prin `saveTo` de un `ScrapeTable` interior. În cele șase `.wfl` din `src/KBot.Forexe/Workflows/` sunt exact două:
 
 | Tabel | Coloană | Ce e | Cine o citește |
 |---|---|---|---|
@@ -414,7 +414,7 @@ Restul câmpurilor din `collectFields` (`Tip`, `Data`, `Suma`, `TipReceptie`, `D
 
 **Confirmat pe date reale, nu doar din definiții:** sarcina utilă de probă `PYTHON/tests/fixtures/prelucrare_AAB37CNBK95.json` poartă exact aceste două coloane ca liste imbricate, și nicio alta.
 
-**Pierderea structurii:** `WorkflowExecutor.Actions.vb:BuildCollectedRow` păstra deja `JArray`/`JObject` prin `JToken.Parse(fromVar)` (comentariul «Preservă structura JArray/JObject»). `ForexeRunner.TryParseTable` o aplatiza apoi prin `row(prop.Name) = prop.Value.ToString()`: scalar fără pierdere, dar `JArray` devenit text JSON de parsat din nou pe server.
+**Aplatizare localizată:** `WorkflowExecutor.Actions.vb:BuildCollectedRow` păstra JArray/JObject prin `JToken.Parse(fromVar)` (comentariu „Preservă structura JArray/JObject”). `ForexeRunner.TryParseTable`, prin `row(prop.Name) = prop.Value.ToString()`, păstra scalarul, dar transforma JArray în JSON text de reparsat pe server.
 
 **Clientul.** Trei tipuri noi în `KBot.Domain/CelulaTabel.vb`:
 
@@ -424,7 +424,7 @@ Restul câmpurilor din `collectFields` (`Tip`, `Data`, `Suma`, `TipReceptie`, `D
 
 `JobResult.Tables` și `PrelucrareRezultat.Tabele` sunt acum `Dictionary(Of String, TabelRezultat)`.
 
-**Serializarea: o punte, nu un `JsonConverter`.** `JsonConverter(Of T).Read` primește `ByRef Utf8JsonReader`, iar `Utf8JsonReader` e `ref struct` — o formă pe care compilatorul VB.NET o refuză din principiu (`BC30668`). **Niciun proiect VB nu poate scrie un convertor System.Text.Json.** Deci conversia e explicită, în `TabeleJson`, la granițele de serializare care există: cererea HTTP, depozitul local de rezultate, dosarul de asociere. `PrelucrareRezultat.Tabele` poartă `<JsonIgnore>`, iar `TabeleSerializate As JsonObject` (`<JsonPropertyName("Tabele")>`) e puntea — deci numele pe disc nu se schimbă și fișierele scrise înainte se citesc mai departe.
+**Punte explicită de serializare:** `JsonConverter(Of T).Read` cere `ByRef Utf8JsonReader`, un ref struct refuzat de VB.NET (`BC30668`); niciun proiect VB nu poate scrie convertor System.Text.Json. `TabeleJson` convertește la granițele HTTP, depozit local și dosar asociere. `PrelucrareRezultat.Tabele` are `<JsonIgnore>`, iar `TabeleSerializate As JsonObject`, `<JsonPropertyName("Tabele")>`, păstrează numele pe disc și citirea fișierelor vechi.
 
 **Citit în depanator** (cerință, nu înfrumusețare):
 
@@ -443,7 +443,7 @@ De ce se poate închide ușa fără plasă: **D2 spune că Access e scos din uz 
 
 **Forma `BugetIndicator` se verifică deși nu este consumată:** textul ar indica un client care aplatizează și `Detaliu`, detectând regresia întregului payload.
 
-**Cealaltă jumătate a regulii (§3.6).** Fiecare loc din `routes/forexe/` care citește o celulă de payload ca text o cere acum prin `text_celula(valoare, unde, coloana)`, care **ridică** pe o listă sau un obiect. Un `.strip()` peste o listă ar crăpa cu `AttributeError` la prima rulare reală; un `str()` peste ea ar fi mai rău — ar scrie liniștit `[{'Cod': 'AAB'}]` într-o coloană de bază de date și nimeni n-ar afla vreodată. Locurile: cele patru celule ale rândului de istoric (3a), cele două de identificare și cele patru de bani ale indicatorului (2), cele patru ale antetului de recepție (4b) și cele cinci frunze din interiorul lui `Detaliu`.
+**Text scalar (§3.6):** cititorii din `routes/forexe/` folosesc `text_celula(valoare, unde, coloana)`, care ridică pe listă/obiect: `.strip()` ar produce AttributeError, `str()` ar putea salva tăcut `[{'Cod': 'AAB'}]` în DB. Acoperire: 4 celule istoric (3a), 2 de identificare/4 monetare indicator (2), 4 antet recepție (4b), 5 frunze Detaliu.
 
 <a id="completare-14-f28--reconstituirea-neverificabilă-5"></a>
 
@@ -459,9 +459,9 @@ Trei coloane, trei fapte, niciodată colapsate:
 | `FX_Receptii_R.Reconstituit` | a fost reconstruită din propriile ei instantanee; n-a avut niciodată rând în `ListaReceptii` |
 | `FX_Receptii_R.ReconstituitNesigur` | în clipa reconstituirii, altă reconstituire pe același angajament făcea gruparea imposibil de verificat |
 
-Regula e o **funcție pură**, `f28_de_marcat(reconstituite)`: una singură ▸ nimic; două sau mai multe ▸ **toate**. Ambiguitatea e ÎNTRE ele, deci nu aparține niciuneia singure — și nici măcar celei adăugate ultima: fiecare instantaneu al oricăreia ar fi putut sta pe cealaltă. Exact condiția lui F27 și nimic mai larg.
+**Funcție pură `f28_de_marcat(reconstituite)`:** una → nimic; minimum două → toate. Fiecare instantaneu putea aparține celeilalte, deci ambiguitatea este între ele, fără apartenență exclusivă ultimei adăugate. Exact condiția F27.
 
-`marcheaza_reconstituirile_nesigure` o aplică la salvare, la coada pasului 4c, **recitind reconstituirile din tabel** — nu numărând deciziile — ca să intre în socoteală și cele rămase din rulări mai vechi: două reconstituiri făcute în două sesiuni diferite sunt exact la fel de imposibil de deosebit ca două făcute în aceeași sesiune.
+`marcheaza_reconstituirile_nesigure` aplică F28 la salvare, după 4c, recitind tabelul, fără numărarea deciziilor: include reconstituirile vechi, la fel de ambigue între sesiuni ca în aceeași sesiune.
 
 **Nu se șterge niciodată.** Funcția spune doar pe cine să marchezi, nu și pe cine să demarchezi, iar un test pinuiază chiar absența acelui drum.
 

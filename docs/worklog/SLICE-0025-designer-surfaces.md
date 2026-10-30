@@ -536,11 +536,11 @@ Public Function Darken(c As Color, amount As Double) As Color
 Public Sub FillModern(g, path, bounds, baseColor As Color, strength As Integer)
 ```
 
-`FillModern` **nu introduce nicio culoare nouă**: primește culoarea de bază din paletă (fundalul de selecție derivat din accent, `ButtonHoverColor`, …) și îi calculează cele două capete. Deci gradientul se schimbă odată cu schema, exact ca restul barei, și merge la fel pe schemele deschise și pe cele întunecate — nimic nu e o constantă.
+`FillModern` derivă capetele din culoarea paletei primită (accentul selecției/ButtonHoverColor etc.), fără culori noi constante; gradientul urmează schema, deschisă sau dark.
 
 Două decizii de aspect, amândouă cu motiv:
 
-- **Capetele nu sunt simetrice** — partea de jos se închide cu 3/4 din cât se deschide partea de sus. Un gradient simetric arată a buton Windows XP; deschis-sus/abia-închis-jos citește ca lumină căzând de sus, care e tot ce înseamnă „modern" aici.
+- **Asimetrie:** jos se închide cu 3/4 din cât se deschide sus, sugerând lumină de sus; simetria ar arăta ca buton Windows XP, fără aspectul modern urmărit.
 - **`strength = 0` ⇒ umplere PLATĂ**, pe drumul `SolidBrush`, fără alocare de gradient — deci «bit cu bit ca înainte» rămâne disponibil și e ce se picta până acum.
 
 Zona gradientului se umflă cu un pixel sus și jos: `LinearGradientBrush` pictează primul/ultimul rând cu culoarea capătului opus (artefact vechi de rotunjire), iar așa rândurile stricate cad în afara căii.
@@ -554,17 +554,17 @@ Zona gradientului se umflă cu un pixel sus și jos: `LinearGradientBrush` picte
 <DefaultValue(14)>  Public Property ItemGradient As Integer        ' 0..100; 0 = plat
 ```
 
-**Per bară, nu per element** — cerut explicit, și e și singura variantă corectă: într-o navigație butoanele trebuie să aibă aceeași formă, altfel coloana arată ruptă (același raționament ca la `IconSize`, care e tot pe bară). Există un test care cade dacă cineva adaugă vreodată o rază pe `KBotNavItem`, ca decizia să se reia conștient, nu din inerție.
+**Per bară**, cerut explicit, ca IconSize: butoane cu formă uniformă. Testul refuză o rază pe KBotNavItem, cerând reconsiderarea conștientă a deciziei.
 
-**`-1` = raza schemei active** (`ThemeStyleOptions.CornerRadius`: 0 pe Classic și Dark, 8 pe Modern). Ăsta e implicitul, deci: (a) o bară care nu atinge proprietatea arată exact ca înainte, și (b) urmează tema când operatorul schimbă schema. O valoare de la 0 în sus o înlocuiește — `0` înseamnă „colțuri drepte chiar și pe o schemă rotunjită", nu „nesetat". De aici și `-1` ca sentinel în loc de `0`: pe o proprietate de rază, `0` e o valoare reală.
+**-1 = ThemeStyleOptions.CornerRadius**, implicit: Classic/Dark 0, Modern 8. Bara neatinsă arată ca înainte și urmează comutarea temei. Orice valoare ≥0 suprascrie, inclusiv 0 = colț drept peste schemă rotunjită; fiind valoare reală, 0 nu poate fi sentinel.
 
 Sub `-1` se limitează la `-1`, iar gradientul la `[0,100]`: un setter de dimensiune care aruncă ar rupe `InitializeComponent` la o valoare greșită din designer (aceeași regulă ca la `IconSize` / `ItemWidth` / `ItemPadding`).
 
-Raza efectivă se rezolvă într-o SINGURĂ funcție (`ItemRadius()`), folosită de butoane, de butonul din colț ȘI de etichetă — altfel cele trei ar putea să se rotunjească diferit. La fel gradientul: aceeași `ThemeShapes.FillModern` în toate trei.
+ItemRadius() rezolvă raza pentru butoane/buton colț/flyout; toate trei folosesc și ThemeShapes.FillModern, evitând forme/gradiente divergente.
 
 #### 1.3 Eticheta primește exact aceeași formă
 
-`KBotNavFlyoutStyle` capătă `GradientStrength`, iar `Radius` vine acum din `ItemRadius()`. Eticheta trebuie să fie **butonul care se desfășoară** (vezi 0025-07): o rază sau un gradient care nu se potrivesc ar strica iluzia mai rău decât lipsa lor. Fixat de test. `Region`-ul ferestrei folosea deja `_style.Radius`, deci colțurile ferestrei urmează automat.
+`KBotNavFlyoutStyle.GradientStrength` și Radius din ItemRadius() păstrează flyoutul ca buton desfășurat (0025-07), cu aceeași formă/gradient, fixat prin test. Region folosea deja `_style.Radius`, deci urmează automat.
 
 ### 2. Fișiere atinse
 
@@ -620,17 +620,17 @@ Cele trei locuri care depindeau de constanta 18 se mută automat pe proprietate,
 | Lățimea în `Complete` | `latură + 2*6` | bara complet strânsă e mai lată |
 | Lățimea în `Icons` | `Max(Complete, pad + pictogramă)` | urmează, dacă butonul o depășește |
 
-Din cauza ultimelor două, setter-ul **reaplică dimensiunea pe loc** dacă bara e STRÂNSĂ chiar atunci (`ApplyCollapseExtent`) — altfel o bară pe `Complete` ar fi rămas la lățimea butonului vechi, adică proprietatea ar fi părut că nu face nimic exact în starea în care contează cel mai mult. Test dedicat, inclusiv că desfășurarea readuce **mărimea inițială a operatorului**, nu una derivată din buton.
+Setterul reaplică imediat ApplyCollapseExtent dacă bara este strânsă, altfel Complete ar păstra vechea lățime. Testul confirmă și revenirea la mărimea inițială a operatorului la desfacere, fără derivare din buton.
 
 #### 1.2 Ce e DESENAT în buton se scalează cu el
 
-Unghiul era deja proporțional (brațul = `latură/5`, grosimea liniei = `latură/10`), dar aerul din jurul pictogramei autorate (0025-06) era **fix, 2 px scalați la DPI**. La o latură de 44 pictograma ar fi stat lipită de margini; la una de 8 n-ar mai fi rămas nimic din ea. Devine `latură \ 9`, cu minim 1 — ceea ce dă exact 2 la latura implicită de 18, deci nimic nu se schimbă la valoarea din oficiu, iar cele două glife se scalează acum la fel.
+Unghiul avea braț latură/5 și grosime latură/10; paddingul pictogramei din 0025-06 era fix 2px scalat DPI, prea mic la 44 și prea mare la 8. Devine `latură \ 9`, minimum 1: tot 2 la implicitul 18, ambele glife scalate proporțional.
 
 #### 1.3 `0` = fără buton
 
-Aceeași convenție ca `IconSize = 0` («fără pictograme», nu «pictograme de zero pixeli care lasă o gaură»): la 0 butonul nu se desenează, `CollapseButtonRect()` întoarce `Rectangle.Empty` — deci nu poate fi nici survolat, nici apăsat — și, important, **nu mai rezervă bandă** (`CollapseBandExtent` întoarce 0), altfel ar fi rămas o gaură de 12 px în capătul barei pentru un buton inexistent.
+**0 elimină butonul**, ca IconSize = 0: fără desen, CollapseButtonRect() = Rectangle.Empty, fără hover/click și CollapseBandExtent = 0, evitând banda goală de 12px.
 
-E o stare validă, nu o greșeală: o aplicație care strânge bara din propriul ei buton de bară de unelte, prin `ToggleCollapse()` / `CollapseState`, nu vrea și unghiul din colț. **Dar e și o capcană, scrisă ca atare în documentația proprietății:** cu `Collapsible = True` și latura 0, operatorul nu mai poate strânge sau desfășura bara cu mouse-ul — strângerea rămâne exclusiv din cod. Testul verifică ambele jumătăți: click în colț nu mai face nimic, `ToggleCollapse()` da.
+Stare validă pentru gazda cu propriul buton/ToggleCollapse()/CollapseState. Capcana este documentată: Collapsible = True cu latura 0 lasă strângerea/desfacerea exclusiv codului, fără mouse. Testul confirmă click inert și ToggleCollapse funcțional.
 
 Negativele se aduc la 0, ca la fiecare măsură a barei (un setter de dimensiune care aruncă ar rupe `InitializeComponent` la o valoare greșită din designer).
 

@@ -19,26 +19,26 @@ Cinci cereri ale operatorului din 10.09.2026, două pe control și trei pe `Asoc
 `AdvancedTreeControl.MultiSelect.vb` — partială nouă. Implicit **stins**, deci cele nouă vederi care folosesc deja arborele nu capătă niciun comportament nou.
 
 - **O singură rădăcină:** un grup aparține aceleiași recepții/coș; gazdele nu trebuie să despartă rânduri fără legătură. Ctrl/Shift pe altă rădăcină începe acolo un grup nou.
-- **`SelectedNode` rămâne ce era**: rândul cu focus, mereu parte din grup, singurul care primește CHENARUL selecției (restul iau doar umplerea). Scris din afară, strânge grupul la el — cine spune «rândul e ăsta» nu poate lăsa în urmă alte cinci rânduri nenumite.
-- **Clicul simplu într-un grup îl strânge la ridicarea butonului, nu la apăsare.** Apăsarea pe un rând al grupului e ȘI felul în care începe tragerea întregului grup; strâns la apăsare, până se mișca mouse-ul ar fi rămas un singur rând. `_pendingSingleSelect` ține datoria, `MaybeBeginDrag` o șterge, `OnMouseUp` o plătește.
+- **SelectedNode rămâne focusul**, inclus în grup și singurul cu chenar; restul au numai umplere. Setterul extern reduce grupul la acel rând, fără selecții nenumite rămase.
+- **Click simplu în grup:** reduce selecția la MouseUp, fără a o pierde înaintea tragerii. `_pendingSingleSelect` amână; MaybeBeginDrag o anulează, OnMouseUp o aplică.
 - Tastatura: Shift + săgeți/Home/End/PgUp/PgDn întind plaja de la ancoră; Ctrl+A ia toată rădăcina rândului curent, fără rândul-rădăcină. Amândouă inerte cu `MultiSelect` stins.
 - API: `SelectedNodes` (în ordinea de pe ecran, niciodată `Nothing`), `SelectedNodeCount`, `IsNodeSelected`, `SelectNodes`, `ClearNodeSelection`, eveniment `SelectedNodesChanged`.
-- Tragerea a devenit «unul sau mai multe» **fără să rupă nimic**: `TreeDragStartEventArgs` capătă `Items` (listă MODIFICABILĂ — gazda scoate din ea rândurile pe care nu le lasă să plece), iar `TreeDragOverEventArgs` / `TreeDropEventArgs` capătă `Sources`, care răspunde cu o listă de un element când s-a tras unul singur. **Constructorii vechi au rămas neatinși**, deci testele și gazdele de dinainte compilează și merg ca înainte.
-- Grupul călătorește printr-un câmp `Shared` (`_draggedGroup`), nu prin obiectul de date: bucla de tragere a sistemului e modală și e una singură pe proces, iar arborele-ȚINTĂ (la o tragere între doi arbori) n-a pornit tragerea, deci câmpurile lui de instanță sunt goale. Obiectul de date a rămas ce era — rândul apăsat.
+- **Drag compatibil:** TreeDragStartEventArgs.Items este lista modificabilă din care gazda poate elimina rânduri; TreeDragOverEventArgs/TreeDropEventArgs.Sources întoarce un element pentru drag simplu. Constructorii vechi rămân, cu gazdele/testele anterioare compatibile.
+- Grupul folosește Shared `_draggedGroup`: bucla drag a sistemului este unică/modală pe proces, iar arborele țintă nu are câmpurile instanței sursă. Data object păstrează rândul apăsat.
 
 ### B. Unde ar cădea rândul (`AdvancedTreeControl.DropPreview.vb`)
 
 Cererea (5), și e o cerință despre adevăr: în lanțul unei recepții locul unui instantaneu **nu se alege**, îl dă `DataH`. Chenarul de pe rândul de sub cursor spunea deci ceva fals.
 
-`SetDropPreview(root, ghosts)` / `ClearDropPreview()`, cu `TreeDropGhost(index, caption)`. Rădăcina se aprinde ÎNTREAGĂ (chenar punctat + văl subțire, în `DragHighlightColor`) și în ea apar rânduri-fantomă pe pozițiile primite. **Pozițiile le calculează GAZDA**, în șirul REZULTAT: ordinea aparține datelor, iar arborele nu știe nimic despre `DataH` — aceeași împărțire ca la vetourile tragerii (arborele arată, gazda hotărăște).
+`SetDropPreview(root, ghosts)`/`ClearDropPreview()`, cu TreeDropGhost(index, caption): rădăcină întreagă cu chenar punctat/văl DragHighlightColor și fantome pe pozițiile calculate de GAZDĂ în șirul REZULTAT. Arborele nu cunoaște DataH, ca la vetouri: desenează decizia gazdei.
 
 Fantomele sunt `TreeItem` în `Children` (`IsDropGhost = True`), deci folosesc pictura, derularea și măsurarea obișnuite. `ClearDropPreview` le elimină din `CancelDrag` (aruncare, ESC, pierderea ferestrei) și `OnDragLeave`; `DragOver` pe fantomă este raportat pe părintele ei.
 
 ### C. `AsociereForm` — ecran de lucru, grafice în fereastra lor
 
-- **Așezarea s-a rotit** (cererea 4): stânga = recepțiile cu lanțurile lor **+ grila lor**, dreapta = coșul de neașezate **+ grila lui**. `UmpleGrila(nod, tinta)` umple grila arborelui din care vine rândul; o singură grilă pentru amândoi ar fi însemnat că un clic în dreapta șterge indicatorii rândului ales în stânga — adică tocmai perechea pe care operatorul o compară. Coloanele au trecut pe `ToContent` cu minime mai mici: panourile sunt acum pe jumătate late.
-- **Graficul și benzile** (cererea 3) stau în `pnlGrafice`, un panou ASCUNS al cardului, care se mută ÎNTREG în `GraficeAsociereForm` la apăsarea butonului «Grafice și benzi» și se întoarce acasă la închidere. Fereastra e redimensionabilă (`KBotShellForm`). **Nu are controale proprii, și nu din economie**: tabloul local trăiește într-un singur loc, iar tratatorii graficului și ai benzilor sunt scriși acolo, lângă el — o a doua pereche de suprafețe ar fi însemnat un al doilea set de culori, de repere și de reguli de tragere, care s-ar putea abate de la primul. Aceeași hotărâre ca la `AsociereBenziForm`.
-- **Tragerea și meniul merg pe grup** (cererea 2). `Tree_NodeDragStarting` SCOATE din grup rândurile care nu se mută (rădăcini prinse din greșeală, legături înghețate) în loc să refuze tot gestul; `TreeLant_NodeDragOver` verifică vetourile pentru fiecare și, la refuz, spune DESPRE CARE e vorba; cele care stau deja pe recepția țintă se scot din socoteală, nu refuză mutarea celorlalte. Meniul de grup oferă doar comenzile care au același înțeles pentru toate: desprinderea, «(nu) consemnează o schimbare» și **«Începe o recepție nouă din toate N»** — un SINGUR IDRR pentru tot grupul, cerut o dată în afara buclei (`UrmatorulIdrrNou` citește `_pozitie`, deci chemat înăuntru ar fi făcut N recepții de câte unul). «Este rândul de ștergere» NU se oferă pe un grup: ștergerea e ultimul instantaneu al unui lanț, pusă pe cinci ar spune că lanțul are cinci sfârșituri.
+- **Layout (4):** stânga recepții/lanțuri + grila lor, dreapta neașezate + grila lor. UmpleGrila(nod, tinta) ține indicatorii fiecăruia: grila unică ar fi șters comparația stângii la click dreapta. Coloane ToContent cu minime reduse pentru panouri înjumătățite.
+- **Grafice/benzi (3):** pnlGrafice ascuns în card se mută întreg în GraficeAsociereForm la «Grafice și benzi» și revine la închidere; fereastră redimensionabilă KBotShellForm. Fără controale duplicate: tabloul/tratatorii existenți păstrează un singur set de culori/repere/drag, ca la AsociereBenziForm.
+- **Drag/meniu pe grup (2):** Tree_NodeDragStarting elimină rădăcini/înghețate, fără refuzul întregului gest; TreeLant_NodeDragOver verifică fiecare și numește rândul refuzat. Rândurile deja pe țintă nu blochează celelalte. Comenzi comune: desprindere, (nu) consemnează schimbare, Începe o recepție nouă din toate N. Un singur IDRR cerut înaintea buclei: UrmatorulIdrrNou citește `_pozitie` și în buclă ar crea N recepții separate. Fără Este rândul de ștergere pe grup: ar declara mai multe sfârșituri ale lanțului.
 - Meniul lucrează pe grup doar dacă grupul CONȚINE rândul pe care a căzut clicul; altfel e o selecție rămasă de la un gest de dinainte.
 
 ## Fișiere atinse
@@ -95,12 +95,12 @@ Doua cereri, amandoua despre acelasi lucru — un grafic fara arborele lui nu e 
 
 ## A. `GraficeAsociereForm` împrumută acum ȘI arborele
 
-Fereastra deschisă de « Grafice și benzi » avea graficul, dar graficul se desface pe recepția ALEASĂ — iar alegerea se face în arbore, care rămăsese în formularul de dedesubt, sub o fereastră modală. Se vedea deci ce fusese ales înainte de apăsarea butonului, și atât; scria chiar pe suprafața goală «Alege o recepție în stânga», și nu exista nicio stânga.
+Modalul Grafice și benzi afișa recepția aleasă anterior; arborele pentru altă alegere rămânea inaccesibil dedesubt. Suprafața goală spunea „Alege o recepție în stânga”, fără arbore acolo.
 
-- `pnlCard` are acum un `SplitContainer` (`splitGrafice`): **stânga = `treeLant`, dreapta = `pnlGrafice`**. Amandoua panourile sunt GOALE în designer — amandoua controalele vin împrumutate de la `AsociereForm` la deschidere și se întorc acasă la închidere, panoul ascuns (cum era) și arborele la vedere (cum a plecat).
-- **Nu s-a făcut un al doilea arbore.** Tratatorii, cele două dicționare de rânduri și pasul de culori sunt scrise pentru `treeLant`; o copie ar fi însemnat un al doilea set de toate. Împreună cu arborele se întorc și cele două legături care nu aveau unde să lucreze: **culoarea** (fiecare punct poartă culoarea rândului lui) și **clicul pe punct**, care selectează rândul.
+- pnlCard primește splitGrafice: stânga treeLant, dreapta pnlGrafice. Ambele panouri sunt goale în Designer; controalele împrumutate revin în AsociereForm la închidere, graficul ascuns și arborele vizibil ca inițial.
+- **Arbore unic:** se păstrează tratatorii, cele două dicționare și colorarea treeLant. Revin astfel culoarea punctului/rândului și selectarea rândului prin click pe punct, fără al doilea set de logică.
 - **La benzi arborele se STRÂNGE** (`Panel1Collapsed`), nu se ascunde: strâns, benzile primesc toată fereastra; ascuns, ar fi rămas o coloană goală și o dungă de tras. Lățimea aleasă de operator nu se pierde — `SplitterDistance` rămâne ce era.
-- Cine spune ferestrei că s-a schimbat vederea: `AsociereForm.AplicaVedereaDinDreaptaSus`, prin `_fereastraGrafice?.AratArborele(...)`. Banda de nume (`navGrafice`) e tot a formularului, deci tot el află primul; câmpul se șterge în `Finally`, ca o fereastră căzută să nu lase în urmă o referință la un formular aruncat. Starea de pornire o citește fereastra din `AsociereForm.VedereaEsteBenzi`, ca să n-o ghicească.
+- AsociereForm.AplicaVedereaDinDreaptaSus, proprietarul navGrafice, notifică prin `_fereastraGrafice?.AratArborele(...)`. Finally golește referința chiar la eșec; starea inițială vine din AsociereForm.VedereaEsteBenzi, fără presupunere.
 
 ## B. `GraficRezervariForm` — graficul rezervărilor, din antetul arborelui
 
@@ -109,11 +109,11 @@ Slotul din dreapta antetului era liber în `RezervariView` (în `ReceptiiView` a
 - **Evoluția** — cât era rezervat, zi de zi: suma alergătoare a lui `R_Valoare`, în TREPTE (`LineMode.Step`), fiindcă o rezervare ține cât ține și sare când vine operația următoare; desenată în pantă, linia ar fi spus despre fiecare zi dintre ele o sumă care n-a existat.
 - **Pe luni** — chiar totalurile scrise pe folderele de lună din arbore, luna cu luna.
 
-Amandoua se desfac din ACELEAȘI rânduri pe care le arată arborele — nicio a treia cifră care să nu se poată regăsi acolo. Rândurile intră O DATĂ, prin constructor: o a doua cerere de rețea ar fi putut răspunde altceva decât scrie în arborele de sub fereastră. Fără angajament ales și fără rezervări sunt două motive diferite de a nu deschide nimic, și se spun separat, prin `KBotMessage`.
+Ambele file primesc aceleași rânduri ca arborele, o dată prin constructor, fără a doua cerere care ar putea schimba cifrele. Fără angajament și fără rezervări sunt refuzuri distincte explicate prin KBotMessage.
 
 **Graficul e al ferestrei**, nu împrumutat ca la asociere: acolo suprafața exista deja în formularul de lucru, aici nu exista niciun grafic al rezervărilor de împrumutat.
 
-⚠ **Lunile negative NU se înroșesc**, deși rândul lor din arbore se înroșește. Încercat și scos: `PointColor` vopsește și SEGMENTUL CARE PLEACĂ din punct, deci o lună negativă făcea roșie urcarea către luna următoare — spunea roșu exact despre partea care creștea.
+⚠ **Lunile negative nu sunt roșii**, deși în arbore sunt: încercarea a fost retrasă deoarece PointColor colorează și segmentul următor, înroșind fals urcarea către luna următoare.
 
 ## Fișiere atinse
 

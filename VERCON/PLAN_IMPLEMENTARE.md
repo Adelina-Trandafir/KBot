@@ -89,14 +89,14 @@ DC validat prin portal = baza MariaDB a unității părinte
 - `DC` este baza aleasă și autorizată de infrastructura existentă. `CAI.DbName` desemnează baza; `CAI.DC` are și semnificație legacy și nu se confundă automat cu `Unitati.DC`.
 - `SubunitId` și `GestiuneId` sunt identități permanente; denumirea, calea Access, tipul sau hashul fișierului nu sunt chei de identitate.
 - `TipGestiune` este un atribut/cod funcțional, nu o bază distinctă și nu valoarea `Masini.IdMasina`. `Masini` reprezintă categorii/conturi în interiorul gestiunii, nu catalogul gestiunilor web.
-- **MF/OI:** fiecare gestiune are o bază Access unică pentru întreg istoricul; toți anii intră în același transfer și în aceeași evidență web. Selecția anului/intervalului este un filtru de lucru/raportare, nu o bază sursă distinctă și nu o copie anuală a activelor.
-- **Materiale/Alimente:** se inventariază toate `tz_aaaa.accdb` din folderele subunității și se includ în lotul ei unic. `AnEvidenta` este anul bazei/exercițiului, distinct de anul datei fiecărui document; o deschidere la 31.12 din anul precedent nu mută rândul în altă sursă. Nu se deduce exercițiul prin MAX(Data).
+- **MF/OI:** sursele unice multianuale confirmate la [decizia 19](#decizii-confirmate-de-utilizator) intră integral în același transfer/evidență. Anul/intervalul este filtru de lucru/raportare, fără sursă sau copie anuală distinctă a activelor.
+- **Materiale/Alimente:** inventarul tuturor `tz_aaaa.accdb` din folderele subunității intră în lotul unic. `AnEvidenta` este anul bazei/exercițiului, distinct de data documentului: deschiderea la 31.12 precedent nu mută sursa. Nu se deduce exercițiul prin MAX(Data).
 - Orice citire, scriere, raport, export, draft, job, import și cache precizează contextul relevant. DC provine din sesiune; ceilalți identificatori sunt validați pe server în DC și între ei.
 - Lipsa contextului cere alegerea lui. Autoselecția este permisă numai când există exact o opțiune eligibilă la nivelul respectiv și răspunsul API o declară explicit.
-- Se păstrează același model de tabele `VC_` pentru toate gestiunile. Configurația și tipul controlează funcțiile disponibile; nu se creează `VC_MF_NIR`, `VC_OI_NIR` ori tabele per an/per fișier.
-- Precizia este configurată pe `SubunitId` și este comună gestiunilor acelei subunități. Anul selectat nu schimbă scara valorilor deja stocate. D02 privește numai maparea/reportarea soldurilor anuale și evitarea dublării lor în transferul unic; organizarea surselor este deja confirmată.
-- Tipul se alege numai pentru baza/evidența nouă fără date. După populare, API-ul și DB interzic schimbarea specificului; nu există comandă de conversie OI↔MF↔Alimente↔Materiale pentru o gestiune existentă.
-- Accesul se obține exclusiv pentru `(DC, SubunitId, GestiuneId)`, fără an în cheia de exclusivitate. Alegerea altui an nu permite unui al doilea utilizator să intre în aceeași gestiune.
+- Schema comună de la [decizia 8](#decizii-confirmate-de-utilizator) folosește tabele `VC_`, configurație/tip pentru funcțiile disponibile; fără `VC_MF_NIR`, `VC_OI_NIR` sau tabele per an/fișier.
+- Precizia comună pe `SubunitId` urmează decizia 11; anul ales nu schimbă scara stocată. D02 privește numai maparea/reportarea soldurilor anuale și evitarea dublării în transfer, organizarea surselor fiind confirmată.
+- Imuabilitatea de la decizia 18 este impusă de API/DB după populare; fără conversie OI↔MF↔Alimente↔Materiale pentru gestiunea existentă.
+- Exclusivitatea deciziei 21 folosește `(DC, SubunitId, GestiuneId)`, fără an; alegerea altui an nu admite al doilea utilizator.
 
 ## Matricea funcțională a gestiunilor
 
@@ -213,11 +213,11 @@ Fiecare problemă primește: `IssueId`, `SourceId`, tabel/cheie/câmp sursă, co
 2. **Date cu avertizare:** necongruență neacoperită de o regulă deja confirmată (de exemplu NULL fără sumă determinabilă). Activarea cere rezolvarea problemelor relevante pentru solduri. N01/N02 rezolvate prin regula >1 leu nu devin blocaje care cer aprobarea aceleiași reguli încă o dată.
 3. **Conversie deterministă documentată:** schimbare de chei, boolean -1/0, reprezentarea INT/scală și normalizarea totalului N01/N02. Originalul, valoarea țintă, suma validată, TVA și numărul conversiilor sunt consemnate în raportul transferului unic.
 
-Un import confirmat nu înseamnă automat gestiune activată. Propunere: stări `IN_PREGATIRE`, `IMPORTATA_IN_REVIZIE`, `ACTIVA`, `ARHIVATA`. Controlul de reconciliere și rezolvarea blocajelor funcționale preced trecerea în ACTIVA. Datele în revizie pot fi inspectate și exportate cu avertizare; nu pot produce operații noi pe un sold nesigur.
+Importul confirmat nu activează automat gestiunea. Stări propuse: `IN_PREGATIRE`, `IMPORTATA_IN_REVIZIE`, `ACTIVA`, `ARHIVATA`. Reconcilierea și rezolvarea blocajelor funcționale preced ACTIVA. În revizie, datele se inspectează/exportă cu avertizare, fără operații noi pe sold nesigur.
 
 ## Modelul persistent propus
 
-**Toate denumirile de mai jos sunt propuneri până la VC03.** Nu reprezintă DDL deja aplicat. Schema comună Access este baza mapării, iar schema web adaugă context, audit, tranzacții și proveniență. Nu este necesar ca fiecare tabel Access să devină tabel web.
+**Denumiri propuse până la VC03, fără DDL aplicat.** Maparea pornește de la schema comună Access și adaugă context/audit/tranzacții/proveniență; nu cere tabel web pentru fiecare tabel Access.
 
 | Grup / tabele țintă propuse | Sursă / responsabilitate | Apartenență |
 |---|---|---|
@@ -266,7 +266,7 @@ Un import confirmat nu înseamnă automat gestiune activată. Propunere: stări 
 
 `S` = suma tuturor liniilor, cu TVA tratată **pe linie** și cu precizia configurată pe subunitate. Se verifică Valoare/TVA/ValoareCUTVA și modul în care sursa salvează prețul: un preț sau total deja TVA-inclus nu primește TVA a doua oară. Linii cu cote diferite, cotă zero și fără TVA sunt cazuri obligatorii. Lipsa câmpurilor necesare calculului nu se înlocuiește cu o cotă globală inventată.
 
-Pentru antetul original `H` cunoscut: **TotalTinta = S dacă H=0 sau abs(H−S)>1 leu; în celelalte cazuri TotalTinta=H.** Pragul este strict: exact 1 leu păstrează H, dacă H nu este 0. Comparația se face în unități monetare reale, nu între coeficienți cu scări diferite și nu după rotunjire automată la 2. Antetul NULL este diagnosticat separat ca lipsă; completarea trebuie consemnată explicit, nu presupusă prin abs(NULL).
+Pentru antet cunoscut `H`: **TotalTinta = S dacă H=0 sau abs(H−S)>1 leu; altfel H.** Exact 1 leu păstrează H nenul. Comparație în unități monetare reale, fără coeficienți cu scări diferite sau rotunjire automată la 2. H NULL se diagnostichează lipsă; completarea se consemnează explicit, fără abs(NULL).
 
 Regula este implementată o singură dată în serviciul numeric comun și folosită de migrator/FC/BC, cu H/S/TVA/scară/regulă în proveniența importului și auditul documentelor noi. Exemplele N01/N02 se recalculează cu TVA corect înainte de stabilirea rezultatului țintă; totalurile din DETECTIE sunt repere, nu substitut pentru calculul validat.
 
@@ -287,19 +287,19 @@ Serviciile primesc parametri expliciți și date verificate; nu citesc `Forms!..
 
 **Protocol comun de scriere:** sesiune + drepturi + capabilitate + drept de acces exclusiv valid → tranzacție scurtă → verificare titular/jeton exclusiv/context/stare/revizie → RequestKey/payload → calcul INT/scară, N01/N02, TVA per linie și preț >=0 → toate efectele+audit+rezultat → COMMIT → succes. Și citirea/rapoartele/exporturile cer accesul exclusiv; tranzacția SQL nu rămâne deschisă pe durata întregii sesiuni.
 
-Fiecare document are revizie pentru cereri vechi/drafturi și comanda web are RequestKey/context/hash payload. Același utilizator poate produce cereri duplicate sau pierde răspunsul; accesul exclusiv nu elimină necesitatea rezultatului idempotent. Nu se permite lucru concurent al doi utilizatori în aceeași gestiune. Retry-ul de conexiune nu reexecută automat business.
+Revizia documentului protejează cererile vechi/drafturile; RequestKey/context/hash payload asigură idempotency și pentru duplicatele/pierderea răspunsului aceluiași utilizator. Se păstrează exclusivitatea pe gestiune; retry-ul conexiunii nu reexecută automat business.
 
 ### Acces exclusiv obligatoriu, inclusiv închiderea de an
 
-Se ocupă atomic un singur drept de lucru pentru cheia `(DC,SubunitId,GestiuneId)`. Rândul păstrează titularul (utilizator și sesiune), jeton/revizie, data ocupării și ultima reînnoire. Propunere tehnică: lease cu heartbeat, eliberare explicită și expirare controlată, verificată la fiecare API/job. Al doilea utilizator primește „Gestiunea este ocupată”; nu este admis pentru alt an sau doar pentru un raport. Gestiuni diferite pot avea utilizatori diferiți.
+Ocuparea atomică pe `(DC,SubunitId,GestiuneId)` păstrează titular utilizator/sesiune, jeton/revizie, data ocupării/ultimei reînnoiri. Propunere: lease cu heartbeat, eliberare explicită, expirare controlată verificată la fiecare API/job. Al doilea utilizator primește „Gestiunea este ocupată”, inclusiv pentru alt an/raport; gestiuni diferite admit utilizatori diferiți.
 
-Durata/reînnoirea/recuperarea accesului sunt fixate în VC04: expirarea nu permite ca o cerere veche să continue să scrie după preluare. Revizia/jetonul și tranzacțiile scurte asigură acest lucru; un simplu flag în browser nu este suficient. Pentru același utilizator în mai multe taburi se definește o singură sesiune titulară ori serializarea cererilor, fără operații paralele necontrolate.
+VC04 fixează durata/reînnoirea/recuperarea: jetonul/revizia și tranzacțiile scurte opresc cererea veche după expirare/preluare, fără simplu flag de browser. Taburile aceluiași utilizator cer sesiune titulară unică ori serializare, fără paralelism necontrolat.
 
-Închiderea anului folosește aceeași ocupare, indiferent de an; nu se construiește un al doilea mecanism pentru doi operatori în paralel. Rămân necesare rollback, detectarea rezultatului necunoscut și prevenirea dublării unei comenzi după întrerupere. Migratorul rezervă întreaga subunitate, blocând accesul la toate gestiunile ei până la încheierea transferului unic.
+Închiderea anului reutilizează ocuparea fără an, fără mecanism paralel pentru doi operatori. Rămân rollbackul, rezultatul necunoscut și idempotency după întrerupere. Migratorul rezervă întreaga subunitate, blocând toate gestiunile până la încheierea transferului unic.
 
 ## Contractul VRC.Migrator
 
-Utilitar Windows separat în `VERCON/VRC.Migrator`, cu executabil **`VRC.Migrator.exe`**, destinat **unui singur transfer complet per DC+Subunitate**. Readerul/conversiile există numai pentru extracția surselor acestui transfer; nu formează un strat permanent de compatibilitate Access. Se reutilizează bibliotecile/controalele/loggerul ADE/KBot.Migrator, cu mapări proprii VERCON.
+Utilitar Windows `VERCON/VRC.Migrator`, **`VRC.Migrator.exe`**, pentru **transferul unic complet DC+Subunitate** de la decizia 22. Readerul/conversiile servesc numai extracției, fără compatibilitate Access permanentă. Reutilizează biblioteci/controale/logger ADE/KBot.Migrator, cu mapări VERCON.
 
 ### Fluxul utilizatorului și manifestul
 
@@ -317,12 +317,12 @@ Manifestul canonic include `PlanVersion`, `RuleVersion`, contract numeric, surse
 
 ### Transfer unic pe subunitate și atomicitate
 
-- Snapshotul citit trebuie să fie stabil: preferabil copie de lucru făcută cu Access oprit pentru scrieri; hash înainte/după extracție și înainte de import. Deschiderea read-only nu garantează că alt utilizator nu scrie în fișier. Dacă snapshotul se schimbă, se recitește și se reprofilează.
-- **VC_Imports are unicitate pe SubunitId în baza DC.** Un transfer confirmat interzice orice al doilea import în aceeași subunitate, chiar cu alte hashuri/fișiere/ani/gestiuni. Nu există buton de repetare/actualizare/sincronizare/clonare sau ștergere automată a markerului. Hashurile sunt dovadă de proveniență, nu permisiune de import nou.
-- Înainte de transfer, ținta business a subunității trebuie să fie nouă/eligibilă, fără import confirmat și fără date conflictuale. Toate gestiunile și sursele sunt reunite în **același pachet**, nu în loturi business succesive pe gestiune.
-- MF/OI: se transferă o singură dată întreg istoricul din baza gestiunii, fără fragmentare/copie pe ani. Materiale/Alimente: toate bazele anuale sunt citite împreună și soldurile lor inițiale sunt identificate pentru a nu fi adunate peste istoricul deja reprezentat. Acesta este un calcul de transfer unic, nu suport pentru importul ulterior al arhivelor.
-- Propunere de atomicitate: o tranzacție pentru toate gestiunile/sursele subunității, inclusiv mapări/registru/conversii și verificările de import înainte de commit. Nu se publică MF reușit cu Alimente eșuat în aceeași subunitate. Dacă volumul cere staging/chunking, datele rămân invizibile business, iar publicarea tuturor gestiunilor și markerului de migrare este atomică. Strategia finală este VC05-03.
-- Înainte de commit eșuat/rollback confirmat nu există migrare reușită; se diagnostichează tentativa. Nu se codează flux de „reimport” al unei subunități migrate. Dacă COMMIT are rezultat necunoscut, se verifică markerul și datele prin instrumentul de diagnostic, fără o nouă inserare automată.
+- Snapshot stabil, preferabil copie cu Access oprit pentru scrieri; hash înainte/după extracție și înainte de import. Read-only nu împiedică scrierea altuia; schimbarea snapshotului cere recitire/reprofilare.
+- **VC_Imports unic pe SubunitId în DC** impune decizia 22, chiar pentru alte hashuri/fișiere/ani/gestiuni. Fără repetare/actualizare/sincronizare/clonare sau ștergere automată a markerului; hashul dovedește proveniența, fără drept de import nou.
+- Ținta business a subunității trebuie nouă/eligibilă, fără import confirmat/date conflictuale; toate gestiunile/sursele formează **același pachet**, fără loturi business succesive pe gestiune.
+- Sursele urmează [organizarea confirmată](#contextul-obligatoriu-de-lucru): istoric MF/OI integral, baze anuale Materiale/Alimente citite împreună. Soldurile inițiale se identifică pentru a nu dubla istoricul; fără suport de import ulterior al arhivelor.
+- Atomicitate propusă: o tranzacție pe toate gestiunile/sursele, mapări/registru/conversii și verificări înainte de commit; fără MF publicat cu Alimente eșuat. Dacă volumul cere staging/chunking, datele sunt invizibile business până la publicarea atomică a tuturor gestiunilor și markerului. VC05-03 fixează strategia finală.
+- Eșecul înainte de commit/rollbackul confirmat cere diagnostic, fără migrare reușită ori reimport al unei subunități migrate. Pentru COMMIT necunoscut se verifică markerul/datele prin Diagnostic, fără inserare automată nouă.
 - Ordine inițială: context → categorii/nomenclatoare/furnizori/clienți/comisii/TVA/feluri → produse → variante → antete NIR/Iesiri_H/LABC → linii intrări/ieșiri/retur/storno → OI/MF și mese/listă/LegBCLA → relații circulare logice validate → registre/reconciliere. Relațiile logice lipsă pot schimba ordinea; nu se dezactivează FK pentru a masca erori.
 - Dacă OI se normalizează în antete/linii, se construiesc antetele pe cheia de grup verificată și se păstrează ID-ul sursă de linie. Dacă antetele repetate au date contradictorii, lotul se blochează pentru reconciliere.
 
@@ -330,7 +330,7 @@ Manifestul canonic include `PlanVersion`, `RuleVersion`, contract numeric, surse
 
 Stări UI propuse: `NECITIT`, `PLAN_CITIT`, `BLOCAT`, `TESTAT`, `IN_IMPORT`, `OPRIRE_SOLICITATA`, `ROLLBACK_CONFIRMAT`, `COMMIT_CONFIRMAT`, `REZULTAT_NECUNOSCUT`, `RECONCILIAT`.
 
-Oprește cere anulare înainte de COMMIT; instrucțiunea curentă poate trebui să se termine. După COMMIT trimis nu se promite anulare. Pierderea confirmării declanșează REZULTAT_NECUNOSCUT: se citește VC_Imports și se verifică întregul lot, fără repetarea transferului. O migrare confirmată închide definitiv opțiunea Migrează pentru subunitate. Nu se închid procese MSACCESS; închiderea formularului așteaptă eliberarea resurselor.
+Oprește cere anulare înainte de COMMIT, eventual după terminarea instrucțiunii curente; după trimitere nu o promite. Confirmare pierdută → REZULTAT_NECUNOSCUT: citire VC_Imports/verificare lot integral, fără repetare. Migrarea confirmată dezactivează definitiv Migrează pe subunitate. Nu închide MSACCESS; formularul așteaptă eliberarea resurselor.
 
 Jurnal: context/hashuri, sursă/gestiune/rânduri pregătite, conversii/probleme, durată și COMMIT/rollback confirmat ori necunoscut. SQL parametrizat și eventualul dump local sunt diagnostic, nu comenzi de reimport; rămân protejate și nu se publică. Secretele nu apar în comenzi/excepții. Eșecul loggerului nu falsifică rezultatul tranzacției.
 
@@ -473,7 +473,7 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 ### SLICE-VC03-01 — ierarhia și politica anuală
 
-**Pași:** modelează ierarhia, tipul imuabil după populare, precizia pe subunitate și ocuparea pe DC+subunitate+gestiune fără an. MF/OI au istoric unic și filtru anual; Materiale/Alimente au exercițiile provenite din toate tz_aaaa, incluse în același transfer al subunității. Definește AnEvidenta vs DataDocument și soldurile fără dublare. **Livrabile:** model logic și schema de context. **Acceptare:** surse cu date din ani multipli și mai multe gestiuni/tipuri în același DC sunt reprezentabile fără baze/tabele separate pe gestiune.
+**Pași:** modelează [contextul obligatoriu](#contextul-obligatoriu-de-lucru): ierarhie, tip imuabil, precizie pe subunitate, exclusivitate fără an și surse multianuale MF/OI/anuale Materiale/Alimente în transferul unic. Definește AnEvidenta vs DataDocument și soldurile fără dublare. **Livrabile:** model logic/schema de context. **Acceptare:** date multianuale și gestiuni/tipuri multiple în același DC, fără baze/tabele separate pe gestiune.
 
 ### SLICE-VC03-02 — tabelele business, tipurile și FK
 
@@ -481,7 +481,7 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 ### SLICE-VC03-03 — importuri, audit și idempotency
 
-**Pași:** modelează VC_Imports cu unicitate pe subunitate (DC implicit în baza țintă), toate sursele/mapările lotului unic, probleme/conversii și audit. Distinge markerul migrare unică de RequestKey al comenzilor web. ContextLock păstrează titular/sesiune/jeton/reînnoire pentru exclusivitate; document/grup OI și linie rămân identități distincte. **Livrabile:** DDL registre/ocupare și contract diagnostic. **Acceptare:** aceleași ID-uri din surse diferite se remapează; al doilea transfer pentru subunitate este interzis indiferent de hash; markerul este atomic cu toate gestiunile; al doilea titular nu poate ocupa aceeași gestiune.
+**Pași:** modelează VC_Imports conform [transferului unic](#transfer-unic-pe-subunitate-și-atomicitate), cu DC implicit în țintă, surse/mapări/probleme/conversii/audit; marker distinct de RequestKey web. ContextLock păstrează titular/sesiune/jeton/reînnoire; documentul/grupul OI și linia au identități distincte. **Livrabile:** DDL registre/ocupare și diagnostic. **Acceptare:** remapare pentru ID-uri egale din surse diferite; al doilea transfer/subunitate interzis indiferent de hash; marker atomic cu toate gestiunile; fără al doilea titular pe aceeași gestiune.
 
 ### SLICE-VC03-04 — configurare, numerotare și date comune
 
@@ -509,7 +509,7 @@ Sunt deja decise și nu se redeschid: schema comună, prefixele VC_/VCxx și VRC
 
 ### SLICE-VC04-04 — ocupare exclusivă, cache, drafturi și joburi
 
-**Pași:** ocupare atomică pe DC+subunitate+gestiune pentru un singur utilizator, titular+session+jeton, heartbeat/eliberare/expirare/recuperare. Citește și scrie numai cu ocupare validă, inclusiv rapoarte și joburi. Definește tratamentul taburilor aceluiași utilizator și blocarea cererii vechi după expirare/preluare. Migratorul rezervă toate gestiunile subunității. Cache/drafturi sunt contextualizate, fără TmpFact global. **Livrabile:** serviciu de ocupare, diagnostic „ocupat”, convenții și invalidări. **Acceptare:** al doilea utilizator nu intră în aceeași gestiune nici pe alt an; gestiuni distincte permit titulari diferiți. Expirarea/preluarea nu permite scrieri ale vechiului titular; închiderea anului folosește aceeași exclusivitate, fără sistem paralel pentru T24.
+**Pași:** implementează [accesul exclusiv obligatoriu](#acces-exclusiv-obligatoriu-inclusiv-închiderea-de-an), inclusiv citiri/rapoarte/joburi, taburi și rezervarea subunității de migrator. Contextualizează cache/drafturi, fără TmpFact global. **Livrabile:** serviciu de ocupare, diagnostic „ocupat”, convenții/invalidări. **Acceptare:** al doilea utilizator blocat și pe alt an; gestiuni distincte admit titulari diferiți; cererea veche nu scrie după expirare/preluare; închiderea anului folosește aceeași exclusivitate, fără sistem paralel T24.
 
 ### SLICE-VC04-05 — probe de acces și audit
 
