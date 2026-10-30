@@ -710,6 +710,20 @@ Public Class ClasificatiiVenituriView
         End Try
     End Sub
 
+    ' Esc twice in a row: a row without an id is one the operator just added with «+» and it goes away; a row from the server goes back as it was (the grid's default).
+    Private Sub Grid_RowCancelRequested(sender As Object, e As KBotRowCancelEventArgs) Handles gridBuget.RowCancelRequested, gridRectificari.RowCancelRequested
+        Try
+            Dim k_grid As KBotDataView = DirectCast(sender, KBotDataView)
+            If _busy OrElse e.RowIndex < 0 OrElse e.RowIndex >= k_grid.RowCount OrElse k_grid(ColId, e.RowIndex) IsNot Nothing Then Return
+            e.Handled = True
+            k_grid.RemoveRowAt(e.RowIndex)
+            UpdateTotalRow()
+            SetDirty(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ClasificatiiVenituriView.Grid_RowCancelRequested", ex)
+        End Try
+    End Sub
+
     Private Sub GridBuget_ButtonClick(sender As Object, e As KBotButtonClickEventArgs) Handles gridBuget.ButtonClick
         Try
             If e.ColumnKey <> ColDelete OrElse _busy Then Return

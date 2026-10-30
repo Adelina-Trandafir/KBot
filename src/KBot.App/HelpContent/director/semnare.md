@@ -4,30 +4,40 @@ title: Semnarea ca director
 part: director
 order: 30
 parent: director
-screens: DirectorForm.pnlDocument, DdfView, DdfVizualizarePage, DdfDocumentPage, DdfFisierePage
+screens: DdfView, DdfVizualizarePage, DdfDocumentPage, DdfFisierePage, OrdView
 keywords: semnare, semnatura, ordonator, adobe, pdf, certificat, aprobat
 ---
-<!-- slice: 0078, 0081-06 -->
-Documentul ales din listă se deschide în dreapta, în aceeași vedere pe care o folosește și
-contabilul pentru documentele de fundamentare. Poți răsfoi paginile ei (conținutul documentului,
-fișierele atașate), dar **nu poți modifica nimic**: la orice comandă de modificare K-BOT răspunde
-«Aici documentul se semnează doar. Modificările se fac din K-BOT-ul unității.»
+<!-- slice: 0078, 0081-06, DIR1-01, 0000-141 -->
+Pagina **Fundamentare** a unui angajament e aceeași vedere pe care o folosește și contabilul. Poți
+răsfoi paginile ei (conținutul documentului, fișierele atașate), dar **nu poți modifica nimic**: la
+orice comandă de modificare K-BOT răspunde «Cu rolul «Director» documentele se citesc și se
+semnează. Modificările și lucrul cu FOREXE se fac din K-BOT-ul contabilului.»
 
-<!-- capture: director-semnare | caption: Documentul deschis pe pagina «Document PDF», gata de semnătura directorului | prepare: În fereastra directorului, selectați un document și deschideți pagina «Document PDF». Faceți poza pe calculatorul directorului și încărcați-o cu «Încarcă». -->
+<!-- capture: director-semnare | caption: Documentul deschis pe pagina «Document PDF», gata de semnătura directorului | prepare: Conectați-vă ca director, alegeți un angajament cu document semnat A și B și deschideți pagina «Document PDF». Faceți poza pe calculatorul directorului. -->
 
 ## Pașii
-<!-- slice: 0078-06, 0081-06 -->
+<!-- slice: 0078-06, 0081-06, DIR1-02, 0000-141 -->
 
-1. Selectează documentul din listă.
-2. Deschide pagina **Document PDF**. Documentul apare în Adobe, chiar în fereastra K-BOT, cu
+1. Alege angajamentul în lista din stânga și deschide pagina **Fundamentare**.
+2. Alege revizia care așteaptă semnătura (starea **«Semnat A și B — la director»**).
+3. Deschide pagina **Document PDF**. Documentul apare în Adobe, chiar în fereastra K-BOT, cu
    semnăturile A și B deja puse.
-3. Citește documentul. Dacă ceva nu e în regulă, **nu semna** — spune-i contabilului unității; el
+4. Citește documentul. Dacă ceva nu e în regulă, **nu semna** — spune-i contabilului unității; el
    face o revizie nouă.
-4. Semnează în câmpul semnăturii **ordonatorului de credite**, cu certificatul tău.
-5. K-BOT salvează documentul semnat pe server. Revizia trece în **«Aprobat»**.
-6. Apasă **«Reîncarcă lista»**: documentul semnat dispare din listă.
+5. Semnează în câmpul semnăturii **ordonatorului de credite**, cu certificatul tău.
+6. K-BOT salvează documentul semnat pe server. Revizia trece în **«Aprobat»**.
 
 Semnăturile A și B nu se ating: semnătura ta se adaugă lângă ele.
+
+## Unde ai voie să semnezi
+<!-- slice: DIR1-03, 0000-141 -->
+
+Directorul semnează **numai în câmpul ordonatorului**, atât pe fundamentare, cât și pe ordonanțare.
+Dacă semnezi în alt câmp, K-BOT **nu trimite nimic pe server** și arată o eroare: «Semnătura NU a
+fost trimisă pe server: ați semnat în alt câmp decât cel al ordonatorului». După ce apeși **OK**,
+K-BOT închide singur documentul, șterge copia de pe calculator și îl aduce din nou, curat, de pe
+server; poți semna atunci în câmpul ordonatorului. Notele de corecție CAB nu au câmp de ordonator, deci un
+director le citește, dar nu le semnează.
 
 ## Dacă ceva nu merge
 <!-- slice: 0078, 0081-06 -->

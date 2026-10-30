@@ -28,10 +28,12 @@ Partial Public Class KbotForm
     Friend Const MachetaClasificatii As String = "clasificatii"
     Friend Const MachetaParteneri As String = "parteneri"
     Friend Const MachetaPlanCont As String = "plan_cont"
+    Friend Const MachetaSabloane As String = "sabloane"
     Friend Const MachetaDdfEdit As String = "ddf.edit"
     Friend Const MachetaOrdEdit As String = "ord.edit"
     Friend Const MachetaAsociere As String = "asociere"
     Friend Const MachetaCabNote As String = "cabnote"
+    Friend Const MachetaCabOmise As String = "cabnote.omise"
     Friend Const MachetaGrafic As String = "grafic.rezervari"
     Friend Const MachetaMesaje As String = "mesaje"
     Friend Const MachetaAjutor As String = "ajutor"
@@ -65,6 +67,7 @@ Partial Public Class KbotForm
         k_registry.Register(New MachetaType(MachetaAjutor, "Ajutor", "folder", AddressOf OpenHelpMachetaAsync))
         k_registry.Register(New MachetaType(MachetaAngajamente, "Lista angajamentelor", "folder_open", AddressOf OpenListaMachetaAsync))
         k_registry.Register(New MachetaType(MachetaCabNote, "Operațiuni necorelate", "FX_RED_16", AddressOf OpenCabNotesMachetaAsync, Nothing, False))
+        k_registry.Register(New MachetaType(MachetaCabOmise, "Operațiuni omise", "FX_RED_16", AddressOf OpenCabSkippedMachetaAsync, Nothing, False))
         k_registry.Register(New MachetaType(MachetaMesaje, "Catalog de mesaje", "folder", Function(k_ref) OpenPage(AddressOf DeschideCatalogulDeMesaje), Nothing, False))
 
         ' Editors and child windows of one angajament.
@@ -256,6 +259,16 @@ Partial Public Class KbotForm
             Return True
         Catch ex As Exception
             GlobalErrorLog.Write("KbotForm.OpenCabNotesMachetaAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    Private Async Function OpenCabSkippedMachetaAsync(k_ref As MachetaRef) As Task(Of Boolean)
+        Try
+            Await ShowSkippedAsync()
+            Return True
+        Catch ex As Exception
+            GlobalErrorLog.Write("KbotForm.OpenCabSkippedMachetaAsync", ex)
             Throw
         End Try
     End Function

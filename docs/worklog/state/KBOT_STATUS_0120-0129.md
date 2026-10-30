@@ -49,6 +49,8 @@ Operator, 20.10.2026: end the dependence of `FX_DDF_REV_SA`, `FX_DDF_REV_SB`, `F
 | 0122-02 | Server DDF/ORD: CodFiscal normalizat | CONSTRUIT (py_compile), NEPORNIT, netestat; client unchanged | [0122-02](../SLICE-0122-parteneri-fara-idpartener.md#slice-0122-02) |
 | 0122-03 | Cititori și protecția la ștergere | CONSTRUIT (py_compile), NEPORNIT, netestat; the old by-id test stays until the keys are dropped | [0122-03](../SLICE-0122-parteneri-fara-idpartener.md#slice-0122-03) |
 | 0122-08 | Ascunderea partenerilor nefolosiți, cu previzualizare | SCRIS, NERULAT; nothing is deleted, reversible; preview first | [0122-08](../SLICE-0122-parteneri-fara-idpartener.md#slice-0122-08) |
+| 0122-09 | DDF edit: «Recepții» din revizia din rezervare însumează `DIF`, nu `Valoare` | SCRIS, NERULAT, netestat; server nedeployat; nu are legătură cu partenerii (slice-ul e doar cel mai recent care a atins `ddf_edit.py`) | [0122-09](../SLICE-0122-09-ddf-receptii-dif.md) |
+| 0122-10 | Recepții vs rezervări: prag de o lună la așezarea automată (server + Asocieri) și detector în tooltipul arborelui | SCRIS + build curat (App 0/0; py_compile); NERULAT, netestat; server nedeployat; fără excepția «suma se potrivește» (cazul real avea suma identică) | [0122-10](../SLICE-0122-10-receptii-vs-rezervari-o-luna.md) |
 
 ---
 
@@ -72,3 +74,63 @@ Operator, 21.10.2026: bring the reports of the VERCON and ADECHIT sites into K-B
 - Other VERCON server files + the site's `reports.js` / `report-result.js` were being changed in the same tree by someone else during 0123-02 (OI reports rework, `tree_group`); the page copies the site's report-tree / selection rules as of 23.10.2026 and must follow if they change.
 - Excel exports all columns (no column picker yet). VERCON «Rapoarte»: the period tree combo opens all years (the site opens the latest only).
 - Ajutor de actualizat: none (done in 0000-119); ribbon captures to redo are listed in the 0000-119 worklog.
+
+---
+
+## Slice 0124 — The DDF flow for DDFs created in K-BOT (DeSemnat, compartment -> role, tray for every role)
+
+Operator, 30.10.2026. Plan and decisions: [SLICE-0124-01](../SLICE-0124-01-flux-ddf-kbot-plan-si-banca.md). Existing revisions stay out of the flow (`DeSemnat` empty).
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0124-01 | The plan; the bench (`DdfFluxServerHarnessForm`) carries captures in step 2 | GATA pe cod (build 0 erori); **capturile probate de operator 30.10.2026 (o imagine de proba in B, semnat si incarcat)**; nimic altceva rulat | [SLICE-0124-01](../SLICE-0124-01-flux-ddf-kbot-plan-si-banca.md) |
+| 0124-02 | SQL: `FX_DDF_REV.DeSemnat` + `FX_DDF_COMP_ROL` (`sql/0124_ddf_desemnat_comp_rol.sql`); rolurile `Secretar` si `Imputernicit` | SCRIS, **NERULAT** (de rulat de operator pe SURSA, apoi sincronizare) | [SLICE-0124-02](../SLICE-0124-02-sql-desemnat-comp-rol.md) |
+| 0124-03 | Server: `ddf_flux_core.py` + `ddf_flux.py` (list per role, `porneste`, compartment -> role table), `DeSemnat` moves in `pdf.py`; Secretar / Administrator see no DDF but the addressed ones (`guard.py` → `refuza_restrans`, `ddf.py` filter), everything else as before | GATA pe cod (py_compile + import OK); **nerulat pe server, de publicat de operator** | [SLICE-0124-03](../SLICE-0124-03-server-flux-si-restrictii.md) |
+| 0124-04 | Client API + generation with section A only (`DdfPdfMode.OnlyA`) by the role that signs A, on that PC, nothing stored before the signature; 412 = old way | GATA pe cod (build 0 erori); **nerulat** | [SLICE-0124-04](../SLICE-0124-04-client-api-si-generare-doar-a.md) |
+| 0124-05 | Setari page «Semnare DDF» (compartment -> role) + `sql/0124_roluri_imputernicit.sql` (AVACONT_COMUN) | GATA pe cod; **nerulat, SQL-ul de comun de rulat de operator** | [SLICE-0124-05](../SLICE-0124-05-setari-comp-rol-si-roluri.md) |
+| 0124-06 | List of documents to sign for Director / Contabil / Imputernicit (+ ribbon button, tray) and the narrowed window `DeSemnatRestransForm` for Secretar / Administrator | GATA pe cod; **nerulat, fereastra nedeschisa niciodata** | [SLICE-0124-06](../SLICE-0124-06-lista-pentru-toate-rolurile-si-fereastra-ingusta.md) |
+| 0124-07 | Section B + captures: the old logic after K-BOT's own sending, plus the operator's step 6 gate (flow revision: the reservation must exist in K-BOT's table) | GATA pe cod; **nerulat** | [SLICE-0124-07](../SLICE-0124-07-sectiunea-b-la-vederea-rezervarii.md) |
+| 0124-08 | Help: `ddf/semnare.md` (new section), `ddf/secretar.md` (new), `setari.md` (page «Semnare DDF») | GATA; fara poze | [SLICE-0124-08](../SLICE-0124-08-ajutor.md) |
+| 0124-09 | Corectiv: fereastra de PIN a tokenului (si «Signing») adusa in fata de capcana Adobe, o data, FARA sa i se citeasca textul (a doua trecere: prima n-a tinut); `KBot.Controls` 1.74.0.0; ajutor 0124-09 in `ddf/semnare.md` | GATA pe cod (build 0 erori); **nevazut pe ecran, nerulat**; titlurile sunt cele englezesti masurate azi | [SLICE-0124-09](../SLICE-0124-09-fereastra-pin-in-fata.md) |
+
+### Open threads — 0124
+
+- **Nothing of 0124-03 .. 0124-08 ran.** To try, in order: the operator publishes the py files; runs `sql/0124_roluri_imputernicit.sql` on AVACONT_COMUN; checks the sync carried `sql/0124` to the unit; sets the compartments in Setari › Semnare DDF; generates a new DDF; signs A as the role; (old «Trimite în FOREXE» from K-BOT) opens it as the accountant for B; the director signs.
+- The director's narrowing is still only in the window (DIR1); the mechanism of 0124-03 could close it on the server if asked.
+- `director/lista.md` (help) still speaks of the director only; the accountant / proxy have the same button now.
+- `KBOT_BANC_PDF` (000_DEMO) can be dropped again by the next schema sync; it is not in the model the sync follows.
+- Captures in the bench: one sample image works (operator, 30.10.2026); not tried with several images or the revision's own PrtScr attachments.
+
+---
+
+## Slice 0125 — A simulated FOREXE for testing the signatures (Debug only)
+
+Operator, 30.10.2026. A FOREXE answered inside K-BOT (no browser, forexecab untouched), reached only from the Debug start window («Aplicația cu FOREXE simulat»).
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0125-01 | `SimulatedForexeRunner` (Debug, `HarnessTests`) answers `CreareAngajament`, `IncarcaRezervare`, `DefinitivareAngajament`, `DerulareAngajament` and the read-back `RezervariAngajament` in the shape of the real answer; the answer goes through the REAL import on the server (needed: section B appears only when `FX_Rezervari` has a row for the revision, 0124-07); launcher entry, `ForexeController.ForexeSimulat`, a line in the send question | GATA pe cod (build Debug 0 erori, 0 avertismente); **nimic rulat, importul nevazut pe server**; scrie in baza de date — doar 000_DEMO | [SLICE-0125-01](../SLICE-0125-01-forexe-simulat-debug.md) |
+
+### Open threads — 0125
+
+- First run to watch: send a K-BOT-made revision, see it reach «PDF final / Semnat A», then `AreRezervari` true and section B written; the import of the simulated history was matched against the server code by reading only.
+- The simulated import writes `FX_Indicatori_Buget` with «largest value + 100.000» per classification: never on a real database.
+- No failure injection (a send that stops half-way) yet.
+- **Found, not from this slice:** `HarnessTests/DdfFluxServerHarnessForm.vb` (0124-01) has no `#If DEBUG` while `PdfSignatureReport` / `RecordingPdfApi` do, so `dotnet build -c Release` of KBot.App fails with 4 errors (BC30451). Needs the file wrapped before the next Release publish.
+
+---
+
+## Slice 0126 — Clasificații: rânduri goale de adăugare, totaluri în arbore, tabel de angajamente
+
+Operator, 30.10.2026, fereastra «Clasificații cheltuieli».
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0126-01 | Rând gol de adăugare în tabelele de buget și rectificări (3 și 6 rânduri fără derulare), totalul final în arbore (`~~~` a treia parte, aliniat la dreapta, fără zecimale), rândul de total cu culoarea subsolului, tabel nou «Angajamente» (rută `POST …/clasificatii/angajamente`) | GATA pe cod (build Debug 0 erori / 0 avertismente, `py_compile` verde); **nevăzut pe ecran, rută nedeployată, nimic rulat** | [0126-01](../SLICE-0126-01-clasificatii-randuri-goale-totaluri-angajamente.md) |
+
+### Open threads — 0126
+
+- Numărul de felie ales de mine (primul liber); operatorul de confirmat.
+- Interpretare: 3 și 6 sunt rânduri cu date, rândul gol vine în plus; două constante de schimbat dacă nu.
+- De văzut pe ecran la 100 / 125 / 150%: fără bară de derulare, coloanele aliniate, culoarea rândului de total, fereastra mai înaltă.
+- Ajutor: captura `clasificatii` de refăcut (ajutor de actualizat: `contabil.nomenclatoare.clasificatii`).

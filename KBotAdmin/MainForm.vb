@@ -48,8 +48,10 @@ Public Class MainForm
         _views("cereri") = viewRequests
         _views("publicare") = viewPublish
         _views("unice") = viewOnce
+        _views("sursa") = viewSource
         _views("login") = viewLogin
         _views("vercon-reports") = viewVerconReports
+        _views("mf-import") = viewMfImport
         _views("demo") = viewDemo
         _views("copii-locale") = viewLocalBackup
         _views("istoric-md") = viewMdHistory

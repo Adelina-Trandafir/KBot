@@ -28,6 +28,8 @@ Friend NotInheritable Class AvcKinds
     Public Const CONT_LIPSA As String = "CONT_LIPSA"
     ''' <summary>Journals the target would refuse, or that need a look.</summary>
     Public Const JURNAL_INVALID As String = "JURNAL_INVALID"
+    ''' <summary>Operation templates the target would refuse, or that need a look (they are left out, never half written).</summary>
+    Public Const SABLON_INVALID As String = "SABLON_INVALID"
 End Class
 
 ''' <summary>How many rows a step wrote into one table.</summary>

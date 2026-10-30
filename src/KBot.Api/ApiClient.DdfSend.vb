@@ -53,6 +53,24 @@ Partial Public Class ApiClient
         Public Property total As Double
         Public Property semnatura As String
         Public Property pdf_sha256 As String
+        Public Property de_semnat As String
+        Public Property incarcat As Boolean
+        Public Property preluat As Boolean
+    End Class
+
+    Private NotInheritable Class CompRolRandWire
+        Public Property comp As String
+        Public Property rol As String
+    End Class
+
+    Private NotInheritable Class CompRolResponse
+        Public Property compartimente As List(Of String)
+        Public Property mapare As List(Of CompRolRandWire)
+        Public Property roluri As List(Of String)
+    End Class
+
+    Private NotInheritable Class CompRolRequest
+        Public Property mapare As List(Of CompRolRandWire)
     End Class
 
     Private Const H_NUME_FISIER As String = "X-Nume-Fisier"
@@ -136,11 +154,20 @@ Partial Public Class ApiClient
         End Try
     End Function
 
-    Public Async Function GetDdfDeSemnatDirectorAsync(ct As CancellationToken) As Task(Of DdfDeSemnatLista) _
+    Public Function GetDdfDeSemnatDirectorAsync(ct As CancellationToken) As Task(Of DdfDeSemnatLista) _
         Implements IDdfSendApi.GetDdfDeSemnatDirectorAsync
+        Return CitesteListaDeSemnatAsync("/api/forexe/ddf/director/de-semnat", "ApiClient.GetDdfDeSemnatDirectorAsync", ct)
+    End Function
+
+    Public Function GetDdfDeSemnatAsync(ct As CancellationToken) As Task(Of DdfDeSemnatLista) _
+        Implements IDdfSendApi.GetDdfDeSemnatAsync
+        Return CitesteListaDeSemnatAsync("/api/forexe/ddf/de-semnat", "ApiClient.GetDdfDeSemnatAsync", ct)
+    End Function
+
+    Private Async Function CitesteListaDeSemnatAsync(url As String, sursa As String, ct As CancellationToken) As Task(Of DdfDeSemnatLista)
         Try
             EnsureConfigured()
-            Using msg As New HttpRequestMessage(HttpMethod.Get, "/api/forexe/ddf/director/de-semnat")
+            Using msg As New HttpRequestMessage(HttpMethod.Get, url)
                 msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
                 Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
                     Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
@@ -165,7 +192,10 @@ Partial Public Class ApiClient
                             .DescScurta = If(w.desc_scurta, String.Empty),
                             .Total = w.total,
                             .Semnatura = If(w.semnatura, String.Empty),
-                            .PdfSha256 = If(w.pdf_sha256, String.Empty)})
+                            .PdfSha256 = If(w.pdf_sha256, String.Empty),
+                            .DeSemnat = If(w.de_semnat, String.Empty),
+                            .Incarcat = w.incarcat,
+                            .Preluat = w.preluat})
                     Next
                     Return rezultat
                 End Using
@@ -173,20 +203,53 @@ Partial Public Class ApiClient
         Catch ex As ApiException
             Throw
         Catch ex As Exception
-            GlobalErrorLog.Write("ApiClient.GetDdfDeSemnatDirectorAsync", ex)
+            GlobalErrorLog.Write(sursa, ex)
             Throw
         End Try
     End Function
 
+    Public Async Function GetCompRolAsync(ct As CancellationToken) As Task(Of DdfCompRol) _
+        Implements IDdfSendApi.GetCompRolAsync
+        Dim resp As CompRolResponse = Await TrimiteJsonAsync(Of Object, CompRolResponse)(
+            "/api/forexe/ddf/flux/comp-rol", Nothing, "citirea tabelei compartiment-rol",
+            "ApiClient.GetCompRolAsync", ct, HttpMethod.Get).ConfigureAwait(False)
+        Dim rezultat As New DdfCompRol()
+        If resp?.compartimente IsNot Nothing Then rezultat.Compartimente.AddRange(resp.compartimente)
+        If resp?.roluri IsNot Nothing Then rezultat.Roluri.AddRange(resp.roluri)
+        If resp?.mapare IsNot Nothing Then
+            For Each w As CompRolRandWire In resp.mapare
+                rezultat.Mapare.Add(New DdfCompRolRand() With {.Comp = If(w.comp, String.Empty), .Rol = If(w.rol, String.Empty)})
+            Next
+        End If
+        Return rezultat
+    End Function
+
+    Public Function SalveazaCompRolAsync(mapare As IReadOnlyList(Of DdfCompRolRand), ct As CancellationToken) As Task _
+        Implements IDdfSendApi.SalveazaCompRolAsync
+        Dim req As New CompRolRequest() With {.mapare = New List(Of CompRolRandWire)()}
+        If mapare IsNot Nothing Then
+            For Each r As DdfCompRolRand In mapare
+                req.mapare.Add(New CompRolRandWire() With {.comp = r.Comp, .rol = r.Rol})
+            Next
+        End If
+        Return TrimiteJsonAsync(Of CompRolRequest, Object)("/api/forexe/ddf/flux/comp-rol", req,
+                                                           "salvarea tabelei compartiment-rol",
+                                                           "ApiClient.SalveazaCompRolAsync", ct, HttpMethod.Put)
+    End Function
+
     ' POST a JSON body (or none) and read a JSON answer. TResp = Object means "only the status matters".
     Private Async Function TrimiteJsonAsync(Of TReq, TResp)(url As String, req As TReq, eticheta As String,
-                                                            sursa As String, ct As CancellationToken) As Task(Of TResp)
+                                                            sursa As String, ct As CancellationToken,
+                                                            Optional metoda As HttpMethod = Nothing) As Task(Of TResp)
         Try
             EnsureConfigured()
-            Using msg As New HttpRequestMessage(HttpMethod.Post, url)
+            Dim k_method As HttpMethod = If(metoda, HttpMethod.Post)
+            Using msg As New HttpRequestMessage(k_method, url)
                 msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
-                Dim body As String = If(req Is Nothing, "{}", JsonSerializer.Serialize(req, _json))
-                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                If k_method IsNot HttpMethod.Get Then
+                    Dim body As String = If(req Is Nothing, "{}", JsonSerializer.Serialize(req, _json))
+                    msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                End If
                 Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
                     Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
                     If Not resp.IsSuccessStatusCode Then

@@ -16,7 +16,7 @@ Fereastra **«Verificare buget FOREXE»** pune față în față, pentru fiecare
 <!-- slice: 0103-04, 0000-47, AV01-13 -->
 
 - Din fereastra [Clasificații cheltuieli](topic:contabil.nomenclatoare.clasificatii), cu butonul **«Verifică bugetul»** din josul ei. Se deschide întotdeauna, chiar dacă totul se potrivește (atunci scrie asta în josul ferestrei).
-- Singură, la sfârșitul unei descărcări de angajament: K-BOT verifică clasificațiile angajamentului și deschide fereastra **doar dacă** găsește diferențe. Dacă totul se potrivește, nu apare nimic.
+- Numai așa: o descărcare din FOREXE nu o deschide singură.
 
 ## Ce arată
 <!-- slice: 0103-04, 0105, 0108, 0107, 0000-47 -->
@@ -32,6 +32,4 @@ Se verifică doar clasificațiile **folosite în FOREXE**, adică cele pentru ca
 ## Dublu clic pe un rând
 <!-- slice: 0107, 0000-47, AV01-13 -->
 
-Când ai deschis fereastra din «Clasificații cheltuieli» (butonul **«Verifică bugetul»**), **dublu clic pe un rând** închide fereastra și alege în arbore clasificația respectivă, ca să vezi direct bugetul și rectificările ei. Dacă filtrele o ascundeau, arborele arată din nou toate clasificațiile. Dacă ai modificări nesalvate, K-BOT te întreabă întâi ce faci cu ele.
-
-Fereastra deschisă singură, după o descărcare, nu are această alegere: acolo dublu clicul nu face nimic. Pentru a o închide, apasă **«Închide»**.
+**Dublu clic pe un rând** închide fereastra și alege în arbore clasificația respectivă, ca să vezi direct bugetul și rectificările ei. Dacă filtrele o ascundeau, arborele arată din nou toate clasificațiile. Dacă ai modificări nesalvate, K-BOT te întreabă întâi ce faci cu ele. Pentru a închide fereastra fără să alegi nimic, apasă **«Închide»**.

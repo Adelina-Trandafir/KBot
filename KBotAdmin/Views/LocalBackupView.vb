@@ -362,6 +362,25 @@ Public Class LocalBackupView
         End Try
     End Sub
 
+    Private Sub BtnProfile_Click(k_sender As Object, e As EventArgs) Handles btnProfile.Click
+        Try
+            Dim k_dbs As List(Of String) = If(_context.IsAll, New List(Of String)(), New List(Of String) From {_context.SelectedDb})
+            Dim k_text As String = BackupProfile.LatestReports(k_dbs)
+            If k_text = String.Empty Then
+                KBotMessage.Show("Nu există încă niciun profil pentru " & If(_context.IsAll, "vreo bază", "baza " & _context.SelectedDb) &
+                                 ". Se scrie la fiecare copie nouă (în Logs\backup_profile\); apăsați «Salvează acum» sau așteptați copia zilnică.",
+                                 "Copii locale", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            Using k_form As New SqlTextForm("Profilul ultimei copii", System.Text.Encoding.UTF8.GetByteCount(k_text), k_text, System.Text.Encoding.UTF8.GetByteCount(k_text), False)
+                k_form.ShowDialog(Me)
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("LocalBackupView.BtnProfile_Click", ex)
+            KBotMessage.Show(ex.Message, "Copii locale", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
     Private Async Sub BtnPurge_Click(k_sender As Object, e As EventArgs) Handles btnPurge.Click
         Try
             Dim k_store As BackupStore = BackupAccess.EnsureStore(_context, Me)

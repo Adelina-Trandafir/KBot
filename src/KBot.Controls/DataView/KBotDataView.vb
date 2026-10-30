@@ -565,6 +565,7 @@ Public Class KBotDataView
                 Throw New ArgumentException($"Coloana '{colKey}' nu e de tip OptionButton.", NameOf(colKey))
             End If
             Dim row As KBotDataRow = _rows(rowIndex)
+            row.CaptureBaseline()
             row(colKey) = value
             If value Then ClearOptionSiblings(row, col)
             row.IsDirty = True          ' e o COMUTARE, nu o încărcare

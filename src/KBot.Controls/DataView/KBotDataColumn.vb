@@ -1298,6 +1298,34 @@ Public NotInheritable Class KBotDataColumn
         ButtonBackColor = Color.Empty
     End Sub
 
+    Private _buttonHoverBackColor As Color = Color.Empty
+
+    ''' <summary>
+    ''' Colour the button face takes while the mouse is over it (slice 0126-02). <c>Color.Empty</c> (default) = no hover effect.
+    ''' A colour with an alpha (for example 60 of 255) is drawn OVER what the face already shows, so it works on a flat button
+    ''' (<see cref="ButtonBackColor"/> transparent) on any row colour.
+    ''' </summary>
+    <Category("K-BOT: Button")>
+    <Description("Colour of the button while the mouse is over it. Empty = no hover effect. A colour with alpha is drawn over the row.")>
+    Public Property ButtonHoverBackColor As Color
+        Get
+            Return _buttonHoverBackColor
+        End Get
+        Set(value As Color)
+            If _buttonHoverBackColor = value Then Return
+            _buttonHoverBackColor = value
+            Owner?.Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeButtonHoverBackColor() As Boolean
+        Return Not _buttonHoverBackColor.IsEmpty
+    End Function
+
+    Private Sub ResetButtonHoverBackColor()
+        ButtonHoverBackColor = Color.Empty
+    End Sub
+
     ''' <summary>
     ''' Colour of the button border. <c>Color.Empty</c> (default) = from the theme (greyed when the
     ''' cell is disabled). <c>Color.Transparent</c> = no border line. An explicit colour also
@@ -1723,6 +1751,26 @@ Public NotInheritable Class KBotDataColumn
     <Browsable(False)>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public Property ComboItems As IList(Of Object)
+
+    ''' <summary>
+    ''' Minimum width of the opened list of a <see cref="KBotColumnType.Combo"/> cell, in logical px (96 dpi, scaled at runtime). 0 = as wide as the cell.
+    ''' A list wider than the cell keeps the left edge of the cell.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Lățimea minimă a listei deschise a celulei combo, px @96dpi. 0 = cât celula.")>
+    <DefaultValue(0)>
+    Public Property ComboDropDownWidth As Integer
+        Get
+            Return _comboDropDownWidth
+        End Get
+        Set(k_value As Integer)
+            If k_value < 0 Then
+                Throw New ArgumentOutOfRangeException(NameOf(k_value), k_value, "ComboDropDownWidth cannot be negative.")
+            End If
+            _comboDropDownWidth = k_value
+        End Set
+    End Property
+    Private _comboDropDownWidth As Integer
 
     ''' <summary>
     ''' Grupul de exclusivitate pentru coloanele <see cref="KBotColumnType.OptionButton"/>.

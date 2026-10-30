@@ -89,6 +89,7 @@ Partial Class KBotDataView
         ' Mutarea celulei curente comite editarea deschisă. Dacă handler-ul de validare a
         ' respins valoarea, mutarea NU are loc — editorul rămâne deschis pe celula lui.
         If _editing AndAlso Not CommitEdit() Then Return
+        _escArmed = False
         _currentRowIndex = rowIndex
         _currentColumnKey = colKey
         If rowIndex >= 0 Then EnsureVisible(rowIndex)
@@ -355,6 +356,8 @@ Partial Class KBotDataView
 
     ' Fără asta, WinForms ar da săgețile/Tab/Enter mai departe (schimbare de focus).
     Protected Overrides Function IsInputKey(keyData As Keys) As Boolean
+        ' The second Esc is ours only while it is armed; otherwise Esc keeps going to the form (CancelButton).
+        If _escArmed AndAlso (keyData And Keys.KeyCode) = Keys.Escape AndAlso RowCanBeCancelled() Then Return True
         Select Case (keyData And Keys.KeyCode)
             Case Keys.Left, Keys.Right, Keys.Up, Keys.Down, Keys.Tab, Keys.Enter,
                  Keys.F2, Keys.PageUp, Keys.PageDown, Keys.Home, Keys.End, Keys.Space
@@ -363,11 +366,26 @@ Partial Class KBotDataView
         Return MyBase.IsInputKey(keyData)
     End Function
 
+    ' The second Esc belongs to the grid only when the operator changed something in the current row; otherwise it goes on to the form.
+    Private Function RowCanBeCancelled() As Boolean
+        Return _currentRowIndex >= 0 AndAlso _currentRowIndex < _rows.Count AndAlso _rows(_currentRowIndex).HasBaseline
+    End Function
+
     Protected Overrides Sub OnKeyDown(e As KeyEventArgs)
         MyBase.OnKeyDown(e)
         Try
             Dim ctrl As Boolean = (e.Modifiers And Keys.Control) = Keys.Control
             Dim shift As Boolean = (e.Modifiers And Keys.Shift) = Keys.Shift
+
+            ' Slice 0010-08: the second Esc in a row (the first one closed the editor) cancels the row; any other key disarms it.
+            Dim k_cancelRow As Boolean = _escArmed AndAlso e.KeyCode = Keys.Escape AndAlso RowCanBeCancelled()
+            _escArmed = False
+            If k_cancelRow Then
+                CancelRow(_currentRowIndex, _currentColumnKey)
+                e.Handled = True
+                e.SuppressKeyPress = True
+                Return
+            End If
 
             Select Case e.KeyCode
                 Case Keys.Up
@@ -459,6 +477,7 @@ Partial Class KBotDataView
             Case KBotColumnType.CheckBox
                 Dim oldValue As Object = _rows(rowIndex)(colKey)
                 Dim newValue As Boolean = Not ToBool(oldValue)
+                _rows(rowIndex).CaptureBaseline()
                 _rows(rowIndex)(colKey) = newValue
                 _rows(rowIndex).IsDirty = True      ' comutare de operator => „editat”
                 InvalidateRow(rowIndex)
@@ -484,6 +503,7 @@ Partial Class KBotDataView
     Protected Overrides Sub OnMouseDown(e As MouseEventArgs)
         MyBase.OnMouseDown(e)
         Try
+            _escArmed = False
             ' Any press closes the cell tooltip: the operator is working now, not reading.
             CancelCellTooltip()
 
@@ -545,8 +565,13 @@ Partial Class KBotDataView
                String.Equals(_currentColumnKey, col.Key, StringComparison.Ordinal) AndAlso
                Not _editing AndAlso CanEdit(col.Key, rowIndex) Then
                 ' Slice 0094: a click on a combo cell's chevron also opens the list.
-                If BeginEdit(col.Key, rowIndex) AndAlso IsOnComboChevron(col, rowIndex, e.Location) Then
-                    editCombo.DroppedDown = True
+                If BeginEdit(col.Key, rowIndex) Then
+                    If IsOnComboChevron(col, rowIndex, e.Location) Then
+                        editCombo.DroppedDown = True
+                    ElseIf IsOnDateButton(col, rowIndex, e.Location) Then
+                        ' A click on a date cell's calendar button also opens the calendar.
+                        ShowDateCalendar()
+                    End If
                 End If
             End If
         Catch ex As Exception
@@ -562,6 +587,11 @@ Partial Class KBotDataView
         If RowAtPoint(pt) <> _editRowIndex Then Return False
         Dim col As KBotDataColumn = ColumnAtX(pt.X)
         If col Is Nothing OrElse Not String.Equals(col.Key, _editColumnKey, StringComparison.Ordinal) Then Return False
+        ' A date cell's calendar button opens the calendar instead of selecting the text.
+        If IsOnDateButton(col, _editRowIndex, pt) Then
+            ShowDateCalendar()
+            Return True
+        End If
         FocusActiveEditor()
         If editText.Visible Then editText.SelectAll()
         If editCombo.Visible Then
@@ -579,6 +609,7 @@ Partial Class KBotDataView
     Protected Overrides Sub OnMouseMove(e As MouseEventArgs)
         MyBase.OnMouseMove(e)
         Try
+            UpdateButtonHover(e.Location, True)
             ' Banda de subsol: hover-ul butonului de strângere. Cât timp cursorul e acolo, nicio
             ' celulă nu e survolată, deci nici etichetă.
             If HandleFooterMouseMove(e.Location) Then
@@ -646,7 +677,8 @@ Partial Class KBotDataView
             ' the arrow), so the operator sees where typing is possible before clicking.
             ' Slice 0094: the chevron of a combo cell is a button, not text.
             If tipCol IsNot Nothing AndAlso CanEdit(tipCol.Key, tipRow) Then
-                Cursor = If(IsOnComboChevron(tipCol, tipRow, e.Location), Cursors.Default, Cursors.IBeam)
+                Cursor = If(IsOnComboChevron(tipCol, tipRow, e.Location) OrElse IsOnDateButton(tipCol, tipRow, e.Location),
+                            Cursors.Default, Cursors.IBeam)
             End If
             UpdateCellTooltip(If(tipCol Is Nothing, Nothing, tipCol.Key), If(tipCol Is Nothing, -1, tipRow))
         Catch ex As Exception
@@ -706,6 +738,7 @@ Partial Class KBotDataView
     Protected Overrides Sub OnMouseLeave(e As EventArgs)
         MyBase.OnMouseLeave(e)
         Cursor = Cursors.Default
+        UpdateButtonHover(Point.Empty, False)
         HandleFooterMouseLeave()
         ClearHeaderIconHover()
         ClearFilterIconHover()

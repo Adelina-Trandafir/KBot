@@ -403,6 +403,17 @@ Public NotInheritable Class VrcRunResult
                 k_sb.AppendLine($"- {k_first.TableName}: {Cases(k_group.Count())} de poziții de primire rămân fără produs, pentru că bonul nu arată o singură variantă sigură. Le reglați din VERCON, cu butonul «Reglare registru OI» din paginile bonurilor.")
                 Continue For
             End If
+            If k_first.RuleCode = "N20" Then
+                k_sb.AppendLine($"- {k_first.TableName}.PUTVA: {Cases(k_group.Count())} cu zecimalele prețului cu TVA recuperate din ProduseP din aceeași sursă/gestiune. Coloana Long din Access rotunjise prețul la întreg. Se schimbă numai în transfer; fișierele Access rămân neatinse.")
+                For Each k_file In k_group.GroupBy(Function(k_i) PathOf(k_i), StringComparer.OrdinalIgnoreCase)
+                    k_sb.AppendLine($"    - `{k_file.Key}`: " & String.Join(", ", k_file.Select(Function(k_i) $"ID {k_i.SourceKey}: {k_i.OriginalValue} → {k_i.TargetValue}")))
+                Next
+                Continue For
+            End If
+            If k_first.RuleCode = "N19" Then
+                k_sb.AppendLine($"- {k_first.TableName}: {Cases(k_group.Count())} de poziții din registru aveau valoarea cu alt semn decât cantitatea (de exemplu cantitate -1 și valoare +184,99, la partea care dă dintr-un transfer). Valoarea a primit semnul cantității, ca să nu rămână valoare la un deținător fără obiecte. Se schimbă numai în transfer; fișierele Access rămân neatinse.")
+                Continue For
+            End If
             If k_first.RuleCode = "X08" Then
                 Dim k_what As String = If(String.Equals(k_first.FieldName, "Cant", StringComparison.OrdinalIgnoreCase), "cantitate negativă", "preț negativ")
                 k_sb.AppendLine($"- {k_first.TableName}: {Cases(k_group.Count())} cu {k_what}. Se transferă exact cum sunt, cu minus; nu se corectează nimic.")

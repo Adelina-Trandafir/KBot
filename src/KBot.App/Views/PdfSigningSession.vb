@@ -19,6 +19,8 @@ Public Enum PdfSigningStatus
     SaveCancelled = 3
     ''' <summary>The saved file could not be read or checked.</summary>
     Failed = 4
+    ''' <summary>A signature in a field the signer may not sign: the document was NOT sent to the server.</summary>
+    Refused = 5
 End Enum
 
 ''' <summary>The result of one signing check. POCO -&gt; no Try/Catch.</summary>
@@ -105,6 +107,16 @@ Public NotInheritable Class PdfSigningSession
     ''' <see cref="ReaderHostPreview"/> sets it on every session it is given.
     ''' </summary>
     Public Property SaveAfterSignature As Func(Of Boolean)
+
+    ''' <summary>
+    ''' The roles a signature added in this session may have (the director signs only as «Ordonator», see DirectorMode).
+    ''' Nothing = no limit. A save that adds a signature of any other role (or of a field with no known role) is NOT uploaded:
+    ''' the session ends it with <see cref="PdfSigningStatus.Refused"/>.
+    ''' </summary>
+    Public Property AllowedNewRoles As IReadOnlyCollection(Of String)
+
+    ' The signed-field key already refused, so the same file is not refused again on every file event.
+    Private _refusedKey As String
 
     Public Sub New(kind As PdfDocKind, id As Integer, displayedPath As String, cachePath As String,
                    serverSha As String, api As IApiClient)
@@ -264,11 +276,17 @@ Public NotInheritable Class PdfSigningSession
         If _baselineKey Is Nothing Then _baselineKey = ""
 
         Dim bytes As Byte() = Await SignedPdfFiles.ReadWhenSettledAsync(DisplayedPath).ConfigureAwait(True)
-        If bytes Is Nothing OrElse _disposed Then Return False
+        If bytes Is Nothing OrElse _disposed Then
+            If Not _disposed Then AdobeHostLogLine("Verificare după salvare: fișierul nu a putut fi citit (încă blocat de Adobe sau lipsă) — nu s-a verificat nimic.")
+            Return False
+        End If
 
         ' Exactly the server copy: nothing to do (e.g. the watcher fired on our own cache write).
         Dim sha As String = PdfHash.Compute(bytes)
-        If PdfHash.AreEqual(sha, ServerSha) Then Return False
+        If PdfHash.AreEqual(sha, ServerSha) Then
+            AdobeHostLogLine("Verificare după salvare: fișierul de pe disc e identic cu cel de pe server — nu s-a scris nicio semnătură nouă în el.")
+            Return False
+        End If
 
         Dim docType As String = Me.DocType
         Dim info As PdfSignatureInfo
@@ -283,9 +301,35 @@ Public NotInheritable Class PdfSigningSession
             Return False
         End Try
 
-        If Not info.IsSigned Then Return False
+        If Not info.IsSigned Then
+            AdobeHostLogLine("Verificare după salvare: documentul de pe disc nu are nicio semnătură.")
+            Return False
+        End If
         Dim key As String = info.FieldKey()
-        If String.Equals(key, _baselineKey, StringComparison.Ordinal) Then Return False
+        If String.Equals(key, _baselineKey, StringComparison.Ordinal) Then
+            AdobeHostLogLine($"Verificare după salvare: aceleași câmpuri semnate ca înainte ({info.FieldNames.Count}) — nicio semnătură nouă.")
+            Return False
+        End If
+        AdobeHostLogLine($"Verificare după salvare: câmpuri semnate acum: {String.Join(", ", info.FieldNames)}.")
+
+        ' A signature in a field this signer may not sign: nothing goes to the server, and the operator is told.
+        If AllowedNewRoles IsNot Nothing Then
+            If String.Equals(key, _refusedKey, StringComparison.Ordinal) Then Return False
+            Dim wrong As List(Of PdfSignatureRecord) = SignatureRecords.Added(info, _baselineKey) _
+                .Where(Function(k_rec) Not AllowedNewRoles.Contains(k_rec.rol, StringComparer.Ordinal)).ToList()
+            If wrong.Count > 0 Then
+                _refusedKey = key
+                _unfinishedSince = Nothing
+                Dim k_where As String = String.Join(", ", wrong.Select(Function(k_rec) If(String.IsNullOrEmpty(k_rec.rol), "câmp necunoscut", k_rec.rol)))
+                AdobeHostLogLine($"Semnătură în câmp nepermis ({k_where}) — documentul NU se încarcă.")
+                RaiseCompleted(New PdfSigningOutcome With {
+                    .Status = PdfSigningStatus.Refused,
+                    .Message = "Semnătura NU a fost trimisă pe server: ați semnat în alt câmp decât cel al ordonatorului (" & k_where & ")." &
+                               Environment.NewLine & Environment.NewLine &
+                               "Directorul semnează doar în câmpul «Ordonator»."})
+                Return False
+            End If
+        End If
 
         ' Slice 0078-05, measured on the bench 29.09.2026: Adobe writes the file TWICE. First with
         ' the new signature field and an EMPTY placeholder («can't decode PKCS7SignedData»), right

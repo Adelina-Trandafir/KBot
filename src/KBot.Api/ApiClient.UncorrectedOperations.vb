@@ -58,6 +58,15 @@ Partial Public Class ApiClient
         Public Property operatiuni As List(Of UncorrelatedWire)
     End Class
 
+    Private NotInheritable Class SkipRequest
+        Public Property idfxp As List(Of Integer)
+        Public Property omis As Boolean
+    End Class
+
+    Private NotInheritable Class SkipResponse
+        Public Property actualizate As Integer
+    End Class
+
     Public Async Function SaveUncorrectedOperationsAsync(rows As IReadOnlyList(Of UncorrectedOperation),
                                                          ct As CancellationToken) As Task(Of UncorrectedOperationsSaveResult) _
         Implements IUncorrectedOperationsApi.SaveUncorrectedOperationsAsync
@@ -112,11 +121,20 @@ Partial Public Class ApiClient
         End Try
     End Function
 
-    Public Async Function GetUncorrelatedOperationsAsync(ct As CancellationToken) As Task(Of List(Of UncorrectedOperation)) _
+    Public Function GetUncorrelatedOperationsAsync(ct As CancellationToken) As Task(Of List(Of UncorrectedOperation)) _
         Implements IUncorrectedOperationsApi.GetUncorrelatedOperationsAsync
+        Return ReadUncorrelatedAsync("/api/forexe/operatiuni/necorelate", "citirea operațiunilor necorelate", ct)
+    End Function
+
+    ' Slice 0088-06: the omitted ones, shown only by «Operațiuni omise».
+    Public Function GetSkippedOperationsAsync(ct As CancellationToken) As Task(Of List(Of UncorrectedOperation)) _
+        Implements IUncorrectedOperationsApi.GetSkippedOperationsAsync
+        Return ReadUncorrelatedAsync("/api/forexe/operatiuni/necorelate?omise=1", "citirea operațiunilor omise", ct)
+    End Function
+
+    Private Async Function ReadUncorrelatedAsync(url As String, action As String, ct As CancellationToken) As Task(Of List(Of UncorrectedOperation))
         Try
-            Dim text As String = Await SendCabAsync(HttpMethod.Get, "/api/forexe/operatiuni/necorelate", Nothing,
-                                                    "citirea operațiunilor necorelate", ct).ConfigureAwait(False)
+            Dim text As String = Await SendCabAsync(HttpMethod.Get, url, Nothing, action, ct).ConfigureAwait(False)
             Dim payload As UncorrelatedResponse = JsonSerializer.Deserialize(Of UncorrelatedResponse)(text, _json)
             Dim result As New List(Of UncorrectedOperation)()
             If payload Is Nothing OrElse payload.operatiuni Is Nothing Then Return result
@@ -143,7 +161,25 @@ Partial Public Class ApiClient
         Catch ex As ApiException
             Throw
         Catch ex As Exception
-            GlobalErrorLog.Write("ApiClient.GetUncorrelatedOperationsAsync", ex)
+            GlobalErrorLog.Write("ApiClient.ReadUncorrelatedAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    Public Async Function SetOperationsSkippedAsync(ids As IReadOnlyList(Of Integer), skipped As Boolean,
+                                                    ct As CancellationToken) As Task(Of Integer) _
+        Implements IUncorrectedOperationsApi.SetOperationsSkippedAsync
+        Try
+            ArgumentNullException.ThrowIfNull(ids)
+            Dim body As String = JsonSerializer.Serialize(New SkipRequest() With {.idfxp = ids.ToList(), .omis = skipped}, _json)
+            Dim text As String = Await SendCabAsync(HttpMethod.Post, "/api/forexe/operatiuni/omitere", body,
+                                                    If(skipped, "omiterea operațiunilor", "reluarea operațiunilor"), ct).ConfigureAwait(False)
+            Dim payload As SkipResponse = JsonSerializer.Deserialize(Of SkipResponse)(text, _json)
+            Return If(payload Is Nothing, 0, payload.actualizate)
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.SetOperationsSkippedAsync", ex)
             Throw
         End Try
     End Function

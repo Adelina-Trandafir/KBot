@@ -105,20 +105,64 @@ Ajutor ADECHIT, o singură sursă pentru fereastră, imprimare și PDF.
 
 ## Slice AD14
 
-Închiderea lunii cu schimbarea taxei active.
+Taxa lunii deschise și închiderea lunii cu schimbarea taxei active.
 
 ### Registry
 
 | Subfelie | Livrabil | Stare | Worklog |
 |---|---|---|---|
 | SLICE-AD14-01 | Fereastra «Închidere lună» (modală, fundal estompat) în locul confirmării simple: tabelul de taxe cu taxa activă prima, «Adaugă taxă» care poziționează tabelul pe rândul nou (devine activ, celelalte se opresc), «Închide luna» / «Renunță»; ajutor + UTILIZARE_WEB actualizate | COD SCRIS, compilat sintactic (node --check); nimic rulat sau văzut | [Fereastra de închidere](../SLICE-AD14-01-inchidere-luna-taxa.md) |
+| SLICE-AD14-02 | Combobox Taxa zilnică în antet: schimbă taxa întregii luni deschise pentru toate grupele subunității, recalculează valorile păstrând zilele; confirmare, drept Catalog, tranzacție/idempotentă și versiuni; ajutor actualizat | SCRIS LOCAL; fără teste, compilare, SQL sau publicare | [Taxa lunii deschise](../SLICE-AD14-02-taxa-lunii-din-antet.md) |
+| SLICE-AD14-03 | Activ în Taxe/Închidere lună: ultima bifă pusă câștigă, celelalte se debifează; reactivare fără restricție cronologică sau rescrierea perioadelor existente; versiuni de lot reconciliate după închiderea internă a unei perioade noi | SCRIS LOCAL; fără teste, compilare, SQL sau publicare | [Bifa Activ](../SLICE-AD14-03-taxe-ultima-bifa-activa.md) |
 
 ### Current focus
 
-- Următoarea subfelie liberă: **AD14-02**.
+- 30.10.2026: AD14-02 permite schimbarea taxei lunii din antet; AD14-03 corectează bifa Activ din catalog/închidere: alegerea operatorului are prioritate față de date. Următoarea subfelie liberă: **AD14-04**.
 
 ### Open threads
 
 - Neprobat de operator: aspectul ferestrei (PC/mobil, tema întunecată), «Adaugă taxă» în fereastră, închiderea după schimbarea taxei, «Renunță»/Escape.
-- Fără DDL, fără fișiere Python modificate: se publică numai fișierele web din worklog.
+- AD14-01: fără DDL și fără fișiere Python modificate; fișierele web sunt în worklogul inițial. AD14-02 include și ruta/comanda Python din worklogul ei; fără DDL.
 - Închiderea lunii august folosește în continuare fereastra anuală, fără selecția taxei (de decis dacă se dorește și acolo).
+- AD14-02 de probat de operator: schimbarea taxei într-o lună deschisă cu prezență în mai multe grupe, soldurile și raportul Situație de plată, zile păstrate, refuz lună închisă/fără Catalog, anularea confirmării, versiuni schimbate și reîncercarea după răspuns pierdut. Aspectul și interacțiunea nu au fost probate.
+- AD14-03 de probat de operator: bifare taxă veche și nouă în ordine alternată, editare după bifare, salvare/redeschidere, anularea unui rând nou, adăugare taxă urmată de reactivarea uneia existente, conflict extern de versiune; în ambele ferestre de taxe. Nu s-au rulat probe. Se publică `catalogs.js`, `service.py` și ajutorul JSON; fără DDL.
+- Ajutorul textual este actualizat. Capturile `01-panouri-luna-grupa.jpg` și `02-tabel-complet.jpg` rămân de refăcut pentru selectorul din antet, cu blur puternic pe datele sensibile; nu s-au realizat capturi noi.
+
+## Slice AD15
+
+Repartizarea unei încasări între mai mulți copii și propunerea sumei din soldul final.
+
+### Registry
+
+| Subfelie | Livrabil | Stare | Worklog |
+|---|---|---|---|
+| SLICE-AD15-01 | Repartizare manuală pe copii în aceeași subunitate/lună, total egal cu extrasul, salvare atomică și proveniență; SQL manual pentru cheia (IDFXE, IDP); SFC la restituiri și SFD la chitanțe/alte plăți la alegerea datei; ajutor și ghid | SCRIS LOCAL; fără teste, SQL sau publicare | [Repartizare și sold final](../SLICE-AD15-01-extrase-multi-copii-si-sold-final.md) |
+
+### Current focus
+
+- 29.10.2026: completarea exista, dar utiliza SIC/SID; repartizarea la mai mulți copii nu exista în implementarea AD13. Următoarea subfelie liberă: **AD15-02**.
+
+### Open threads
+
+- Operatorul aplică manual `sql/AD_15_extrase_repartizare.sql` după AD_11 în bazele unităților și publică fișierele din worklog prin AvacontPush. Schema MariaDB nu a fost modificată din chat.
+- Fără teste, compilare sau pornire a aplicației: de probat repartizarea 2+ copii, total greșit, copil repetat, reîncercare și concurență, situații închise eligibile și sumele SFC/SFD în toate cele trei file.
+- Ajutor textual actualizat; captura `13-extrase-asociere-manuala.jpg` este anterioară controalelor noi și rămâne de refăcut, cu blur puternic pe datele sensibile. Aspectul PC/mobil și derularea panoului nu au fost văzute.
+
+## Slice AD16
+
+Macheta chitanțelor.
+
+### Registry
+
+| Subfelie | Livrabil | Stare | Worklog |
+|---|---|---|---|
+| SLICE-AD16-01 | Adresa plătitorului pe două rânduri în ambele exemplare ale chitanței PDF; micșorare automată pentru text lung, fără trunchiere; ajutor actualizat | SCRIS LOCAL; fără teste, randări, SQL sau publicare | [Adresa pe două rânduri](../SLICE-AD16-01-chitante-adresa-doua-randuri.md) |
+
+### Current focus
+
+- 30.10.2026: spațiu fix de două rânduri pentru adresă, folosit de Listare și Descarcă PDF. Următoarea subfelie liberă: **AD16-02**.
+
+### Open threads
+
+- Operatorul probează adrese scurte, lungi până la 255 de caractere și cu diacritice; ambele exemplare și vecinătatea câmpurilor Suma/Am primit de la. Nu s-au generat PDF-uri, randări sau capturi din chat.
+- Publicare prin AvacontPush: `PYTHON/routes/adechit/receipt_output.py` și `PYTHON/static/help/adechit.json`. Fără SQL sau modificări de schemă.

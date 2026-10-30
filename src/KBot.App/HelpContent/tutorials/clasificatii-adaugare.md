@@ -37,7 +37,7 @@ Alege <b>«Clasificații cheltuieli»</b>.
 ## Arborele de clasificații
 <!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiBugetView.tree
-Clasificațiile sunt într-un arbore: <b>Capitol › Subcapitol › Articol › Alineat</b>. Codul e în prima coloană, denumirea în a doua. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
+Clasificațiile sunt într-un arbore: <b>Capitol › Subcapitol › Titlu › Articol › Alineat</b>. Codul e în prima coloană, denumirea în a doua. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Bifele de sub arbore
 <!-- slice: 000T-10, 000T-13 -->
@@ -57,19 +57,22 @@ Apasă <b>«+»</b> din subsolul arborelui, cel de lângă «Adaugă clasificaț
 ## 1. Sursa și sectorul
 <!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiAddForm.flowSurse
-Bifează <b>sursele-sector</b> pentru care adaugi clasificațiile. Se pot alege doar sursele unității. Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
+optional: yes
+why: Dacă în bara de titlu e aleasă o sursă anume, secțiunea nu apare: clasificațiile se adaugă pe sursa din bara de titlu.
+Cu <b>«Toate»</b> în bara de titlu, bifează <b>sursele-sector</b> pentru care adaugi clasificațiile. Se pot alege doar sursele unității.<BR>
+<mark>Cu o sursă anume aleasă în bara de titlu, secțiunea lipsește, iar clasificațiile se adaugă pe sursa aceea.</mark> Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## 2. Clasificația funcțională
 <!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiAddForm.treeF
-Bifează în arbore <b>clasificațiile funcționale</b>.<BR>
+Bifează în arbore <b>clasificațiile funcționale</b>. Arborele arată doar ce e sub capitolul unității (de obicei 65), fără capitolul ca rădăcină.<BR>
 <mark>Se bifează pozițiile de pe ultimul nivel.</mark> Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## 3. Clasificația economică
 <!-- slice: 000T-10, 000T-13 -->
 target: ClasificatiiAddForm.treeE
 Bifează în arbore <b>clasificațiile economice</b>.<BR>
-<mark>Bifarea unui articol bifează tot ce este sub el.</mark> Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
+<mark>Se bifează pozițiile de pe ultimul nivel; nivelurile de deasupra nu au căsuță.</mark> Apoi apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Adaugă clasificațiile
 <!-- slice: 000T-10 -->

@@ -51,5 +51,7 @@
   <ItemGroup>
     <!-- GlobalErrorLog (sink-ul de erori). KBot.Common referă doar Domain — fără ciclu. -->
     <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
+    <!-- KBotMessage: the operator's messages (box + mesaje_operator.log). Theming references Common, not Xfa, so there is no cycle. -->
+    <ProjectReference Include="..\KBot.Theming\KBot.Theming.vbproj" />
   </ItemGroup>
 </Project>

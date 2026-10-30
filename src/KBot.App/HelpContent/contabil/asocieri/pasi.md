@@ -60,6 +60,8 @@ Nu există o regulă sigură — de asta te întreabă K-BOT. Te ajută, în ord
   singură** recepție și spune: «N instantanee au fost așezate automat, pe singura recepție cu aceeași
   valoare. Verifică în arbore și apasă «Salvează» dacă e bine; altfel trage-le înapoi în coș.»
 
+Un instantaneu aflat la **mai mult de o lună** față de data recepției nu se așază niciodată singur, nici dacă valoarea se potrivește: îl așezi tu. O recapitulare lunară (salariile, de pildă) are aceeași sumă de la o lună la alta, iar suma singură nu spune a cărei luni e.
+
 O așezare automată **poate fi greșită** (două recepții pot avea aceeași valoare în momente diferite).
 Verifică-le ca pe ale tale — nimic nu se scrie până nu salvezi.
 

@@ -42,6 +42,16 @@ Public Class ClasificatiiBugetView
     Private Const ColId As String = "id"
     Private Const ColClsf As String = "clsf"
     Private Const DeleteCaption As String = "✕"
+    Private Const ColAngajament As String = "angajament"
+    Private Const ColIndicator As String = "indicator"
+    Private Const ColRezervari As String = "rezervari"
+    Private Const ColReceptii As String = "receptii"
+    Private Const ColPlati As String = "plati"
+    ' Slice 0126-01: the data rows each grid holds with no vertical bar; the spare row at the end comes on top of them.
+    Private Const BudgetRowsFit As Integer = 3
+    Private Const CorrectionsRowsFit As Integer = 6
+    ' The Tag of the spare row at the end of the budget and the corrections grid (a real row has Tag Nothing).
+    Private Shared ReadOnly SpareTag As New Object()
     Private Shared ReadOnly QuarterColumns As String() = {ColTrim1, ColTrim2, ColTrim3, ColTrim4}
     Private Shared ReadOnly DateFormats As String() = {
         "d.M.yyyy", "dd.MM.yyyy", "d/M/yyyy", "dd/MM/yyyy", "d-M-yyyy", "yyyy-MM-dd", "ddMMyyyy"}
@@ -69,9 +79,27 @@ Public Class ClasificatiiBugetView
     ' total); the designer's «+» icons and captions are kept here to put back for a leaf.
     Private _childNote As String = String.Empty
     Private _summaryMode As Boolean
-    Private _plusIcon As Image
     Private _budgetCaption As String
     Private _correctionsCaption As String
+    ' Slice 0126-01: the figure shown at the right of each tree row = the last budget + all the corrections of the classification
+    ' (summed under a node); the rows keep their caption without the figure so it can be redone after a save.
+    Private ReadOnly _figures As New Dictionary(Of Integer, Decimal)()
+    Private ReadOnly _figureNodes As New List(Of FigureNode)()
+    ' Slice 0126-01: only the newest answer of the «Angajamente» grid is shown (the operator can click through the tree faster than the server answers).
+    Private _angajamenteAsk As Integer
+
+    ''' <summary>A tree row whose caption ends with a figure: the row, its caption before the figure, and the classifications the figure adds up.</summary>
+    Private NotInheritable Class FigureNode
+        Public ReadOnly Node As AdvancedTreeControl.TreeItem
+        Public ReadOnly Prefix As String
+        Public ReadOnly Ids As List(Of Integer)
+
+        Public Sub New(k_node As AdvancedTreeControl.TreeItem, k_prefix As String, k_ids As List(Of Integer))
+            Node = k_node
+            Prefix = k_prefix
+            Ids = k_ids
+        End Sub
+    End Class
 
     ''' <summary>Designer only.</summary>
     Public Sub New()
@@ -94,12 +122,12 @@ Public Class ClasificatiiBugetView
             _session = k_session
             AddHandler _session.PeriodChanged, AddressOf SessionPeriodChanged
             AddHandler Disposed, AddressOf ViewDisposed
-            _plusIcon = gridBuget.FooterRightIcon
             _budgetCaption = gridBuget.FooterCaption
             _correctionsCaption = gridRectificari.FooterCaption
             ' Slice 0104: «Trimite in Access» exists only for a unit that has the Access application
             ' (Setari.Access = 1) AND only where the Access component is installed.
             btnTrimiteAccess.Visible = AccessFeature.Enabled
+            ApplyGridHeights()
             ShowNoSelection()
             LoadTree(Nothing)
         Catch ex As Exception
@@ -158,6 +186,10 @@ Public Class ClasificatiiBugetView
             _catalog = catalog
             _shownSs = CurrentSs()
             _activeIds = New HashSet(Of Integer)(summary.Where(Function(r) r.Active).Select(Function(r) r.IdClsf))
+            _figures.Clear()
+            For Each k_s As BudgetSummaryRow In summary
+                _figures(k_s.IdClsf) = FigureOf(k_s)
+            Next
             BuildTree(catalog, selectIdClsf)
             SetStatus(CountText(catalog))
         Catch ex As ApiException
@@ -174,6 +206,7 @@ Public Class ClasificatiiBugetView
     Private Sub BuildTree(catalog As ClasificatiiCatalog, selectIdClsf As Integer?)
         tree.Clear()
         _leafNodes.Clear()
+        _figureNodes.Clear()
         _currentNode = Nothing
         Dim folder As Image = My.Resources.Resources.folder_open
         Dim toSelect As AdvancedTreeControl.TreeItem = Nothing
@@ -186,31 +219,54 @@ Public Class ClasificatiiBugetView
             Dim ss As String = chapter.Key.Ss
             Dim chapterName As String = NameOr(catalog.CapitolNames, Left2(capitol))
             Dim ssName As String = NameOr(catalog.SsNames, ss)
+            Dim k_rootPrefix As String = $"{capitol} ({ss})~~~{Escape(JoinNames(chapterName, ssName))}"
+            Dim k_rootIds As List(Of Integer) = chapter.Select(Function(c) c.IdClsf).ToList()
             Dim root As AdvancedTreeControl.TreeItem = tree.AddItem(
                 $"C|{capitol}|{ss}",
-                $"{capitol} ({ss})~~~{Escape(JoinNames(chapterName, ssName))}",
+                k_rootPrefix & FigureSuffix(k_rootIds),
                 pLeftIconClosed:=folder, pLeftIconOpen:=folder, pExpanded:=True)
+            _figureNodes.Add(New FigureNode(root, k_rootPrefix, k_rootIds))
             root.Bold = True
 
             For Each sub1 In chapter.GroupBy(Function(c) c.Subcapitol).OrderBy(Function(gp) gp.Key, StringComparer.Ordinal)
                 Dim subName As String = NameOr(catalog.SubcapitolNames, Left2(capitol) & sub1.Key.Replace(".", String.Empty))
+                Dim k_subPrefix As String = $"{sub1.Key}~~~{Escape(subName)}"
+                Dim k_subIds As List(Of Integer) = sub1.Select(Function(c) c.IdClsf).ToList()
                 Dim subNode As AdvancedTreeControl.TreeItem = tree.AddItem(
-                    $"S|{capitol}|{ss}|{sub1.Key}", $"{sub1.Key}~~~{Escape(subName)}", root,
+                    $"S|{capitol}|{ss}|{sub1.Key}", k_subPrefix & FigureSuffix(k_subIds), root,
                     pLeftIconClosed:=folder, pLeftIconOpen:=folder)
+                _figureNodes.Add(New FigureNode(subNode, k_subPrefix, k_subIds))
 
-                For Each art In sub1.GroupBy(Function(c) c.Articol).OrderBy(Function(gp) gp.Key, StringComparer.Ordinal)
-                    Dim artNode As AdvancedTreeControl.TreeItem = tree.AddItem(
-                        $"A|{capitol}|{ss}|{sub1.Key}|{art.Key}",
-                        $"{art.Key}~~~{Escape(NameOr(catalog.ArticolNames, art.Key))}", subNode,
+                ' Title level (the first two digits of the articol, «10» for «10.01») between the sub-chapter and the article.
+                For Each k_title In sub1.GroupBy(Function(c) Left2(c.Articol)).OrderBy(Function(gp) gp.Key, StringComparer.Ordinal)
+                    Dim k_titlePrefix As String = $"{k_title.Key}~~~{Escape(NameOr(catalog.TitluNames, k_title.Key))}"
+                    Dim k_titleIds As List(Of Integer) = k_title.Select(Function(c) c.IdClsf).ToList()
+                    Dim k_titleNode As AdvancedTreeControl.TreeItem = tree.AddItem(
+                        $"T|{capitol}|{ss}|{sub1.Key}|{k_title.Key}",
+                        k_titlePrefix & FigureSuffix(k_titleIds), subNode,
                         pLeftIconClosed:=folder, pLeftIconOpen:=folder)
+                    _figureNodes.Add(New FigureNode(k_titleNode, k_titlePrefix, k_titleIds))
 
-                    For Each c As Clasificatie In art.OrderBy(Function(x) x.Alineat, StringComparer.Ordinal)
-                        Dim leaf As AdvancedTreeControl.TreeItem = tree.AddItem(
-                            $"L|{c.IdClsf}", $"{c.Articol}.{c.Alineat}~~~{Escape(c.Denumire)}", artNode)
-                        leaf.Tag = c
-                        _leafNodes(c.IdClsf) = leaf
-                        leaf.Tooltip = c.Clsf
-                        If selectIdClsf.HasValue AndAlso c.IdClsf = selectIdClsf.Value Then toSelect = leaf
+                    For Each art In k_title.GroupBy(Function(c) c.Articol).OrderBy(Function(gp) gp.Key, StringComparer.Ordinal)
+                        Dim k_artPrefix As String = $"{art.Key}~~~{Escape(NameOr(catalog.ArticolNames, art.Key))}"
+                        Dim k_artIds As List(Of Integer) = art.Select(Function(c) c.IdClsf).ToList()
+                        Dim artNode As AdvancedTreeControl.TreeItem = tree.AddItem(
+                            $"A|{capitol}|{ss}|{sub1.Key}|{art.Key}",
+                            k_artPrefix & FigureSuffix(k_artIds), k_titleNode,
+                            pLeftIconClosed:=folder, pLeftIconOpen:=folder)
+                        _figureNodes.Add(New FigureNode(artNode, k_artPrefix, k_artIds))
+
+                        For Each c As Clasificatie In art.OrderBy(Function(x) x.Alineat, StringComparer.Ordinal)
+                            Dim k_leafPrefix As String = $"{c.Articol}.{c.Alineat}~~~{Escape(c.Denumire)}"
+                            Dim k_leafIds As New List(Of Integer) From {c.IdClsf}
+                            Dim leaf As AdvancedTreeControl.TreeItem = tree.AddItem(
+                                $"L|{c.IdClsf}", k_leafPrefix & FigureSuffix(k_leafIds), artNode)
+                            _figureNodes.Add(New FigureNode(leaf, k_leafPrefix, k_leafIds))
+                            leaf.Tag = c
+                            _leafNodes(c.IdClsf) = leaf
+                            leaf.Tooltip = c.Clsf
+                            If selectIdClsf.HasValue AndAlso c.IdClsf = selectIdClsf.Value Then toSelect = leaf
+                        Next
                     Next
                 Next
             Next
@@ -282,6 +338,40 @@ Public Class ClasificatiiBugetView
         Return If(text, String.Empty).Replace("<", "‹").Replace(">", "›").Replace("~~~", "~ ~ ~")
     End Function
 
+    ' ── The figure at the right of each tree row (slice 0126-01) ────────────────
+
+    ' The last budget + all the corrections of the year, with no quarter cut-off (the same figure the «Buget + rectificări» row shows).
+    Private Shared Function FigureOf(k_summary As BudgetSummaryRow) As Decimal
+        Return If(k_summary.LastBudget Is Nothing, 0D, k_summary.LastBudget.Amounts.Total) +
+               If(k_summary.CorrectionsTotal Is Nothing, 0D, k_summary.CorrectionsTotal.Total)
+    End Function
+
+    Private Shared Function FigureOf(k_data As BugetClasificatie) As Decimal
+        Dim k_last As BudgetVersion = k_data.Budgets.
+            Where(Function(b) b.StartDate.HasValue).
+            OrderByDescending(Function(b) b.StartDate.Value).
+            FirstOrDefault()
+        Return If(k_last Is Nothing, 0D, k_last.Amounts.Total) + k_data.Corrections.Sum(Function(r) r.Amounts.Total)
+    End Function
+
+    ' « ~~~ figure »: the tree keeps a THIRD «~~~» part at the right edge, right-aligned. Standard format, no decimals.
+    Private Function FigureSuffix(k_ids As List(Of Integer)) As String
+        Dim k_sum As Decimal = 0D
+        For Each k_id As Integer In k_ids
+            Dim k_value As Decimal
+            If _figures.TryGetValue(k_id, k_value) Then k_sum += k_value
+        Next
+        Return "~~~" & k_sum.ToString("N0", CultureInfo.CurrentCulture)
+    End Function
+
+    ' After a save the figures of the saved classification and of every row above it are redone, the rows staying where they are.
+    Private Sub RefreshFigures()
+        For Each k_n As FigureNode In _figureNodes
+            k_n.Node.Caption = k_n.Prefix & FigureSuffix(k_n.Ids)
+        Next
+        tree.Invalidate()
+    End Sub
+
     Private Sub Tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
         Try
             If pNode Is Nothing OrElse pNode Is _currentNode Then Return
@@ -334,7 +424,8 @@ Public Class ClasificatiiBugetView
     Private Sub Tree_FooterRightIconClicked(e As MouseEventArgs) Handles tree.FooterRightIconClicked
         Try
             If _busy OrElse _api Is Nothing Then Return
-            Using f As New ClasificatiiAddForm(_api, _gate, _an)
+            ' The classifications go to the source of the title bar (Nothing on «Toate»: the dialog lets the operator pick).
+            Using f As New ClasificatiiAddForm(_api, _gate, _an, CurrentSs())
                 If f.ShowDialog(Me) <> DialogResult.OK Then Return
                 If f.Result IsNot Nothing AndAlso f.Result.Inserted > 0 Then
                     ' New classifications have no movement yet: show them, or the operator would not find them.
@@ -342,6 +433,7 @@ Public Class ClasificatiiBugetView
                     chkToate.Checked = True
                     chkForexe.Checked = False
                     _suppressToggle = False
+                    ' The whole catalog is read again from the server, so the tree, the counts and the movement list all include the new rows.
                     LoadTree(If(_current Is Nothing, CType(Nothing, Integer?), _current.IdClsf))
                 End If
             End Using
@@ -363,6 +455,7 @@ Public Class ClasificatiiBugetView
             If IsDisposed Then Return
             _current = c
             FillGrids(data)
+            ShowAngajamente(New List(Of Integer) From {c.IdClsf}, $"clasificația {c.Clsf}")
             _childNote = ChildNoteFor(c.Ss)
             SetStatus(String.Empty)
         Catch ex As ApiException
@@ -382,18 +475,20 @@ Public Class ClasificatiiBugetView
         End Try
     End Function
 
-    ' The classifications under a chapter («C|capitol|ss»), sub-chapter («S|…|sub») or article («A|…|art»)
+    ' The classifications under a chapter («C|capitol|ss»), sub-chapter («S|…|sub»), title («T|…|titlu») or article («A|…|art»)
     ' node, in tree order; Nothing for any other node.
     Private Function LeavesUnder(node As AdvancedTreeControl.TreeItem) As List(Of Clasificatie)
         If _catalog Is Nothing OrElse String.IsNullOrEmpty(node.Key) Then Return Nothing
         Dim parts As String() = node.Key.Split("|"c)
         Dim level As String = parts(0)
-        Dim minParts As Integer = If(level = "C", 3, If(level = "S", 4, If(level = "A", 5, Integer.MaxValue)))
+        Dim minParts As Integer = If(level = "C", 3, If(level = "S", 4, If(level = "T" OrElse level = "A", 5, Integer.MaxValue)))
         If parts.Length <> minParts Then Return Nothing
+        ' «T|cap|ss|sub|titlu» holds the articles of that title; «A|cap|ss|sub|articol» one article.
+        Dim k_isTitle As Boolean = level = "T"
         Return VisibleItems(_catalog).
             Where(Function(x) x.Capitol = parts(1) AndAlso x.Ss = parts(2) AndAlso
                               (parts.Length < 4 OrElse x.Subcapitol = parts(3)) AndAlso
-                              (parts.Length < 5 OrElse x.Articol = parts(4))).
+                              (parts.Length < 5 OrElse If(k_isTitle, Left2(x.Articol) = parts(4), x.Articol = parts(4)))).
             OrderBy(Function(x) x.Subcapitol, StringComparer.Ordinal).
             ThenBy(Function(x) x.Articol, StringComparer.Ordinal).
             ThenBy(Function(x) x.Alineat, StringComparer.Ordinal).
@@ -410,6 +505,8 @@ Public Class ClasificatiiBugetView
             _current = Nothing
             FillSummary(node, leaves, summary)
             Dim k_parts As String() = node.Key.Split("|"c)   ' «C|capitol|ss», «S|capitol|ss|sub», «A|capitol|ss|sub|art»
+            ShowAngajamente(leaves.Select(Function(k_l) k_l.IdClsf).ToList(),
+                            $"clasificațiile de sub {String.Join(".", k_parts.Skip(1).Where(Function(k_p, k_i) k_i <> 1))} ({k_parts(2)})")
             _childNote = If(k_parts.Length > 2, ChildNoteFor(k_parts(2)), String.Empty)
             SetStatus(String.Empty)
         Catch ex As ApiException
@@ -506,7 +603,6 @@ Public Class ClasificatiiBugetView
         SetColumn(gridTotal, ColDelete, Not summary)
         For Each grid As KBotDataView In {gridBuget, gridRectificari}
             grid.ReadOnlyGrid = summary
-            grid.FooterRightIcon = If(summary, Nothing, _plusIcon)
         Next
         gridRectificari.FillColumnKey = If(summary, ColClsf, ColDocument)
         gridBuget.FooterCaption = If(summary, "Ultimul buget al fiecărei clasificații", _budgetCaption)
@@ -604,6 +700,7 @@ Public Class ClasificatiiBugetView
                 row(ColTotal) = v.Amounts.Total
                 row(ColDelete) = DeleteCaption
             Next
+            AddSpareRow(gridBuget)
         Finally
             gridBuget.EndUpdate()
         End Try
@@ -623,6 +720,7 @@ Public Class ClasificatiiBugetView
                 row(ColTotal) = r.Amounts.Total
                 row(ColDelete) = DeleteCaption
             Next
+            AddSpareRow(gridRectificari)
         Finally
             gridRectificari.EndUpdate()
         End Try
@@ -649,6 +747,9 @@ Public Class ClasificatiiBugetView
         gridBuget.ClearRows()
         gridRectificari.ClearRows()
         gridTotal.ClearRows()
+        _angajamenteAsk += 1
+        gridAngajamente.ClearRows()
+        lblAngajamente.Text = "Angajamente"
         gridBuget.Enabled = False
         gridRectificari.Enabled = False
         gridTotal.Enabled = False
@@ -657,6 +758,98 @@ Public Class ClasificatiiBugetView
         lblBuget.Text = "Buget — alegeți un alineat din arbore"
         lblRectificari.Text = "Rectificări bugetare"
         SetDirty(False)
+    End Sub
+
+    ' ── The angajamente that lead to the chosen classification(s) (slice 0126-01) ──
+
+    ' UI boundary: started without await; the budget never waits for it. Only the newest answer is shown.
+    Private Async Sub ShowAngajamente(k_ids As List(Of Integer), k_what As String)
+        Try
+            _angajamenteAsk += 1
+            Dim k_ask As Integer = _angajamenteAsk
+            gridAngajamente.ClearRows()
+            lblAngajamente.Text = $"Angajamente — {k_what}"
+            Dim k_rows As IReadOnlyList(Of ClasificatieAngajament) = Await _gate.RunAsync(
+                Function() _api.GetClasificatiiAngajamenteAsync(k_ids, CancellationToken.None)).ConfigureAwait(True)
+            If IsDisposed OrElse k_ask <> _angajamenteAsk Then Return
+            gridAngajamente.BeginUpdate()
+            Try
+                gridAngajamente.ClearRows()
+                For Each k_a As ClasificatieAngajament In k_rows
+                    Dim k_row As KBotDataRow = gridAngajamente.AddRow()
+                    k_row(ColAngajament) = If(String.IsNullOrWhiteSpace(k_a.Descriere), k_a.CodAngajament, k_a.CodAngajament & " — " & k_a.Descriere)
+                    k_row(ColIndicator) = k_a.CodIndicator
+                    k_row(ColRezervari) = k_a.TotalRezervari
+                    k_row(ColReceptii) = k_a.TotalReceptii
+                    k_row(ColPlati) = k_a.TotalPlati
+                Next
+            Finally
+                gridAngajamente.EndUpdate()
+            End Try
+            gridAngajamente.ClearDirty()
+            lblAngajamente.Text = $"Angajamente — {k_what}: {k_rows.Count}"
+        Catch ex As ApiException
+            GlobalErrorLog.Write("ClasificatiiBugetView.ShowAngajamente", ex)
+            If Not IsDisposed Then SetStatus(ex.Message)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ClasificatiiBugetView.ShowAngajamente", ex)
+            If Not IsDisposed Then SetStatus("Angajamentele clasificației nu au putut fi încărcate. Detalii în jurnalul de erori.")
+        End Try
+    End Sub
+
+    ' ── Sizes and the spare row (slice 0126-01) ─────────────────────────────────
+
+    ' The budget grid holds BudgetRowsFit rows and the corrections grid CorrectionsRowsFit, each plus the spare row, with no vertical bar;
+    ' the «Angajamente» grid takes what is left. The table wants LOGICAL heights, the grid knows device pixels.
+    Private Sub ApplyGridHeights()
+        Try
+            Dim k_scale As Single = Math.Max(0.5F, AppScaling.FactorFor(tlyRight))
+            tlyRight.SetRowHeight(1, gridBuget.HeightForRows(BudgetRowsFit + 1) / k_scale)
+            tlyRight.SetRowHeight(3, gridRectificari.HeightForRows(CorrectionsRowsFit + 1) / k_scale)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ClasificatiiBugetView.ApplyGridHeights", ex)
+        End Try
+    End Sub
+
+    ' UI boundary (handler): another DPI or zoom = other pixel heights for the same number of rows.
+    Protected Overrides Sub OnDpiChangedAfterParent(e As EventArgs)
+        Try
+            MyBase.OnDpiChangedAfterParent(e)
+            If _api IsNot Nothing AndAlso IsHandleCreated Then BeginInvoke(New Action(AddressOf ApplyGridHeights))
+        Catch ex As Exception
+            GlobalErrorLog.Write("ClasificatiiBugetView.OnDpiChangedAfterParent", ex)
+        End Try
+    End Sub
+
+    Private Shared Function IsSpare(k_row As KBotDataRow) As Boolean
+        Return k_row IsNot Nothing AndAlso ReferenceEquals(k_row.Tag, SpareTag)
+    End Function
+
+    Private Shared Sub AddSpareRow(k_grid As KBotDataView)
+        Dim k_row As KBotDataRow = k_grid.AddRow()
+        k_row.Tag = SpareTag
+    End Sub
+
+    ''' <summary>
+    ''' The spare row becomes a real one: the cells not typed get what the «+» of the footer always gave (the version starts 01.01 or today;
+    ''' the correction has today's date), and a new spare row follows it.
+    ''' </summary>
+    Private Sub PromoteSpareRow(k_grid As KBotDataView, k_row As KBotDataRow)
+        Dim k_index As Integer = k_grid.RowCount - 1
+        If k_grid Is gridBuget Then
+            k_row(ColClsf) = _current.Clsf
+            If k_row(ColStart) Is Nothing Then
+                k_row(ColStart) = If(k_index > 0 AndAlso Date.Today.Year = _an, Date.Today, New Date(_an, 1, 1))
+            End If
+        Else
+            If k_row(ColDocument) Is Nothing Then k_row(ColDocument) = String.Empty
+            If k_row(ColData) Is Nothing Then k_row(ColData) = If(Date.Today.Year = _an, Date.Today, New Date(_an, 1, 1))
+        End If
+        k_row(ColTotal) = RowTotal(k_row)
+        k_row(ColDelete) = DeleteCaption
+        k_row.Tag = Nothing
+        k_row.IsDirty = True
+        AddSpareRow(k_grid)
     End Sub
 
     ' Quarter by quarter, never through a total: +1000 and -1000 total 0 and still count as movement.
@@ -736,6 +929,11 @@ Public Class ClasificatiiBugetView
         Handles gridBuget.CellValueChanged, gridRectificari.CellValueChanged
         Try
             Dim grid As KBotDataView = DirectCast(sender, KBotDataView)
+            ' Slice 0126-01: typing into the spare row makes it a real row (and a new spare row follows).
+            If _current IsNot Nothing AndAlso e.RowIndex >= 0 AndAlso e.RowIndex < grid.RowCount AndAlso IsSpare(grid.Rows(e.RowIndex)) Then
+                If String.IsNullOrWhiteSpace(Convert.ToString(grid(e.ColumnKey, e.RowIndex), CultureInfo.CurrentCulture)) Then Return
+                PromoteSpareRow(grid, grid.Rows(e.RowIndex))
+            End If
             ' Both grids show the row «Total» (slice 0107); neither has a footer total for the budget.
             If QuarterColumns.Contains(e.ColumnKey) Then
                 grid(ColTotal, e.RowIndex) = RowTotal(grid.Rows(e.RowIndex))
@@ -747,32 +945,58 @@ Public Class ClasificatiiBugetView
         End Try
     End Sub
 
-    Private Sub GridBuget_FooterRightIconClicked(sender As Object, e As EventArgs) Handles gridBuget.FooterRightIconClicked
+    ' Esc twice in a row: a row without an id is one the operator just typed in the spare row and it goes away; a row from the server goes back as it was (the grid's default).
+    Private Sub Grid_RowCancelRequested(sender As Object, e As KBotRowCancelEventArgs) Handles gridBuget.RowCancelRequested, gridRectificari.RowCancelRequested
         Try
-            If _current Is Nothing OrElse _busy Then Return
-            If Not gridBuget.CommitPendingEdit() Then Return
-            Dim row As KBotDataRow = gridBuget.AddRow()
-            row(ColClsf) = _current.Clsf
-            ' The first version of a year starts on 01.01; the next ones default to today (inside
-            ' the year), the day a budget is usually changed.
-            row(ColStart) = If(gridBuget.RowCount > 1 AndAlso Date.Today.Year = _an, Date.Today, New Date(_an, 1, 1))
-            row(ColTotal) = 0D
-            row(ColDelete) = DeleteCaption
-            row.IsDirty = True
-            SetDirty(True)
+            Dim k_grid As KBotDataView = DirectCast(sender, KBotDataView)
+            If _busy OrElse e.RowIndex < 0 OrElse e.RowIndex >= k_grid.RowCount Then Return
+            ' The spare row is not a row of the budget: there is nothing to take away.
+            If IsSpare(k_grid.Rows(e.RowIndex)) Then
+                e.Handled = True
+                Return
+            End If
+            If k_grid(ColId, e.RowIndex) IsNot Nothing Then Return
+            e.Handled = True
+            k_grid.RemoveRowAt(e.RowIndex)
             UpdateTotalRow()
-            Dim index As Integer = gridBuget.RowCount - 1
-            gridBuget.EnsureVisible(index)
-            gridBuget.EditCell(ColStart, index)
+            SetDirty(True)
         Catch ex As Exception
-            GlobalErrorLog.Write("ClasificatiiBugetView.GridBuget_FooterRightIconClicked", ex)
+            GlobalErrorLog.Write("ClasificatiiBugetView.Grid_RowCancelRequested", ex)
+        End Try
+    End Sub
+
+    ' Slice 0126-01: the spare row shows no «✕»; a hint in its first text cell says what typing there does.
+    Private Sub Grid_CellFormatting(sender As Object, e As KBotCellFormattingEventArgs) _
+        Handles gridBuget.CellFormatting, gridRectificari.CellFormatting
+        Try
+            Dim k_grid As KBotDataView = DirectCast(sender, KBotDataView)
+            If e.RowIndex < 0 OrElse e.RowIndex >= k_grid.RowCount OrElse Not IsSpare(k_grid.Rows(e.RowIndex)) Then Return
+            If e.ColumnKey = ColDelete Then
+                e.HideButton = True
+            ElseIf String.IsNullOrEmpty(e.Text) AndAlso
+                   ((k_grid Is gridBuget AndAlso e.ColumnKey = ColClsf) OrElse (k_grid Is gridRectificari AndAlso e.ColumnKey = ColDocument)) Then
+                e.Text = If(k_grid Is gridBuget, "Versiune nouă…", "Rectificare nouă…")
+                e.ForeColor = ThemeManager.Current.Palette.TextDimColor
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("ClasificatiiBugetView.Grid_CellFormatting", ex)
+        End Try
+    End Sub
+
+    ' Slice 0126-01: the row «Buget + rectificări» looks like the footer of the grids above it.
+    Private Sub GridTotal_RowFormatting(sender As Object, e As KBotRowFormattingEventArgs) Handles gridTotal.RowFormatting
+        Try
+            e.BackColor = gridBuget.FooterBackColorInUse
+            e.ForeColor = gridBuget.FooterForeColorInUse
+        Catch ex As Exception
+            GlobalErrorLog.Write("ClasificatiiBugetView.GridTotal_RowFormatting", ex)
         End Try
     End Sub
 
     Private Sub GridBuget_ButtonClick(sender As Object, e As KBotButtonClickEventArgs) Handles gridBuget.ButtonClick
         Try
             If e.ColumnKey <> ColDelete OrElse _busy Then Return
-            If e.RowIndex < 0 OrElse e.RowIndex >= gridBuget.RowCount Then Return
+            If e.RowIndex < 0 OrElse e.RowIndex >= gridBuget.RowCount OrElse IsSpare(gridBuget.Rows(e.RowIndex)) Then Return
             Dim id As Object = gridBuget(ColId, e.RowIndex)
             If id IsNot Nothing Then _deletedBudgetIds.Add(Convert.ToInt32(id, CultureInfo.InvariantCulture))
             gridBuget.RemoveRowAt(e.RowIndex)
@@ -783,29 +1007,10 @@ Public Class ClasificatiiBugetView
         End Try
     End Sub
 
-    Private Sub GridRectificari_FooterRightIconClicked(sender As Object, e As EventArgs) Handles gridRectificari.FooterRightIconClicked
-        Try
-            If _current Is Nothing OrElse _busy Then Return
-            If Not gridRectificari.CommitPendingEdit() Then Return
-            Dim row As KBotDataRow = gridRectificari.AddRow()
-            row(ColDocument) = String.Empty
-            row(ColData) = If(Date.Today.Year = _an, Date.Today, New Date(_an, 1, 1))
-            row(ColTotal) = 0D
-            row(ColDelete) = DeleteCaption
-            row.IsDirty = True
-            SetDirty(True)
-            Dim index As Integer = gridRectificari.RowCount - 1
-            gridRectificari.EnsureVisible(index)
-            gridRectificari.EditCell(ColDocument, index)
-        Catch ex As Exception
-            GlobalErrorLog.Write("ClasificatiiBugetView.GridRectificari_FooterRightIconClicked", ex)
-        End Try
-    End Sub
-
     Private Sub GridRectificari_ButtonClick(sender As Object, e As KBotButtonClickEventArgs) Handles gridRectificari.ButtonClick
         Try
             If e.ColumnKey <> ColDelete OrElse _busy Then Return
-            If e.RowIndex < 0 OrElse e.RowIndex >= gridRectificari.RowCount Then Return
+            If e.RowIndex < 0 OrElse e.RowIndex >= gridRectificari.RowCount OrElse IsSpare(gridRectificari.Rows(e.RowIndex)) Then Return
             Dim id As Object = gridRectificari(ColId, e.RowIndex)
             If id IsNot Nothing Then _deletedIds.Add(Convert.ToInt32(id, CultureInfo.InvariantCulture))
             gridRectificari.RemoveRowAt(e.RowIndex)
@@ -857,6 +1062,8 @@ Public Class ClasificatiiBugetView
                                                            deleted, CancellationToken.None)).ConfigureAwait(True)
             If IsDisposed Then Return True
             FillGrids(saved)
+            _figures(idClsf) = FigureOf(saved)
+            RefreshFigures()
             If HasMovement(saved) Then _activeIds.Add(idClsf) Else _activeIds.Remove(idClsf)
             SetStatus($"Salvat: {_current.Clsf}.")
             Return True
@@ -885,6 +1092,7 @@ Public Class ClasificatiiBugetView
         Dim seen As New HashSet(Of Date)()
         For i As Integer = 0 To gridBuget.RowCount - 1
             Dim row As KBotDataRow = gridBuget.Rows(i)
+            If IsSpare(row) Then Continue For
             Dim startValue As Object = row(ColStart)
             If Not TypeOf startValue Is Date Then
                 problem = $"Bugetul de la rândul {i + 1}: lipsește data de început."
@@ -914,6 +1122,7 @@ Public Class ClasificatiiBugetView
         Dim list As New List(Of RectificareBugetara)()
         For i As Integer = 0 To gridRectificari.RowCount - 1
             Dim row As KBotDataRow = gridRectificari.Rows(i)
+            If IsSpare(row) Then Continue For
             Dim document As String = Convert.ToString(row(ColDocument), CultureInfo.CurrentCulture).Trim()
             Dim dataValue As Object = row(ColData)
             If document.Length = 0 Then
@@ -1142,7 +1351,16 @@ Public Class ClasificatiiBugetView
             lblBuget.ForeColor = p.TextColor
             lblRectificari.BackColor = p.SurfaceAltColor
             lblRectificari.ForeColor = p.TextColor
+            lblAngajamente.BackColor = p.SurfaceAltColor
+            lblAngajamente.ForeColor = p.TextColor
             lblStare.ForeColor = p.TextDimColor
+            ' Slice 0126-02: the «✕» buttons are flat (they show the row colour); only the hover takes a wash of the error colour.
+            Dim k_hover As Color = Color.FromArgb(70, p.ErrorColor)
+            gridBuget.Column(ColDelete).ButtonHoverBackColor = k_hover
+            gridRectificari.Column(ColDelete).ButtonHoverBackColor = k_hover
+            ' The footer colour of the grids is part of the theme: the heights and the «footer-like» row follow it.
+            If IsHandleCreated AndAlso _api IsNot Nothing Then BeginInvoke(New Action(AddressOf ApplyGridHeights))
+            gridTotal.Invalidate()
             ButtonStyles.ApplyPrimary(btnSalveaza, scheme)
             ButtonStyles.ApplySecondary(btnVerifica, scheme)
             ButtonStyles.ApplySecondary(btnTrimiteAccess, scheme)

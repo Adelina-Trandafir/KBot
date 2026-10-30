@@ -260,6 +260,7 @@ def create_nir(cursor, repo, ctx, exercise, body, request_key, request_id, parse
     invoices.require(cursor)
     body = {**body, 'id': None}
     parsed = parsed if parsed is not None else _clean_nir(cursor, repo, ctx, exercise, body, 'nir')
+    parsed['accept_difference'] = body.get('accept_difference') is True
     errors = {}
     header = body.get('header') or {}
     sub = _sub_number(header.get('NumarSub'), errors)
@@ -334,6 +335,7 @@ def edit_nir(cursor, repo, ctx, exercise, doc_id, body, request_id):
     previous = saved_document(cursor, repo, ctx, doc_id)
     old_lines = {r['id']: r for r in previous['lines']}
     parsed = _clean_nir(cursor, repo, ctx, exercise, body, 'nir', stored=old_lines)
+    parsed['accept_difference'] = body.get('accept_difference') is True
     errors = {}
     header = body.get('header') or {}
     manual = header.get('Numar')
@@ -356,8 +358,9 @@ def edit_nir(cursor, repo, ctx, exercise, doc_id, body, request_id):
     total_int = before['Valoare'] if not economic and same_declared else _nir_total(ctx, parsed)
     invoice_id, current = invoices.prepare_receipt(cursor, ctx, doc_id, header)
     moved_stock_date = str(header.get('DataFc') or '')[:10] != str(previous['header']['DataFc'])[:10]
+    stock_reductions = set()
     if economic or moved_stock_date:
-        receipt_rules.simulate(cursor, repo, ctx, parsed, doc_id)
+        stock_reductions = receipt_rules.simulate(cursor, repo, ctx, parsed, doc_id)
     invoices.clear_allocations(cursor, ctx, doc_id)
     stored = _all(cursor, 'SELECT ID, IdProdus FROM VC_Intrari WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND IdIntrare=%s', (*_scope(ctx), doc_id))
     by_id = {r['ID']: r for r in stored}
@@ -389,7 +392,7 @@ def edit_nir(cursor, repo, ctx, exercise, doc_id, body, request_id):
     if repo.update('VC_NIR', values, {'IdIntrare': doc_id, 'Version': before['Version']}, bump_version=True) != 1:
         raise NomError('CONFLICT', 'Documentul a fost modificat de altcineva. Reîncărcați documentul.', 409)
     if economic or moved_stock_date:
-        protocol.check_timeline(cursor, ctx, touched)
+        protocol.check_timeline(cursor, ctx, touched & stock_reductions)
     invoices.receipt_saved(cursor, ctx, doc_id, parsed, invoice_id, current, request_id)
     protocol.audit(cursor, ctx, 'nir.update', 'VC_NIR', doc_id, {'Numar': before['Numar'], 'Valoare': before['Valoare'], 'NrFact': before['NrFact']},
                    {'header': parsed['cols'], 'total': total_int, 'lines': len(parsed['lines'])}, None, request_id)

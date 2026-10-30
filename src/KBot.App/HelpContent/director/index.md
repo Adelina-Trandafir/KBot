@@ -3,14 +3,21 @@ id: director
 title: K-BOT pentru director
 part: director
 order: 0
-screens: DirectorForm, DirectorForm.capBar, KBotHelpPopup
-keywords: director, ordonator, semnare, documente de semnat, fereastra directorului
+screens: AvacontMain, KbotForm, KbotForm.navViews, KbotForm.tree, DirectorForm, KBotHelpPopup
+keywords: director, ordonator, semnare, documente, fereastra directorului, fundamentare, ordonantare, note de corectie
 ---
-<!-- slice: 0081-06 -->
-Când te conectezi cu rolul **Director**, K-BOT nu deschide fereastra contabilului, ci o singură
-fereastră: **documentele de fundamentare care așteaptă semnătura ta**, din toate unitățile tale.
+<!-- slice: DIR1-01, 0000-141, 0081-06 -->
+Când te conectezi cu rolul **Director**, K-BOT se deschide direct pe **lista angajamentelor** unității
+tale. Vezi doar partea FOREXE a aplicației și, din ea, doar trei feluri de documente:
 
-<!-- capture: director-fereastra | caption: Fereastra directorului, cu un document deschis | prepare: Conectați-vă cu un utilizator care are rolul «Director» și selectați un document din listă. Pe calculatorul directorului, faceți poza cu Windows și încărcați-o cu «Încarcă». -->
+- **Fundamentare** — documentul de fundamentare (DDF);
+- **Ordonanțare** — ordonanțările de plată (ORD);
+- **Note corecție** — notele de corecție CAB.
+
+Nimic altceva nu apare: nici rezervările, nici recepțiile, plățile sau extrasele, nici facturile.
+Când va fi nevoie și de altceva, se adaugă aici.
+
+<!-- capture: director-fereastra | caption: Fereastra directorului, cu un angajament ales | prepare: Conectați-vă cu un utilizator care are rolul «Director», alegeți din listă un angajament care are document de fundamentare și faceți poza pe calculatorul directorului. -->
 
 ## Unde se află semnătura ta în drumul documentului
 <!-- slice: 0081, 0081-06 -->
@@ -21,21 +28,28 @@ documentul ajunge la tine. **Semnătura ta e ultima**: după ea documentul e **�
 
 | Starea documentului | Ce înseamnă pentru tine |
 |---------------------|-------------------------|
-| **Semnat A și B — la director** | e în lista ta și așteaptă semnătura |
-| **Aprobat** | l-ai semnat; nu mai apare în listă |
+| **Semnat A și B — la director** | așteaptă semnătura ta |
+| **Aprobat** | l-ai semnat |
 
-Documentele în orice altă stare sunt încă la contabil și nu apar la tine.
+Documentele în orice altă stare sunt încă la contabil.
 
 ## Fereastra, pe scurt
-<!-- slice: 0081-06, 0000-20, 0000-21 -->
+<!-- slice: DIR1-01, 0000-141 -->
 
-- **Sus** — câte documente ai de semnat.
-- **Stânga** — lista documentelor. Vezi [Lista documentelor de semnat](topic:director.lista).
-- **Dreapta** — documentul ales, gata de semnat. Vezi [Semnarea ca director](topic:director.semnare).
-- **Jos** — cine e conectat și pe ce unitate, «Reîncarcă lista» și «Închide».
+- **Sus** — panglica, cu cinci butoane: «Lista angajamentelor», «Documente de semnat»,
+  «Configurare K-BOT», «Istoric versiuni» și «Închide». Vezi
+  [Documente de semnat](topic:director.lista).
+- **Stânga** — lista angajamentelor. Alegi unul și văd documentele lui. Vezi
+  [Angajamentele și documentele lor](topic:director.documente).
+- **Lângă listă** — barra cu cele trei feluri de documente. Apar doar cele pe care angajamentul ales
+  le are.
+- **Dreapta** — documentul ales. Vezi [Semnarea ca director](topic:director.semnare).
+- **Bara de titlu** — unitatea pe care lucrezi; dacă ai rolul de director în mai multe unități, o
+  poți schimba de aici. Vezi [Mai multe unități](topic:director.unitati).
 
-Un document din altă unitate decât cea pe care te-ai conectat se deschide după o nouă conectare pe
-unitatea lui. Vezi [Documente din alte unități](topic:director.unitati).
+Cu rolul de director **citești și semnezi**. Nu poți modifica documente și nu poți lucra cu FOREXE:
+la orice încercare K-BOT răspunde «Cu rolul «Director» documentele se citesc și se semnează.
+Modificările și lucrul cu FOREXE se fac din K-BOT-ul contabilului.»
 
 > Tasta **F1** deschide acest ajutor. Butonul **?** din bara de titlu deschide un meniu mic: o
 > căsuță în care scrii o întrebare cu cuvintele tale, pagina ecranului și turul ghidat al

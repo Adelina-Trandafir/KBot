@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+Properties for window #32770 (0x00320A2C)
+Created by Window Detective
+-->
+<window>
+    <windowClass>
+        <name>#32770</name>
+        <atom>0x8002</atom>
+        <styleBits>0x00000000</styleBits>
+        <classExtraBytes>0</classExtraBytes>
+        <windowExtraBytes>0</windowExtraBytes>
+    </windowClass>
+    <handle>0x00320A2C</handle>
+    <parentHandle>0x0001000C</parentHandle>
+    <windowText>Adobe Acrobat</windowText>
+    <dimensions>
+        <rect x="0" y="0" width="862" height="252"/>
+    </dimensions>
+    <clientDimensions>
+        <rect x="11" y="45" width="840" height="196"/>
+    </clientDimensions>
+    <styleBits>0x96C00000</styleBits>
+    <extendedStyleBits>0x00000101</extendedStyleBits>
+    <windowPropsList>
+        <windowProp>
+            <name>DRL</name>
+            <data>0x9648C5B0</data>
+        </windowProp>
+        <windowProp>
+            <name>ADMDialogWindow</name>
+            <data>0x00320A2C</data>
+        </windowProp>
+        <windowProp>
+            <name>0x0000A916 (Atom)</name>
+            <data>0x00000002</data>
+        </windowProp>
+        <windowProp>
+            <name>_WVBW**&amp;!</name>
+            <data>0x84DD1C40</data>
+        </windowProp>
+        <windowProp>
+            <name>MSAA_*FCFFFFFF00000000</name>
+            <data>0x3B690000</data>
+        </windowProp>
+        <windowProp>
+            <name>SandboxEnableCallback</name>
+            <data>0x68FD5790</data>
+        </windowProp>
+        <windowProp>
+            <name>SysSetRedraw</name>
+            <data>0x00000000</data>
+        </windowProp>
+    </windowPropsList>
+    <ownerProcessPath>C:\Program Files\Adobe\Acrobat DC\Acrobat\Acrobat.exe</ownerProcessPath>
+    <ownerProcessId>5500</ownerProcessId>
+    <ownerThreadId>39052</ownerThreadId>
+</window>

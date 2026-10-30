@@ -237,6 +237,25 @@ Public Class ReaderHostPreview
         End Try
     End Sub
 
+    ' The first methods above the caller's frame, «A.B < C.D < ...», for the log line of ShowDocument.
+    ' Reached only from ShowDocument (wrapped); a failure here must not stop the load.
+    Private Shared Function CallerChain() As String
+        Try
+            Dim k_frames As Diagnostics.StackFrame() = New Diagnostics.StackTrace(2, False).GetFrames()
+            Dim k_names As New List(Of String)()
+            For Each k_frame As Diagnostics.StackFrame In k_frames
+                Dim k_method As Reflection.MethodBase = k_frame.GetMethod()
+                If k_method Is Nothing OrElse k_method.DeclaringType Is Nothing Then Continue For
+                k_names.Add($"{k_method.DeclaringType.Name}.{k_method.Name}")
+                If k_names.Count = 6 Then Exit For
+            Next
+            Return If(k_names.Count = 0, "(necunoscut)", String.Join(" < ", k_names))
+        Catch ex As Exception
+            GlobalErrorLog.Write("ReaderHostPreview.CallerChain", ex)
+            Return "(necunoscut)"
+        End Try
+    End Function
+
     ''' <summary>
     ''' Afișează documentul. Fișier lipsă -&gt; suprafața „document lipsă" (contract IDdfPreview,
     ''' niciodată o excepție). La orice document nou detașăm mai întâi fereastra găzduită curent.
@@ -246,6 +265,9 @@ Public Class ReaderHostPreview
             ' Slice 0078-15: the document that was on screen, kept to delete its local signed copy below.
             Dim k_previous As String = _requestedPath
             _requestedPath = pdfPath
+            ' 30.10.2026: who asks for this document -- a load of REV_1 came between the signing session of REV_0
+            ' and the load of REV_0 and the log did not say who asked (adobe_preview.log, 14:22:05).
+            AdobeHostLog.Write($"Document cerut: «{IO.Path.GetFileName(pdfPath)}» de {CallerChain()}.")
             ' Slice 0099: the previous document is no longer on screen (its late jobs are still caught).
             StopPrintWatch()
             ' Ambele motoare folosesc ACELAȘI panou, deci cel nefolosit trebuie să-l elibereze —

@@ -19,8 +19,8 @@ Public NotInheritable Class SigningMessages
     Public Shared Sub ShowOutcome(owner As IWin32Window, outcome As PdfSigningOutcome)
         Try
             If outcome Is Nothing OrElse String.IsNullOrEmpty(outcome.Message) Then Return
-            Dim icon As MessageBoxIcon = If(outcome.Status = PdfSigningStatus.Uploaded,
-                                            MessageBoxIcon.Information, MessageBoxIcon.Warning)
+            Dim icon As MessageBoxIcon = If(outcome.Status = PdfSigningStatus.Uploaded, MessageBoxIcon.Information,
+                                            If(outcome.Status = PdfSigningStatus.Refused, MessageBoxIcon.Error, MessageBoxIcon.Warning))
             KBotMessage.Show(owner, outcome.Message, Caption, MessageBoxButtons.OK, icon)
         Catch ex As Exception
             GlobalErrorLog.Write("SigningMessages.ShowOutcome", ex)

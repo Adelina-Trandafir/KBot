@@ -4,11 +4,11 @@ title: Setări și aspect
 part: contabil
 order: 80
 parent: contabil
-screens: SetariForm, SetariInfoView, SetariAplicatieView, SetariForexeView, SetariMultithreadView, SetariExtraseView, SetariAutentificareView
+screens: SetariForm, SetariInfoView, SetariAplicatieView, SetariForexeView, SetariMultithreadView, SetariExtraseView, SetariAutentificareView, SetariSemnareDdfView
 keywords: setari, configurare, configurare k-bot, tema, marime text, parola, informatii, autentificare, sesiune expirata, reafiseaza fereastra, tine minte parola, uita datele memorate, certificat memorat, uita certificatul, schimbare unitate, fereastra marita, tot ecranul, full screen, maximizat, la pornire, tur initial, nu mai arata turul, tutorial initial, tutorialul de inceput, nu mai arata tutorialul, mini-meniu, meniul din pagina
 open: setari:aplicatie
 ---
-<!-- slice: 0072, 0072-01, 0100-02, 0113, 0114, 0118 -->
+<!-- slice: 0072, 0072-01, 0100-02, 0113, 0114, 0118, 0124-08 -->
 Setările se deschid din ribbon, **Configurări › Configurare › «Configurare K-BOT»**, ca pagină a ferestrei
 principale; le închizi cu **«Închide»** din dreapta ribbonului sau cu Esc ([Ribbonul](topic:contabil.ribbon)).
 Jurnalele și istoria versiunilor nu mai sunt pagini aici: au machetele lor, **«Jurnal activitate»** și **«Istoric
@@ -119,6 +119,17 @@ Cu opțiunile avansate mai apare:
 și nu se schimbă de aici.
 
 <!-- capture: setari-autentificare | caption: Pagina «Autentificare» din Setări | goto: setari:autentificare -->
+
+## Pagina «Semnare DDF»
+<!-- slice: 0124-05, 0124-08 -->
+
+Aici stabilești **ce rol semnează Secțiunea A** a unui document de fundamentare nou, în funcție de **compartimentul**
+documentului. Lista are câte un rând pentru fiecare compartiment folosit de documentele unității; în a doua coloană
+alegi rolul (Contabil, Împuternicit, Secretar, Administrator sau Director) sau «(niciun rol)». Nimic nu se aplică până la
+**«Salvează»**; **«Reîncarcă»** aruncă alegerile nesalvate.
+
+Rolul ales se aplică documentelor **noi**, generate de acum înainte. Un compartiment fără rol oprește generarea unui document nou,
+cu un mesaj care îl numește. Vezi [Cine semnează A](topic:contabil.ddf.semnare).
 
 ## Tema și mărimea textului
 <!-- slice: 0028-09, 0036, 0036-01 -->

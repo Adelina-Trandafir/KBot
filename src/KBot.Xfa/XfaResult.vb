@@ -46,6 +46,11 @@ Public NotInheritable Class XfaResult
         Me.CodIesireLegacy = codLegacy
     End Sub
 
+    ''' <summary>Rezultat pentru o operație care nu a pornit (ex. fără sesiune, deci fără machetă); operatorul a fost deja înștiințat.</summary>
+    Public Shared Function Nereusit() As XfaResult
+        Return New XfaResult(False, 0, Nothing, 1)
+    End Function
+
     ''' <summary>Rezultat pentru generare fără semnare (cod legacy 0).</summary>
     Public Shared Function Generat(caleOutputPdf As String) As XfaResult
         Return New XfaResult(True, 0, caleOutputPdf, 0)

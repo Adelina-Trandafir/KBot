@@ -46,11 +46,9 @@ target: ClasificatiiBugetView.gridRectificari
 Aici sunt <b>rectificările bugetare ale anului</b> pentru clasificația aleasă: numărul documentului, data și cele patru trimestre. În subsol vezi totalurile. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Adaugă o rectificare
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 0126-02 -->
 target: ClasificatiiBugetView.gridRectificari
-part: footer.right
-wait: click
-Apasă <b>«+»</b> din subsolul tabelului. Apare un rând nou, pe care îl completezi direct în tabel.
+O rectificare nouă se adaugă scriind în <b>rândul gol</b> de la sfârșitul tabelului: un clic în el și scrii. Devine rând nou, iar dedesubt apare altul gol. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Completează rândul
 <!-- slice: 000T-10, 000T-13 -->

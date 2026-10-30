@@ -4,27 +4,22 @@ title: Fereastra directorului
 part: director
 topic: director
 ---
-## Câte documente ai de semnat
-<!-- slice: 0081-06 -->
-target: DirectorForm.lblTitlu
-Aici K-BOT spune câte documente de fundamentare așteaptă semnătura ta, din toate unitățile tale. Dacă o unitate n-a putut fi citită, o numește tot aici.
+## Lista angajamentelor
+<!-- slice: DIR1-01, 0000-141 -->
+target: KbotForm.tree
+Aici sunt angajamentele unității tale. Alege unul și îi vezi documentele în dreapta.
 
-## Lista documentelor
-<!-- slice: 0081-06 -->
-target: DirectorForm.lstDocumente
-Câte un rând pe document: unitatea, angajamentul, obiectul, revizia, data și totalul. Un clic pe rând deschide documentul în dreapta. Un document din altă unitate cere întâi o conectare pe unitatea lui.
+## Documentele angajamentului
+<!-- slice: DIR1-01, 0000-141 -->
+target: KbotForm.navViews
+Doar trei feluri de documente: fundamentare, ordonanțare și note de corecție. Apar numai cele pe care angajamentul ales le are.
 
 ## Documentul ales
-<!-- slice: 0081-06 -->
-target: DirectorForm.pnlDocument
-Aici se deschide documentul. Pe pagina «Document PDF» îl citești și îl semnezi, ca ordonator de credite. Aici nu se poate modifica nimic.
+<!-- slice: DIR1-01, 0000-141 -->
+target: KbotForm.viewHost
+Aici se deschide documentul. Pe pagina «Document PDF» a fundamentării îl citești și îl semnezi, ca ordonator de credite. Aici nu se poate modifica nimic.
 
-## Cine e conectat
-<!-- slice: 0081-06 -->
-target: DirectorForm.lblStare
-Numele tău și unitatea pe care ești conectat acum. Documentele acestei unități se deschid direct.
-
-## Reîncarcă lista
-<!-- slice: 0081-06 -->
-target: DirectorForm.btnReincarca
-Lista nu se actualizează singură după o semnătură. Apasă aici: documentele semnate dispar, iar cele noi apar.
+## Unitatea
+<!-- slice: DIR1-01, 0000-141 -->
+target: KbotForm.capBar
+Unitatea pe care lucrezi. Dacă ești director în mai multe unități, o schimbi de aici, fără parolă.

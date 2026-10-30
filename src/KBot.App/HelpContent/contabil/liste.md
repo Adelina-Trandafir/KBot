@@ -70,6 +70,18 @@ un filtru: tabelul nu arată toate rândurile.
 - **«+»** în dreapta subsolului (în Nomenclatoare: rectificări, coduri de angajament) adaugă un rând
   nou, care se completează direct în tabel.
 
+## Esc într-un tabel în care scrii
+<!-- slice: 0010-08 -->
+
+Când scrii într-o celulă, **Esc** renunță la ce ai scris în ea și celula revine cum era. Un **al doilea Esc**, apăsat imediat după
+primul, **anulează tot rândul**:
+
+- un rând **nou**, adăugat de tine (cu «+» sau din rândul gol de la sfârșitul tabelului), **dispare**; unde nu poate dispărea,
+  se golește;
+- un rând care **exista deja** revine la ce avea înainte să-l modifici.
+
+Dacă nu ai schimbat nimic în rând, Esc nu face nimic în tabel: fereastra se închide ca de obicei.
+
 ## Bifează / debifează tot
 <!-- slice: 0060, 0000-07 -->
 

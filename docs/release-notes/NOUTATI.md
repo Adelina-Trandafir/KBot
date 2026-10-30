@@ -6,6 +6,16 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
+## 1.1.3.1 (29.10.2026)
+<!-- felii: AV01-17, 0010-08, 0000-138, 0000-139, 0000-140 -->
+
+- «Sabloane»: la operatiile cu clasificatie tabelul arata coloana «Forma»; formele fara operatie apar ca randuri de completat la «Modifica».
+- «Sabloane»: o linie se salveaza doar daca are si contul debit, si contul credit; altfel randul se anuleaza.
+- «Sabloane»: listele de conturi arata planul de conturi al sursei, cu analitic si cu conturile clasificatiei liniei; listele se deschid mai late.
+- «Sabloane», operatii diverse: tabelul ocupa toata latimea, are clasificatie pe linie, bifele O/P/C si optiunea «VARIABIL» pentru partener.
+- «Sabloane», operatii cu clasificatie: butonul X de la capatul unui rand goleste randul si pastreaza forma. «Salveaza» e mai scurt.
+- In toate tabelele in care scrieti: Esc renunta la ce ati scris in casuta; al doilea Esc, imediat dupa, anuleaza tot randul (unul nou dispare).
+
 ## 1.1.3.0 (24.10.2026)
 <!-- release: utc=2026-10-24T08:25:26Z -->
 

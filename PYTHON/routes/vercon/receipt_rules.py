@@ -6,6 +6,8 @@ from decimal import Decimal
 from . import numeric, protocol
 from .nomenclatoare import NomError
 
+ACCEPTED_DIFFERENCE = Decimal(1)
+
 
 def chronology(cursor, ctx, number, sub, day, exclude=None):
     from .documents import _all, _sub_text
@@ -106,7 +108,8 @@ def exact_total(parsed):
         raise NomError('HISTORICAL_VALUES', 'Documentul are valori istorice lipsă. Corectați explicit liniile înainte de o modificare economică.', 422)
     total = sum((line['v']['ValoareCUTVA'] for line in parsed['lines']), Decimal(0))
     target = parsed['declared']
-    if target is not None and target != total:
+    # The operator may knowingly save a difference of at most 1 leu; the invoice keeps the declared value.
+    if target is not None and target != total and not (parsed.get('accept_difference') and abs(target - total) <= ACCEPTED_DIFFERENCE):
         message = 'Totalul liniilor (%s) diferă de valoarea NIR (%s) cu %s lei. Aplicați corecția sau corectați repartizarea.' % (
             format(total, 'f'), format(target, 'f'), format(target - total, 'f'))
         raise NomError('NIR_TOTAL_DIFFERENT', message, 422, {'h.Valoare': message})
@@ -117,11 +120,17 @@ def exact_total(parsed):
 
 
 def simulate(cursor, repo, ctx, parsed, exclude=None):
-    """No writes, including price variants. New variants get local synthetic identities."""
+    """Check stock-reducing variants only; return their identities for the save check.
+
+    A positive addition cannot cause a shortage, including in an imperfect imported
+    history. No writes, including price variants: new ones get synthetic identities.
+    """
     from .documents import _all, _scope
-    old = _all(cursor, 'SELECT DISTINCT IdProdus FROM VC_Intrari WHERE SubunitId=%s AND GestiuneId=%s '
-               'AND ExercitiuId=%s AND IdIntrare=%s', (*_scope(ctx), exclude)) if exclude else []
-    products = {r['IdProdus'] for r in old}
+    old = _all(cursor, 'SELECT i.IdProdus, i.Cant, DATE(COALESCE(n.DataFc,n.Data)) AS day '
+               'FROM VC_Intrari i JOIN VC_NIR n ON n.SubunitId=i.SubunitId AND n.GestiuneId=i.GestiuneId '
+               'AND n.ExercitiuId=i.ExercitiuId AND n.IdIntrare=i.IdIntrare '
+               'WHERE i.SubunitId=%s AND i.GestiuneId=%s AND i.ExercitiuId=%s AND i.IdIntrare=%s',
+               (*_scope(ctx), exclude)) if exclude else []
     drafts, synthetic = [], {}
     on = parsed['cols']['DataFc'] or parsed['cols']['Data']
     for line in parsed['lines']:
@@ -133,12 +142,27 @@ def simulate(cursor, repo, ctx, parsed, exclude=None):
         if variant is None:
             identity = (line.get('product'), line['v']['PUTVA'], line['key'] if ctx['type'] == 'MF' else None)
             variant = synthetic.setdefault(identity, -len(synthetic) - 1)
-        products.add(variant)
         drafts.append((variant, on, line['v']['Cant'] or Decimal(0)))
+    changes = {}
+    for row in old:
+        changes.setdefault(row['IdProdus'], []).append((row['day'] or date.min, -Decimal(row['Cant'])))
+    for variant, day, quantity in drafts:
+        changes.setdefault(variant, []).append((day or date.min, quantity))
+    products = set()
+    for variant, items in changes.items():
+        difference = Decimal(0)
+        for day, amount in protocol._by_day(items):
+            difference += amount
+            if difference < 0:
+                products.add(variant)
+                break
+    if not products:
+        return products
     existing = protocol.movements(cursor, ctx, {p for p in products if p > 0}, ('nir', exclude) if exclude else None) if any(p > 0 for p in products) else []
     per = {}
     for variant, day, quantity in existing + drafts:
-        per.setdefault(variant, []).append((day or date.min, quantity))
+        if variant in products:
+            per.setdefault(variant, []).append((day or date.min, quantity))
     for variant, items in per.items():
         balance = Decimal(0)
         for day, amount in protocol._by_day(items):
@@ -148,6 +172,7 @@ def simulate(cursor, repo, ctx, parsed, exclude=None):
                 raise NomError('STOCK_NEGATIVE', '%s: la %s ar lipsi %s. Modificarea nu poate fi aplicată.' % (
                     label, day.strftime('%d.%m.%Y'), format(-balance, 'f')), 409,
                     {'product': variant, 'date': day.isoformat(), 'missing': format(-balance, 'f')})
+    return products
 
 
 def serialize(parsed, ctx=None, doc_id=None):

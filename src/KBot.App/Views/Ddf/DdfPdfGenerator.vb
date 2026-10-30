@@ -29,7 +29,8 @@ Public NotInheritable Class DdfPdfGenerator
 
     ''' <summary>
     ''' Generates the PDF of revision <paramref name="idrev"/> of angajament <paramref name="cod"/>.
-    ''' Risky boundary (HTTP, XML, iTextSharp, disk): logs and rethrows.
+    ''' Risky boundary (HTTP, XML, iTextSharp, disk): logs and rethrows. Nothing when there is no
+    ''' signed-in session to download the template with (the operator was told).
     ''' </summary>
     ''' <param name="citesteDdf">The DDF read through the caller's 401 net
     ''' (<c>GetDdfAsync(cod, pentruGenerare:=True)</c>).</param>
@@ -74,7 +75,9 @@ Public NotInheritable Class DdfPdfGenerator
             Dim xmlPath As String = Path.ChangeExtension(pdfPath, ".xml")
             File.WriteAllText(xmlPath, xml, New Text.UTF8Encoding(False))
 
-            Await Task.Run(Sub() Call Global.KBot.Xfa.XfaWriter.Genereaza(xmlPath, pdfPath, "DDF", deschidePdf:=False)).ConfigureAwait(True)
+            Dim k_xfa As Global.KBot.Xfa.XfaResult = Await Task.Run(
+                Function() Global.KBot.Xfa.XfaWriter.Genereaza(xmlPath, pdfPath, "DDF", deschidePdf:=False)).ConfigureAwait(True)
+            If Not k_xfa.Reusit Then Return Nothing   ' no template (not signed in): the operator was already told
 
             Return New Rezultat() With {.PdfPath = pdfPath, .Antet = antet, .Revizie = revizie}
         Catch ex As Exception

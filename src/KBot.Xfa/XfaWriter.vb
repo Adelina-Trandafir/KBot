@@ -34,6 +34,10 @@ Public NotInheritable Class XfaWriter
             Dim templatePath As String = Nothing
             Dim cleanXmlPath As String = Nothing
             Dim attachments As List(Of AttachmentModel) = PregatesteGenerare(xmlPath, docType, templatePath, cleanXmlPath)
+            If templatePath Is Nothing Then   ' no template (not signed in): the operator was told, nothing to generate
+                CurataXmlTemporar(cleanXmlPath, xmlPath)
+                Return XfaResult.Nereusit()
+            End If
 
             Try
                 Dim cPDF As New AdobeUtils(attachments)
@@ -66,6 +70,10 @@ Public NotInheritable Class XfaWriter
             Dim templatePath As String = Nothing
             Dim cleanXmlPath As String = Nothing
             Dim attachments As List(Of AttachmentModel) = PregatesteGenerare(xmlPath, docType, templatePath, cleanXmlPath)
+            If templatePath Is Nothing Then   ' no template (not signed in): the operator was told, nothing to sign
+                CurataXmlTemporar(cleanXmlPath, xmlPath)
+                Return XfaResult.Nereusit()
+            End If
 
             Dim masca As Integer
             Try

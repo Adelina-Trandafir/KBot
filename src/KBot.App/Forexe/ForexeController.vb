@@ -102,6 +102,20 @@ Partial Public NotInheritable Class ForexeController
         End Get
     End Property
 
+    ''' <summary>
+    ''' Slice 0125: FOREXE is answered by the simulated runner (Debug start entry «Aplicatia cu FOREXE
+    ''' simulat»). Always False in Release, where the simulator does not exist.
+    ''' </summary>
+    Public ReadOnly Property ForexeSimulat As Boolean
+        Get
+#If DEBUG Then
+            Return TypeOf _runner Is SimulatedForexeRunner
+#Else
+            Return False
+#End If
+        End Get
+    End Property
+
     ''' <summary>O operație e în curs (conectare sau descărcare)?</summary>
     Public ReadOnly Property IsBusy As Boolean
         Get
@@ -213,6 +227,11 @@ Partial Public NotInheritable Class ForexeController
     ''' </summary>
     Public Async Function ConnectAsync() As Task(Of Boolean)
         Try
+            ' A director does not work with FOREXE (DirectorMode): no connection, whatever asked for it.
+            If DirectorMode.IsActive(_session) Then
+                RaporteazaEsec(DirectorMode.ReadOnlyMessage)
+                Return False
+            End If
             If _replayMode Then
                 RaporteazaStare("Mod reîncărcare: FOREXE nu se deschide; răspunsurile vin din «Rezultate_Forexe».")
                 Return True
@@ -261,6 +280,10 @@ Partial Public NotInheritable Class ForexeController
 
     Public Async Function ConnectAsync(certificat As X509Certificate2) As Task(Of Boolean)
         Try
+            If DirectorMode.IsActive(_session) Then
+                RaporteazaEsec(DirectorMode.ReadOnlyMessage)
+                Return False
+            End If
             If _replayMode Then
                 RaporteazaStare("Mod reîncărcare: FOREXE nu se deschide; răspunsurile vin din «Rezultate_Forexe».")
                 Return True

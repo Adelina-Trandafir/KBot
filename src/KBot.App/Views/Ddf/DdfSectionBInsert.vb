@@ -46,6 +46,9 @@ Public NotInheritable Class DdfSectionBInsert
     Public Shared Function IsCandidate(revizie As RevizieRow, antet As DdfAntet) As Boolean
         If revizie Is Nothing OrElse antet Is Nothing OrElse Not revizie.ArePdfSemnat Then Return False
         If revizie.StareTrimitere <> DdfSendStage.SentInProgress AndAlso revizie.StareTrimitere <> DdfSendStage.FinalPdf Then Return False
+        ' Slice 0124-07 (operator's flow, step 6): in the signing flow the option to sign B comes only once the reservation exists in the
+        ' reservations table K-BOT brought back from FOREXE.
+        If revizie.InFluxulKbot AndAlso Not revizie.AreRezervari Then Return False
         If Not DdfRevisionStates.HasRole(revizie.Semnatura, DdfRevisionStates.RoleA) Then Return False
         If DdfRevisionStates.HasRole(revizie.Semnatura, DdfRevisionStates.RoleB) Then Return False
         Dim cod As String = If(antet.CodAngajament, String.Empty).Trim()

@@ -11,7 +11,7 @@ from io import BytesIO
 
 from flask import Blueprint, Response, current_app, g, jsonify, request, send_file, send_from_directory
 
-from . import capabilities, diagnostics, doc_routes, nom_routes, operations
+from . import capabilities, diagnostics, doc_routes, nom_routes, operations, partners
 from .capabilities import FormUnavailable
 from .connection import connection  # noqa: F401  re-exported for the repositories of VC03+
 from .context import SelectionInvalid, resolve
@@ -50,7 +50,10 @@ def create_blueprint(authenticate=None, rights=None, preview=False, provider=Non
     if rights is None:
         def rights(context):
             from routes.portal import drepturi
-            return drepturi.operations_of(context["email"], context["db_name"], SECTION)
+            granted = drepturi.operations_of(context["email"], context["db_name"], SECTION)
+            if 'read' in granted:
+                granted.add(partners.OPERATION)
+            return granted
 
     def guard(operation):
         def decorate(function):
@@ -73,19 +76,19 @@ def create_blueprint(authenticate=None, rights=None, preview=False, provider=Non
                                 response = result if isinstance(result, (Response, tuple)) else jsonify(result)
                                 diagnostics.info(operation, 'success', context, rid)
                     except SelectionInvalid as error:
-                        diagnostics.refusal(operation, context, rid, error.reason)
+                        diagnostics.refusal(operation, context, rid, error.reason, str(error))
                         response = _refuse(409, error.reason, str(error))
                     except Busy as error:
                         diagnostics.busy(operation, context, rid)
                         response = _refuse(409, 'GESTIUNE_OCCUPIED', 'Gestiunea este ocupată de alt utilizator (%s).' % error.holder)
                     except LockLost as error:
-                        diagnostics.refusal(operation, context, rid, 'LOCK_LOST')
+                        diagnostics.refusal(operation, context, rid, 'LOCK_LOST', str(error))
                         response = _refuse(409, 'LOCK_LOST', str(error))
                     except NomError as error:
-                        diagnostics.refusal(operation, context, rid, error.reason)
+                        diagnostics.refusal(operation, context, rid, error.reason, str(error))
                         response = (jsonify(error=str(error), reason=error.reason, fields=error.fields), error.status)
                     except FormUnavailable as error:
-                        diagnostics.refusal(operation, context, rid, error.reason)
+                        diagnostics.refusal(operation, context, rid, error.reason, str(error))
                         response = _refuse(error.status, error.reason, str(error))
                     except Exception:
                         logger.exception(diagnostics.line(operation, 'failed', context, rid))
@@ -232,6 +235,7 @@ def create_blueprint(authenticate=None, rights=None, preview=False, provider=Non
         return response
 
     nom_routes.register(bp, guard, scoped, open_db)
+    partners.register(bp, guard, scoped, open_db)
     doc_routes.register(bp, guard, scoped, open_db)
     bp.scoped = scoped   # the door business routes (VC06+) use
     return bp

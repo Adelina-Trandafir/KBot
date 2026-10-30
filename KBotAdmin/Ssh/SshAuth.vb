@@ -49,7 +49,26 @@ Public NotInheritable Class SshAuth
                 "Puneți cheia în ~/.ssh sau tastați parola.")
         End If
 
-        Return New ConnectionInfo(k_settings.Host, k_settings.Port, k_settings.User, k_methods.ToArray())
+        Return New ConnectionInfo(k_settings.Host, k_settings.Port, k_settings.User, k_methods.ToArray()) With {
+            .Timeout = TimeSpan.FromSeconds(ConnectTimeoutSeconds)
+        }
+    End Function
+
+    ''' <summary>How long one connection attempt waits for the server (the whole connect: socket, key exchange, login). 10 s was too short for this server.</summary>
+    Public Const ConnectTimeoutSeconds As Integer = 30
+
+    ''' <summary>How many times a connect is tried before it is given up (SshSession and SftpSession).</summary>
+    Public Const ConnectAttempts As Integer = 2
+
+    ''' <summary>
+    ''' True when a failed connect is worth trying again: the server did not answer in time (a lost packet,
+    ''' a firewall that drops the first one) or the link broke during the handshake. A changed host key
+    ''' (<paramref name="k_hostKeyRefused"/>) or a refused login never is.
+    ''' </summary>
+    Public Shared Function IsTransientConnectFailure(k_error As Exception, k_hostKeyRefused As Boolean) As Boolean
+        If k_hostKeyRefused Then Return False
+        If TypeOf k_error Is Net.Sockets.SocketException OrElse TypeOf k_error Is Renci.SshNet.Common.SshOperationTimeoutException Then Return True
+        Return TypeOf k_error Is ApplicationException AndAlso TypeOf k_error.InnerException Is Renci.SshNet.Common.SshConnectionException
     End Function
 
     ''' <summary>One line for the status bar: how the next connection will log in.</summary>

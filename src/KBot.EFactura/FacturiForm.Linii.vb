@@ -361,6 +361,29 @@ Partial Public Class FacturiForm
         gridLinii.EditCell(ColContinut, k_index)
     End Sub
 
+    ' Esc twice in a row: a line the operator just started (it came from the spare row) goes away; a line of the invoice goes back as it was (the grid's default).
+    Private Sub GridLinii_RowCancelRequested(sender As Object, e As KBotRowCancelEventArgs) Handles gridLinii.RowCancelRequested
+        Try
+            If _loading OrElse _busy OrElse _mode = EditMode.Viewing Then
+                e.Handled = True
+                Return
+            End If
+            If e.RowIndex < 0 OrElse e.RowIndex >= gridLinii.RowCount Then Return
+            Dim k_row As KBotDataRow = gridLinii.Rows(e.RowIndex)
+            If IsSpare(k_row) Then
+                e.Handled = True
+                Return
+            End If
+            If k_row.Tag IsNot Nothing Then Return
+            e.Handled = True
+            gridLinii.RemoveRowAt(e.RowIndex)
+            UpdateTotal()
+            SetDirty(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("FacturiForm.GridLinii_RowCancelRequested", ex)
+        End Try
+    End Sub
+
     Private Sub GridLinii_ButtonClick(sender As Object, e As KBotButtonClickEventArgs) Handles gridLinii.ButtonClick
         Try
             If (e.ColumnKey <> ColSterge AndAlso e.ColumnKey <> ColDuplica) OrElse _busy OrElse _mode = EditMode.Viewing Then Return

@@ -1,5 +1,7 @@
 # ADECHIT — STATUS și plan de portare
 
+**30.10.2026 — SLICE-WB02-01:** opțiunea „Înrolează Certificat Digital” în meniul siglei A, deasupra setărilor tooltip, numai pentru Administratorul unității curente pe calculator. Pagină comună cu rol verificat pe server; ajutorul și ghidul de utilizare actualizate. **IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT**, fără SQL. [Worklog](docs/worklog/SLICE-WB02-01-certificat-digital-administrator.md).
+
 Stare produs: confirmarea operatorului din **23.10.2026**; reorganizare documentară D001-04, **24.10.2026**. Sursa unică pentru starea proiectului ADECHIT.
 Acest fișier spune ce este planificat, ce este scris și ce este verificat.
 Dacă realitatea diferă, actualizăm statusul în aceeași intervenție.
@@ -63,11 +65,14 @@ specifice stabilite de utilizator pentru ADECHIT, consemnate mai jos.
 | SLICE-AD12 | Ajutor ADECHIT: buton «?», cuprins + text formatat, imprimare, PDF | AD12-01 TESTAT, RULAT, PUBLICAT; conținut actualizat în ADE6-24 | [AD12](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad12) |
 | SLICE-AD13 | Încărcare extrase bancare: fișiere/folder și e-mail (IMAP), cu deduplicare | AD13-01 cod scris, compilat sintactic; SQL nerulat, nimic rulat sau văzut | [AD13](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad13) |
 | SLICE-AD11 | Anulare document în taburile de încasări, cu motiv obligatoriu | AD11-01 TESTAT, RULAT, PUBLICAT | [AD11](docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md#slice-ad11) |
-| SLICE-AD14 | Închiderea lunii cu schimbarea taxei active | AD14-01 cod scris, compilat sintactic; nimic rulat sau văzut | [AD14](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad14) |
+| SLICE-AD14 | Taxa lunii și închiderea lunii cu schimbarea taxei active | AD14-03 SCRIS LOCAL: ultima bifă Activ are prioritate, orice taxă existentă poate fi reactivată; AD14-02 combobox în antet; fără teste sau publicare | [AD14](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad14) |
+| SLICE-AD15 | O încasare repartizată la mai mulți copii; sume propuse din soldul final | AD15-01 SCRIS LOCAL; fără teste, SQL sau publicare | [AD15](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad15) |
+| SLICE-AD16 | Macheta chitanțelor | AD16-01 SCRIS LOCAL: Adresa pe două rânduri, cu încadrarea textului lung; fără teste sau publicare | [AD16](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad16) |
 
-**Următorul număr liber de felie: SLICE-AD15**.
+**Următorul număr liber de felie: SLICE-AD17**.
 Planul tuturor feliilor este [documentat](ADECHIT/PLAN_IMPLEMENTARE.md); toate
-feliile de mai sus sunt implementate, testate, rulate și publicate (confirmat de operator, 23.10.2026).
+confirmările de testare/publicare din 23.10.2026 privesc starea de la acea dată;
+intervențiile ulterioare au starea indicată separat în registru și în workloguri.
 ADE0–ADE9 sunt alocate prin acest plan. Subfeliile planificate și următoarele numere libere
 sunt în secțiunea fiecărei felii. Registrul numeric K-BOT rămâne separat.
 
@@ -152,6 +157,14 @@ sunt în secțiunea fiecărei felii. Registrul numeric K-BOT rămâne separat.
     utilizatorului; excepția autorizată a fost numai pornirea nonvizuală ADE1-06.
 
 ## Open threads — transversale
+
+- AD16-01: câmpul Adresa din chitanța PDF are două rânduri și text adaptabil; SCRIS LOCAL, fără probe PDF/vizuale sau publicare. Fără SQL. De probat adrese scurte/lungi în ambele exemplare și la listare/descărcare.
+
+- AD14-03: corecția bifei Activ din Taxe/Închidere lună este SCRISĂ LOCAL; fără teste/publicare și fără SQL. De probat reactivarea unei taxe vechi, schimbarea repetată a bifei și adăugarea unei taxe urmată de revenirea la una existentă.
+
+- AD14-02: selectorul Taxa zilnică și schimbarea taxei întregii luni deschise sunt SCRISE LOCAL, fără teste sau publicare; nu necesită DDL. Ajutorul textual este actualizat; capturile `01-panouri-luna-grupa.jpg` și `02-tabel-complet.jpg` rămân de actualizat pentru comboboxul din antet.
+
+- AD15-01: SCRIS LOCAL; SQL AD_15 pregătit pentru aplicare manuală; fără teste/publicare. De probat: repartizarea unui extras la mai mulți copii și propunerea SFC/SFD la alegerea datei. Ajutorul textual este actualizat; captura `13-extrase-asociere-manuala.jpg` rămâne de actualizat pentru noile controale.
 
 Registrul complet al deciziilor/probelor: [DECIZII_DESCHISE](ADECHIT/DECIZII_DESCHISE.md).
 

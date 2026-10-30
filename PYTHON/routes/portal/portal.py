@@ -11,7 +11,7 @@ already on the MariaDB server. Nothing here writes business data.
     GET  /api/portal/session/info                -> idle window, extensions (for the page's timer)
     GET  /api/portal/session/check               -> is the session alive?
     POST /api/portal/session/extend              -> slides the window, counts the extension
-    POST /api/portal/session/renew               -> restarts a live session's duration on page load
+    POST /api/portal/session/renew               -> restarts a live session's duration (page load, and the pages' keyboard/click activity)
 
 WHO GETS IN. Two factors, as for the password change (slice 0072) and the operator page
 (slice 0075-05): the K-BOT password, proven by a MariaDB login AS the user (auth.verify_operator,
@@ -52,6 +52,7 @@ from routes.auth.auth import log_action, verify_operator
 from routes.auth.ratelimit import LIMITER
 from routes.auth.session_store import STORE
 from routes.portal import drepturi
+from routes.portal.policy import can_enter_kbot
 from routes.portal.session_settings import SESSION_SECONDS
 from utils.database import get_kbot_comun_connection
 
@@ -67,7 +68,7 @@ _NOTE_TRUST = "portal_trust"            # the code was typed in this browser: pa
 
 CODE_TTL = 10 * 60
 CODE_MAX_ATTEMPTS = 5
-PORTAL_MAX = SESSION_SECONDS            # from login / the latest page-load renewal
+PORTAL_MAX = SESSION_SECONDS            # from login / the latest activity (any data request, page load or /session/renew)
 PORTAL_IDLE = PORTAL_MAX
 PORTAL_MAX_EXTENSIONS = 0
 PORTAL_TRUST = 60 * 60                  # code reuse after password login is independent of session renewal
@@ -351,14 +352,14 @@ def _live_session():
 
 
 def _slide(token, note):
-    """Renews the idle window, never past the absolute cap."""
-    # Preserve a renewal completed while a data request was using an older Redis snapshot.
+    """Any request made on the user's behalf is activity: the whole window starts again."""
+    now = time.time()
+    # Never move the deadline back: a renewal completed while this request held an older snapshot wins.
     current = STORE.get_note(token, _NOTE_SESSION)
-    if current and _session_deadline(current) > _session_deadline(note):
-        note["renewed_at"] = current.get("renewed_at", current.get("issued_at", 0))
-    left_to_cap = _session_deadline(note) - time.time()
-    ttl = max(1, int(min(PORTAL_IDLE, left_to_cap)))
-    note["idle_until"] = time.time() + ttl
+    newest = max(now, float(current.get("renewed_at", 0)) if current else 0)
+    note["renewed_at"] = newest
+    ttl = max(1, int(PORTAL_IDLE))
+    note["idle_until"] = newest + ttl
     STORE.put_note(token, _NOTE_SESSION, note, ttl)
     return ttl
 
@@ -454,6 +455,23 @@ def portal_unit():
     _slide(token, note)
     log_action(note["email"], db_name, "PORTAL_UNIT", ip=_ip())
     return _json({"db_name": db_name, "role": mine["Rol"], "periods": periods, "sections": sections})
+
+
+@portal_bp.route("/api/portal/kbot", methods=["GET"])
+@require_portal_session
+def portal_kbot():
+    """SLICE-WB01-01: the K-BOT web entry, separate from shared application sign-in."""
+    try:
+        units = _user_units(g.portal["email"])
+        active = next((unit for unit in units if unit["DC"] == g.portal["db_name"]), None)
+        if not active or not can_enter_kbot(active.get("Rol")):
+            return _fail("ROL_INTERZIS", "K-BOT este disponibil doar pentru rolurile Contabil și Director.", 403)
+        periods = _unit_periods(active["DC"])
+    except mysql.connector.Error:
+        logger.exception("portal K-BOT: cannot read current unit rights")
+        return _fail("DB_ERROR", "Drepturile contului nu au putut fi citite.", 500)
+    return _json({"email": g.portal["email"], "db_name": active["DC"], "role": active["Rol"],
+                  "periods": periods, "units": [unit for unit in units if can_enter_kbot(unit.get("Rol"))]})
 
 
 def _remaining_idle(note):

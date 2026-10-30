@@ -48,6 +48,10 @@ Partial Class KBotDataView
     Private _editBackColor As Color = Color.Empty
 
     Private _arrowKeyEditing As Boolean = True
+
+    ' Slice 0010-08: Esc closes the editor of the cell; a SECOND Esc right after it asks the host to cancel the row (only when the host turned it on).
+    Private _escapeCancelsRow As Boolean = True
+    Private _escArmed As Boolean = False
     Private _enterKeyMode As KBotEnterKeyMode = KBotEnterKeyMode.NextRow
     Private _tabKeyMode As KBotTabKeyMode = KBotTabKeyMode.NextColumn
 
@@ -61,6 +65,14 @@ Partial Class KBotDataView
 
     ''' <summary>Raised before the value is written; the handler may reject or correct it.</summary>
     Public Event CellValidating As EventHandler(Of KBotCellValidatingEventArgs)
+
+    ''' <summary>Raised when a combo cell opens its editor: the handler may replace <see cref="KBotComboItemsEventArgs.Items"/> with the list of THAT cell.</summary>
+    Public Event ComboItemsRequested As EventHandler(Of KBotComboItemsEventArgs)
+
+    ''' <summary>Raised by a second Esc in a row, right after the first one closed the editor of a cell (see <see cref="EscapeCancelsRow"/>), when the operator changed
+    ''' something in the row. A host that cancels the row itself sets <see cref="KBotRowCancelEventArgs.Handled"/> (a row that is only the empty row of the table is removed);
+    ''' otherwise the grid puts the cells back as they were (<see cref="RevertRow"/>).</summary>
+    Public Event RowCancelRequested As EventHandler(Of KBotRowCancelEventArgs)
 
     ''' <summary>True while a cell is being edited.</summary>
     <Browsable(False)>
@@ -94,6 +106,24 @@ Partial Class KBotDataView
         End Get
         Set(value As Boolean)
             _arrowKeyEditing = value
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Esc in an open editor cancels the edit of that cell (always). With this on (the default of every table), a second Esc pressed right after it (nothing else
+    ''' done in between) cancels the whole row, when the operator changed something in it: the cells go back as they were (a new, empty row is emptied), after
+    ''' <see cref="RowCancelRequested"/> let the host do it its own way. When the row was not changed, Esc is left to the form (a dialog closes on it).
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("A second Esc after the one that closed the editor cancels the row. Off = Esc only cancels the edit of the cell.")>
+    <DefaultValue(True)>
+    Public Property EscapeCancelsRow As Boolean
+        Get
+            Return _escapeCancelsRow
+        End Get
+        Set(value As Boolean)
+            _escapeCancelsRow = value
+            If Not value Then _escArmed = False
         End Set
     End Property
 
@@ -206,6 +236,7 @@ Partial Class KBotDataView
             If _editing Then
                 If Not CommitEdit() Then Return False     ' commit rejected => stay where we were
             End If
+            _escArmed = False
             If Not CanEdit(colKey, rowIndex) Then Return False
 
             EnsureVisible(rowIndex)
@@ -231,10 +262,14 @@ Partial Class KBotDataView
                     editText.Focus()
                     editText.SelectAll()
                 Else
+                    ' The host may give this cell its own list (RaiseEvent inside the suppress window: the editor is not shown yet).
+                    Dim k_itemsArgs As New KBotComboItemsEventArgs(colKey, rowIndex, col.ComboItems)
+                    RaiseEvent ComboItemsRequested(Me, k_itemsArgs)
+                    editCombo.DropDownWidth = col.ComboDropDownWidth
                     editCombo.BeginUpdate()
                     Try
                         editCombo.Items.Clear()
-                        If col.ComboItems IsNot Nothing Then editCombo.Items.AddRange(col.ComboItems)
+                        If k_itemsArgs.Items IsNot Nothing Then editCombo.Items.AddRange(k_itemsArgs.Items)
                     Finally
                         editCombo.EndUpdate()
                     End Try
@@ -297,6 +332,7 @@ Partial Class KBotDataView
 
             Dim row As KBotDataRow = _rows(_editRowIndex)
             Dim oldValue As Object = row(_editColumnKey)
+            row.CaptureBaseline()
             row(_editColumnKey) = args.ProposedValue      ' the handler may have corrected the value
             row.IsDirty = True                            ' operator edit => "edited"
 
@@ -334,6 +370,44 @@ Partial Class KBotDataView
         Return BeginEdit(colKey, rowIndex)
     End Function
 
+    ' The second Esc: the host may cancel the row itself; by default the cells go back to what they were before the operator touched the row, and the row is clean again.
+    Private Sub CancelRow(k_rowIndex As Integer, k_columnKey As String)
+        Dim k_args As New KBotRowCancelEventArgs(k_columnKey, k_rowIndex)
+        RaiseEvent RowCancelRequested(Me, k_args)
+        If k_args.Handled OrElse k_rowIndex < 0 OrElse k_rowIndex >= _rows.Count Then Return
+        RevertRow(k_rowIndex)
+    End Sub
+
+    ''' <summary>Puts the cells of a row back as they were before the operator first changed it (nothing if it was not changed). Raises <see cref="CellValueChanged"/> for each cell that changes.</summary>
+    Public Sub RevertRow(k_rowIndex As Integer)
+        Try
+            If k_rowIndex < 0 OrElse k_rowIndex >= _rows.Count Then Return
+            Dim k_row As KBotDataRow = _rows(k_rowIndex)
+            Dim k_baseline As Dictionary(Of String, Object) = k_row.TakeBaseline()
+            If k_baseline Is Nothing Then Return
+            Dim k_changes As New List(Of KBotCellValueEventArgs)()
+            Dim k_keys As New HashSet(Of String)(k_row.StoredKeys(), StringComparer.Ordinal)
+            k_keys.UnionWith(k_baseline.Keys)
+            For Each k_key As String In k_keys
+                Dim k_old As Object = k_row(k_key)
+                Dim k_new As Object = Nothing
+                k_baseline.TryGetValue(k_key, k_new)
+                If Object.Equals(k_old, k_new) Then Continue For
+                k_row(k_key) = k_new
+                k_changes.Add(New KBotCellValueEventArgs(k_key, k_rowIndex, k_old, k_new))
+            Next
+            k_row.MarkClean()
+            RecomputeDerived()
+            InvalidateRow(k_rowIndex)
+            For Each k_change As KBotCellValueEventArgs In k_changes
+                RaiseEvent CellValueChanged(Me, k_change)
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.RevertRow", ex)
+            Throw
+        End Try
+    End Sub
+
     ''' <summary>Abandons the edit: nothing is written, no value event.</summary>
     Friend Sub CancelEdit()
         Try
@@ -359,6 +433,7 @@ Partial Class KBotDataView
         _editing = False
         _editColumnKey = Nothing
         _editRowIndex = -1
+        CloseDatePopup()
     End Sub
 
     ' The current value in the active editor.
@@ -490,7 +565,8 @@ Partial Class KBotDataView
                 SendMessage(editText.Handle, EM_SETMARGINS,
                             New IntPtr(EC_LEFTMARGIN Or EC_RIGHTMARGIN), New IntPtr(margins))
 
-                Dim w As Integer = Math.Max(1, content.Width)
+                ' A date cell keeps its right strip for the calendar button.
+                Dim w As Integer = Math.Max(1, If(HasDateButton(col), DateTextRect(content).Width, content.Width))
                 editText.Bounds = New Rectangle(content.Left, edTop, w, h)
             Else
                 ' Slice 0094: the combo editor is placed like the text editor -- one line high,
@@ -593,7 +669,10 @@ Partial Class KBotDataView
                     e.Handled = True
                     e.SuppressKeyPress = True
                 Case Keys.Escape
+                    ' First Esc: the cell goes back to what it was. It arms the second Esc (the row), which the grid itself receives (OnKeyDown).
+                    Dim k_wasEditing As Boolean = _editing
                     CancelEdit()
+                    _escArmed = _escapeCancelsRow AndAlso k_wasEditing
                     Focus()
                     e.Handled = True
                     e.SuppressKeyPress = True
@@ -610,7 +689,20 @@ Partial Class KBotDataView
                     End If
                     e.Handled = True
                     e.SuppressKeyPress = True
+                Case Keys.F4
+                    ' A date cell: F4 (like Alt+Down) opens its calendar.
+                    If _editing AndAlso HasDateButton(Column(_editColumnKey)) Then
+                        ShowDateCalendar()
+                        e.Handled = True
+                        e.SuppressKeyPress = True
+                    End If
                 Case Keys.Up, Keys.Down
+                    If e.KeyCode = Keys.Down AndAlso e.Alt AndAlso _editing AndAlso HasDateButton(Column(_editColumnKey)) Then
+                        ShowDateCalendar()
+                        e.Handled = True
+                        e.SuppressKeyPress = True
+                        Return
+                    End If
                     If Not _arrowKeyEditing Then Return
                     ' Dropped-down combo: the arrows pick a value, they do not move the cell.
                     If editCombo.Visible AndAlso editCombo.DroppedDown Then Return
@@ -792,6 +884,8 @@ Partial Class KBotDataView
     Private Sub OnEditorLeave(sender As Object, e As EventArgs)
         Try
             If _suppressEditorEvents Then Return
+            ' The calendar of a date cell took the focus: the edit goes on when it closes.
+            If _datePopup IsNot Nothing Then Return
             CommitEdit()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.OnEditorLeave", ex)

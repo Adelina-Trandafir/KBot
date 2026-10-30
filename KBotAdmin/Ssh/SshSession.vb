@@ -37,24 +37,48 @@ Public NotInheritable Class SshSession
         End Get
     End Property
 
+    ''' <summary>Connects; a server that does not answer in time is tried again (a lost first packet is common), then reported.</summary>
     Public Sub Connect()
         Try
-            _client = New SshClient(SshAuth.Build(_settings))
-            _client.KeepAliveInterval = TimeSpan.FromSeconds(30)   ' an idle session is not dropped by the server or a firewall
-            AddHandler _client.HostKeyReceived, AddressOf OnHostKeyReceived
-            _hostKeyError = String.Empty
-            Try
-                _client.Connect()
-            Catch ex As SshConnectionException
-                If _hostKeyError <> String.Empty Then Throw New ApplicationException(_hostKeyError, ex)
-                Throw New ApplicationException("Conectare eșuată la server (SSH). Verificați rețeaua și portul.", ex)
-            Catch ex As SshAuthenticationException
-                Throw New ApplicationException("Autentificare eșuată (SSH). Verificați utilizatorul, cheia SSH din ~/.ssh sau parola.", ex)
-            End Try
+            For k_attempt As Integer = 1 To SshAuth.ConnectAttempts
+                Try
+                    ConnectOnce()
+                    Return
+                Catch ex As Exception When k_attempt < SshAuth.ConnectAttempts AndAlso SshAuth.IsTransientConnectFailure(ex, _hostKeyError <> String.Empty)
+                    GlobalErrorLog.Write("SshSession.Connect (incercarea " & k_attempt.ToString(CultureInfo.InvariantCulture) & ")", ex)
+                    DropClient()
+                    Threading.Thread.Sleep(1000)
+                End Try
+            Next
+        Catch ex As Exception When TypeOf ex Is Net.Sockets.SocketException OrElse TypeOf ex Is Renci.SshNet.Common.SshOperationTimeoutException
+            GlobalErrorLog.Write("SshSession.Connect", ex)
+            Throw New ApplicationException("Serverul nu răspunde (SSH), după " & SshAuth.ConnectAttempts.ToString(CultureInfo.InvariantCulture) &
+                                           " încercări. Verificați rețeaua, VPN-ul și firewall-ul.", ex)
         Catch ex As Exception
             GlobalErrorLog.Write("SshSession.Connect", ex)
             Throw
         End Try
+    End Sub
+
+    Private Sub ConnectOnce()
+        _client = New SshClient(SshAuth.Build(_settings))
+        _client.KeepAliveInterval = TimeSpan.FromSeconds(30)   ' an idle session is not dropped by the server or a firewall
+        AddHandler _client.HostKeyReceived, AddressOf OnHostKeyReceived
+        _hostKeyError = String.Empty
+        Try
+            _client.Connect()
+        Catch ex As SshConnectionException
+            If _hostKeyError <> String.Empty Then Throw New ApplicationException(_hostKeyError, ex)
+            Throw New ApplicationException("Conectare eșuată la server (SSH). Verificați rețeaua și portul.", ex)
+        Catch ex As SshAuthenticationException
+            Throw New ApplicationException("Autentificare eșuată (SSH). Verificați utilizatorul, cheia SSH din ~/.ssh sau parola.", ex)
+        End Try
+    End Sub
+
+    Private Sub DropClient()
+        If _client Is Nothing Then Return
+        _client.Dispose()
+        _client = Nothing
     End Sub
 
     Private Sub OnHostKeyReceived(k_sender As Object, e As HostKeyEventArgs)

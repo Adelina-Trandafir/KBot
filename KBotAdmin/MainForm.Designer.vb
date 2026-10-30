@@ -25,6 +25,7 @@ Partial Class MainForm
         Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
         Dim rbComenzi As KBotRibbonButton = New KBotRibbonButton()
         Dim rbUnice As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbSursa As KBotRibbonButton = New KBotRibbonButton()
         Dim rbSincronizare As KBotRibbonButton = New KBotRibbonButton()
         Dim rbDemo As KBotRibbonButton = New KBotRibbonButton()
         Dim rbDrepturi As KBotRibbonButton = New KBotRibbonButton()
@@ -46,6 +47,7 @@ Partial Class MainForm
         Dim rbCopiiLocale As KBotRibbonButton = New KBotRibbonButton()
         Dim rbPublicare As KBotRibbonButton = New KBotRibbonButton()
         Dim rbRapoarte As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbImportMf As KBotRibbonButton = New KBotRibbonButton()
         Dim rgRulare As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgSchema As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgPagina As KBotRibbonGroup = New KBotRibbonGroup()
@@ -94,8 +96,10 @@ Partial Class MainForm
         viewRequests = New RequestsView()
         viewPublish = New PushFilesView()
         viewOnce = New OnceQueryView()
+        viewSource = New SourceQueryView()
         viewLogin = New LoginResetView()
         viewVerconReports = New VerconReportsView()
+        viewMfImport = New MfImportView()
         viewDemo = New DemoCloneView()
         viewLocalBackup = New LocalBackupView()
         viewMdHistory = New MdHistoryView()
@@ -159,8 +163,14 @@ Partial Class MainForm
         rbUnice.Text = "Interogări unice"
         rbUnice.ToolTipHeader = "Interogări unice"
         rbUnice.ToolTipText = "Rulează o dată un text SQL pe AVACONT_SURSA și pe bazele bifate, cu istoricul a ce a rulat."
+        rbSursa.Image = AdminIcons.Get("once")
+        rbSursa.Key = "sursa"
+        rbSursa.Text = "Interogare pe SURSA"
+        rbSursa.ToolTipHeader = "Interogare pe SURSA"
+        rbSursa.ToolTipText = "Dai calea unui fișier .sql: se citește, rulează pe AVACONT_SURSA, se verifică în structura ei, apare în graf și bare, iar la confirmare se sincronizează unitățile."
         rgRulare.Buttons.Add(rbComenzi)
         rgRulare.Buttons.Add(rbUnice)
+        rgRulare.Buttons.Add(rbSursa)
         rgRulare.Text = "Rulare"
         rbSincronizare.Image = AdminIcons.Get("sync")
         rbSincronizare.Key = "sincronizare"
@@ -314,6 +324,12 @@ Partial Class MainForm
         rbRapoarte.ToolTipHeader = "Rapoarte VERCON"
         rbRapoarte.ToolTipText = "SQL-ul, antetul și machetele rapoartelor VERCON ale unei unități."
         rgVercon.Buttons.Add(rbRapoarte)
+        rbImportMf.Image = AdminIcons.Get("database")
+        rbImportMf.Key = "mf-import"
+        rbImportMf.Text = "Import MF din Access"
+        rbImportMf.ToolTipHeader = "Import MF din Access"
+        rbImportMf.ToolTipText = "Aduce mijloacele fixe active dintr-un mf.mdb vechi într-o gestiune MF a unei unități, în contul de magazie ales, fără primitor."
+        rgVercon.Buttons.Add(rbImportMf)
         rgVercon.Text = "VERCON"
         rtPublicare.Groups.Add(rgFisiere)
         rtPublicare.Groups.Add(rgVercon)
@@ -487,8 +503,10 @@ Partial Class MainForm
         pnlViews.Controls.Add(viewRequests)
         pnlViews.Controls.Add(viewPublish)
         pnlViews.Controls.Add(viewOnce)
+        pnlViews.Controls.Add(viewSource)
         pnlViews.Controls.Add(viewLogin)
         pnlViews.Controls.Add(viewVerconReports)
+        pnlViews.Controls.Add(viewMfImport)
         pnlViews.Controls.Add(viewDemo)
         pnlViews.Controls.Add(viewLocalBackup)
         pnlViews.Controls.Add(viewMdHistory)
@@ -506,6 +524,8 @@ Partial Class MainForm
         viewDemo.Visible = False
         viewVerconReports.Dock = DockStyle.Fill
         viewVerconReports.Visible = False
+        viewMfImport.Dock = DockStyle.Fill
+        viewMfImport.Visible = False
         pnlViews.Dock = DockStyle.Fill
         pnlViews.Location = New Point(0, 0)
         pnlViews.Margin = New Padding(0)
@@ -624,6 +644,16 @@ Partial Class MainForm
         viewOnce.TabIndex = 11
         viewOnce.Visible = False
         '
+        ' viewSource
+        '
+        viewSource.Dock = DockStyle.Fill
+        viewSource.Location = New Point(0, 0)
+        viewSource.Margin = New Padding(0)
+        viewSource.Name = "viewSource"
+        viewSource.Size = New Size(962, 512)
+        viewSource.TabIndex = 40
+        viewSource.Visible = False
+        '
         ' viewLogin
         '
         viewLogin.Dock = DockStyle.Fill
@@ -713,8 +743,10 @@ Partial Class MainForm
     Friend WithEvents mnuExit As ToolStripMenuItem
     Friend WithEvents viewPublish As PushFilesView
     Friend WithEvents viewOnce As OnceQueryView
+    Friend WithEvents viewSource As SourceQueryView
     Friend WithEvents viewLogin As LoginResetView
     Friend WithEvents viewVerconReports As VerconReportsView
+    Friend WithEvents viewMfImport As MfImportView
     Friend WithEvents viewDemo As DemoCloneView
     Friend WithEvents viewLocalBackup As LocalBackupView
     Friend WithEvents viewMdHistory As MdHistoryView

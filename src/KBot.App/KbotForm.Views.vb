@@ -13,8 +13,23 @@ Partial Public Class KbotForm
     ' Slice 0097-02: «Creeaza angajament in FOREXE» is in force -- no selection, only the browser.
     Private _formularNouActiv As Boolean
 
+    ' The page that stands in when no entry of the navigation is selected (the director's shell, before an angajament with a
+    ' document is picked). It is not an entry of the navigation: nothing is highlighted while it shows.
+    Private Const EmptyViewKey As String = "gol"
+
+    ''' <summary>The shell of a director (DirectorMode): only DDF, ORD and the CAB notes, and no FOREXE.</summary>
+    Private ReadOnly Property ModDirector As Boolean
+        Get
+            Return DirectorMode.IsActive(_session)
+        End Get
+    End Property
+
     Private Sub NavViews_SelectionChanged(key As String) Handles navViews.SelectionChanged
         Try
+            If String.IsNullOrEmpty(key) Then
+                ActivateView(EmptyViewKey)
+                Return
+            End If
             ActivateView(key)
             NoteViewOpened(key)   ' KbotForm.Machete.vb: the history of the opened machete
         Catch ex As Exception
@@ -165,7 +180,7 @@ Partial Public Class KbotForm
                 ' «Încarcă în CAB» goes through the same step as the note window; «Validează
                 ' documentul» (page «Recipisă», slice 0088-04) opens the shell's receipt window.
                 Case "notecab" : Return New NoteCabView(_apiClient, Function(op) WithReauth(Of List(Of CabCorrectionNote))(op),
-                                                        AddressOf UploadCabNoteAsync, AddressOf OpenReceiptWindow)
+                                                        AddressOf UploadCabNoteAsync, AddressOf OpenReceiptWindow, _session)
                 ' The live FOREXE page, docked into the shell (slice 0074). Only the
                 ' coordinator: the view docks, opens angajamente and follows the page
                 ' through it, and the shell keeps the reference for page-to-tree selection.
@@ -173,6 +188,9 @@ Partial Public Class KbotForm
                 ' Slice 00EF-18: the received e-invoices of the angajament's DDF (KBot.EFactura's PrimiteView inside).
                 Case "efactura" : Return New EFacturaView(_apiClient, Function(op) WithReauth(Of DdfInfo)(op),
                                                           New ReauthGate(Function(action) WithReauth(Of Object)(action)))
+                Case EmptyViewKey : Return New PlaceholderView(key, "Documente",
+                    "Alegeți din listă un angajament." & vbCrLf & vbCrLf &
+                    "Documentul de fundamentare, ordonanțările și notele de corecție CAB ale lui apar aici.")
                 Case Else
                     Throw New ArgumentException($"Vedere necunoscută: '{key}'.", NameOf(key))
             End Select
@@ -216,6 +234,21 @@ Partial Public Class KbotForm
             ' selection the operator can still browse; without a session there is no page.
             navViews.SetItemVisible("browser", BrowserDisponibil())
 
+            ' A director sees only DDF, ORD and the CAB notes (DirectorMode), whatever the node holds.
+            If ModDirector Then
+                For Each k_key As String In {"sumar", "istoric", "rezervari", "receptii", "plati", "extrase", "efactura", "browser"}
+                    navViews.SetItemVisible(k_key, False)
+                Next
+                ' The open one stays when the node still has it; else the first of the three the node has; else the empty page.
+                If Not DirectorMode.ViewKeys.Contains(navViews.SelectedKey) OrElse Not IsViewEnabled(navViews.SelectedKey, info) Then
+                    navViews.SelectedKey = DirectorViewKey(info)
+                    If Not String.Equals(ActiveViewKey, If(String.IsNullOrEmpty(navViews.SelectedKey), EmptyViewKey, navViews.SelectedKey), StringComparison.Ordinal) Then
+                        ActivateView(If(String.IsNullOrEmpty(navViews.SelectedKey), EmptyViewKey, navViews.SelectedKey))
+                    End If
+                End If
+                Return
+            End If
+
             ' If the active view has just closed, fall back to «sumar» (always enabled) so the
             ' shell does not stay on a page the operator can no longer leave.
             If Not IsViewEnabled(navViews.SelectedKey, info) OrElse
@@ -227,6 +260,15 @@ Partial Public Class KbotForm
             Throw
         End Try
     End Sub
+
+    ' The view a director's shell opens for this node: the first of DDF / ORD / CAB notes the node has. Empty = none of them
+    ' (no node, or a node without those documents): the empty page shows.
+    Private Shared Function DirectorViewKey(info As AngajamentTreeInfo) As String
+        For Each k_key As String In DirectorMode.ViewKeys
+            If IsViewEnabled(k_key, info) Then Return k_key
+        Next
+        Return String.Empty
+    End Function
 
     ' True when the view is allowed to be active for the given context.
     Private Shared Function IsViewEnabled(key As String, info As AngajamentTreeInfo) As Boolean

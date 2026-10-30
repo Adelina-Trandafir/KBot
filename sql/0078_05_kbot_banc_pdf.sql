@@ -5,8 +5,6 @@
 -- byte for byte. The route (PUT /api/forexe/banc/pdf/<tip>/<id>) refuses any other database.
 -- Not created on the unit databases; nothing in production reads or writes it.
 
-USE `000_DEMO`;
-
 CREATE TABLE IF NOT EXISTS `KBOT_BANC_PDF` (
   `Id`            BIGINT        NOT NULL AUTO_INCREMENT,
   `Primit`        DATETIME(3)   NOT NULL DEFAULT CURRENT_TIMESTAMP(3),

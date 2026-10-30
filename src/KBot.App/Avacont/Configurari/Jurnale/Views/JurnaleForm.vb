@@ -175,6 +175,19 @@ Public Class JurnaleForm
         End Try
     End Sub
 
+    ' Esc twice in a row: a row without an id is one the operator just added with «+» and it goes away; a row from the server goes back as it was (the grid's default).
+    Private Sub GridJurnale_RowCancelRequested(sender As Object, e As KBotRowCancelEventArgs) Handles gridJurnale.RowCancelRequested
+        Try
+            If _busy OrElse Not _loaded OrElse e.RowIndex < 0 OrElse e.RowIndex >= gridJurnale.RowCount OrElse gridJurnale(ColId, e.RowIndex) IsNot Nothing Then Return
+            e.Handled = True
+            gridJurnale.RemoveRowAt(e.RowIndex)
+            ntfMesaj.Clear()
+            SetDirty(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("JurnaleForm.GridJurnale_RowCancelRequested", ex)
+        End Try
+    End Sub
+
     Private Sub GridJurnale_ButtonClick(sender As Object, e As KBotButtonClickEventArgs) Handles gridJurnale.ButtonClick
         Try
             If e.ColumnKey <> ColDelete OrElse _busy OrElse Not _loaded Then Return

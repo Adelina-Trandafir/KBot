@@ -1,5 +1,6 @@
 Option Strict On
 Imports System.Collections.Generic
+Imports System.Linq
 Imports System.Threading
 Imports KBot.Api
 Imports KBot.Common
@@ -19,6 +20,8 @@ Public Class ClasificatiiAddForm
     Private ReadOnly _api As INomenclatoareApi
     Private ReadOnly _gate As ReauthGate
     Private ReadOnly _an As Integer
+    ' The source of the title bar; Nothing = «Toate» (the source section is shown and the operator picks).
+    Private ReadOnly _fixedSs As String
     Private _loaded As Boolean
     Private _busy As Boolean
 
@@ -31,13 +34,36 @@ Public Class ClasificatiiAddForm
         _gate = ReauthGate.Direct
     End Sub
 
-    Public Sub New(api As INomenclatoareApi, gate As ReauthGate, an As Integer)
+    ''' <param name="k_ss">The source of the title bar, or Nothing on «Toate»: with a source the classifications go to it, the
+    ''' «Sursa si sectorul» section is not shown and the functional tree starts under the chapter the source works in.</param>
+    Public Sub New(api As INomenclatoareApi, gate As ReauthGate, an As Integer, k_ss As String)
         ArgumentNullException.ThrowIfNull(api)
         ArgumentNullException.ThrowIfNull(gate)
         InitializeComponent()
         _api = api
         _gate = gate
         _an = an
+        _fixedSs = If(String.IsNullOrWhiteSpace(k_ss), Nothing, k_ss.Trim())
+        If _fixedSs IsNot Nothing Then HideSourceSection()
+    End Sub
+
+    ' A source is chosen in the title bar: the section takes no room (its rows go to zero) and the steps are renumbered.
+    Private Sub HideSourceSection()
+        Try
+            For Each k_row As Integer In {0, 1, 2}
+                tlyCorp.RowStyles(k_row).SizeType = SizeType.Absolute
+                tlyCorp.RowStyles(k_row).Height = 0
+            Next
+            lblPasSurse.Visible = False
+            lblHintSurse.Visible = False
+            flowSurse.Visible = False
+            lblPasF.Text = "1. Clasificația funcțională"
+            lblPasE.Text = "2. Clasificația economică"
+            capBar.Text = $"Adaugă clasificații — {_fixedSs}"
+        Catch ex As Exception
+            GlobalErrorLog.Write("ClasificatiiAddForm.HideSourceSection", ex)
+            Throw
+        End Try
     End Sub
 
     Private Sub ClasificatiiAddForm_Load(sender As Object, e As EventArgs) Handles Me.Load
@@ -56,13 +82,22 @@ Public Class ClasificatiiAddForm
             Dim lists As ClasificatiiNomenclator = Await _gate.RunAsync(
                 Function() _api.GetClasificatiiNomenclatorAsync(_an, CancellationToken.None)).ConfigureAwait(True)
             If IsDisposed Then Return
-            FillSources(lists.SectorSources)
-            FillTree(treeF, ClassificationCodeTree.Build(lists.FunctionalCodes, lists.FunctionalGroups))
+            Dim k_sources As List(Of CodeName) = lists.SectorSources
+            If _fixedSs IsNot Nothing Then
+                k_sources = lists.SectorSources.Where(Function(k_s) String.Equals(k_s.Code, _fixedSs, StringComparison.Ordinal)).ToList()
+            End If
+            FillSources(k_sources)
+            Dim k_functional As List(Of ClassificationCodeNode) = ClassificationCodeTree.Build(lists.FunctionalCodes, lists.FunctionalGroups)
+            FillTree(treeF, ShapeFunctional(k_functional, ChaptersOf(lists)))
             FillTree(treeE, ClassificationCodeTree.Build(lists.EconomicCodes, lists.EconomicGroups))
             _loaded = True
-            SetStatus(If(lists.SectorSources.Count = 0,
-                         "Unitatea nu are nicio sursă-sector; clasificațiile nu se pot adăuga de aici.",
-                         String.Empty))
+            If k_sources.Count = 0 Then
+                SetStatus(If(_fixedSs IsNot Nothing,
+                             $"Sursa {_fixedSs} nu are o unitate în această bază; clasificațiile nu se pot adăuga de aici.",
+                             "Unitatea nu are nicio sursă-sector; clasificațiile nu se pot adăuga de aici."))
+            Else
+                SetStatus(String.Empty)
+            End If
             RefreshCounts()
         Catch ex As ApiException
             GlobalErrorLog.Write("ClasificatiiAddForm.LoadLists", ex)
@@ -74,6 +109,48 @@ Public Class ClasificatiiAddForm
             If Not IsDisposed Then SetBusy(False, Nothing)
         End Try
     End Sub
+
+    ' The functional chapters of the base: those of the chosen source, or of every source on «Toate». Empty = not known (a base with no
+    ' classification yet), and then the whole tree is offered.
+    Private Function ChaptersOf(k_lists As ClasificatiiNomenclator) As HashSet(Of String)
+        Dim k_set As New HashSet(Of String)(StringComparer.Ordinal)
+        For Each k_pair As KeyValuePair(Of String, List(Of String)) In k_lists.ChaptersBySs
+            If _fixedSs IsNot Nothing AndAlso Not String.Equals(k_pair.Key, _fixedSs, StringComparison.Ordinal) Then Continue For
+            For Each k_cap As String In k_pair.Value
+                k_set.Add(k_cap)
+            Next
+        Next
+        Return k_set
+    End Function
+
+    ' The functional tree as the window shows it: only the chapters of the base (all of them when none is known), and with ONE chapter (the usual
+    ' case, 65) its own node is left out: the tree starts at what is under it. Every code sits under a four-digit group, even a lone «650100» that
+    ' the code tree keeps as a bare leaf, so no root looks different from the others.
+    Private Shared Function ShapeFunctional(k_tree As List(Of ClassificationCodeNode), k_chapters As HashSet(Of String)) As List(Of ClassificationCodeNode)
+        Dim k_kept As List(Of ClassificationCodeNode) = If(k_chapters.Count = 0, k_tree,
+            k_tree.Where(Function(k_n) k_chapters.Contains(k_n.Id)).ToList())
+        For Each k_chapter As ClassificationCodeNode In k_kept
+            k_chapter.Children = GroupLoneLeaves(k_chapter.Children)
+        Next
+        If k_kept.Count = 1 Then Return k_kept(0).Children
+        Return k_kept
+    End Function
+
+    Private Shared Function GroupLoneLeaves(k_nodes As List(Of ClassificationCodeNode)) As List(Of ClassificationCodeNode)
+        Dim k_out As New List(Of ClassificationCodeNode)(k_nodes.Count)
+        For Each k_n As ClassificationCodeNode In k_nodes
+            If Not k_n.IsLeaf OrElse k_n.Id.Length <> 6 Then
+                k_out.Add(k_n)
+                Continue For
+            End If
+            Dim k_group As New ClassificationCodeNode() With {
+                .Id = k_n.Id.Substring(0, 4), .Digits = k_n.Id.Substring(2, 2), .Caption = k_n.Caption, .IsLeaf = False}
+            k_n.Digits = k_n.Id.Substring(4)
+            k_group.Children.Add(k_n)
+            k_out.Add(k_group)
+        Next
+        Return k_out
+    End Function
 
     ' The sector-sources are data, so their check boxes are made here (the panel is in the designer).
     Private Sub FillSources(sources As List(Of CodeName))
@@ -106,9 +183,12 @@ Public Class ClasificatiiAddForm
     End Sub
 
     Private Shared Sub AddNode(tree As AdvancedTreeControl, n As ClassificationCodeNode, parent As AdvancedTreeControl.TreeItem)
-        Dim caption As String = If(String.IsNullOrEmpty(n.Caption), n.Digits, $"<b>{n.Digits}</b> · {Escape(n.Caption)}")
+        ' A top node shows its whole code: with the chapter left out, «01» under 65 would lose where it belongs.
+        Dim digits As String = If(parent Is Nothing, n.Id, n.Digits)
+        Dim caption As String = If(String.IsNullOrEmpty(n.Caption), digits, $"<b>{digits}</b> · {Escape(n.Caption)}")
         Dim item As AdvancedTreeControl.TreeItem = tree.AddItem(If(n.IsLeaf, "L|" & n.Id, "G|" & n.Id), caption, parent)
-        item.HasCheckBox = True
+        ' Only the last level is a choice; the groups above it carry no check box.
+        item.HasCheckBox = n.IsLeaf
         If n.IsLeaf Then item.Tag = n.Id
         For Each child As ClassificationCodeNode In n.Children
             AddNode(tree, child, item)

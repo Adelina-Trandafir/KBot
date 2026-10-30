@@ -511,8 +511,15 @@ Partial Public Class AdvancedTreeControl
         Dim lower As String = searchText.ToLowerInvariant()
 
         ' Strip mini-html tags for caption search
+        ' A third «~~~» part is a right-aligned figure (slice 0126-01): it is not searched.
+        Dim rawCaption As String = If(it.Caption, "")
+        Dim firstSeparator As Integer = rawCaption.IndexOf("~~~", StringComparison.Ordinal)
+        If firstSeparator >= 0 Then
+            Dim secondSeparator As Integer = rawCaption.IndexOf("~~~", firstSeparator + 3, StringComparison.Ordinal)
+            If secondSeparator >= 0 Then rawCaption = rawCaption.Substring(0, secondSeparator)
+        End If
         Dim plainCaption As String = Regex.Replace(
-            If(it.Caption, ""), "<[^>]+>", "", RegexOptions.IgnoreCase
+            rawCaption, "<[^>]+>", "", RegexOptions.IgnoreCase
         ).ToLowerInvariant()
 
         Dim tagText As String = If(it.Tag IsNot Nothing, it.Tag.ToString(), "").ToLowerInvariant()

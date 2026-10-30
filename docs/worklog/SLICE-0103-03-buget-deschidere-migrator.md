@@ -62,7 +62,7 @@ The operator asked for a system that checks the budget downloaded from FOREXE ag
 - **Client**: `INomenclatoareApi.GetBudgetCheckAsync`, `BudgetCheck` / `BudgetCheckRow` (Domain), `BudgetCheckForm` (dialog,
   designer-authored; grid: Clasificație, Denumire, SS, Buget K-BOT, Credit FOREXE, Diferență; check box «Doar diferențele»).
 - **Triggers**: the new button «Verifică bugetul» in «Clasificații bugetare» (always opens the window); automatically at the end of
-  `DuLaIngestieAsync` after a download (`VerificaBugetulFxAsync`): the window opens ONLY when something differs.
+  `DuLaIngestieAsync` after a download (`VerificaBugetulFxAsync`): the window opens ONLY when something differs. **Removed 27.10.2026 (operator):** a download no longer opens the window; only «Verifica bugetul» in Clasificatii does (`VerificaBugetulFxAsync` deleted).
 - FileVersions: KBot.Api 1.0.19.0, KBot.Domain 1.2.11.0.
 
 ### Files touched

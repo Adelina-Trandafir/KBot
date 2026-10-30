@@ -138,6 +138,7 @@ Contractele, reviziile și limitele fiecărei etape sunt în jurnalul legat; rep
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
 | 0088 | Note corecție CAB și reviziile numerotării/recipisei | GATA pe cod (build Domain/Xfa/Api/Forexe/App **0 / 0**; `py_compile` verde) / **nerulat, nevăzut pe ecran, fără teste** | [0088](../SLICE-0088-note-corectie-cab.md#slice-0088) | Contracte, etape, rezultate și limite în jurnalul legat. |
+| 0088-06 | «Omite rândul»: operațiunile ERR făcute manual în FOREXE, păstrate pe server (`FX_Operatiuni.Omis`) | SCRIS + build App **0 / 0**; `py_compile` verde; **nerulat, nevăzut pe ecran**; DDL `sql/0088_06_fx_operatiuni_omis.sql` de rulat înaintea `operatiuni.py` nou | [0088-06](../SLICE-0088-06-omite-randul.md) | Server, Api, fereastră, intrare nouă «Operațiuni omise». |
 
 ---
 

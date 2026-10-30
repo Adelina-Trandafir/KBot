@@ -673,16 +673,43 @@ Copy-Item -LiteralPath $UpdaterExe -Destination (Join-Path $PublishDir 'KBot.Upd
 Remove-Item $UpdaterStage -Recurse -Force
 Write-Host "Updater OK: KBot.Updater.exe in $PublishDir" -ForegroundColor Cyan
 
+# --- 4c3. KBot.Tray (slice TRAY-01) -> single KBot.Tray.exe next to the app --------
+#  The mini application of the notification area (documents to sign above the clock).
+#  Published SINGLE-FILE like the updater: it copies itself to %LOCALAPPDATA% at start and runs
+#  from the copy, so the next update never meets this file locked. KBot.App starts it after the
+#  sign-in; it puts itself in the Windows Run key on its first run.
+$TrayProj = Join-Path $SolutionRoot 'src\KBot.Tray\KBot.Tray.vbproj'
+if (-not (Test-Path $TrayProj)) { throw "Project not found: $TrayProj" }
+$TrayStage = Join-Path $ArtifactsDir "_tray_$Stamp"
+if (Test-Path $TrayStage) { Remove-Item $TrayStage -Recurse -Force }
+Write-Host "Publish KBot.Tray (single-file) ..." -ForegroundColor Cyan
+& dotnet publish $TrayProj `
+    -c $Configuration `
+    -r $Rid `
+    --self-contained false `
+    -p:PublishSingleFile=true `
+    -o $TrayStage
+if ($LASTEXITCODE -ne 0) {
+    throw "dotnet publish KBot.Tray failed (ExitCode=$LASTEXITCODE)."
+}
+$TrayExe = Join-Path $TrayStage 'KBot.Tray.exe'
+if (-not (Test-Path -LiteralPath $TrayExe)) { throw "KBot.Tray.exe missing from $TrayStage after publish." }
+Copy-Item -LiteralPath $TrayExe -Destination (Join-Path $PublishDir 'KBot.Tray.exe') -Force
+Remove-Item $TrayStage -Recurse -Force
+Write-Host "Tray OK: KBot.Tray.exe in $PublishDir" -ForegroundColor Cyan
+
 # --- 4d. Sign the three EXEs only (optional, non-fatal) ------------------------
 #  Windows checks Authenticode on what the operator launches, never on DLLs a
 #  desktop app loads, so the KBot.*.dll files stay unsigned on purpose: each
 #  signature is one SimplySign confirmation. Setup.exe and the uninstaller are
-#  signed by Inno Setup itself (step 7b). Total: 5 confirmations per build.
+#  signed by Inno Setup itself (step 7b). Total: 6 confirmations per build (the tray exe included).
 #  The updater relaunches itself through UAC on machines where C:\KBOT is not
 #  writable; unsigned, that prompt would be the yellow one.
 Invoke-KBotSign -SignFile (Join-Path $PublishDir 'KBot.App.exe')
 if ($IncludeAccess) { Invoke-KBotSign -SignFile (Join-Path $MigrareDir 'KBot.Migrator.exe') }
 Invoke-KBotSign -SignFile (Join-Path $PublishDir 'KBot.Updater.exe')
+# Slice TRAY-01: the tray application starts with Windows, so it is signed too (one more confirmation).
+Invoke-KBotSign -SignFile (Join-Path $PublishDir 'KBot.Tray.exe')
 
 # --- 5. Workflows folder -------------------------------------------------------
 $WorkflowsDir    = Join-Path $PublishDir 'Workflows'

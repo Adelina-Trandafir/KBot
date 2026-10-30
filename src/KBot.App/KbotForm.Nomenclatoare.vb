@@ -98,6 +98,9 @@ Partial Public Class KbotForm
                 Case UncorrelatedMenuKey
                     ' Slice 0088: every stored ERR operation no note covers yet.
                     OpenRegistered(MachetaCabNote, AddressOf OpenUncorrelatedFromMenu)
+                Case SkippedMenuKey
+                    ' Slice 0088-06: the operations the operator omitted; the only place to bring them back.
+                    OpenRegistered(MachetaCabOmise, AddressOf OpenSkippedFromMenu)
                 Case Else
                     Throw New ArgumentException($"Unknown menu key '{e.Key}'.", NameOf(e))
             End Select
@@ -119,22 +122,6 @@ Partial Public Class KbotForm
         If api Is Nothing Then Throw New InvalidOperationException("The API client does not implement INomenclatoareApi.")
         gate = New ReauthGate(Function(action) WithReauth(Of Object)(action))
         Return True
-    End Function
-
-    ''' <summary>
-    ''' Slice 0103-04: after a download, the budget FOREXE reported for the angajament against the budget
-    ''' K-BOT holds (version in force + rectifications). Silent when everything is equal; never stops the
-    ''' download flow (the check is advice).
-    ''' </summary>
-    Private Async Function VerificaBugetulFxAsync(cod As String) As Task
-        Try
-            Dim api As INomenclatoareApi = TryCast(_apiClient, INomenclatoareApi)
-            If api Is Nothing OrElse String.IsNullOrWhiteSpace(_session.DbName) Then Return
-            Dim gate As New ReauthGate(Function(action) WithReauth(Of Object)(action))
-            Await BudgetCheckForm.RunAsync(Me, api, gate, showWhenEqual:=False, codAngajament:=cod).ConfigureAwait(True)
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.VerificaBugetulFxAsync", ex)
-        End Try
     End Function
 
     Private Sub DeschideClasificatiile()

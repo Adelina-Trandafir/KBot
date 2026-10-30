@@ -32,7 +32,7 @@ fereastra principală.
 | **Total** | suma valorilor curente din Secțiunea A, recalculată la fiecare schimbare |
 
 ## Secțiunea A
-<!-- slice: 0081-08, 0081-12, 0102, 0108, 0120, 0081-13, AV01-13 -->
+<!-- slice: 0081-08, 0081-12, 0102, 0108, 0120, 0081-13, AV01-13, 0122-09 -->
 
 Tabelul din **Secțiunea A** se completează direct în el. La sfârșitul tabelului este mereu **un rând gol**: aici începi un rând nou.
 

@@ -99,6 +99,9 @@ Operator: two ERR rows with different numbers were saved under one number (the n
 - `CabNoteForm`: `_numberTexts` per row, `NumberFor`, `RowNumber`, `RowProblems`, `BuildNotes`; save → one call for all → one PDF per note → the CAB question per note. `SavedNotes` replaces `SavedNote`. Tooltips updated.
 - Build App 0/0; py_compile green. Nothing run.
 
+## 0088-06 (29.10.2026) — «Omite rândul»
+Own worklog: [SLICE-0088-06-omite-randul.md](SLICE-0088-06-omite-randul.md).
+
 ## Left unverified / deferred
 - ⚠ **Run `sql/0088_fx_note_cab.sql` first** on every unit database + AVACONT_SURSA, then upload `note_cab.py`, `operatiuni.py`, `pdf.py`, `__init__.py`. The new `operatiuni.py` writes `CodAngajament` — without the DDL every login save fails (500).
 - Nothing run against the server, FOREXE or Adobe; the window and the view never seen on screen.

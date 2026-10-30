@@ -22,6 +22,12 @@ Partial Public Class KbotForm
     Private Async Sub ExecutaComandaOrd(comanda As OrdComanda)
         Try
             If comanda Is Nothing OrElse String.IsNullOrWhiteSpace(comanda.Cod) Then Return
+            ' A director reads and signs; the signing runs inside the view, so none of these commands is his.
+            If ModDirector Then
+                KBotMessage.Show(Me, DirectorMode.ReadOnlyMessage, "Ordonanțare",
+                                MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
 
             Select Case comanda.Actiune
                 Case OrdActiune.Adauga

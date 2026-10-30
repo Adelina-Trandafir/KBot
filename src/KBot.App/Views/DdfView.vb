@@ -376,6 +376,20 @@ Public Class DdfView
     ''' Selecția din arbore s-a schimbat. Fără angajament (nod de capitol / deselectare) sau
     ''' fără DDF (<c>AreDDF = False</c>) NU se face niciun apel de rețea — doar se golește vederea.
     ''' </summary>
+    ''' <summary>
+    ''' The revisions tree is out of sight and its column collapsed: the view shows only the pages («Vizualizare», «Document PDF»)
+    ''' of the revision it was asked for. Used by the director's list of documents to sign, where the revision is picked in
+    ''' the list and the tree has nothing left to choose.
+    ''' </summary>
+    Public Property ArboreAscuns As Boolean
+        Get
+            Return split.Panel1Collapsed
+        End Get
+        Set(k_value As Boolean)
+            split.Panel1Collapsed = k_value
+        End Set
+    End Property
+
     ' Slice 0078-15: the shell put this view away -- every page lets its document go.
     Public Sub ReleaseDocument() Implements IReleasesDocument.ReleaseDocument
         Try
@@ -523,6 +537,8 @@ Public Class DdfView
                     _pdfRezolvatPentruIdrev = 0
                     Dim nod As AdvancedTreeControl.TreeItem = Nothing
                     If _noduriRevizie.TryGetValue(tinta.Idrev, nod) Then tree.SelectAndReveal(nod)
+                    ' Without the tree (the director's list) the revision picked IS the document: its PDF is the page shown.
+                    If ArboreAscuns Then navSub.SelectedKey = PAGE_PDF
                     PushToActivePage()
                     ShowContent()
                     ' Slice 0078: a signed revision shows nothing until its copy is checked.
@@ -964,11 +980,25 @@ Public Class DdfView
                 ' into the work area) moved to DdfPdfGenerator, shared with the send's final PDF.
                 ' Slice 0081-02: a revision not sent yet gets the INTERIM document (no section B,
                 ' no captures); from the send on, the whole one, captures included (0081-05).
-                Dim mode As DdfPdfMode = If(DdfRevisionStates.IsSent(revizie.Stare), DdfPdfMode.Final, DdfPdfMode.Interim)
+                ' Slice 0124-04: a revision of the signing flow (the server set DeSemnat when it was created) that is not signed on A yet is
+                ' generated, and signed on A, by the role the compartment names, on that person's own PC -- and ALWAYS by the accountant, whatever the
+                ' compartment (operator, 30.10.2026: «contabilul e rege in fluxul asta»); for anyone else Generate only says so.
+                ' Nothing is stored on the server before the signature.
+                Dim k_flux As Boolean = revizie.InFluxulKbot AndAlso revizie.Stare = DdfRevisionState.Draft
+                If k_flux AndAlso Not EsteAdresatMie(revizie.DeSemnat) Then
+                    KBotMessage.Show(FindForm(),
+                        $"Documentul este adresat rolului «{revizie.DeSemnat}» (după compartimentul documentului). " &
+                        "Îl generează și îl semnează cel care are acest rol, din lista lui de documente de semnat.",
+                        "Document de fundamentare", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                    Return
+                End If
+                Dim mode As DdfPdfMode = If(k_flux, DdfPdfMode.OnlyA,
+                                            If(DdfRevisionStates.IsSent(revizie.Stare), DdfPdfMode.Final, DdfPdfMode.Interim))
                 Dim generat As DdfPdfGenerator.Rezultat = Await DdfPdfGenerator.GenereazaAsync(
                     Function() _withReauth(Function() _apiClient.GetDdfAsync(cod, CancellationToken.None, pentruGenerare:=True)),
                     AddressOf CitesteCapturaAsync, _session, revizie.Idrev, mode).ConfigureAwait(True)
                 ' The target changed meanwhile? Drop it.
+                If generat Is Nothing Then Return   ' not signed in: the operator was told
                 If Not String.Equals(_requestedCod, cod, StringComparison.Ordinal) Then Return
                 Dim pdfPath As String = generat.PdfPath
 
@@ -994,6 +1024,18 @@ Public Class DdfView
                 "DDF", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Slice 0124-04: may the logged-in user generate and sign section A of a document addressed to <paramref name="k_rol"/>? The role itself, a proxy
+    ''' for what is the accountant's (the same rule the server applies to its lists), and the ACCOUNTANT always, whatever the role.
+    ''' </summary>
+    Private Function EsteAdresatMie(k_rol As String) As Boolean
+        Dim k_mine As String = If(_session?.Role, String.Empty)
+        If String.Equals(k_rol, k_mine, StringComparison.OrdinalIgnoreCase) Then Return True
+        If String.Equals(k_mine, "Contabil", StringComparison.OrdinalIgnoreCase) Then Return True
+        Return String.Equals(k_mine, "Imputernicit", StringComparison.OrdinalIgnoreCase) AndAlso
+               String.Equals(k_rol, "Contabil", StringComparison.OrdinalIgnoreCase)
+    End Function
 
     ''' <summary>Slice 0081-05: one FOREXE capture's bytes, for the final PDF's Table4. Risky
     ''' boundary (HTTP): logs and rethrows; the generation stops rather than drop a capture.</summary>
@@ -1072,7 +1114,7 @@ Public Class DdfView
             Dim mode As DdfPdfMode = If(DdfRevisionStates.IsSent(rev.Stare), DdfPdfMode.Final, DdfPdfMode.Interim)
             Dim generat As DdfPdfGenerator.Rezultat = Await DdfPdfGenerator.GenereazaAsync(
                 Function() GenerationDataAsync(cod), AddressOf CitesteCapturaAsync, _session, rev.Idrev, mode).ConfigureAwait(True)
-            Return generat.PdfPath
+            Return generat?.PdfPath
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.ObtainPrintPdfAsync", ex)
             Throw
@@ -1134,6 +1176,7 @@ Public Class DdfView
         EndSigning()
         Dim cachePath As String = DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, r.NumarRev)
         _signing = New PdfSigningSession(PdfDocKind.Ddf, r.Idrev, pdfPath, cachePath, serverSha, _apiClient)
+        If DirectorMode.IsActive(_session) Then _signing.AllowedNewRoles = DirectorMode.SigningRoles
         AddHandler _signing.Completed, AddressOf OnSigningCompleted
         _signing.Begin()
         Return _signing
@@ -1176,11 +1219,32 @@ Public Class DdfView
                         _idrevDeReselectat = r.Idrev
                         LoadAsync(_requestedCod)
                     End If
+                Case PdfSigningStatus.Refused
+                    SigningMessages.ShowOutcome(FindForm(), outcome)
+                    RestoreAfterRefusalAsync(session)
                 Case Else
                     SigningMessages.ShowOutcome(FindForm(), outcome)
             End Select
         Catch ex As Exception
             GlobalErrorLog.Write("DdfView.OnSigningCompleted", ex)
+        End Try
+    End Sub
+
+    ' Slice DIR1-03: after a refused signature the document goes back to the server's, by itself: the signing session ends, Adobe
+    ' lets the document go, the local copies are deleted and the revision is loaded again (the original is downloaded).
+    ' UI boundary (async Sub): log and swallow.
+    Private Async Sub RestoreAfterRefusalAsync(k_session As PdfSigningSession)
+        Try
+            Dim k_cod As String = _requestedCod
+            Dim k_idrev As Integer = k_session.Id
+            EndSigning()
+            ReleaseDocument()
+            Await SigningRestore.DeleteLocalCopiesAsync(k_session).ConfigureAwait(True)
+            If IsDisposed OrElse String.IsNullOrWhiteSpace(k_cod) Then Return
+            _idrevDeReselectat = k_idrev
+            LoadAsync(k_cod)
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.RestoreAfterRefusalAsync", ex)
         End Try
     End Sub
 
@@ -1533,6 +1597,21 @@ Public Class DdfView
             Return
         End If
         _executaComanda(comanda)
+    End Sub
+
+    ''' <summary>
+    ''' Shows ONE revision of the angajament: the context and the revision to land on go in together, so there is a single load
+    ''' (a context load followed by <see cref="Reincarca"/> started two, and the one without a revision won, leaving the «Toate
+    ''' reviziile» node on screen).
+    ''' </summary>
+    Public Sub ArataRevizia(k_info As AngajamentTreeInfo, k_idrev As Integer)
+        Try
+            _idrevDeReselectat = k_idrev
+            SetContext(k_info)
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfView.ArataRevizia", ex)
+            Throw
+        End Try
     End Sub
 
     ''' <summary>

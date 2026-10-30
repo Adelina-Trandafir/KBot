@@ -6,7 +6,7 @@ order: 70
 parent: contabil
 keywords: nomenclatoare, clasificatii, parteneri, jurnale
 ---
-<!-- slice: 0087, 0113, 0114, AV01-04, AV01-09, AV01-11, AV01-13 -->
+<!-- slice: 0087, 0113, 0114, AV01-04, AV01-09, AV01-11, AV01-13, AV01-14, AV01-15 -->
 Din ribbon, fila **Date › Nomenclatoare**, se deschid trei machete, fiecare ca pagină a ferestrei principale
 (una câte una; le închizi cu «Închide» din ribbon sau cu Esc):
 
@@ -16,3 +16,4 @@ Din ribbon, fila **Date › Nomenclatoare**, se deschid trei machete, fiecare ca
 - [Plan de conturi](topic:contabil.nomenclatoare.plan-conturi) — subunitățile unității și conturile fiecăreia.
 - [Jurnale](topic:contabil.nomenclatoare.jurnale) — jurnalele contabile ale unității; nu este o pagină, ci o fereastră mică deschisă
   peste pagina de pe ecran.
+- [Șabloane de operații](topic:contabil.nomenclatoare.sabloane) — operațiile contabile automate (cu clasificație și diverse) și șabloanele de salarii (fila **Date › Șabloane**).

@@ -139,6 +139,16 @@ Public NotInheritable Class RevizieRow
     Public Property PdfDataModif As Date?
     ''' <summary>Slice 0099: how many times the revision was printed (PDF row + document row).</summary>
     Public Property PrintCount As Integer
+    ''' <summary>Slice 0124: the role that signs the revision next (<c>FX_DDF_REV.DeSemnat</c>). Empty = the revision is not in
+    ''' the K-BOT signing flow (every revision written before it, every DDF that came from FOREXE).</summary>
+    Public Property DeSemnat As String = String.Empty
+
+    ''' <summary>Slice 0124: is the revision in the K-BOT signing flow (A only, then FOREXE, then B)?</summary>
+    Public ReadOnly Property InFluxulKbot As Boolean
+        Get
+            Return Not String.IsNullOrWhiteSpace(DeSemnat)
+        End Get
+    End Property
 
     ''' <summary>Exista un PDF SEMNAT pe server pentru aceasta revizie?</summary>
     Public ReadOnly Property ArePdfSemnat As Boolean

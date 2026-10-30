@@ -184,6 +184,11 @@ Friend Module Program
         Select Case alegere
             Case StartupLauncherForm.KEY_APLICATIE
                 RunShellWithLogin(provider, k_updatePending)
+            Case StartupLauncherForm.KEY_APLICATIE_SIMULAT
+                ' Slice 0125: the same application, but FOREXE is answered by SimulatedForexeRunner. The switch is read
+                ' when the runner is first resolved, which happens inside the shell, after this line.
+                SimulatedForexeSwitch.Active = True
+                RunShellWithLogin(provider, k_updatePending)
             Case StartupLauncherForm.KEY_BANC
                 RunHarness(provider)
             Case StartupLauncherForm.KEY_JURNALE
@@ -297,6 +302,11 @@ Friend Module Program
             Using login As LoginForm = provider.GetRequiredService(Of LoginForm)()
                 AppScreen.SetReference(login)
                 login.UpdateCheckPending = updateCheckPending
+                ' Slice TRAY-01: started by the tray for a document of a unit? Sign in on that unit.
+                Dim k_trayRequest As TrayRequest = TrayRequest.Peek(TrayRequestHub.MaxAge)
+                If k_trayRequest IsNot Nothing AndAlso Not String.IsNullOrWhiteSpace(k_trayRequest.Dc) Then
+                    login.PreferredDc = k_trayRequest.Dc
+                End If
                 If login.ShowDialog() <> DialogResult.OK Then
                     Return   ' anulat (sau actualizarea a pornit: login.ExitForUpdate) -> ieșim fără a lansa shell-ul
                 End If
@@ -308,14 +318,14 @@ Friend Module Program
             Dim api As IApiClient = provider.GetRequiredService(Of IApiClient)()
             KBot.Xfa.TemplateDownloader.TokenProvider = Function() session.Token
 
-            ' Slice 0081-06: a director gets only the list of documents to sign, never the shell.
-            Dim shell As Form
-            If DirectorForm.EsteDirector(session) Then
-                shell = provider.GetRequiredService(Of DirectorForm)()
-            Else
-                ' AvacontMain step 1: the main window hosts the shell (KbotForm) as its page.
-                shell = provider.GetRequiredService(Of AvacontMain)()
-            End If
+            ' AvacontMain step 1: the main window hosts the shell (KbotForm) as its page.
+            ' 30.10.2026: a director gets this same window, narrowed to the FOREXE part and to DDF / ORD / CAB notes
+            ' (DirectorMode). The separate list window of slice 0081-06 (DirectorForm) is switched off, not deleted:
+            ' it stays registered below and is no longer opened here.
+            ' Slice 0124-06: a Secretar / Administrator gets the narrowed window (their documents and nothing else), not the main one.
+            Dim k_restricted As Boolean = DeSemnatRestransForm.EsteRolRestrans(session)
+            Dim shell As Form = If(k_restricted, CType(provider.GetRequiredService(Of DeSemnatRestransForm)(), Form),
+                                   CType(provider.GetRequiredService(Of AvacontMain)(), Form))
             Dim k_kbotShell As KbotForm = TryCast(shell, AvacontMain)?.Shell
             If k_kbotShell IsNot Nothing Then
                 ' The PDF template download runs on a worker thread outside ApiClient: on a 401 it asks the shell
@@ -325,10 +335,20 @@ Friend Module Program
             End If
             AppScreen.SetReference(shell)   ' the shell replaces the login as the application's window (slice 0062)
             ' Slice 0078: signed PDFs whose upload failed earlier are retried once the shell is up.
-            AddHandler shell.Shown, Sub(s, e) RetryPendingPdfUploads(shell, api)
+            If Not k_restricted Then AddHandler shell.Shown, Sub(s, e) RetryPendingPdfUploads(shell, api)
+            ' Slice TRAY-01: the tray application (documents to sign above the clock) is started from here, and what it asked
+            ' of K-BOT is answered once the window has finished appearing (posted, not run inside the Shown event).
+            TrayRequestHub.StartTray()
+            Dim k_trayHub As TrayRequestHub = Nothing
+            Dim k_main As AvacontMain = TryCast(shell, AvacontMain)
+            If k_main IsNot Nothing Then
+                k_trayHub = New TrayRequestHub(k_main)
+                AddHandler shell.Shown, Sub(s, e) shell.BeginInvoke(New Action(AddressOf k_trayHub.Start))
+            End If
             Try
                 Application.Run(shell)
             Finally
+                k_trayHub?.Dispose()
                 ' Slice 0078-11: the Adobe processes K-BOT started do not outlive it (no ghosts in the Task Manager).
                 KBot.Controls.AdobeProcessRegistry.Shutdown()
                 ' Slice 0078-15: the local signed copies that were still locked by Adobe go now that it is gone.
@@ -527,7 +547,17 @@ Friend Module Program
             End Function)
 
         ' Executor FOREXE (in-process).
+#If DEBUG Then
+        ' Slice 0125 (Debug only): "Aplicatia cu FOREXE simulat" in the start window turns the switch on before
+        ' the shell is built; the real runner stays registered, so the normal start is unchanged.
+        services.AddSingleton(Of ForexeRunner)()
+        services.AddSingleton(Of IForexeRunner)(
+            Function(sp) If(SimulatedForexeSwitch.Active,
+                            DirectCast(New SimulatedForexeRunner(), IForexeRunner),
+                            sp.GetRequiredService(Of ForexeRunner)()))
+#Else
         services.AddSingleton(Of IForexeRunner, ForexeRunner)()
+#End If
 
         ' Coordonatorul FOREXE (felia 0034) — SINGLETON, ca runner-ul: ține sesiunea, progresul,
         ' certificatul ales și depozitul local de rezultate. Cele două suprafețe de UI (banda din
@@ -554,6 +584,7 @@ Friend Module Program
         services.AddTransient(Of KbotForm)()
         services.AddTransient(Of AvacontMain)()
         services.AddTransient(Of DirectorForm)()
+        services.AddTransient(Of DeSemnatRestransForm)()
         services.AddTransient(Of LoginForm)()
         ' Vizualizatorul de jurnale (felia 0031-04). Transient: se deschide nemodal din meniul
         ' butonului de opțiuni al shell-ului și modal din bancul de probă — două vieți diferite,

@@ -4,10 +4,11 @@ from utils.clock import utc_now
 from decimal import Decimal
 import hashlib
 import json
-from . import report_balance, report_body, report_catalog, report_data, report_food, report_store, report_output, report_reception, report_identity
+from . import report_balance, report_body, report_catalog, report_data, report_food, report_store, report_output, report_reception, report_identity, report_sort
 from .nomenclatoare import NomError
 from . import report_voucher
 from . import report_statement
+from . import report_stock_card
 from reporting.snapshots import Snapshots as ReportSnapshots
 
 
@@ -70,6 +71,8 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
         if spec['kind'] == 'balance':
             rows = report_balance.prepare(rows, params)
             layout = {**layout, 'value': report_balance.display_layout(layout['value'], params)}
+        else:
+            rows = report_sort.by_name(rows, spec, layout['value'].get('groups', []))
         if (params.get('document') is not None or params.get('document_ids') is not None) and not rows:
             raise NomError('NOT_FOUND', 'Documentul nu este disponibil în selecția raportului.', 404)
         committees = {row['IdComisie']: row for row in source.rows('committee')} if spec.get('family') in ('nir', 'storno') else {}
@@ -85,6 +88,8 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
                          'Observațiile din tabel indică activele care necesită corectarea datelor.')
         if spec.get('ledger') == 'custody' or spec['kind'] in ('balance', 'product', 'accounts', 'final', 'inventory', 'statement'):
             notes.append('Stoc evaluat la prețul curent al variantei; documentele păstrează valorile proprii.')
+        if spec.get('ledger') != 'custody' and spec['kind'] in ('balance', 'product', 'accounts'):
+            notes.append('Stornările diminuează intrările; bonurile de retur diminuează ieșirile.')
         if (params.get('supplier') is not None or params.get('supplier_ids') is not None) and spec['kind'] == 'statement':
             notes.append('Furnizorul selectează variantele recepționate de la acesta. Fișa păstrează toate mișcările variantelor; consumurile nu au o alocare istorică pe furnizori.')
     title = layout['value']['title']
@@ -103,6 +108,7 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
         heading.append({'t': 'text', 'text': period})
     model = {'title': title, 'report_name': spec['id'], 'layout': layout['value'], 'identity': identity['value'],
              'letterhead_version': report_identity.VERSION,
+             'warehouse_balance_version': report_balance.VERSION,
              'gestiune_name': gestiune_name, 'period_text': period,
              'filename': spec['id'].replace(' ', '_') + '_' + params['end'].isoformat(),
              'blocks': heading + band('before') + blocks + band('after'),
@@ -113,6 +119,7 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
         model['receptions'] = receptions
     if balance_reference:
         model['versions']['balance_reference'] = balance_reference
+    report_stock_card.attach(model, ctx, params)
     model = primitive(model)
     model['data_hash'] = hashlib.sha256(json.dumps(model, ensure_ascii=False, sort_keys=True, default=str).encode()).hexdigest()
     return model

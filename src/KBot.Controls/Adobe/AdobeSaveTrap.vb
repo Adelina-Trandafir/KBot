@@ -76,10 +76,27 @@ Public NotInheritable Class AdobeSaveTrap
     ''' <summary>How many times one dialog may be pressed before it is cancelled.</summary>
     Public Const MaxPresses As Integer = 3
 
-    ''' <summary>Title prefix of the alert boxes raised by the form's own scripts.</summary>
-    Public Const ScriptAlertTitle As String = "Warning: JavaScript Window"
-    ''' <summary>Title of Adobe's script console, which opens itself on a script error.</summary>
-    Public Const ScriptConsoleTitle As String = "JavaScript Debugger"
+    ''' <summary>
+    ''' Title prefixes of the alert boxes raised by the form's own scripts, one per Adobe interface
+    ''' language seen in the logs. Adobe titles the box in its own language (Romanian Reader,
+    ''' 29.10.2026: «Avertisment: Fereastră JavaScript - »; matched up to the diacritic, which
+    ''' stays out of the code).
+    ''' </summary>
+    ' «Adobe Acrobat» (MEASURED 30.10.2026, Window Detective): Adobe's own plain alert, e.g. «No error.»
+    ' when a load is cut by opening another document. Like the script alerts it is closed only when
+    ' its text is on the operator's list (AdobeScriptAlertFilter); any other text stays on screen.
+    Public Shared ReadOnly ScriptAlertTitles As String() = {"Warning: JavaScript Window", "Avertisment: Fereastr", "Adobe Acrobat"}
+    ''' <summary>
+    ''' Titles of the windows of the signature itself: Adobe's signing window and the token's PIN window (30.10.2026, adobe_preview.log).
+    ''' Each one is brought to the front once (never moved, never written into): behind the K-BOT window the PIN window waited unseen
+    ''' and the signature looked like a hang.
+    ''' </summary>
+    Public Shared ReadOnly SigningDialogTitles As String() = {"Token Logon", "Signing", "Sign Document"}
+    ''' <summary>
+    ''' Titles of Adobe's script console, which opens itself on a script error (English and
+    ''' Romanian «Depanator JavaScript»).
+    ''' </summary>
+    Public Shared ReadOnly ScriptConsoleTitles As String() = {"JavaScript Debugger", "Depanator JavaScript"}
 
     ' Every running trap of the process, and which trap a Save As was handed to. All traps live on
     ' the UI thread (WinForms timer + out-of-context hook), so no lock is needed.
@@ -114,6 +131,8 @@ Public NotInheritable Class AdobeSaveTrap
     Private ReadOnly _hooks As New List(Of IntPtr)()
     ' «Other» dialogs are logged once per handle.
     Private ReadOnly _seen As New HashSet(Of IntPtr)()
+    ' Signing / PIN windows already brought to the front: once each, so the operator is never fought for the focus.
+    Private ReadOnly _fronted As New HashSet(Of IntPtr)()
 
     Private _targetPath As String
     Private _pids As New List(Of Integer)()
@@ -422,6 +441,7 @@ Public NotInheritable Class AdobeSaveTrap
             If _hooks.Count > 0 OrElse _targetPath IsNot Nothing Then Report("Capcana «Salvare ca» oprită.")
             _hooks.Clear()
             _seen.Clear()
+            _fronted.Clear()
             _answered.Clear()
             _pending = IntPtr.Zero
             _hiddenSince = Nothing
@@ -619,6 +639,15 @@ Public NotInheritable Class AdobeSaveTrap
             Return
         End If
 
+        ' The signature's own windows (Adobe's «Signing» / «Sign Document», the token's «Token Logon»): read by TITLE only, never by text.
+        ' GatherFacts sends WM_GETTEXT to every static of a dialog, with a 2 s timeout each, on every 200 ms tick; the token's window is
+        ' busy with the token while it appears, so the UI thread sat in this tick (30.10.2026: both K-BOT windows reported as hung).
+        If AdobeSaveDialogFilter.StartsWithAny(AdobeNativeMethods.GetTitle(hwnd), SigningDialogTitles) AndAlso
+           _pids.Contains(AdobeNativeMethods.OwnerPid(hwnd)) Then
+            BringSigningDialogToFront(hwnd)
+            Return
+        End If
+
         Dim facts As AdobeDialogFacts = GatherFacts(hwnd)
         Dim kind As AdobeDialogKind = AdobeSaveDialogFilter.Classify(facts, _pids, _pending)
         ' Dialogs of processes we do not watch are not traced (the Report below covers the Adobe
@@ -639,7 +668,7 @@ Public NotInheritable Class AdobeSaveTrap
             Case AdobeDialogKind.Other
                 If _closing AndAlso AdobeSaveDialogFilter.IsSaveOnClosePrompt(facts, _targetPath) Then
                     AnswerClosePrompt(hwnd, facts)
-                ElseIf AdobeSaveDialogFilter.IsScriptNoise(facts.Title, ScriptAlertTitle, ScriptConsoleTitle) Then
+                ElseIf AdobeSaveDialogFilter.IsScriptNoise(facts.Title, ScriptAlertTitles, ScriptConsoleTitles) Then
                     DismissScriptNoise(hwnd, facts)
                 Else
                     ' Slice 0099: Adobe's own Print window. Left alone like every other dialog; the
@@ -658,6 +687,15 @@ Public NotInheritable Class AdobeSaveTrap
                     Report($"Dialog al unui proces Adobe NEURMĂRIT (lăsat în pace): 0x{hwnd.ToInt64():X} {facts.Describe()}")
                 End If
         End Select
+    End Sub
+
+    ' The signing window or the token's PIN window of a watched Adobe process: brought to the front ONCE. It is not moved, resized, read
+    ' (no text) or written into (the PIN is the operator's alone). Windows may refuse the foreground to a background process; that is logged.
+    Private Sub BringSigningDialogToFront(hwnd As IntPtr)
+        If Not _fronted.Add(hwnd) Then Return
+        Dim k_title As String = AdobeNativeMethods.GetTitle(hwnd)
+        Dim k_front As Boolean = AdobeNativeMethods.SetForegroundWindow(hwnd)
+        Report($"Fereastra de semnare «{k_title}» 0x{hwnd.ToInt64():X} (proces {AdobeNativeMethods.OwnerPid(hwnd)}) adusă în față: {If(k_front, "da", "Windows a refuzat (alt proces are prim-planul)")}. Nu a fost mutată, nu i s-a citit textul și nu s-a scris nimic în ea.")
     End Sub
 
     ' First sight of a Save As: decide which running trap it belongs to, BEFORE anything is written
@@ -968,7 +1006,7 @@ Public NotInheritable Class AdobeSaveTrap
         If Not AdobeNativeMethods.IsWindowVisible(hwnd) Then
             Return
         End If
-        Dim isConsole As Boolean = facts.Title.StartsWith(ScriptConsoleTitle, StringComparison.OrdinalIgnoreCase)
+        Dim isConsole As Boolean = AdobeSaveDialogFilter.StartsWithAny(facts.Title, ScriptConsoleTitles)
         Dim now As DateTime = DateTime.UtcNow
         Tr($"DismissScriptNoise {AcroPdfTraceLog.Hex(hwnd)} «{facts.Title}»: console={isConsole} " &
            $"sinceLastAlert={(now - _lastScriptAlert).TotalMilliseconds:0} ms sinceStart={(now - _startedAt).TotalMilliseconds:0} ms")

@@ -371,6 +371,8 @@ Public NotInheritable Class AppUpdateService
                 psi.ArgumentList.Add("--driver-zip") : psi.ArgumentList.Add(k_driverZip)
                 psi.ArgumentList.Add("--driver-sha256") : psi.ArgumentList.Add(check.Info.Driver.Sha256)
             End If
+            ' Slice TRAY-01: the tray application ends first; it starts again, in its new version, with the K-BOT the updater restarts.
+            TrayRequestHub.StopTray()
             Process.Start(psi)
             OperatorLog.Write("AppUpdateService", CAPTION,
                               "Actualizare pornită: " & check.Current.ToString() & " -> " & check.Info.Version &

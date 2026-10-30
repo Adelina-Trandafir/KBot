@@ -47,10 +47,17 @@ Partial Class ClasificatiiBugetView
         Dim KBotDataColumn25 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn26 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn27 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn28 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn29 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn30 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn31 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn32 As KBotDataColumn = New KBotDataColumn()
         tips =New KBotToolTip(components)
         gridBuget = New KBotDataView()
         gridRectificari = New KBotDataView()
         gridTotal = New KBotDataView()
+        gridAngajamente = New KBotDataView()
+        lblAngajamente = New Label()
         btnSalveaza = New Button()
         btnVerifica = New Button()
         btnTrimiteAccess = New Button()
@@ -69,6 +76,7 @@ Partial Class ClasificatiiBugetView
         CType(gridBuget, ComponentModel.ISupportInitialize).BeginInit()
         CType(gridRectificari, ComponentModel.ISupportInitialize).BeginInit()
         CType(gridTotal, ComponentModel.ISupportInitialize).BeginInit()
+        CType(gridAngajamente, ComponentModel.ISupportInitialize).BeginInit()
         tlyMain.SuspendLayout()
         pnlCard.SuspendLayout()
         tlyBody.SuspendLayout()
@@ -159,6 +167,10 @@ Partial Class ClasificatiiBugetView
         KBotDataColumn19.ValueType = KBotValueType.Number
         KBotDataColumn19.Width = 110
         KBotDataColumn5.AggregateFormatString = Nothing
+        KBotDataColumn5.ButtonBackColor = Color.Transparent
+        KBotDataColumn5.ButtonBorders = KBotBorderSides.None
+        KBotDataColumn5.ButtonMargin = New Padding(0)
+        KBotDataColumn5.ButtonPadding = New Padding(0)
         KBotDataColumn5.ColumnType = KBotColumnType.Button
         KBotDataColumn5.FormatString = Nothing
         KBotDataColumn5.HeaderText = ""
@@ -189,8 +201,6 @@ Partial Class ClasificatiiBugetView
         gridBuget.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
         gridBuget.FooterBackColor = SystemColors.Control
         gridBuget.FooterCaption = "Versiuni de buget"
-        gridBuget.FooterRightIcon = My.Resources.Resources.plus_green
-        gridBuget.FooterRightIconTooltip = "Adaugă o versiune de buget" & vbLf & "Rândul nou se completează direct în tabel."
         gridBuget.FooterSeparatorColor = SystemColors.ActiveBorder
         gridBuget.FooterVisible = True
         gridBuget.HeaderBackColor = SystemColors.Control
@@ -301,6 +311,10 @@ Partial Class ClasificatiiBugetView
         KBotDataColumn12.ValueType = KBotValueType.Number
         KBotDataColumn12.Width = 110
         KBotDataColumn13.AggregateFormatString = Nothing
+        KBotDataColumn13.ButtonBackColor = Color.Transparent
+        KBotDataColumn13.ButtonBorders = KBotBorderSides.None
+        KBotDataColumn13.ButtonMargin = New Padding(0)
+        KBotDataColumn13.ButtonPadding = New Padding(0)
         KBotDataColumn13.ColumnType = KBotColumnType.Button
         KBotDataColumn13.FormatString = Nothing
         KBotDataColumn13.HeaderText = ""
@@ -332,8 +346,6 @@ Partial Class ClasificatiiBugetView
         gridRectificari.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
         gridRectificari.FooterBackColor = SystemColors.Control
         gridRectificari.FooterCaption = "Total"
-        gridRectificari.FooterRightIcon = My.Resources.Resources.plus_green
-        gridRectificari.FooterRightIconTooltip = "Adaugă o rectificare" & vbLf & "Rândul nou se completează direct în tabel."
         gridRectificari.FooterSeparatorColor = SystemColors.ActiveBorder
         gridRectificari.FooterVisible = True
         gridRectificari.HeaderHeight = 24
@@ -463,7 +475,103 @@ Partial Class ClasificatiiBugetView
         gridTotal.TabIndex = 4
         ' tips.SetToolTipHeader(gridTotal, "Bugetul in vigoare, cu rectificari")
         ' tips.SetToolTipText(gridTotal, "Ultimul buget (cel cu data cea mai noua) plus TOATE rectificarile de mai sus, pe trimestre." & vbLf & "La un nod, insumeaza toate clasificatiile de sub el.")
-        ' 
+        '
+        ' gridAngajamente
+        '
+        gridAngajamente.AutoSizeColumnsMode = KBotAutoSizeMode.None
+        gridAngajamente.BackColor = SystemColors.Window
+        gridAngajamente.ColumnFillMode = KBotFillMode.SpecificColumn
+        gridAngajamente.FillColumnKey = "angajament"
+        KBotDataColumn28.AggregateFormatString = Nothing
+        KBotDataColumn28.FormatString = Nothing
+        KBotDataColumn28.HeaderText = "Angajament"
+        KBotDataColumn28.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn28.Key = "angajament"
+        KBotDataColumn28.MinWidth = 150
+        KBotDataColumn28.OptionGroup = Nothing
+        KBotDataColumn28.ReadOnly = True
+        KBotDataColumn28.Width = 150
+        KBotDataColumn29.AggregateFormatString = Nothing
+        KBotDataColumn29.FormatString = Nothing
+        KBotDataColumn29.HeaderText = "Cod indicator"
+        KBotDataColumn29.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn29.Key = "indicator"
+        KBotDataColumn29.OptionGroup = Nothing
+        KBotDataColumn29.ReadOnly = True
+        KBotDataColumn29.Width = 130
+        KBotDataColumn30.Aggregate = KBotAggregate.Sum
+        KBotDataColumn30.AggregateFormatString = Nothing
+        KBotDataColumn30.DecimalPlaces = 2
+        KBotDataColumn30.Format = KBotFormat.Standard
+        KBotDataColumn30.FormatString = Nothing
+        KBotDataColumn30.HeaderText = "Total rezervări"
+        KBotDataColumn30.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn30.Key = "rezervari"
+        KBotDataColumn30.OptionGroup = Nothing
+        KBotDataColumn30.ReadOnly = True
+        KBotDataColumn30.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn30.ValueType = KBotValueType.Number
+        KBotDataColumn30.Width = 130
+        KBotDataColumn31.Aggregate = KBotAggregate.Sum
+        KBotDataColumn31.AggregateFormatString = Nothing
+        KBotDataColumn31.DecimalPlaces = 2
+        KBotDataColumn31.Format = KBotFormat.Standard
+        KBotDataColumn31.FormatString = Nothing
+        KBotDataColumn31.HeaderText = "Total recepții"
+        KBotDataColumn31.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn31.Key = "receptii"
+        KBotDataColumn31.OptionGroup = Nothing
+        KBotDataColumn31.ReadOnly = True
+        KBotDataColumn31.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn31.ValueType = KBotValueType.Number
+        KBotDataColumn31.Width = 130
+        KBotDataColumn32.Aggregate = KBotAggregate.Sum
+        KBotDataColumn32.AggregateFormatString = Nothing
+        KBotDataColumn32.DecimalPlaces = 2
+        KBotDataColumn32.Format = KBotFormat.Standard
+        KBotDataColumn32.FormatString = Nothing
+        KBotDataColumn32.HeaderText = "Total plăți"
+        KBotDataColumn32.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn32.Key = "plati"
+        KBotDataColumn32.OptionGroup = Nothing
+        KBotDataColumn32.ReadOnly = True
+        KBotDataColumn32.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn32.ValueType = KBotValueType.Number
+        KBotDataColumn32.Width = 130
+        gridAngajamente.Columns.Add(KBotDataColumn28)
+        gridAngajamente.Columns.Add(KBotDataColumn29)
+        gridAngajamente.Columns.Add(KBotDataColumn30)
+        gridAngajamente.Columns.Add(KBotDataColumn31)
+        gridAngajamente.Columns.Add(KBotDataColumn32)
+        gridAngajamente.Dock = DockStyle.Fill
+        gridAngajamente.FooterBackColor = SystemColors.Control
+        gridAngajamente.FooterCaption = "Total"
+        gridAngajamente.FooterSeparatorColor = SystemColors.ActiveBorder
+        gridAngajamente.FooterVisible = True
+        gridAngajamente.HeaderBackColor = SystemColors.Control
+        gridAngajamente.HeaderHeight = 24
+        gridAngajamente.HeaderSeparatorColor = SystemColors.ActiveBorder
+        gridAngajamente.Location = New Point(0, 760)
+        gridAngajamente.Margin = New Padding(0)
+        gridAngajamente.Name = "gridAngajamente"
+        gridAngajamente.ReadOnlyGrid = True
+        gridAngajamente.RowHeight = 24
+        gridAngajamente.Size = New Size(955, 180)
+        gridAngajamente.TabIndex = 6
+        '
+        ' lblAngajamente
+        '
+        lblAngajamente.AutoEllipsis = True
+        lblAngajamente.Dock = DockStyle.Fill
+        lblAngajamente.Font = New Font("Segoe UI", 10F, FontStyle.Bold)
+        lblAngajamente.Location = New Point(0, 703)
+        lblAngajamente.Margin = New Padding(0, 12, 0, 0)
+        lblAngajamente.Name = "lblAngajamente"
+        lblAngajamente.Size = New Size(955, 45)
+        lblAngajamente.TabIndex = 5
+        lblAngajamente.Text = "Angajamente"
+        lblAngajamente.TextAlign = ContentAlignment.MiddleCenter
+        '
         ' btnSalveaza
         ' 
         btnSalveaza.AutoSize = True
@@ -524,7 +632,7 @@ Partial Class ClasificatiiBugetView
         tlyMain.RowCount = 2
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 78F))
-        tlyMain.Size = New Size(1599, 710)
+        tlyMain.Size = New Size(1599, 1044)
         tlyMain.TabIndex = 0
         ' 
         ' pnlCard
@@ -647,16 +755,22 @@ Partial Class ClasificatiiBugetView
         tlyRight.Controls.Add(lblRectificari, 0, 2)
         tlyRight.Controls.Add(gridRectificari, 0, 3)
         tlyRight.Controls.Add(gridTotal, 0, 4)
+        tlyRight.Controls.Add(lblAngajamente, 0, 5)
+        tlyRight.Controls.Add(gridAngajamente, 0, 6)
         tlyRight.Dock = DockStyle.Fill
         tlyRight.Location = New Point(620, 0)
         tlyRight.Margin = New Padding(0)
         tlyRight.Name = "tlyRight"
-        tlyRight.RowCount = 5
+        tlyRight.RowCount = 7
+        ' Slice 0126-01: the heights of the two grids (rows 1 and 3) are set in code to fit 3 + 1 and 6 + 1 rows; these are the same
+        ' figures at the designer dpi.
         tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 45F))
-        tlyRight.RowStyles.Add(New RowStyle(SizeType.Percent, 40F))
+        tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 222F))
         tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 57F))
-        tlyRight.RowStyles.Add(New RowStyle(SizeType.Percent, 60F))
+        tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 330F))
         tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
+        tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 57F))
+        tlyRight.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyRight.Size = New Size(955, 614)
         tlyRight.TabIndex = 1
         ' 
@@ -726,10 +840,11 @@ Partial Class ClasificatiiBugetView
         Controls.Add(tlyMain)
         Margin = New Padding(0)
         Name = "ClasificatiiBugetView"
-        Size = New Size(1599, 710)
+        Size = New Size(1599, 1044)
         CType(gridBuget, ComponentModel.ISupportInitialize).EndInit()
         CType(gridRectificari, ComponentModel.ISupportInitialize).EndInit()
         CType(gridTotal, ComponentModel.ISupportInitialize).EndInit()
+        CType(gridAngajamente, ComponentModel.ISupportInitialize).EndInit()
         tlyMain.ResumeLayout(False)
         pnlCard.ResumeLayout(False)
         tlyBody.ResumeLayout(False)
@@ -755,6 +870,8 @@ Partial Class ClasificatiiBugetView
     Friend WithEvents lblRectificari As Label
     Friend WithEvents gridRectificari As KBotDataView
     Friend WithEvents gridTotal As KBotDataView
+    Friend WithEvents lblAngajamente As Label
+    Friend WithEvents gridAngajamente As KBotDataView
     Friend WithEvents tlySubsol As KBotTableLayoutPanel
     Friend WithEvents lblStare As Label
     Friend WithEvents btnSalveaza As Button

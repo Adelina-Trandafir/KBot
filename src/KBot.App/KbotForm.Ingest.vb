@@ -135,9 +135,8 @@ Partial Public Class KbotForm
             ' decides whether to read them again now.
             Await OferaReimprospatareaReceptiilorAsync(cod, propunere.ReceptiiIncomplete)
 
-            ' Slice 0103-04: the credit FOREXE just sent against the budget K-BOT holds; the window
-            ' opens only when something differs.
-            Await VerificaBugetulFxAsync(cod)
+            ' The budget check window is NOT opened here (operator, 27.10.2026): only the operator
+            ' opens it, from «Clasificatii» («Verifica bugetul»).
             Return True
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.DuLaIngestieAsync", ex)

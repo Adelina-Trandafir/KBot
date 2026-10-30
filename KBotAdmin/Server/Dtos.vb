@@ -90,6 +90,7 @@ Public Class CommandInfo
     Public Property Writes As Boolean
     ''' <summary>Label of the one value the command needs typed (empty = none); such a command runs on ONE database only.</summary>
     Public Property Param As String = String.Empty
+    Public Property SingleDb As Boolean
 End Class
 
 Public Class CommandsResult
@@ -231,6 +232,75 @@ End Class
 Public Class OnceHistoryResult
     Public Property Items As New List(Of OnceHistoryItem)()
     Public Property Units As Integer
+End Class
+
+''' <summary>One structure object a statement touches (admin_source.py, page «Interogare pe SURSA»). Kind: TABLE, COLUMN, INDEX, PK, FK, DATA.</summary>
+Public Class SourceObject
+    Public Property Stmt As Integer
+    Public Property Kind As String = String.Empty
+    Public Property Action As String = String.Empty
+    Public Property Table As String = String.Empty
+    Public Property Name As String = String.Empty
+    Public Property Old As String = String.Empty
+    Public Property Sql As String = String.Empty
+End Class
+
+Public Class SourceReadResult
+    Public Property Statements As Integer
+    Public Property Objects As New List(Of SourceObject)()
+End Class
+
+''' <summary>A query of the AVACONT_SURSA ledger with the objects it touches and the units that already hold it.</summary>
+Public Class SourceQueryItem
+    Public Property Name As String = String.Empty
+    Public Property Hash As String = String.Empty
+    Public Property RanAt As String = String.Empty
+    Public Property RanBy As String = String.Empty
+    Public Property Rows As Integer?
+    Public Property Text As String = String.Empty
+    Public Property Done As Integer
+    Public Property Total As Integer
+    Public Property Missing As New List(Of String)()
+    Public Property Objects As New List(Of SourceObject)()
+
+    ''' <summary>The text has statements that change data, not structure: the schema sync does not carry them.</summary>
+    Public ReadOnly Property HasData As Boolean
+        Get
+            Return Objects.Any(Function(k_o) String.Equals(k_o.Kind, "DATA", StringComparison.Ordinal))
+        End Get
+    End Property
+End Class
+
+''' <summary>The structure of AVACONT_SURSA as dump text (<c>source-dump</c>); the views are not in the text, only named here.</summary>
+Public Class SourceDumpResult
+    Public Property Database As String = String.Empty
+    Public Property Tables As Integer
+    Public Property Views As New List(Of String)()
+    Public Property Text As String = String.Empty
+End Class
+
+Public Class SourceQueriesResult
+    Public Property Items As New List(Of SourceQueryItem)()
+    Public Property Units As Integer
+End Class
+
+''' <summary>State: ok, missing, still_there or unchecked.</summary>
+Public Class SourceCheck
+    Public Property Stmt As Integer
+    Public Property Kind As String = String.Empty
+    Public Property Table As String = String.Empty
+    Public Property Name As String = String.Empty
+    Public Property Expect As String = String.Empty
+    Public Property State As String = String.Empty
+End Class
+
+Public Class SourceCheckResult
+    Public Property Name As String = String.Empty
+    Public Property Checks As New List(Of SourceCheck)()
+    ''' <summary>Objects whose state is missing or still_there.</summary>
+    Public Property Bad As Integer
+    <JsonPropertyName("unchecked")> Public Property UncheckedCount As Integer
+    Public Property DataStatements As Integer
 End Class
 
 ''' <summary>One database of a dump run (the server's <c>backup</c> answer, ME02-02).</summary>

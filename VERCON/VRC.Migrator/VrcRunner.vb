@@ -22,7 +22,7 @@ End Class
 ''' SLICE-VC05-03/04/05: the ONE transfer of a subunit. One MariaDB transaction holds everything (subunit, gestiuni, exercises,
 ''' the import marker, every row, the id map, the findings, the counters); nothing is visible until the single COMMIT. The
 ''' transfer is driven by <see cref="VrcImportMap"/>: parents first, every key remapped through the id map, values exact
-''' (unscaled DECIMAL(20,4)), with source amounts and signs unchanged (including NULL/zero headers). Before COMMIT the
+''' (unscaled DECIMAL(20,4)), including NULL/zero headers; documented recovery rules are reported per row. Before COMMIT the
 ''' target is read back and compared with what was converted; any difference or blocking finding rolls everything back.
 ''' An unanswered COMMIT is reported as unknown, never as cancelled.
 ''' </summary>
@@ -561,6 +561,9 @@ Partial Friend NotInheritable Class VrcRunner
         Dim k_sums As New Dictionary(Of String, Decimal)(StringComparer.OrdinalIgnoreCase)
         Dim k_ok As Boolean = True
 
+        If k_table.Name = "IntrariStorno" OrElse k_table.Name = "IesiriRetur" Then
+            k_row = PrepareCorrectionPriceRow(k_source, k_table, k_row, k_key)
+        End If
         If k_table.Name = "OI_Produse" Then
             k_row = PrepareOiRegistryRow(k_source, k_sourceIndex, k_row, k_key, k_ok)
             If Not k_ok Then Return Nothing

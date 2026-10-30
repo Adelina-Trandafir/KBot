@@ -90,6 +90,33 @@ Partial Class KBotDataView
         Return New Rectangle(k_x, k_y, k_w, k_h)
     End Function
 
+    ' Slice 0126-02: the button cell the mouse is over (only tracked for a column that has a ButtonHoverBackColor).
+    Private _hoverButtonColumn As String
+    Private _hoverButtonRow As Integer = -1
+
+    Private Function IsButtonHovered(k_columnKey As String, k_rowIndex As Integer) As Boolean
+        Return k_rowIndex = _hoverButtonRow AndAlso String.Equals(k_columnKey, _hoverButtonColumn, StringComparison.Ordinal)
+    End Function
+
+    ' Called from OnMouseMove with the mouse position; Nothing-position (leave) clears.
+    Private Sub UpdateButtonHover(k_pt As Point, k_inside As Boolean)
+        Dim k_row As Integer = -1
+        Dim k_key As String = Nothing
+        If k_inside Then
+            Dim k_r As Integer = RowAtPoint(k_pt)
+            Dim k_col As KBotDataColumn = If(k_r < 0, Nothing, ColumnAtX(k_pt.X))
+            If k_col IsNot Nothing AndAlso k_col.ColumnType = KBotColumnType.Button AndAlso
+               Not k_col.ButtonHoverBackColor.IsEmpty AndAlso IsOnCellButton(k_col, k_r, k_pt) Then
+                k_row = k_r
+                k_key = k_col.Key
+            End If
+        End If
+        If k_row = _hoverButtonRow AndAlso String.Equals(k_key, _hoverButtonColumn, StringComparison.Ordinal) Then Return
+        _hoverButtonRow = k_row
+        _hoverButtonColumn = k_key
+        Invalidate()
+    End Sub
+
     ''' <summary>True when <paramref name="pt"/> is on the button face of that cell.</summary>
     Private Function IsOnCellButton(col As KBotDataColumn, rowIndex As Integer, pt As Point) As Boolean
         If col Is Nothing OrElse col.ColumnType <> KBotColumnType.Button Then Return False
@@ -146,7 +173,14 @@ Partial Class KBotDataView
 
     ' Face fill + border. All four sides = the rounded outline of old; any other choice = a plain
     ' rectangle with straight lines on the chosen sides. Covered by the Try in OnPaint.
-    Private Sub DrawButtonFace(g As Graphics, col As KBotDataColumn, k_face As Rectangle, k_enabled As Boolean)
+    Private Sub DrawButtonFace(g As Graphics, col As KBotDataColumn, k_face As Rectangle, k_enabled As Boolean,
+                               Optional k_hover As Boolean = False)
+        ' Slice 0126-02: the hover colour goes under the border and the caption, over the row (or over the face).
+        If k_hover AndAlso k_enabled AndAlso Not col.ButtonHoverBackColor.IsEmpty Then
+            Using k_hoverBrush As New SolidBrush(col.ButtonHoverBackColor)
+                g.FillRectangle(k_hoverBrush, k_face)
+            End Using
+        End If
         Dim k_fill As Boolean = Not ButtonIsFlat(col)
         Dim k_border As Boolean = ButtonBorderVisible(col)
         If Not k_fill AndAlso Not k_border Then Return
@@ -202,11 +236,12 @@ Partial Class KBotDataView
 
     ' Draws the whole button cell. Covered by the Try in OnPaint.
     Private Sub DrawButtonCell(g As Graphics, col As KBotDataColumn, k_cellRect As Rectangle,
-                               k_caption As String, k_font As Font, k_enabled As Boolean)
+                               k_caption As String, k_font As Font, k_enabled As Boolean,
+                               Optional k_hover As Boolean = False)
         Dim k_face As Rectangle = ButtonFaceRect(col, k_cellRect)
         If k_face.Width <= 0 OrElse k_face.Height <= 0 Then Return
 
-        DrawButtonFace(g, col, k_face, k_enabled)
+        DrawButtonFace(g, col, k_face, k_enabled, k_hover)
 
         Dim k_content As Rectangle = ButtonContentRect(col, k_face)
         If k_content.Width <= 0 OrElse k_content.Height <= 0 Then Return

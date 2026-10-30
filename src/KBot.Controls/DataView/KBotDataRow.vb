@@ -52,6 +52,34 @@ Public NotInheritable Class KBotDataRow
     ''' <summary>Coboară steagul „murdar” (baseline curat după încărcare/commit).</summary>
     Public Sub MarkClean()
         IsDirty = False
+        _baseline = Nothing
     End Sub
+
+    ' Slice 0010-08: the cells as they were just before the operator touched this (clean) row. A second Esc puts them back.
+    Private _baseline As Dictionary(Of String, Object)
+
+    ' True when the operator changed the row since it was last clean (so there is something to put back).
+    Friend ReadOnly Property HasBaseline As Boolean
+        Get
+            Return _baseline IsNot Nothing
+        End Get
+    End Property
+
+    ' Called by the grid right before an operator write. Only the first write counts (until the row is made clean again); a row the host created and marked dirty by hand gets its baseline then too.
+    Friend Sub CaptureBaseline()
+        If _baseline Is Nothing Then _baseline = New Dictionary(Of String, Object)(_cells, StringComparer.Ordinal)
+    End Sub
+
+    ' The baseline, handed over (the row has none afterwards). Nothing = the operator changed nothing.
+    Friend Function TakeBaseline() As Dictionary(Of String, Object)
+        Dim k_result As Dictionary(Of String, Object) = _baseline
+        _baseline = Nothing
+        Return k_result
+    End Function
+
+    ' Every key with a stored value.
+    Friend Function StoredKeys() As List(Of String)
+        Return New List(Of String)(_cells.Keys)
+    End Function
 
 End Class

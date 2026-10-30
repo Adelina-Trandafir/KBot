@@ -189,6 +189,15 @@ Partial Class KBotDataView
         Return If(_footerHeight > 0, _footerHeight, _headerHeight)
     End Function
 
+    ''' <summary>
+    ''' The control height (device px) at which <paramref name="k_rows"/> rows show with no vertical bar: header band + the rows +
+    ''' footer band + the border frame. A host sizes a grid to "this many rows" with it (slice 0126-01); it follows DPI and the
+    ''' header measuring, so ask again after either changes.
+    ''' </summary>
+    Public Function HeightForRows(k_rows As Integer) As Integer
+        Return HeaderBandHeight() + FooterBandHeight() + Math.Max(0, k_rows) * _rowHeight + 2 * BorderDevicePx()
+    End Function
+
     ''' <summary>Y-ul (client) la care începe banda de subsol — sub antet și sub corp.</summary>
     Private Function FooterBandTop() As Integer
         Return HeaderBandHeight() + ViewportHeight()

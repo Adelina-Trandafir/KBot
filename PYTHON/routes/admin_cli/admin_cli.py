@@ -42,6 +42,10 @@ Commands (all read-only unless marked WRITE):
     request-reject --id N --motiv T    WRITE  reject, with the reason the applicant receives
     request-link --id N                WRITE  a fresh password link for an approved request
     once-history                       the one-time queries that ran (template ledger): text, date, databases done / to do
+    source-read --sql-b64 B            what the statements of a query text touch (tables, columns, keys); nothing runs (admin_source.py)
+    source-queries                     the queries that ran on AVACONT_SURSA, with the objects each touches and the units that hold it
+    source-check --name N              the objects of query N against the real structure of AVACONT_SURSA
+    source-dump                        the structure of AVACONT_SURSA as dump text (SHOW CREATE TABLE of every table)
     backups [--db D]                   the dump files and schema plans (of one database when D is given), with the reason of each dump
     backup-text --path P               the text of one dump / plan file (first 2 MB)
     backup --db D|ALL --reason T       WRITE  dump one database, or every unit database but 000_DEMO, to backup/ (admin_backup.py)
@@ -373,6 +377,34 @@ def _c_fisa_angajament(conn, db, param):
                   "%d randuri. DIAG = verificarile calculate; restul = randurile brute ale tabelelor." % len(rows), raw=True)
 
 
+def _c_profil_produs(conn, db, param):
+    """VERCON: every movement of one IdProdus in the unit database (routes/admin_cli/vercon_profile.py); returns several blocks."""
+    from routes.admin_cli.vercon_profile import profile
+    return profile(conn, db, param, _block)
+
+
+def _c_oi_semne(conn, db):
+    """VERCON: register rows whose quantity and value have different signs, per gestiune (routes/admin_cli/vercon_profile.py)."""
+    from routes.admin_cli.vercon_profile import sign_check
+    return sign_check(conn, db, _block)
+
+
+def _c_oi_semne_repara(conn, db):
+    """VERCON, WRITES: the repair of what `oi_semne` finds (routes/admin_cli/vercon_profile.py); the button «Repara» of KBotAdmin runs it."""
+    from routes.admin_cli.vercon_profile import repair_signs
+    return repair_signs(conn, db, _block)
+
+
+def _c_storno_preturi(conn, db):
+    from routes.admin_cli.vercon_storno_prices import check
+    return check(conn, db, _block)
+
+
+def _c_storno_preturi_repara(conn, db):
+    from routes.admin_cli.vercon_storno_prices import repair
+    return repair(conn, db, _block)
+
+
 # name -> (title, description, writes, handler)
 COMMANDS = {
     "ping": ("Conexiune", "Versiune, cont, charset si timpul de raspuns al bazei.", False, _c_ping),
@@ -385,16 +417,31 @@ COMMANDS = {
     "analyze": ("ANALYZE TABLE", "Actualizeaza statisticile tabelelor (scrie, dar nu schimba date).", True, _c_analyze),
     "fisa_angajament": ("Fisa angajament", "Tot ce stie baza despre un angajament, intr-un singur tabel (verificarile KE intai, apoi randurile "
                         "din toate tabelele). Cere o baza anume si codul angajamentului.", False, _c_fisa_angajament),
+    "profil_produs": ("Profil produs VERCON", "Tot ce stie baza despre un produs (IdProdus): fiecare rand din fiecare tabela VC_ in care apare, "
+                      "cu antetul bonului/NIR-ului, plus verificarea registrului OI. Cere o baza anume si IdProdus.", False, _c_profil_produs),
+    "oi_semne": ("Semne gresite registru OI", "Randurile din registrul OI (VC_OI_Produse) la care cantitatea si valoarea au semne diferite, "
+                 "pe gestiune. Doar citire; merge si pe toate bazele.", False, _c_oi_semne),
+    "oi_semne_repara": ("Repara semne registru OI", "Pune valoarea negativa pe randurile din registrul OI care au cantitatea negativa si valoarea "
+                        "pozitiva. SCRIE in baza aleasa (cere confirmare), apoi arata ce a ramas.", True, _c_oi_semne_repara),
+    "storno_preturi": ("Preturi storno si retur VERCON", "Verifica in intreaga baza selectata preturile cu TVA din storno si bonuri retur fata de variantele "
+                       "aceleiasi gestiuni. Separa rotunjirile Access reparabile de diferentele care cer analiza. Doar citire.", False, _c_storno_preturi),
+    "storno_preturi_repara": ("Repara preturi storno si retur VERCON", "Recupereaza zecimalele pierdute din preturile storno si retur eligibile in intreaga "
+                              "baza selectata. SCRIE pretul liniilor si reviziile liniilor/documentelor; audit si Jurnal. Arata diferentele ramase.", True, _c_storno_preturi_repara),
 }
 
 # Commands that need one typed value besides the database: name -> label of that value. They run on ONE database only.
 COMMAND_PARAMS = {
     "fisa_angajament": "Cod angajament",
+    "profil_produs": "IdProdus",
 }
+
+# Commands restricted to one selected database (including database-wide VERCON checks).
+SINGLE_DB_COMMANDS = {"oi_semne_repara", "storno_preturi", "storno_preturi_repara"}
 
 
 def cmd_commands(args):
-    return {"commands": [{"name": k, "title": v[0], "description": v[1], "writes": v[2], "param": COMMAND_PARAMS.get(k, "")}
+    return {"commands": [{"name": k, "title": v[0], "description": v[1], "writes": v[2], "param": COMMAND_PARAMS.get(k, ""),
+                          "single_db": k in SINGLE_DB_COMMANDS}
                          for k, v in COMMANDS.items()]}
 
 
@@ -404,10 +451,11 @@ def cmd_command(args):
     handler = COMMANDS[args.name][3]
     label = COMMAND_PARAMS.get(args.name)
     param = (getattr(args, "param", "") or "").strip()
-    if label:
+    if label or args.name in SINGLE_DB_COMMANDS:
         if (args.db or "").upper() == "ALL":
             raise AdminError("Comanda «%s» se ruleaza pe o singura baza: alege o baza in arbore, nu <TOATE BAZELE>."
                              % COMMANDS[args.name][0])
+    if label:
         if not param:
             raise AdminError("Scrie %s." % label.lower())
     conn = connect()
@@ -416,7 +464,8 @@ def cmd_command(args):
         for db in _resolve_db(conn, args.db):
             try:
                 conn.database = db
-                blocks.append(handler(conn, db, param) if label else handler(conn, db))
+                made = handler(conn, db, param) if label else handler(conn, db)
+                blocks.extend(made) if isinstance(made, list) else blocks.append(made)   # a handler may return several blocks
             except mysql.connector.Error as err:
                 blocks.append(_block(db, COMMANDS[args.name][0], ["eroare"], [[str(err)]]))
         return {"name": args.name, "blocks": blocks}
@@ -798,8 +847,12 @@ def _parser():
     p.set_defaults(fn=cmd_visits)
     from routes.admin_cli import vercon_reports
     vercon_reports.register(sub)
+    from routes.admin_cli import vercon_mf_import
+    vercon_mf_import.register(sub)
     from routes.admin_cli import admin_demo
     admin_demo.register(sub)
+    from routes.admin_cli import admin_source
+    admin_source.register(sub)
     return parser
 
 

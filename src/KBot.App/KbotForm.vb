@@ -301,7 +301,9 @@ Partial Public Class KbotForm
 
             Try
                 ' Attach the FOREXE logger to the runner (the same singleton instance).
-                DirectCast(_forexeRunner, ForexeRunner).AttachLogger(_forexeLogger)
+                ' Slice 0125: the simulated runner (Debug) has no logger to take.
+                Dim k_realRunner As ForexeRunner = TryCast(_forexeRunner, ForexeRunner)
+                If k_realRunner IsNot Nothing Then k_realRunner.AttachLogger(_forexeLogger)
             Catch ex As Exception
                 KBotMessage.Show(Me, "Nu s-a putut atașa logger-ul la runner: " & ex.Message,
                                 "K-BOT", MessageBoxButtons.OK, MessageBoxIcon.Error)
@@ -337,11 +339,15 @@ Partial Public Class KbotForm
             ' ApplyViewGating. Sumar is always enabled (it has no flag).
             ' The initial selection STAYS in code, deliberately: this assignment is what raises
             ' SelectionChanged and so creates the first view. In the designer it would be dead.
-            navViews.SelectedKey = "sumar"   ' raises SelectionChanged -> creates the view
+            ' A director has no «sumar» (DirectorMode): ApplyViewGating below puts the empty page up.
+            If Not ModDirector Then navViews.SelectedKey = "sumar"   ' raises SelectionChanged -> creates the view
 
             ' With no node selected nobody knows what data exists: every flagged view starts
             ' closed, not open-and-empty.
             ApplyViewGating(Nothing)
+
+            ' A director does not work with FOREXE: the band with the connection and the robot queue is not shown.
+            If ModDirector Then forexeFooter.Visible = False
 
             ' The angajamente list: a flat list whose columns (CODANGAJAMENT / SURSE) and order
             ' come from AppSettings and follow its changes (slice 0777, KbotForm.TreeOptions.vb).
@@ -403,7 +409,8 @@ Partial Public Class KbotForm
     ' data first. UI boundary: a tutorial that cannot start is logged, never told -- nobody asked for it.
     Private Sub PornesteTutorialulDePornire()
         Try
-            If IsDisposed OrElse Not IsHandleCreated OrElse HostForm Is Nothing Then Return
+            ' Not for a director: the tour walks through ribbon buttons and views his window does not have.
+            If IsDisposed OrElse Not IsHandleCreated OrElse HostForm Is Nothing OrElse ModDirector Then Return
             BeginInvoke(New Action(
                 Sub()
                     Try

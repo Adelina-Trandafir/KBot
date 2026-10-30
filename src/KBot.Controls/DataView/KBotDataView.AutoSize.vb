@@ -520,8 +520,8 @@ Partial Class KBotDataView
                 need = Math.Max(need, ButtonColumnNeed(col))
 
             Case Else
-                ' Text: widest formatted cell plus the column's own padding.
-                need = Math.Max(need, MeasureSampledCells(col) + cellPadX)
+                ' Text: widest formatted cell plus the column's own padding (and the calendar button of a date column).
+                need = Math.Max(need, MeasureSampledCells(col) + cellPadX + If(HasDateButton(col), ScaleDpi(DateButtonZone), 0))
         End Select
 
         ' EffectiveMinWidth, nu MinWidth: podeaua ține cont și de pictogramele de antet, și ea

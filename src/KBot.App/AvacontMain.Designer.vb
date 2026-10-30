@@ -60,6 +60,7 @@ Partial Class AvacontMain
         Dim KBotRibbonButton25 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonGroup7 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
         Dim KBotRibbonButton26 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButtonOmise As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonTab3 As KBot.Controls.KBotRibbonTab = New Controls.KBotRibbonTab()
         Dim KBotRibbonGroup8 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
         Dim KBotRibbonButton27 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
@@ -82,6 +83,9 @@ Partial Class AvacontMain
         Dim KBotRibbonButton37 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton38 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton39 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton40 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton41 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton42 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotSidePanelSection1 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection2 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection3 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
@@ -212,6 +216,12 @@ Partial Class AvacontMain
         KBotRibbonButton35.ToolTipHeader = "Repară programul documentului"
         KBotRibbonButton35.ToolTipText = "Programul din antetul DDF nu se potrivește cu SS-ul datelor salvate: indicatorii, rândurile reviziilor DDF și ale ordonanțărilor (SS 01A are programul 0000002510, orice alt SS 0000000000)." & vbLf & "Îți arată întâi ce se schimbă și scrie doar după ce confirmi; se schimbă doar programul din antetul DDF."
         KBotRibbonButton35.Visible = False
+        KBotRibbonButton41.Image = My.Resources.Resources.Fatcow_Farm_Fresh_Pdf_exports_24
+        KBotRibbonButton41.Key = "notecab_trimite"
+        KBotRibbonButton41.Text = "Trimite în CAB"
+        KBotRibbonButton41.ToolTipHeader = "Trimite nota în CAB"
+        KBotRibbonButton41.ToolTipText = "Încarcă în FOREXE («Transmitere documente electronice») documentul notei de corecție alese în arbore." & vbLf & "Îți cere o confirmare înainte; un document nesemnat poate fi refuzat de FOREXE."
+        KBotRibbonButton41.Visible = False
         KBotRibbonButton37.Image = My.Resources.Resources.cells
         KBotRibbonButton37.Key = "plan_cont_solduri"
         KBotRibbonButton37.Text = "Afișează solduri inițiale"
@@ -231,6 +241,7 @@ Partial Class AvacontMain
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton11)
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton12)
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton35)
+        ribbon.RightGroup.Buttons.Add(KBotRibbonButton41)
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton37)
         ribbon.RightGroup.Buttons.Add(KBotRibbonButton38)
         ribbon.SelectedTabIndex = 1
@@ -259,7 +270,13 @@ Partial Class AvacontMain
         KBotRibbonGroup1.Buttons.Add(KBotRibbonButton13)
         KBotRibbonGroup1.Buttons.Add(KBotRibbonButton14)
         KBotRibbonGroup1.Buttons.Add(KBotRibbonButton36)
+        KBotRibbonButton40.Image = My.Resources.Resources.cells
+        KBotRibbonButton40.Key = "sabloane"
+        KBotRibbonButton40.Text = "Șabloane"
+        KBotRibbonButton40.ToolTipHeader = "Șabloane"
+        KBotRibbonButton40.ToolTipText = "Șabloanele operațiilor contabile: cu clasificație și diverse."
         KBotRibbonGroup1.Buttons.Add(KBotRibbonButton39)
+        KBotRibbonGroup1.Buttons.Add(KBotRibbonButton40)
         KBotRibbonGroup1.Text = "Date"
         KBotRibbonButton15.Image = My.Resources.Resources.Folder_blue_24
         KBotRibbonButton15.Key = "jurnal"
@@ -328,7 +345,14 @@ Partial Class AvacontMain
         KBotRibbonButton28.Text = "Recepții <> EFACTURA"
         KBotRibbonButton28.ToolTipHeader = "E-Factura Recepții"
         KBotRibbonButton28.ToolTipText = "Leagă facturile primite de recepții: bifezi facturile, alegi angajamentul și recepția (nouă, existentă sau modificată)."
+        KBotRibbonButton42.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
+        KBotRibbonButton42.Key = "director_de_semnat"
+        KBotRibbonButton42.Text = "Documente de semnat"
+        KBotRibbonButton42.ToolTipHeader = "Documente de semnat"
+        KBotRibbonButton42.ToolTipText = "Documentele de fundamentare care așteaptă semnătura ta (după rol), din toate unitățile tale."
+        KBotRibbonButton42.Visible = False
         KBotRibbonGroup5.Buttons.Add(KBotRibbonButton23)
+        KBotRibbonGroup5.Buttons.Add(KBotRibbonButton42)
         KBotRibbonGroup5.Buttons.Add(KBotRibbonButton28)
         KBotRibbonGroup5.Text = "Navigare"
         KBotRibbonButton24.Image = My.Resources.Resources.plus_green
@@ -350,7 +374,14 @@ Partial Class AvacontMain
         KBotRibbonButton26.ToolTipHeader = "Operațiuni necorelate"
         KBotRibbonButton26.ToolTipText = "Operațiunile «ERR» din FOREXE care nu au încă o notă de corecție."
         KBotRibbonButton26.Visible = False
+        KBotRibbonButtonOmise.Image = My.Resources.Resources.FX_RED_16
+        KBotRibbonButtonOmise.Key = "operatiuni_omise"
+        KBotRibbonButtonOmise.Text = "Operațiuni omise"
+        KBotRibbonButtonOmise.ToolTipHeader = "Operațiuni omise"
+        KBotRibbonButtonOmise.ToolTipText = "Operațiunile «ERR» pe care le-ai omis din notele de corecție. Aici le poți reactiva."
+        KBotRibbonButtonOmise.Visible = False
         KBotRibbonGroup7.Buttons.Add(KBotRibbonButton26)
+        KBotRibbonGroup7.Buttons.Add(KBotRibbonButtonOmise)
         KBotRibbonGroup7.Text = "Verificări"
         KBotRibbonTab2.Groups.Add(KBotRibbonGroup5)
         KBotRibbonTab2.Groups.Add(KBotRibbonGroup6)

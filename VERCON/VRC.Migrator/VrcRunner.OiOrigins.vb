@@ -15,6 +15,8 @@ Partial Friend NotInheritable Class VrcRunner
         Private ReadOnly _replacements As New Dictionary(Of String, String)(StringComparer.Ordinal)
         ''' <summary>Write-off positions saved with a positive quantity: position -> (quantity in Access, quantity written, sentence for the report).</summary>
         Private ReadOnly _flipped As New Dictionary(Of String, (Original As Decimal, Fixed As Decimal, Text As String))(StringComparer.Ordinal)
+        ''' <summary>Positions whose value had a sign different from their quantity: position -> (value in Access, value written).</summary>
+        Private ReadOnly _valueAligned As New Dictionary(Of String, (Original As Decimal, Fixed As Decimal))(StringComparer.Ordinal)
         ''' <summary>Day of each document (family|label), the earliest of its active lines.</summary>
         Private ReadOnly _dates As New Dictionary(Of String, Date)(StringComparer.Ordinal)
         Private _balanceChecked As Boolean
@@ -24,6 +26,7 @@ Partial Friend NotInheritable Class VrcRunner
             ' Clone before correcting links. Neither the Access file nor the original dictionaries are changed.
             _rows = k_rows.Select(Function(k_r) New Dictionary(Of String, Object)(k_r, StringComparer.OrdinalIgnoreCase)).ToList()
             FlipWrongSignWriteOffs()
+            AlignValueSigns()
             AddDocuments("IDBP", k_bp)
             AddDocuments("IDBT", k_bt)
             AddDocuments("IDBC", k_bs)
@@ -246,7 +249,7 @@ Partial Friend NotInheritable Class VrcRunner
             If k_candidates.Count <> 1 Then
                 Throw New InvalidOperationException(k_reason & If(k_candidates.Count = 0,
                     "nu a găsit nicio primire potrivită (același produs, același preț, aceeași persoană și același cont, dată anterioară și cantitate rămasă suficientă).",
-                    $"a găsit {k_candidates.Count} primiri la fel de potrivite și nu alege la întâmplare."))
+                    $"a găsit {k_candidates.Count} primiri la fel de potrivite și nu alege la întâmplare: {CandidatesText(k_candidates, k_origin)}"))
             End If
             For Each k_row In k_group
                 Dim k_position = VrcConvert.KeyText(k_row("IDOI"))
@@ -254,6 +257,22 @@ Partial Friend NotInheritable Class VrcRunner
                 _replacements(k_position) = k_candidates(0).Family
             Next
         End Sub
+
+        ''' <summary>The receipts a dangling origin could point to, with their dates, for the operator; hints at a number that looks like the dangling one with zeros added.</summary>
+        Private Function CandidatesText(k_candidates As List(Of (Family As String, Label As String)), k_origin As String) As String
+            Dim k_parts As New List(Of String)()
+            Dim k_hint As String = String.Empty
+            For Each k_candidate In k_candidates
+                Dim k_day As Date
+                Dim k_dayText = If(_dates.TryGetValue(k_candidate.Family & "|" & k_candidate.Label, k_day), " din " & k_day.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), String.Empty)
+                k_parts.Add($"{DocName(k_candidate.Family)} nr. {k_candidate.Label}{k_dayText}")
+                If k_candidate.Label.Length > k_origin.Length AndAlso k_candidate.Label.StartsWith(k_origin, StringComparison.Ordinal) AndAlso
+                   k_candidate.Label.Substring(k_origin.Length).All(Function(k_c) k_c = "0"c) Then
+                    k_hint = $" Numărul {k_candidate.Label} seamănă cu {k_origin}: poate lipsesc zerourile din IDBO."
+                End If
+            Next
+            Return String.Join("; ", k_parts) & "." & k_hint
+        End Function
 
         ''' <summary>
         ''' A write-off position (bon de casare) saved with a POSITIVE quantity is a wrong sign of the old program: the quantity (and its value)
@@ -282,6 +301,32 @@ Partial Friend NotInheritable Class VrcRunner
                     $"Bonul de casare nr. {k_label}, produsul {VrcConvert.KeyText(k_row("IdProdus"))}: cantitatea {k_original.ToString("G29", CultureInfo.InvariantCulture)} a devenit {(-k_original).ToString("G29", CultureInfo.InvariantCulture)}.")
             Next
         End Sub
+
+        ''' <summary>
+        ''' The value of a register position follows the sign of its quantity (minus on the side that gives or writes off, plus on the side that
+        ''' receives), the way the online application writes it. The old program left a positive value on some giving rows (the giver side of a
+        ''' transfer, a write-off): a holder then ends with quantity 0 and a value left over. The value gets the sign of the quantity, in the copy only.
+        ''' </summary>
+        Private Sub AlignValueSigns()
+            For Each k_row In _rows
+                Dim k_quantity = Quantity(k_row)
+                Dim k_valueRaw As Object = Nothing
+                If k_quantity = 0D OrElse Not k_row.TryGetValue("ValoareCUTVA", k_valueRaw) Then Continue For
+                Dim k_value = VrcConvert.ToDecimal(k_valueRaw)
+                If Not k_value.HasValue OrElse k_value.Value = 0D OrElse (k_value.Value < 0D) = (k_quantity < 0D) Then Continue For
+                k_row("ValoareCUTVA") = -k_value.Value
+                _valueAligned(VrcConvert.KeyText(k_row("IDOI"))) = (k_value.Value, -k_value.Value)
+            Next
+        End Sub
+
+        ''' <summary>True when the value of the position had its sign changed; gives the value in Access and the value written.</summary>
+        Public Function ValueAligned(k_position As String, ByRef k_original As Decimal, ByRef k_fixed As Decimal) As Boolean
+            Dim k_pair As (Original As Decimal, Fixed As Decimal) = Nothing
+            If Not _valueAligned.TryGetValue(k_position, k_pair) Then Return False
+            k_original = k_pair.Original
+            k_fixed = k_pair.Fixed
+            Return True
+        End Function
 
         ''' <summary>The sentence for a position whose sign was changed, or empty.</summary>
         Public Function FlippedText(k_position As String) As String
@@ -409,6 +454,12 @@ Partial Friend NotInheritable Class VrcRunner
             Dim k_flipText = k_resolver.FlippedText(k_key)
             If k_flipText.Length > 0 Then
                 AddIssue(k_source, "OI_Produse", k_key, "Cant", "N18", "CONVERSIE", k_resolver.FlippedOriginal(k_key), k_resolver.FlippedFixed(k_key), k_flipText)
+            End If
+            Dim k_valueOriginal As Decimal, k_valueFixed As Decimal
+            If k_resolver.ValueAligned(k_key, k_valueOriginal, k_valueFixed) Then
+                AddIssue(k_source, "OI_Produse", k_key, "ValoareCUTVA", "N19", "CONVERSIE",
+                         k_valueOriginal.ToString("G29", CultureInfo.InvariantCulture), k_valueFixed.ToString("G29", CultureInfo.InvariantCulture),
+                         "Valoarea poziției din registru avea alt semn decât cantitatea. A primit semnul cantității (la o ieșire valoarea este negativă, ca și cantitatea). Se schimbă numai în transfer; fișierul Access rămâne neatins.")
             End If
             For Each k_negative In k_resolver.NegativeBalancesAfterFlip()
                 AddIssue(k_source, "OI_Produse", k_negative.Position, "Cant", "X18", "AVERTIZARE",

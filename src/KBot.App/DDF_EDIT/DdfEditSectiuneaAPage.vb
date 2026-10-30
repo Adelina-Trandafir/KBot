@@ -732,6 +732,27 @@ Public Class DdfEditSectiuneaAPage
     End Sub
 
     ''' <summary>
+    ''' Esc twice in a row. A line the operator started in this session (no key yet) goes away, without a question; a line that was already saved is left as it is
+    ''' (its classification feeds other values, so the cells are not put back one by one).
+    ''' </summary>
+    ' Boundary UI (event handler): logged and swallowed.
+    Private Sub Grd_RowCancelRequested(sender As Object, e As KBotRowCancelEventArgs) Handles grd.RowCancelRequested
+        Try
+            e.Handled = True
+            If _doarCitire OrElse _draft Is Nothing OrElse e.RowIndex < 0 OrElse e.RowIndex >= grd.RowCount Then Return
+            Dim a As DdfDraftLinieA = TryCast(grd.Rows(e.RowIndex).Tag, DdfDraftLinieA)
+            If a Is Nothing OrElse a.IdSecA <> 0 Then Return
+            _draft.LiniiA.Remove(a)
+            grd.RemoveRowAt(e.RowIndex)
+            ActualizeazaStarea()
+            If _draft.Manual Then ReincarcaListaManualaAsync()
+            RaiseEvent DraftModificat(Me, EventArgs.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("DdfEditSectiuneaAPage.Grd_RowCancelRequested", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
     ''' Removes a line (its button column). Its section-B twin goes with it, which needs no code here:
     ''' section B is rebuilt from section A by the form when <c>DraftModificat</c> fires.
     ''' </summary>

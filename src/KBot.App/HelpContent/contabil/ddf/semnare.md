@@ -7,7 +7,7 @@ parent: contabil.ddf
 keywords: semnare, semnatura, semnatura electronica, certificat digital, token, adobe, pdf, sectiunea a, sectiunea b, validez
 open: view:ddf
 ---
-<!-- slice: 0078 -->
+<!-- slice: 0078, 0124-08 -->
 Documentul se semnează în K-BOT, pe pagina **Document PDF** a vederii «Fundamentare». Pagina
 arată documentul în Adobe, chiar în fereastra K-BOT.
 
@@ -22,6 +22,26 @@ arată documentul în Adobe, chiar în fereastra K-BOT.
 
 După semnătură revizia **nu se mai modifică** și nu se mai șterge: urmează trimiterea în FOREXE.
 Verifică deci valorile **înainte** să semnezi.
+
+## Documente noi, create în K-BOT: cine semnează A
+<!-- slice: 0124-04, 0124-05, 0124-06, 0124-08 -->
+
+La un document de fundamentare **nou**, creat în K-BOT, **cine semnează A** depinde de **compartimentul** documentului: fiecare compartiment
+are un rol, stabilit în [Setări › Semnare DDF](topic:contabil.setari). Documentul se face **doar cu Secțiunea A** (fără nimic din B) de cel care îl semnează.
+
+- **Contabilul poate genera oricând** documentul, indiferent de compartiment, și îl semnează pe A.
+- Dacă rolul compartimentului e **al tău**, documentul se generează și se semnează ca până acum.
+- Dacă e **al altcuiva** (de exemplu al secretarului) și nu ești contabil, K-BOT îți spune că documentul a fost trimis spre semnare acelui rol și nu
+  generează nimic. Cel cu rolul respectiv îl găsește în lista **«Documente de semnat»** (butonul din panglică; îl anunță și mesajul de
+  lângă ceas), îl generează la el, pe calculatorul lui, și îl semnează.
+- Dacă **compartimentul nu are un rol**, K-BOT nu salvează revizia și îți spune ce compartiment trebuie completat în Setări.
+- Un **împuternicit FOREXE** vede și documentele adresate contabilului.
+- Pe unitățile unde tabela de roluri nu e pregătită, documentul se face ca înainte.
+
+După semnătura A, trimiterea în FOREXE se face **ca până acum**, din K-BOT. Opțiunea de a semna **B** apare abia după ce rezervarea există în K-BOT, adusă înapoi din FOREXE.
+
+Rolurile **Secretar** și **Administrator** nu pot vedea alte documente de fundamentare decât pe cele care le sunt adresate:
+vezi [Secretar și administrator](topic:contabil.ddf.secretar).
 
 ## După trimitere — semnătura B
 <!-- slice: 0078-04, 0078-06, 0081-05, 0000-14 -->
@@ -42,8 +62,10 @@ Dacă Secțiunea B nu are încă, pe server, codurile din FOREXE, K-BOT arată d
 > de fundamentare. Rămâne așa cum a fost semnat; ce mai trebuie adăugat se pune în el.
 
 ## Dacă ceva nu merge
-<!-- slice: 0078, 0079 -->
+<!-- slice: 0078, 0079, 0124-09 -->
 
+- La semnare apare fereastra tokenului, în care scrii PIN-ul. K-BOT o aduce în față. Dacă nu o vezi,
+  caută-o în bara de activități: documentul așteaptă PIN-ul și nu se salvează până nu îl scrii.
 - Documentul semnat se păstrează pe calculator până ajunge pe server. Dacă încărcarea nu reușește,
   K-BOT o reîncearcă la următoarea pornire și îți spune ce a rămas neîncărcat.
 - Dacă pe server există între timp **altă** versiune semnată, copia de pe calculator **nu** o

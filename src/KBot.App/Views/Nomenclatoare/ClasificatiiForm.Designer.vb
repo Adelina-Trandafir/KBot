@@ -50,7 +50,7 @@ Partial Class ClasificatiiForm
         tlyMain.RowCount = 2
         tlyMain.RowStyles.Add(New RowStyle())
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyMain.Size = New Size(1818, 776)
+        tlyMain.Size = New Size(1818, 1136)
         tlyMain.TabIndex = 0
         '
         ' capBar
@@ -78,7 +78,7 @@ Partial Class ClasificatiiForm
         pnlWork.Margin = New Padding(0)
         pnlWork.Name = "pnlWork"
         pnlWork.Padding = New Padding(11, 13, 11, 13)
-        pnlWork.Size = New Size(1818, 710)
+        pnlWork.Size = New Size(1818, 1070)
         pnlWork.TabIndex = 1
         pnlWork.Tag = "Card"
         '
@@ -91,7 +91,7 @@ Partial Class ClasificatiiForm
         pnlHost.Margin = New Padding(0)
         pnlHost.Name = "pnlHost"
         pnlHost.Padding = New Padding(11, 0, 0, 0)
-        pnlHost.Size = New Size(1577, 684)
+        pnlHost.Size = New Size(1577, 1044)
         pnlHost.TabIndex = 1
         '
         ' viewVenituri
@@ -100,7 +100,7 @@ Partial Class ClasificatiiForm
         viewVenituri.Location = New Point(11, 0)
         viewVenituri.Margin = New Padding(0)
         viewVenituri.Name = "viewVenituri"
-        viewVenituri.Size = New Size(1566, 684)
+        viewVenituri.Size = New Size(1566, 1044)
         viewVenituri.TabIndex = 1
         viewVenituri.Visible = False
         '
@@ -110,7 +110,7 @@ Partial Class ClasificatiiForm
         viewBuget.Location = New Point(11, 0)
         viewBuget.Margin = New Padding(0)
         viewBuget.Name = "viewBuget"
-        viewBuget.Size = New Size(1566, 684)
+        viewBuget.Size = New Size(1566, 1044)
         viewBuget.TabIndex = 0
         '
         ' navClasificatii
@@ -137,19 +137,19 @@ Partial Class ClasificatiiForm
         navClasificatii.Margin = New Padding(4, 5, 4, 5)
         navClasificatii.Name = "navClasificatii"
         navClasificatii.SelectedKey = "buget"
-        navClasificatii.Size = New Size(219, 684)
+        navClasificatii.Size = New Size(219, 1044)
         navClasificatii.TabIndex = 0
         '
         ' ClasificatiiForm
         '
         AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
-        ClientSize = New Size(1822, 780)
+        ClientSize = New Size(1822, 1140)
         Controls.Add(tlyMain)
         FormBorderStyle = FormBorderStyle.None
         Margin = New Padding(4)
         MinimizeBox = False
-        MinimumSize = New Size(1570, 780)
+        MinimumSize = New Size(1570, 1000)
         Name = "ClasificatiiForm"
         Padding = New Padding(2)
         ShowInTaskbar = False

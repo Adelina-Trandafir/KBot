@@ -247,6 +247,10 @@ function Test-SliceId([string]$id, [string]$where) {
     elseif ($id -match '^AV(\d{2})(-\d{2})?$') {
         $ok = ($statusIndex -match '(?m)^\|\s*AV[\s|/-]') -or [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")
     }
+    # Slice DIR (the director, family DIRn-nn): the id is DIRn or DIRn-nn, with a worklog or a row in the index.
+    elseif ($id -match '^DIR\d(-\d{2})?$') {
+        $ok = ($statusIndex -match '(?m)^\|\s*DIR\d?[\s|/-]') -or [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")
+    }
     # Slice CHAT (the shared chat in K-BOT.app, CHAT-08 on): the id is CHAT-NN, with a worklog or a row in the index.
     elseif ($id -match '^CHAT-\d{2}$') {
         $ok = ($statusIndex -match '(?m)^\|\s*CHAT[\s|/-]') -and [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")

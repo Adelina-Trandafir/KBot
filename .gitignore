@@ -543,3 +543,6 @@ PYTHON/data/*.mmdb
 
 # VRC.Migrator local publish (never delivered; see publish-vrc-migrator.ps1)
 /_VrcMigrator
+/DDF_V008_2026_05_01 - Copy.pdf
+/DDF_V008_2026_05_01 - SECTA.pdf
+/DDF_V008_2026_05_01.pdf

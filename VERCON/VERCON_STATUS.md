@@ -1,5 +1,93 @@
 # VERCON — status (registru separat, ca ADECHIT_STATUS)
 
+## SLICE-VC09-17 — Alinierea chenarului de hover cu grila — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Conturul de 2px este centrat pe marginea rândului, iar stratul interactiv folosește 100% din suprafața de conținut a paginii, ca și canvasul. Fără translații fixe ale rândurilor; exporturile se păstrează. [Worklog VC09-17](../docs/worklog/SLICE-VC09-17-aliniere-chenar-hover-cu-grila.md). Fără teste, browser, build, SQL sau publicare; analiză din cod și captura utilizatorului.
+
+## SLICE-VC09-16 — Chenar de hover mai vizibil — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Chenarul rândului devine 2px, albastru opac, în interiorul rândului. [Worklog VC09-16](../docs/worklog/SLICE-VC09-16-chenar-hover-mai-vizibil.md). Fără teste, verificări automate, browser, build, SQL sau publicare.
+
+## SLICE-VC09-15 — Chenar subtil pe întregul rând la hover în raport — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Previzualizarea interactivă VERCON marchează dreptunghiul real al rândului, după paginare, cu un chenar albastru discret de 1px la hover/focus. Toate coloanele produsului sunt incluse; secțiunile paralele rămân independente. Exporturile rămân fără linkuri și fără chenar. [Worklog VC09-15](../docs/worklog/SLICE-VC09-15-chenar-hover-rand-produs-raport.md). Fără teste, verificări automate, browser, PDF de probă, SQL sau publicare.
+
+## SLICE-VC09-14 — Alinierea clickului pe produs cu rândul PDF — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Modelul de dimensiuni al paginii PDF revine la `content-box` strict în previzualizarea interactivă VERCON: bordurile nu mai micșorează canvasul față de coordonatele adnotărilor. Fără deplasări fixe; exporturile fără linkuri se păstrează. [Worklog VC09-14](../docs/worklog/SLICE-VC09-14-aliniere-click-produse-pdf.md). Fără teste, verificări automate, browser, PDF de probă, SQL sau publicare.
+
+## SLICE-VC09-13 — Balanță fără tooltip/subliniere; export fără linkuri — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Fișa rămâne accesibilă din previzualizare, fără tooltip sau sublinierea produselor. Descărcarea și tipărirea folosesc PDF fără linkuri interne; Excel elimină și el acțiunile din model. Regenerarea perioadei actualizează împreună previzualizarea și sursa exportului. [Worklog VC09-13](../docs/worklog/SLICE-VC09-13-raport-fara-tooltip-si-export-fara-linkuri.md). Fără teste, verificări automate, browser, PDF de probă, SQL sau publicare.
+
+## SLICE-VC09-12 — Fișa din raport: popup 840px, mai scurt, cu Închide vizibil — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Lățime dublată față de regula comună de 420px, limitată la ecran; înălțime 67,5% din viewportul aplicației. Antet/subsol fixe, grilă proporțională în spațiul rămas, fără hscroll în popup; Închide vizibil. Clickul în exterior închide numai fișa. [Worklog VC09-12](../docs/worklog/SLICE-VC09-12-popup-fisa-dimensiuni-si-inchidere.md). Fără teste, verificări automate, browser, capturi noi, SQL sau publicare.
+
+## SLICE-VC09-11 — Click pe produs în raport → fișă de magazie în popup — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Denumirile rândurilor cu o singură variantă devin linkuri în PDF-ul afișat în aplicație. Clickul încarcă fișa de magazie într-un popup cu contextul/perioada raportului, SI, mișcări, rulaje nete și solduri, fără regenerarea PDF-ului principal. Totalurile și agregările cu variante multiple nu primesc link arbitrar. Rapoarte și documente salvate, inclusiv NIR/FCS și schimbarea perioadei; ciornele locale rămân separate. [Worklog VC09-11](../docs/worklog/SLICE-VC09-11-raport-link-fisa-magazie-popup.md). Fără teste, build, verificări automate, PDF de probă, browser, HTTP, SQL sau publicare. Necesită actualizare server/resurse web și regenerarea rapoartelor.
+
+## SLICE-VC09-10 — Balanță: fără rânduri cu solduri și rulaje nete zero — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Corectare explicită a regulii VC09-09: documentele compensate nu păstrează rândul dacă SI, Intrări nete, Ieșiri nete și SF sunt toate zero. Soldurile sau rulajele nete nenule îl păstrează. Filtrarea se aplică raportului comun ecran/PDF/Excel și previzualizării din Stocuri; opțiunea explicită „Afișează FĂRĂ mișcări” rămâne disponibilă. Versiune model 2, necesită regenerarea balanțelor. [Worklog VC09-10](../docs/worklog/SLICE-VC09-10-balanta-fara-randuri-net-zero.md). Fără teste, build, verificări automate, browser, SQL sau publicare.
+
+## SLICE-VC09-09 — Retururi: prețuri recuperate; storno/retur în coloanele corecte ale balanței — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** VRC.Migrator 0.3.15.0 recuperează zecimalele și pentru `IesiriRetur.PUTVA`. Comanda devine **Preturi storno si retur VERCON**, cu verificare și reparare pentru ambele tipuri pe întreaga bază selectată, revizii, audit/Jurnal. Balanța și previzualizarea folosesc **Intrări = NIR − storno**, **Ieșiri = consum − retur**, pentru cantități și valori, cu soldul păstrat. Produsele cu mișcări compensate la net zero rămân în Balanță; exporturile vechi de rulaje cer regenerare. [Worklog VC09-09](../docs/worklog/SLICE-VC09-09-retururi-si-rulaje-balanta.md). Fără build, teste, verificări automate, date reale, SQL executat sau publicare.
+
+## SLICE-VC09-08 — Aceeași pierdere de zecimale la bonurile de retur — 30.10.2026
+
+**ANALIZAT ÎN SCHEMĂ ȘI COD.** `IesiriRetur.PUTVA` este tot Long în Access; migratorul îl copiază fără recuperarea zecimalelor. Access citește prețul variantei în formular/raport, în timp ce VERCON derivă valoarea BR din prețul documentului migrat. Bonurile de consum au PUTVA Double; retururile noi din web folosesc prețul BC sursă, fără conversia la întreg. Comanda VC09-07 și recuperarea din migrator acoperă încă numai storno. [Worklog VC09-08](../docs/worklog/SLICE-VC09-08-analiza-preturi-bonuri-retur.md). Fără modificări funcționale, teste, build, date reale, SQL executat sau publicare; numărul retururilor afectate nu a fost măsurat.
+
+## SLICE-VC09-07 — KBotAdmin: prețuri storno pe întreaga bază selectată — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** În Comenzi: **Prețuri storno VERCON**, fără IdProdus, pentru toate gestiunile/exercițiile bazei selectate; sumar, diferențe cu preț actual/propus și buton **Repară** pentru toate rotunjirile eligibile. Repararea recitește datele, confirmă proveniența din migrator, folosește o tranzacție cu audit/Jurnal și crește reviziile liniilor/documentelor. Cazurile neexplicate, modificate sau anulate rămân pentru analiză. Fișierele SQL pentru produsul individual au fost retrase. [Worklog VC09-07](../docs/worklog/SLICE-VC09-07-kbotadmin-preturi-storno.md). Fără build, teste, verificări automate, rulare, SQL sau publicare; necesită actualizarea serverului și recompilarea KBotAdmin.
+
+## SLICE-VC09-06 — Prețul storno și analiza balanței — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** VRC.Migrator 0.3.14.0 recuperează zecimalele pierdute de `IntrariStorno.PUTVA` (Long în Access) din varianta aceleiași surse/gestiuni, numai la rotunjire compatibilă; N20 pentru corecții, N21 pentru diferențe neexplicate. Fișierele SQL specifice produsului, pregătite și nerulate, au fost retrase și înlocuite de comanda generală VC09-07. Sursa standard a balanței include deja storno; motivul absenței din raportul efectiv rămâne neconfirmat. [Worklog VC09-06](../docs/worklog/SLICE-VC09-06-storno-pret-si-balanta.md). Fără build, teste, verificări automate, browser sau operații MariaDB.
+
+## SLICE-WB02-01 — Certificat digital pentru Administrator — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Meniul siglei V include „Înrolează Certificat Digital” deasupra „Setări tooltip”, numai pentru Administratorul unității curente pe calculator. Pagina comună de înrolare verifică rolul la fiecare apel și reutilizează mTLS din portal. Ajutorul este actualizat. [Worklog WB02-01](../docs/worklog/SLICE-WB02-01-certificat-digital-administrator.md). Fără teste, verificări automate, browser, HTTP sau SQL.
+
+## SLICE-VC06-27 — Rolul corect: Administrator — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Utilizatorul a corectat denumirea rolului: Administrator, nu Gestionar. Restricția de combinare și mesajul aferent folosesc rolul corect; disponibilitatea sincronizării ANAF din VC06-26 se păstrează. [Worklog VC06-27](../docs/worklog/SLICE-VC06-27-rol-corect-administrator.md). Fără teste, verificări automate, browser, HTTP sau SQL.
+
+## SLICE-VC06-26 — Sincronizarea ANAF disponibilă în lista furnizorilor — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Opțiunea ANAF este disponibilă tuturor utilizatorilor cu acces VR la listă, fără condiția rolului Gestionar. Restricțiile de câmp și drepturile existente de combinare se păstrează. [Worklog VC06-26](../docs/worklog/SLICE-VC06-26-furnizori-anaf-disponibil.md). Fără teste, verificări automate, browser, HTTP sau SQL.
+
+## SLICE-VC06-25 — Furnizori: antetul coloanei de opțiuni — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Corecție după captura care arată persistența hscroll: eliminat paddingul de 44px din antetul fix de 36px al opțiunilor și aplicate regulile de încadrare ale nomenclatoarelor. [Worklog VC06-25](../docs/worklog/SLICE-VC06-25-furnizori-antet-optiuni-fara-overflow.md). Fără teste, verificări automate, browser, HTTP sau SQL; rezultat neprobat vizual.
+
+## SLICE-VC06-24 — Furnizori: coloane DGV proporționale — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Grila folosește `proportionalWidths: true` pentru încadrarea coloanelor în spațiul disponibil, cu opțiunile la lățime fixă. [Worklog VC06-24](../docs/worklog/SLICE-VC06-24-furnizori-coloane-proportionale.md). Fără teste, verificări automate, browser, HTTP sau SQL.
+
+## SLICE-VC06-23 — Furnizori: layout și opțiunea ANAF în DGV — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Căutarea deasupra DGV-ului, aliniată la dreapta acestuia; Cod fiscal sub Cod partener; Adresă ultimul câmp; meniu CUSTOM `⋮` pe rând cu singura opțiune „Sincronizează cu ANAF”. [Worklog VC06-23](../docs/worklog/SLICE-VC06-23-furnizori-layout-optiuni-anaf.md). Fără teste, verificări automate, browser, HTTP sau SQL.
+
+## SLICE-VC06-22 — Gestionar: furnizori și actualizare numai prin ANAF — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Pagina Furnizori folosește layout-ul nomenclatoarelor și controalele CUSTOM. Gestionarul poate actualiza prin ANAF sau salva numai CodFiscal după confirmarea explicită „negăsit”; alte editări și combinarea partenerilor sunt refuzate. [Worklog VC06-22](../docs/worklog/SLICE-VC06-22-gestionari-parteneri-anaf.md). Fără teste, verificări automate, browser, HTTP sau SQL; fără schimbări de schemă.
+
+## SLICE-VC06-21 — Data NIR după data facturii — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Schimbarea datei facturii în editor actualizează automat data NIR și parcurge validările existente; un refuz restaurează ambele date. [Worklog VC06-21](../docs/worklog/SLICE-VC06-21-data-nir-dupa-data-facturii.md). Fără teste, verificări automate, browser, HTTP sau SQL.
+
+## SLICE-VC07-09 — Data listelor de alimente între vecine — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Data unei liste mai vechi poate fi corectată între vecinele active, păstrând ordinea cronologică și numerică la egalitate de dată. Corecțiile porțiilor păstrează restricția ultimei luni active. [Worklog VC07-09](../docs/worklog/SLICE-VC07-09-data-listelor-intre-vecine.md). Fără teste, verificări automate, browser, HTTP sau SQL.
+
+## SLICE-VC06-20 — NIR: adaos pozitiv fără blocaj pentru deficit istoric — 30.10.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Validarea ciornei și controlul de la salvarea editării verifică stocul numai pentru variantele a căror contribuție cumulată este redusă. Intrările pozitive nu mai sunt blocate de un deficit cronologic existent. [Worklog VC06-20](../docs/worklog/SLICE-VC06-20-nir-adaos-pozitiv-fara-blocaj-istoric.md). Fără teste, verificări automate, HTTP sau operații MariaDB.
+
 ## Jurnalele VERCON-2026-… regrupate pe felii — 23.10.2026
 
 Jurnalele numite `VERCON-2026-10-12-*` și `VERCON-2026-10-23-*` erau de fapt subfelii VC. Au fost separate pe logică (furnizori CF, tooltip/comisii, DGV/listă) și redenumite `SLICE-VCxx-yy-*`; legăturile din `implementare_vercon_v2.md`, din acest registru și din documentele VERCON au fost actualizate.
@@ -25,6 +113,7 @@ Jurnalele numite `VERCON-2026-10-12-*` și `VERCON-2026-10-23-*` erau de fapt su
 | SLICE-VC06-16 | eFactura: overflow, NIR asociat protejat, afișare PDF; [worklog](../docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md#slice-vc06-16) | **Confirmat 23.10** |
 | SLICE-VC06-17 | eFactura: ComboBox custom și încărcare automată; [worklog](../docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md#slice-vc06-17) | **Confirmat 23.10** |
 | SLICE-VC06-18 | VERCON online: furnizori exclusiv prin cod fiscal; [worklog](../docs/worklog/SLICE-VC06-18-furnizori-exclusiv-cod-fiscal.md) | **Confirmat 23.10** |
+| SLICE-VC06-19 | Bonuri: grupare în popup, numerotare pe cont la materiale, fereastra Setări gestiune cu numerele curente, numere de bon cu prefix (BC 13, BX 13, BP 13, BS 13, BT 13); interogare unică de refacere; [worklog](../docs/worklog/SLICE-VC06-19-bc-grupare-popup-si-numerotare-pe-cont.md) | **SCRIS LOCAL, NEPUBLICAT** (doar sintaxa verificată; SQL nerulat) |
 | SLICE-VC07-06 | Numărul copiilor în orice listă din ultima lună; [worklog](../docs/worklog/SLICE-VC07-06-copii-liste-ultima-luna.md) | **Confirmat 23.10** |
 | SLICE-VC07-07 | Lista Alimente: ordinea și alinierea butoanelor; [worklog](../docs/worklog/SLICE-VC07-07-lista-butoane-actiuni.md) | **Confirmat 23.10** |
 | SLICE-VC07-08 | Lista de alimente compactă, fără mesaj permanent; [worklog](../docs/worklog/SLICE-VC07-07-lista-butoane-actiuni.md#slice-vc07-08) | **Confirmat 23.10** |

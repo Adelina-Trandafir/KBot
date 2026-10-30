@@ -166,7 +166,8 @@ Partial Public Class KbotForm
                 If k_filtru IsNot Nothing Then node.NodeForeColor = k_culoareGrupa
                 ' Slice 0101: a reception whose chain does not close paints the whole row red.
                 ' Operator, 12.10.2026: so does a broken reservation chain (repaired from the Rezervari view).
-                If info.LantNeinchis.Count > 0 OrElse info.RezervariGresite.Count > 0 Then
+                ' Slice 0122-10: so does a day on which the receptions do not add up to the reservations.
+                If info.LantNeinchis.Count > 0 OrElse info.RezervariGresite.Count > 0 OrElse info.ReceptiiNepotrivite.Count > 0 Then
                     _nodLantNeinchis.Add(node)
                 ElseIf info.LegaturiGresite.Count > 0 Then
                     ' Slice 0114-26 (operator, 23.10.2026): reservations linked to a revision that does not cover
@@ -419,6 +420,20 @@ Partial Public Class KbotForm
                            $"instantaneu {k_r.TotalUltimInstantaneu.ToString("N2", k_ro)}, recepție {k_r.ValoareReceptie.ToString("N2", k_ro)}",
                            k_rosu)
                 Next
+            End If
+
+            ' Slice 0122-10 (operator, 29.10.2026): the receptions (sum of DIF) do not add up to the reservations on a day when
+            ' both exist -- a reception version put on the wrong header. Nothing else warns of it.
+            If k_info.ReceptiiNepotrivite.Count > 0 Then
+                TtRand(k_sb, "⚠ Recepții nepotrivite cu rezervările", "ordonanțările din zilele acestea ar vedea recepții greșite", k_rosu, True)
+                For Each k_r As ReceptieNepotrivita In k_info.ReceptiiNepotrivite.Take(k_maxRanduri)
+                    TtRand(k_sb, $"La {k_r.Zi:dd.MM.yyyy}, {k_r.CodIndicator}",
+                           $"rezervat {k_r.Rezervat.ToString("N2", k_ro)}, recepționat {k_r.Receptionat.ToString("N2", k_ro)}", k_rosu)
+                Next
+                If k_info.ReceptiiNepotrivite.Count > k_maxRanduri Then
+                    TtRand(k_sb, $"… și încă {k_info.ReceptiiNepotrivite.Count - k_maxRanduri}", String.Empty, k_rosu)
+                End If
+                TtRand(k_sb, "Se verifică", "în fereastra «Asocieri»: o versiune de recepție poate fi așezată pe altă recepție", k_rosu)
             End If
 
             ' Operator, 12.10.2026: a reservation that does not start from the end value of the one before it.

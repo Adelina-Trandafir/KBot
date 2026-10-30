@@ -21,23 +21,47 @@ Public NotInheritable Class SftpSession
         _settings = k_settings
     End Sub
 
+    ''' <summary>Connects; a server that does not answer in time is tried again (a lost first packet is common), then reported.</summary>
     Public Sub Connect()
         Try
-            _client = New SftpClient(SshAuth.Build(_settings))
-            AddHandler _client.HostKeyReceived, AddressOf OnHostKeyReceived
-            _hostKeyError = String.Empty
-            Try
-                _client.Connect()
-            Catch ex As SshConnectionException
-                If _hostKeyError <> String.Empty Then Throw New ApplicationException(_hostKeyError, ex)
-                Throw New ApplicationException("Conectare eșuată la server (SFTP). Verificați rețeaua și portul.", ex)
-            Catch ex As SshAuthenticationException
-                Throw New ApplicationException("Autentificare eșuată (SFTP). Verificați utilizatorul, cheia SSH din ~/.ssh sau parola.", ex)
-            End Try
+            For k_attempt As Integer = 1 To SshAuth.ConnectAttempts
+                Try
+                    ConnectOnce()
+                    Return
+                Catch ex As Exception When k_attempt < SshAuth.ConnectAttempts AndAlso SshAuth.IsTransientConnectFailure(ex, _hostKeyError <> String.Empty)
+                    GlobalErrorLog.Write("SftpSession.Connect (incercarea " & k_attempt.ToString(CultureInfo.InvariantCulture) & ")", ex)
+                    DropClient()
+                    Threading.Thread.Sleep(1000)
+                End Try
+            Next
+        Catch ex As Exception When TypeOf ex Is Net.Sockets.SocketException OrElse TypeOf ex Is Renci.SshNet.Common.SshOperationTimeoutException
+            GlobalErrorLog.Write("SftpSession.Connect", ex)
+            Throw New ApplicationException("Serverul nu răspunde (SFTP), după " & SshAuth.ConnectAttempts.ToString(CultureInfo.InvariantCulture) &
+                                           " încercări. Verificați rețeaua, VPN-ul și firewall-ul.", ex)
         Catch ex As Exception
             GlobalErrorLog.Write("SftpSession.Connect", ex)
             Throw
         End Try
+    End Sub
+
+    Private Sub ConnectOnce()
+        _client = New SftpClient(SshAuth.Build(_settings))
+        AddHandler _client.HostKeyReceived, AddressOf OnHostKeyReceived
+        _hostKeyError = String.Empty
+        Try
+            _client.Connect()
+        Catch ex As SshConnectionException
+            If _hostKeyError <> String.Empty Then Throw New ApplicationException(_hostKeyError, ex)
+            Throw New ApplicationException("Conectare eșuată la server (SFTP). Verificați rețeaua și portul.", ex)
+        Catch ex As SshAuthenticationException
+            Throw New ApplicationException("Autentificare eșuată (SFTP). Verificați utilizatorul, cheia SSH din ~/.ssh sau parola.", ex)
+        End Try
+    End Sub
+
+    Private Sub DropClient()
+        If _client Is Nothing Then Return
+        _client.Dispose()
+        _client = Nothing
     End Sub
 
     Private Sub OnHostKeyReceived(k_sender As Object, e As HostKeyEventArgs)

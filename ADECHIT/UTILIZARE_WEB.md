@@ -4,6 +4,9 @@ Actualizat: 19.10.2026, SLICE-ADE9-08/09. Acest document consolidează rezultatu
 
 ## Pagina principală și controalele comune
 
+<!-- slice: WB02-01 -->
+Pe calculator, rolul **Administrator** al unității curente are în meniul siglei **A** opțiunea **Înrolează Certificat Digital**, deasupra **Setări tooltip**. Pagina dedicată verifică certificatul de pe token/card și îl înrolează pe contul propriu numai după apăsarea **Înrolează certificatul acesta**. Înrolarea unui certificat nou dezactivează certificatul anterior; **Dezactivează** oprește folosirea certificatului activ. **Înapoi în aplicație** revine la ADECHIT. Opțiunea nu apare pe telefon/tabletă. Dacă sesiunea a expirat, reveniți în aplicație și autentificați-vă din nou.
+
 <!-- slice: ADE9-08 -->
 Notificarea generală de eroare de sub antet se șterge și se ascunde la următoarea acțiune: apăsare/clic, tastare, schimbarea unei valori sau trimiterea unui formular. Dacă noua acțiune eșuează, mesajul ei este afișat. Simplul hover nu ascunde eroarea.
 
@@ -87,6 +90,12 @@ La clic se deschide o fereastră de confirmare cu întrebarea «Ești sigur/ă c
 
 ## Chitanțe pe PC
 
+<!-- slice: AD16-01 -->
+În chitanța PDF folosită la Listare și Descarcă PDF, câmpul **Adresa** al plătitorului ocupă două rânduri, în ambele exemplare. Textul folosește întreaga lățime disponibilă și se micșorează automat numai când este necesar pentru a încăpea integral. Se folosește adresa salvată, cu limita existentă de 255 de caractere; nu se taie textul la afișare.
+
+<!-- slice: AD15-01 -->
+La alegerea datei unui document nou, Valoarea se propune din soldul final al copilului pentru luna selectată: SFC pozitiv la Restituiri, SFD pozitiv la Chitanțe și Alte plăți. Suma rămâne editabilă. Aceste solduri înlocuiesc propunerea anterioară din SIC/SID (soldul inițial).
+
 <!-- slice: ADE8-05 -->
 Pe PC, la Chitanțe, butonul 📥 de lângă 💾 deschide meniul ultimei chitanțe salvate pentru copilul curent. Până la prima salvare este inactiv. Fiecare chitanță existentă are și propriul buton 📥. Meniul are stil Windows, pictograme în stânga, navigare cu săgeți și închidere prin Escape sau clic în afară: 🖨️ Listare, ✉️ Trimitere pe mail, 📄 Descarcă PDF. Mailul apare numai dacă plătitorul asociat chitanței are EMail completat și rămâne inactiv.
 
@@ -106,7 +115,21 @@ Instrucțiunile introductive sunt eliminate în toate modurile; erorile rămân 
 
 La adăugare, taxa nouă este activă implicit. Începutul propus este luna curentă sau luna de după ultima perioadă cunoscută. Noua perioadă trebuie să înceapă după toate începuturile cunoscute. Taxa anterior activă devine inactivă și primește ca sfârșit luna anterioară noului început; modificările se salvează atomic.
 
+<!-- slice: AD14-03 -->
+La bifarea **Activ** pe o taxă existentă, ultima bifă pusă de operator are prioritate și toate celelalte taxe se debifează automat. Poți reactiva orice taxă mai veche, indiferent de ordinea începuturilor, și poți schimba alegerea repetat înainte de salvare. Simpla activare/dezactivare nu modifică perioadele existente și nu este respinsă pentru suprapunerea cu taxa anterior activă. La adăugarea unei perioade noi se păstrează completarea automată a sfârșiturilor. Regula de bifare se aplică atât în **Taxe**, cât și în **Închidere lună**. Dacă anulezi un rând nou, alegerea anterioară încă valabilă se reconstituie. Sumele și explicațiile rămân supuse validărilor obișnuite.
+
 **Taxele migrate pot avea DeLa/PanaLa NULL.** Lipsa datelor nu blochează citirea, editarea, utilizarea sau importul lor și nu se inventează perioade istorice. Numai taxele noi create prin catalog necesită DeLa. IDV istoric rămâne păstrat.
+
+## Taxa lunii deschise — AD14-02
+
+<!-- slice: AD14-02 -->
+Pe calculator, după alegerea lunii, textul simplu «Taxa zilnică» din bara albastră este înlocuit de un combobox comun. Câmpul arată suma curentă; lista arată suma și explicația fiecărei taxe pozitive din subunitate. Ordinea este numerică după valoare, apoi alfabetic în română după explicație și cronologic după început, pentru valori egale.
+
+Într-o lună deschisă, cu dreptul **Catalog**, alege o altă taxă și confirmă **Aplică taxa**. Se schimbă taxa întregii luni, pentru toate grupele subunității curente, inclusiv cele neafișate. Se păstrează zilele de prezență și se recalculează valorile contractuale/totale și situația. Operația nu împarte luna pe zile sau intervale de taxe. Taxa aleasă se folosește și pentru copiii preluați ulterior în aceeași lună.
+
+Lunile închise sunt blocate inclusiv pentru conturile cu dreptul de editare a prezenței închise. Fără dreptul Catalog, taxa se poate numai consulta. Salvează sau abandonează documentul început înainte de schimbare; o celulă de prezență în editare se salvează mai întâi. În timpul salvării nu se pot începe alte editări. La succes se reîncarcă situația, păstrând sensul sortării și copilul selectat. În caz de eroare, mesajul este afișat, iar selectorul revine la taxa cunoscută; aceeași alegere poate fi reîncercată.
+
+Alegerea unei taxe pentru luna deschisă nu modifică valoarea sau perioadele taxelor din catalog, bifa **Activ** ori lunile anterioare. Pentru o taxă nouă folosește întâi **Meniu → Taxe**. Taxa activă din catalog rămâne cea propusă la deschiderea unei luni noi. Pe telefon, acest control din antet rămâne ascuns.
 
 ## Închiderea lunii cu schimbarea taxei — AD14-01
 
@@ -134,6 +157,15 @@ Sub tabele apare (când subunitatea are serie de chitanțe) caseta **„Reia num
 „Renunță” abandonează planul. „Închide august și deschide septembrie” salvează atomic situația din august cu datele vechi, aplică planul și creează septembrie. Mutările și plecările sunt jurnalizate; perioadele educatorilor anteriori se păstrează. Datele modificate între timp de alt utilizator impun reîncărcarea ferestrei. Operația necesită drepturile de închidere, catalog și transfer.
 
 Implementat. Aspectul, interacțiunea drag-and-drop în browser și funcționarea pe MariaDB: TESTAT, RULAT, PUBLICAT.
+
+## O încasare bancară pentru mai mulți copii
+
+<!-- slice: AD15-01 -->
+În **Asociere extrase cu copii → Asociere manuală**, alege extrasul și luna înregistrării. Alege copilul și plătitorul activ, completează **Suma pentru copil (lei)** și **Explicație document**, apoi apasă **Adaugă copil la repartizare**. Repetă pentru fiecare copil, inclusiv din altă grupă a subunității curente. Lista se ordonează alfabetic după numele copilului. **Șterge** permite refacerea unei sume. Câmpul propune suma rămasă; totalul repartizat și restul sunt afișate sub listă.
+
+La **Asociază și înregistrează în Alte plăți**, verifică fiecare copil și suma lui din confirmare. Se acceptă numai sume pozitive în lei întregi, cu totalul exact egal cu încasarea. Se creează câte o plată și un document pentru fiecare copil, în aceeași tranzacție. Pentru un singur copil poți salva direct suma integrală, fără adăugare în listă. Previzualizarea automată rămâne pentru o încasare asociată unui singur copil; pentru repartizare revino în modul manual.
+
+O încasare deja salvată nu se poate repartiza din nou, nici în altă subunitate; anularea unui document păstrează proveniența și rezervarea extrasului. La schimbarea extrasului, a lunii, a modului, la reîncărcare sau închidere, repartizarea pregătită cere confirmare înainte de abandonare. Sunt necesare drepturile Încasare și Catalog. Repartizarea între copii necesită aplicarea manuală a [AD_15_extrase_repartizare.sql](../sql/AD_15_extrase_repartizare.sql), după AD_11, în baza unității.
 
 ## Subunități — ADE10-04
 

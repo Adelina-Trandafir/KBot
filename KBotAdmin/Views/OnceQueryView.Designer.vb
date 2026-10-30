@@ -1,4 +1,4 @@
-' The «Interogari unice» page of «Publicare» (slice ME01): one query text run once on AVACONT_SURSA and on the ticked databases, with a ledger on the server.
+' The «Interogari unice» page of «Publicare» (slice ME01): one query text run once on AVACONT_SURSA and on the databases ticked in the main tree, with a ledger on the server.
 ' All controls are declared HERE; coordinates are in the 96 dpi it was authored at.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class OnceQueryView
@@ -18,9 +18,6 @@ Partial Class OnceQueryView
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        Dim gridDbCol1 As KBotDataColumn = New KBotDataColumn()
-        Dim gridDbCol2 As KBotDataColumn = New KBotDataColumn()
-        Dim gridDbCol3 As KBotDataColumn = New KBotDataColumn()
         Dim gridHistCol1 As KBotDataColumn = New KBotDataColumn()
         Dim gridHistCol2 As KBotDataColumn = New KBotDataColumn()
         Dim gridHistCol3 As KBotDataColumn = New KBotDataColumn()
@@ -35,16 +32,12 @@ Partial Class OnceQueryView
         btnView = New KBotButton()
         btnRun = New KBotButton()
         btnStatus = New KBotButton()
-        btnAllDb = New KBotButton()
-        btnNoDb = New KBotButton()
         tlyMid = New KBotTableLayoutPanel()
-        txtSql = New KBotTextBox()
-        gridDb = New KBotDataView()
+        txtSql = New KBotSqlBox()
         tlyBottom = New KBotTableLayoutPanel()
         logBox = New KBotLogBox()
         gridHist = New KBotDataView()
         lblState = New Label()
-        CType(gridDb, ComponentModel.ISupportInitialize).BeginInit()
         CType(gridHist, ComponentModel.ISupportInitialize).BeginInit()
         tlyMain.SuspendLayout()
         tlyBar.SuspendLayout()
@@ -77,22 +70,18 @@ Partial Class OnceQueryView
         ' tlyBar
         '
         tlyBar.AutoFitToTheme = False
-        tlyBar.ColumnCount = 8
+        tlyBar.ColumnCount = 6
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 230F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 130F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150F))
-        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 90F))
-        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 90F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyBar.Controls.Add(txtName, 0, 0)
         tlyBar.Controls.Add(btnFile, 1, 0)
         tlyBar.Controls.Add(btnView, 2, 0)
         tlyBar.Controls.Add(btnRun, 3, 0)
         tlyBar.Controls.Add(btnStatus, 4, 0)
-        tlyBar.Controls.Add(btnAllDb, 5, 0)
-        tlyBar.Controls.Add(btnNoDb, 6, 0)
         tlyBar.Dock = DockStyle.Fill
         tlyBar.Location = New Point(0, 0)
         tlyBar.Margin = New Padding(0)
@@ -151,7 +140,7 @@ Partial Class OnceQueryView
         btnRun.TabIndex = 5
         btnRun.Text = "Execută"
         tips.SetToolTipHeader(btnRun, "Execută")
-        tips.SetToolTipText(btnRun, "Rulează interogarea întâi pe AVACONT_SURSA, apoi pe bazele bifate. O bază care a rulat deja textul e sărită; modificările nu se pot anula.")
+        tips.SetToolTipText(btnRun, "Rulează interogarea întâi pe AVACONT_SURSA, apoi pe bazele bifate în arborele din stânga. O bază care a rulat deja textul e sărită; modificările nu se pot anula.")
         '
         ' btnStatus
         '
@@ -165,38 +154,12 @@ Partial Class OnceQueryView
         tips.SetToolTipHeader(btnStatus, "Istoric")
         tips.SetToolTipText(btnStatus, "Citește din nou de pe server lista interogărilor unice rulate (din registrul Interogari_Unice).")
         '
-        ' btnAllDb
-        '
-        btnAllDb.Dock = DockStyle.Fill
-        btnAllDb.Location = New Point(0, 0)
-        btnAllDb.Margin = New Padding(0, 2, 6, 6)
-        btnAllDb.Name = "btnAllDb"
-        btnAllDb.Size = New Size(84, 36)
-        btnAllDb.TabIndex = 7
-        btnAllDb.Text = "Toate"
-        tips.SetToolTipHeader(btnAllDb, "Toate bazele")
-        tips.SetToolTipText(btnAllDb, "Bifează toate bazele din listă.")
-        '
-        ' btnNoDb
-        '
-        btnNoDb.Dock = DockStyle.Fill
-        btnNoDb.Location = New Point(0, 0)
-        btnNoDb.Margin = New Padding(0, 2, 6, 6)
-        btnNoDb.Name = "btnNoDb"
-        btnNoDb.Size = New Size(84, 36)
-        btnNoDb.TabIndex = 8
-        btnNoDb.Text = "Niciuna"
-        tips.SetToolTipHeader(btnNoDb, "Nicio bază")
-        tips.SetToolTipText(btnNoDb, "Debifează toate bazele din listă.")
-        '
         ' tlyMid
         '
         tlyMid.AutoFitToTheme = False
-        tlyMid.ColumnCount = 2
-        tlyMid.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 70F))
-        tlyMid.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 30F))
+        tlyMid.ColumnCount = 1
+        tlyMid.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyMid.Controls.Add(txtSql, 0, 0)
-        tlyMid.Controls.Add(gridDb, 1, 0)
         tlyMid.Dock = DockStyle.Fill
         tlyMid.Location = New Point(0, 0)
         tlyMid.Margin = New Padding(0)
@@ -208,70 +171,17 @@ Partial Class OnceQueryView
         '
         ' txtSql
         '
-        txtSql.AcceptsReturn = True
         txtSql.AcceptsTab = True
-        txtSql.CornerRadius = 0
         txtSql.Dock = DockStyle.Fill
-        txtSql.Font = New Font("Consolas", 9.75F)
         txtSql.Location = New Point(0, 0)
-        txtSql.Margin = New Padding(0, 0, 8, 6)
+        txtSql.Margin = New Padding(0, 0, 0, 6)
         txtSql.MaxLength = 100000
-        txtSql.Multiline = True
         txtSql.Name = "txtSql"
-        txtSql.ScrollBars = ScrollBars.Both
         txtSql.Size = New Size(600, 200)
         txtSql.TabIndex = 10
         txtSql.WordWrap = False
         tips.SetToolTipHeader(txtSql, "Textul interogării")
         tips.SetToolTipText(txtSql, "Instrucțiuni separate prin ;. Numele de tabele NU se calificează: fiecare bază rulează pe ea însăși." & vbLf & "DELIMITER, DROP DATABASE și DROP SCHEMA sunt refuzate. Cel mult 30.000 de octeți." & vbLf & "Scrieți-o ca să nu strice dacă rulează de două ori (IF EXISTS, WHERE pe ce rămâne de reparat).")
-        '
-        ' gridDb
-        '
-        gridDb.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridDb.ColumnFillMode = KBotFillMode.SpecificColumn
-        gridDbCol1.AggregateFormatString = Nothing
-        gridDbCol1.ColumnType = KBotColumnType.CheckBox
-        gridDbCol1.FormatString = Nothing
-        gridDbCol1.HeaderText = "Rulează"
-        gridDbCol1.HeaderTooltip = "Bifat = interogarea se rulează și pe această bază. AVACONT_SURSA rulează mereu, prima."
-        gridDbCol1.HeaderTextAlign = ContentAlignment.MiddleCenter
-        gridDbCol1.Key = "use"
-        gridDbCol1.MinWidth = 50
-        gridDbCol1.OptionGroup = Nothing
-        gridDbCol1.Width = 70
-        gridDbCol2.AggregateFormatString = Nothing
-        gridDbCol2.FormatString = Nothing
-        gridDbCol2.HeaderText = "Baza"
-        gridDbCol2.HeaderTooltip = "Numele bazei de unitate."
-        gridDbCol2.HeaderTextAlign = ContentAlignment.MiddleCenter
-        gridDbCol2.Key = "db"
-        gridDbCol2.MinWidth = 70
-        gridDbCol2.OptionGroup = Nothing
-        gridDbCol2.ReadOnly = True
-        gridDbCol2.Width = 110
-        gridDbCol3.AggregateFormatString = Nothing
-        gridDbCol3.FormatString = Nothing
-        gridDbCol3.HeaderText = "Unitatea"
-        gridDbCol3.HeaderTooltip = "Denumirea unității."
-        gridDbCol3.HeaderTextAlign = ContentAlignment.MiddleCenter
-        gridDbCol3.Key = "name"
-        gridDbCol3.MinWidth = 80
-        gridDbCol3.OptionGroup = Nothing
-        gridDbCol3.ReadOnly = True
-        gridDbCol3.Width = 200
-        gridDb.Columns.Add(gridDbCol1)
-        gridDb.Columns.Add(gridDbCol2)
-        gridDb.Columns.Add(gridDbCol3)
-        gridDb.Dock = DockStyle.Fill
-        gridDb.FillColumnKey = "name"
-        gridDb.HeaderHeight = 24
-        gridDb.Location = New Point(0, 0)
-        gridDb.Margin = New Padding(0)
-        gridDb.Name = "gridDb"
-        gridDb.Size = New Size(600, 300)
-        gridDb.TabIndex = 11
-        tips.SetToolTipHeader(gridDb, "Bazele")
-        tips.SetToolTipText(gridDb, "Bazele de unitate de pe server (fără AVACONT_SURSA și AVACONT_COMUN). Toate vin bifate.")
         '
         ' tlyBottom
         '
@@ -404,7 +314,6 @@ Partial Class OnceQueryView
         Controls.Add(tlyMain)
         Name = "OnceQueryView"
         Size = New Size(900, 560)
-        CType(gridDb, ComponentModel.ISupportInitialize).EndInit()
         CType(gridHist, ComponentModel.ISupportInitialize).EndInit()
         tlyMain.ResumeLayout(False)
         tlyBar.ResumeLayout(False)
@@ -421,11 +330,8 @@ Partial Class OnceQueryView
     Friend WithEvents btnView As KBotButton
     Friend WithEvents btnRun As KBotButton
     Friend WithEvents btnStatus As KBotButton
-    Friend WithEvents btnAllDb As KBotButton
-    Friend WithEvents btnNoDb As KBotButton
     Friend WithEvents tlyMid As KBotTableLayoutPanel
-    Friend WithEvents txtSql As KBotTextBox
-    Friend WithEvents gridDb As KBotDataView
+    Friend WithEvents txtSql As KBotSqlBox
     Friend WithEvents tlyBottom As KBotTableLayoutPanel
     Friend WithEvents logBox As KBotLogBox
     Friend WithEvents gridHist As KBotDataView

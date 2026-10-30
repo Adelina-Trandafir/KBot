@@ -289,6 +289,12 @@ Partial Public Class KbotForm
     ''' the dry run, or answers loaded from «Rezultate_Forexe». Empty in the normal mode.
     ''' </summary>
     Private Function ModeNote() As String
+        If _controller.ForexeSimulat Then
+            Return vbCrLf & vbCrLf & "MOD FOREXE SIMULAT (doar Debug): FOREXE nu este atins, răspunsul îl face K-BOT. " &
+                   "Răspunsul simulat trece însă prin importul obișnuit al serverului, deci rezervările, codurile, " &
+                   "capturile (marcate SIMULARE) și starea reviziei se scriu în baza de date ca la o trimitere reală. " &
+                   "Folosiți DOAR baza 000_DEMO."
+        End If
         If _controller.ReplayMode Then
             Return vbCrLf & vbCrLf & "MOD REÎNCĂRCARE: robotul nu intră în FOREXE. Pentru fiecare pas alegeți " &
                    "răspunsul păstrat în «Rezultate_Forexe»; K-BOT îl tratează ca și cum FOREXE ar fi răspuns acum."

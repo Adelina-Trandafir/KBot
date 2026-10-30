@@ -120,6 +120,8 @@ Public NotInheritable Class GetTreeRow
     Public Property LegaturiGresite As String
     ' Slice 0114-27: «actual~asteptat~surse», null = the DDF's program is right.
     Public Property ProgramGresit As String
+    ' Slice 0122-10: «yyyy-MM-dd~indicator~rezervat~receptionat» joined with «|», null = the receptions add up to the reservations.
+    Public Property ReceptiiNepotrivite As String
     ' Slice 0008-02: FX_Angajamente.Alias (null = none).
     <Text.Json.Serialization.JsonPropertyName("Alias")>
     Public Property AliasAng As String
@@ -391,6 +393,8 @@ Public NotInheritable Class GetDdfRevizieRow
     Public Property pdf_data_modif As Date?
     ' Slice 0099: how many times the revision was printed (PDF row + document row of sql/0099).
     Public Property print_count As Integer
+    ' Slice 0124: the role that signs next (FX_DDF_REV.DeSemnat); null = the revision is not in the K-BOT flow.
+    Public Property de_semnat As String
 End Class
 
 ' One FX_DDF_REV_SA record. parametrii_fund/ss are carried but not displayed (decision 4) —

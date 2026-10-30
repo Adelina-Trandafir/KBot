@@ -32,6 +32,7 @@ Partial Class KbotForm
         Dim KBotMenuItem6 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem7 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem8 As KBotMenuItem = New KBotMenuItem()
+        Dim KBotMenuItemOmise As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem9 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem11 As KBotMenuItem = New KBotMenuItem()
         Dim KBotMenuItem12 As KBotMenuItem = New KBotMenuItem()
@@ -182,6 +183,10 @@ Partial Class KbotForm
         KBotMenuItem8.Key = "operatiuni_necorelate"
         KBotMenuItem8.Text = "<b>(!) Operațiuni necorelate</b>"
         KBotMenuItem8.Visible = False
+        KBotMenuItemOmise.Image = My.Resources.Resources.FX_RED_16
+        KBotMenuItemOmise.Key = "operatiuni_omise"
+        KBotMenuItemOmise.Text = "Operațiuni omise"
+        KBotMenuItemOmise.Visible = False
         KBotMenuItem9.Image = My.Resources.Resources.binvoice
         KBotMenuItem9.Key = "extrase"
         KBotMenuItem9.Text = "Extrase"
@@ -217,6 +222,7 @@ Partial Class KbotForm
         menuNou.Items.Add(KBotMenuItem4)
         menuNou.Items.Add(KBotMenuItem7)
         menuNou.Items.Add(KBotMenuItem8)
+        menuNou.Items.Add(KBotMenuItemOmise)
         menuNou.Items.Add(KBotMenuItem9)
         menuNou.Items.Add(KBotMenuItem15)
         menuNou.Items.Add(KBotMenuItem16)

@@ -24,19 +24,18 @@ Partial Class DirectorForm
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
+        Dim KBotDataColumn1 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn4 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn5 As KBotDataColumn = New KBotDataColumn()
         components = New ComponentModel.Container()
         tips = New KBotToolTip(components)
         tlyMain = New KBotTableLayoutPanel()
         capBar = New KBotCaptionBar()
         lblTitlu = New Label()
         split = New SplitContainer()
-        lstDocumente = New ListView()
-        colUnitate = New ColumnHeader()
-        colCod = New ColumnHeader()
-        colObiect = New ColumnHeader()
-        colRevizie = New ColumnHeader()
-        colData = New ColumnHeader()
-        colTotal = New ColumnHeader()
+        lstDocumente = New KBotDataView()
         pnlDocument = New Panel()
         lblDocument = New Label()
         tlySubsol = New KBotTableLayoutPanel()
@@ -127,53 +126,73 @@ Partial Class DirectorForm
         '
         ' lstDocumente
         '
-        lstDocumente.BorderStyle = BorderStyle.None
-        lstDocumente.Columns.AddRange(New ColumnHeader() {colUnitate, colCod, colObiect, colRevizie, colData, colTotal})
+        lstDocumente.AlternatingRows = False
+        lstDocumente.AutoSizeColumnsMode = KBotAutoSizeMode.None
+        lstDocumente.BackColor = SystemColors.Window
+        lstDocumente.BorderColor = SystemColors.ActiveBorder
+        lstDocumente.ColumnFillMode = KBotFillMode.SpecificColumn
+        KBotDataColumn1.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn1.HeaderText = "Angajament"
+        KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn1.Key = "cod"
+        KBotDataColumn1.ReadOnly = True
+        KBotDataColumn1.Width = 110
+        KBotDataColumn2.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn2.HeaderText = "Obiect"
+        KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn2.Key = "obiect"
+        KBotDataColumn2.MinWidth = 120
+        KBotDataColumn2.ReadOnly = True
+        KBotDataColumn2.Width = 180
+        KBotDataColumn3.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn3.HeaderText = "Rev."
+        KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn3.Key = "rev"
+        KBotDataColumn3.ReadOnly = True
+        KBotDataColumn3.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn3.Width = 50
+        KBotDataColumn4.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn4.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn4.HeaderText = "Data"
+        KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn4.Key = "data"
+        KBotDataColumn4.ReadOnly = True
+        KBotDataColumn4.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn4.Width = 90
+        KBotDataColumn5.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn5.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn5.HeaderText = "Total"
+        KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn5.Key = "total"
+        KBotDataColumn5.ReadOnly = True
+        KBotDataColumn5.TextAlign = ContentAlignment.MiddleRight
+        KBotDataColumn5.Width = 100
+        lstDocumente.Columns.Add(KBotDataColumn1)
+        lstDocumente.Columns.Add(KBotDataColumn2)
+        lstDocumente.Columns.Add(KBotDataColumn3)
+        lstDocumente.Columns.Add(KBotDataColumn4)
+        lstDocumente.Columns.Add(KBotDataColumn5)
         lstDocumente.Dock = DockStyle.Fill
-        lstDocumente.FullRowSelect = True
-        lstDocumente.HideSelection = False
+        lstDocumente.EnableGrouping = False
+        lstDocumente.FillColumnKey = "obiect"
+        lstDocumente.HeaderBackColor = SystemColors.Control
+        lstDocumente.HeaderColumnSeparatorColor = Color.Gainsboro
+        lstDocumente.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        lstDocumente.HeaderForeColor = SystemColors.ActiveCaptionText
+        lstDocumente.HeaderSeparatorColor = Color.Gainsboro
         lstDocumente.Location = New Point(8, 0)
         lstDocumente.Margin = New Padding(0)
-        lstDocumente.MultiSelect = False
         lstDocumente.Name = "lstDocumente"
+        lstDocumente.ReadOnlyGrid = True
+        lstDocumente.RowHeight = 22
+        lstDocumente.ShrinkColumnsToFit = False
         lstDocumente.Size = New Size(512, 676)
         lstDocumente.TabIndex = 0
-        lstDocumente.UseCompatibleStateImageBehavior = False
-        lstDocumente.View = View.Details
         tips.SetToolTipHeader(lstDocumente, "Documente de semnat")
-        tips.SetToolTipText(lstDocumente, "Reviziile semnate A și B care așteaptă semnătura directorului, din toate unitățile." & vbLf & "Selectați una ca să o deschideți în dreapta.")
-        '
-        ' colUnitate
-        '
-        colUnitate.Text = "Unitate"
-        colUnitate.Width = 120
-        '
-        ' colCod
-        '
-        colCod.Text = "Angajament"
-        colCod.Width = 110
-        '
-        ' colObiect
-        '
-        colObiect.Text = "Obiect"
-        colObiect.Width = 150
-        '
-        ' colRevizie
-        '
-        colRevizie.Text = "Rev."
-        colRevizie.TextAlign = HorizontalAlignment.Right
-        colRevizie.Width = 40
-        '
-        ' colData
-        '
-        colData.Text = "Data"
-        colData.Width = 80
-        '
-        ' colTotal
-        '
-        colTotal.Text = "Total"
-        colTotal.TextAlign = HorizontalAlignment.Right
-        colTotal.Width = 90
+        tips.SetToolTipText(lstDocumente, "Reviziile semnate A și B care așteaptă semnătura directorului, ale unității la care sunteți conectat." & vbLf & "Selectați una ca să o deschideți în dreapta.")
         '
         ' pnlDocument
         '
@@ -267,6 +286,7 @@ Partial Class DirectorForm
         MinimumSize = New Size(900, 560)
         Name = "DirectorForm"
         Padding = New Padding(1)
+        ShowInTaskbar = False
         StartPosition = FormStartPosition.CenterScreen
         Text = "K-BOT — Documente de fundamentare de semnat"
         tlyMain.ResumeLayout(False)
@@ -285,13 +305,7 @@ Partial Class DirectorForm
     Friend WithEvents capBar As KBotCaptionBar
     Friend WithEvents lblTitlu As Label
     Friend WithEvents split As SplitContainer
-    Friend WithEvents lstDocumente As ListView
-    Friend WithEvents colUnitate As ColumnHeader
-    Friend WithEvents colCod As ColumnHeader
-    Friend WithEvents colObiect As ColumnHeader
-    Friend WithEvents colRevizie As ColumnHeader
-    Friend WithEvents colData As ColumnHeader
-    Friend WithEvents colTotal As ColumnHeader
+    Friend WithEvents lstDocumente As KBotDataView
     Friend WithEvents pnlDocument As Panel
     Friend WithEvents lblDocument As Label
     Friend WithEvents tlySubsol As KBotTableLayoutPanel

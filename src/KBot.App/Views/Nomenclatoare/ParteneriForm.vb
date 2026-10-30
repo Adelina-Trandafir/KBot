@@ -504,6 +504,19 @@ Public Class ParteneriForm
         End Try
     End Sub
 
+    ' Esc twice in a row: a row with neither an id nor a link is one the operator just added with «+» and it goes away; the others go back as they were (the grid's default).
+    Private Sub GridCoduri_RowCancelRequested(sender As Object, e As KBotRowCancelEventArgs) Handles gridCoduri.RowCancelRequested
+        Try
+            If _busy OrElse e.RowIndex < 0 OrElse e.RowIndex >= gridCoduri.RowCount Then Return
+            If gridCoduri(ColId, e.RowIndex) IsNot Nothing OrElse gridCoduri(ColIdLeg, e.RowIndex) IsNot Nothing Then Return
+            e.Handled = True
+            gridCoduri.RemoveRowAt(e.RowIndex)
+            SetDirty(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ParteneriForm.GridCoduri_RowCancelRequested", ex)
+        End Try
+    End Sub
+
     Private Sub GridCoduri_ButtonClick(sender As Object, e As KBotButtonClickEventArgs) Handles gridCoduri.ButtonClick
         Try
             If e.ColumnKey <> ColDelete OrElse _busy Then Return

@@ -22,11 +22,12 @@ Imports KBot.Theming
 ''' goes to the server at once, replacing the unsigned copy stored when the note was made.</para>
 '''
 ''' <para>The notes come in ONE call per angajament (GET /api/forexe/note-cab?cod=), through the
-''' shell's 401 net; a click in the tree only filters. Right click on a note: «Încarcă în CAB»,
-''' through the shell's <c>UploadCabNoteAsync</c> (the same step as the note window).</para>
+''' shell's 401 net; a click in the tree only filters. «Trimite în CAB» is a button of the ribbon's view group
+''' (operator, 29.10.2026; the right click menu of the tree is gone), through the shell's
+''' <c>UploadCabNoteAsync</c> (the same step as the note window).</para>
 ''' </summary>
 Public Class NoteCabView
-    Implements IAngajamentView, IThemedControl, IReleasesDocument, IPutAway
+    Implements IAngajamentView, IThemedControl, IReleasesDocument, IPutAway, IViewRibbon
 
     Private Const PageView As String = "vizualizare"
     Private Const PageDocument As String = "document"
@@ -37,8 +38,8 @@ Public Class NoteCabView
     Private Const IconSigned As String = "signed"
     Private Const IconSent As String = "sent"
 
-    Private Const MenuUpload As String = "incarca"
-    Private Const MenuRegenerate As String = "regenereaza"
+    Private Const KeySend As String = "notecab_trimite"
+    Private Shared ReadOnly RibbonKeyList As String() = {KeySend}
 
     Private Shared ReadOnly RoCulture As New CultureInfo("ro-RO")
 
@@ -63,6 +64,8 @@ Public Class NoteCabView
     Private _resolvedFor As Integer
     Private _generating As Boolean
     Private _signing As PdfSigningSession
+    ' Who is logged in: a director's signatures are limited to the «Ordonator» field (DirectorMode). Nothing = no limit.
+    Private ReadOnly _session As SessionContext
     Private ReadOnly _leaves As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
 
     Private _splitterExpanded As Integer
@@ -71,7 +74,8 @@ Public Class NoteCabView
     Public Sub New(apiClient As IApiClient,
                    withReauth As Func(Of Func(Of Task(Of List(Of CabCorrectionNote))), Task(Of List(Of CabCorrectionNote))),
                    Optional uploadToCab As Func(Of IWin32Window, CabCorrectionNote, String, Task(Of Boolean)) = Nothing,
-                   Optional openReceipt As Func(Of IWin32Window, CabCorrectionNote, Boolean) = Nothing)
+                   Optional openReceipt As Func(Of IWin32Window, CabCorrectionNote, Boolean) = Nothing,
+                   Optional k_session As SessionContext = Nothing)
         ArgumentNullException.ThrowIfNull(apiClient)
         ArgumentNullException.ThrowIfNull(withReauth)
         InitializeComponent()
@@ -81,6 +85,7 @@ Public Class NoteCabView
         _withReauth = withReauth
         _uploadToCab = uploadToCab
         _openReceipt = openReceipt
+        _session = k_session
         AddHandler Disposed, Sub(s, e) EndSigning()
         navSub.SelectedKey = PageView
         ShowEmpty("Selectați un angajament din arbore.")
@@ -191,6 +196,7 @@ Public Class NoteCabView
     Private Sub PushToActivePage()
         _currentCtx = BuildContext()
         _activePage?.SetContext(_currentCtx)
+        RaiseEvent RibbonStateChanged(Me, EventArgs.Empty)   ' the selected note, or its sent state, may have changed
     End Sub
 
     ' ── Shell context ──────────────────────────────────────────────────────────
@@ -324,10 +330,6 @@ Public Class NoteCabView
                 _resolvedFor = 0
             End If
             PushToActivePage()
-            If e IsNot Nothing AndAlso e.Button = MouseButtons.Right AndAlso _selected IsNot Nothing Then
-                ShowMenu(_selected)
-                Return
-            End If
             EnsureDocumentAsync(_selected)
             EnsureReceiptAsync(_selected)
         Catch ex As Exception
@@ -335,24 +337,44 @@ Public Class NoteCabView
         End Try
     End Sub
 
-    Private Sub ShowMenu(note As CabCorrectionNote)
-        Dim items As New List(Of CustomPopupItem) From {New CustomPopupItem(MenuUpload, "Încarcă în &CAB…")}
-        If Not note.IsSigned Then items.Add(New CustomPopupItem(MenuRegenerate, "&Generează din nou documentul"))
-        Dim menu As New CustomPopup(items)
-        AddHandler menu.ItemClicked, Sub(s As Object, ev As CustomPopupItemEventArgs) OnMenu(ev.Item.Key, note)
-        menu.ShowAtCursor(tree)
-    End Sub
+    ' ── The button of the view in the ribbon (operator, 29.10.2026) ───────────────────────────
 
-    Private Sub OnMenu(key As String, note As CabCorrectionNote)
+    ''' <summary>Raised when what the ribbon button shows has changed (the window asks again).</summary>
+    Public Event RibbonStateChanged As EventHandler Implements IViewRibbon.RibbonStateChanged
+
+    Public ReadOnly Property RibbonCaption As String Implements IViewRibbon.RibbonCaption
+        Get
+            Return "Note corecție"
+        End Get
+    End Property
+
+    Public ReadOnly Property RibbonKeys As IReadOnlyList(Of String) Implements IViewRibbon.RibbonKeys
+        Get
+            Return RibbonKeyList
+        End Get
+    End Property
+
+    ''' <summary>«Trimite în CAB» is usable while a note (not a month) is selected and the host runs the upload.</summary>
+    Public Function RibbonButtonState(k_key As String) As ViewButtonState Implements IViewRibbon.RibbonButtonState
+        If Not String.Equals(k_key, KeySend, StringComparison.Ordinal) Then
+            Throw New ArgumentException($"Buton de ribbon necunoscut pentru notele de corecție: '{k_key}'.", NameOf(k_key))
+        End If
+        Return If(_uploadToCab IsNot Nothing AndAlso _selected IsNot Nothing, ViewButtonState.Enabled, ViewButtonState.Dimmed)
+    End Function
+
+    Public Function RibbonButtonText(k_key As String) As String Implements IViewRibbon.RibbonButtonText
+        Return If(_selected IsNot Nothing AndAlso _selected.Sent, "Trimite din nou în CAB", "Trimite în CAB")
+    End Function
+
+    ''' <summary>A press on the button. UI boundary: logs and swallows.</summary>
+    Public Sub RunRibbonButton(k_key As String) Implements IViewRibbon.RunRibbonButton
         Try
-            Select Case key
-                Case MenuUpload : UploadAsync(note)
-                Case MenuRegenerate : GenerateAsync(note)
-                Case Else
-                    Throw New ArgumentException($"Unknown menu command: {key}", NameOf(key))
-            End Select
+            If Not String.Equals(k_key, KeySend, StringComparison.Ordinal) Then
+                Throw New ArgumentException($"Buton de ribbon necunoscut pentru notele de corecție: '{k_key}'.", NameOf(k_key))
+            End If
+            UploadAsync(_selected)
         Catch ex As Exception
-            GlobalErrorLog.Write("NoteCabView.OnMenu", ex)
+            GlobalErrorLog.Write("NoteCabView.RunRibbonButton", ex)
         End Try
     End Sub
 
@@ -572,6 +594,7 @@ Public Class NoteCabView
         If _signing IsNot Nothing AndAlso _signing.Matches(PdfDocKind.Nc, n.IdNc, pdfPath, serverSha) Then Return _signing
         EndSigning()
         _signing = New PdfSigningSession(PdfDocKind.Nc, n.IdNc, pdfPath, CabNoteFiles.CachePath(n), serverSha, _apiClient)
+        If DirectorMode.IsActive(_session) Then _signing.AllowedNewRoles = DirectorMode.SigningRoles
         AddHandler _signing.Completed, AddressOf OnSigningCompleted
         _signing.Begin()
         Return _signing
@@ -599,8 +622,22 @@ Public Class NoteCabView
             End If
             SigningMessages.ShowOutcome(FindForm(), outcome)
             If outcome.Status = PdfSigningStatus.Conflict Then Reincarca()
+            If outcome.Status = PdfSigningStatus.Refused Then RestoreAfterRefusalAsync(session)
         Catch ex As Exception
             GlobalErrorLog.Write("NoteCabView.OnSigningCompleted", ex)
+        End Try
+    End Sub
+
+    ' Slice DIR1-03: after a refused signature the document goes back to the server's, by itself (see DdfView). UI boundary.
+    Private Async Sub RestoreAfterRefusalAsync(k_session As PdfSigningSession)
+        Try
+            EndSigning()
+            ReleaseDocument()
+            Await SigningRestore.DeleteLocalCopiesAsync(k_session).ConfigureAwait(True)
+            If IsDisposed Then Return
+            Reincarca()
+        Catch ex As Exception
+            GlobalErrorLog.Write("NoteCabView.RestoreAfterRefusalAsync", ex)
         End Try
     End Sub
 

@@ -30,6 +30,7 @@ Partial Class SetariForm
         Dim KBotNavItem10 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem12 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem13 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem14 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         btnClose = New Button()
         pnlRoot = New Panel()
@@ -134,6 +135,9 @@ Partial Class SetariForm
         KBotNavItem10.Image = My.Resources.Resources.binvoice
         KBotNavItem10.Key = "extrase"
         KBotNavItem10.Text = "Extrase"
+        KBotNavItem14.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
+        KBotNavItem14.Key = "semnareddf"
+        KBotNavItem14.Text = "Semnare DDF"
         KBotNavItem4.Image = My.Resources.Resources.Papirus_Team_Papirus_Apps_Preferences_desktop_theme_24
         KBotNavItem4.Key = "tema"
         KBotNavItem4.Text = "Temă"
@@ -150,6 +154,7 @@ Partial Class SetariForm
         navViews.Items.Add(KBotNavItem13)
         navViews.Items.Add(KBotNavItem9)
         navViews.Items.Add(KBotNavItem10)
+        navViews.Items.Add(KBotNavItem14)
         navViews.Items.Add(KBotNavItem4)
         navViews.Items.Add(KBotNavItem5)
         navViews.Items.Add(KBotNavItem6)

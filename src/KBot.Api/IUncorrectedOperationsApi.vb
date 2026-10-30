@@ -27,6 +27,21 @@ Public Interface IUncorrectedOperationsApi
     ''' </summary>
     Function GetUncorrelatedOperationsAsync(ct As CancellationToken) As Task(Of List(Of UncorrectedOperation))
 
+    ''' <summary>
+    ''' Slice 0088-06: the operations the operator omitted from the correction notes
+    ''' (GET /api/forexe/operatiuni/necorelate?omise=1). They are not in
+    ''' <see cref="GetUncorrelatedOperationsAsync"/> until brought back.
+    ''' </summary>
+    Function GetSkippedOperationsAsync(ct As CancellationToken) As Task(Of List(Of UncorrectedOperation))
+
+    ''' <summary>
+    ''' Slice 0088-06: omits (<paramref name="skipped"/> True) or brings back (False) the operations with the given
+    ''' <c>FX_Operatiuni.IDFXP</c> (POST /api/forexe/operatiuni/omitere). Returns how many rows changed. Throws
+    ''' <see cref="ApiException"/> on any non-2xx (409 while the database lacks the <c>Omis</c> column).
+    ''' </summary>
+    Function SetOperationsSkippedAsync(ids As IReadOnlyList(Of Integer), skipped As Boolean,
+                                       ct As CancellationToken) As Task(Of Integer)
+
 End Interface
 
 ''' <summary>What the server did with the rows sent.</summary>

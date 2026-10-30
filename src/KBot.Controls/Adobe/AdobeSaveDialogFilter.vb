@@ -78,7 +78,13 @@ Public NotInheritable Class AdobeSaveDialogFilter
         Next
         If Not ours Then Return AdobeDialogKind.NotOurs
 
-        If facts.HasFileNameEdit AndAlso facts.HasOkButton Then Return AdobeDialogKind.SaveAs
+        ' MEASURED 30.10.2026 (adobe_preview.log): the DDF form's image field opens «Select Image File»,
+        ' an OPEN dialog with the same file-name box + OK button. The trap typed the PDF path into it
+        ' and pressed it. A file dialog whose title says it picks a file is the operator's, left alone.
+        If facts.HasFileNameEdit AndAlso facts.HasOkButton Then
+            If IsPickFileTitle(facts.Title) Then Return AdobeDialogKind.Other
+            Return AdobeDialogKind.SaveAs
+        End If
 
         If awaitingConfirmFor <> IntPtr.Zero AndAlso facts.OwnerWindow = awaitingConfirmFor AndAlso
            (facts.HasYesButton OrElse facts.IsTaskDialog) Then
@@ -94,6 +100,19 @@ Public NotInheritable Class AdobeSaveDialogFilter
         End If
 
         Return AdobeDialogKind.Other
+    End Function
+
+    ''' <summary>Title prefixes of the file dialogs that PICK an existing file (open / select / attach), English and Romanian.</summary>
+    Public Shared ReadOnly PickFileTitles As String() = {"Select", "Open", "Browse", "Choose", "Attach", "Insert", "Import",
+                                                         "Deschid", "Alege", "Atasa", "Inser"}
+
+    ''' <summary>
+    ''' True when the title of a file dialog says it picks an existing file («Select Image File»,
+    ''' «Open», «Browse»...), not that it saves one. An empty title is NOT a pick: a Save As whose
+    ''' title cannot be read is still ours.
+    ''' </summary>
+    Public Shared Function IsPickFileTitle(title As String) As Boolean
+        Return StartsWithAny(title, PickFileTitles)
     End Function
 
     ''' <summary>
@@ -198,13 +217,23 @@ Public NotInheritable Class AdobeSaveDialogFilter
 
     ''' <summary>
     ''' True for the windows Adobe opens because a form script failed: the alert box (title starting
-    ''' with <paramref name="alertTitle"/>) and the script console (<paramref name="consoleTitle"/>).
+    ''' with one of <paramref name="k_alertTitles"/>) and the script console (one of
+    ''' <paramref name="k_consoleTitles"/>). Several titles because Adobe titles these windows in
+    ''' the language of its own interface (the Romanian Reader says «Avertisment: Fereastră
+    ''' JavaScript» and «Depanator JavaScript»).
     ''' </summary>
-    Public Shared Function IsScriptNoise(title As String, alertTitle As String, consoleTitle As String) As Boolean
-        If String.IsNullOrWhiteSpace(title) Then Return False
+    Public Shared Function IsScriptNoise(title As String, k_alertTitles As IEnumerable(Of String), k_consoleTitles As IEnumerable(Of String)) As Boolean
+        Return StartsWithAny(title, k_alertTitles) OrElse StartsWithAny(title, k_consoleTitles)
+    End Function
+
+    ''' <summary>True when the trimmed <paramref name="title"/> starts, in any case, with one of <paramref name="k_prefixes"/>.</summary>
+    Public Shared Function StartsWithAny(title As String, k_prefixes As IEnumerable(Of String)) As Boolean
+        If String.IsNullOrWhiteSpace(title) OrElse k_prefixes Is Nothing Then Return False
         Dim t As String = title.Trim()
-        Return (Not String.IsNullOrEmpty(alertTitle) AndAlso t.StartsWith(alertTitle, StringComparison.OrdinalIgnoreCase)) OrElse
-               (Not String.IsNullOrEmpty(consoleTitle) AndAlso t.StartsWith(consoleTitle, StringComparison.OrdinalIgnoreCase))
+        For Each k_prefix As String In k_prefixes
+            If Not String.IsNullOrEmpty(k_prefix) AndAlso t.StartsWith(k_prefix, StringComparison.OrdinalIgnoreCase) Then Return True
+        Next
+        Return False
     End Function
 
     ''' <summary>

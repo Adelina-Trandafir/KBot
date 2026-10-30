@@ -44,6 +44,7 @@ Partial Class CabNoteForm
         txtExplicatii = New KBotTextField()
         txtDenumire = New KBotTextField()
         btnSalveaza = New Button()
+        btnOmite = New Button()
         pnlCard = New Panel()
         tlyCorp = New KBotTableLayoutPanel()
         tlyDetalii = New KBotTableLayoutPanel()
@@ -337,8 +338,23 @@ Partial Class CabNoteForm
         tips.SetToolTipText(btnSalveaza, resources.GetString("btnSalveaza.ToolTipText"))
         btnSalveaza.UseVisualStyleBackColor = True
         ' 
+        ' btnOmite
+        '
+        btnOmite.Dock = DockStyle.Left
+        btnOmite.Enabled = False
+        btnOmite.FlatStyle = FlatStyle.Flat
+        btnOmite.Location = New Point(157, 10)
+        btnOmite.Margin = New Padding(0)
+        btnOmite.Name = "btnOmite"
+        btnOmite.Size = New Size(230, 56)
+        btnOmite.TabIndex = 3
+        btnOmite.Text = "Omite rândul"
+        tips.SetToolTipHeader(btnOmite, "Rând care nu se corectează")
+        tips.SetToolTipText(btnOmite, resources.GetString("btnOmite.ToolTipText"))
+        btnOmite.UseVisualStyleBackColor = True
+        '
         ' pnlCard
-        ' 
+        '
         pnlCard.Controls.Add(tlyCorp)
         pnlCard.Controls.Add(pnlJos)
         pnlCard.Controls.Add(capBar)
@@ -563,6 +579,7 @@ Partial Class CabNoteForm
         ' 
         pnlJos.Controls.Add(lblStare)
         pnlJos.Controls.Add(btnSalveaza)
+        pnlJos.Controls.Add(btnOmite)
         pnlJos.Controls.Add(btnInchide)
         pnlJos.Dock = DockStyle.Bottom
         pnlJos.Location = New Point(0, 960)
@@ -577,10 +594,10 @@ Partial Class CabNoteForm
         ' 
         lblStare.AutoEllipsis = True
         lblStare.Dock = DockStyle.Fill
-        lblStare.Location = New Point(157, 10)
+        lblStare.Location = New Point(387, 10)
         lblStare.Margin = New Padding(4, 0, 4, 0)
         lblStare.Name = "lblStare"
-        lblStare.Size = New Size(1055, 56)
+        lblStare.Size = New Size(825, 56)
         lblStare.TabIndex = 0
         lblStare.TextAlign = ContentAlignment.MiddleLeft
         ' 
@@ -667,5 +684,6 @@ Partial Class CabNoteForm
     Friend WithEvents pnlJos As Panel
     Friend WithEvents lblStare As Label
     Friend WithEvents btnSalveaza As Button
+    Friend WithEvents btnOmite As Button
     Friend WithEvents btnInchide As Button
 End Class

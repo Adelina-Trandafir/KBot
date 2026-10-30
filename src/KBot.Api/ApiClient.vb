@@ -381,7 +381,8 @@ Public Class ApiClient
                                 .LantNeinchis = ParseLantNeinchis(r.LantNeinchis),
                                 .RezervariGresite = ParseRezervariGresite(r.RezervariGresite),
                                 .LegaturiGresite = ParseLegaturiGresite(r.LegaturiGresite),
-                                .ProgramGresit = ParseProgramGresit(r.ProgramGresit)
+                                .ProgramGresit = ParseProgramGresit(r.ProgramGresit),
+                                .ReceptiiNepotrivite = ParseReceptiiNepotrivite(r.ReceptiiNepotrivite)
                             })
                         Next
                     End If
@@ -414,6 +415,28 @@ Public Class ApiClient
                Double.TryParse(k_parti(3), Globalization.NumberStyles.Float, Globalization.CultureInfo.InvariantCulture, k_ast) Then
                 k_rezultat.Add(New RezervareGresita() With {
                     .DataRezervare = k_data, .CodIndicator = k_parti(1), .Anterioara = k_ant, .Asteptata = k_ast})
+            End If
+        Next
+        Return k_rezultat
+    End Function
+
+    ' Slice 0122-10: «yyyy-MM-dd~indicator~rezervat~receptionat|...» from the tree route -> the days on which the
+    ' receptions do not add up to the reservations. A piece that does not parse is skipped, not guessed (a warning only).
+    Private Shared Function ParseReceptiiNepotrivite(k_text As String) As IReadOnlyList(Of ReceptieNepotrivita)
+        Dim k_rezultat As New List(Of ReceptieNepotrivita)()
+        If String.IsNullOrWhiteSpace(k_text) Then Return k_rezultat
+        For Each k_bucata As String In k_text.Split("|"c)
+            Dim k_parti() As String = k_bucata.Split("~"c)
+            If k_parti.Length <> 4 Then Continue For
+            Dim k_zi As Date
+            Dim k_rez As Double
+            Dim k_rec As Double
+            If Date.TryParseExact(k_parti(0), "yyyy-MM-dd", Globalization.CultureInfo.InvariantCulture,
+                                  Globalization.DateTimeStyles.None, k_zi) AndAlso
+               Double.TryParse(k_parti(2), Globalization.NumberStyles.Float, Globalization.CultureInfo.InvariantCulture, k_rez) AndAlso
+               Double.TryParse(k_parti(3), Globalization.NumberStyles.Float, Globalization.CultureInfo.InvariantCulture, k_rec) Then
+                k_rezultat.Add(New ReceptieNepotrivita() With {
+                    .Zi = k_zi, .CodIndicator = k_parti(1), .Rezervat = k_rez, .Receptionat = k_rec})
             End If
         Next
         Return k_rezultat
@@ -984,7 +1007,8 @@ Public Class ApiClient
                                 .PdfSha256 = If(r.pdf_sha256, String.Empty),
                                 .PdfDimensiune = r.pdf_dimensiune,
                                 .PdfDataModif = r.pdf_data_modif,
-                                .PrintCount = r.print_count
+                                .PrintCount = r.print_count,
+                                .DeSemnat = If(r.de_semnat, String.Empty)
                             })
                         Next
                     End If

@@ -513,7 +513,8 @@ Partial Class KBotDataView
                 ' with the same button on every row -- but not when a picture is set. Slice 0085-02:
                 ' placement, face colour, padding, picture and font come from the column.
                 If Not _cellArgs.HideButton Then
-                    DrawButtonCell(g, col, cellRect, ButtonCaptionFor(col, _cellArgs.Text), _cellArgs.Font, enabled)
+                    DrawButtonCell(g, col, cellRect, ButtonCaptionFor(col, _cellArgs.Text), _cellArgs.Font, enabled,
+                                   IsButtonHovered(col.Key, rowIndex))
                 End If
             Case KBotColumnType.ProgressBar
                 DrawProgressCell(g, cellRect, ProgressFraction(value, col), enabled)
@@ -526,10 +527,13 @@ Partial Class KBotDataView
             Case Else
                 ' Slice 0085: the borderless editor draws this cell's text while it is open;
                 ' painting it too would show the old value around the caret.
+                ' A date cell keeps its right strip for the calendar button (KBotDataView.DateEditor.vb).
+                Dim k_withDate As Boolean = HasDateButton(col)
                 If Not IsEditingCell(col.Key, rowIndex) Then
-                    DrawTextCell(g, contentRect, _cellArgs.Text, _cellArgs.Font,
+                    DrawTextCell(g, If(k_withDate, DateTextRect(contentRect), contentRect), _cellArgs.Text, _cellArgs.Font,
                                  fore, _cellArgs.Alignment)
                 End If
+                If k_withDate Then DrawDateGlyph(g, contentRect, enabled)
         End Select
 
         ' Slice 0085-03: the cell's borders (default right + bottom in the grid-line colour = the

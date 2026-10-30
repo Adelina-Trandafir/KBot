@@ -523,6 +523,27 @@ Partial Class KBotDataView
     End Function
 
     ''' <summary>
+    ''' The colour the footer band is painted with now (the theme's, or the one pinned in the designer). A host uses it for a row that
+    ''' has to look like a footer (slice 0126-01); read it when painting, it changes with the theme.
+    ''' </summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property FooterBackColorInUse As Color
+        Get
+            Return FooterBackResolved()
+        End Get
+    End Property
+
+    ''' <summary>The text colour of the footer band now; pairs with <see cref="FooterBackColorInUse"/>.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public ReadOnly Property FooterForeColorInUse As Color
+        Get
+            Return FooterForeResolved()
+        End Get
+    End Property
+
+    ''' <summary>
     ''' Culoarea liniei dintre antet și corp. <c>Color.Empty</c> = accentul schemei.
     '''
     ''' <para><b>Aici NU se aplică regula întunericului</b> (<see cref="DarkOverridesDesignerColors"/>),

@@ -798,7 +798,9 @@ Public Class OrdView
 
                 ' 5. The generation itself, off the UI thread. XfaWriter logs + rethrows at
                 ' its boundary; no second catch layer here -- it lands in the one below.
-                Await Task.Run(Sub() Call Global.KBot.Xfa.XfaWriter.Genereaza(xmlPath, pdfPath, "ORD", deschidePdf:=False)).ConfigureAwait(True)
+                Dim k_xfa As Global.KBot.Xfa.XfaResult = Await Task.Run(
+                    Function() Global.KBot.Xfa.XfaWriter.Genereaza(xmlPath, pdfPath, "ORD", deschidePdf:=False)).ConfigureAwait(True)
+                If Not k_xfa.Reusit Then Return   ' not signed in: the operator was told
 
                 ' 6. Nothing written back, nothing uploaded (unsigned). Existence is decided
                 ' by probing the disk: the context is rebuilt (PdfExists just went False ->
@@ -904,6 +906,7 @@ Public Class OrdView
         EndSigning()
         Dim cachePath As String = OrdPdfLocator.ExpectedPath(KBotPaths.Current.OrdPdfRoot, o, _requestedCod)
         _signing = New PdfSigningSession(PdfDocKind.Ord, o.Idordp, pdfPath, cachePath, serverSha, _apiClient)
+        If DirectorMode.IsActive(_session) Then _signing.AllowedNewRoles = DirectorMode.SigningRoles
         AddHandler _signing.Completed, AddressOf OnSigningCompleted
         _signing.Begin()
         Return _signing
@@ -936,11 +939,27 @@ Public Class OrdView
                     SigningMessages.ShowOutcome(FindForm(), outcome)
                     ' Reload: the list brings the server's current sha, the reselect path downloads it.
                     If o IsNot Nothing Then Reincarca(o.Idordp)
+                Case PdfSigningStatus.Refused
+                    SigningMessages.ShowOutcome(FindForm(), outcome)
+                    RestoreAfterRefusalAsync(session, If(o Is Nothing, 0, o.Idordp))
                 Case Else
                     SigningMessages.ShowOutcome(FindForm(), outcome)
             End Select
         Catch ex As Exception
             GlobalErrorLog.Write("OrdView.OnSigningCompleted", ex)
+        End Try
+    End Sub
+
+    ' Slice DIR1-03: after a refused signature the document goes back to the server's, by itself (see DdfView). UI boundary.
+    Private Async Sub RestoreAfterRefusalAsync(k_session As PdfSigningSession, k_idordp As Integer)
+        Try
+            EndSigning()
+            ReleaseDocument()
+            Await SigningRestore.DeleteLocalCopiesAsync(k_session).ConfigureAwait(True)
+            If IsDisposed OrElse k_idordp <= 0 Then Return
+            Reincarca(k_idordp)
+        Catch ex As Exception
+            GlobalErrorLog.Write("OrdView.RestoreAfterRefusalAsync", ex)
         End Try
     End Sub
 

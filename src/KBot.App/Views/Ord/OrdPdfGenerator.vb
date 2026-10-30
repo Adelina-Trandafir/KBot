@@ -18,7 +18,8 @@ Friend NotInheritable Class OrdPdfGenerator
 
     ''' <summary>
     ''' Generates the document of <paramref name="ordonantare"/> and returns its path. Risky boundary
-    ''' (HTTP, XML, iTextSharp, disk): logs and re-throws.
+    ''' (HTTP, XML, iTextSharp, disk): logs and re-throws. Nothing when there is no signed-in session
+    ''' to download the template with (the operator was told).
     ''' </summary>
     Public Shared Async Function GenereazaAsync(api As IApiClient,
                                                 session As SessionContext,
@@ -57,7 +58,9 @@ Friend NotInheritable Class OrdPdfGenerator
             Dim xmlPath As String = IO.Path.ChangeExtension(pdfPath, ".xml")
             IO.File.WriteAllText(xmlPath, xml, New Text.UTF8Encoding(False))
 
-            Await Task.Run(Sub() Call Global.KBot.Xfa.XfaWriter.Genereaza(xmlPath, pdfPath, "ORD", deschidePdf:=False)).ConfigureAwait(True)
+            Dim k_xfa As Global.KBot.Xfa.XfaResult = Await Task.Run(
+                Function() Global.KBot.Xfa.XfaWriter.Genereaza(xmlPath, pdfPath, "ORD", deschidePdf:=False)).ConfigureAwait(True)
+            If Not k_xfa.Reusit Then Return Nothing   ' no template (not signed in): the operator was already told
             Return pdfPath
         Catch ex As Exception
             GlobalErrorLog.Write("OrdPdfGenerator.GenereazaAsync", ex)

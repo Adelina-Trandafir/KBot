@@ -55,6 +55,29 @@ Public NotInheritable Class OnceQuery
                " --targets " & AdminClient.Quote(String.Join(",", k_targets)) & If(k_view, " --view", " --run")
     End Function
 
+    ''' <summary>
+    ''' «Interogare pe SURSA»: the text runs on AVACONT_SURSA alone (<c>--only-source</c>); the units are not touched.
+    ''' View = show what would run and execute nothing.
+    ''' </summary>
+    Public Shared Function SourceCommand(k_settings As AdminSettings, k_name As String, k_sql As String, k_view As Boolean) As String
+        Dim k_problem As String = CheckName(k_name)
+        If k_problem = String.Empty Then k_problem = CheckSize(k_sql)
+        If k_problem <> String.Empty Then Throw New ApplicationException(k_problem)
+        Dim k_b64 As String = Convert.ToBase64String(Encoding.UTF8.GetBytes(k_sql))
+        Return Prefix(k_settings) & " --name " & AdminClient.Quote(k_name.Trim()) & " --sql-b64 " & AdminClient.Quote(k_b64) &
+               " --only-source" & If(k_view, " --view", " --run")
+    End Function
+
+    ''' <summary>
+    ''' Writes the ledger row of a query that ran on AVACONT_SURSA into the units, without executing it (<c>--mark</c>): run after the
+    ''' schema sync carried the structure, so the units do not run the text a second time.
+    ''' </summary>
+    Public Shared Function MarkCommand(k_settings As AdminSettings, k_name As String) As String
+        Dim k_problem As String = CheckName(k_name)
+        If k_problem <> String.Empty Then Throw New ApplicationException(k_problem)
+        Return Prefix(k_settings) & " --name " & AdminClient.Quote(k_name.Trim()) & " --mark"
+    End Function
+
     ''' <summary>What every database's ledger holds.</summary>
     Public Shared Function StatusCommand(k_settings As AdminSettings) As String
         Return Prefix(k_settings) & " --status"

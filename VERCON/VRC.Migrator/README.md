@@ -1,11 +1,28 @@
 # VRC.Migrator — utilizare
 
+## Prețuri storno și bonuri de retur — 30.10.2026 (SLICE-VC09-09)
+
+Versiune curentă în surse: **0.3.15.0**, reguli `VC09-STORNO-RETURN-PRICE-2026-10-30`. Recuperarea descrisă în VC09-06 se aplică acum și `IesiriRetur.PUTVA`, care este tot Long în Access. Prețul se ia din `ProduseP` numai din aceeași sursă/gestiune, pentru un întreg compatibil cu rotunjirea ToEven a prețului variantei. N20/N21 și reconcilierea acoperă distinct ambele tabele. Fără modificarea fișierelor Access.
+
+Pentru datele deja migrate, comanda este acum **KBotAdmin → Comenzi → Preturi storno si retur VERCON**, cu buton **Repară** pentru toate cazurile eligibile din baza selectată, cu proveniență din migrator, stare activă, revizii și audit. NIR-ul storno și bonul de retur sunt tratate ca documente diferite inclusiv când au același număr intern. Funcția și migratorul sunt scrise local, necompilate, nerulate și nepublicate. [Worklog VC09-09](../../docs/worklog/SLICE-VC09-09-retururi-si-rulaje-balanta.md).
+
+În aceeași etapă, balanța VERCON afișează storno la Intrări cu minus și retur la Ieșiri cu minus, pentru cantități și valori; soldul stocului se păstrează. Rapoartele generate înaintea actualizării trebuie regenerate.
+
+## Prețul storno rotunjit de coloana Long din Access — 30.10.2026 (SLICE-VC09-06)
+
+Versiune în surse: **0.3.14.0**, reguli `VC09-STORNO-PRICE-2026-10-30`. Implementat local; fără build, teste sau import.
+
+`IntrariStorno.PUTVA` este `Long` în schema Access: prețul 14,4855 se pierde ca 14. Formularul FCS (`QFCS`) și raportul Access `NIR_Storno` folosesc însă `ProduseP.PUTVA`. Migratorul recuperează acum zecimalele din varianta cu același `IdProdus`, numai din aceeași sursă și partiție/gestiune și numai dacă valoarea sursă este un întreg Access (`Int32`) egal cu rotunjirea la întreg a prețului variantei. Prețurile deja zecimale rămân neschimbate. Nu se aplică încă o dată TVA; este recuperat prețul care include deja TVA. Diferențele care nu corespund rotunjirii rămân neschimbate și sunt semnalate N21. Corecțiile N20 sunt listate cu ID și preț vechi/nou în raportul de import și intră în reconcilierea normală. Access rămâne nemodificat.
+
+Pentru datele deja migrate: **KBotAdmin → Comenzi → Prețuri storno VERCON**, pe baza selectată; butonul **Repară** corectează toate cazurile eligibile din baza respectivă, în toate gestiunile și exercițiile. Cazurile fără proveniență din migrator, modificate, anulate sau incompatibile cu rotunjirea rămân listate pentru analiză. Funcția este scrisă local, nerulată, nepublicată. Fișierele SQL specifice produsului au fost retrase la cererea utilizatorului. [Worklog VC09-06](../../docs/worklog/SLICE-VC09-06-storno-pret-si-balanta.md), [comanda generală VC09-07](../../docs/worklog/SLICE-VC09-07-kbotadmin-preturi-storno.md).
+
 ## Obiecte de inventar: primirea din OI_Predare, produs completat în registru — 21.10.2026 (SLICE-VC09-05)
 
 Versiune în surse: **0.3.11.0**. Doar sursele; nerulat.
 
 - **Contul unei scoateri (transfer/casare)** se află acum din linia de primire a bonului din `OI_Predare` (bon + produs, fără preț, ca în programul Access), nu din rândurile de primire ale `OI_Produse`, care au adesea `IdProdus` gol. Contul este `IdMasina` de pe linia din `OI_Predare`. Primirile prin bon de transfer se iau în continuare din registru, cu lanțul prin transferuri neschimbat.
 - **Produsul lipsă din registru** se completează la transfer pentru pozițiile de primire BP: se ia produsul liniei bonului din `OI_Predare` cu aceeași cantitate și același preț, numai când există exact atâtea linii libere câte poziții goale și toate au același produs. Restul rămân fără produs (raport N17) și se reglează din VERCON, butonul «Reglare registru OI». Raport N16 pentru cele completate. Fișierele Access nu se modifică.
+- **Semnul valorii în registrul OI** urmează semnul cantității: la o poziție cu cantitate negativă (partea care dă dintr-un transfer, o casare) valoarea devine negativă, la una cu cantitate pozitivă devine pozitivă. Programul Access lăsa uneori valoarea pozitivă pe rândul care dă, ceea ce lăsa un deținător cu cantitate 0 și valoare rămasă. Se schimbă numai în transfer (raport N19); fișierul Access rămâne neatins. Bazele deja migrate se repară din KBotAdmin, Comenzi, «Semne greșite registru OI», butonul «Repară».
 - Mesajele de blocaj și din secțiunea «Doar de informare» sunt rescrise în limbaj clar; blocajul X16 are titlu general și câte un rând explicit pentru fiecare poziție.
 
 Regula veche din secțiunea «Contul lotului OI/MF până la casare» (primirea căutată în `OI_Produse`, cu preț) este înlocuită de aceasta pentru primirile BP.

@@ -395,8 +395,40 @@ Public NotInheritable Class AppSettings
     ''' function», raised by the DDF / ORD scripts on open and changing nothing in the file.
     ''' </summary>
     Public Shared Function DefaultAdobeTrappedAlerts() As List(Of String)
-        Return New List(Of String) From {"GeneralError", "Operation failed", "TypeError"}
+        Return New List(Of String) From {"GeneralError", "Operation failed", "TypeError", "^No error\.?$"}
     End Function
+
+    ''' <summary>
+    ''' Version of the default list the saved <see cref="AdobeTrappedAlerts"/> has caught up with. A saved
+    ''' list replaces the defaults, so a default added later would never reach a PC whose settings were
+    ''' saved once: on load, <see cref="FromDto"/> appends the defaults of every version newer than the
+    ''' file's (<see cref="AdobeAlertDefaultsAddedIn"/>) and stamps the current one. A row the operator
+    ''' deletes after that stays deleted. Raise it, and add the entry there, whenever a default is added.
+    ''' </summary>
+    Public Const AdobeTrappedAlertsVersionCurrent As Integer = 2
+
+    Public Property AdobeTrappedAlertsVersion As Integer = AdobeTrappedAlertsVersionCurrent
+
+    ''' <summary>The default patterns introduced by <paramref name="k_version"/> (1 = the first list, nothing to add).</summary>
+    Public Shared Function AdobeAlertDefaultsAddedIn(k_version As Integer) As IReadOnlyList(Of String)
+        Select Case k_version
+            Case 2 : Return New String() {"^No error\.?$"}   ' 30.10.2026: Adobe's empty-code alert when a load is cut short
+            Case Else : Return Array.Empty(Of String)()
+        End Select
+    End Function
+
+    ' A list saved by an older build: the defaults added since are appended (once, see AdobeTrappedAlertsVersion).
+    ' An EMPTY saved list is the operator's choice («nothing is closed automatically») and stays empty.
+    Private Shared Sub CatchUpAlertDefaults(k_list As List(Of String), k_savedVersion As Integer)
+        If k_list.Count = 0 Then Return
+        For k_v As Integer = k_savedVersion + 1 To AdobeTrappedAlertsVersionCurrent
+            For Each k_pattern As String In AdobeAlertDefaultsAddedIn(k_v)
+                If Not k_list.Any(Function(k_p) String.Equals(k_p, k_pattern, StringComparison.OrdinalIgnoreCase)) Then
+                    k_list.Add(k_pattern)
+                End If
+            Next
+        Next
+    End Sub
 
     ''' <summary>
     ''' How the Excel ribbon is taken down in the hosted preview: «Excel4Macro» or
@@ -700,6 +732,7 @@ Public NotInheritable Class AppSettings
             .AcroPdfSaveAfterSignature = AcroPdfSaveAfterSignature,
             .AdobeClassicUi = AdobeClassicUi,
             .AdobeTrappedAlerts = AdobeTrappedAlerts?.ToList(),
+            .AdobeTrappedAlertsVersion = AdobeTrappedAlertsVersion,
             .ExcelRibbon = ExcelRibbon,
             .TreeSort = TreeSort,
             .TreeSortDescending = TreeSortDescending,
@@ -787,6 +820,8 @@ Public NotInheritable Class AppSettings
             s.AdobeTrappedAlerts = dto.AdobeTrappedAlerts.
                 Where(Function(p) Not String.IsNullOrWhiteSpace(p)).
                 Select(Function(p) p.Trim()).ToList()
+            ' A file without the version is from before it existed = version 1.
+            CatchUpAlertDefaults(s.AdobeTrappedAlerts, If(dto.AdobeTrappedAlertsVersion, 1))
         End If
         If Not String.IsNullOrWhiteSpace(dto.ExcelRibbon) Then s.ExcelRibbon = dto.ExcelRibbon.Trim()
         If Not String.IsNullOrWhiteSpace(dto.TreeSort) Then s.TreeSort = dto.TreeSort.Trim()
@@ -863,6 +898,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property AcroPdfSaveAfterSignature As Boolean?
     Public Property AdobeClassicUi As Boolean?
     Public Property AdobeTrappedAlerts As List(Of String)
+    Public Property AdobeTrappedAlertsVersion As Integer?
     Public Property ExcelRibbon As String
     Public Property TreeSort As String
     Public Property TreeSortDescending As Boolean?

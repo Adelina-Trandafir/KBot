@@ -43,6 +43,7 @@ Partial Class LocalBackupView
         btnHistory = New KBotButton()
         btnPurge = New KBotButton()
         btnDelete = New KBotButton()
+        btnProfile = New KBotButton()
         tlySplit = New KBotTableLayoutPanel()
         gridSnaps = New KBotDataView()
         gridTables = New KBotDataView()
@@ -77,13 +78,14 @@ Partial Class LocalBackupView
         ' tlyBar
         '
         tlyBar.AutoFitToTheme = False
-        tlyBar.ColumnCount = 9
+        tlyBar.ColumnCount = 10
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 84F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 92F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 128F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 92F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 104F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 108F))
+        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 84F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 84F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 84F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
@@ -95,6 +97,7 @@ Partial Class LocalBackupView
         tlyBar.Controls.Add(btnHistory, 5, 0)
         tlyBar.Controls.Add(btnPurge, 6, 0)
         tlyBar.Controls.Add(btnDelete, 7, 0)
+        tlyBar.Controls.Add(btnProfile, 8, 0)
         tlyBar.Dock = DockStyle.Fill
         tlyBar.Location = New Point(8, 8)
         tlyBar.Margin = New Padding(0)
@@ -200,6 +203,18 @@ Partial Class LocalBackupView
         btnDelete.Text = "Șterge"
         tips.SetToolTipHeader(btnDelete, "Șterge copia aleasă")
         tips.SetToolTipText(btnDelete, "Șterge definitiv copia aleasă în listă (și fișierele pe care nu le mai folosește nicio altă copie). Copiile făcute de mână se șterg doar așa, nu prin Curăță.")
+        '
+        ' btnProfile
+        '
+        btnProfile.Dock = DockStyle.Fill
+        btnProfile.Location = New Point(760, 0)
+        btnProfile.Margin = New Padding(0, 2, 6, 6)
+        btnProfile.Name = "btnProfile"
+        btnProfile.Size = New Size(78, 36)
+        btnProfile.TabIndex = 8
+        btnProfile.Text = "Profil"
+        tips.SetToolTipHeader(btnProfile, "Profilul ultimei copii")
+        tips.SetToolTipText(btnProfile, "Arată cât a durat ultima copie a bazei alese (sau a fiecărei baze, dacă ați ales «toate»): fazele, apoi fiecare tabelă cu ce a făcut serverul cu ea și cât a durat. Raportul e și în Logs\backup_profile\.")
         '
         ' tlySplit
         '
@@ -450,6 +465,7 @@ Partial Class LocalBackupView
     Friend WithEvents btnExport As KBotButton
     Friend WithEvents btnHistory As KBotButton
     Friend WithEvents btnPurge As KBotButton
+    Friend WithEvents btnProfile As KBotButton
     Friend WithEvents btnDelete As KBotButton
     Friend WithEvents tlySplit As KBotTableLayoutPanel
     Friend WithEvents gridSnaps As KBotDataView

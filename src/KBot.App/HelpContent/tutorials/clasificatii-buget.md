@@ -47,12 +47,10 @@ target: ClasificatiiBugetView.gridBuget
 Fiecare rând este <b>bugetul de la data din «Început» încolo</b>, pe cele patru trimestre. Documentul de fundamentare citește bugetul de la data revizuirii. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Adaugă o versiune
-<!-- slice: 000T-10 -->
+<!-- slice: 000T-10, 0126-02 -->
 target: ClasificatiiBugetView.gridBuget
-part: footer.right
-wait: click
-Apasă <b>«+»</b> din subsolul tabelului. Apare un rând nou, pe care îl completezi direct în tabel.<BR>
-<mark>Prima versiune a anului începe la 01.01; următoarele propun data de azi, ziua în care se schimbă de obicei un buget.</mark>
+O versiune nouă se adaugă scriind în <b>rândul gol</b> de la sfârșitul tabelului: un clic în el și scrii. Devine rând nou, iar dedesubt apare altul gol.<BR>
+<mark>Prima versiune a anului începe la 01.01; următoarele propun data de azi, ziua în care se schimbă de obicei un buget.</mark> Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Completează rândul
 <!-- slice: 000T-10, 000T-13 -->

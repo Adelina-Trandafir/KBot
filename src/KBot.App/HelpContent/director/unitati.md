@@ -1,36 +1,26 @@
 ---
 id: director.unitati
-title: Documente din alte unități
+title: Mai multe unități
 part: director
 order: 20
 parent: director
+screens: KBotCaptionBar
 keywords: unitate, alta unitate, autentificare, conectare, schimbare unitate, parola
 ---
-<!-- slice: 0081-06 -->
-Lista arată documentele din **toate** unitățile tale, dar K-BOT lucrează, la un moment dat, pe o
-**singură** unitate: cea aleasă la conectare. Unitatea de acum se vede în colțul din stânga jos,
-lângă numele tău.
+<!-- slice: DIR1-01, 0000-141, 0081-06 -->
+K-BOT lucrează, la un moment dat, pe o **singură** unitate: cea aleasă la conectare. Numele ei se
+vede în bara de titlu, după «K-BOT».
 
-Când alegi un document din **altă** unitate:
-
-1. K-BOT întreabă: «Documentul este în unitatea ..., iar sesiunea de acum este pe .... Pentru a-l
-   deschide și semna vă autentificați pe acea unitate. Continuați?»
-2. La **Da** se deschide fereastra de conectare, cu **unitatea documentului deja aleasă**.
-3. Te conectezi ca de obicei (inclusiv parola).
-4. Documentul se deschide în dreapta. Conectarea pe unitatea veche se închide singură.
-
-Lista rămâne aceeași: poți trece de la o unitate la alta oricât, iar fiecare trecere cere o nouă
-conectare.
+Dacă ai rolul de director în **două sau mai multe** unități, numele unității din bara de titlu e o
+listă. Alegi altă unitate și lista angajamentelor se schimbă pe loc, **fără să-ți ceară parola din
+nou**. În listă apar doar unitățile în care ești director.
 
 ## Mesaje posibile
-<!-- slice: 0081-06 -->
+<!-- slice: DIR1-01, 0000-141 -->
 
 | Mesaj | Ce faci |
 |-------|---------|
-| «Pe unitatea aleasă nu aveți rolul Director.» | în fereastra de conectare ai ales altă unitate sau alt utilizator; alege documentul din nou și conectează-te pe unitatea lui |
-| «V-ați autentificat pe altă unitate decât cea a documentului.» | ai schimbat unitatea în fereastra de conectare; alege documentul din nou |
-
-Dacă renunți la conectare, rămâi pe unitatea de dinainte, iar documentul nu se deschide.
+| «Pe unitatea ... nu aveți rolul «Director»: ea se deschide cu o autentificare nouă, ca contabil.» | unitatea nu e de director; dacă vrei să lucrezi pe ea, închide K-BOT și conectează-te din nou |
 
 > Dacă stai mult fără să lucrezi, conectarea expiră. K-BOT îți cere atunci să te conectezi din
 > nou pe **aceeași** unitate și reia ce făceai.

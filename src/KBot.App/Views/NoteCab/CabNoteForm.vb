@@ -22,6 +22,13 @@ Imports KBot.Theming
 ''' one). A complete row gets its tick in the first column. «Salvează tot» is enabled only when
 ''' EVERY row is ticked, and saves them ALL at once, all or nothing.</para>
 '''
+''' <para><b>Omitted rows</b> (operator, slice 0088-06): a row made by hand in FOREXE, with no documents in
+''' K-BOT, cannot be corrected from here. «Omite rândul» marks it omitted ON THE SERVER
+''' (<c>FX_Operatiuni.Omis</c>) and it leaves the grid: it is no longer asked for here, nor counted by the menu
+''' and the ribbon, until it is brought back by hand. That happens in the same window opened from
+''' «Operațiuni omise» (<c>skippedMode</c>): it lists ONLY the omitted rows, read-only, and «Reia rândul» sends
+''' the chosen one back to «Operațiuni necorelate». «Salvează tot» then covers the rows left in the grid.</para>
+'''
 ''' <para><b>Note numbers</b> (operator, slice 0088-05): the number is per row. Choosing an
 ''' angajament already chosen on another row brings that row's number; a new angajament gets the
 ''' next number free on the server and in this window. One number = one note = one PDF. A number
@@ -46,6 +53,10 @@ Public Class CabNoteForm
     Private ReadOnly _operations As List(Of UncorrectedOperation)
     Private ReadOnly _preparation As CabNotePreparation
     Private ReadOnly _api As ICabNotesApi
+    ' Slice 0088-06: omit / bring back; Nothing = the button stays off.
+    Private ReadOnly _opsApi As IUncorrectedOperationsApi
+    ' True = the window of «Operațiuni omise»: only the omitted rows, nothing to fill or save.
+    Private ReadOnly _skippedMode As Boolean
     Private ReadOnly _uploadToCab As Func(Of IWin32Window, CabCorrectionNote, String, Task(Of Boolean))
     Private ReadOnly _unitName As String
     Private ReadOnly _unitTaxCode As String
@@ -55,6 +66,9 @@ Public Class CabNoteForm
     ' Slice 0088-05: operation index -> the note number typed for it (text, as typed). One note per
     ' number: rows on the same angajament share it, each new angajament gets its own.
     Private ReadOnly _numberTexts As New Dictionary(Of Integer, String)()
+    ' Slice 0088-06: what the operator filled for a row, kept by FX_Operatiuni.IDFXP while the grid is rebuilt
+    ' (a row leaves it when it is omitted).
+    Private ReadOnly _stash As New Dictionary(Of Integer, StashedRow)()
     ' What the two combos hold, in their order.
     Private ReadOnly _offeredCommitments As New List(Of CabCommitment)()
     Private ReadOnly _offeredIndicators As New List(Of CabCommitmentIndicator)()
@@ -73,15 +87,20 @@ Public Class CabNoteForm
     ''' <param name="operations">The ERR operations to correlate.</param>
     ''' <param name="preparation">Next number and the unit's angajamente with their indicators.</param>
     ''' <param name="uploadToCab">The shell's «upload into CAB» step (asks, uploads, records).</param>
+    ''' <param name="opsApi">Omits / brings back rows (slice 0088-06); Nothing = no such button.</param>
+    ''' <param name="skippedMode">Opens the list of omitted rows (<paramref name="preparation"/> may be Nothing).</param>
     Public Sub New(operations As IEnumerable(Of UncorrectedOperation), preparation As CabNotePreparation,
                    api As ICabNotesApi, unitName As String, unitTaxCode As String,
-                   uploadToCab As Func(Of IWin32Window, CabCorrectionNote, String, Task(Of Boolean)))
-        ArgumentNullException.ThrowIfNull(preparation)
+                   uploadToCab As Func(Of IWin32Window, CabCorrectionNote, String, Task(Of Boolean)),
+                   Optional opsApi As IUncorrectedOperationsApi = Nothing, Optional skippedMode As Boolean = False)
+        If Not skippedMode Then ArgumentNullException.ThrowIfNull(preparation)
         ArgumentNullException.ThrowIfNull(api)
         InitializeComponent()
         _operations = If(operations, Enumerable.Empty(Of UncorrectedOperation)()).Where(Function(o) o IsNot Nothing).ToList()
-        _preparation = preparation
+        _preparation = If(preparation, New CabNotePreparation())
         _api = api
+        _opsApi = opsApi
+        _skippedMode = skippedMode
         _uploadToCab = uploadToCab
         _unitName = If(unitName, String.Empty)
         _unitTaxCode = If(unitTaxCode, String.Empty)
@@ -96,41 +115,65 @@ Public Class CabNoteForm
         Try
             _loading = True
             Try
-                capBar.Text = $"K-BOT — Operațiuni necorelate ({_operations.Count})"
-                Text = capBar.Text
                 txtDenumire.Text = CabCorrectionNoteRules.EntityName(_unitName)
                 txtCif.Text = CabCorrectionNoteRules.TaxCode(_unitTaxCode)
-
-                grdOperatii.ClearRows()
-                For i As Integer = 0 To _operations.Count - 1
-                    Dim op As UncorrectedOperation = _operations(i)
-                    _drafts(i) = NewDraft(op)
-                    _numberTexts(i) = String.Empty
-                    Dim row As KBotDataRow = grdOperatii.AddRow()
-                    row(ColDone) = False
-                    row(ColReference) = op.TreasuryReference
-                    row(ColDocument) = op.DocumentNumber
-                    row(ColDate) = If(op.PaymentDate.HasValue, CabCorrectionNoteRules.FormDate(op.PaymentDate.Value), String.Empty)
-                    row(ColKind) = op.Kind
-                    row(ColSsi) = DisplaySsi(op)
-                    If op.Amount.HasValue Then row(ColAmount) = CDbl(op.Amount.Value)
-                    row(ColState) = "De completat"
-                    row.Tag = op
-                Next
+                PopulateGrid()
+                If _skippedMode Then SetEditorsEnabled(False)   ' only «Reia rândul» works there
             Finally
                 _loading = False
             End Try
-            If _operations.Count > 0 Then
-                grdOperatii.CurrentRowIndex = 0
-                ShowOperation(0)
-            Else
-                lblStare.Text = "Nu există operațiuni «ERRRRRRRRRR» necorelate."
-            End If
-            UpdateSaveEnabled()
+            ShowFirstOperation()
         Catch ex As Exception
             GlobalErrorLog.Write("CabNoteForm.OnLoad", ex)
             lblStare.Text = "Fereastra nu s-a putut pregăti. Detalii în jurnalul de erori."
         End Try
+    End Sub
+
+    ''' <summary>
+    ''' (Re)builds the grid from <see cref="_operations"/>: a row the operator already filled keeps its
+    ''' draft and number (by IDFXP), every other starts empty. The caller holds <c>_loading</c>.
+    ''' </summary>
+    Private Sub PopulateGrid()
+        capBar.Text = If(_skippedMode, $"K-BOT — Operațiuni omise ({_operations.Count})",
+                         $"K-BOT — Operațiuni necorelate ({_operations.Count})")
+        Text = capBar.Text
+        grdOperatii.ClearRows()
+        _drafts.Clear()
+        _numberTexts.Clear()
+        For i As Integer = 0 To _operations.Count - 1
+            Dim op As UncorrectedOperation = _operations(i)
+            Dim kept As StashedRow = Nothing
+            If _stash.TryGetValue(op.IdFxp, kept) Then
+                _drafts(i) = kept.Draft
+                _numberTexts(i) = kept.NumberText
+            Else
+                _drafts(i) = NewDraft(op)
+                _numberTexts(i) = String.Empty
+            End If
+            Dim row As KBotDataRow = grdOperatii.AddRow()
+            row(ColDone) = False
+            row(ColReference) = op.TreasuryReference
+            row(ColDocument) = op.DocumentNumber
+            row(ColDate) = If(op.PaymentDate.HasValue, CabCorrectionNoteRules.FormDate(op.PaymentDate.Value), String.Empty)
+            row(ColKind) = op.Kind
+            row(ColSsi) = DisplaySsi(op)
+            If op.Amount.HasValue Then row(ColAmount) = CDbl(op.Amount.Value)
+            row(ColState) = If(_skippedMode, "Omisă", "De completat")
+            row.Tag = op
+        Next
+    End Sub
+
+    ' The first row on screen, or the line that says there is none.
+    Private Sub ShowFirstOperation()
+        _current = -1
+        If _operations.Count > 0 Then
+            grdOperatii.CurrentRowIndex = 0
+            ShowOperation(0)
+        Else
+            lblStare.Text = If(_skippedMode, "Nu există operațiuni omise.",
+                               "Nu mai există operațiuni «ERRRRRRRRRR» de corectat.")
+        End If
+        UpdateSaveEnabled()
     End Sub
 
     ' What a row starts with: everything FOREXE told about the operation; angajament and
@@ -194,8 +237,8 @@ Public Class CabNoteForm
         Finally
             _loading = False
         End Try
-        ShowRowState(index)
-        If _saved Is Nothing AndAlso String.IsNullOrEmpty(d.CommitmentCode) Then ActiveControl = cmbAngajament
+                ShowRowState(index)
+        If _saved Is Nothing AndAlso Not _skippedMode AndAlso String.IsNullOrEmpty(d.CommitmentCode) Then ActiveControl = cmbAngajament
     End Sub
 
     ' The unit's angajamente, those with an indicator on the operation's SS + classification first.
@@ -374,6 +417,14 @@ Public Class CabNoteForm
 
     ''' <summary>The row's tick, its «Stare» cell and the line under the editors.</summary>
     Private Sub ShowRowState(index As Integer)
+        If _skippedMode Then
+            ' Read-only list: the rows are greyed and only «Reia rândul» works.
+            grdOperatii.Rows(index).Enabled = False
+            grdOperatii.InvalidateRow(index)
+            If index = _current Then lblStare.Text = "Rând omis: nu se cere în «Operațiuni necorelate». «Reia rândul» îl aduce înapoi."
+            UpdateSaveEnabled()
+            Return
+        End If
         Dim problems As List(Of String) = RowProblems(index)
         Dim done As Boolean = problems.Count = 0
         If _saved Is Nothing Then
@@ -402,11 +453,69 @@ Public Class CabNoteForm
         Return Enumerable.Range(0, _operations.Count).Where(Function(i) RowProblems(i).Count = 0).Count()
     End Function
 
-    ' Trivial: enabled only when EVERY row is complete (operator, 28.09.2026).
+    ' Trivial: enabled only when EVERY row is complete (operator, 28.09.2026). Never in the list of omitted rows.
     Private Sub UpdateSaveEnabled()
-        btnSalveaza.Enabled = _saved Is Nothing AndAlso Not _saving AndAlso _operations.Count > 0 AndAlso
+        btnSalveaza.Enabled = Not _skippedMode AndAlso _saved Is Nothing AndAlso Not _saving AndAlso _operations.Count > 0 AndAlso
                               CompleteCount() = _operations.Count
+        btnOmite.Enabled = _opsApi IsNot Nothing AndAlso _saved Is Nothing AndAlso Not _saving AndAlso _current >= 0 AndAlso
+                           _current < _operations.Count
+        btnOmite.Text = If(_skippedMode, "Reia rândul", "Omite rândul")
     End Sub
+
+    ''' <summary>
+    ''' Slice 0088-06: «Omite rândul» (the grid) / «Reia rândul» (the list of omitted rows). Both are stored on the server
+    ''' at once; the row then leaves this grid. UI boundary (async Sub): log and tell, never rethrow.
+    ''' </summary>
+    Private Async Sub btnOmite_Click(sender As Object, e As EventArgs) Handles btnOmite.Click
+        Try
+            If _opsApi Is Nothing OrElse _saved IsNot Nothing OrElse _saving OrElse _current < 0 OrElse _current >= _operations.Count Then Return
+            Dim op As UncorrectedOperation = _operations(_current)
+            If Not _skippedMode Then
+                Dim question As String = $"Omiți operațiunea {op.TreasuryReference} / nr. {op.DocumentNumber}?" & Environment.NewLine & Environment.NewLine &
+                                         "Rândul dispare din «Operațiuni necorelate» și nu mai este numărat în meniu, până îl reiei din " &
+                                         "Meniu → «Operațiuni omise»."
+                If KBotMessage.Show(Me, question, "Nota de corecție", MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
+            End If
+            btnOmite.Enabled = False
+            Dim k_ids As New List(Of Integer) From {op.IdFxp}
+            Try
+                Await _opsApi.SetOperationsSkippedAsync(k_ids, Not _skippedMode, CancellationToken.None)
+            Catch ex As ApiException
+                GlobalErrorLog.Write("CabNoteForm.btnOmite_Click.Save", ex)
+                KBotMessage.Show(Me, "Nu s-a salvat nimic: " & ex.Message, "Nota de corecție", MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            Finally
+                UpdateSaveEnabled()
+            End Try
+            RemoveRowOf(op)
+        Catch ex As Exception
+            GlobalErrorLog.Write("CabNoteForm.btnOmite_Click", ex)
+            KBotMessage.Show(Me, "Rândul nu a putut fi " & If(_skippedMode, "reluat", "omis") & ": " & ex.Message, "Nota de corecție",
+                             MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ' The row stored as omitted / brought back leaves this grid; what the operator filled on the others stays.
+    Private Sub RemoveRowOf(op As UncorrectedOperation)
+        For i As Integer = 0 To _operations.Count - 1
+            _stash(_operations(i).IdFxp) = New StashedRow With {.Draft = _drafts(i), .NumberText = _numberTexts(i)}
+        Next
+        _stash.Remove(op.IdFxp)
+        _operations.Remove(op)
+        _loading = True
+        Try
+            PopulateGrid()
+        Finally
+            _loading = False
+        End Try
+        ShowFirstOperation()
+    End Sub
+
+    ''' <summary>What the operator filled for a row, kept while the grid is rebuilt.</summary>
+    Private NotInheritable Class StashedRow
+        Public Property Draft As CabNoteCorrection
+        Public Property NumberText As String
+    End Class
 
     ' ══════════════════════════════════════════════════════════════════════════
     ' Saving -- ALL rows, one note per number (slice 0088-05)

@@ -23,12 +23,17 @@ Public Class PlaceholderView
     Private ReadOnly _displayName As String
     Private _info As AngajamentTreeInfo
 
-    Public Sub New(viewKey As String, displayName As String)
+    ' A fixed sentence instead of «name — în lucru»: the page that says there is nothing to show yet (the director's shell,
+    ' before an angajament with a document is picked). Nothing = the work-in-progress text.
+    Private ReadOnly _message As String
+
+    Public Sub New(viewKey As String, displayName As String, Optional k_message As String = Nothing)
         If String.IsNullOrWhiteSpace(viewKey) Then Throw New ArgumentException("Cheie vidă.", NameOf(viewKey))
         If String.IsNullOrWhiteSpace(displayName) Then Throw New ArgumentException("Nume vid.", NameOf(displayName))
         InitializeComponent()
         _viewKey = viewKey
         _displayName = displayName
+        _message = k_message
         UpdateText()
         ' Vederea se creează ascunsă (shell-ul o arată după ce o andochează), deci pornirea NU se
         ' face aici — o face VisibleChanged. Dacă vine deja vizibilă, tot el o prinde.
@@ -40,7 +45,7 @@ Public Class PlaceholderView
     ''' </summary>
     Private Sub Placeholder_VisibleChanged(sender As Object, e As EventArgs) Handles Me.VisibleChanged
         Try
-            busy.Running = Visible
+            busy.Running = Visible AndAlso String.IsNullOrEmpty(_message)   ' a fixed sentence is not work in progress
         Catch ex As Exception
             GlobalErrorLog.Write("PlaceholderView.VisibleChanged", ex)
         End Try
@@ -64,6 +69,10 @@ Public Class PlaceholderView
 
     Private Sub UpdateText()
         Try
+            If Not String.IsNullOrEmpty(_message) Then
+                lblMessage.Text = _message
+                Return
+            End If
             Dim text As String = $"«{_displayName}» — în lucru"
             If _info IsNot Nothing AndAlso Not String.IsNullOrEmpty(_info.CodAngajament) Then
                 text &= Environment.NewLine & Environment.NewLine & "Angajament: " & _info.CodAngajament

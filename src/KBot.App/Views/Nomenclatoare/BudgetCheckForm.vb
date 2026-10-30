@@ -44,8 +44,8 @@ Public Class BudgetCheckForm
 
     ''' <summary>
     ''' Reads the check from the server and shows it. With <paramref name="showWhenEqual"/> False the
-    ''' window opens only when something differs (the automatic check after a download); True always
-    ''' opens it (the operator asked). Returns the number of differences. Never throws: a failed read
+    ''' window opens only when something differs; True always opens it (the operator asked; the only
+    ''' caller today, «Verifica bugetul» in Clasificatii). Returns the number of differences. Never throws: a failed read
     ''' is told to the operator.
     ''' </summary>
     Public Shared Async Function RunAsync(owner As IWin32Window, api As INomenclatoareApi, gate As ReauthGate,

@@ -167,6 +167,7 @@ Partial Class KBotDataView
         Dim k_changed As New List(Of Integer)()
         For Each k_row As Integer In GroupModelRows(k_band.GroupIndex)
             If ToBool(_rows(k_row)(CheckColumnKey)) = k_target OrElse Not IsCellEnabled(CheckColumnKey, k_row) Then Continue For
+            _rows(k_row).CaptureBaseline()
             _rows(k_row)(CheckColumnKey) = k_target
             _rows(k_row).IsDirty = True
             k_changed.Add(k_row)

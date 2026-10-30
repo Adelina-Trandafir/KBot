@@ -27,6 +27,8 @@ Partial Public Class KbotForm
 
     Private Const CabNoteCaption As String = "Nota de corecție CAB"
     Private Const UncorrelatedMenuKey As String = "operatiuni_necorelate"
+    ' Slice 0088-06: the operations the operator omitted; shown only while there are some, without the «(!)» mark.
+    Friend Const SkippedMenuKey As String = "operatiuni_omise"
     Private Const MenuButtonText As String = "  Meniu"
     Private Const MenuButtonMarkedText As String = "  Meniu  (!)"
 
@@ -96,19 +98,25 @@ Partial Public Class KbotForm
             Dim prep As CabNotePreparation = Await WithReauth(
                 Function() notesApi.GetCabNotePreparationAsync(CancellationToken.None))
 
+            Dim k_saved As Boolean
             _uncorrelatedOpen = True
             Try
                 Using f As New CabNoteForm(shown, prep, notesApi, _session.NumeUnitate, _session.CF,
-                                           AddressOf UploadCabNoteAsync)
+                                           AddressOf UploadCabNoteAsync, opsApi)
                     If Not Await ShowModalAsync(f, MachetaRef.Create(MachetaCabNote)) Then Return
                     If f.SavedNotes.Count > 0 Then
-                        TryCast(_activeView, NoteCabView)?.Reincarca()
+                        k_saved = True
+                        ' Raised at once, so the entry shows even if the reload below fails.
                         AprindePoartaNotelor(f.SavedNotes)
                     End If
                 End Using
             Finally
                 _uncorrelatedOpen = False
             End Try
+            ' Operator, 29.10.2026: the notes just saved must show in the navigation without reopening the app. The note
+            ' may belong to an angajament other than the one on screen, so the tree is read again (the selection kept):
+            ' that refreshes every flag, and the view on screen gets its context again (NoteCabView reloads its notes).
+            If k_saved Then Await LoadTreeAsync(pastreazaSelectia:=True)
             Await RefreshUncorrelatedMarkAsync()
         Catch ex As ApiException
             GlobalErrorLog.Write("MainForm.ShowUncorrelatedAsync", ex)
@@ -121,9 +129,64 @@ Partial Public Class KbotForm
         End Try
     End Function
 
+    ' UI boundary: the menu handler is synchronous.
+    Private Sub OpenSkippedFromMenu()
+        ShowSkippedFireAndForget()
+    End Sub
+
+    Private Async Sub ShowSkippedFireAndForget()
+        Try
+            Await ShowSkippedAsync()
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ShowSkippedFireAndForget", ex)
+        End Try
+    End Sub
+
     ''' <summary>
-    ''' Counts the uncorrelated ERR operations and shows / hides the menu entry and the «(!)» mark.
-    ''' Never throws: a count that cannot be read leaves the mark as it was (logged).
+    ''' Slice 0088-06: the window of «Operațiuni omise» -- ONLY the operations the operator omitted, read-only, with
+    ''' «Reia rândul» to send one back to «Operațiuni necorelate». Never throws.
+    ''' </summary>
+    Friend Async Function ShowSkippedAsync() As Task
+        Try
+            If _uncorrelatedOpen Then Return
+            Dim opsApi As IUncorrectedOperationsApi = TryCast(_apiClient, IUncorrectedOperationsApi)
+            Dim notesApi As ICabNotesApi = TryCast(_apiClient, ICabNotesApi)
+            If opsApi Is Nothing OrElse notesApi Is Nothing Then Throw New InvalidOperationException("The API client does not implement the slice 0088 interfaces.")
+
+            Dim skipped As List(Of UncorrectedOperation) = Await WithReauth(
+                Function() opsApi.GetSkippedOperationsAsync(CancellationToken.None))
+            MarkSkipped(skipped.Count)
+            If skipped.Count = 0 Then
+                KBotMessage.Show(Me, "Nu există operațiuni omise.", CabNoteCaption, MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            If IsDisposed OrElse Disposing Then Return
+
+            _uncorrelatedOpen = True
+            Try
+                Using f As New CabNoteForm(skipped, Nothing, notesApi, _session.NumeUnitate, _session.CF,
+                                           AddressOf UploadCabNoteAsync, opsApi, skippedMode:=True)
+                    Await ShowModalAsync(f, MachetaRef.Create(MachetaCabOmise))
+                End Using
+            Finally
+                _uncorrelatedOpen = False
+            End Try
+            ' Some rows may have gone back to «Operațiuni necorelate».
+            Await RefreshUncorrelatedMarkAsync()
+        Catch ex As ApiException
+            GlobalErrorLog.Write("MainForm.ShowSkippedAsync", ex)
+            KBotMessage.Show(Me, "Operațiunile omise nu pot fi citite: " & ex.Message,
+                             CabNoteCaption, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ShowSkippedAsync", ex)
+            KBotMessage.Show(Me, "Operațiunile omise nu pot fi citite. Detalii în jurnalul de erori.",
+                             CabNoteCaption, MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Function
+
+    ''' <summary>
+    ''' Counts the uncorrelated ERR operations and shows / hides the menu entry and the «(!)» mark, and the omitted
+    ''' ones for the «Operațiuni omise» entry. Never throws: a count that cannot be read leaves the mark as it was (logged).
     ''' </summary>
     Private Async Function RefreshUncorrelatedMarkAsync() As Task
         Try
@@ -132,10 +195,23 @@ Partial Public Class KbotForm
             Dim all As List(Of UncorrectedOperation) = Await WithReauth(
                 Function() opsApi.GetUncorrelatedOperationsAsync(CancellationToken.None))
             MarkUncorrelated(all.Count)
+            Dim skipped As List(Of UncorrectedOperation) = Await WithReauth(
+                Function() opsApi.GetSkippedOperationsAsync(CancellationToken.None))
+            MarkSkipped(skipped.Count)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.RefreshUncorrelatedMarkAsync", ex)
         End Try
     End Function
+
+    ' Slice 0088-06: «Operațiuni omise (N)» -- a quiet entry (no «(!)», no red) that exists only to bring rows back.
+    Private Sub MarkSkipped(count As Integer)
+        If IsDisposed Then Return
+        Dim item As KBotMenuItem = menuNou.Items.FirstOrDefault(Function(i) String.Equals(i.Key, SkippedMenuKey, StringComparison.Ordinal))
+        If item Is Nothing Then Throw New InvalidOperationException($"The menu has no «{SkippedMenuKey}» entry (KbotForm.Designer.vb).")
+        item.Visible = count > 0
+        item.Text = $"Operațiuni omise ({count})"
+        RaiseEvent MenuStateChanged(Me, EventArgs.Empty)   ' the ribbon in AvacontMain follows (KbotForm.Host.vb)
+    End Sub
 
     Private Sub MarkUncorrelated(count As Integer)
         If IsDisposed Then Return
@@ -161,6 +237,11 @@ Partial Public Class KbotForm
     Friend Async Function UploadCabNoteAsync(owner As IWin32Window, note As CabCorrectionNote, pdfPath As String) As Task(Of Boolean)
         Try
             If note Is Nothing Then Return False
+            ' A director reads the notes; the upload into CAB drives FOREXE and is the accountant's.
+            If ModDirector Then
+                KBotMessage.Show(owner, DirectorMode.ReadOnlyMessage, CabNoteCaption, MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return False
+            End If
             If String.IsNullOrWhiteSpace(pdfPath) OrElse Not File.Exists(pdfPath) Then
                 KBotMessage.Show(owner, "PDF-ul notei nu există pe acest calculator; deschideți pagina «Document» a notei ca să-l generați.",
                                  CabNoteCaption, MessageBoxButtons.OK, MessageBoxIcon.Warning)

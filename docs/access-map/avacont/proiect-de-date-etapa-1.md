@@ -49,7 +49,7 @@ sau e in sabloane; schimbarea `Cod` blocata daca are operatii (propunere, lipses
 
 **TZ_Sablon** (antet) - `IdSablon` PK, `Explicatie`, `Fel` char(1) (E/P/A), `IdJurnal` FK, `Compartiment` varchar(50) NULL,
 `FelOP` varchar(50) NULL, `Cheie` varchar(30) NULL (cheia clasificatiei `65.01.XX.XX.57.02.02`, doar cand sablonul e legat de o
-clasificatie), `Tip` char(1) (A/C/M, **pastrat ca in Access pana se afla sensul lui M**), `Activ`.
+clasificatie), `Tip` char(1) (**M / A, decis 27.10.2026**: `M` = operatie cu clasificatie si partener pe O singura parte, fix sau variabil; `A` = alte operatii, pot lipsi si partenerul si clasificatia; in Access `C` si `M` -> `M`), `Activ`. **Numele tabelelor: `TZ_SablonOperatii` / `TZ_SablonOperatiiLinie`** (in loc de `TZ_Sablon*`), iar cele de salarii `TZ_SablonSalarii*`.
 **TZ_SablonLinie** - `IdLinie` PK, `IdSablon` FK, `Forma` varchar(5) (subcapitol), `Explicatie`, `ContDebit`, `ContCredit`
 (int(11), FK `AVACONT_COMUN.DefaCont.Simbol`: DOAR contul de baza, decis), `PartDebitMod`/`PartCreditMod` enum(`NIMIC`,`OPERATIE`,`FIX`),
 `IdPartDebit`/`IdPartCredit` FK `Parteneri` NULL (obligatoriu cand mod = `FIX`), `Ordonantare`, `PA`, `Chelt` tinyint, `Simpla`
@@ -105,7 +105,7 @@ view in `KBot.App\Views\`, buton in ribbon (tab Configurari), ajutor `0000-NN`, 
 
 ## 8. Ce NU stiu inca (DE VERIFICAT / DE CONFIRMAT)
 
-- `Tip = M` la antetul de sablon; `DefaNote.Tip` (1/2/4) si `Simpla`.
+- `DefaNote.Tip` (1/2/4) si `Simpla`. (`Tip` de antet M/A: hotarat 27.10.2026, vezi mai sus.)
 - Sector si sursa la TOATE conturile din `DefaCont` (bifele din Access lipsesc) - de confirmat; 818 vs 991 de randuri (gruparile de 3 cifre au disparut?).
 - `ParteneriForm`/0121-0123: impun cod fiscal? (conditioneaza analiticele fara CF).
 - (Rezolvat) planul de conturi pe subunitate; `TZ_Subunitati` fara legatura cu `VC_Subunitati`.

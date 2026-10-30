@@ -105,15 +105,19 @@ Public NotInheritable Class DdfXmlBuilder
                                          Optional mode As DdfPdfMode = DdfPdfMode.Final,
                                          Optional capturi As IEnumerable(Of String) = Nothing) As String
         Dim interim As Boolean = mode = DdfPdfMode.Interim
+        Dim onlyA As Boolean = mode = DdfPdfMode.OnlyA
         ' Slice 0078-04: the interim document carries a PLACEHOLDER section B (code and indicator only), ticked --
         ' with section B empty the form's «Valideaza» button never enables the signature field.
-        If interim Then ctx = InterimContext(ctx)
-        Dim sb As IEnumerable(Of SectiuneBRow) = If(interim, InterimSectionB(linii, antet, sbRows), sbRows)
+        If interim OrElse onlyA Then ctx = InterimContext(ctx)
+        ' OnlyA (bench): nothing of section B -- no rows and option 1 unticked. The element itself stays: the template's own saved data
+        ' has option 1 ticked and a blank row, and only an explicit 0 / no rows overrides them. The form's «Valideaza» may then refuse the signature.
+        Dim sb As IEnumerable(Of SectiuneBRow) = If(interim, InterimSectionB(linii, antet, sbRows),
+                                                    If(onlyA, Enumerable.Empty(Of SectiuneBRow)(), sbRows))
         ' FOREXE captures (PrtScr) are section B's Table4, never a file attachment (0081-05).
         Dim att As IEnumerable(Of AtasamentRow) = SafeEnum(attRows).Where(Function(a) Not a.PrtScr)
-        Dim poze As IEnumerable(Of String) = If(interim, Enumerable.Empty(Of String)(), capturi)
-        Dim formXml As String = BuildFormXml(ctx, antet, revizie, linii, sb, sectiuneaB:=True, capturi:=poze)
-        Dim notafdXml As String = BuildNotafdXml(ctx, antet, revizie, linii, sb, sectiuneaB:=True)
+        Dim poze As IEnumerable(Of String) = If(interim OrElse onlyA, Enumerable.Empty(Of String)(), capturi)
+        Dim formXml As String = BuildFormXml(ctx, antet, revizie, linii, sb, sectiuneaB:=Not onlyA, capturi:=poze)
+        Dim notafdXml As String = BuildNotafdXml(ctx, antet, revizie, linii, sb, sectiuneaB:=Not onlyA)
         Return InsertAttachments(formXml, notafdXml, att)
     End Function
 
@@ -461,4 +465,6 @@ Public Enum DdfPdfMode
     Interim = 0
     ''' <summary>After every forexecab action of the revision: header + A + B (+ captures, 0081-05).</summary>
     Final = 1
+    ''' <summary>Bench only: header + section A and NOTHING of section B (no rows, option 1 explicitly unticked, in the form data and in NOTAFD); no captures.</summary>
+    OnlyA = 2
 End Enum

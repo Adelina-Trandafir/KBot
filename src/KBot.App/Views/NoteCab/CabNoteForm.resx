@@ -124,6 +124,7 @@
     <value>Încasările pe care FOREXE nu le-a putut lega de un angajament.
 Alegeți fiecare rând și completați dedesubt angajamentul și indicatorul: rândul complet se bifează.
 Când toate sunt bifate, «Salvează tot» face câte o notă pentru fiecare număr.
+Un rând făcut de mână în FOREXE, fără documente în K-BOT, se scoate cu «Omite rândul».
 «Ieșire» fără salvare: operațiunile rămân în K-BOT și se regăsesc în Meniu → «Operațiuni necorelate».</value>
   </data>
   <data name="txtNrNota.ToolTipText" xml:space="preserve">
@@ -132,9 +133,14 @@ aduce numărul acelui rând; un angajament nou primește următorul număr liber
 Un număr = o notă = un PDF. Același număr la angajamente diferite, sau un număr
 folosit deja pe server, oprește salvarea și nu se salvează nimic.</value>
   </data>
+  <data name="btnOmite.ToolTipText" xml:space="preserve">
+    <value>Scoate rândul ales din «Operațiuni necorelate»: nu se mai cere aici și nu mai apare în meniu și în ribbon.
+Pentru operațiunile făcute de mână în FOREXE, fără documente în K-BOT.
+Rămâne omis (și la următoarea pornire) până îl reiei din Meniu → «Operațiuni omise», cu «Reia rândul».</value>
+  </data>
   <data name="btnSalveaza.ToolTipText" xml:space="preserve">
-    <value>Se activează doar când TOATE rândurile sunt bifate (complete).
-Salvează toate operațiunile, câte o notă pentru fiecare număr (toate sau niciuna),
+    <value>Se activează doar când TOATE rândurile neomise sunt bifate (complete).
+Salvează operațiunile neomise, câte o notă pentru fiecare număr (toate sau niciuna),
 face PDF-ul fiecărei note (formularul F1135) și întreabă, pentru fiecare, dacă o încarcă în CAB.</value>
   </data>
 </root>

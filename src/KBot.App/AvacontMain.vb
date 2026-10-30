@@ -117,7 +117,8 @@ Public Class AvacontMain
         Try
             _kbot.Show()   ' its Load runs now: session, periods, tree, FOREXE watchers; the opening page covers it
             _home.Show()
-            ShowHome()
+            ' A director works in the FOREXE part only (DirectorMode): the window opens on it, not on the opening page.
+            If DirectorMode.IsActive(_session) Then ShowShell() Else ShowHome()
             SyncRibbon(Me, EventArgs.Empty)
             ApplyAppTabs()
             Activate()
@@ -180,13 +181,15 @@ Public Class AvacontMain
             Select Case e.Key
                 Case "sumar_parteneri"
                     _kbot.OpenSumarPartners()
-                Case "rezervari_repara", "rezervari_grafic", "rezervari_adauga", "receptii_reface", "receptii_asociere", "ddf_repara_program"
+                Case "rezervari_repara", "rezervari_grafic", "rezervari_adauga", "receptii_reface", "receptii_asociere", "ddf_repara_program", "notecab_trimite"
                     _kbot.RunViewRibbonButton(e.Key)
                 Case "plan_cont_solduri", "plan_cont_excel"
                     ' Slice AV01-06: a button of the group of the PAGE on screen (the «Plan de conturi» window), not of a shell view.
                     TryCast(CurrentPage, IViewRibbon)?.RunRibbonButton(e.Key)
                 Case "pagina_angajamente"
                     _kbot.OpenRegistered(KbotForm.MachetaAngajamente, Sub() ShowShell())
+                Case DirectorMode.RibbonKeyToSign
+                    _kbot.DeschideDirectorDeSemnat()
                 Case "pagina_inchide"
                     CloseCurrent()
                 Case "istoric_versiuni"
@@ -197,6 +200,9 @@ Public Class AvacontMain
                 Case "jurnale"
                     ' Slice AV01-09: the journals of the unit, a small modal window (KbotForm.Jurnale.vb).
                     _kbot.DeschideJurnale()
+                Case "sabloane"
+                    ' Slice AV01-14 / AV01-16: the operation and salary templates, a modal window (KbotForm.Sabloane.vb).
+                    _kbot.DeschideSabloane()
                 Case "efactura_vanzare", "efactura_cumparare", "efactura_receptii", "efactura_vercon"
                     ' the ribbon key is the key of the macheta
                     _kbot.OpenRegistered(e.Key, Sub() _kbot.RunEFacturaCommand(e.Key))
@@ -282,6 +288,7 @@ Public Class AvacontMain
         k_toAccess.Visible = k_access
         k_fromAccess.Visible = k_access
         ribbon.FormGroup.Text = k_caption
+        ApplyDirectorRibbon()
         ribbon.InvalidateLayout()
     End Sub
 
@@ -313,7 +320,7 @@ Public Class AvacontMain
     End Sub
 
     Private Shared ReadOnly ShellEntries As New HashSet(Of String)(StringComparer.Ordinal) From {
-        "angajament_nou", "angajament_forexe", "operatiuni_necorelate"}
+        "angajament_nou", "angajament_forexe", "operatiuni_necorelate", "operatiuni_omise"}
 
     Private Sub Ribbon_CollapsedChanged(sender As Object, e As EventArgs)
         Try
@@ -330,6 +337,7 @@ Public Class AvacontMain
         Try
             If IsDisposed OrElse _kbot.IsDisposed Then Return
             _kbot.MirrorMenuTo(ribbon)
+            ApplyDirectorRibbon()
         Catch ex As Exception
             GlobalErrorLog.Write("AvacontMain.SyncRibbon", ex)
         End Try
@@ -355,6 +363,76 @@ Public Class AvacontMain
         End Try
     End Sub
 
+    ' The director's ribbon (DirectorMode): only the buttons of DirectorMode.RibbonKeys stay; every tab left with none, and every
+    ' field, goes out of sight. It only HIDES -- what shows is still decided by the rules above -- so it runs after each of them.
+    Private Sub ApplyDirectorRibbon()
+        Try
+            If IsDisposed Then Return
+            If Not DirectorMode.IsActive(_session) Then
+                ' Slice 0124-06: an accountant / proxy also finds documents addressed to them; their ribbon stays whole, the one
+                ' button (hidden in the designer) is shown.
+                If DirectorForm.AreListaDeSemnat(_session) Then
+                    Dim k_own As KBotRibbonButton = ribbon.FindButton(DirectorMode.RibbonKeyToSign)
+                    If k_own IsNot Nothing AndAlso Not k_own.Visible Then
+                        k_own.Visible = True
+                        ribbon.InvalidateLayout()
+                    End If
+                End If
+                Return
+            End If
+            Dim k_changed As Boolean
+            ' The one button that exists for a director only (it is hidden in the designer).
+            Dim k_sign As KBotRibbonButton = ribbon.FindButton(DirectorMode.RibbonKeyToSign)
+            If k_sign IsNot Nothing AndAlso Not k_sign.Visible Then
+                k_sign.Visible = True
+                k_changed = True
+            End If
+            For Each k_tab As KBotRibbonTab In ribbon.Tabs
+                Dim k_keep As Boolean
+                For Each k_group As KBotRibbonGroup In k_tab.Groups
+                    If HideNotAllowed(k_group) Then k_changed = True
+                    For Each k_button As KBotRibbonButton In k_group.Buttons
+                        If DirectorMode.RibbonKeys.Contains(k_button.Key) Then k_keep = True
+                    Next
+                Next
+                If Not k_keep AndAlso k_tab.Visible Then
+                    k_tab.Visible = False
+                    k_changed = True
+                End If
+            Next
+            If HideNotAllowed(ribbon.RightGroup) Then k_changed = True
+            If HideNotAllowed(ribbon.FormGroup) Then k_changed = True
+            For Each k_button As KBotRibbonButton In ribbon.PinnedButtons
+                If k_button.Visible AndAlso Not DirectorMode.RibbonKeys.Contains(k_button.Key) Then
+                    k_button.Visible = False
+                    k_changed = True
+                End If
+            Next
+            If k_changed Then ribbon.InvalidateLayout()
+        Catch ex As Exception
+            ' UI boundary (called from ribbon refreshes): log and swallow.
+            GlobalErrorLog.Write("AvacontMain.ApplyDirectorRibbon", ex)
+        End Try
+    End Sub
+
+    ' Hides the buttons and fields of the group that a director does not keep; True = something changed.
+    Private Shared Function HideNotAllowed(k_group As KBotRibbonGroup) As Boolean
+        Dim k_changed As Boolean
+        For Each k_button As KBotRibbonButton In k_group.Buttons
+            If k_button.Visible AndAlso Not DirectorMode.RibbonKeys.Contains(k_button.Key) Then
+                k_button.Visible = False
+                k_changed = True
+            End If
+        Next
+        For Each k_field As KBotRibbonField In k_group.Fields
+            If k_field.Visible Then
+                k_field.Visible = False
+                k_changed = True
+            End If
+        Next
+        Return k_changed
+    End Function
+
     Private Sub ApplyAppTabs()
         Try
             If IsDisposed Then Return
@@ -374,6 +452,7 @@ Public Class AvacontMain
                 End If
             Next
             If k_changed Then ribbon.InvalidateLayout()
+            ApplyDirectorRibbon()
         Catch ex As Exception
             GlobalErrorLog.Write("AvacontMain.ApplyAppTabs", ex)
         End Try
@@ -429,7 +508,7 @@ Public Class AvacontMain
     ' Every button of the view group, with the view that owns it (the keys are the ones written in the designer).
     Private Shared ReadOnly ViewGroupKeys As String() = {KeySumarParteneri,
         "rezervari_repara", "rezervari_grafic", "rezervari_adauga", "receptii_reface", "receptii_asociere", "ddf_repara_program",
-        "plan_cont_solduri", "plan_cont_excel"}
+        "notecab_trimite", "plan_cont_solduri", "plan_cont_excel"}
 
     Private Sub UpdateViewGroup()
         Dim k_onShell As Boolean = CurrentPage Is Nothing AndAlso _baseIsShell
@@ -465,6 +544,7 @@ Public Class AvacontMain
             ribbon.RightGroup.Text = k_caption
             k_changed = True
         End If
+        ApplyDirectorRibbon()
         If k_changed Then ribbon.InvalidateLayout()
     End Sub
 

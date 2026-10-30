@@ -55,6 +55,8 @@ Public NotInheritable Class ClasificatiiCatalog
     Public Property CapitolNames As New Dictionary(Of String, String)(StringComparer.Ordinal)
     ''' <summary>Sub-chapter names by ClsfF (six digits): «650402» -&gt; name.</summary>
     Public Property SubcapitolNames As New Dictionary(Of String, String)(StringComparer.Ordinal)
+    ''' <summary>Title names by the first two digits of the articol: «10» -&gt; name.</summary>
+    Public Property TitluNames As New Dictionary(Of String, String)(StringComparer.Ordinal)
     ''' <summary>Article names by articol: «10.01» -&gt; name.</summary>
     Public Property ArticolNames As New Dictionary(Of String, String)(StringComparer.Ordinal)
     ''' <summary>Sector-source names: «02A» -&gt; name.</summary>
@@ -126,6 +128,19 @@ Public NotInheritable Class BudgetSummaryRow
 End Class
 
 ''' <summary>
+''' One indicator of an angajament that leads to a classification, with the three totals the angajament summary shows (slice 0126-01):
+''' reservations, receptions and payments.
+''' </summary>
+Public NotInheritable Class ClasificatieAngajament
+    Public Property CodAngajament As String = String.Empty
+    Public Property Descriere As String = String.Empty
+    Public Property CodIndicator As String = String.Empty
+    Public Property TotalRezervari As Decimal
+    Public Property TotalReceptii As Decimal
+    Public Property TotalPlati As Decimal
+End Class
+
+''' <summary>
 ''' One classification in the check of slice 0103-04: what FOREXE last reported as the budget of the
 ''' classification (<c>FX_Indicatori_Buget.CreditBugetar</c>, one row per classification since slice
 ''' 0108) against what K-BOT holds (the TOTAL of the version in force + the total of its
@@ -170,6 +185,8 @@ End Class
 ''' </summary>
 Public NotInheritable Class ClasificatiiNomenclator
     Public Property SectorSources As New List(Of CodeName)()
+    ''' <summary>The functional chapters («65») each sector-source already has classifications in, keyed by sector-source.</summary>
+    Public Property ChaptersBySs As New Dictionary(Of String, List(Of String))(StringComparer.Ordinal)
     ''' <summary>Functional codes (ClsfF, six digits).</summary>
     Public Property FunctionalCodes As New List(Of CodeName)()
     Public Property FunctionalGroups As New Dictionary(Of String, String)(StringComparer.Ordinal)

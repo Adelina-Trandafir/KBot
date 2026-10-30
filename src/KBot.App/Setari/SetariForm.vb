@@ -280,6 +280,7 @@ Public Class SetariForm
                 Case KeyAccess : Return New SetariAccessView(_session)
                 Case "pagina" : Return New SetariPaginaView(_controller)
                 Case "extrase" : Return New SetariExtraseView()
+                Case "semnareddf" : Return New SetariSemnareDdfView(_apiClient)
                 Case "tema" : Return New SetariTemaView()
                 Case "autentificare" : Return New SetariAutentificareView(_apiOptions)
                 Case "foldere" : Return New SetariFolder()

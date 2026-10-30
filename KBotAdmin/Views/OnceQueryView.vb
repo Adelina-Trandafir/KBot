@@ -5,7 +5,7 @@ Imports System.Text
 
 ''' <summary>
 ''' The one-time queries of AvacontPush, inside KBotAdmin (slice ME01): ONE query text run once on AVACONT_SURSA
-''' and on every ticked database, remembered in the ledger table of each database so it never runs twice. The
+''' and on every database ticked in the main tree on the left (<see cref="AdminContext.CheckedDatabases"/>), remembered in the ledger table of each database so it never runs twice. The
 ''' runner (<c>routes/one_time/runner.py</c>) lives on the server; this page only builds its command line.
 ''' </summary>
 Public Class OnceQueryView
@@ -13,7 +13,6 @@ Public Class OnceQueryView
 
     Private _context As AdminContext
     Private ReadOnly _log As LogSink
-    Private ReadOnly _ticks As New Dictionary(Of String, Boolean)(StringComparer.OrdinalIgnoreCase)
     Private _running As Boolean
 
     Public Sub New()
@@ -26,58 +25,18 @@ Public Class OnceQueryView
     End Sub
 
     Public Async Function ActivatedAsync() As Task Implements IAdminView.ActivatedAsync
-        FillDatabases()
         Await LoadHistoryAsync()
     End Function
 
     Public Sub SelectionChanged() Implements IAdminView.SelectionChanged
-        ' The databases to run on are ticked here, not taken from the tree.
+        ' The databases to run on are the ticks of the main tree, read when the query runs; the row chosen in the tree does not matter here.
     End Sub
 
-    Private Sub FillDatabases()
-        ' Keep the ticks the operator made; a database seen for the first time comes ticked.
-        For k_i As Integer = 0 To gridDb.Rows.Count - 1
-            _ticks(Convert.ToString(gridDb("db", k_i), CultureInfo.InvariantCulture)) = Convert.ToBoolean(gridDb("use", k_i), CultureInfo.InvariantCulture)
-        Next
-        gridDb.BeginUpdate()
-        Try
-            gridDb.ClearRows()
-            For Each k_db As DatabaseInfo In _context.Databases
-                Dim k_row As KBotDataRow = gridDb.AddRow()
-                k_row("use") = _ticks.GetValueOrDefault(k_db.Db, True)
-                k_row("db") = k_db.Db
-                k_row("name") = k_db.Name
-            Next
-        Finally
-            gridDb.EndUpdate()
-        End Try
-    End Sub
-
+    ''' <summary>The unit databases ticked in the main tree, in the order of the database list; a tick that is not a database of the server is left out.</summary>
     Private Function TickedDatabases() As List(Of String)
-        Dim k_list As New List(Of String)()
-        For k_i As Integer = 0 To gridDb.Rows.Count - 1
-            If Convert.ToBoolean(gridDb("use", k_i), CultureInfo.InvariantCulture) Then k_list.Add(Convert.ToString(gridDb("db", k_i), CultureInfo.InvariantCulture))
-        Next
-        Return k_list
+        Dim k_ticked As IReadOnlyList(Of String) = _context.CheckedDatabases
+        Return _context.Databases.Where(Function(k_db) k_ticked.Contains(k_db.Db, StringComparer.OrdinalIgnoreCase)).Select(Function(k_db) k_db.Db).ToList()
     End Function
-
-    Private Sub BtnAllDb_Click(k_sender As Object, e As EventArgs) Handles btnAllDb.Click
-        SetAll(True)
-    End Sub
-
-    Private Sub BtnNoDb_Click(k_sender As Object, e As EventArgs) Handles btnNoDb.Click
-        SetAll(False)
-    End Sub
-
-    Private Sub SetAll(k_value As Boolean)
-        Try
-            For k_i As Integer = 0 To gridDb.Rows.Count - 1
-                gridDb("use", k_i) = k_value
-            Next
-        Catch ex As Exception
-            GlobalErrorLog.Write("OnceQueryView.SetAll", ex)
-        End Try
-    End Sub
 
     Private Sub BtnFile_Click(k_sender As Object, e As EventArgs) Handles btnFile.Click
         Try
@@ -115,7 +74,7 @@ Public Class OnceQueryView
         Dim k_units As List(Of String) = TickedDatabases()
         Dim k_problem As String = OnceQuery.CheckName(k_name)
         If k_problem = String.Empty Then k_problem = OnceQuery.CheckSize(txtSql.Text)
-        If k_problem = String.Empty AndAlso k_units.Count = 0 Then k_problem = "Bifați cel puțin o bază."
+        If k_problem = String.Empty AndAlso k_units.Count = 0 Then k_problem = "Bifați în arborele din stânga cel puțin o bază."
         If k_problem <> String.Empty Then
             KBotMessage.Show(k_problem, "Interogare unică", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return

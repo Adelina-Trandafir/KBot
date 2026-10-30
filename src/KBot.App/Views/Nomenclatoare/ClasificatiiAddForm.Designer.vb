@@ -181,7 +181,7 @@ Partial Class ClasificatiiAddForm
         lblHintE.Name = "lblHintE"
         lblHintE.Size = New Size(794, 39)
         lblHintE.TabIndex = 6
-        lblHintE.Text = "Bifarea unui articol bifează tot ce este sub el."
+        lblHintE.Text = "Se bifează pozițiile de pe ultimul nivel."
         lblHintE.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' treeF

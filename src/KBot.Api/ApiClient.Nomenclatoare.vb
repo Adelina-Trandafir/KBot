@@ -35,6 +35,7 @@ Partial Public Class ApiClient
     Private NotInheritable Class ClsfNamesWire
         Public Property capitol As Dictionary(Of String, String)
         Public Property subcapitol As Dictionary(Of String, String)
+        Public Property titlu As Dictionary(Of String, String)
         Public Property articol As Dictionary(Of String, String)
         Public Property ss As Dictionary(Of String, String)
     End Class
@@ -85,6 +86,23 @@ Partial Public Class ApiClient
         Public Property items As List(Of SummaryRowWire)
     End Class
 
+    Private NotInheritable Class AngajamenteRequest
+        Public Property ids As List(Of Integer)
+    End Class
+
+    Private NotInheritable Class AngajamentWire
+        Public Property cod_angajament As String
+        Public Property descriere As String
+        Public Property cod_indicator As String
+        Public Property total_rezervari As Double?
+        Public Property total_receptii As Double?
+        Public Property total_plati As Double?
+    End Class
+
+    Private NotInheritable Class AngajamenteResponse
+        Public Property items As List(Of AngajamentWire)
+    End Class
+
     Private NotInheritable Class BudgetRequest
         Public Property an As Integer
         Public Property budgets As List(Of BudgetVersionWire)
@@ -120,8 +138,14 @@ Partial Public Class ApiClient
         Public Property groups As Dictionary(Of String, String)
     End Class
 
+    Private NotInheritable Class ChapterWire
+        Public Property ss As String
+        Public Property capitol As String
+    End Class
+
     Private NotInheritable Class NomenclatorResponse
         Public Property ss As List(Of CodeNameWire)
+        Public Property capitole As List(Of ChapterWire)
         Public Property f As CodeListWire
         Public Property e As CodeListWire
     End Class
@@ -225,6 +249,7 @@ Partial Public Class ApiClient
             If payload.names IsNot Nothing Then
                 CopyNames(payload.names.capitol, result.CapitolNames)
                 CopyNames(payload.names.subcapitol, result.SubcapitolNames)
+                CopyNames(payload.names.titlu, result.TitluNames)
                 CopyNames(payload.names.articol, result.ArticolNames)
                 CopyNames(payload.names.ss, result.SsNames)
             End If
@@ -296,6 +321,37 @@ Partial Public Class ApiClient
             Throw
         Catch ex As Exception
             GlobalErrorLog.Write("ApiClient.GetBudgetSummaryAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    Public Async Function GetClasificatiiAngajamenteAsync(idClsfs As IReadOnlyList(Of Integer), ct As CancellationToken) _
+        As Task(Of IReadOnlyList(Of ClasificatieAngajament)) _
+        Implements INomenclatoareApi.GetClasificatiiAngajamenteAsync
+        Try
+            ArgumentNullException.ThrowIfNull(idClsfs)
+            Dim result As New List(Of ClasificatieAngajament)()
+            If idClsfs.Count = 0 Then Return result
+            Dim respText As String = Await SendNomenclatoareAsync(
+                HttpMethod.Post, $"{NomenclatoareRoot}/clasificatii/angajamente",
+                New AngajamenteRequest() With {.ids = idClsfs.ToList()},
+                "citirea angajamentelor clasificației", ct).ConfigureAwait(False)
+            Dim payload As AngajamenteResponse = JsonSerializer.Deserialize(Of AngajamenteResponse)(respText, _json)
+            If payload Is Nothing Then Return result
+            For Each w As AngajamentWire In If(payload.items, New List(Of AngajamentWire)())
+                result.Add(New ClasificatieAngajament() With {
+                    .CodAngajament = If(w.cod_angajament, String.Empty),
+                    .Descriere = If(w.descriere, String.Empty),
+                    .CodIndicator = If(w.cod_indicator, String.Empty),
+                    .TotalRezervari = ToDecimal(w.total_rezervari).GetValueOrDefault(),
+                    .TotalReceptii = ToDecimal(w.total_receptii).GetValueOrDefault(),
+                    .TotalPlati = ToDecimal(w.total_plati).GetValueOrDefault()})
+            Next
+            Return result
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetClasificatiiAngajamenteAsync", ex)
             Throw
         End Try
     End Function
@@ -381,6 +437,15 @@ Partial Public Class ApiClient
             Dim result As New ClasificatiiNomenclator()
             If payload Is Nothing Then Return result
             result.SectorSources.AddRange(ToCodeNames(payload.ss))
+            For Each k_w As ChapterWire In If(payload.capitole, New List(Of ChapterWire)())
+                If String.IsNullOrWhiteSpace(k_w.ss) OrElse String.IsNullOrWhiteSpace(k_w.capitol) Then Continue For
+                Dim k_list As List(Of String) = Nothing
+                If Not result.ChaptersBySs.TryGetValue(k_w.ss, k_list) Then
+                    k_list = New List(Of String)()
+                    result.ChaptersBySs(k_w.ss) = k_list
+                End If
+                If Not k_list.Contains(k_w.capitol) Then k_list.Add(k_w.capitol)
+            Next
             If payload.f IsNot Nothing Then
                 result.FunctionalCodes.AddRange(ToCodeNames(payload.f.codes))
                 CopyNames(payload.f.groups, result.FunctionalGroups)

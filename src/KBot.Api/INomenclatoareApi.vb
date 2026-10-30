@@ -28,6 +28,13 @@ Public Interface INomenclatoareApi
     Function GetBudgetSummaryAsync(an As Integer, ct As CancellationToken) As Task(Of IReadOnlyList(Of BudgetSummaryRow))
 
     ''' <summary>
+    ''' The angajamente that lead to the classifications <paramref name="idClsfs"/> (one row per indicator), with their reservation,
+    ''' reception and payment totals (slice 0126-01).
+    ''' </summary>
+    Function GetClasificatiiAngajamenteAsync(idClsfs As IReadOnlyList(Of Integer),
+                                             ct As CancellationToken) As Task(Of IReadOnlyList(Of ClasificatieAngajament))
+
+    ''' <summary>
     ''' Saves the budget versions and the corrections of one classification in one transaction and
     ''' returns them as read back from the database. <paramref name="deletedBudgetIds"/> and
     ''' <paramref name="deletedIds"/> are the versions and the corrections removed in the window.

@@ -55,6 +55,29 @@ Public Class DirectorForm
         Return session IsNot Nothing AndAlso String.Equals(session.Role, RolDirector, StringComparison.OrdinalIgnoreCase)
     End Function
 
+    ''' <summary>Slice 0124-06: the roles that have a list of documents to sign inside the full K-BOT: the director, the accountant and
+    ''' the FOREXE proxy. (A Secretar / Administrator has the narrowed window of their own, see <c>DeSemnatRestrans</c>.)</summary>
+    Public Shared Function AreListaRol(k_rol As String) As Boolean
+        Return String.Equals(k_rol, RolDirector, StringComparison.OrdinalIgnoreCase) OrElse
+               String.Equals(k_rol, "Contabil", StringComparison.OrdinalIgnoreCase) OrElse
+               String.Equals(k_rol, "Imputernicit", StringComparison.OrdinalIgnoreCase)
+    End Function
+
+    Public Shared Function AreListaDeSemnat(session As SessionContext) As Boolean
+        Return session IsNot Nothing AndAlso AreListaRol(session.Role)
+    End Function
+
+    ''' <summary>
+    ''' The list: the flow's list for every role (<c>GET /api/forexe/ddf/de-semnat</c>); a director also gets the older list (A and B
+    ''' signed, no «Ordonator», <c>GET .../director/de-semnat</c>), the two joined without a revision twice.
+    ''' </summary>
+    Private Async Function CitesteListaAsync(k_api As IDdfSendApi) As Task(Of DdfDeSemnatLista)
+        Dim k_flux As DdfDeSemnatLista = Await k_api.GetDdfDeSemnatAsync(CancellationToken.None).ConfigureAwait(True)
+        If Not EsteDirector(_session) Then Return k_flux
+        Dim k_vechi As DdfDeSemnatLista = Await k_api.GetDdfDeSemnatDirectorAsync(CancellationToken.None).ConfigureAwait(True)
+        Return k_vechi.Uneste(k_flux)
+    End Function
+
     Private Sub DirectorForm_Load(sender As Object, e As EventArgs) Handles Me.Load
         Try
             ArataUnitatea()
@@ -76,7 +99,7 @@ Public Class DirectorForm
             Dim sendApi As IDdfSendApi = TryCast(_apiClient, IDdfSendApi)
             If sendApi Is Nothing Then Throw New InvalidOperationException("The API client does not implement IDdfSendApi.")
             Dim lista As DdfDeSemnatLista = Await WithReauth(Of DdfDeSemnatLista)(
-                Function() sendApi.GetDdfDeSemnatDirectorAsync(CancellationToken.None)).ConfigureAwait(True)
+                Function() CitesteListaAsync(sendApi)).ConfigureAwait(True)
             If IsDisposed Then Return
             Umple(lista)
         Catch ex As ApiException
@@ -94,69 +117,95 @@ Public Class DirectorForm
     End Sub
 
     Private Sub Umple(lista As DdfDeSemnatLista)
-        Dim revizii As List(Of DdfDeSemnat) = If(lista?.Revizii, New List(Of DdfDeSemnat)())
+        ' Only the unit the director is logged in on: the server lists every unit he is a director of.
+        Dim revizii As List(Of DdfDeSemnat) = If(lista?.Revizii, New List(Of DdfDeSemnat)()) _
+            .Where(Function(k_rev) String.Equals(k_rev.DbName, _session.DbName, StringComparison.OrdinalIgnoreCase)).ToList()
         Dim ro As New CultureInfo("ro-RO")
         lstDocumente.BeginUpdate()
         Try
-            lstDocumente.Items.Clear()
+            lstDocumente.ClearRows()
             For Each d As DdfDeSemnat In revizii
-                Dim item As New ListViewItem(If(String.IsNullOrWhiteSpace(d.NumeUnitate), d.DbName, d.NumeUnitate))
-                item.SubItems.Add(d.CodAngajament)
-                item.SubItems.Add(d.ObiectDdf)
-                item.SubItems.Add(d.NumarRev.ToString(CultureInfo.InvariantCulture))
-                item.SubItems.Add(If(d.DataRev.HasValue, d.DataRev.Value.ToString("dd.MM.yyyy", ro), String.Empty))
-                item.SubItems.Add(d.Total.ToString("#,##0.00", ro))
-                item.Tag = d
-                item.ToolTipText = d.DescScurta
-                lstDocumente.Items.Add(item)
+                Dim k_row As KBotDataRow = lstDocumente.AddRow()
+                k_row.Tag = d
+                k_row("cod") = d.CodAngajament
+                k_row("obiect") = d.ObiectDdf
+                k_row("rev") = d.NumarRev.ToString(CultureInfo.InvariantCulture)
+                k_row("data") = If(d.DataRev.HasValue, d.DataRev.Value.ToString("dd.MM.yyyy", ro), String.Empty)
+                k_row("total") = d.Total.ToString("#,##0.00", ro)
             Next
         Finally
             lstDocumente.EndUpdate()
         End Try
 
+        SelecteazaRevizia(0)
+
         lblTitlu.Text = If(revizii.Count = 0,
                            "Nu aveți documente de fundamentare de semnat.",
                            If(revizii.Count = 1, "Aveți 1 document de fundamentare de semnat.",
                               $"Aveți {revizii.Count} documente de fundamentare de semnat."))
-        If lista IsNot Nothing AndAlso lista.UnitatiNecitite.Count > 0 Then
-            lblTitlu.Text &= "  Nu s-au putut citi: " & String.Join(", ", lista.UnitatiNecitite) & "."
+        ' The unit that could not be read is named only when it is this one.
+        If lista IsNot Nothing AndAlso lista.UnitatiNecitite.Any(Function(k_name) String.Equals(k_name, _session.NumeUnitate, StringComparison.OrdinalIgnoreCase)) Then
+            lblTitlu.Text &= "  Lista unității nu a putut fi citită acum."
         End If
     End Sub
 
-    Private Async Sub LstDocumente_SelectedIndexChanged(sender As Object, e As EventArgs) Handles lstDocumente.SelectedIndexChanged
+    ''' <summary>The revision to pick as soon as the list is read (the tray's click on a document); 0 = none.</summary>
+    Friend Property IdrevInitial As Integer
+
+    ''' <summary>
+    ''' Picks the revision in the list, which opens its document. With 0 it picks <see cref="IdrevInitial"/> (once, when the
+    ''' list has just been read). A revision that is not in the list (signed meanwhile, or the list is older than the tray's)
+    ''' makes the list be read again first; if it is still not there, nothing is picked.
+    ''' </summary>
+    Friend Sub SelecteazaRevizia(k_idrev As Integer)
         Try
-            If lstDocumente.SelectedItems.Count = 0 Then Return
-            Dim d As DdfDeSemnat = TryCast(lstDocumente.SelectedItems(0).Tag, DdfDeSemnat)
-            If d Is Nothing Then Return
-            Await DeschideAsync(d).ConfigureAwait(True)
+            Dim k_wanted As Integer = If(k_idrev > 0, k_idrev, IdrevInitial)
+            If k_wanted <= 0 Then Return
+            For k_index As Integer = 0 To lstDocumente.Rows.Count - 1
+                Dim k_document As DdfDeSemnat = TryCast(lstDocumente.Rows(k_index).Tag, DdfDeSemnat)
+                If k_document IsNot Nothing AndAlso k_document.Idrev = k_wanted Then
+                    IdrevInitial = 0
+                    lstDocumente.CurrentRowIndex = k_index   ' raises SelectionChanged, which opens the document
+                    Return
+                End If
+            Next
+            ' Not among the rows. After a fresh read (IdrevInitial was already tried once) it is simply gone.
+            If k_idrev > 0 Then
+                IdrevInitial = k_idrev
+                IncarcaListaAsync()
+            Else
+                IdrevInitial = 0
+            End If
         Catch ex As Exception
-            ' UI boundary (async Sub).
-            GlobalErrorLog.Write("DirectorForm.LstDocumente_SelectedIndexChanged", ex)
+            ' UI boundary: log and swallow (the list stays as it is).
+            GlobalErrorLog.Write("DirectorForm.SelecteazaRevizia", ex)
+        End Try
+    End Sub
+
+    Private Sub LstDocumente_SelectionChanged(sender As Object, e As EventArgs) Handles lstDocumente.SelectionChanged
+        Try
+            Dim k_current As KBotDataRow = lstDocumente.CurrentRow
+            If k_current Is Nothing Then Return
+            Dim d As DdfDeSemnat = TryCast(k_current.Tag, DdfDeSemnat)
+            If d Is Nothing Then Return
+            Deschide(d)
+        Catch ex As Exception
+            ' UI boundary (event handler): log and show.
+            GlobalErrorLog.Write("DirectorForm.LstDocumente_SelectionChanged", ex)
             KBotMessage.Show(Me, "Documentul nu a putut fi deschis. Detalii în jurnalul de erori.", Titlu,
                             MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
 
-    ''' <summary>Opens the revision in the DDF view -- after a login on its unit when it lives in
-    ''' another one than the session's.</summary>
-    Private Async Function DeschideAsync(d As DdfDeSemnat) As Task
-        If Not String.Equals(d.DbName, _session.DbName, StringComparison.OrdinalIgnoreCase) Then
-            Dim unitate As String = If(String.IsNullOrWhiteSpace(d.NumeUnitate), d.DbName, d.NumeUnitate)
-            If KBotMessage.Show(Me, $"Documentul este în unitatea «{unitate}», iar sesiunea de acum este pe «{_session.NumeUnitate}»." &
-                                vbCrLf & vbCrLf & "Pentru a-l deschide și semna vă autentificați pe acea unitate. Continuați?",
-                                Titlu, MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then
-                Return
-            End If
-            If Not Await SchimbaUnitateaAsync(d.DbName).ConfigureAwait(True) Then Return
-        End If
-
+    ''' <summary>Opens the revision in the DDF view. The list holds only the unit the director is logged in on, so the
+    ''' revision is always on the session's database.</summary>
+    Private Sub Deschide(d As DdfDeSemnat)
         Dim view As DdfView = VedereaDdf()
         lblDocument.Visible = False
         view.Visible = True
-        view.SetContext(New AngajamentTreeInfo() With {
-            .CodAngajament = d.CodAngajament, .AreDDF = True, .IDDF = CLng(d.Iddf)})
-        view.Reincarca(d.Idrev)
-    End Function
+        view.ArataRevizia(New AngajamentTreeInfo() With {
+            .CodAngajament = d.CodAngajament, .AreDDF = True, .IDDF = CLng(d.Iddf)}, d.Idrev)
+    End Sub
 
     ''' <summary>The DDF view, created once (its constructor takes the API client, so it cannot be
     ''' declared in the Designer -- same as the shell's views). The write commands are not offered
@@ -164,6 +213,7 @@ Public Class DirectorForm
     Private Function VedereaDdf() As DdfView
         If _ddfView IsNot Nothing Then Return _ddfView
         _ddfView = New DdfView(_apiClient, Function(op) WithReauth(Of DdfInfo)(op), _session, AddressOf ComandaRefuzata)
+        _ddfView.ArboreAscuns = True   ' the revision is the one picked in the list: straight to «Vizualizare» / the document
         _ddfView.Dock = DockStyle.Fill
         pnlDocument.Controls.Add(_ddfView)
         _ddfView.BringToFront()
@@ -172,42 +222,10 @@ Public Class DirectorForm
     End Function
 
     Private Sub ComandaRefuzata(comanda As DdfComanda)
-        KBotMessage.Show(Me, "Aici documentul se semnează doar. Modificările se fac din K-BOT-ul unității.",
+        KBotMessage.Show(Me, If(EsteDirector(_session), DirectorMode.ReadOnlyMessage,
+                                "Din această listă documentele se deschid și se semnează. Celelalte comenzi se dau din fereastra principală."),
                         Titlu, MessageBoxButtons.OK, MessageBoxIcon.Information)
     End Sub
-
-    ''' <summary>
-    ''' A login on unit <paramref name="dc"/>. True when the session is on it now. The previous
-    ''' session is logged out best-effort only after the new one exists.
-    ''' </summary>
-    Private Async Function SchimbaUnitateaAsync(dc As String) As Task(Of Boolean)
-        Dim tokenVechi As String = _session.Token
-        Using login As LoginForm = _loginFactory()
-            login.PreferredDc = dc
-            If login.ShowDialog(Me) <> DialogResult.OK Then Return False
-        End Using
-        If Not String.Equals(tokenVechi, _session.Token, StringComparison.Ordinal) AndAlso
-           Not String.IsNullOrEmpty(tokenVechi) Then
-            Try
-                Await _authApi.LogoutAsync(tokenVechi, CancellationToken.None).ConfigureAwait(True)
-            Catch ex As Exception
-                ' Best effort: an old token left alive expires by itself.
-                GlobalErrorLog.Write("DirectorForm.SchimbaUnitateaAsync", ex)
-            End Try
-        End If
-        ArataUnitatea()
-        If Not EsteDirector(_session) Then
-            KBotMessage.Show(Me, "Pe unitatea aleasă nu aveți rolul «Director».", Titlu,
-                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
-            Return False
-        End If
-        If Not String.Equals(_session.DbName, dc, StringComparison.OrdinalIgnoreCase) Then
-            KBotMessage.Show(Me, "V-ați autentificat pe altă unitate decât cea a documentului.", Titlu,
-                            MessageBoxButtons.OK, MessageBoxIcon.Information)
-            Return False
-        End If
-        Return True
-    End Function
 
     ''' <summary>
     ''' The 401 net: a login dialog on the SAME unit, then one retry. A second failure propagates.

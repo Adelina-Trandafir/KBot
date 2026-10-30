@@ -219,6 +219,26 @@ $UpdaterExe = Join-Path $UpdaterStage 'KBot.Updater.exe'
 if (-not (Test-Path -LiteralPath $UpdaterExe)) { throw "KBot.Updater.exe lipseste din $UpdaterStage dupa publish." }
 Copy-Item -LiteralPath $UpdaterExe -Destination (Join-Path $PublishDir 'KBot.Updater.exe') -Force
 Remove-Item $UpdaterStage -Recurse -Force
+
+# KBot.Tray (slice TRAY-01): aplicatia din zona de notificari, single-file, langa aplicatie.
+$TrayProj = Join-Path $SolutionRoot 'src\KBot.Tray\KBot.Tray.vbproj'
+if (-not (Test-Path $TrayProj)) { throw "Nu gasesc proiectul: $TrayProj" }
+$TrayStage = Join-Path $ArtifactsDir "_tray_$Stamp"
+if (Test-Path $TrayStage) { Remove-Item $TrayStage -Recurse -Force }
+Write-Host "Publish KBot.Tray (single-file) ..." -ForegroundColor Cyan
+& dotnet publish $TrayProj `
+    -c $Configuration `
+    -r $Rid `
+    --self-contained false `
+    -p:PublishSingleFile=true `
+    -o $TrayStage
+if ($LASTEXITCODE -ne 0) {
+    throw "dotnet publish KBot.Tray a esuat (ExitCode=$LASTEXITCODE)."
+}
+$TrayExe = Join-Path $TrayStage 'KBot.Tray.exe'
+if (-not (Test-Path -LiteralPath $TrayExe)) { throw "KBot.Tray.exe lipseste din $TrayStage dupa publish." }
+Copy-Item -LiteralPath $TrayExe -Destination (Join-Path $PublishDir 'KBot.Tray.exe') -Force
+Remove-Item $TrayStage -Recurse -Force
 'Marcaj: acest Debug instalat verifica actualizarile la pornire (AppUpdateService.PUBLISHED_DEBUG_MARKER).' |
     Set-Content -Path (Join-Path $PublishDir 'debug-update-check.flag') -Encoding UTF8
 Write-Host "Updater OK + marcaj debug-update-check.flag in $PublishDir" -ForegroundColor Cyan

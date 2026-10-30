@@ -21,7 +21,7 @@
     <OptionCompare>Binary</OptionCompare>
     <Nullable>disable</Nullable>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.1.0.0</FileVersion>
+    <FileVersion>1.2.0.0</FileVersion>
     <ApplicationIcon>KBotAdmin.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -38,6 +38,8 @@
 
   <ItemGroup>
     <PackageReference Include="SSH.NET" Version="2026.0.0" />
+    <!-- Import MF din Access: reads the old mf.mdb (ACE provider, as VRC.Migrator does). OleDb is a NuGet package on .NET 8. -->
+    <PackageReference Include="System.Data.OleDb" Version="8.0.0" />
     <!-- ME02: the key of the local backup can be kept on this PC, protected by the Windows account (DPAPI). -->
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
   </ItemGroup>

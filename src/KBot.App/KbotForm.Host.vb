@@ -90,6 +90,8 @@ Partial Public Class KbotForm
             If String.Equals(k_item.Key, UncorrelatedMenuKey, StringComparison.Ordinal) Then
                 k_button.Text = Regex.Replace(k_item.Text, "<[^>]+>", String.Empty).Replace("(!) ", String.Empty)
                 k_button.ForeColor = k_item.ForeColor
+            ElseIf String.Equals(k_item.Key, SkippedMenuKey, StringComparison.Ordinal) Then
+                k_button.Text = k_item.Text
             End If
         Next
         k_ribbon.InvalidateLayout()

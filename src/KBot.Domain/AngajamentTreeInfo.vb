@@ -127,6 +127,9 @@ Public NotInheritable Class AngajamentTreeInfo
     Public Property LegaturiGresite As IReadOnlyList(Of RezervareLegataGresit) = Array.Empty(Of RezervareLegataGresit)()
     ' Slice 0114-27: the DDF's program is not the one of its indicators' SS (01A -> 0000002510, otherwise 0000000000); Nothing = right.
     Public Property ProgramGresit As DdfProgramGresit
+    ' Slice 0122-10: the days on which the receptions (sum of DIF) do not add up to the reservations -- a reception version on the
+    ' wrong header. Empty = they add up. Shown in the tooltip and paints the row.
+    Public Property ReceptiiNepotrivite As IReadOnlyList(Of ReceptieNepotrivita) = Array.Empty(Of ReceptieNepotrivita)()
 
     ' --- stare de navigare (în Access: setate de mcTree_Click, după nivelul nodului) ---
     Public Property TipNod As String = String.Empty      ' "D" / "R" / "P" / ... (TIP_NOD)

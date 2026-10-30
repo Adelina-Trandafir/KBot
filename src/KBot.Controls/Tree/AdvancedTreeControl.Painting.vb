@@ -455,17 +455,32 @@ Partial Public Class AdvancedTreeControl
         ' ── 1. Split separator ──────────────────────────────────────────────────
         Dim leftText As String = text
         Dim rightText As String = ""
+        Dim figureText As String = ""
         Dim hasSplit As Boolean = False
 
         If text.Contains("~~~") Then
             Dim partsStr = text.Split({"~~~"}, StringSplitOptions.None)
             leftText = partsStr(0)
             If partsStr.Length > 1 Then rightText = partsStr(1)
+            ' Slice 0126-01: a THIRD part is a figure kept at the right edge of the row, right-aligned; the two parts before it
+            ' share what is left.
+            If partsStr.Length > 2 Then figureText = partsStr(2)
             hasSplit = True
         End If
 
         Dim fmt As StringFormat = StringFormat.GenericTypographic
         fmt.FormatFlags = fmt.FormatFlags Or StringFormatFlags.MeasureTrailingSpaces
+
+        If figureText.Length > 0 Then
+            Dim figureParts As List(Of RichTextPart) = ParseRichText(figureText, defaultFont, defaultColor)
+            Dim figureWidth As Single = 0
+            For Each figurePart In figureParts
+                figureWidth += g.MeasureString(figurePart.Text, figurePart.Font, PointF.Empty, fmt).Width
+            Next
+            Dim figureX As Single = Math.Max(CSng(x), CSng(x) + CSng(availableWidth) - figureWidth)
+            DrawRichPartsSimple(g, figureParts, y, figureX, fmt)
+            availableWidth = CInt(Math.Max(0, figureX - PaddingSeparatorGapPx - CSng(x)))
+        End If
 
         Dim rightEdgeX As Single = CSng(x) + CSng(availableWidth)
         Dim hasLeftProp As Boolean = (m_leftTextWidth > 0)

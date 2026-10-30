@@ -8,7 +8,7 @@ topic: contabil.nomenclatoare.clasificatii
 <!-- slice: 0087, 0000-20, AV01-13 -->
 target: ClasificatiiBugetView.tree
 goto: menu:clasificatii
-Capitol › Subcapitol › Articol › Alineat, cu denumirile alături.
+Capitol › Subcapitol › Titlu › Articol › Alineat, cu denumirile alături.
 
 ## Paginile ferestrei
 <!-- slice: AV01-11 -->
@@ -34,10 +34,9 @@ target: ClasificatiiBugetView.gridBuget
 Bugetul anului pentru clasificația aleasă, pe versiuni: fiecare rând este bugetul de la data din «Început» încolo, pe trimestre, cu totalul rândului în ultima coloană. Jos nu există total general. Prima coloană arată clasificația; coloanele au aceeași lățime ca la rectificări.
 
 ## Buget › Adaugă o versiune
-<!-- slice: 0102, 0000-40 -->
+<!-- slice: 0102, 0000-40, 0126-02 -->
 target: ClasificatiiBugetView.gridBuget
-part: footer.right
-Semnul + adaugă o versiune nouă de buget, cu data ei de început; «✕» de pe rând o șterge. Pentru revizii din ianuarie – martie adaugă o versiune care începe la 01.01.
+O versiune nouă de buget se adaugă scriind în rândul gol de la sfârșit; «✕» de pe rând o șterge. Pentru revizii din ianuarie – martie adaugă o versiune care începe la 01.01.
 
 ## Rectificările
 <!-- slice: 0087, 0000-20 -->
@@ -45,10 +44,9 @@ target: ClasificatiiBugetView.gridRectificari
 Aceleași coloane plus numărul și data documentului. Data unei rectificări trebuie să fie în anul de lucru.
 
 ## Rectificări › Adaugă o rectificare
-<!-- slice: 0087, 0000-23 -->
+<!-- slice: 0087, 0000-23, 0126-02 -->
 target: ClasificatiiBugetView.gridRectificari
-part: footer.right
-Semnul + adaugă un rând nou, pe care îl completezi direct în tabel.
+Scrii în rândul gol de la sfârșit și devine o rectificare nouă.
 
 ## Rectificări › Total
 <!-- slice: 0087, 0000-23, 0107-02 -->

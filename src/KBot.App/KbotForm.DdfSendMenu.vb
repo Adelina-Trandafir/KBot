@@ -124,6 +124,7 @@ Partial Public Class KbotForm
                 Function() WithReauth(Of DdfInfo)(
                     Function() _apiClient.GetDdfAsync(cod, CancellationToken.None, pentruGenerare:=True)),
                 AddressOf CitesteFisierulDdfAsync, _session, idrev, DdfPdfMode.Final).ConfigureAwait(True)
+            If generat Is Nothing Then Return False   ' not signed in: the operator was told
 
             Dim continut As Byte() = File.ReadAllBytes(generat.PdfPath)
             ' The sha the server holds now (the signed interim PDF), or «no row».

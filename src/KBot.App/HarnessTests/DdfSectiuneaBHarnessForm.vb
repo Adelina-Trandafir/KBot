@@ -66,6 +66,10 @@ Public NotInheritable Class DdfSectiuneaBHarnessForm
         _session = session
         _loginFactory = loginFactory
         _log = log
+        ' The harness signs in with its own session (no Program.RunShellWithLogin), so the template download reads that one.
+        KBot.Xfa.TemplateDownloader.TokenProvider = Function() _session.Token
+        ' The bench works on the template the server holds right now, never on a copy left in the cache folder.
+        KBot.Xfa.TemplateDownloader.UseLocalCache = False
         AddHandler AdobeHostLog.LineWritten, AddressOf OnAdobeLogLine
         _logHooked = True
         AddHandler preview.DocumentSaved, AddressOf OnDocumentSaved
@@ -116,6 +120,7 @@ Public NotInheritable Class DdfSectiuneaBHarnessForm
                 ' The real interim generation (DdfPdfGenerator, as the DDF view does), from the data just read.
                 Dim generat As DdfPdfGenerator.Rezultat = Await DdfPdfGenerator.GenereazaAsync(
                     Function() Task.FromResult(data), Nothing, _session, idrev, DdfPdfMode.Interim).ConfigureAwait(True)
+                If generat Is Nothing Then Return   ' the template could not be downloaded: the operator was told
 
                 Dim target As String = StampedPath(TempPdfStore.EnsureRoot(), $"BANC_DDF_{idrev}_A")
                 ReleaseDocument()

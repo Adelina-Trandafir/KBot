@@ -489,6 +489,10 @@ Public Class AsociereForm
     ''' DataH, ca fiecare instantaneu să fie judecat față de lanțul deja crescut cu cele de
     ''' dinaintea lui; unul refuzat rămâne în coș.</para>
     ''' </remarks>
+    ' Slice 0122-10: the distance, in days, between a snapshot and its reception beyond which nothing is placed by itself.
+    ' The same number as PRAG_ZILE_SUGESTIE in PYTHON/routes/forexe/prelucrare_asociere.py: change them together.
+    Private Const PRAG_ZILE_ASEZARE As Integer = 31
+
     Private Function AsazaPerechileUnice() As Integer
         If _stare Is Nothing Then Return 0
 
@@ -511,6 +515,9 @@ Public Class AsociereForm
         For Each inst As InstantaneuLegat In inCos
             Dim rec As ReceptiePropusa = Nothing
             If Not unicaReceptie.TryGetValue(cheie(inst.Total), rec) Then Continue For
+            ' Slice 0122-10: a sum that matches is not proof (a monthly salary has the same sum every month): a snapshot
+            ' further than a month from the reception's date is left in the basket for the operator.
+            If Math.Abs((inst.DataH.Date - rec.DataR.Date).TotalDays) > PRAG_ZILE_ASEZARE Then Continue For
             If MotivulRefuzului(inst, rec) <> String.Empty Then Continue For
             _pozitie(inst.Idrh) = rec.Idrr
             _ignorat(inst.Idrh) = False

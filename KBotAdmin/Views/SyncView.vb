@@ -15,11 +15,11 @@ Public Class SyncView
     Private Shared ReadOnly WarnWords As New Regex("\b(WARN|WARNING|DISTRUCTIV[AE]?|refuz\w*|MISSING)\b", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
 
     ' ME01-05: the server mentions a database the registry lists but the server does not have; it is not a target, so it is not shown.
-    Private Shared ReadOnly MissingDbLine As New Regex("listeaz.+nu exist.+ignorat", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
+    Friend Shared ReadOnly MissingDbLine As New Regex("listeaz.+nu exist.+ignorat", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
 
     ' The preview's summary: «<n> DISTRUCTIVE, pe: ...» when the plan deletes or changes data, «Instructiunile scrise in: <file>» when there is any plan at all.
-    Private Shared ReadOnly DestructiveLine As New Regex("(\d+) DISTRUCTIVE", RegexOptions.CultureInvariant)
-    Private Shared ReadOnly PlanWrittenLine As New Regex("Instruc.iunile scrise", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
+    Friend Shared ReadOnly DestructiveLine As New Regex("(\d+) DISTRUCTIVE", RegexOptions.CultureInvariant)
+    Friend Shared ReadOnly PlanWrittenLine As New Regex("Instruc.iunile scrise", RegexOptions.IgnoreCase Or RegexOptions.CultureInvariant)
 
     Private _context As AdminContext
     Private ReadOnly _lines As New List(Of KBotLogLine)()

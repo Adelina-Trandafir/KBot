@@ -1,0 +1,44 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- K-BOT tray application (slice TRAY-01). A mini program that lives in the notification area
+       from the start of Windows until it is closed, checks every few minutes whether the logged-in user has documents
+       waiting for the signature and, if so, shows a list above the clock. A click on a row starts K-BOT on that
+       document (see KBot.Common TrayRequest). publish-release.ps1 publishes it as ONE file (framework-dependent), like
+       KBot.Updater, and drops KBot.Tray.exe next to KBot.App.exe; at start it copies itself to %LOCALAPPDATA% and runs from
+       the copy, so the update of C:\KBOT never meets a locked file. -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net8.0-windows</TargetFramework>
+    <RootNamespace>KBot.Tray</RootNamespace>
+    <AssemblyName>KBot.Tray</AssemblyName>
+    <UseWindowsForms>true</UseWindowsForms>
+    <MyType>Empty</MyType>
+    <StartupObject>KBot.Tray.Program</StartupObject>
+    <OptionStrict>On</OptionStrict>
+    <OptionExplicit>On</OptionExplicit>
+    <OptionInfer>On</OptionInfer>
+    <OptionCompare>Binary</OptionCompare>
+    <ApplicationIcon>..\KBot.App\kbot.ico</ApplicationIcon>
+  </PropertyGroup>
+
+  <!-- K-BOT component version.
+       FileVersion: bump MANUALLY, only when THIS project changes.
+       AssemblyVersion: keep STABLE. -->
+  <PropertyGroup>
+    <FileVersion>1.0.0.0</FileVersion>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Import Include="System.Drawing" />
+    <Import Include="System.Windows.Forms" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\KBot.Api\KBot.Api.vbproj" />
+    <ProjectReference Include="..\KBot.Common\KBot.Common.vbproj" />
+    <ProjectReference Include="..\KBot.Domain\KBot.Domain.vbproj" />
+    <ProjectReference Include="..\KBot.Theming\KBot.Theming.vbproj" />
+  </ItemGroup>
+
+</Project>

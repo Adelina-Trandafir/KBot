@@ -22,6 +22,9 @@ Public Class StartupLauncherForm
     ''' <summary>Aplicația reală: autentificare, apoi shell-ul (MainForm).</summary>
     Public Const KEY_APLICATIE As String = "aplicatie"
 
+    ''' <summary>Slice 0125: aplicația reală, dar FOREXE răspunde simulat (nu se atinge forexecab).</summary>
+    Public Const KEY_APLICATIE_SIMULAT As String = "aplicatie-simulat"
+
     ''' <summary>Bancul de probă (DevHarnessForm).</summary>
     Public Const KEY_BANC As String = "banc"
 
@@ -35,6 +38,7 @@ Public Class StartupLauncherForm
     ' din Program.Main aruncă pe o cheie pe care n-o cunoaște, deci o pornire uitată se vede imediat.
     Private Shared ReadOnly PORNIRI As (Key As String, Text As String)() = {
         (KEY_APLICATIE, "Aplicația — autentificare, apoi K-BOT"),
+        (KEY_APLICATIE_SIMULAT, "Aplicația cu FOREXE simulat — fără robot, forexecab neatins"),
         (KEY_BANC, "Banc de probă — teste și playground-uri"),
         (KEY_JURNALE, "Jurnale — vizualizatorul de jurnale"),
         (KEY_ACCESS, "Probă Access — citește cale.accdb, închide direct")}

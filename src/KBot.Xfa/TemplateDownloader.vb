@@ -1,7 +1,9 @@
 Option Strict On
 Imports System.IO
 Imports System.Net.Http
+Imports System.Windows.Forms
 Imports KBot.Common
+Imports KBot.Theming
 
 ' Descarcă/cache-uiește macheta XFA (DDF/ORD) de pe rutele bearer ale API-ului (vezi Configs).
 ' Portat din XFA_WRITTER. Cache pe disc în CACHE_DIR; HEAD întâi (evită re-download
@@ -11,6 +13,13 @@ Public Class TemplateDownloader
 
     ''' <summary>Returns the live bearer token of the signed-in session; set once by the application at start-up.</summary>
     Public Shared Property TokenProvider As Func(Of String)
+
+    ''' <summary>
+    ''' True (default) = a template already in the cache folder is reused, after a HEAD that only asks for its name. False = the
+    ''' template is ALWAYS downloaded from the server (no HEAD, no cache check) and written over the cache copy; the test bench
+    ''' sets it so it works on exactly what the server holds.
+    ''' </summary>
+    Public Shared Property UseLocalCache As Boolean = True
 
     ''' <summary>
     ''' Called when the server answers 401 (session closed or expired): the application re-signs the
@@ -29,7 +38,8 @@ Public Class TemplateDownloader
     End Class
 
     ''' <summary>
-    ''' Întoarce calea locală a machetei pentru tipul de document (o descarcă dacă lipsește).
+    ''' Întoarce calea locală a machetei pentru tipul de document (o descarcă dacă lipsește);
+    ''' Nothing când nu există sesiune autentificată (operatorul a fost înștiințat).
     ''' Metodă de graniță (I/O + HTTP): loghează în GlobalErrorLog și rearuncă.
     ''' </summary>
     Public Shared Function GetTemplatePath(docType As String) As String
@@ -65,9 +75,18 @@ Public Class TemplateDownloader
                 client.Timeout = TimeSpan.FromSeconds(60)
                 Dim k_token As String = If(TokenProvider Is Nothing, String.Empty, TokenProvider.Invoke())
                 If String.IsNullOrEmpty(k_token) Then
-                    Throw New InvalidOperationException("Nu exista o sesiune autentificata pentru descarcarea machetei.")
+                    ' Not signed in: the operator is told and the download simply does not happen (no exception).
+                    KBotMessage.Show("Nu sunteți conectat(ă): macheta nu poate fi descărcată. Autentificați-vă și încercați din nou.",
+                                     "Descărcare machetă", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                    XfaLog.Log("WARN", "GetTemplatePath — fără sesiune autentificată, macheta nu a fost descărcată.")
+                    Return Nothing
                 End If
                 client.DefaultRequestHeaders.Authorization = New System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", k_token)
+
+                If Not UseLocalCache Then
+                    XfaLog.Log("INFO", "GetTemplatePath — fără cache local: macheta se descarcă direct de pe server.")
+                    Return DownloadFull(client, templateUrl, docType)
+                End If
 
                 Dim headRequest As New HttpRequestMessage(HttpMethod.Head, BASE_URL & templateUrl)
                 Dim headResponse As HttpResponseMessage

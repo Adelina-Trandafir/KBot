@@ -1,5 +1,21 @@
 # Implementare VERCON v2
 
+## Actualizare 30.10.2026 — Certificat digital Administrator (SLICE-WB02-01)
+
+[Worklog SLICE-WB02-01](docs/worklog/SLICE-WB02-01-certificat-digital-administrator.md).
+
+## Actualizare 30.10.2026 — Data NIR după data facturii (SLICE-VC06-21)
+
+[Worklog SLICE-VC06-21](docs/worklog/SLICE-VC06-21-data-nir-dupa-data-facturii.md).
+
+## Actualizare 30.10.2026 — Data listelor de alimente între vecine (SLICE-VC07-09)
+
+[Worklog SLICE-VC07-09](docs/worklog/SLICE-VC07-09-data-listelor-intre-vecine.md).
+
+## Actualizare 30.10.2026 — NIR: adaos pozitiv fără blocaj pentru deficit istoric (SLICE-VC06-20)
+
+[Worklog SLICE-VC06-20](docs/worklog/SLICE-VC06-20-nir-adaos-pozitiv-fara-blocaj-istoric.md).
+
 Convenție editorială (D001-04): marcajul **Confirmat 23.10** abreviază exclusiv «TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026)». Se aplică numai intrării care poartă marcajul; nu confirmă alte intervenții, limitări sau cazuri individuale. Stările locale/nerulate și confirmările ulterioare din workloguri rămân distincte.
 
 Titlurile cu legătură trimit la istoricul tematic: comportament, evoluție, reguli, fișiere, ordinea aplicării, proveniență, probe și limite ale etapei. Titlul și data rămân în poziția cronologică inițială; confirmările aparțin numai etapelor indicate în destinație. Consolidările NIR din 16.10 sunt cele preluate prin D001-04, iar nomenclatoarele din 15.10 prin D001-05.
@@ -839,3 +855,65 @@ Detalii: [revizia 28](docs/worklog/SLICE-VC06-03-bc-si-controlul-disponibilului.
 Grila paginii Rapoarte avea patru rânduri declarate (minmax(0,1fr) auto auto auto); cu doar panouri și butoane, ultimele două rânduri goale își adăugau fiecare câte 12px de spațiu sub butoane. Acum un singur rând fix pentru panouri și rânduri automate dedesubt (grid-auto-rows). Fișier: css/vercon-workspace.css. Neîncercat în browser; ipoteza vine din CSS, nu dintr-o măsurătoare.
 
 Rapoarte: .vc-reports__actions are acum și padding-bottom: 10px (css/vercon-rapoarte.css).
+
+### [2026-10-27 — VC06-19: bonuri de consum: grupare în popup și numerotare pe cont](docs/worklog/SLICE-VC06-19-bc-grupare-popup-si-numerotare-pe-cont.md)
+
+Butonul Grupare (Data / Primitor / Cont) la BC; fereastra «Setări gestiune» (modal, grila de setări + grila cu numerele curente); numerotare pe cont la materiale; numere de bon cu prefix și un spațiu (BC 13, BX 13, BP 13, BS 13, BT 13); interogare unică `sql/VC_20261027_BC_NUMEROTARE_PE_CONT.sql`. Doar sintaxa verificată; nerulat, nepublicat.
+
+## 27.10.2026 — antet BC pe două rânduri
+
+Rândul 1: Primitor / gestionar și Cont, câte 50% din lățime. Rândul 2: Explicații 50%, Număr BC și Data câte 25% (50% din ce rămâne după Explicații). Grila are patru coloane egale; înălțimea rezervată a antetului BC e de două rânduri (NIR rămâne la trei). Fișiere: css/vercon-consumption.css, css/vercon-header-inline.css, css/vercon-documente-layout.css. Neîncercat în browser.
+
+Corectie 27.10.2026: rândul 2 al antetului BC e Număr BC, Data, Explicații (în această ordine). Mesajul «se pot modifica numai în luna activă» nu mai apare la click în arbore (docs.js, open()); apare doar la click pe «Modifică», care nu mai e dezactivat pentru documentele blocate pe lună (docs.js, butonul și meniul). Valabil pentru toate familiile de bonuri care folosesc docs.js. Neîncercat în browser.
+
+## 27.10.2026 — rapoarte: produsele ordonate dupa Denumire
+
+Toate rapoartele cu linii de produs se ordoneaza dupa grupare (de la exterior spre interior), apoi dupa Denumire (diacriticele urmeaza litera de baza). Documentele (NIR, bonuri) isi pastreaza ordinea de acum; se ordoneaza doar liniile din document. Balanta pastreaza gruparea pe conturi. Lista de alimente: alimentele in ordine alfabetica inainte de impartirea pe doua coloane. Nu se ating fisele (cronologice) si rapoartele agregate fara produs (Centralizator conturi/furnizori, centralizator bonuri, furnizori). Fisiere: PYTHON/routes/vercon/report_sort.py (nou), report_service.py, report_food.py. Doar compilarea si doua verificari mici pe date inventate; neincercat pe rapoarte reale.
+
+## 27.10.2026 — NIR: TVA din grila nu mai schimba antetul
+
+In `docs.js`, `syncVatLock` rescria cota din antet din liniile grilei la fiecare recalculare. Acum cota din linii se preia in antet o singura data, cand se deschide un NIR salvat (documentul salvat nu are cota de antet proprie). Dupa aceea, schimbarea TVA pe o linie nu mai atinge antetul; ramane doar sensul antet -> linii. La NIR nou, antetul ramane cum l-a ales operatorul. Casuta de antet ramane ascunsa cand liniile au cote diferite (neschimbat). Doar sintaxa verificata (node --check); neincercat in browser.
+
+## 27.10.2026 — rapoarte: fara textul «Subunitatea:» in antet
+
+In antetul rapoartelor (ecran, PDF, Excel) apare direct numele subunitatii, fara prefixul «Subunitatea:». Fisiere: PYTHON/routes/vercon/report_identity.py (si VERSION 1 -> 2, ca rapoartele deja generate sa fie refacute la export), PYTHON/static/js/vercon/snapshot-pdf.js. Doar compilarea verificata; neincercat in browser.
+
+## 27.10.2026 — NIR: salvare cu diferenta de cel mult 1 leu
+
+La salvare, daca valoarea din antet difera de totalul liniilor cu cel mult 1 leu, apare o fereastra de atentionare («Salveaza cu diferenta» / «Nu salva»). La confirmare clientul trimite `accept_difference: true`; serverul accepta diferenta doar pana la 1 leu (`receipt_rules.ACCEPTED_DIFFERENCE`), atat la adaugare (receipt_distribution.write) cat si la modificare (receipt_rules.exact_total prin create_nir/edit_nir). NIR-ul pastreaza totalul liniilor; factura pastreaza valoarea declarata. Peste 1 leu ramane blocat ca pana acum. La factura comuna (asociata mai multor NIR) fereastra nu apare si se aplica regula INVOICE_TOTAL. Fisiere: PYTHON/static/js/vercon/docs.js, PYTHON/routes/vercon/receipt_rules.py, receipts.py, receipt_distribution.py. Compilat si probat pe numere inventate (exact_total); neincercat in browser sau pe baza reala.
+
+### [2026-10-30 — SLICE-VC06-22: Gestionar — furnizori și actualizare numai prin ANAF](docs/worklog/SLICE-VC06-22-gestionari-parteneri-anaf.md)
+
+### [2026-10-30 — SLICE-VC06-23: Furnizori — layout și opțiunea ANAF în DGV](docs/worklog/SLICE-VC06-23-furnizori-layout-optiuni-anaf.md)
+
+### [2026-10-30 — SLICE-VC06-24: Furnizori — coloane DGV proporționale](docs/worklog/SLICE-VC06-24-furnizori-coloane-proportionale.md)
+
+### [2026-10-30 — SLICE-VC06-25: Furnizori — încadrarea antetului de opțiuni](docs/worklog/SLICE-VC06-25-furnizori-antet-optiuni-fara-overflow.md)
+
+### [2026-10-30 — SLICE-VC06-26: Furnizori — sincronizarea ANAF disponibilă tuturor utilizatorilor listei](docs/worklog/SLICE-VC06-26-furnizori-anaf-disponibil.md)
+
+### [2026-10-30 — SLICE-VC06-27: Furnizori — rolul corect Administrator](docs/worklog/SLICE-VC06-27-rol-corect-administrator.md)
+
+### [2026-10-30 — SLICE-VC09-06: Prețul cu TVA al stornărilor și analiza balanței](docs/worklog/SLICE-VC09-06-storno-pret-si-balanta.md)
+
+### [2026-10-30 — SLICE-VC09-07: KBotAdmin — verificarea și repararea prețurilor storno pe baza selectată](docs/worklog/SLICE-VC09-07-kbotadmin-preturi-storno.md)
+
+### [2026-10-30 — SLICE-VC09-08: Analiza pierderii zecimalelor la bonurile de retur](docs/worklog/SLICE-VC09-08-analiza-preturi-bonuri-retur.md)
+
+### [2026-10-30 — SLICE-VC09-09: Retururi — prețuri recuperate și rulaje storno/retur în coloanele corecte ale balanței](docs/worklog/SLICE-VC09-09-retururi-si-rulaje-balanta.md)
+
+### [2026-10-30 — SLICE-VC09-10: Balanță — fără rânduri cu solduri și rulaje nete zero](docs/worklog/SLICE-VC09-10-balanta-fara-randuri-net-zero.md)
+
+### [2026-10-30 — SLICE-VC09-11: Click pe produs în raport — fișă de magazie în popup](docs/worklog/SLICE-VC09-11-raport-link-fisa-magazie-popup.md)
+
+### [2026-10-30 — SLICE-VC09-12: Popup fișă — lățime dublă, înălțime redusă și închidere la exterior](docs/worklog/SLICE-VC09-12-popup-fisa-dimensiuni-si-inchidere.md)
+
+### [2026-10-30 — SLICE-VC09-13: Balanță fără tooltip/subliniere și export fără linkuri](docs/worklog/SLICE-VC09-13-raport-fara-tooltip-si-export-fara-linkuri.md)
+
+### [2026-10-30 — SLICE-VC09-14: Alinierea zonelor de click cu produsele din PDF](docs/worklog/SLICE-VC09-14-aliniere-click-produse-pdf.md)
+
+### [2026-10-30 — SLICE-VC09-15: Chenar subtil pe întregul rând al produsului la hover în raport](docs/worklog/SLICE-VC09-15-chenar-hover-rand-produs-raport.md)
+
+### [2026-10-30 — SLICE-VC09-16: Chenar de hover mai vizibil în raport](docs/worklog/SLICE-VC09-16-chenar-hover-mai-vizibil.md)
+
+### [2026-10-30 — SLICE-VC09-17: Alinierea chenarului de hover cu grila PDF](docs/worklog/SLICE-VC09-17-aliniere-chenar-hover-cu-grila.md)
