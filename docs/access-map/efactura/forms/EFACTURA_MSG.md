@@ -1,8 +1,10 @@
 # Form `EFACTURA_MSG`
 
-Source: `Forms/EFACTURA_MSG.txt` (26,968 chars). [Reading conventions](../README.md#form-page-conventions).
+Source: `Surse/RawExport/Forms/EFACTURA_MSG.txt` (26,968 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
+
+Inherits [P1](../README.md#form-properties-p1).
 
 | Property | Value |
 |---|---|
@@ -10,20 +12,12 @@ Source: `Forms/EFACTURA_MSG.txt` (26,968 chars). [Reading conventions](../README
 | DefaultView | 0 |
 | AutoCenter | NotDefault |
 | BorderStyle | 3 |
-| NavigationButtons | NotDefault |
-| RecordSelectors | NotDefault |
-| DividingLines | NotDefault |
-| ScrollBars | 0 |
 | Width | 6994 |
 | Left | 11748 |
 | Top | 3900 |
 | Right | 18744 |
 | Bottom | 8088 |
 | FitToScreen | 1 |
-| GridY | 10 |
-| TabularCharSet | 238 |
-| DatasheetFontName | Calibri |
-| DatasheetFontHeight | 11 |
 
 Form events wired: `OnLoad` = VBA
 
@@ -74,5 +68,3 @@ See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 ## Opened from
 
 `module:mdl_Popup2022`
-
-Raw source: `Surse/RawExport/Forms/EFACTURA_MSG.txt`

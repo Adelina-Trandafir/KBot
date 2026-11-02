@@ -4,9 +4,9 @@
 
 Notificarea `ade-message` din pagina principală rămânea afișată după eroare, inclusiv după selectarea unui copil sau alegerea altei luni/grupe.
 
-Modulul comun `static/js/portal/messages.js` oferă acum legarea opțională `clearMessageOnAction`. Evenimentele pointerdown, click, keydown, input, change și submit sunt ascultate în captura ferestrei, înainte de handlerii acțiunilor. Mesajul existent cu rol alert este golit și ascuns prin `showMessage`, care resetează și rolul la status. Mesajul rămâne în istoricul comun; golirea nu adaugă o înregistrare nouă. Un handler care raportează o nouă eroare o poate afișa după această resetare.
+Legarea opțională `clearMessageOnAction` din `static/js/portal/messages.js` ascultă pointerdown, click, keydown, input, change și submit în captura ferestrei, înaintea handlerilor. `showMessage` golește/ascunde alerta și schimbă rolul în status; istoricul comun o păstrează, fără înregistrare pentru golire. Handlerul poate afișa apoi o eroare nouă.
 
-ADECHIT leagă mecanismul numai pentru notificarea generală a paginii și eliberează listenerii la pagehide. Nu se modifică validarea câmpurilor sau mesajele proprii formularelor. Hoverul și răspunsurile de fundal nu declanșează resetarea notificării.
+ADECHIT îl leagă numai la notificarea generală și eliberează listenerii la pagehide. Validarea câmpurilor și mesajele formularelor rămân neschimbate; hoverul și răspunsurile de fundal nu resetează notificarea.
 
 De publicat prin AvacontPush:
 

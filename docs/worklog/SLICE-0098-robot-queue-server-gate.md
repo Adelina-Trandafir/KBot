@@ -24,7 +24,7 @@ No tests and no git, as asked.
 - `ForexeController.RunGatedAsync` closes the gate around the runner call **only**. That includes the workflow run (`RunJobAsync` / `RunAsync`, so connect, downloads, DDF send and opening an angajament), the statements walk, the CAB document upload and the receipt search.
 - Pre-run server reads (REVERSE local history, last statement date) and post-run ingest remain outside the gate.
 - **Closed gate = requests wait, they are not refused.** A view that loads during a download simply shows its busy bar until the run ends.
-- Closing the gate first waits for any request already on the wire to come back, answer body included. So the robot never starts while an answer is still arriving.
+- Before the robot starts, gate closure waits for in-flight requests, including response bodies.
 - **The handler counts timeout after the gate wait; `HttpClient.Timeout` is infinite.** Otherwise a four-minute download could exhaust the 100 s timeout before a waiting request left the PC.
   - When it fires, the handler throws the same error as `HttpClient` (a `TaskCanceledException` over a `TimeoutException`), so the retry in `ApiClient` still recognises it.
 - **Some requests pass a closed gate** (`ServerGate.Bypass`, set on the request):
@@ -34,7 +34,7 @@ No tests and no git, as asked.
   - Holding the first two would hold the robot forever.
 
 #### 2. The robot queue (`KBot.App/Forexe/RobotQueue.vb`)
-- **One task = the whole operation.** That means the questions, the download, the two-phase ingest (the «Asociere» window included), the tree reload and the pictures.
+- **One task = the whole operation:** questions, download, two-phase ingest (including «Asociere»), tree reload and pictures.
 - Tasks run sequentially on the UI thread; the next run waits for the previous association window and package write (rule 1).
 - **Entry points routed through the queue:**
 
@@ -51,16 +51,15 @@ No tests and no git, as asked.
   | Operation captured in the FOREXE page | none; goes **in front** of the waiting tasks, because its pictures are of the page as the operator left it |
 
 - A second click on something already queued or running is refused, with a line on the console.
-- **Each task first waits for robot idle**, allowing an outside operation («Conectare» / «Browser FOREXE») to finish instead of failing as busy.
+- **Each task waits for robot idle**, including outside operations («Conectare» / «Browser FOREXE»), instead of failing as busy.
 - **Nested queued flows run in place**, detected with `AsyncLocal`, avoiding a task waiting behind itself.
 - **A task that never ran throws `RobotTaskDroppedException`**, with a Romanian message. The click handlers swallow it, because the console already said it. The CAB note shows it in its receipt window.
 - **`DuLaIngestieAsync`** marks the queue as waiting while the «Asociere» window is open, and the queue window shows it.
-- **`KbotForm.LoadTreeAsync`** now reads the selected node **after** the tree request comes back.
-  - Previously selection was read before the request; a gate wait could then restore the old node over a newer click.
+- **`KbotForm.LoadTreeAsync`** reads selection **after** the tree response; reading it before a gate wait could restore an old node over a newer click.
 
 #### 3. The queue window (`RobotQueueForm`) and the footer button
 - **`RobotQueueForm`** is modeless, owned by the shell and does not take focus when shown.
-  - It shows the running task and what it waits for, then the waiting tasks in order, with the time each was queued.
+  - Shows the running task and its wait reason, then queued tasks in order with enqueue times.
   - Commands:
     - **Pauză / Continuă**: the running task finishes and nothing new starts.
     - **Scoate**: removes the selected waiting task.

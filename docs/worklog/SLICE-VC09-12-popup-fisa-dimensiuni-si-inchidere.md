@@ -6,9 +6,9 @@ Utilizatorul a trimis captura popupului îngust și a cerut lățime dublă, în
 
 Din CSS rezultă că regula comună `.confirm-box` are lățimea 420px și poate prevala peste `.vc-modal` la aceeași specificitate. Popupul primește regula explicită `.confirm-box.vc-stock-card`: **840px**, limitat la 94% din lățimea disponibilă. Înălțimea este **67,5% din viewportul aplicației** (75% din limita anterioară de 90%), cu suport pentru viewportul dinamic și zoomul aplicației. Nu se schimbă dimensiunile altor dialoguri.
 
-Dialogul are structură flex verticală: antet și subsol fixe, corpul ocupă spațiul rămas și se poate derula vertical. Butonul Închide este în subsolul permanent vizibil, aliniat la dreapta. Grila ocupă spațiul rămas în corp, în locul înălțimii proprii de 48vh care împingea subsolul în jos. Coloanele folosesc în continuare dimensionarea proporțională a controlului; derularea orizontală este dezactivată strict în corpul și grila acestui popup. Controlul DataGrid comun nu este modificat.
+Flex vertical: antet/subsol fixe, Închide permanent vizibil la dreapta în subsol, corp derulabil vertical în spațiul rămas. Grila folosește restul corpului, înlocuind cei 48vh care împingeau subsolul. Coloanele păstrează dimensionarea proporțională; derularea orizontală este oprită numai în corpul/grila acestui popup. DataGrid comun rămâne neschimbat.
 
-Clickul pe backdrop închide numai fișa și anulează cererea în curs prin ciclul de viață existent. Se verifică începutul și sfârșitul gestului în afara dreptunghiului dialogului, pentru a evita închiderea la o selecție/tragere începută în interior. Clickurile în conținut nu închid fișa. Închide și Escape rămân disponibile; raportul principal nu se reîncarcă.
+Backdropul închide numai fișa și anulează cererea în curs prin ciclul de viață existent, dacă gestul începe și se termină în afara dreptunghiului dialogului. Clickurile și selecțiile/tragerile începute în interior nu închid. Închide și Escape rămân disponibile; raportul principal nu se reîncarcă.
 
 Fișiere: `PYTHON/static/css/vercon-stock-card.css`, `PYTHON/static/js/vercon/report-stock-card.js`; acest worklog și trimiterile din `VERCON/VERCON_STATUS.md` și `implementare_vercon_v2.md`.
 

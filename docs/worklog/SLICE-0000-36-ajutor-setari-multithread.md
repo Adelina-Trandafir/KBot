@@ -4,7 +4,7 @@ Help work for feature slice **0100-02** ([0100-02](SLICE-0100-multithreading-des
 
 ## What changed and why
 The group «Descărcări multiple» left Setări › Aplicație and became its own Setări page, shown only while the unit allows multi-thread; the advanced options no longer matter; the tabs limit comes from the unit.
-- `contabil.forexe.descarcare-multipla`: intro + «Cum o pornești» rewritten (Setări › Descărcări multiple; «Nu vezi pagina în listă?» = not allowed for the unit, ask who administers K-BOT; no advanced options; «Numărul de taburi deodată (1–N)» with N = the unit's limit, never above 10; the page disappears at the next connection if the unit stops allowing it); the two later capture prepares point to the new page; keywords added.
+- `contabil.forexe.descarcare-multipla`: intro / «Cum o pornești»: Setări › Descărcări multiple, without advanced options; «Nu vezi pagina în listă?» means the unit disallows it: ask the K-BOT administrator. «Numărul de taburi deodată (1–N)» uses the unit's limit, at most 10. Revoked permission hides the page at next connection. The two later capture prepares point here; keywords added.
 - `contabil.setari`: `screens:` + `SetariMultithreadView`; new row «Descărcări multiple» in the page table; the group table no longer lists it (one sentence points to the topic).
 - `avansat`: the bullet about the group removed from «Cum le pornești».
 - `tours/tur-setari.md`: new step «Descărcări multiple» (`part: item:multithread`; skipped on its own when the page is not in the list). `HelpContent/README.md`: `multithread` added to the `setari:<page>` list.

@@ -24,13 +24,13 @@ Construit ca Rezervări (0014): un singur endpoint cititor brut, `WithReauth(Of 
 - **LISTA** (`qFX_MAIN_REC_LISTA_IND`): `UNION ALL` între total sintetic (`IDR=-1`, `Valoare = Sum(FX_Receptii.DIF)` pe antet) și `Sum(Valoare)` per clsf, cu `FX_Indicatori.NrCrt`/eticheta clasificației. Selecția H o umple; rădăcina o golește (`mcTree_Click`, `IDRH=-1`), ca Access.
 - **Iconița rădăcinii reflectă starea** (finding 5): `Incarcat` → „sus", altfel `Preluat` → „jos", altfel „neutru" (Access `REV_SUS`/`REV_JOS`/`REV_NOT`). Anteturile n-au iconiță.
 - **Clasificația, drumul 0011-03:** `LEFT JOIN FX_Indicatori` pe `CodAI`, Clsf prin scalară `LIMIT 1` pe `I.IdClsf` (ID Access) + `I.IdUnitate`. Duplicate reale în nomenclator exclud joinul cu fan-out; `NrCrt = FX_Indicatori.NrCrt`.
-- **`LEFT JOIN FX_Receptii`** (nu INNER): un antet fără linii nu are voie să dispară din arbore (qFX_MAIN_REC_TREE nu depinde de FX_Receptii). Vine cu un rând având `idr` NULL; clientul îl ține în arbore, iar grila lui arată doar randul-total.
-- **Un endpoint** livrează `receptii` + `plati` pentru arbore/LISTA și viitorul tooltip 0015-02. `qFX_MAIN_REC_TT_PLATI`: `Data_plata, Suma WHERE CodAngajament=cod`, fără alte filtre, confirmat în export; plățile sunt incluse deja pentru un singur apel client.
+- **`LEFT JOIN FX_Receptii`**, nu INNER, păstrează antetul fără linii (qFX_MAIN_REC_TREE nu depinde de FX_Receptii): `idr` NULL, nod păstrat, grilă numai cu total.
+- **Un endpoint:** `receptii` + `plati` pentru arbore/LISTA și viitorul tooltip 0015-02, într-un apel. Plăți conform exportului `qFX_MAIN_REC_TT_PLATI`: `Data_plata, Suma WHERE CodAngajament=cod`, fără alte filtre.
 
 #### Devieri față de schița planului (documentate)
 
 - **Chei de fir snake_case**, nu PascalCase-ul din schița JSON a planului — pentru consistență cu `/sumar` și `/rezervari` (același `PropertyNamingPolicy=Nothing`, „snake_case se oprește la fir").
-- **Descriere = antet** (`FX_Receptii_H.Descriere`), „Toți indicatorii” la total. Planul vag „Descriere from the indicator” este infirmat de `qFX_MAIN_REC_LISTA_IND`: `Nz([HH]![Descriere],'Toți indicatorii')`, HH = FX_Receptii_H. Rândul transmite `descriere_h`.
+- **Descriere = antet** (`FX_Receptii_H.Descriere`), „Toți indicatorii” la total, transmis ca `descriere_h`. Infirmă planul „Descriere from the indicator”: `qFX_MAIN_REC_LISTA_IND` folosește `Nz([HH]![Descriere],'Toți indicatorii')`, HH = FX_Receptii_H.
 - **`sters_h` brut** vine din 0015-01 pentru cumulul DIFH al tooltipului 02: `qFX_MAIN_REC_TT_DIFH` filtrează `Sters=False`, spre deosebire de arbore. Evită adăugarea unui câmp în pasul următor, fără pre-modelare.
 - **Randul-total al grilei apare PRIMUL** (decizie blocată a planului), deși Access îl împinge la coadă cu trucul `Nz(HH.DataH, #12/31/2100#)`. Restul grupurilor: pe NrCrt (DataH e constant pe un antet).
 

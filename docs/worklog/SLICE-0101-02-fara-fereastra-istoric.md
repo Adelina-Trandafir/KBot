@@ -4,9 +4,9 @@ Branch: `SLICE-0100-Multithreading` (nothing committed).
 
 ## What changed and why
 
-After K-BOT took over a save made in the FOREXE page, it opened the «Istoric angajament» window (the history rows FOREXE wrote in the operator's minutes). Since 28.09.2026 it no longer opened after a reception; the operator now says it adds nothing and only breaks the flow, for any operation.
+Taking over a FOREXE save opened «Istoric angajament» (history rows FOREXE wrote in the operator's minutes). Reception saves stopped opening it on 28.09.2026; the operator now asks removal for all operations: no added value, interrupted flow.
 
-- `KbotForm.ForexeWatch.vb`: the call `DeschideIstoricInterval(...)` after each take-over is gone, and so is the `DeschideIstoricInterval` method and the now-unused `deLa` / `panaLa` locals.
+- `KbotForm.ForexeWatch.vb`: removed the post-takeover `DeschideIstoricInterval(...)` call, the method and unused `deLa`/`panaLa` locals.
 - **`IstoricIntervalForm` (+ Designer) is deliberately KEPT** in `src/KBot.App/Forexe/`, unreferenced - the operator asked to remove only the references, not the form.
 - Help: `contabil/forexe/browser.md` - the paragraph about the window and its capture `istoric-interval` are gone, as is «și istoricul» from the receptions row and `IstoricIntervalForm` from `screens:`. No picture file existed for it.
 

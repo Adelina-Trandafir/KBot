@@ -14,7 +14,7 @@ Escape este consumat în faza capture a editorului comun DataGrid și anulează 
 
 Am eliminat mesajul cu instrucțiuni din Taxe. Elementul pentru mesaje rămâne ascuns și este folosit numai pentru erori, pentru a păstra raportarea controlată. Începutul taxei se introduce ca text ll.aaaa (fără calendar), stocat YYYY-MM. Sfârșitul este coloană doar pentru afișare, fără input/editor, inclusiv pe rând nou.
 
-O taxă nouă este activă implicit și primește propunerea lunii curente sau a lunii următoare celei mai recente taxe, dacă există deja una cu început ulterior. Taxa anterioară devine inactivă și primește sfârșitul în luna precedentă noului început. UI afișează modificarea în draft; API o aplică în tranzacția atomică la salvare, cu versiuni/idempotency existente. IDV din lunile istorice nu se schimbă. Începutul taxei noi trebuie să fie ulterior începuturilor deja cunoscute.
+Taxa nouă, activă implicit, propune luna curentă sau luna următoare celei mai recente taxe cu început ulterior. Taxa anterioară devine inactivă și se încheie în luna precedentă noului început. UI arată draftul; API îl aplică atomic la salvare, cu versiunile/idempotency existente, fără schimbarea IDV istoric. Începutul nou trebuie să fie ulterior tuturor celor cunoscute.
 
 ### Date migrate
 
@@ -42,7 +42,7 @@ DataGrid comun oferă beginNewRowEdit(row, key, onCancelRow): Escape în editoru
 
 Taxele cer valoare >0, explicație nevidă și început pentru rândurile noi; începutul nou sau modificat trebuie să fie după ultimul început existent. Validarea este în UI și API. Excepția deja decisă pentru migrare se păstrează: începutul NULL al unei taxe existente nu blochează dacă nu este modificat. Valoarea și explicația sunt obligatorii la salvarea taxei.
 
-La eroare de celulă, ieșire din rând din taste sau salvare, UI deschide un dialog cu «Continuă editarea» / «Anulează înregistrarea». Continuarea revine în editor; anularea elimină taxa nouă sau abandonează modificările rândului existent. Previzualizarea taxelor active/perioadelor se reconstruiește din datele originale și drafturile rămase, astfel încât anularea să refacă taxa anterior activă. Mai multe taxe noi păstrează ordinea începuturilor la validarea batchului.
+La eroare de celulă, ieșire din rând din taste sau salvare: «Continuă editarea» revine în editor; «Anulează înregistrarea» elimină taxa nouă ori abandonează modificările rândului existent. Previzualizarea taxelor active/perioadelor se reface din originale și drafturile rămase, restaurând taxa anterior activă la anulare. Validarea batchului păstrează ordinea începuturilor taxelor noi.
 
 Fișiere runtime: PYTHON/static/js/dgv/editing.js, PYTHON/static/js/adechit/catalogs.js, PYTHON/static/js/adechit/payers.js, PYTHON/static/css/adechit.css, PYTHON/routes/adechit/service.py, PYTHON/static/adechit.html (ajutor). Documentație: ghidul web, deciziile, statusul rădăcină și registrul detaliat.
 

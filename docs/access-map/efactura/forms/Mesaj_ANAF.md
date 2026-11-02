@@ -1,8 +1,10 @@
 # Form `Mesaj_ANAF`
 
-Source: `Forms/Mesaj_ANAF.txt` (13,532 chars). [Reading conventions](../README.md#form-page-conventions).
+Source: `Surse/RawExport/Forms/Mesaj_ANAF.txt` (13,532 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
+
+Inherits [P1](../README.md#form-properties-p1).
 
 | Property | Value |
 |---|---|
@@ -11,10 +13,6 @@ Source: `Forms/Mesaj_ANAF.txt` (13,532 chars). [Reading conventions](../README.m
 | PopUp | NotDefault |
 | Modal | NotDefault |
 | AutoCenter | NotDefault |
-| NavigationButtons | NotDefault |
-| RecordSelectors | NotDefault |
-| DividingLines | NotDefault |
-| ScrollBars | 0 |
 | Width | 8820 |
 | Left | 6168 |
 | Top | 3780 |
@@ -22,9 +20,6 @@ Source: `Forms/Mesaj_ANAF.txt` (13,532 chars). [Reading conventions](../README.m
 | Bottom | 8508 |
 | GridX | 24 |
 | GridY | 24 |
-| TabularCharSet | 238 |
-| DatasheetFontName | Calibri |
-| DatasheetFontHeight | 11 |
 
 Form events wired: none
 
@@ -54,5 +49,3 @@ See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 ## Opened from
 
 `module:mdl_EFactura`
-
-Raw source: `Surse/RawExport/Forms/Mesaj_ANAF.txt`

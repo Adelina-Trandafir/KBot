@@ -1,8 +1,10 @@
 # Form `EFACTURA_TMP`
 
-Source: `Forms/EFACTURA_TMP.txt` (35,587 chars). [Reading conventions](../README.md#form-page-conventions).
+Source: `Surse/RawExport/Forms/EFACTURA_TMP.txt` (35,587 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
+
+Inherits [P1](../README.md#form-properties-p1).
 
 | Property | Value |
 |---|---|
@@ -11,20 +13,12 @@ Source: `Forms/EFACTURA_TMP.txt` (35,587 chars). [Reading conventions](../README
 | PopUp | NotDefault |
 | AutoCenter | NotDefault |
 | BorderStyle | 3 |
-| NavigationButtons | NotDefault |
-| RecordSelectors | NotDefault |
-| DividingLines | NotDefault |
-| ScrollBars | 0 |
 | Width | 6579 |
 | Left | 8115 |
 | Top | 2700 |
 | Right | 14700 |
 | Bottom | 10800 |
 | FitToScreen | 1 |
-| GridY | 10 |
-| TabularCharSet | 238 |
-| DatasheetFontName | Calibri |
-| DatasheetFontHeight | 11 |
 
 Form events wired: `OnClose` = VBA, `OnLoad` = VBA
 
@@ -78,5 +72,3 @@ See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 ## Opened from
 
 `module:mdl_EFactura`
-
-Raw source: `Surse/RawExport/Forms/EFACTURA_TMP.txt`

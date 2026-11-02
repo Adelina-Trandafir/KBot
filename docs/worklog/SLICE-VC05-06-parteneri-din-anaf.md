@@ -7,7 +7,7 @@ Stare: **VALIDAT_SERVER** (000_DEMO, 13 parteneri adăugați și confirmați). C
 
 ## Facut
 - `VrcAnaf.vb`: apel ANAF v9 (același ca `PYTHON/routes/inregistrare/anaf.py`: POST, `[{cui, data}]`, `found` / `notFound`), câte 100 de coduri pe cerere, o secundă între cereri; pagină HTML = eroare, nu «negăsit». Doar coduri din cifre (2–10).
-- `VrcPartnersForm.vb` + `.Designer.vb` (butonul «Parteneri ANAF…» între «Testează» și «Migrează»): lista furnizorilor fără partener, «Interogare ANAF» (denumire + adresă), coloane de bifat, câte una pe SS al DC-ului. Coloanele SS depind de date și se adaugă din cod; restul sunt în designer. Un click pe titlul unei coloane SS bifează sau debifează caseta pentru toți furnizorii (`KBotDataView.HeaderClick`, înregistrat în SLICE-0008-03).
+- `VrcPartnersForm.vb` + `.Designer.vb`: «Parteneri ANAF…» între «Testează» și «Migrează», furnizori fără partener, «Interogare ANAF» (denumire/adresă), bife pe SS al DC-ului. Numai coloanele SS, dependente de date, sunt adăugate din cod; restul în Designer. Clickul pe titlul SS bifează/debifează toți furnizorii (`KBotDataView.HeaderClick`, SLICE-0008-03).
 - Regula (decisă de operator): bifezi pe furnizor SS-ul (unul sau mai multe); `IdUnitate` = cea mai mică unitate dintre SS-urile bifate (aceeași regulă ca `_unit_for_new` din fereastra Parteneri). Mai multe SS bifate dau tot **un** partener (un cod fiscal = un partener în DC, verificat în `_check_fiscal_code`). `CodPartener` = următorul număr liber (minim 3 cifre) din SS-ul unității alese, ca `NextCode`. `Tip` 1, `Ascuns` 0, `CodFiscal` doar cifre.
 - Fără cod fiscal, negăsiți la ANAF sau fără SS bifat: nu se adaugă; NIR-urile lor rămân fără partener (X04).
 

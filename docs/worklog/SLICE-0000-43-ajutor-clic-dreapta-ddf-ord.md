@@ -28,6 +28,6 @@ Text only, tag `0107` added to every section touched:
 
 ## Old Check-Help errors cleared in the same slice (operator, 03.10.2026)
 
-- `0077-3` in `contabil\fereastra.md`: there is no slice 0077-3 (the id was never in the registry and has no worklog; it was added by a commit that also added `0777-02`, so most likely a typo). Removed from the tag; the facts of that section stay covered by its other tags. If the operator knows what it meant, add the right id back.
-- `0000-39` in `asocieri\index.md` and `forexe\lista.md`: the sub-slice had text and tags but no worklog and no registry row. Written now: `SLICE-0000-39-ajutor-lista-sursa-si-denumire-asocieri.md` plus its row in `state/KBOT_STATUS_0000-0009.md`; the index line of 0000 now reads «0000-01…43 GATA».
+- `0077-3` in `contabil\fereastra.md`: absent from registry/worklogs, probably a typo (same commit added `0777-02`). Removed from the tag; other tags still cover the section. The operator may supply the intended id.
+- `0000-39` in `asocieri\index.md` / `forexe\lista.md`: existing text/tags lacked a worklog and row. Added `SLICE-0000-39-ajutor-lista-sursa-si-denumire-asocieri.md` and its `state/KBOT_STATUS_0000-0009.md` row; index 0000: «0000-01…43 GATA».
 - Result: `Check-Help.ps1 -Coverage` → «No errors.» (exit 0). It still lists six windows without a topic (`HelpCaptureViewForm`, `IstoricIntervalForm`, `PrintListPage`, `SetariAccessView`, `SetariIstoricView`, `UpdateOfferForm`): not errors, and not touched. `0000-42` (help of 0105) has no worklog or registry row either; the checker does not flag it because no tag uses it.

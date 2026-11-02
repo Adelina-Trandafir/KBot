@@ -12,7 +12,7 @@ Data: 30.09.2026. Pentru felia 0078-08 (arborii nu mai iau alt rând cât Adobe 
 | `contabil.notecab` | «Vederea «Note corecție»» | o propoziție + legătura | + `0078-08` |
 | `contabil.fereastra` | «Lista angajamentelor» | lista angajamentelor așteaptă și ea, cu legătura | + `0078-08` |
 
-**A treia trecere, la cererea operatorului («the helper doesn't need to know about the inner workings of the app... it's meant for users only»):** scoase din nou secțiunile care descriau cum lucrează K-BOT pe dinăuntru — «Cum se deschide documentul» (`contabil.ddf.semnare`: Ctrl+H, Ctrl+2, fereastra ținută cât panoul), «Ce face K-BOT cu fereastra găzduită» (`avansat.documente`) și «Ce cauți în `adobe_preview.log`» (`avansat.jurnale`) — și propoziția despre de ce se blochează arborele (`contabil.liste`). Cele trei fișiere sunt din nou identice cu versiunea comisă. Regula a intrat în `docs/HELP_SYSTEM.md` §5 «Left out on purpose».
+**A treia trecere, la cererea operatorului («the helper doesn't need to know about the inner workings of the app... it's meant for users only»):** eliminate din nou explicațiile interne: «Cum se deschide documentul» (`contabil.ddf.semnare`: Ctrl+H, Ctrl+2, fereastra ținută cât panoul), «Ce face K-BOT cu fereastra găzduită» (`avansat.documente`), «Ce cauți în `adobe_preview.log`» (`avansat.jurnale`) și motivul blocării arborelui (`contabil.liste`). Cele trei fișiere redevin identice cu versiunea comisă. Regula: `docs/HELP_SYSTEM.md` §5 «Left out on purpose».
 
 ## Fișiere atinse
 

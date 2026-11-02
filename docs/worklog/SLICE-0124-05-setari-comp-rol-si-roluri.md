@@ -4,9 +4,7 @@
 
 ## What changed and why
 
-- **`SetariSemnareDdfView` (new page of the settings window, key `semnareddf`)**: a grid with one row per compartment (the compartments the unit's documents use, plus the ones
-  already in the table, so a name is picked and never typed) and a combo with the role (`(niciun rol)` = no role). «Reîncarcă» / «Salvează»; nothing is written before «Salvează»;
-  the page asks before closing with unsaved changes. All controls are in the `.Designer.vb`. Wired in `SetariForm` (`CreateView`, nav item).
+- **`SetariSemnareDdfView` (new settings page, key `semnareddf`)**: grid row per compartment from unit documents/table, selected rather than typed; role combo (`(niciun rol)` = none). «Reîncarcă» / «Salvează», no writes before save; asks before closing unsaved. Controls in `.Designer.vb`; `SetariForm` wiring through `CreateView` and nav item.
 - **`sql/0124_roluri_imputernicit.sql` (new, AVACONT_COMUN)**: KBotAdmin offers the roles of `Roluri` with `Sectiune = 'KB'`. `KB_SECRETAR` and `KB_ADMINISTRATOR` already existed; the script adds
   `KB_IMPUTERNICIT` (the accountant's operations) and brings the descriptions of Secretar / Administrator in line with the rule «see ONLY what is addressed to them».
   **The operator runs it** (like `AD10_03`); I did not.

@@ -12,7 +12,7 @@ Reunire documentară D001-21. Se păstrează cele 12 etape existente (01…10, 1
 
 The plan said the state S0–S4 (and S1x) would be derived from `FX_DDF_REV.Incarcat` + `Semnatura`, no new column. Reading the code showed that does not hold, and the operator chose a new column (question asked in this thread, 25.09.2026):
 
-1. The import sets `FX_DDF_REV.Incarcat = 1` by itself — `prelucrare_pasi.py`, step 3e, case 1: any reservation carrying an `IDREV` (from the `(REV:n)` tag the send writes, D9) marks its revision `Incarcat = 1`. So `Incarcat` cannot hold the send stage: the import, which is off limits, overwrites it right after the send.
+1. `prelucrare_pasi.py` import step 3e/case 1 sets `FX_DDF_REV.Incarcat = 1` for reservations carrying `IDREV` from send's `(REV:n)` tag (D9). This off-limits import overwrites the value right after sending, preventing its use as send stage.
 2. «A signed on the final PDF» and «A signed on the interim PDF» both read `Semnatura = 'A'`, so S2a and S2b could not be told apart; the Rezervări menu would have offered «Generează PDF final» again and wiped the signature.
 3. S1x had no trace in either column.
 
@@ -30,11 +30,11 @@ The plan said the state S0–S4 (and S1x) would be derived from `FX_DDF_REV.Inca
 
 Plus `IsOpen` (S0, S1, S1x, S2a — «one open revision at a time»), `CanEdit` (S0, S1), `CanSend` (S1, S1x), `IsSent` (S2a and after), `Label` (the Romanian text), `HasRole`.
 
-**Signature header:** empty `X-Semnatura` remains 400 («Antetul X-Semnatura este gol»), not a reset. Added `X-Semnatura: -`, like `X-Sha-Precedent`, explicitly writes `''`; the final PDF upload in 0081-04 uses it. Empty is a client error; `-` is intentional.
+**Signature header:** empty `X-Semnatura` remains client error 400 («Antetul X-Semnatura este gol»). New `X-Semnatura: -`, like `X-Sha-Precedent`, intentionally writes `''`; 0081-04 final PDF upload uses this reset.
 
 **Read route** (`routes/forexe/ddf.py`, read-only additions): `stare_trimitere` (the literal 0 when the column is not there yet — probed once per database, `routes/forexe/ddf_stare.py`) and `are_rezervari` (scalar `EXISTS` on `FX_Rezervari.IDREV`, no fan-out).
 
-**DDF view:** each revision leaf gets a RIGHT icon for its state (the left arrow keeps meaning the sign of the total) and a second tooltip line «Stare: …». Icons: `image_list` key `stare_<state>` first (e.g. `stare_signeda`), else a GDI shape per state from `DdfIcons.StateIcon`, coloured from the palette — a different SHAPE per state, so it reads without colour.
+**DDF view:** revision leaves get RIGHT state icon and second tooltip line «Stare: …»; left arrow keeps total's sign. First `image_list` key `stare_<state>` (e.g. `stare_signeda`), else palette-coloured `DdfIcons.StateIcon` GDI shape, distinct per state even without colour.
 
 ### Files touched
 
@@ -74,7 +74,7 @@ Plus `IsOpen` (S0, S1, S1x, S2a — «one open revision at a time»), `CanEdit` 
 - **«Angajament nou»** — a new button on the main header, top left, in the empty column 0 of `tlyHeader`, before «An». Port of Access `FX_Adaugare_ANG`: code `"!" + 10 chars` (`DdfCodIndicator.Genereaza(10)`), `Stare = "MANUAL"`, `Manual = True`, `Incarcat/Preluat/Buget = False`, revision 0, `Tip = "Manual"`, DC = the session's database, Program = the session's program, section A empty. The existing save (its Manual branch) writes `FX_Angajamente` / `FX_Indicatori`; after the save the tree reloads ONTO the new code (`LoadTreeAsync(codDeSelectat:=…)`).
 - **«Adaugă rezervare»** — the Rezervări tree footer LEFT icon. On an angajament with a document: a new revision on the same header (read through the editor's `/draft` of the LAST revision; only the header is kept), section A empty, `NumarRev = last + 1` (the number lock then holds the real one). Without a document: its revision 0 on the existing forexecab angajament (header from the tree node: description, creation date, state). Refused when a revision is still open (checked again on fresh data).
 
-**Rezervări footer LEFT icon:** `RezervariMenu.Decide` (pure, tested; plan 0081-04 table) offers at most one option. Each load uses `FX_Angajamente.Stare` without case/diacritics and DDF revisions, fetched by one extra existing GET only when a document exists. No option hides the icon, which has no disabled look. Click opens the one-option `CustomPopup` and delegates to the shell; only «Adaugă rezervare» is handled here, the other three in 0081-04.
+**Rezervări footer LEFT:** pure/tested `RezervariMenu.Decide` (0081-04 table) offers at most one option from case/diacritic-blind `FX_Angajamente.Stare` and revisions (one extra existing GET per load, only with document). No option hides the icon, which lacks disabled state. Click opens one-option `CustomPopup`, delegating to shell; «Adaugă rezervare» here, other three in 0081-04.
 
 **The editor knows the revision state** (`DdfEditForm(…, stare, sendApi)`):
 - «Secțiunea B» nav item hidden by key (`navSub.SetItemVisible`) unless the revision is sent. Section B stays derived from A on every edit (unchanged), it is only not shown.
@@ -84,7 +84,7 @@ Plus `IsOpen` (S0, S1, S1x, S2a — «one open revision at a time»), `CanEdit` 
 
 **Interim PDF** — `DdfXmlBuilder.BuildComplete(…, mode)`, `DdfPdfMode.Interim`: `Table3` only the hidden template row, `CheckBox9 = 0`, NOTAFD `sectiuneaB` with `ckbx_secta_inreg_ctrl_ang = 0` and no rows, no `PrtScr` attachment. `DdfView` picks Interim for a revision not sent, Final otherwise. The «Vizualizare» page never rendered Section B (checked), so nothing changes there.
 
-**Sending API** — `KBot.Api/IDdfSendApi.vb` + `ApiClient.DdfSend.vb` follow `IMarcajApi`, avoiding new members on the nine `IApiClient` test fakes. The shell uses `TryCast(_apiClient, IDdfSendApi)`. This step declares the full 0081 API (start / codes / capture / stage / director list); server routes follow in 0081-04 / -06.
+**Sending API:** `KBot.Api/IDdfSendApi.vb` / `ApiClient.DdfSend.vb` follow `IMarcajApi`, leaving nine `IApiClient` fakes unchanged; shell uses `TryCast(_apiClient, IDdfSendApi)`. Full 0081 start/codes/capture/stage/director API declared here, routes in 0081-04/06.
 
 **Read route** — `FX_DDF.Manual` added to the header (`DdfAntet.Manual`): only a K-BOT-created document's Rev 0 gets «Definitivează» / «Derulează».
 
@@ -189,12 +189,12 @@ Rezervări footer menu (`ExecutaMeniulRezervari`): «Definitivează» / «Derule
 
 ### Assumptions (details, decided and written down)
 
-1. **Code unknown after an interrupted Creare.** If the page shows an angajament code, the operator is asked whether it is the one created (Yes = continue on it). If not, the operator is asked whether the angajament exists in forexecab: Yes («it does NOT exist») = run Creare; No = stop and resume after opening it in «Browser FOREXE». There is no text-input dialog in K-BOT, so reading the code off the page is the only way to give it.
+1. **Code unknown after interrupted Creare.** A code on the page prompts confirmation that it is the created angajament (Yes = continue). Otherwise, ask whether the angajament exists in forexecab: Yes («it does NOT exist») = run Creare; No = stop, open it in «Browser FOREXE», then resume. K-BOT has no text-input dialog: the code can only be supplied from the page.
 2. **`angajamentNou` = `FX_DDF.Manual` AND Rev 0.** `Manual` stays 1 after the `!` swap, so it holds on a resume.
-3. **Row codes** come from the run's own `TabelIndicatori` (Creare scrapes it) and, for every send, from the download's `TabelIndicatori` — Incarca Rezervare scrapes no indicator table.
+3. **Row codes** come from the run's own `TabelIndicatori` (Creare scrapes it) and, for every send, the download's `TabelIndicatori`; Incarca Rezervare scrapes no indicator table.
 4. **A resume uploads the captures of the resumed run as new attachments**; those of the first run stay. All of them go into Table4 in `IdRevAtt` order.
 5. **A capture upload that fails** is logged, counted and reported; the rest continue.
-6. **The check happens before the import** (plan step 4 before 6). The codes are written before the check (the dangerous-case rule: saved as soon as known).
+6. **Check before import** (plan step 4 before 6); codes are saved as soon as known, before the check (the dangerous-case rule).
 7. **Definitivare/Derulare** do not change `StareTrimitere` (Rev 0 stays S2a until its final PDF).
 8. **The final-PDF upload** uses the unsigned-PDF path of `UploadDdfPdfAsync` with no `semnaturi` rows (nobody signed anything).
 
@@ -441,7 +441,7 @@ Build App (with Common, Forexe) **0 / 0**; `py_compile` green. Nothing run, noth
 ## SLICE 0081-10 — Classification without «.02», the partner list, the header of revision 0 <a id="slice-0081-10"></a>
 
 **Date:** 26.09.2026. **Request (operator), in the DDF editor:**
-1. In the classification combo «65.02» must be just «65». The «02» after the chapter is an Access relic: not shown, and not filled into the sending workflows. Change only the row window and the workflow inputs.
+1. Drop Access's «02» after the chapter («65.02» → «65») only in the row-window classification combo and sending-workflow inputs.
 2. The partners in `DdfEditForm`:
    1. «Angajament nou» + tick «Partener asociat»: the list is empty.
    2. A new document on an existing angajament: the «Partener asociat» box is disabled.
@@ -449,15 +449,15 @@ Build App (with Common, Forexe) **0 / 0**; `py_compile` green. Nothing run, noth
 
 ### What was wrong
 
-- **(1)** `Clasificatii.Clsf` is `concat_ws('.', Capitol, Subcapitol, Articol, Alineat)`, and `Capitol` is Access's «65.02». The send passed it through: `Clasificatia` = «65.02.04.02.20.01.01» and `ClsfSal` = «65020402200101», while the workflows expect «65.04.02.20.01.01» / «650402200101» (their own headers say so; the table's `ClsfSal` column already drops it).
-- **(2.2, 2.3)** 0081-09 locked the header whenever `RevizieNoua` was set on an angajament not created now. `ForFirstRevisionOfExisting` (revision 0 of a downloaded angajament) is a NEW document with `RevizieNoua = True`, so it was locked too; only the compartment escaped, through the "open while empty" exception.
+- **(1)** `Clasificatii.Clsf` = `concat_ws('.', Capitol, Subcapitol, Articol, Alineat)` retains Access's `Capitol` «65.02». Sending passed through `Clasificatia` «65.02.04.02.20.01.01» / `ClsfSal` «65020402200101»; workflow headers expect «65.04.02.20.01.01» / «650402200101». The table's `ClsfSal` already drops the extra part.
+- **(2.2, 2.3)** 0081-09 locked headers with `RevizieNoua` on angajamente not created now, including `ForFirstRevisionOfExisting` (NEW document, revision 0 of a downloaded angajament, `RevizieNoua = True`). Only the compartment escaped via "open while empty".
 - **(2.1)** `/api/forexe/ddf/parteneri` scoped partners to the units of the angajament's `FX_Indicatori` rows. A new angajament (code «!…») has none yet, so nothing matched.
 
 ### What changed
 
-- **Domain:** `DdfSendInputs.ForexeClsf` drops the second dotted part only when the text has exactly seven parts (the Access shape); anything else comes back trimmed, unchanged. `DdfSendLine.FromDraft` uses it, so `Clasificatia`, `ClsfSal` and the difference messages all get forexecab's form. Stored data (`FX_DDF_SA.Clsf`) is untouched.
+- **Domain:** `DdfSendInputs.ForexeClsf` drops the second dotted part only from exactly seven parts (Access shape); otherwise it only trims. `DdfSendLine.FromDraft` uses it; `Clasificatia`, `ClsfSal` and difference messages get forexecab's form. Stored `FX_DDF_SA.Clsf` stays unchanged.
 - **`DdfEditLinieAForm`:** the combo items use `ForexeClsf`; the mask is `00.00.00.00.00.00`.
-- **`DdfEditForm.AplicaEnablement`:** the lock is back to "a new revision on a document that already exists" (`RevizieNoua AndAlso Not Nou`) -- which Access's rule already locked. Revision 0 of a downloaded angajament and the change of an existing revision follow Access's rule again. The "open while empty" exception for compartment / object stays.
+- **`DdfEditForm.AplicaEnablement`:** Access's lock returns: "a new revision on an existing document" (`RevizieNoua AndAlso Not Nou`). Downloaded angajament revision 0 and editing an existing revision follow Access again; compartment/object stay open while empty.
 - **Server** (`ddf_edit.py`, `_SQL_PARTENERI`): when the angajament has no indicator with a unit, every unit of the database is offered (the database is one DC).
 
 ### Files touched

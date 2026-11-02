@@ -10,7 +10,7 @@ Reper ulterior: [0036](SLICE-0036-theme-options-scaling.md#slice-0036) centraliz
 
 Trei cereri ale operatorului, care s-au dovedit a fi una singură plus două:
 
-1. **O etichetă plutitoare proprie**, cu proprietăți vizibile în designer, cu antet (pictogramă + titlu, cu font, aliniere și fundal propriu), subsol, linie despărțitoare între secțiuni și corp cu text îmbogățit. Condiția tare: **două controale de pe același formular trebuie să poată avea etichete care arată diferit** — deci NU se extinde obiectul intern de tooltip al vreunui control.
+1. **Tooltip propriu**, configurabil în designer: antet cu pictogramă/titlu, font/aliniere/fundal proprii, corp îmbogățit, subsol și separatoare (§3). Două controale ale aceluiași formular trebuie să poată arăta diferit; fără extinderea tooltipului intern al unui control.
 2. **Aplicația scalează pe jumătate.** „În grilă, celulele, antetul și subsolul se fac mai mari, dar textul rămâne la fel." Și, mai revelator: *«la 100% arată prost, la 125% mai bine, la 150% și mai bine»*.
 3. **Butoanele din antetele arborelui și ale grilei nu spun la ce folosesc**, iar formularele n-au etichete deloc.
 
@@ -23,9 +23,9 @@ Un control desenat de noi are două feluri de măsuri:
 - **literele** — un `Font` e în PUNCTE, deci la 150% același font se pictează cu 1,5× mai mulți pixeli. Se scalează **singur**, fără cod;
 - **geometria** — `ItemHeight = 22`, `RowHeight = 28`, `HeaderHeight = 30`, `Indent`, `ExpanderSize`, mărimile de iconiță: erau în pixeli BRUȚI. Rămâneau 22, 28, 30 la orice scalare.
 
-De aici, exact ce se vedea: la 100%, un rând de 28 px cu litere de ~12 px — mult aer degeaba; la 150%, aceleași 28 px cu litere de ~18 px — „arată mai bine", fiindcă textul a crescut până la măsura rândului. La 175% ar fi început să nu mai încapă. Nu era o alegere de aspect: era **o măsură care lipsea**.
+La 100%, rândul de 28 px cu litere ~12 px avea mult aer; la 150%, tot 28 px cu litere ~18 px părea mai bun. La 175% textul ar fi început să nu încapă. Lipsea scalarea geometriei, nu o alegere de aspect.
 
-**A face aplicația surdă la scalare (`HighDpiMode.DpiUnaware`) ar înrăutăți lucrurile:** Windows ar randa totul la 96 dpi și ar întinde imaginea ca pe un bitmap. Proporțiile s-ar potrivi, dar TOT textul ar fi neclar pe orice ecran peste 100% — inclusiv la 150%, unde operatorul lucrează. Se păstrează `PerMonitorV2` (vezi `Program.Main`) și se repară măsurile.
+**HighDpiMode.DpiUnaware ar agrava:** Windows ar randa la 96 dpi și ar întinde bitmapul; proporțiile s-ar potrivi, dar textul ar deveni neclar peste 100%, inclusiv la 150% unde lucrează operatorul. Se păstrează PerMonitorV2 (Program.Main) și se corectează geometria.
 
 ### Leacul, care e cel al platformei
 
@@ -34,7 +34,7 @@ WinForms cheamă `Control.ScaleControl(factor, specified)` pe fiecare copil:
 - la autoscalarea formularului (`AutoScaleMode.Font`, ce are fiecare formular K-BOT), și
 - la fiecare schimbare de DPI, fiindcă aplicația e `PerMonitorV2`.
 
-Un control obișnuit își scalează acolo `Bounds`/`Padding`. Fișierele noi `AdvancedTreeControl.Dpi.vb` și `KBotDataView.Dpi.vb` suprascriu `ScaleControl` și scalează, în plus, **măsurile noastre**. Nimic de chemat din gazdă, nimic de ținut minte.
+ScaleControl scalează Bounds/Padding în controalele obișnuite; noile AdvancedTreeControl.Dpi.vb/KBotDataView.Dpi.vb îl suprascriu și pentru măsurile proprii. Fără apeluri suplimentare din gazdă.
 
 ### Perechea logic / scalat — și de ce nu se putea altfel
 
@@ -45,11 +45,9 @@ Fiecare măsură are acum două valori:
 | `_itemHeightLogic`, `_rowHeightLogic`, … | ce a scris operatorul, px la 96 dpi | proprietatea publică, `.Designer.vb` |
 | `_itemHeight`, `_rowHeight`, … | aceeași măsură scalată | pictarea, hit-testul, așezarea |
 
-Un getter scalat ar face designerul să serializeze 33 în locul celor 22 logici; următoarea deschidere ar scala din nou. Este capcana valorii rezolvate confundate cu alegerea operatorului din regula `ShouldSerialize`, aplicată numerelor în locul culorilor.
+Getterul scalat ar serializa 33 în loc de 22 logici, apoi ar scala din nou la redeschidere: capcana ShouldSerialize, valoare rezolvată confundată cu alegerea operatorului, aplicată numerelor.
 
-**La design time nu se scalează nimic** (`KBotDesignTime.IsDesignTime`): suprafața Visual Studio desenează la 96 dpi, deci acolo se vede chiar valoarea tastată.
-
-**Răspunsul la «trebuie să proiectez la 100%?»: nu.** Designerul lucrează la 96 dpi indiferent de scalarea ecranului fizic, iar valorile scrise acolo sunt logice prin definiție. Se poate proiecta liniștit la 150%.
+**Design time:** KBotDesignTime.IsDesignTime oprește scalarea; suprafața VS lucrează la 96 dpi și arată valorile logice tastate, indiferent de scara monitorului. La «trebuie proiectat la 100%?» răspunsul este nu: se poate proiecta și la 150%.
 
 ### Ce s-a atins efectiv
 
@@ -101,7 +99,7 @@ Patru fișiere, în folderul propriu al familiei, cum cere regula casei.
 
 ### Cum se satisface „stiluri diferite pe același formular"
 
-Stilul e o **valoare**, nu o componentă. `KBotToolTip` are un stil implicit (`Style`), iar orice control poate primi **propriul** stil prin `SetStyleFor(ctrl, style)` — de obicei pornind de la `Style.Clone()`. Se pot pune, la fel de bine, mai multe componente pe formular. Ambele căi merg; niciuna nu cere modificarea obiectului intern de tooltip al vreunui control.
+Stilul este valoare, nu componentă: KBotToolTip.Style implicit, SetStyleFor(ctrl,style) per control, uzual din Style.Clone(). Alternativ, mai multe componente pe formular. Ambele permit stiluri distincte fără modificarea tooltipului intern al vreunui control.
 
 ### Regulile casei, respectate
 
@@ -112,13 +110,13 @@ Stilul e o **valoare**, nu o componentă. `KBotToolTip` are un stil implicit (`S
 
 ### De ce nu se refolosește analizorul arborelui
 
-`AdvancedTreeControl.ParseRichText` e `Friend Shared` pe control și legat de structurile lui interne. O etichetă generală, folosibilă de orice formular, n-are voie să depindă de un control anume. Tooltip-ul vechi al arborelui (`TooltipPopup`, cu modul lui de tabel XML) **rămâne neatins** — nu s-a cerut regresie acolo.
+AdvancedTreeControl.ParseRichText este Friend Shared, legat de structurile arborelui; tooltipul general nu trebuie să depindă de el. Vechiul TooltipPopup/tabel XML rămâne neatins, fără regresie cerută.
 
 ---
 
 ## 4. Etichete pe butoanele desenate (arbore + grilă)
 
-Butoanele din antete nu sunt controale, sunt zone pictate: `System.Windows.Forms.ToolTip` n-are ce extinde. De aceea `KBotToolTip` are `ShowAt(owner, content, screenPos)` / `HideNow()`, chemate din funcțiile care urmăreau deja survolarea.
+Butoanele de antet sunt zone pictate, fără control de extins prin System.Windows.Forms.ToolTip. Urmărirea existentă a survolării apelează KBotToolTip.ShowAt(owner,content,screenPos)/HideNow().
 
 **Arbore** (`AdvancedTreeControl.ButtonTips.vb`) — proprietăți multilinie (editor `MultilineStringEditor`): `HeaderSearchIconTooltip`, `HeaderRightIconTooltip`, `FooterLeftIconTooltip`, `FooterRightIconTooltip`, `CollapseButtonTooltip`, `ExpandButtonTooltip`, plus `ButtonTooltip` (componenta, îmbrăcabilă din grila de proprietăți). Butonul de strângere are **două** texte, fiindcă are două înțelesuri; un singur text ar minți jumătate din timp. Legături: `UpdateHeaderButtonHover`, `HandleFooterMouseMove`, `ClearButtonHover`, `HandleFooterMouseLeave`.
 
@@ -130,7 +128,7 @@ O cheie de buton repetată nu reprogramează apariția — altfel fiecare pixel 
 
 ## 5. Etichete în română pe formulare și vederi
 
-O componentă `tips` (`KBotToolTip`) declarată în `.Designer.vb`, adăugată în `components` (deci eliberată odată cu formularul), cu apelurile `SetToolTipHeader` / `SetToolTipText` scrise tot în `InitializeComponent` — forma pe care o scrie și o reciteste designerul Visual Studio.
+Componenta tips/KBotToolTip: declarată în .Designer.vb și inclusă în components pentru eliberare; SetToolTipHeader/SetToolTipText în InitializeComponent, în forma citită/scrisă de designerul VS.
 
 Acoperite: `LoginForm`, `MainForm`, `StartupLauncherForm`, `InternalInfoForm`, `ForexeConsoleForm`, `ForexeFooterView`, `IstoricView`, `LogViewerForm`, `LogClearDialog`, `DdfDocumentPage`, `ReaderHostPreview`, `XfaXmlPreview` — adică **toate formularele/vederile care au butoane, combo-uri, casete de text sau bare de cipuri proprii**.
 

@@ -7,7 +7,7 @@ Construit si probat in `KBOT_TEST`, adus in `KBOT\src` la 13.10.2026. Istoria: `
 ## Ce s-a schimbat si de ce
 1. **Jurnalul si istoricul versiunilor au iesit din fereastra de setari**: paginile «Jurnal» si «Istoric versiuni» (si separatorul de sub ele) scoase din `SetariForm.Designer.vb`, cazurile `jurnal` / `istoric` scoase din `SetariForm.CreateView`. `setari:jurnal` nu mai exista.
 2. **Machete proprii**, pagini ale ferestrei principale (0113), una cate una:
-   - `JurnalPage` («K-BOT — Jurnal activitate»): gazduieste `SetariJurnalView` (jurnalele aplicatiei si, cu optiunile avansate, ale serverului) + o eticheta de stare jos; deschisa din ribbon, Configurari › Configurare › «Jurnal activitate» (butonul urmeaza comutatorul din Setari › Aplicatie, ca randul vechi din MENIU);
+   - `JurnalPage` («K-BOT — Jurnal activitate»): `SetariJurnalView` (jurnale aplicatie/server, cele din server numai cu optiunile avansate), stare jos. Ribbon: Configurari › Configurare › «Jurnal activitate»; butonul urmeaza comutatorul Setari › Aplicatie, ca vechiul rand din MENIU;
    - `IstoricVersiuniPage` («K-BOT — Istoric versiuni»): gazduieste `SetariIstoricView` (ce a schimbat fiecare versiune, din `NOUTATI.md`); deschisa din ribbon, Configurari › Configurare › «Istoric versiuni».
    `KbotForm.Pagini.vb`: `DeschideJurnal`, `DeschideIstoricVersiuni`, `HasOpenWork`.
 3. **Jurnalul**: ziua curenta e desfacuta cand zilele se strang (`KBotDataView.ExpandGroup`, nou in `KBotDataView.Grouping.vb`), iar intre grila si detaliu e un separator reglabil (`splitJurnal`, SplitContainer).

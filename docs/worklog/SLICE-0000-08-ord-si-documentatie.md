@@ -26,8 +26,8 @@ Fișierul Etapa3 identic cu Etapa1 este constatarea inițială din 10; înlocuir
 - `ORD_EDIT/OrdAtasamentePage.Designer.vb`: the «Lipește» button carried the tooltip of «Șterge» («Șterge imaginea» / «Scoate imaginea...»). Now «Lipește imaginea» / «Adaugă imaginea din memoria temporară...». KBot.App FileVersion not bumped (`push-update.ps1` asks).
 
 #### Documentation for later threads
-- NEW `docs/HELP_SYSTEM.md`: what the system is, the parts and who sees them, where every piece lives, how F1 picks a topic, **the step-by-step procedure for updating the help after a change**, what a feature slice must leave behind, writing rules and what is deliberately left out, engine extension points.
-- NEW `tools/HelpCheck/Check-Help.ps1` (ASCII, PowerShell 5.1): the static check done by hand until now — headers, ids, parents, links, capture tags, tours, screen keys / tour targets against the code; `-Coverage` lists windows without a topic, `-Map` prints the topic tree (so no hand-kept map goes stale).
+- NEW `docs/HELP_SYSTEM.md`: system/parts/audience, file locations, F1 topic selection, **step-by-step help updates after a change**, feature-slice deliverables, writing rules/exclusions and engine extension points.
+- NEW `tools/HelpCheck/Check-Help.ps1` (ASCII, PowerShell 5.1) automates the former manual static check: headers, ids, parents, links, capture tags, tours, screen keys/tour targets against code. `-Coverage` lists topicless windows; `-Map` prints the topic tree, avoiding a stale manual map.
 - Pointers: `CLAUDE.md` (new «Help (slice 0000)» section), `CODE_WORKFLOW.md` (definition of done item 4: update the help or name the stale topics), `KBOT_STATUS.md` (the locked decision points to the guide), `HelpContent/README.md` (points to the guide).
 - `state/KBOT_STATUS_0000-0009.md`: a watermark «Ajutorul e la zi până la» (30.09.2026, slice 0096) and an Open threads line «Ajutor de actualizat» where feature slices leave their notes.
 
@@ -58,7 +58,7 @@ Fișierul Etapa3 identic cu Etapa1 este constatarea inițială din 10; înlocuir
 ### Findings worth knowing (details in the FUNDAMENT file)
 - The form does NOT force the CFP signatures: after SignatureField2, fields 3, 4 and 5 all open.
 - SignatureField5 (Ordonator) locks fields 3 and 4 → a CFP signature must precede the ordonator's.
-- K-BOT's generated ORD leaves `StareSemnatura` at 0, so the operator validates twice (unlike the DDF, where K-BOT's placeholders make one «Validează» enough).
+- ORD starts with `StareSemnatura = 0` and needs two validations; DDF's K-BOT placeholders need one «Validează».
 
 ### Files touched
 `docs/FUNDAMENT_Ordonantare_CAB.md` (new), `src/KBot.App/HelpContent/contabil/vederi/ord.md`, `docs/HELP_SYSTEM.md`, status files.

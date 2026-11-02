@@ -14,7 +14,7 @@ Filed under 0094-02 because 0094 is the last slice that did something to `DdfEdi
 
 - **`DdfEditForm`** gets a fifth nav entry, **«Parteneri»**, `KBotNavAlign.Far` (right-aligned in the `navSub` bar), key `parteneri`. The page is created on first activation like the other four.
 - **`DdfEditPartnersPage`** (new `IDdfEditPage`): an information line + the shared `DdfPartnersView`. It edits `DdfDraft.Parteneri` — no request of its own; its picker is the header combo's list, handed down by the form.
-- **The header combo stays and stays the MAIN partner.** `DdfDraft.SyncHeaderPartner` keeps the two in step: the combo's partner is the first row of the list (role «Principal»), cannot be removed from the page, and picking another one REPLACES the previous main partner (the combo is a single choice; extras stay). Unticking «Partener asociat» removes the main partner's row; the others stay.
+- **Header combo = MAIN partner.** `DdfDraft.SyncHeaderPartner` keeps it first in the list (role «Principal»), nonremovable from the page. Another combo choice REPLACES the main partner, retaining extras; unticking «Partener asociat» removes only the main row.
 - **Save**: `CatreFir` always sends the COMPLETE list; the server (`sincronizeaza_parteneri` inside the save transaction, step 3b) makes `FX_DDF_Parteneri` match it, the main partner always among the rows. A body without the key (an older client) leaves the table untouched.
 - **Read**: `GET /ddf/draft/<iddf>/<idrev>` and `POST /ddf/genereaza` (existing document) now carry `parteneri`; `DdfDraftFactory.ForAddedReservation` copies the list, so a new revision on an existing document does not drop the partners on its save.
 - Only the MAIN partner is written on the section-A / B lines (unchanged). The page says so.
@@ -49,7 +49,7 @@ Nothing else moved: `KBotNavList` unchanged, no other form touched, the draft an
 
 ### Files touched
 
-`src/KBot.App/DDF_EDIT/DdfEditForm.vb` — `DdfEditForm_Load`, `ChkPartAng_CheckedChanged`. Help (0094-03 added to the slice tags): `HelpContent/contabil/ddf/editor.md`, `HelpContent/tours/tur-ddf-editor.md`. The tours skip a part that is not on screen (`KBotNavList.HelpParts` returns an empty rectangle for a hidden item), and the 000T tutorial step «Fila «Parteneri»» already has `when: checked:DdfEditForm.chkPartAng`, so neither needed a structural change.
+`src/KBot.App/DDF_EDIT/DdfEditForm.vb`: `DdfEditForm_Load`, `ChkPartAng_CheckedChanged`. Help tags +0094-03 in `HelpContent/contabil/ddf/editor.md`, `HelpContent/tours/tur-ddf-editor.md`. No tour/tutorial structural change: `KBotNavList.HelpParts` gives hidden items an empty rectangle, skipping them; 000T step «Fila «Parteneri»» already uses `when: checked:DdfEditForm.chkPartAng`.
 
 ### Test results
 

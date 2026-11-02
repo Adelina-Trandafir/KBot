@@ -4,10 +4,10 @@ Operator request, 03.10.2026 (the slice itself: `SLICE-0100-03-…`).
 
 ## What changed and why
 
-- `contabil.forexe.coada`: new section «Mai multe angajamente deodată» (rows with code, progress bar and X; X stops only that download, nothing of it is saved and it is not counted as failed; a row that ends leaves and the next one comes; «Încă N în coadă.»; no rows for one angajament); the window now also opens by itself when a run of 2+ angajamente starts; «Oprește curenta» says it stops all, the X stops one.
+- `contabil.forexe.coada`: new section «Mai multe angajamente deodată»: for 2+ angajamente, the window opens automatically with code/progress/X rows, replaced as downloads finish, and «Încă N în coadă.»; one angajament has no rows. X stops only its download, saving nothing and not counting as failure; «Oprește curenta» stops all.
 - `contabil.forexe.descarcare-multipla`: new point 6 under «Cum decurge descărcarea» (what the window shows, the X).
 - Slice tags `0100-03, 0000-48` on every touched section. Nothing about inner workings (tab closing, hooks).
-- The guided tour `tur-coada` got no step: its steps point at controls that exist whenever the window is open, and the grid exists only during a run of 2+.
+- No new `tur-coada` step: existing targets are always present in the window; the grid exists only during a run of 2+.
 
 ## Files touched
 
@@ -24,4 +24,4 @@ Operator request, 03.10.2026 (the slice itself: `SLICE-0100-03-…`).
 
 ## Follow-up (03.10.2026)
 
-The list box and the «Scoate» button left the window (see SLICE-0100-03, follow-up 4): `coada.md` now says every waiting row has an X and has no «Scoate» point; `tur-coada.md` loses the «Scoate» step and its list step targets `lblInCoada`. Tags `0100-03, 0000-48` on the touched sections.
+After removal of the list box / «Scoate» button (SLICE-0100-03, follow-up 4), `coada.md` gives each waiting row an X and drops «Scoate»; `tur-coada.md` drops that step and targets `lblInCoada` in the list step. Touched sections: tags `0100-03, 0000-48`.

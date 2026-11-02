@@ -9,9 +9,9 @@ Asocierea extraselor cu copiii (AD_11) citea doar ce adusese K-BOT/FOREXE în `F
 1. **Fișiere PDF sau un folder întreg**, cu deduplicare.
 2. **Căsuță de e-mail** (IMAP: Gmail, Yahoo, Outlook sau alt server public). Parola se salvează criptat pe server (Fernet) și se schimbă din fereastră. «Verifică e-mailul acum» citește mesajele noi și ia atașamentele PDF al căror nume conține «ExtrasEP».
 
-Ambele folosesc **același cititor ca K-BOT**: XML-ul din PDF se desface cu un port Python al `PdfXmlExtractor` (fără bibliotecă PDF), apoi intră prin aceeași scriere în `FX_Extrase_F/H/Extrase`. Asocierea existentă vede rândurile fără niciun pas în plus; ferestra are butonul «Asociază plăți cu extrase…».
+Ambele folosesc **același cititor ca K-BOT**: port Python `PdfXmlExtractor` pentru XML-ul din PDF, fără bibliotecă PDF, apoi scrierea comună `FX_Extrase_F/H/Extrase`. Rândurile apar direct în asocierea existentă; fereastra oferă «Asociază plăți cu extrase…».
 
-Deduplicare pe trei straturi: SHA-256 al PDF-ului (`AD_EXTRASE_INCARCARI`); numele fișierului + data extrasului, apoi cheia fiecărei operațiuni (ca la importul FOREXE); un fișier cu alt nume ale cărui operațiuni există TOATE deja nu mai scrie nici antet gol (parametrul nou `sari_continut_cunoscut`).
+Deduplicare: SHA-256 PDF (`AD_EXTRASE_INCARCARI`); nume fișier + data extrasului, apoi cheia operațiunii (ca FOREXE); `sari_continut_cunoscut` nou evită și antetul gol pentru alt nume cu TOATE operațiunile deja prezente.
 
 Decizii:
 - E-mailul se citește **doar la cerere** (buton), nu pe timp. Nu există planificator în aplicația Flask.

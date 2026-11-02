@@ -4,9 +4,9 @@ Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 Butonul de zoom este montat o singură dată în bara aplicației, lângă Ajutor. Ambele aplicații folosesc același control din `PYTHON/static/js/components/menu/menu-zoom.js`, cu CSS alăturat. Paginile și ferestrele individuale nu instanțiază controale de zoom.
 
-Sliderul acoperă 75–150%, cu valori intermediare și puncte magnetice la 90%, 100%, 110% și 125%. Procentele respective sunt și butoane de selecție directă. În timpul tragerii se actualizează indicatorul; redimensionarea se aplică la încheierea gestului. Din tastatură se pot alege toate procentele întregi, fără blocare în punctele snap.
+Slider 75–150%, cu valori intermediare și puncte magnetice/butoane directe la 90%, 100%, 110%, 125%. Tragerea actualizează indicatorul; încheierea gestului aplică redimensionarea. Tastatura permite toate procentele întregi, fără blocare în snap.
 
-Nivelul se aplică rădăcinii documentului și se memorează în `localStorage`, cheia comună `kbot-application-zoom`: rămâne activ la schimbarea paginilor, redeschiderea aplicației și trecerea între cele două aplicații. Evenimentul storage sincronizează filele deschise. În lipsa accesului la storage, nivelul curent funcționează în pagină.
+Zoomul rădăcinii documentului persistă în `localStorage`, cheia comună `kbot-application-zoom`, între pagini, redeschideri și cele două aplicații. Evenimentul storage sincronizează filele; fără acces la storage funcționează nivelul curent în pagină.
 
 `PYTHON/static/js/utils/layout-geometry.js` convertește coordonatele de ecran în pixeli de layout pentru meniuri, ComboBox, ComboTree, TreeView, DatePicker, ModalFrame și DataGrid. Sunt adaptate și poziționările specifice ADECHIT și cardurilor de context VERCON. Lățimile și înălțimile raportate la viewport din CSS păstrează proporțiile existente folosind variabilele controlului comun; fallback-ul păstrează comportamentul pe paginile fără zoom. Imprimarea resetează zoom-ul interfeței la 100%.
 

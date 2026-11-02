@@ -15,10 +15,10 @@ AA2 a fost adăugat («adaugare rand») pe 27.08, cât angajamentul era «În de
 
 ## Ce s-a schimbat (varianta A, aleasă de operator)
 
-Rezervarea inițială se citește ca UN eveniment, pus pe ULTIMA zi inițială a angajamentului (ziua în care rezervarea a devenit definitivă). Nimic nu se rescrie în bază; se schimbă doar cititorii, deci și angajamentele deja prelucrate se văd corect.
+Rezervarea inițială devine un eveniment pe ultima zi inițială (definitivarea). Se schimbă numai cititorii, fără rescriere în bază: regula acoperă și angajamentele deja prelucrate.
 
-- **`RezervariView.BuildTree`** — ziua din arbore (`treeDay`) = ultima zi inițială pentru rândurile inițiale, `DataRezervare` pentru rest. Folosită la luna, la frunză și la alegerea frunzei cu «+». Grila și graficul rămân pe datele reale ale rândurilor.
-- **`ddf_edit._SQL_GEN_REZERVARI`** — aceeași regulă pe server: tabel derivat `_REZ_NETRIMISE` cu coloana `ZiRez` (MAX(DataRezervare) peste TOATE rândurile inițiale ale angajamentului), iar regula «cea mai veche zi, apoi cel mai mic tip» merge pe `ZiRez`. Data reviziei generate (`DataRezervare` din primul rând) devine `ZiRez`. Numărul de parametri rămâne 5.
+- **RezervariView.BuildTree:** treeDay = ultima zi inițială pentru rânduri inițiale, DataRezervare pentru rest; folosită la lună/frunză/alegerea frunzei +. Grila și graficul păstrează datele reale.
+- **ddf_edit._SQL_GEN_REZERVARI:** derivata _REZ_NETRIMISE calculează ZiRez = MAX(DataRezervare) pe TOATE inițialele angajamentului. «Cea mai veche zi, apoi cel mai mic tip» folosește ZiRez, la fel data reviziei generate (DataRezervare din primul rând). Tot 5 parametri.
 
 ## Fișiere atinse
 

@@ -42,7 +42,7 @@ Operator: «de ce la factura cumparare exista spatiul ala alb in footer? nu il v
 ## SLICE-0114-22 - E-Factura VIEW: no options button in the tree header, no supplier level (17.10.2026) <a id="slice-0114-22"></a>
 
 ### What changed and why
-Operator (second time asked for the grouping): in the VIEW of the angajament (`EFacturaView`, not the window «Facturi primite»): (1) the tree's header-right button goes; (2) the tree is «Toate facturile» / month-year / invoice, no supplier level. `PrimiteView` gets a designer property `AngajamentView` (set True in `EFacturaView.Designer.vb`): it takes the options (funnel) icon off the header (the icon the designer gave is kept and given back if the property is False again), `BuildMonthTree` puts the invoices (newest first) directly under their month, and a stray click on the header-right area does nothing. The invoice rows are built by one shared routine (`AddInvoiceNodes`) for both shapes. The window «Facturi primite» is unchanged (supplier level, options menu). With the button gone, the view has no «fara operatii» filter any more (it was in that menu).
+Operator's repeated grouping request applies only to angajament VIEW `EFacturaView`: no header-right button; «Toate facturile» / month-year / invoice, without supplier. New designer `PrimiteView.AngajamentView` (True in `EFacturaView.Designer.vb`) removes funnel icon, retaining/restoring its designer value on False, and ignores stray header-right clicks. `BuildMonthTree` puts newest invoices directly under month; shared `AddInvoiceNodes` builds both shapes. «Facturi primite» window keeps suppliers/options; view loses the menu's «fara operatii» filter.
 
 ### Files touched
 `src/KBot.EFactura/Views/Primite/PrimiteView.vb`, `src/KBot.App/Views/EFactura/EFacturaView.Designer.vb`; help `contabil/efactura/index.md` (0000-93).
@@ -57,7 +57,7 @@ Operator (second time asked for the grouping): in the VIEW of the angajament (`E
 
 ### What changed and why
 Operator, five points.
-1. **Bottom padding of the sub-views** (the 2-3 px strip under the XML / content views, in the view of the angajament and in the window «Facturi primite»): the pages `PrimiteLiniiPage`, `PrimiteMesajePage`, `PrimiteReceptiiPage` and the XML view (`pgXml`) had `Padding(3)`; now `Padding(3, 3, 3, 0)` (left, top and right stay, the bottom goes), so the content reaches the bottom of the tree's frame.
+1. **Bottom padding** (2-3 px strip below XML/content in angajament view and «Facturi primite»): `PrimiteLiniiPage`, `PrimiteMesajePage`, `PrimiteReceptiiPage`, XML `pgXml` change `Padding(3)` to `Padding(3, 3, 3, 0)`. Only bottom goes, extending content to tree-frame bottom.
 2. **«Facturi primite» (the control, so the view and the window): the tree 25 % narrower**: the column split 32 / 68 became 24 / 76.
 3. **Vanzare (`FacturiForm`): tree 25 % narrower**: the body split 30 / 70 became 22.5 / 77.5 (the footer buttons' split follows, so the footer stays under the same columns).
 4. **Vanzare: the view «Atasamente» is gone** (nav item, `pgAtasamente`, the class `VanzareAtasamentePage` and its two files deleted).
@@ -76,7 +76,7 @@ Operator, five points.
 ## SLICE-0114-24 - E-Factura: the download id is named in the ANAF download error (17.10.2026 request, 7.3 still open) <a id="slice-0114-24-efactura"></a>
 
 ### What changed and why
-Operator item 7.3 (view «Factura ANAF» of an issued invoice): «nu cred ca foloseste ID-ul corect pentru descarcare, de obicei incepe cu 4xxx»; later: the error text differs from error to error, so there is no single text to send. The path was read end to end: the client sends only the invoice id (`GET /facturi/{id}/pdf-anaf`) -> `trimitere.pdf_anaf` -> `trimitere.descarca` -> `anaf_api.descarca(token, row["id_descarcare"])`; `id_descarcare` is written only by `verifica` (`stareMesaj` -> attribute `id_descarcare`, the 4xxx number) when ANAF says «ok», and the state «acceptata» needs it numeric. Nothing in the code picks `id_incarcare` (5xxx) for the download. So a wrong id can only be a WRONG STORED VALUE (older rows, or written outside this code). To make the next occurrence readable without asking for a database read, `anaf_api.descarca` now ends its two errors with «(id descarcare folosit: N)».
+Operator item 7.3 («Factura ANAF», issued invoice): «nu cred ca foloseste ID-ul corect pentru descarcare, de obicei incepe cu 4xxx»; later reported varying error texts. Path read end to end: invoice id via `GET /facturi/{id}/pdf-anaf` → `trimitere.pdf_anaf` → `trimitere.descarca` → `anaf_api.descarca(token, row["id_descarcare"])`. Only `verifica` writes that 4xxx attribute from `stareMesaj` when ANAF says «ok»; «acceptata» requires numeric value. Code never picks 5xxx `id_incarcare` for download: diagnosis was WRONG STORED VALUE (older/external writes). To expose the next case without database reading, both `anaf_api.descarca` errors append «(id descarcare folosit: N)».
 
 ### Files touched
 `PYTHON/routes/efactura/anaf_api.py` (`descarca`). Not deployed (the operator does that by hand).

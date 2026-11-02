@@ -9,7 +9,7 @@ Operator request, 26.09.2026:
 
 ## What changed and why
 
-**Split.** `KbotForm.vb` now holds only the fields, the constructor, the re-login net (`WithReauth`, `IsContextMismatch`, `ContextMismatchError`), `MainForm_Load` and `MainForm_Shown`. Everything else moved, unchanged in behaviour, into new partial files (`Partial Public Class KbotForm`), one per concern:
+**Split:** KbotForm.vb retains fields/constructor, re-login (WithReauth/IsContextMismatch/ContextMismatchError), MainForm_Load/MainForm_Shown. Other concerns move to new Partial Public Class KbotForm files without behavioural changes:
 
 | File | Lines | Contents |
 |------|------:|----------|
@@ -29,11 +29,11 @@ Operator request, 26.09.2026:
 
 The existing partials (`Browser`, `DdfSend`, `ForexeWatch`, `TreeOptions`, `UncorrectedOperations`) are untouched.
 
-**Rule 0 / English-only sweep of the moved code.** Every Romanian comment and XML doc in the moved code was rewritten in English without diacritics. Operator-visible strings (`KBotMessage.Show`, `ArgumentException` messages, menu captions, `SpuneStare`) are unchanged, diacritics included. No identifier was renamed except one local (`caleJurnal` → `logPath` in `MainForm_Load`). The two stacked `<summary>` blocks above `IntreabaDacaRefolosescLista` were separated, each now sits on its own function.
+**Rule 0 / English:** moved Romanian comments/XML docs rewritten in English without diacritics. Operator strings (KBotMessage.Show, ArgumentException, menus, SpuneStare) retain diacritics. Only renamed identifier: local caleJurnal → logPath in MainForm_Load. Two stacked `<summary>` blocks above IntreabaDacaRefolosescLista split onto their own functions.
 
-**Dead commented-out code dropped:** the old header «Conectare» button wiring (`Forexe_StateChanged`, `ActualizeazaButonConectare`, the commented `OnFormClosed`, the commented `AddHandler` in Load and the commented `ButtonStyles.ApplyPrimary(btnConectare, …)`). The button no longer exists; connecting lives in the FOREXE footer band.
+**Removed dead commented wiring** for the obsolete header Conectare button: Forexe_StateChanged, ActualizeazaButonConectare, OnFormClosed, AddHandler in Load, ButtonStyles.ApplyPrimary(btnConectare,…). Connection now lives in the FOREXE footer.
 
-**Primary button.** `KbotForm.Chrome.vb` `OnThemeChanged` calls `ButtonStyles.ApplyPrimary(btnAngajamentNou, scheme)`, so the button follows the accent colour of the active scheme (rounded under Modern) on every theme switch. The designer is not touched.
+**Primary button:** KbotForm.Chrome.vb.OnThemeChanged calls ButtonStyles.ApplyPrimary(btnAngajamentNou,scheme), following the active accent on each theme change (rounded under Modern). Designer untouched.
 
 ## Pass 2 (same day) — DdfSend split + partials nested in Solution Explorer
 

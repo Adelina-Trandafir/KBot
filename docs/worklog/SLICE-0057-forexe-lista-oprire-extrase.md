@@ -10,7 +10,7 @@ Trei lucruri cerute de operator, în aceeași trecere. Primele două sunt repara
 
 ## 1. Descărcarea listei „rămânea în aer"
 
-**Ce era.** În subsolul arborelui `MainForm`, stânga afișa `database` / «Sursa datelor: unitatea și perioada…», dreapta refresh / «Actualizează lista de angajamente din FOREXE». Handlerul era numai pe stânga (`Tree_FooterLeftIconClicked`): dreapta nu făcea nimic, iar stânga descărca local, apoi shell-ul arunca rândurile întoarse de `DownloadListaAsync`. Arborele și serverul rămâneau neactualizate.
+**Anterior:** în subsolul `MainForm`, stânga `database` / «Sursa datelor: unitatea și perioada…», dreapta refresh / «Actualizează lista de angajamente din FOREXE». Numai stânga avea handler (`Tree_FooterLeftIconClicked`): descărca local, dar shell-ul arunca rândurile `DownloadListaAsync`; dreapta era inertă. Arbore/server neactualizate.
 
 **Ce s-a făcut.** Alegerea operatorului (2026-09-08): **dreapta = lista, stânga = extrasele**.
 
@@ -43,7 +43,7 @@ Cifrele vin de la SERVER, nu se numără în client: arborele arată o singură 
 
 - `WorkflowExecutor` expune `_exitMessage` prin `ExitMessage`, resetat la fiecare `ExecuteAsync`. `<Exit>` rămâne oprire intenționată, fără excepție propagată, păstrând browserul deschis.
 - `ForexeRunner.RunJobAsync` și `RunAsync` (Conectare) întorc `Failed(mesaj)` când `ExitMessage` este nevid. Conectarea nu are încă `<Exit>`, dar va respecta același contract dacă apare.
-- `ForexeController` capătă `LastFailure`: **de ce** s-a întors goală ultima intenție. Se golește la începutul fiecărei intenții și rămâne GOL când operatorul însuși a renunțat (a închis dialogul de certificat) — shell-ul arată casetă doar când e plin.
+- `ForexeController.LastFailure`: motivul rezultatului gol; resetat la fiecare intenție, rămâne GOL la renunțarea operatorului (dialogul certificatului închis). Shell-ul arată casetă numai cu motiv nevid.
 - `MainForm.ShowForexeFailure` pune motivul în fața operatorului.
 
 Toate cele patru workflow-uri care au `<Exit>` îl folosesc pentru același lucru — «ce am fost trimis să aduc nu e acolo, mă opresc» — deci schimbarea e corectă pentru toate.

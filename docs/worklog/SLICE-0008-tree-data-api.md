@@ -14,9 +14,7 @@ The old `GET /api/forexe/angajamente` flat list had no Are* flags for view gatin
 
 ### Step 0 — what the mandatory reads showed
 
-The plan said the two source queries were "in this chat's history". They were not (fresh session), so everything below was read from the **repo** export at `FX_System_Export/QUERIES/` — *not* from `C:\AVACONT\FX_System_Export`. Nobody has confirmed the repo copy matches live Access; that remains unverified (see below).
-
-The single most useful finding: **the plan's contract is a composite of two different Access queries, and reading only one of them makes the plan look wrong.**
+The plan's two source queries were unavailable in the fresh chat, despite its history reference. Read from **repo** `FX_System_Export/QUERIES/`, not `C:\AVACONT\FX_System_Export`; parity with live Access remains unconfirmed. **The contract combines two Access queries; reading only one misrepresents it.**
 
 | Query | Carries | Lacks |
 |---|---|---|
@@ -115,9 +113,9 @@ So the genuinely-unshipped work was: **Part A (the orphan escape, which 0008 did
 
 Rather than churn working, committed code to match the brief's exact letter, the two architectural choices 0008 made — which already satisfy the brief's *goals* — were kept:
 
-1. **Mapping lives in the client, not in a `MainForm.BuildTreeInfo`.** `ApiClient.GetTreeAsync` returns `IReadOnlyList(Of AngajamentTreeInfo)`, mapping every field (incl. the `AreOrd` JSON → `AreORD` POCO bridge) itself. This keeps the wire DTO out of `MainForm` entirely, which is cleaner than the brief's `GetTreeResponse`-in-the- form shape. The mapping assertions the brief wanted on `BuildTreeInfo` are covered by `GetTree_Deserializes_AllFields_AndNineFlags` instead.
-2. **No `token` parameter on `GetTreeAsync`.** The brief signature threads `token` through; the codebase reads the bearer from the `SessionContext` singleton per-request (this is pinned by the existing `ApiClient_ReadsTokenAtCallTime_NotAtConstruction` H1 regression guard). Adding a `token` param would contradict that pattern, so it was not added.
-3. **`GetTreeRow.IDDF` is `Long?`, not the brief's `Integer?`.** `AngajamentTreeInfo.IDDF` is `Long?`, so `Long?` on the wire DTO means a straight `.IDDF = r.IDDF` with no `CLng` conversion — one fewer place to get a cast wrong, and no overflow risk. The brief's `Integer?` → `Long?` conversion was mirroring `GetAngajamenteRow.IDDF As Integer?`; here the cleaner `Long?`-throughout was kept. `System.Text.Json` deserializes the JSON integer straight into `Long?`.
+1. **Client mapping instead of `MainForm.BuildTreeInfo`.** `ApiClient.GetTreeAsync` returns `IReadOnlyList(Of AngajamentTreeInfo)`, mapping every field including JSON `AreOrd` → POCO `AreORD`; no wire DTO in `MainForm`, unlike the brief's `GetTreeResponse`. `GetTree_Deserializes_AllFields_AndNineFlags` covers its requested `BuildTreeInfo` mapping assertions.
+2. **No `token` parameter on `GetTreeAsync`.** Bearer is read per-request from `SessionContext`, pinned by H1 `ApiClient_ReadsTokenAtCallTime_NotAtConstruction`; the brief's explicit token would contradict that pattern.
+3. **`GetTreeRow.IDDF As Long?`**, matching `AngajamentTreeInfo.IDDF`: direct `.IDDF = r.IDDF`, no `CLng` or overflow risk. The brief's `Integer?` → `Long?` mirrored `GetAngajamenteRow.IDDF As Integer?`; here `System.Text.Json` reads JSON integer straight into `Long?` throughout.
 
 ### Part A — server orphan escape (`PYTHON/routes/forexe/tree.py`)
 

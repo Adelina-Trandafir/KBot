@@ -9,7 +9,7 @@ The operator confirmed the two defaults («confirm și fă tot într-o bucată»
   roles (`Administrator`, `Secretar`, `Imputernicit`, `Contabil`, `Director`); `roluri_vizibile` (a proxy also sees what is the accountant's);
   `urmatorul` / `avanseaza` (A → `Contabil`, B → `Director`, Ordonator → NULL, run in the PDF upload's own transaction); the probes for the column and
   the table (a unit where sql/0124 was not carried is left alone); the allow-list of the restricted roles; `refuza_pdf_nevizibil`.
-- **Flow start (operator's step 1):** `ddf_edit.py` `_scrie_graf` — a revision created in K-BOT (not from FOREXE) gets `DeSemnat` from the compartment **when it is created**; a compartment with no role stops the save with a message naming it. The route that started the flow on «Generează» was removed.
+- **Flow start (operator's step 1):** `ddf_edit.py` `_scrie_graf` sets `DeSemnat` from the compartment **at K-BOT revision creation**, excluding FOREXE revisions. Missing compartment role blocks saving with its name in the message. «Generează» start route removed.
 - **`PYTHON/routes/forexe/ddf_flux.py` (new).** `GET /api/forexe/ddf/de-semnat` (every role; spans the user's units, each read with the role the user
   has there; a unit that cannot be read is named in `unitati_necitite`), `GET` / `PUT /api/forexe/ddf/flux/comp-rol` (the compartments in use + the table + the roles; the PUT replaces the table, all or nothing).
 - **CRITICAL rule (operator): a `Secretar` / `Administrator` must not see any DDF other than the ones addressed to them — and everything else works for them as it did before** (corrected the same day: the first version closed every route
@@ -22,8 +22,7 @@ The operator confirmed the two defaults («confirm și fă tot într-o bucată»
 
 ## Differences from the plan of 0124-01
 
-- The signer (also a Secretar / Administrator) **generates the document locally** from the revision's data (as the accountant does) and uploads it signed; **nothing is stored on the server before the signature** (the first version stored an unsigned
-  A-only PDF; the operator rejected it). So the list of what is addressed (`ddf_flux.py`) does not need a PDF row (`LEFT JOIN FX_DDF_PDF`), and a restricted role reads the DDF through the filtered `GET /api/forexe/ddf`.
+- Signers, including Secretar/Administrator, **generate locally** from revision data like the accountant, then upload signed. **No server PDF before signing**: operator rejected the first unsigned A-only upload. Thus `ddf_flux.py` needs no PDF row (`LEFT JOIN FX_DDF_PDF`); restricted roles read through filtered `GET /api/forexe/ddf`.
 
 ## Files touched
 

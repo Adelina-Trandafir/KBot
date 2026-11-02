@@ -111,7 +111,7 @@ The deliberate exception is the operator’s ignorat action (F17): a save with n
 
 **D6 — keys become `AUTO_INCREMENT`, as a prerequisite, not as part of this work.** See §3.
 
-**D7 — `IdClsf` on these tables stays the Access id.** `KBOT_STATUS.md` (slice 0047) settles it: `FX_Istoric`, `FX_Indicatori`, `FX_Rezervari`, `FX_Plati`, `FX_Receptii` carry `IdClsf` = `Clasificatii.IdClsfAcc`, not the MariaDB `IDClsf`, and the read routes depend on that. New rows written by this pipeline **keep the same convention**. Where a classification has to be resolved from scratch (step 2), look the row up in `Clasificatii` and write its **`IdClsfAcc`** into `FX_Indicatori.IdClsf`. Writing `IDClsf` there would silently empty the Istoric and Recepții filter menus — it would not raise anything.
+**D7 — `IdClsf` stays the Access id.** Per `KBOT_STATUS.md` (0047), `FX_Istoric`, `FX_Indicatori`, `FX_Rezervari`, `FX_Plati`, `FX_Receptii` use `IdClsf` = `Clasificatii.IdClsfAcc`, which the read routes require. New rows **keep this convention**. Step 2 resolves classifications in `Clasificatii`, writing **`IdClsfAcc`** to `FX_Indicatori.IdClsf`; MariaDB `IDClsf` there would silently empty Istoric/Recepții filters, without raising.
 
 **D8 — initial unit assumption (amended by D16/§5.2a).** The original wording below predates the finding that one database may contain a set of units; D16/§5.2a governs the resolution per indicator.
 

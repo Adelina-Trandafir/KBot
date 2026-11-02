@@ -15,7 +15,7 @@ Jurnalul lipit de operator (o conectare cu certificat indisponibil) avea 33 de l
 
 - `Public Shared Property VerboseLogging As Boolean` pe `RichTextBoxLogger`: True Debug/False Release, #If DEBUG în InitialVerbosity(). Steagul rezervat viitorului comutator «jurnal detaliat» redesenează la schimbare toate consolele din buffer; viitoarea felie trebuie numai să-l seteze.
 - Regula (`ShouldDisplay`): o linie ajunge pe consolă dacă `VerboseLogging` **sau** e scrisă pentru operator (`operatorFacing`) **sau** e de nivel `Error`. Restul — Info, Action, Success, Warning, Debug, Normal fără steag — stau ascunse.
-- **Fișierul-jurnal (`Logs\Log_*.txt`) și istoricul lucrărilor NU sunt filtrate**: primesc fiecare linie ca înainte. Filtrul e doar pe ce vede operatorul; nimic nu se pierde pentru citit mai târziu.
+- **Fișierul-jurnal (`Logs\Log_*.txt`) și istoricul lucrărilor NU sunt filtrate**: păstrează toate liniile; filtrul afectează numai consola.
 - Buffer (Level,Msg,OperatorFacing): RedrawAll aplică aceeași regulă la temă/verbozitate. SetColorScheme și noul setter cheamă RefreshAllInstances.
 - `Log(message, level, operatorFacing:=False)` primește parametrul opțional; `LogOperator(message, level)` e scurtătura. `Separator()` se arată doar în modul detaliat.
 
@@ -29,7 +29,7 @@ Jurnalul lipit de operator (o conectare cu certificat indisponibil) avea 33 de l
 Frontieră Error unică: ForexeRunner.RunAsync/RunJobAsync prinde executorul și erorile anterioare (browser/parsare), cunoscând faza «Eroare conectare»/«Eroare rulare 'X'». Celelalte straturi renunță la Error:
 - `ExecuteAuthClickAsync`: cele două `LogError` de dinaintea `Throw` scoase (mesajul călătorește în excepție). Mesajul de timeout a rămas fără «EROARE CRITICĂ» și fără `[Auth]` — prefixul «Eroare conectare:» îl pune runner-ul.
 - `WorkflowExecutor.ExecuteAsync`: `LogException` → `LogDebug("Eroare la executare workflow: …")`.
-- `ForexeRunner`: `[DIAG]` (tip + mesaj, dublura a treia) scos; `[DIAG][STACK]` (stiva completă, singura informație nouă) → `LogDebug`, deci în fișier și în modul detaliat.
+- `ForexeRunner`: `[DIAG]` (a treia copie a tipului/mesajului) scos; `[DIAG][STACK]` (stiva, singura informație nouă) → `LogDebug`: fișier și mod detaliat.
 
 Aceeași conectare eșuată, în Release, va arăta acum:
 ```

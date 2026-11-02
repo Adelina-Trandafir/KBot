@@ -14,14 +14,14 @@ Pass 1 of slice 0020 (vederea DDF), per `PLAN_DdfView.md` §3–§4. Ships the e
 
 One endpoint, three arrays, one round trip: `{cod, antet[], revizii[], linii[]}`. The client filters locally (tree, grid, clsf combo) so a tree click never issues a request — decision 7.
 
-- **`antet` is an array:** the composite MariaDB PK `(IDDF, CUAL)` and absent `CodAngajament` uniqueness (`000_DEMO.sql:161`) do not enforce the single header Access assumes. Count > 1 logs a warning; `DdfInfo.AntetDeLucru(iddfPreferat)` explicitly matches `AngajamentTreeInfo.IDDF`, otherwise picks the first.
-- **`TotalRevizie = SUM(ValCur)`** in a correlated scalar subquery. Access labels one `SA.ValCur` as the total; `Show_Revizii` re-adds `"RC_" & IDREV` per line, displaying an arbitrary value, like the 0011-03 `aggRev` fan-out. `COALESCE(…, 0)` keeps revisions without section-A lines at 0, which the Access `INNER JOIN` drops.
+- **`antet` array:** composite MariaDB PK `(IDDF, CUAL)` with no `CodAngajament` uniqueness (`000_DEMO.sql:161`) does not guarantee Access's single header. Count >1 warns; `DdfInfo.AntetDeLucru(iddfPreferat)` matches `AngajamentTreeInfo.IDDF`, else first.
+- **`TotalRevizie = SUM(ValCur)`**, correlated scalar. Access's `Show_Revizii` re-adds `"RC_" & IDREV` per line and labels arbitrary `SA.ValCur` total, like 0011-03 `aggRev` fan-out. `COALESCE(…, 0)` retains no-SA revisions at 0, unlike Access `INNER JOIN`.
 - **`Clsf` needs none of the 0011-03 `IdClsfAcc` + `IdUnitate` treatment.** Confirmed from `routes/ddf/sync_acc_mdb.py:7-8` (`Access.IdClsfPY → MariaDB.IdClsf`) and the DDL constraint `FX_DDF_REV_SA_ibfk_4 FOREIGN KEY (IdClsf) REFERENCES Clasificatii (IDClsf)`: on this table `IdClsf` already holds the nomenclator **primary key**, the reverse of `FX_Indicatori`. Keying on a PK is unique by definition → no fan-out, so **no `IdUnitate` predicate**. The denormalised `FX_DDF_REV_SA.Clsf` is preferred, falling back to the nomenclator only when blank.
 - **`ParametriiFund` is on `linii` from the start** (plan §8 bis asked for this explicitly): the grid never shows it (decision 4), but the pass-05 XML builder writes it into section A's `Cell4`. Adding it now avoids reopening the endpoint later.
 
 #### Deviation from the plan: no join to the header
 
-Plan §3 joins `FX_DDF_REV` to `FX_DDF`, but `INNER JOIN … ON IDDF` would multiply revisions by the composite-key `CUAL` rows. Instead, `revizii`/`linii` use `IN (SELECT …)`, guaranteeing one row per `IDREV`/`IdSecA` by query shape, without a mutable `GROUP BY`. This extends the 0011-03 lesson already applied to `TotalRevizie`.
+Plan §3 joins `FX_DDF_REV` to `FX_DDF`; `INNER JOIN … ON IDDF` would multiply revisions by composite-key `CUAL` rows. `revizii`/`linii` instead use `IN (SELECT …)`: one row per `IDREV`/`IdSecA` by query shape, without mutable `GROUP BY`, extending the 0011-03 lesson used for `TotalRevizie`.
 
 `test_second_cual_row_does_not_fan_out_revisions` is the regression pin: it inserts a genuine second `CUAL` row and asserts `antet` grows to 2 while `revizii` stays at 3 and `linii` at 4.
 
@@ -163,7 +163,7 @@ Pass 4 of slice 0020 (vederea DDF), per `PLAN_DdfView.md` §7. Adds the local-pa
 ### What changed and why
 
 - **`KBotPaths`** (`KBot.Common`): a JSON-backed config next to the executable (`<AppDir>\kbot_paths.json`), one property for now — `DdfPdfRoot`, default `C:\AVACONT\FOREXE\PDF\DDF\` (decision 13). Missing / empty / malformed → default + log, **never throws at startup**. `Load(dir)` is testable (bypasses the `Current` singleton). **This is not a revival of `AppConfig`.** `AppConfig` was retired because it held the server address, which stays hardcoded in `ApiOptions`; `KBotPaths` holds only local filesystem locations. The Config form that will edit it is a later slice, out of scope. `KBot.Common` `FileVersion` 1.0.0.0 → 1.1.0.0 (this project changed).
-- **`DdfPdfLocator`** (pure, testable): the §2.5 path convention (`<root>\<partener|GENERAL>\DDF_NR_{CUAL}_REV_{NumarRev}_{Cod}.PDF`) and the enumeration. `Enumerate` walks the root recursively for `*.pdf` and keeps only names ending `_{CodAngajament}.PDF` — this picks up `GENERAL\` **and** every partener folder without hardcoding either, and excludes `.xml` siblings by construction (it only globs `*.pdf`). `PDF\ORD\` is never touched — it is outside `DdfPdfRoot`. Sorted by Modified descending. A missing root returns an empty list — no throw, no folder creation.
+- **`DdfPdfLocator`** (pure, testable): §2.5 `<root>\<partener|GENERAL>\DDF_NR_{CUAL}_REV_{NumarRev}_{Cod}.PDF`. `Enumerate` recursively scans `*.pdf`, retaining `_{CodAngajament}.PDF` endings: GENERAL and all partner folders without hardcoding, no `.xml` siblings. `PDF\ORD\` stays outside `DdfPdfRoot`. Modified descending; missing root → empty list, no throw/folder creation.
 - **`DdfFileBrowser`** (`KBotDataView`): columns Folder / Nume fișier / CUAL / Rev. / Dimensiune / Modificat. A missing root shows a Romanian empty-state **naming the configured path**. Selecting a row raises `FileActivated(fullPath)`.
 - **Cross-linking in `DdfView`** (§7): one `IDdfPreview` instance, **two entry points**.
   - Selecting a tree **leaf** computes the expected path via `DdfPdfLocator.ExpectedPath(KBotPaths.Current.DdfPdfRoot, _antet, NumarRev)` (this is where `_antet`'s `CUAL`/`PartAng`/`NumePartener`, loaded in pass 02, finally gets used) and hands it to the preview with `File.Exists` as the flag. A **root** click clears the preview.
@@ -211,7 +211,7 @@ Pass 5 of slice 0020 (vederea DDF), per `PLAN_DdfView.md` §8 bis. **Scope decis
 
 #### Endpoint extension (one route, `GET /api/forexe/ddf`)
 - `linii` gains `ss` — `COALESCE(NULLIF(SA.SS,''), Clasificatii.SS by IDClsf)`. The XML builder needs it for `Cell3` (form1) and `codSSI` (NOTAFD). **Finding:** MariaDB `Clasificatii` has **no `CodSSI`** column (the VBA reads Access `Clasificatii.CodSSI`) — it has the generated `SS` (Sector+Sursa), which is the analog. One `ss` field serves both the form1 and NOTAFD needs.
-- `sectiuneb` (FX_DDF_REV_SB) and `atasamente` (FX_DDF_REV_ATT) arrays, **opt-in behind a single `?pentru_generare=1` flag**. Both are generation-only (§2.8: the view must not carry data it never shows). **Deviation from the plan**, which proposed a separate `?atasamente=1` for attachments only — one flag is cleaner and avoids a half-loaded generation payload; documented in the route.
+- Generation-only `sectiuneb` (FX_DDF_REV_SB) / `atasamente` (FX_DDF_REV_ATT) arrays **opt in together via `?pentru_generare=1`** (§2.8: no undisplayed data in view). Deviates from plan's separate attachment `?atasamente=1`, avoiding half-loaded generation payload; documented in route.
 
 #### The XML builder — `DdfXmlBuilder` (pure, the crown jewel of the pass)
 A faithful port of the three module functions, generating **per revision** (as the Access `tmpFX_*` tables hold one revision):

@@ -1,6 +1,6 @@
 # SLICE-0000-25 — the help for slice 0097-02
 
-The second pass of the corrective slice ([0097-02](SLICE-0097-corective.md#slice-0097-02), operator, 01.10.2026) changed what the operator sees in seven places. This is the help for them, written in the same task (rule of 30.09.2026), every section tagged `0097-02`.
+Help for seven operator-visible changes in [0097-02](SLICE-0097-corective.md#slice-0097-02) (operator, 01.10.2026), written in the same task under the 30.09.2026 rule; every section tagged `0097-02`.
 
 ## What changed and why
 
@@ -39,7 +39,7 @@ Left out on purpose (HELP_SYSTEM §5): how K-BOT recognises a confirmation windo
 
 ## De citit de operator
 
-- `contabil.forexe.browser`, «Întrebările «Sunteți sigur...?» din pagină»: written from what the code does, but **the FOREXE windows themselves were not seen** — the example («la «Renunță»») comes from the comments in `ForexeWatch.js`. If on a client PC a question stays on screen, the sentence must be narrowed (and the rule in the script widened).
+- `contabil.forexe.browser`, «Întrebările «Sunteți sigur...?» din pagină»: code-based; **FOREXE windows not seen**. Example «la «Renunță»»: comments in `ForexeWatch.js`. If a question remains on a client screen, narrow the sentence and widen the script rule.
 - `contabil.forexe.browser`, «Două recepții pe aceeași dată»: «după ce ieși din câmpul datei» is what the script asks for; whether FOREXE's date picker lets it happen there was not seen. The question at «Salvează» is certain.
 - `contabil.forexe.browser`, «Mini-meniul K-BOT din pagină»: the first description of the mini menu in the help; it names only the zoom buttons and the state line.
 

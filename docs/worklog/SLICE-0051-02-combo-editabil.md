@@ -2,7 +2,7 @@
 
 Reper ulterior, D002-22: [0094](SLICE-0094-combo-own-control-grid-editor.md) rescrie KBotComboBox pe Control și îl folosește ca editor de grilă. API-ul nativ și probele de ecran de mai jos aparțin implementării 0051-02; ele nu certifică noul control nevăzut pe ecran la reperul 0094.
 
-Rundă corectivă la felia 0051. Cerința operatorului, în două propoziții: combo-ul K-BOT trebuie să permită tastarea, printr-o proprietate expusă în designer; și trebuie să aibă o proprietate nouă, `LimitToList`, care — stinsă — lasă operatorul să scrie o valoare inexistentă și o **păstrează la ieșirea din câmp**.
+Corecție 0051 cerută de operator: tastare în combo prin proprietate de designer; noul `LimitToList`, stins, acceptă valori din afara listei și le **păstrează la ieșirea din câmp**.
 
 **Stare:** cod verde. `dotnet build src/KBot.Controls/KBot.Controls.vbproj` → **0 erori / 0 avertismente**. `dotnet build KBot.sln --no-incremental` → **0 erori / 14 avertismente**, toate `MSB3825` PREEXISTENTE pe `.resx`-urile din `KBot.App` (`*.ImageStream` prin `BinaryFormatter`) — niciunul nou, niciunul din proiectele atinse aici.
 
@@ -20,7 +20,7 @@ Rundă corectivă la felia 0051. Cerința operatorului, în două propoziții: c
 
 ## 1. Premisa feliei 0051 era GREȘITĂ, și de aceea felia asta există
 
-0051 a scris, și în cod și în `possible_future_directions.md`, că un combo editabil nu poate fi tematizat: are un EDIT nativ copil «pe care pictura noastră nu-l atinge». De aceea antetul DDF poartă și azi două controale pentru o singură valoare — `txtComp` (valoarea autoritară) lângă `cmbComp` (doar alegătorul).
+0051 afirma în cod/`possible_future_directions.md` că EDIT-ul nativ copil face combo-ul editabil netematizabil. De aici perechea DDF pentru aceeași valoare: `txtComp` autoritar, `cmbComp` alegător.
 
 Pictarea nu ajunge la EDIT, dar culorile se cer părintelui prin `WM_CTLCOLOREDIT`; părintele EDIT-ului este combo-ul, nu formularul. WinForms reflectă `WM_CTLCOLOR*` către controlul managed proprietar al ferestrei emitente; EDIT-ul nu este managed. Fără răspunsul nostru, `DefWindowProc` păstra culorile sistemului: alb cu text negru.
 
@@ -37,7 +37,7 @@ Asta **nu e o deducție** — e diferența dintre două capturi de ecran făcute
 - **`AlignEditText()`** — marginile interioare ale EDIT-ului, calculate din dreptunghiul LUI real (nu dintr-o constantă ghicită): la stânga cât lipsește până la spațiul nostru de 8 px logici, la dreapta cât ar intra sub săgeată. Se cer din nou la `OnHandleCreated`, `OnResize` și `OnFontChanged`. Măsurat: `rcItem = {3, 3, 428, 26}` la 150% ⇒ marginile ies 5 și 4 px.
 - **`OnLeave`** apelează `CommitText`; **`OnKeyDown`** la Enter cu lista închisă. `Leave`, emis de container la schimbarea controlului activ, precedă clicul exterior și nu se declanșează când lista ia focusul, spre deosebire de `LostFocus`.
 - **`OnPaint`** nu mai dublează textul EDIT-ului în modul editabil. Hover-ul colorează conturul, deoarece EDIT-ul își repictează fundalul și ar lăsa din umplere numai un chenar gros.
-- **`DropDownStyle`** nu mai aruncă pe `DropDown`, ci doar pe `Simple` (acolo lista e un panou permanent, pe care nu-l desenăm și nu-l tematizăm). Scrierea lui mută steagul `Editable`, ca să existe o singură sursă de adevăr; nu se serializează (C4 verificat, §4).
+- **`DropDownStyle`** acceptă `DropDown`; refuză numai `Simple` (panou permanent nedesenat/netematizat). Setterul schimbă `Editable`, sursa unică de adevăr; neserializat (C4 verificat, §4).
 - **Fișierul a fost MĂTURAT în engleză ASCII.** Comentariile și `<Description>`-urile erau românești cu diacritice, ceea ce încalcă REGULA 0 și regula «cod și comentarii în engleză»; controalele noi (`KBotDatePicker`, `KBotChartView`) sunt deja engleză. Regula spune că vechiul se mătură, nu se copiază — de aici diff-ul mare pe un fișier cu adaosuri mici. Categoriile din grila de proprietăți: «K-BOT Combo - Culori» ▸ «K-BOT Combo Colors».
 
 ### `src/KBot.Theming/Interop/NativeMethods.vb`

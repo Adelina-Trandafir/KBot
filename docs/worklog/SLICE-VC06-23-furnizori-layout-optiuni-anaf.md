@@ -15,4 +15,4 @@ Salvarea exclusivă a CodFiscal după răspunsul ANAF „negăsit” rămâne î
 
 Fișiere de aplicație: `PYTHON/static/js/vercon/partners.js`, `PYTHON/static/css/vercon-partners.css`.
 
-Nu s-au rulat teste, build, verificări automate/de sintaxă, browser, HTTP sau SQL. Captura utilizatorului a fost folosită ca referință pentru proiectare; nu a fost copiată în proiect. Nu există probă vizuală a modificării locale. Publicarea acestei tranșe cere cele două fișiere statice; nu cere schimbări Python, restart de serviciu sau SQL, presupunând VC06-22 deja publicat. Helpul și capturile nu au fost modificate.
+Fără teste, build, verificări automate/de sintaxă, browser, HTTP sau SQL. Captura utilizatorului: referință de proiectare, necopiată în proiect; nicio probă vizuală a modificării locale. Cu VC06-22 deja publicat, publicarea cere cele două fișiere statice, fără Python, restart de serviciu sau SQL. Helpul și capturile rămân nemodificate.

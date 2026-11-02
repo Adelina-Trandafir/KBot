@@ -18,7 +18,7 @@ Work: see `SLICE-0092-01-rezervari-gresite-sterge-luna.md`.
 The «Repara...» button of the Rezervari view now opens a window with what was detected and what will be written. Help updated to say so.
 
 ### Files touched
-`src/KBot.App/HelpContent/contabil/vederi/rezervari.md`, section «Rezervari gresite si repararea lor»: the bullet on «Repara...» describes the window (two tables, «Repara» / «Renunta»). Tag `0114-25, 0000-110`. `src/KBot.App/HelpContent/tours/tur-rezervari.md`, step «Ribbon > Repara...»: same sentence. Same tag.
+`src/KBot.App/HelpContent/contabil/vederi/rezervari.md` («Rezervari gresite si repararea lor», «Repara...» bullet) and `src/KBot.App/HelpContent/tours/tur-rezervari.md` («Ribbon > Repara...»): window with two tables, «Repara» / «Renunta»; same sentence and tags `0114-25, 0000-110`.
 
 ### Test results
 `tools\HelpCheck\Check-Help.ps1`: the only message for these files was «0000-110 not in KBOT_STATUS» before the status row was added.

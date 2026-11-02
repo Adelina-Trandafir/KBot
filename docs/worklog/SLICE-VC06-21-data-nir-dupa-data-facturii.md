@@ -6,9 +6,9 @@
 
 La schimbarea datei facturii în editorul NIR, data NIR-ului trebuie să primească aceeași valoare.
 
-`PYTHON/static/js/vercon/docs.js`: evenimentul schimbării câmpului `DataFc`, numai pentru familia `nir`, actualizează atât `header.Data`, cât și controlul DatePicker al datei NIR. Actualizarea controlului nu emite un al doilea eveniment de schimbare. Se aplică la adăugare și modificare, pentru câmpurile editabile. Data NIR poate fi apoi modificată separat.
+În `PYTHON/static/js/vercon/docs.js`, schimbarea `DataFc` actualizează `header.Data` și DatePicker-ul NIR fără al doilea eveniment. Numai familia `nir`, la adăugare/modificare, pe câmpuri editabile; data NIR rămâne apoi modificabilă separat.
 
-Schimbarea parcurge și controlul numărului NIR pentru noua dată, apoi validarea ciornei existentă. În cazul unui refuz/unei erori, ambele date sunt restaurate împreună și antetul este redesenat. Salvarea folosește cele două date din ciornă; nu se impune egalitatea permanentă a datelor pe server și nu se rescriu documentele istorice.
+Se controlează numărul NIR pentru noua dată, apoi se validează ciorna ca înainte. Refuzul/eroarea restaurează ambele date și redesenează antetul. Salvarea folosește datele ciornei, fără egalitate permanentă impusă pe server sau rescrierea documentelor istorice.
 
 `PYTHON/static/help/vercon.json`: explicație în secțiunea de înregistrare NIR. Storno și celelalte familii de documente nu sunt modificate.
 

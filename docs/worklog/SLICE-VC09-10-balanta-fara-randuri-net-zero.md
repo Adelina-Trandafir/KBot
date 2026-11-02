@@ -13,7 +13,7 @@ Exemple de proiectare, nerulate:
 - SI sau SF nenul → rând păstrat, inclusiv fără rulaj net în lună.
 - Intrări nete 10 și Ieșiri nete 10, SI/SF 0 → rând păstrat: există rulaje nete în coloane.
 
-Opțiunea existentă **Afișează FĂRĂ mișcări**, dacă este aleasă explicit în pagina Rapoarte, își păstrează funcția de a include rândurile fără solduri/rulaje. Nu a fost eliminată sau schimbată. Previzualizarea Balanță din Stocuri elimină rândurile cu toate cele patru mărimi zero, comparând șirurile zecimale exacte, fără conversie în float. Filtrul separat „Doar produse cu stoc” al grilei Stocuri nu este schimbat.
+**Afișează FĂRĂ mișcări**, aleasă explicit în Rapoarte, păstrează includerea rândurilor fără solduri/rulaje. Previzualizarea Balanță din Stocuri elimină rândurile cu toate cele patru mărimi zero prin compararea șirurilor zecimale exacte, fără float. Filtrul separat „Doar produse cu stoc” al grilei rămâne neschimbat.
 
 `report_balance.VERSION` este 2; mecanismul existent din VC09-09 refuză exportul modelelor vechi de balanță/rulaje până la regenerare. Ecranul/PDF/Excel folosesc același model filtrat. Calculul Intrări = NIR − storno, Ieșiri = consum − retur, soldul și reparațiile prețurilor rămân neschimbate.
 

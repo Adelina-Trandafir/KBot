@@ -1,14 +1,14 @@
 # SLICE 0000-53 — help for 0111: correcting the value of a snapshot
 
-**Date:** 06.10.2026. Help sub-slice of the feature `0111` (`SLICE-0111-01-corectie-valoare-instantaneu.md`), done in the same task as the rule says: any change to what the operator sees is recorded in the help with its slice number.
+**Date:** 06.10.2026. Help for `0111` (`SLICE-0111-01-corectie-valoare-instantaneu.md`), in the same task, under the rule to document operator-visible changes with their slice number.
 
 ## What changed and why
 
-The association window has a new context-menu command, «Corectează valoarea…», a new window (`CorectieValoareForm`) and a new sign on corrected snapshots, **[corectat]**. The help now says what they are for and how they work, in the operator's words and without any inner workings (no column names, no server rules beyond what the operator sees).
+Help covers «Corectează valoarea…», `CorectieValoareForm` and **[corectat]**: purpose/use in the operator's words, omitting internal columns/server rules.
 
-- `contabil/asocieri/cazuri.md` (`id: contabil.asocieri.cazuri`): new section «Valoarea greșită din FOREXE — «Corectează valoarea…»» (when to use it, the window, the rule total = sum of the lines, the required reason, «Revino la valorile din FOREXE», «Salvează» is immediate and reloads the window, what is not possible); «Legături blocate» now says a value cannot be corrected either when an ordonantare freezes the snapshot; `screens:` gets `CorectieValoareForm` (F1 in the new window opens this topic); keywords added; slice tag `0111`.
+- `contabil/asocieri/cazuri.md` (`id: contabil.asocieri.cazuri`): new section «Valoarea greșită din FOREXE — «Corectează valoarea…»» (use/window, total = sum of lines, required reason, «Revino la valorile din FOREXE», immediate «Salvează» and reload, restrictions); «Legături blocate» also forbids value correction when an ordonantare freezes the snapshot; `screens: CorectieValoareForm` gives the window F1 access; keywords and tag `0111` added.
 - `contabil/asocieri/fereastra.md` (`id: contabil.asocieri.fereastra`): **[corectat]** among the signs of a snapshot row, with a link to the new section; slice tag `0111`.
-- `contabil/asocieri/cazuri.md` also says (second pass of 0111) that the correction can be made right after a download, kept in the window and written together with the download.
+- The same section records 0111's second pass: correction immediately after download, kept in the window and written with the download.
 - `tours/tur-asocieri.md`: the «Clic dreapta» step names the new command; slice tag `0111`.
 - `help-version.txt`: stays `2026-10-06` (already today's date).
 

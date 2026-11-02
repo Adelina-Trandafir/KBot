@@ -10,7 +10,7 @@ Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ### Ce s-a schimbat și de ce
 
-Panoul «Rapoarte» din dreapta era dezactivat. Acum fiecare buton cere serverului un raport (pagină de listare sau PDF). Serverul doar citește: nu scrie rânduri și nu consumă numere de chitanță. Cifrele vin din aceleași rânduri ca ecranul (luna deschisă = `calculate`, luna închisă = `AD_SS_Buget`), nu dintr-un al doilea calcul.
+Panoul «Rapoarte» din dreapta, anterior dezactivat, cere serverului pagină de listare sau PDF. Serverul doar citește, fără scrieri sau numere de chitanță consumate. Folosește rândurile ecranului (luna deschisă: `calculate`; închisă: `AD_SS_Buget`), fără recalcul separat.
 
 | Raport Access | În web | Panou |
 |---|---|---|
@@ -55,9 +55,9 @@ Fiecare raport pe date reale, listare + PDF; interogările SQL nu au fost rulate
 
 ### Comportament
 
-Raport A4 portret după imagine: grupă, copii în ordine alfabetică, SID/SIC, taxa pentru zilele configurate ale lunii și suma SID + taxa − SIC. Utilizatorul a confirmat explicit soldurile inițiale și taxa lunară integrală. Datele provin din situația calculată/salvată existentă; taxa și zilele sunt cele ale lunii selectate. Sumele negative se păstrează. Nu se schimbă calculele contabile existente.
+Raport A4 portret după imagine: grupă, copii alfabetic, SID/SIC, taxa pentru zilele configurate ale lunii și SID + taxa − SIC. Soldurile inițiale și taxa lunară integrală sunt confirmate explicit de utilizator. Date: situația calculată/salvată existentă, taxa și zilele lunii selectate; sumele negative se păstrează. Calculele contabile rămân.
 
-Butonul Situație de plată este sub Situație lunară și folosește Toate grupele. Toate grupele introduce mereu salt de pagină între grupe, independent de Separă grupe. HTML/PDF repetă antetul tabelului la continuare și nota sub fiecare grupă. Grupele numeroase sau notele lungi pot ocupa mai multe pagini.
+Butonul Situație de plată, sub Situație lunară, folosește Toate grupele: salt de pagină între grupe indiferent de Separă grupe. HTML/PDF repetă antetul tabelului la continuare și nota sub fiecare grupă. Grupele numeroase/notele lungi pot ocupa mai multe pagini.
 
 Meniul Text situație de plată deschide editor vizual/sursă HTML, per subunitate și cu drept Catalog. Salvarea are versiune și cheie idempotentă reutilizată; subunitatea nu se schimbă cât dialogul e deschis. Lista acceptată: liste, paragrafe, titluri, aldine/cursive/subliniere, aliniere, șapte culori, trei fonturi, șapte mărimi; fără CSS/atribute arbitrare. Editorul primește HTML filtrat; paste = text simplu, sursa acceptă HTML. Variabile: [UNITATE], [CONT], [COD_FISCAL], [GRUPA], [LUNA], [AN]. Primul cont este implicit, cu alt IBAN permis în text. Datele instituției din imagine nu devin valori reale.
 
@@ -160,11 +160,11 @@ Nu există modificări Python/JS, DDL sau seed. Nu s-au executat publicare, rest
 
 Până acum, multe comenzi făceau generarea și descărcarea înainte să deschidă viewerul, fără feedback vizibil. Un clic repetat putea porni alte rapoarte.
 
-Componenta comună ia acum o blocare înainte de prima operație asincronă și deschide imediat fereastra raportului. Aceasta afișează o cartelă centrală, indicator animat și mesajul „Se pregătește raportul…”. Generarea începe după ce browserul poate desena fereastra. Nu se aplică o temporizare arbitrară de debounce: blocarea acoperă întreaga operație reală, inclusiv regenerarea unui snapshot expirat. Clicurile suplimentare nu sunt puse în coadă.
+Componenta comună blochează înaintea primei operații asincrone și deschide imediat fereastra raportului: cartelă centrală, indicator animat și „Se pregătește raportul…”. Generarea începe după ce browserul poate desena fereastra. Blocarea acoperă operația reală, inclusiv regenerarea snapshotului expirat, fără debounce arbitrar sau clicuri suplimentare puse în coadă.
 
-La PDF, încărcarea rămâne până când PDF.js a desenat prima pagină curentă, apoi apare raportul cu acțiunile active. La descărcare PDF/Excel, progresul se închide după pregătirea fișierului și predarea lui către browser. Finalizarea salvării de către utilizator nu poate fi observată de aplicație.
+La PDF, încărcarea rămâne până când PDF.js desenează prima pagină curentă, apoi apar raportul și acțiunile active. La descărcare PDF/Excel, progresul se închide după pregătirea fișierului și predarea către browser; aplicația nu poate observa finalizarea salvării de către utilizator.
 
-Erorile de generare, rețea sau afișare apar în aceeași fereastră și sunt jurnalizate. Dacă bytes PDF există, eroarea de afișare oferă descărcarea ca rezervă. Blocarea este eliberată în `finally`, la rezultat/eroare. Dacă fereastra este închisă în timpul unei cereri, blocarea rămâne până la terminarea cererii; o nouă încercare între timp afișează un mesaj explicativ. Rezultatele întârziate ale unui context invalidat nu sunt afișate.
+Erorile de generare/rețea/afișare apar în aceeași fereastră și în jurnal; dacă bytes PDF există, eroarea de afișare oferă descărcarea de rezervă. Blocarea se eliberează în `finally`, la rezultat/eroare, chiar dacă fereastra s-a închis între timp; până atunci, reîncercarea afișează un mesaj explicativ. Rezultatele întârziate ale contextului invalidat nu se afișează.
 
 Indicatorul respectă tema și preferința de mișcare redusă. Stările sunt anunțate accesibil, iar focusul este mutat de la loading la acțiunile PDF după afișarea documentului.
 

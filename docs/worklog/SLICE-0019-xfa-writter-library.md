@@ -1,8 +1,6 @@
 # SLICE-0019 — XFA_WRITTER → `KBot.Xfa` (librărie în proces, nu exe separat)
 
-Portarea exe-ului `XFA_WRITTER` (din `Surse/SURSA_XFA_WRITTER`) în `src/KBot.Xfa` ca **librărie apelată în proces**. Access lansa exe-ul prin `WScript.Shell.Run(cmd, 1, True)` și citea codul de ieșire; K-BOT îl apelează acum direct, în proces — cerința operatorului: „exact ce face proiectul din surse, dar din K-BOT, NU un exe separat ca în Access”.
-
-`KBot.Xfa` era doar un ciot (vbproj + README) deja referit de `KBot.App`. Acum e o librărie reală.
+XFA_WRITTER (Surse/SURSA_XFA_WRITTER) devine librăria în proces src/KBot.Xfa, fostul ciot vbproj/README deja referit de KBot.App. Access lansa `WScript.Shell.Run(cmd, 1, True)` și citea codul de ieșire; K-BOT apelează direct, conform cererii: „exact ce face proiectul din surse, dar din K-BOT, NU un exe separat ca în Access”.
 
 ## API public — `XfaWriter` (înlocuiește `Program.Main` + parsarea CLI)
 
@@ -17,7 +15,7 @@ Portarea exe-ului `XFA_WRITTER` (din `Surse/SURSA_XFA_WRITTER`) în `src/KBot.Xf
 
 ## Componente portate
 
-- **`AdobeUtils`** — motorul iTextSharp 5 (`PdfReader`/`PdfStamper`/`XfaForm`/`AcroFields`): modifică XFA din XML (recursiv; tabele = șterge `Row1`-urile din DOM și le reconstruiește din XML; subformulare repetabile `SubformInf` clonate când XML are mai multe instanțe decât macheta), embedează atașamente, deschide Adobe și calculează masca semnatarilor din handler-ul `.pdf` din registry (UserChoice → HKCR), cu validare că exe-ul e Adobe (nume `Acrobat.exe`/`AcroRd32.exe` sau `CompanyName` conține „Adobe”). Expus în plus `MascaSemnatari(fieldNames, docType)` — bucla de clasificare, utilă și fără PDF.
+- **AdobeUtils**, iTextSharp 5 (PdfReader/PdfStamper/XfaForm/AcroFields): XFA din XML recursiv, Row1 șterse/reconstruite pentru tabele; SubformInf clonate când XML are mai multe instanțe decât macheta. Embedează atașamente, deschide Adobe, calculează masca semnatarilor. Handler .pdf din registry (UserChoice → HKCR), validat prin Acrobat.exe/AcroRd32.exe sau CompanyName conținând Adobe. Expune MascaSemnatari(fieldNames,docType), clasificare utilizabilă fără PDF.
 - **`TemplateDownloader`** — cache DDF/ORD de pe API-ul **legacy** (`Configs`: `adcredit.avatarsoft.ro:5008` + `X-API-KEY`, `c:\avacont\cache`). HEAD întâi (skip re-download dacă e în cache), apoi GET complet. E API-ul vechi FOREXE/VBA, separat de API-ul K-BOT bearer.
 - **`AttachmentModel`**, **`XfaResult`**, **`Configs`**, **`XfaLog`** (trasare în `C:\AVACONT\logs`).
 
@@ -25,7 +23,7 @@ Portarea exe-ului `XFA_WRITTER` (din `Surse/SURSA_XFA_WRITTER`) în `src/KBot.Xf
 
 - **Fără bloc `Namespace`** — `Namespace AdobeUtilsNS` scos; tipurile stau în namespace-ul implicit `KBot.Xfa`.
 - **`Logger` → modul `XfaLog`** — fără `AllocConsole`/`Console.WriteLine` (rula ca exe CLI acolo); trasarea operațională detaliată rămâne, în `C:\AVACONT\logs`, un fișier per rulare. Sink terminal: nu aruncă niciodată.
-- **`GlobalErrorLog` la granițe** — metodele de graniță (`XfaWriter.*`, `AdobeUtils` publice, `TemplateDownloader.GetTemplatePath`) loghează în `GlobalErrorLog` (`KBot.Common`) și rearuncă; internele deja logau în `XfaLog`. `KBot.Xfa` referă acum `KBot.Common` — **fără ciclu** (Common referă doar Domain).
+- **GlobalErrorLog la granițe:** XfaWriter.*, AdobeUtils publice și TemplateDownloader.GetTemplatePath loghează în KBot.Common.GlobalErrorLog și rearuncă; internele logau deja în XfaLog. Referință KBot.Xfa → KBot.Common fără ciclu: Common referă numai Domain.
 - Comentarii/șiruri românești.
 
 ## Două capcane rezolvate

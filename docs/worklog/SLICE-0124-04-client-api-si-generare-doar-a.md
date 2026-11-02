@@ -7,8 +7,7 @@
 - **`KBot.Api`**: `IDdfSendApi` gains `GetDdfDeSemnatAsync`, `PornesteFluxDdfAsync`, `GetCompRolAsync`, `SalveazaCompRolAsync` (+ `DdfCompRol`, `DdfCompRolRand`);
   `DdfDeSemnat` carries `DeSemnat`, `Incarcat`, `Preluat`; `DdfDeSemnatLista.Uneste` joins two lists without a revision twice. `ApiClient.DdfSend.vb`: one shared reader
   for the two lists, and the JSON helper takes the HTTP method (GET / PUT as well as POST). `GetDdfRevizieRow.de_semnat` → `RevizieRow.DeSemnat` (+ `InFluxulKbot`).
-- **`DdfView.OnGenerateRequested`**: for a revision of the flow (`RevizieRow.InFluxulKbot`, `DeSemnat` set by the server when the revision was created) not yet signed on A: if the role in `DeSemnat` is **the user's own** (a proxy also takes the accountant's) **or the user is the accountant, always** the document is made with
-  `DdfPdfMode.OnlyA` on this PC and signed as before; otherwise the operator is told it was handed to that role and nothing is generated. **Nothing is uploaded before the signature.** A revision outside the flow (`DeSemnat` empty: older revisions, units without the flow) → the old interim document, unchanged. After A is signed the sending to FOREXE is the old one, from K-BOT.
+- **`DdfView.OnGenerateRequested`**: flow revision (`RevizieRow.InFluxulKbot`, server-set `DeSemnat` at creation) unsigned on A generates locally with `DdfPdfMode.OnlyA` for **the addressed role** (proxy includes accountant) **or always for the accountant**; otherwise a message names the addressed role, without generation. Signing stays as before, **without upload before signature**. Empty `DeSemnat` (older revisions/units without flow) keeps the old interim document. After A, FOREXE sending remains through K-BOT as before.
 
 ## Files touched
 

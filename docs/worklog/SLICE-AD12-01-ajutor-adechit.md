@@ -4,10 +4,9 @@
 
 ## Ce s-a făcut și de ce
 
-Butonul **?** în bara de sus, în stânga butonului de meniu, deschide o fereastră de ajutor: cuprinsul pe care se poate apăsa în stânga (secțiuni și subtitluri), textul formatat în dreapta (titluri, liste, tabele, casete de notă), cu linkuri între secțiuni; bara ferestrei are
-**Imprimă**, **Export PDF** și **Închide**.
+Butonul **?** din bara de sus, la stânga meniului, deschide ajutorul: cuprins interactiv în stânga (secțiuni/subtitluri), text formatat în dreapta (titluri, liste, tabele, note), linkuri între secțiuni și bara **Imprimă**, **Export PDF**, **Închide**.
 
-- **O singură sursă:** `PYTHON/static/help/adechit.json` (secțiuni cu blocuri `p`, `h`, `ul`, `ol`, `note`, `table`; în text `**aldin**` și `[text](#id)`). Din ea se hrănesc fereastra, imprimarea și PDF-ul. Textul este scris pentru utilizator (cum se folosește), nu descrie funcționarea internă și nu menționează Access. Fiecare afirmație vine din codul paginii sau din `UTILIZARE_WEB.md`.
+- **Sursă comună ferestrei/imprimării/PDF:** `PYTHON/static/help/adechit.json` (blocuri `p`, `h`, `ul`, `ol`, `note`, `table`; în text `**aldin**`, `[text](#id)`). Instrucțiuni de utilizare bazate pe codul paginii/`UTILIZARE_WEB.md`, fără funcționare internă sau mențiuni Access.
 - **Fereastra:** `js/adechit/help.js` + `css/adechit-help.css` + `<dialog id="ade-help-dialog">`. Secțiunea curentă este evidențiată în cuprins la derulare. Pe ecrane înguste cuprinsul trece deasupra textului. Culorile vin din temă (luminoasă/întunecată).
 - **Imprimă:** o fereastră nouă cu tot ajutorul (titlu, cuprins, secțiuni) pe alb, apoi dialogul de imprimare al browserului; linkurile din copie merg la secțiunea lor.
 - **Export PDF:** `GET /api/adechit/help/pdf` (`routes/adechit/help_pdf.py`, ReportLab, fontul DejaVuSans ca la rapoarte): copertă, cuprins cu linkuri, secțiuni, tabele, număr de pagină. Fontul are o singură grosime, deci textul aldin apare în albastru închis; emoji-urile din text sunt înlocuite cu simboluri pe care fontul le are (↓ ✕ + → ↩).

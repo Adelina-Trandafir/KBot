@@ -91,7 +91,7 @@ Vezi [RAPOARTE.md](RAPOARTE.md).
 
 ## Ribbonul „Vercon" (furnizat de utilizator; [XML](REFERINTE/ribbon_Vercon.xml))
 
-La pornire ribbonul este `startFromScratch`; **vizibilitatea si activarea fiecarui buton vin din tabelul `Rbb` (coloanele `N`, `V`, `E`)** prin `GetVisible`/`GetEnabled` (`basRibbonCallbacks`). Codul exportat nu scrie in `Rbb` nicaieri; **continutul tabelului a fost primit de la utilizator** ([Rbb.xml](REFERINTE/Rbb.xml), [Rbb.xsd](REFERINTE/Rbb.xsd), 49 randuri, 11.10.2026): toate butoanele si grupurile au `V=1, E=1`; singura exceptie este tabul `Tab_MF` (`V=0, E=0`, fila MF este ascunsa, MF foloseste fila „Obiecte de Inventar / Mijloace Fixe") — **ribbonul nu diferentiaza dupa tip prin date**; diferentierea o face doar `Form_Open`. `Rbb` mai contine butoane absente din ribbonul primit (`btnDelNir`, `btnDelBC`), elementele ribbonului de previzualizare la tiparire (`ExportExcel`, `FilePrintQuick`, `FileSaveAsPdfOrXps`, `PageSetupDialog`, `PrintPreviewClose`, `tabPPVW`) si, in coloana `C`, `gest_CPV` (la `btnAddProd`), `Masini` (`btnCategorii`), `Config` (`btnUnitate`); codul deschide insa `produse`, `Masini` si `SETARI`, deci coloana `C` nu este folosita de `OnActionButton`. Reguli de gestiune sunt insa impuse si in `Form_Open` al formularelor (mai jos), deci nu depind de ribbon.
+Ribbon startFromScratch; GetVisible/GetEnabled din basRibbonCallbacks citesc Rbb.N/V/E. Codul exportat nu scrie Rbb. Utilizatorul a furnizat [Rbb.xml](REFERINTE/Rbb.xml)/[Rbb.xsd](REFERINTE/Rbb.xsd): 49 rânduri, 11.10.2026; toate V=1/E=1, exceptând Tab_MF ascuns, V=0/E=0. MF folosește fila „Obiecte de Inventar / Mijloace Fixe”. Datele ribbonului nu diferențiază tipurile; Form_Open impune regulile (tabelul de mai jos). Rbb include butoanele absente btnDelNir/btnDelBC și previzualizarea ExportExcel/FilePrintQuick/FileSaveAsPdfOrXps/PageSetupDialog/PrintPreviewClose/tabPPVW. Coloana C: btnAddProd→gest_CPV, btnCategorii→Masini, btnUnitate→Config; OnActionButton deschide însă produse/Masini/SETARI, deci nu folosește C.
 
 | Tab / grup | Buton | Id | Deschide | Disponibilitate (dovada) |
 |---|---|---|---|---|
@@ -116,7 +116,7 @@ La pornire ribbonul este `startFromScratch`; **vizibilitatea si activarea fiecar
 | OI / MF | Lista Mijloace Fixe | btnListMF | (fara actiune in OnActionButton: „Lipseste actiunea") | neimplementat in Access |
 | Rapoarte | TOATE RAPOARTELE | btnLstSFP | SFP | meniu dupa TIP |
 
-Note: `OnActionButton` mai contine ramuri pentru butoane care **nu sunt in ribbonul furnizat** (`btnAmmy`, `btn_AddMF`, `btn_Amortizare`, `btn_Casari`, `btn_Restaurare`), spre formulare absente din export (`Mijloace Fixe`, `Amortizare`, `Casari`, `MFIesite`): cod mort sau ribbon mai vechi. Butonul „Gestionari" deschide formularul `Clienti`; formularul `Gestionari` din export nu este deschis de ribbon. `Furnizori` din ribbon deschide `Furnizori2022`.
+OnActionButton mai are btnAmmy/btn_AddMF/btn_Amortizare/btn_Casari/btn_Restaurare, absente din ribbonul primit, spre formulare absente din export: Mijloace Fixe/Amortizare/Casari/MFIesite (cod mort ori ribbon vechi). „Gestionari” deschide Clienti, nu formularul Gestionari; „Furnizori” deschide Furnizori2022.
 
 ## Reguli din cod (confirmate in `Form_Open` / `Form_Load`)
 
@@ -130,7 +130,7 @@ Note: `OnActionButton` mai contine ramuri pentru butoane care **nu sunt in ribbo
 | FC | Citeste `MF` si `OBINV` ca `isMF`/`isOI` si adapteaza ecranul | Forms/FC.txt:4461 |
 | Main | La incarcare, daca `UNIT` este goala, o completeaza din `CaleTemp` (Firma, CUI, DC, Detalii) | Forms/Main.txt:180 |
 
-Concluzie: in Access exista trei situatii efective determinate de `Setari`: **OI** (`OBINV`), **MF** (`MF`) si **restul** (fara steaguri). **Alimente vs Materiale nu este stabilit de niciun steag**: formularul `ListaAlimente` este permis oricarei baze fara OBINV/MF. Diferenta apare doar in date (ex.: `ListaAlimente` are 127 randuri in baza Alimente si 0 in MF si OI). Tipul web `ALIMENTE` vs `MATERIALE` este deci o alegere a operatorului in migrator.
+Setari distinge în Access OI (OBINV), MF (MF) și restul. Niciun steag nu separă Alimente de Materiale: ListaAlimente este permisă fără OBINV/MF; numai datele diferă (127 rânduri în baza Alimente, 0 în MF/OI). Tipul web ALIMENTE/MATERIALE se alege de operator în migrator.
 
 ## Intrarea in aplicatie — `VaerCon.Intrare_Click` (Forms/VaerCon.txt:1697)
 
@@ -143,7 +143,7 @@ Ordinea executata la „Intrare" (confirmat in cod):
 5. `TempVars`: separatorul zecimal si **`Zec = Nz(DLookup("ZEC","NR"),4)`** (fallback 4 si la eroare).
 6. `Setari` (UseTreescroll), `SalvezSiguranta` (ZIP local in C:\SIG), `Functii` (reparatii unice din `RunOnce`), verificare backup online (>10 zile, doar anul curent), deschide `Main` ascuns.
 
-**Ce rezulta pentru atribuirea in migrator (dovada):** un rand din `cale` este o pereche (folder, an): `IA` creeaza pentru anul urmator un rand nou cu acelasi `Cale`, `DC`, `Detalii`. Deci **gestiunea in Access = folderul `cale.Cale`** (+ `Detalii`), iar fisierele `tz_<an>.accdb` din folder sunt exercitiile ei. **Subunitatea nu exista in Access**; se atribuie in `VRC.Migrator`. `cale.DC` este codul DC; in `cale.accdb` furnizat toate cele 7 randuri au DC `00000000` (valoare-semnal, nu un DC real).
+**Atribuire în migrator, dovadă:** cale identifică (folder, an); IA adaugă anul următor cu aceleași Cale/DC/Detalii. Gestiune Access = folder cale.Cale (+Detalii); `tz_<an>.accdb` din el sunt exercițiile. Subunitatea, absentă din Access, se atribuie în VRC.Migrator. cale.DC este cod DC, dar cele 7 rânduri furnizate au 00000000 (semnal, nu DC real).
 
 | Rand `cale` | Folder | An | Observatie |
 |---:|---|---:|---|
@@ -154,4 +154,4 @@ Ordinea executata la „Intrare" (confirmat in cod):
 | 15 | \14 | 2100 | an 2100: codul nu il trateaza special (ar cauta `tz_2100.accdb`); **ipoteza**: marcaj pentru baza fara an |
 | 16 | \MF | 2100 | idem |
 
-Toate au `Detalii = Manuale` (`UNIT` il suprascrie pe toate randurile din `AlteDetalii`). Fisierele de pe disc nu au denumirile din `cale`: `tz_Alimente.accdb`, `tz_Mijloace_Fixe.accdb`, `tz_Obiecte_Inventar.accdb` sunt nume puse la export; legatura cu folderele \14, \MF, \OI_MONNET, \AUTO, \ISJ2020 o stabileste operatorul in migrator, la import.
+Toate: Detalii=Manuale; UNIT rescrie Detalii pe toate rândurile, din AlteDetalii. tz_Alimente.accdb/tz_Mijloace_Fixe.accdb/tz_Obiecte_Inventar.accdb sunt nume de export, diferite de cale; operatorul stabilește la import legătura cu folderele \14/\MF/\OI_MONNET/\AUTO/\ISJ2020.

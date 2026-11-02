@@ -1,6 +1,6 @@
 # SLICE-0000-50 — help for the interactive tutorials (also 000T-05)
 
-The help sub-slice of slice 000T (rule of 30.09.2026: every change to what the operator sees is recorded in the help, as `0000-NN`, with the slice number in the hidden source tag). Written for the user only (`docs/HELP_SYSTEM.md` §5): what a tutorial is and how it behaves, how to start one. The designer, the picker and the recorder are an operator tool and are NOT described (same line as the capture mode).
+Help for 000T under the 30.09.2026 rule: record every operator-visible change as `0000-NN`, with its slice in the hidden source tag. Per `docs/HELP_SYSTEM.md` §5, it covers tutorial behaviour/start; designer, picker and recorder are operator tools excluded like capture mode.
 
 ## What changed and why
 

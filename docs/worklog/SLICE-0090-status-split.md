@@ -1,8 +1,8 @@
 # SLICE 0090 — KBOT_STATUS.md split into an index + ten-slice files
 
-**Date:** 28.09.2026. **Request (operator):** `KBOT_STATUS.md` had grown so large that reading it cost a lot of tokens on every task. Split it into files of ten slices each, ordered by number; keep in the main file only the ideas every task needs plus links to the slice files; add a separate file for work done outside the slice system; add a rule that says to read the main file first and follow its links. Nothing may be lost.
+**Date:** 28.09.2026. **Operator request:** reduce the recurring token cost of `KBOT_STATUS.md`: numbered ten-slice files, common ideas/links in the main index, separate sliceless file and main-first reading rule. Lose nothing.
 
-**Operator choices during the slice:** split `docs/worklog/KBOT_STATUS.md` (the 658 KB file), not the small root `project_state.md` (its content is kept too, then the file is retired); put the pieces in `docs/worklog/state/`; name them `KBOT_STATUS_*` (main file keeps its name, so nothing that links to it had to change).
+**Operator choices:** split the 658 KB `docs/worklog/KBOT_STATUS.md` into `docs/worklog/state/KBOT_STATUS_*`, retaining the main name/links. Preserve then retire the small root `project_state.md`, which was not the split target.
 
 ## The problem
 

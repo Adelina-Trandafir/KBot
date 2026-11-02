@@ -4,9 +4,9 @@ Branch: `SLICE-0100-Multithreading` (kept on this branch for now; nothing commit
 
 ## What changed and why
 
-**1. Month «+» / batch ORD generation.** `KbotForm.Ord.vb`, `GenereazaInLotAsync`: the success count moves from «N ordonanțări au fost generate și salvate» to `OperatorLog` (`mesaje_operator.log`), as for single/group deletion. The operator retains confirmation BEFORE work, the no-unordered-payments message, and failure boxes naming the stopped day and earlier saved results. The shared handler applies this also to Ordonanțări «Generare în lot».
+**1. Month «+» / batch ORD.** `KbotForm.Ord.vb`, `GenereazaInLotAsync`: «N ordonanțări au fost generate și salvate» moves to `OperatorLog` (`mesaje_operator.log`), like single/group deletion. Keeps pre-work confirmation, no-unordered-payments message and failure boxes with stopped day/earlier saved results. Shared handler also covers Ordonanțări «Generare în lot».
 
-**2. Non-closing chains are red in the association form.** New `AsociereForm.ColoreazaRosuLanturileNeinchise` compares the LAST H total, rounded to 2 decimals, with R `SumaAntet`, except deletion rows: both R and H receive text `ErrorColor`, using the existing «Lanțul nu se închide» tooltip condition. It runs after tree construction and last in `SincronizeazaCulorile`, overriding chart and blocked/no-change grey colours.
+**2. Red non-closing chains.** New `AsociereForm.ColoreazaRosuLanturileNeinchise` compares LAST H total rounded to 2 decimals to R `SumaAntet`, excluding deletion rows. Existing «Lanțul nu se închide» tooltip condition sets both R/H text to `ErrorColor`; runs after tree construction and last in `SincronizeazaCulorile`, overriding chart/blocked/no-change grey.
 
 **3. Main tree (KbotForm): the same check for every angajament of the unit.**
 - Server, `PYTHON/routes/forexe/tree.py`: new scalar column `LantNeinchis` (`_LANT_NEINCHIS`), a correlated `GROUP_CONCAT` over `FX_Receptii_R` / `FX_Receptii_H`: last snapshot of each chain (DataH, then IDRH), not a deletion row, has lines (`FX_Receptii`), totals differ at 2 decimals. NULL = every chain closes; otherwise `yyyy-MM-dd~total~suma` joined with `|` (fixed `DECIMAL(18,2)` casts, `CAST(DATE AS CHAR)` so no `%` has to cross the driver). The tuple unpack and the JSON got the new field.

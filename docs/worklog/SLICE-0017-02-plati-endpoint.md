@@ -10,14 +10,12 @@ Pass 2 of slice 0017 (Plăți). The raw-reader endpoint the client (pass 03) sha
 
 ### What changed and why
 
-New `PYTHON/routes/forexe/plati.py`, registered in `routes/forexe/__init__.py`. `@require_session`, one parameter `cod` (`CodAngajament`); no `db_name` / `id_unitate` — the database is the session's (one database = one unit), exactly like `receptii.py`.
-
-One row per `FX_Plati` record, each carrying its bank statement (`FX_Extrase`) and an `are_ord` flag. The client derives the three-level tree, the filtered LISTA and the detail pane from this single reader.
+New `PYTHON/routes/forexe/plati.py`, registered in `routes/forexe/__init__.py`: `@require_session`, only `cod` (`CodAngajament`), no `db_name`/`id_unitate`; session database = unit, like `receptii.py`. One row per `FX_Plati`, carrying `FX_Extrase` and `are_ord`; client derives three-level tree, filtered LISTA and detail pane from this reader.
 
 ### Decisions taken / deviations from the plan
 
 - **Classification follows 0011-03 via `FX_Indicatori`.** This overrides plan SQL `WHERE c.<clsf_pk> = p.IdClsf` under its Step 0 instruction to match `sumar.py` / `receptii.py`: P → I on PK `CodAI` (1:1) → scalar `Clasificatii` on `IdClsfAcc = I.IdClsf AND IdUnitate = I.IdUnitate`, `LIMIT 1`. `FX_Indicatori.IdClsf` is the verified Access id; `FX_Plati.IdClsf` direction remains unverified. Returns nomenclator `clsf` / `denumire` plus raw `FX_Plati.Clsf` as `clsf_plata`, used when `clsf` is empty.
-- **`LEFT JOIN FX_Extrase`, not the Access `FX_Extrase_H INNER JOIN FX_Extrase`.** The Access detail query inner-joins the statement header but selects nothing from it; an inner join would drop a payment whose extras row has no header. Left join keeps the payment (detail pane shows its empty state).
+- **`LEFT JOIN FX_Extrase`** replaces Access's `FX_Extrase_H INNER JOIN FX_Extrase`, which selects no header fields but drops payments lacking that header. Keeps such payments with empty detail pane.
 - **`are_ord` against a `DISTINCT` derived table** (`SELECT DISTINCT IdPlataFX FROM FX_ORD_TBL_REC`), so a payment on several ordonanțare lines cannot duplicate the payment row. Tested explicitly (`test_are_ord_not_duplicated_by_multiple_ord_lines`).
 - **`ORDER BY P.Data_plata, P.IdPlataFX`** — the client relies on it for month/day/leaf order and for picking the *oldest* un-ordonanțat day (the «+»). `IdPlataFX` is the stable tiebreaker.
 - **`data_doc` passed as a raw string, not ISO.** `FX_Extrase.DataDoc` is a `varchar` in the schema (not a date), so `_iso` would mangle it — it goes through untouched. `Data_plata` / `DataBanca` are real `DATETIME` → date-only ISO (the tree groups on the day).
@@ -101,7 +99,7 @@ System.ArgumentException: Cheie de coloană duplicată: 'clsf'. (Parameter 'key'
    at KBot.App.MainForm.CreateView(String key)   MainForm.vb:384
 ```
 
-O trecere prin designerul Visual Studio autorase **toate cele cinci coloane** ale grilei în `PlatiView.Designer.vb` (`clsf`, `platitor`, `nrdoc`, `data`, `suma`, cu fonturi, aliniere, lățimi și iconițe de filtru). `BuildColumns()` le adăuga a doua oară la construcție, iar regula casei „fără no-op tăcut" transforma cheia duplicată în `ArgumentException` — care dobora tot lanțul `CreateView` → `ActivateView` → `navViews_SelectionChanged`.
+Designerul Visual Studio autorase **cele cinci coloane** în `PlatiView.Designer.vb` (`clsf`, `platitor`, `nrdoc`, `data`, `suma`, cu fonturi/alinieri/lățimi/iconițe de filtru). `BuildColumns()` le dubla la construcție; regula „fără no-op tăcut" arunca `ArgumentException`, doborând `CreateView` → `ActivateView` → `navViews_SelectionChanged`.
 
 `BuildColumns()` a fost **șters**: designerul deține coloanele. Constantele `COL_*` rămân, cu un comentariu care spune explicit că sunt singura legătură dintre coloanele autorate și `FillGrid` și că trebuie să rămână identice cu cheile din designer.
 
@@ -131,9 +129,9 @@ Cerință de operator, o abatere deliberată de la Access (unde tot ce se constr
 
 #### 5. Defect găsit pe drum: panoul de detaliu era mort
 
-Independent de crash. `HEAD` avea zece apeluri `InitDetailPair` **în interiorul lui `InitializeComponent`**; o revenire prin designerul Visual Studio a regenerat metoda și **le-a șters pe toate zece**. Cele zece perechi etichetă/valoare rămâneau construite și denumite, dar niciodată atașate lui `detailTable` — panoul de detaliu ieșea gol pe ecran, tăcut.
+Independent de crash: regenerarea `InitializeComponent` în Visual Studio a șters cele zece apeluri manuale `InitDetailPair` din `HEAD`. Perechile etichetă/valoare rămâneau construite și denumite, neatașate la `detailTable`; panoul apărea gol, fără eroare.
 
-Cablarea s-a mutat într-un `BuildDetailRows()` chemat din constructor, unde designerul nu ajunge. **Lecția, notată aici fiindcă va mai mușca:** orice cod scris de mână în `InitializeComponent` se pierde la primul dute-vino prin designer.
+Cablarea trece în `BuildDetailRows()`, chemat din constructor, în afara designerului: codul manual din `InitializeComponent` se pierde la regenerare.
 
 ### Fișiere atinse
 

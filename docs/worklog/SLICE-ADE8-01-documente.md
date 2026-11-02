@@ -37,13 +37,13 @@ Configurația și numerotarea reală a chitanțelor necesită proba pe server. P
 
 ## ADE8-05 — Meniu de listare și PDF pentru chitanțe <a id="slice-ADE8-05"></a>
 
-Utilizatorul a confirmat că Listare și Descarcă PDF trebuie să fie funcționale. Pe PC, 📥 de lângă salvare deschide meniul ultimei chitanțe salvate a copilului; este inactiv înainte de prima salvare. Fiecare chitanță existentă are și buton propriu. Meniul are aspect Windows, pictograme în stânga, navigare din taste și închidere prin Escape/clic în afară. Este ascuns pe mobil.
+La cererea utilizatorului, Listare și Descarcă PDF devin funcționale. Pe PC, 📥 de lângă salvare deschide meniul ultimei chitanțe salvate a copilului, inactiv înainte de prima salvare; fiecare chitanță existentă are și buton propriu. Meniu Windows cu pictograme în stânga, navigare din taste, închidere prin Escape/clic în afară; ascuns pe mobil.
 
-Listare deschide documentul și dialogul browserului. PDF-ul se generează cu ReportLab. Ambele folosesc aceeași chitanță salvată, plata, plătitorul asociat și datele unității. Nu emit alt număr și nu salvează automat rândul nou. Documentul are două exemplare și marcaj ANULATĂ când este cazul. Structura câmpurilor se bazează pe raportul Access Chitanta; echivalența vizuală nu a fost verificată.
+Listare deschide documentul și dialogul browserului; PDF folosește ReportLab. Ambele folosesc aceeași chitanță salvată, plata, plătitorul asociat și datele unității, fără număr nou sau salvarea automată a rândului nou. Documentul are două exemplare, marcaj ANULATĂ când este cazul și structura câmpurilor din raportul Access Chitanta; echivalența vizuală este neverificată.
 
 Trimitere pe mail apare numai când plătitorul asociat are email completat și rămâne inactivă. Nu se trimite niciun mesaj.
 
-Endpointurile print/pdf reutilizează autorizarea și contextul unității. Cererile trimit tokenul/contextul în headere; acestea nu sunt introduse în URL. Răspunsurile nu se păstrează în cache. Șablonul HTML escapează datele, PDF-ul escapează textul pentru Paragraph, iar meniul curăță listenerii la închidere/navigare.
+Endpointurile print/pdf reutilizează autorizarea și contextul unității; tokenul/contextul se trimit în headere, fără a le pune în URL. Răspunsurile nu se păstrează în cache. HTML escapează datele, PDF escapează textul pentru Paragraph; meniul curăță listenerii la închidere/navigare.
 
 Fișiere principale: routes/adechit/receipt_output.py și __init__.py, static/js/adechit/app.js și receipt-print.js, static/css/adechit.css și adechit-receipt.css, templates/adechit/receipt.html, static/fonts/DejaVuSans.ttf și licența, requirements-adechit.txt, ajutorul și documentele de stare.
 

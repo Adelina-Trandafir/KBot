@@ -8,7 +8,7 @@ Cerere de operator, fără plan prealabil:
 > «they must be grouped logically. all stuff for dgv in the same folder. all for treeview in
 > the same folder, all for adobe viewer in the same folder... and so on»
 
-Felie pur structurală: **niciun comportament nu s-a schimbat**. Zero modificări de logică în vreun control — doar mutări de fișiere, calificări de tip și lărgirea a exact două puncte de acces din motorul de teme.
+Felie structurală, fără schimbări de logică/comportament: mutări, calificări de tip și exact două puncte de acces lărgite în motorul de teme.
 
 ---
 
@@ -54,16 +54,16 @@ Proiectul avea 40+ fișiere în rădăcină. Acum:
 
 Controalele mutate au trecut într-un **alt assembly**, deci membrii `Friend` de care se sprijineau au devenit invizibili. Două puncte, ambele minime:
 
-1. **`ThemeShapes`** `Friend Module` → `Public Module`, iar `ScaleDpi`/`RoundedRect`/`Blend` `Friend` → `Public`. Modulul e folosit ȘI de ce a rămas în motor (`ModernRenderer`, `KBotShellForm`), deci **nu putea fi mutat** în `KBot.Controls` — trebuia expus. (Nota din `SLICE-0010-01` — «`ThemeShapes` e `Friend`, deci invizibil din `KBot.Controls`; am replicat» — descrie situația de dinainte de felia asta.)
-2. **`Interop/NativeMethods`** `Friend Module` → `Public Module`, dar **numai `DragMove` a rămas `Public`**: `SetTitleBarDark`, `SetRoundedCorners`, `ApplyMinMaxInfo` și `ApplyWindowTheme` au fost coborâte `Public` → `Friend`, fiindcă sunt consumate exclusiv din `KBot.Theming` (`ThemeManager` și `KBotShellForm`). Suprafața publică nouă a modulului e deci **un singur membru**, cel cerut de `KBotCaptionBar`. Constantele `WM_*`/`HT*` și structurile `NativePoint`/`MINMAXINFO` rămân `Friend`.
+1. **ThemeShapes:** Friend Module → Public Module; ScaleDpi/RoundedRect/Blend: Friend → Public. ModernRenderer și KBotShellForm îl folosesc în continuare din motor: trebuie expus, nu mutat în Controls. Nota SLICE-0010-01 despre Friend/invizibil din KBot.Controls și replicare descrie situația anterioară.
+2. **Interop/NativeMethods:** Friend Module → Public Module, numai DragMove rămâne Public (cerut de KBotCaptionBar). SetTitleBarDark/SetRoundedCorners/ApplyMinMaxInfo/ApplyWindowTheme devin Friend: folosite numai de ThemeManager/KBotShellForm. Constantele `WM_*`/`HT*` și structurile NativePoint/MINMAXINFO rămân Friend.
 
 `KBotDesignTime` era deja `Public` (lărgit la felia 0025 exact din același motiv).
 
 ## 4. Actualizări la apelanți
 
 - `MainForm.Designer.vb`, `LoginForm.Designer.vb`, `InternalInfoForm.Designer.vb`, `DdfView.Designer.vb` — tipurile calificate `KBot.Theming.KBotX` → `KBot.Controls.KBotX`.
-- **Capcană reală, prinsă de compilator:** forma scurtă `Controls.KBotNavCorner` **nu compilează** într-un fișier de designer de formular — `Controls` se leagă mai întâi de proprietatea moștenită `Control.ControlCollection`, iar eroarea e `BC30456: 'KBotNavCorner' is not a member of 'Control.ControlCollection'`. Vechiul `Theming.X` nu avea coliziunea asta. De aceea **tot ce vine din `KBot.Controls` în cele patru fișiere de designer se scrie CALIFICAT COMPLET** (`KBot.Controls.KBotNavItem`). Ciudățenia care merge totuși: `New Controls.KBotDataView()` (context `New`) — există de dinainte în vederile existente și a fost lăsat neatins, dar forma corectă e cea calificată.
-- `LoginForm.vb` — `NoticeKind.Error` → `KBot.Controls.NoticeKind.Error`. Un `Imports KBot.Controls` la începutul fișierului **NU merge**: face `Write` ambiguu între `KBot.Common.GlobalErrorLog.Write` și `KBot.Controls.AdobeHostLog.Write` (ambele module).
+- **Capcană prinsă de compilator:** Controls.KBotNavCorner în designer se leagă de proprietatea moștenită Control.ControlCollection: `BC30456: 'KBotNavCorner' is not a member of 'Control.ControlCollection'`. Vechiul Theming.X nu coliziona. În cele patru designere, tipurile se califică integral (KBot.Controls.KBotNavItem). Excepție existentă păstrată: New Controls.KBotDataView() funcționează în context New; forma calificată rămâne cea corectă.
+- LoginForm.vb: NoticeKind.Error → KBot.Controls.NoticeKind.Error. Imports KBot.Controls ar face Write ambiguu între modulele KBot.Common.GlobalErrorLog.Write și KBot.Controls.AdobeHostLog.Write.
 - `tests/KBot.App.Tests/MainFormNavItemsTests.vb` — `Imports KBot.Controls` adăugat.
 - Testele `KBotNavListTests.vb` (20), `KBotNavListSelectionTests.vb` (4) și `KBotNavListCollapseTests.vb` (25) mutate din `KBot.Theming.Tests` în `KBot.Controls.Tests`. `KBot.Controls.Tests` **nu** a avut nevoie de `DisableTestParallelization` (spre deosebire de `KBot.Theming.Tests`): verificat prin grep că niciun test de acolo nu atinge starea statică `ThemeManager`/`ThemeStore`.
 

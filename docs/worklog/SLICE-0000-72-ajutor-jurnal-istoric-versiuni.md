@@ -6,7 +6,7 @@ Sub-felie de ajutor a feliei 0118. Context, capturi si navigare: `SLICE-0000-69-
 
 ## Ce s-a schimbat si de ce
 - Subiect NOU `contabil.jurnal` («Jurnal activitate», `contabil/jurnal.md`, `screens: JurnalPage, SetariJurnalView, LogViewerForm, LogClearDialog`, `open: menu:jurnal`): de unde se deschide (ribbon, doar cu comutatorul pornit), ce vezi (cautare, interval, niveluri, tabelul pe zile cu **ziua de azi desfacuta**, mesajul intreg sub **separatorul reglabil**, butoanele de jos), jurnalele serverului doar cu optiunile avansate. Sectiunile «Mesajele K-BOT» si «Golirea jurnalelor» au trecut aici din `contabil.setari`. Captura noua: `jurnal-activitate` (`goto: menu:jurnal`, care ajunge: deschide macheta).
-- `contabil.setari`: intro rescris (Setari din ribbon, ca pagina; jurnalul si istoricul au machetele lor), randul «Jurnal» scos din tabelul paginilor, `screens:` fara vederile jurnalului (mutate), sectiunile de jurnal inlocuite de o trimitere; pornirea marita (bifata o data dupa actualizare, 0113). Captura `setari` rosie.
+- `contabil.setari`: intro despre pagina din ribbon si machetele separate de jurnal/istoric; scoase randul «Jurnal» si vederile lui din `screens:`, sectiunile de jurnal inlocuite cu trimitere. Pornire marita (bifata o data dupa actualizare, 0113); captura `setari` rosie.
 - `contabil.actualizare`: sectiune noua «Ce a adus fiecare versiune: «Istoric versiuni»» (`screens:` + `IstoricVersiuniPage`, `SetariIstoricView` — acopera si fereastra fara subiect raportata din 0000-32). Captura noua: `istoric-versiuni` (doar `prepare:`: nu exista `goto:` pentru ea).
 - `avansat.jurnale`: `open: setari:jurnal` (nu mai ajunge) -> `open: menu:jurnal`; textul spune macheta, nu pagina din Setari.
 

@@ -18,10 +18,9 @@ Pass 1 of slice 0022 (vederea Istoric), per `PLAN_IstoricView.md` §2–§3. Shi
 One round trip returns `{cod, randuri[], clasificatii[]}`. `IstoricView` builds the grid, three column menus and filters locally; filter changes issue no requests (0020-01 §7).
 
 - **`randuri`** — `SELECT … FROM FX_Istoric WHERE CodAngajament = %s ORDER BY DataFX, Clsf`. The `ORDER BY` is the Access `RecordSource`'s, verbatim. Nineteen wire fields (§2.1). `cod` is an **exact** match, parametrized (Access used `Like` — deviation, see §9 in 0022-02).
-- **`data_fx` keeps its time component** (§2.3). `FX_Istoric.DataFX` is a `datetime` and istoric rows are timestamped events. A dedicated `_iso_dt` returns the full ISO value **with** the time — deliberately NOT the `_iso` from `ddf.py`, which truncates to the day (right there, wrong here). Pinned by `test_data_fx_carries_time_component`.
-- **`Clsf` needs no join** (§2.4). `FX_Istoric.Clsf` is a stored TEXT column, written at parse time by `FX_Istoric_Prelucreaza_Observatii` from `FX_Indicatori`. Read it directly. The view is therefore **not** exposed to the `Clasificatii` duplicate problem for display — only the filter hierarchy touches the nomenclator.
-- **The classification key points the opposite way from DDF** (§2.5). `FX_Istoric_Prelucreaza_` `Observatii` writes `Rs!IdClsf = rcInd!IdClsf` straight from `FX_Indicatori`, which holds the **Access** id. So `FX_Istoric.IdClsf` matches `Clasificatii.IdClsfAcc` (NOT `IDClsf`, as DDF's `FX_DDF_REV_SA` does), and needs the `IdUnitate` predicate — which `FX_Istoric` has no column for, so it comes through `FX_Indicatori` on `CodAngajament`, exactly as the Access filter (`bFilter_Click`) did. Getting this backwards yields an **empty filter menu, not an error** — pinned by `test_key_resolves_via_idclsfacc_not_idclsf` (a row where `IDClsf` ≠ `IdClsfAcc`).
-- **`clasificatii` is deduped on `IdClsfAcc`** (§2.2). The nomenclator has real duplicates (0011-03 measured pairs at `(75,79/84/90/92/93)`). This is a **list**, not a scalar lookup, so `LIMIT 1` does not apply — `GROUP BY c.IdClsfAcc`, one entry per distinct value. Both predicates (present-in-`FX_Istoric` **and** the angajament's `IdUnitate` via `FX_Indicatori`) are from the Access `bFilter_Click` query and are mandatory. `IdUnitate` is **kept** — `Clasificatii` is a shared nomenclator, not an `FX_` table, so the drop-`IdUnitate` rule (0011-03) does not apply.
+- **data_fx includes time (§2.3):** FX_Istoric.DataFX is datetime; rows are timestamped events. _iso_dt emits full ISO, unlike ddf.py _iso truncating to day (correct there). Pinned by test_data_fx_carries_time_component.
+- **Clsf needs no join (§2.4):** stored TEXT in FX_Istoric, written from FX_Indicatori by FX_Istoric_Prelucreaza_Observatii at parse time. Read directly; nomenclator duplicates affect filter hierarchy only, never display.
+- **Classification key/deduplication (§2.2/§2.5):** FX_Istoric_Prelucreaza_Observatii copies Rs!IdClsf=rcInd!IdClsf from FX_Indicatori: Access id → Clasificatii.IdClsfAcc, opposite DDF FX_DDF_REV_SA → IDClsf. Mandatory Access bFilter_Click predicates: ids present in FX_Istoric AND angajament IdUnitate via FX_Indicatori/CodAngajament (FX_Istoric has no IdUnitate). Shared Clasificatii keeps unit scope despite the FX_ drop-unit rule (0011-03). Real duplicate pairs (75,79/84/90/92/93) require GROUP BY c.IdClsfAcc for one list entry per id; scalar LIMIT 1 cannot dedup a list. Wrong key yields an empty menu, not an error: test_key_resolves_via_idclsfacc_not_idclsf uses unequal IDClsf/IdClsfAcc.
 
 #### ⚠️ Host-verification risk: the two caption tables (`DefaClsfF` / `DefaArticol`)
 
@@ -64,11 +63,11 @@ Access source was a **popup dialog** (`frmFX_ISTORIC`); here it is a **hosted vi
 
 ### Layout (§4.1)
 
-`pnlFiltre` (Dock=Top, filter strip) over a horizontal `SplitContainer`: grid (`KBotDataView`, read-only, totals row) on top, `pnlDetaliu` (two read-only multiline textboxes side by side) at the bottom. `lblEmpty` is topmost (Fill) and covers everything in the empty/loading state. All controls declared in `IstoricView.Designer.vb` (house rule). Dock-order trap respected: `split` added before `pnlFiltre`.
+pnlFiltre (Dock=Top) above a horizontal SplitContainer: readonly KBotDataView/totals on top, pnlDetaliu with two readonly multiline textboxes side by side below. Topmost Fill lblEmpty covers all during empty/loading. Controls in IstoricView.Designer.vb; split added before pnlFiltre to respect dock order.
 
 ### Grid (§4.2)
 
-Twelve columns in Access `Left` order: `Clsf`, `TipRand`, `Data` (`dd.MM.yyyy`), the seven money columns, `Descriere`, `Observații`. Money columns store a `Double`, `FormatString = "N2"`, right-aligned — same idiom as `PlatiView`, read from it rather than invented. **Totals row on EXACTLY the three columns Access totalled** (`tot_Val_Rezervare_Dif`, `tot_Val_Receptie`, `tot_Val_Plata` → `vrdif`/`vrec`/`vpl`, `Aggregate = Sum`); totalling the other four would show a figure the source never showed. `Descriere`/`Observatii` carry `AutoHide = True` (0016) — they auto-hide first because the detail pane carries them in full.
+Twelve columns in Access Left order: Clsf, TipRand, Data (dd.MM.yyyy), seven money columns, Descriere, Observații. Money: Double, FormatString="N2", right-aligned, copied from PlatiView. Totals ONLY on the three Access columns: tot_Val_Rezervare_Dif/tot_Val_Receptie/tot_Val_Plata → vrdif/vrec/vpl, Aggregate=Sum; no invented totals on the other four. Descriere/Observatii AutoHide=True (0016): hidden first, retained in full in detail.
 
 ### Detail pane (§4.3)
 
@@ -76,7 +75,7 @@ Selection fills read-only `txtDescriere`/`txtObservatii` from the row Tag (`Isto
 
 ### The three filters
 
-**`IstoricFilter`** (`KBot.App/Views/IstoricFilter.vb`) — a **pure class, no UI references**, a faithful port of `mdl_FX_Popups.ApplyColumnFilter`: three independent segments (`Clsf`, `TipRand`, `DataFx`); setting a segment **replaces** it; "TOATE" **clears only that segment**; the effective filter is the AND of the non-empty segments; `Apply(randuri)` returns the filtered list. `Clsf` = a set of `id_clsf`; `TipRand` = exact value or a `Rez_`/`Plata_` prefix group, matched **case-insensitively**; `DataFx` = month+year or an exact day.
+**IstoricFilter** (KBot.App/Views/IstoricFilter.vb), pure/no UI, ports mdl_FX_Popups.ApplyColumnFilter. Independent Clsf/TipRand/DataFx segments: setting replaces one, TOATE clears only that one, effective predicate ANDs nonempty segments; Apply(randuri) returns the filtered list. Clsf = id_clsf set; TipRand matches case-insensitively: exact value or `Rez_`/`Plata_` prefix group; DataFx = month/year or exact day.
 
 The three menus are themed `ContextMenuStrip`s built from the loaded data (this replaces Access's hover-following `bFilter` button — deviation §6 below):
 
@@ -96,7 +95,7 @@ Access stored row `ID` in hidden `CL` on `Form_Current`; its `Public Event RowCh
 
 ### Theming
 
-`IstoricView` implements `IThemedControl`; `ApplyTheme` styles the strip/detail/empty state, `ButtonStyles.ApplySecondary` on the four buttons, and themes the three `ContextMenuStrip`s (which are **not** in the control tree, so `ThemeManager.Apply` cannot reach them) via a palette-derived `KBotMenuColorTable : ProfessionalColorTable`. The grid self-themes (it implements `IThemedControl`).
+IstoricView/IThemedControl: ApplyTheme styles strip/detail/empty state, ButtonStyles.ApplySecondary on four buttons. Three ContextMenuStrip menus, outside the control tree and unreachable by ThemeManager.Apply, use palette-derived KBotMenuColorTable : ProfessionalColorTable. KBotDataView themes itself via IThemedControl.
 
 ### The nine deviations from Access (§9 of the plan)
 

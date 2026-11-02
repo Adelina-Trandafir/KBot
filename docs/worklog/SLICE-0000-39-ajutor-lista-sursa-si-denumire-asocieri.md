@@ -1,6 +1,6 @@
 # SLICE-0000-39 — help for the sliceless work of 02.10.2026 (list sources, name in the association window)
 
-Written late, on 03.10.2026, inside slice 0107: the help text of this change was already in the files and tagged `0000-39`, but the sub-slice had no worklog and no registry row, so `Check-Help.ps1` reported the tag as unknown. This file is that missing record. The code work it documents is in `SLICELESS-lista-sursa-asociere-denumire-wicket.md` (items 1 and 2; item 3, the Wicket monitor, is not operator-visible and is not in the help).
+Late record (03.10.2026, within 0107): missing worklog/registry row made the existing `0000-39` help tag unknown to `Check-Help.ps1`. This records items 1–2 of `SLICELESS-lista-sursa-asociere-denumire-wicket.md`; item 3 (Wicket monitor) is not operator-visible and has no help.
 
 ## What changed and why
 

@@ -122,12 +122,12 @@ Operator, 30.09.2026: «fix the tooltip, then go ahead with 0000-04».
 ### What changed and why
 
 - **Tooltip** (`KbotForm.Designer.vb`, `cboSs`): header «Sursă / sector», text «Sursa și sectorul (de exemplu 02A) din anul ales. / Schimbarea lor reîncarcă arborele și toate ecranele. / Ultima alegere se ține minte pentru data viitoare.» (was «Subperioada (SS)...», wrong — found in 0000-03).
-- **Tour files**: `HelpContent/tours/*.md` — header (`id`, `title`, `part`, `topic`) + one `## ` per step with optional `target:` / `goto:`. Parsed by `HelpTour`; loaded by `HelpLibrary` (the topic loader skips the folder; bad files / duplicate ids / missing topic are logged). Format in README.
+- **Tour files**: `HelpContent/tours/*.md` — header (`id`, `title`, `part`, `topic`), one `## ` per step, optional `target:` / `goto:`. `HelpTour` parses; `HelpLibrary` loads, logging bad files, duplicate ids and missing topics. The topic loader skips this folder. Format in README.
 - **Engine**:
-  - `HelpTourRunner` — per step: `HelpService.Navigate(goto)` (moved out of `HelpCaptureForm`, now shared by captures and tours), 400 ms for a lazily built view, finds the target among the open windows (`TypeName` / `TypeName.controlName`, first visible), rings it, places the bubble. One tour at a time. A missing target → centred bubble with a note; the tour goes on.
+  - `HelpTourRunner` — each step calls `HelpService.Navigate(goto)` (extracted from `HelpCaptureForm`, shared with captures), waits 400 ms for lazy view creation, rings the first visible target in open windows (`TypeName` / `TypeName.controlName`) and places its bubble. One tour at a time; missing target → centred bubble with note, tour continues.
   - `HelpTourFrame` — top-most, click-through, never-activating hollow rectangle in the accent colour.
   - `HelpTourBubble` (Designer) — «Pasul n din m», title, text, note, «◄ Înapoi» / «Înainte ►» («Gata» on the last) / «Închide»; → / Enter / ← / Esc; sized to its text; placed right, left, below or above the target, clamped to the working area.
-- **Entry points**: «▶ Tur ghidat: ...» at the top of the tour's topic page and a «Tururi ghidate» list on the help start page (`tour:` link scheme). The help window minimizes during a tour and comes back after. Tours are not in the exported manual.
+- **Entry points** (`tour:` links): «▶ Tur ghidat: ...» atop the topic and «Tururi ghidate» on the help start page. Help minimizes during the tour and returns after. Exported manuals omit tours.
 - **Four tours** (Part 1): `tur-fereastra` (9 steps), `tur-forexe` (9), `tur-rezervari` (4), `tur-ddf` (6).
 
 ### Files touched

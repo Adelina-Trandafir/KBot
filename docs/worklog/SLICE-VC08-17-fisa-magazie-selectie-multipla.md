@@ -4,7 +4,7 @@ Data: 2026-10-23. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2
 
 Eliminată restricția variant_required pentru Fisa_Magazie și variantele sale de raport FM1-u, FM2 și Fisa_Magazie_BF. Selectarea multiplă folosește filtrul variant_ids deja existent în interfață și pe server. Bifarea unei ramuri produs încarcă/selectează variantele sale prin mecanismul existent.
 
-Noul report_statement.build separă rândurile după identitatea variantei, ordonează produsele alfabetic și prețurile numeric și construiește fiecare fișă prin motorul existent. Înaintea fiecărei fișe după prima introduce un bloc break, interpretat de exportul comun drept PageBreak în PDF și întrerupere de pagină la imprimarea Excelului. Nu adaugă pagină finală goală.
+`report_statement.build` separă rândurile pe identitatea variantei, ordonează produsele alfabetic/prețurile numeric și folosește motorul existent pentru fiecare fișă. Blocul `break` înaintea fișelor după prima devine PageBreak PDF / întrerupere la imprimarea Excelului, fără pagină finală goală.
 
 Fiecare fișă păstrează propriile solduri, mișcări cronologice, totaluri lunare și semnături. Variantele cu același preț rămân identități separate, fără amestecarea stocurilor. Machetele personalizate păstrează coloanele și formatările; gruparea pe variantă este impusă în modelul din memorie. Datele salvate și configurațiile de pe disc nu sunt rescrise.
 

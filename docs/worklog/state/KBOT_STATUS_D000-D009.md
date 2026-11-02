@@ -224,7 +224,7 @@ Predare documentară 26.10.2026: loturile D001-87…99 și D002-01…23 continu�
 
 Progres curent: [D002-99](../SLICE-D002-31-index-vercon-si-continuare-documentara.md#slice-d002-99); cumul 420 fișiere și 25458 rânduri mai puțin net. Curățarea nu este terminată. Stage numai la final; detaliile și limitele fiecărui lot rămân în worklog.
 
-Următoarea subfelie: **SLICE-D003-01**. Următorul număr principal documentar liber: **D003**. Registrul numeric K-BOT rămâne neschimbat.
+Următoarea subfelie: **SLICE-D003-01**. Următorul număr principal documentar liber: **D003**. Numerotarea feliilor funcționale rămâne neschimbată.
 
 ## Slice D003
 
@@ -311,11 +311,15 @@ Continuare după D002-99, în același domeniu. Stare comună: aplicat local; nu
 | D003-77 | Explicații istorice condensate; inventar Calendar unic, condiții și probe păstrate. | [D003-77](../SLICE-D003-01-continuare-documentara.md#slice-d003-77) |
 | D003-78 | Redundanțe și explicații tehnice condensate, cu stările istorice păstrate. | [D003-78](../SLICE-D003-01-continuare-documentara.md#slice-d003-78) |
 | D003-79 | Responsabilități JS și reguli OI centralizate; explicații și evidență condensate, cu etape/probe distincte. | [D003-79](../SLICE-D003-01-continuare-documentara.md#slice-d003-79) |
+| D003-80 | Contracte și explicații condensate; Near/Far, Istoric, DPI și criteriul FOREXE fără reluări. | [D003-80](../SLICE-D003-01-continuare-documentara.md#slice-d003-80) |
+| D003-81 | Explicații scurtate inclusiv în jurnalele mici; proveniență e-Factura fără dubluri, probe distincte. | [D003-81](../SLICE-D003-01-continuare-documentara.md#slice-d003-81) |
+| D003-82 | Predări ADE/metadate help centralizate; explicații scurtate, planuri și probe distincte. | [D003-82](../SLICE-D003-01-continuare-documentara.md#slice-d003-82) |
+| D003-83 | Profil P1, layout comun Note/MF și descrieri de registru/metadate istorice fără reluări. | [D003-83](../SLICE-D003-01-continuare-documentara.md#slice-d003-83) |
 
 ### Continuare D003
 
-Progres curent D003: [D003-79](../SLICE-D003-01-continuare-documentara.md#slice-d003-79); bilanț propriu D003-31…79: 1166 rânduri mai puțin net, cu jurnal/registre/index și SLICELESS-rezervari-reanaliza incluse. Checkpointurile anterioare rămân istorice. Curățarea proiectului nu este terminată; fără commit/push.
+Progres curent D003: [D003-83](../SLICE-D003-01-continuare-documentara.md#slice-d003-83); bilanț propriu D003-31…83: 1347 rânduri mai puțin net, cu jurnal/registre/index și SLICELESS-rezervari-reanaliza incluse. Checkpointurile anterioare rămân istorice. Curățarea proiectului nu este terminată; fără commit/push.
 
-Următoarea subfelie D003: **SLICE-D003-80**. Următorul număr principal documentar liber: **D004**. Registrul numeric K-BOT rămâne neschimbat.
+Următoarea subfelie D003: **SLICE-D003-84**. Următorul număr principal documentar liber: **D004**. Numerotarea feliilor funcționale rămâne neschimbată.
 
-D003-79, față de HEAD 66aadb3d: economie netă de 33283 caractere și 27 rânduri cu evidența. Index gol la pornire, stage final selectiv; fără teste/builduri/verificatoare, aplicații sau SQL. Modificările independente rămân în afară.
+D003-83, față de indexul D003-82 (HEAD 17a6d08a): 59936 caractere și 109 rânduri mai puțin net, după evidență. Stage-ul anterior păstrat, adaos final selectiv; fără teste/builduri/verificatoare, aplicații sau SQL. Modificările independente rămân în afară.

@@ -1,27 +1,21 @@
 # Form `EFACTURA_2025`
 
-Source: `Forms/EFACTURA_2025.txt` (152,813 chars). [Reading conventions](../README.md#form-page-conventions).
+Source: `Surse/RawExport/Forms/EFACTURA_2025.txt` (152,813 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
+
+Inherits [P1](../README.md#form-properties-p1).
 
 | Property | Value |
 |---|---|
 | DefaultView | 0 |
 | AutoCenter | NotDefault |
 | BorderStyle | 0 |
-| NavigationButtons | NotDefault |
-| RecordSelectors | NotDefault |
-| DividingLines | NotDefault |
-| ScrollBars | 0 |
 | Width | 18260 |
 | Left | 3195 |
 | Top | 870 |
 | Right | 21615 |
 | Bottom | 10050 |
-| GridY | 10 |
-| TabularCharSet | 238 |
-| DatasheetFontName | Calibri |
-| DatasheetFontHeight | 11 |
 
 Form events wired: `OnClose` = VBA, `OnLoad` = VBA
 
@@ -162,5 +156,3 @@ See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 ## Opened from
 
 `query:SAV_ACTIUNE_EV`, `query:SAV_ACTIUNE_PL`, `query:SAV_Cont8067_EV`, `query:SAV_Cont8067_PL`, `query:SAV_Credit_EV`, `query:SAV_Credit_PL`, `query:SAV_Debit_EV`, `query:SAV_Debit_PL`, `query:SAV_Document_EV`, `query:SAV_OP`, `query:SAV_OPER_EV`, `query:SAV_OPER_PL`, `query:SAV_PlatiFacturi`, `form:Note`, `module:basRibbonCallbacks`, `module:mdl_Popup2022`, `module:mdl_Salvare_NoteContabile`, `query:QEF_EV`, `query:QEF_PL`, `query:QEF_Plata`, `query:QEF_RestDePlata`, `query:QEF_RestDePlata_Data`, `form:EF_F`, `form:EF_F_inlucru`, `form:EF_P`, `module:mdl_EFactura`
-
-Raw source: `Surse/RawExport/Forms/EFACTURA_2025.txt`

@@ -5,7 +5,7 @@ Corecție cerută explicit: eliminarea elementului vizual `p#vc-message`, renun�
 ## Implementare
 
 - `PYTHON/static/vercon.html`: șters efectiv `p#vc-message`.
-- `PYTHON/static/js/vercon/messages.js`: adaptor VERCON peste `messageBox` din `utils/confirm-box.js`. Folosește dialogul comun, butonul Am înțeles și backdrop-ul modal existent pe întreg ecranul; fără alt design/CSS. Mesajele păstrează jurnalul de sesiune; apelul către jurnal dezactivează tooltipul automat. Mesajele generale nu au un host inline în pagină. Statusurile deja autorizate din barele de acțiuni își păstrează textul. O singură notificare modală curentă; următorul mesaj o înlocuiește. Închiderea ecranului-sursă închide și mesajul acestuia.
+- `PYTHON/static/js/vercon/messages.js`: adaptor peste `messageBox` din `utils/confirm-box.js`, cu dialogul comun, Am înțeles și backdropul modal existent pe întreg ecranul, fără design/CSS nou. Păstrează jurnalul de sesiune, dezactivând tooltipul automat la jurnalizare. Fără host inline pentru mesaje generale; textele statusurilor autorizate din barele de acțiuni rămân. Următorul mesaj înlocuiește unica notificare modală curentă; închiderea ecranului-sursă îi închide mesajul.
 - `ui.js`: exportul showMessage folosește adaptorul VERCON, astfel încât notificările operațiilor și erorilor nu mai deschid toast-uri mici.
 - `app.js`: erorile generale, pierderea ocupării și informarea schimbării selecției folosesc notify; eliminate dependențele de vc-message.
 - `efactura-notice.js`: informarea facturilor folosește același dialog comun, cu titlu și text lizibil. Păstrează excluderea facturilor inactive, numărarea resturilor și protecția împotriva răspunsurilor din alt context. La părăsirea gestiunii se închide numai propriul dialog, fără banner.

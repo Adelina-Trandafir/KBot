@@ -1,8 +1,10 @@
 # Form `EFACTURA_ADD`
 
-Source: `Forms/EFACTURA_ADD.txt` (133,048 chars). [Reading conventions](../README.md#form-page-conventions).
+Source: `Surse/RawExport/Forms/EFACTURA_ADD.txt` (133,048 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
+
+Inherits [P1](../README.md#form-properties-p1).
 
 | Property | Value |
 |---|---|
@@ -10,20 +12,12 @@ Source: `Forms/EFACTURA_ADD.txt` (133,048 chars). [Reading conventions](../READM
 | DefaultView | 0 |
 | AutoCenter | NotDefault |
 | BorderStyle | 1 |
-| NavigationButtons | NotDefault |
-| RecordSelectors | NotDefault |
-| DividingLines | NotDefault |
-| ScrollBars | 0 |
 | Width | 12869 |
 | Left | 2450 |
 | Top | 1170 |
 | Right | 15320 |
 | Bottom | 6760 |
 | FitToScreen | 255 |
-| GridY | 10 |
-| TabularCharSet | 238 |
-| DatasheetFontName | Calibri |
-| DatasheetFontHeight | 11 |
 
 Form events wired: `OnClose` = VBA, `OnLoad` = VBA
 
@@ -130,5 +124,3 @@ See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 ## Opened from
 
 `module:basRibbonCallbacks`, `module:mdl_Popup2022`, `form:EFACTURA_ADD_FACTURI`, `form:EFACTURA_PickIBAN`, `form:EFACTURA_UM`
-
-Raw source: `Surse/RawExport/Forms/EFACTURA_ADD.txt`

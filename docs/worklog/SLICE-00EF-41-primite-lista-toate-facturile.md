@@ -8,7 +8,7 @@
 ## SLICE-00EF-41 - Received invoices: the root «Toate facturile» shows a grid with ticks, «Listeaza» and «Salveaza XML» (17.10.2026) <a id="slice-00EF-41"></a>
 
 ### What changed and why
-Operator request: in the E-Factura view, choosing «Toate facturile» must do what the DDF and ORD views do for their roots: show a grid with all the invoices (of the supplier / angajament the view holds), with a tick column like the DDF view and two actions on the ticked rows, «Listeaza» and «Salveaza XML»; the last column of every row is an options button with the same two actions (for the selected row only).
+Operator request: «Toate facturile» in E-Factura shows all invoices of the view's supplier/angajament in a grid like the DDF/ORD roots, with DDF-style ticks. «Listeaza» / «Salveaza XML» act on ticked rows; every row's last-column options button offers both for that row only.
 
 Built as the DDF view's `PrintListPage` (slice 0099), in the shape of this project:
 - New page `PrimiteListaPage` (`Views/Primite`, own designer, all controls declared there): `KBotDataView` with columns tick (header icon ticks / unticks all), Data, Numar, Furnizor, Scadenta, Total (footer sum) and the button column «…»; footer with a status line and the two buttons. The page only collects: it raises `ListRequested` / `SaveXmlRequested` with the invoices (the ticked ones, or the one of the row whose «…» menu was used).
@@ -17,7 +17,7 @@ Built as the DDF view's `PrintListPage` (slice 0099), in the shape of this proje
 - `PdfPrinter` / `PrinterChoice` (the printto helper of the print list) moved from `KBot.App/Views/Print` to `KBot.Controls/Print`, now Public, so this project can use it; the print list of the DDF / ORD views is unchanged (it already imports `KBot.Controls`).
 - New resource `check_boxes` (copy of the App's tick-box icon) in `KBot.EFactura`.
 
-Reading of the request (assumptions): «pentru furnizorul respectiv» = the invoices the view holds (in the view of an angajament, those of its DDF's suppliers; in the window «Cumparare», the year's invoices, where the same root exists); «doar pentru randul selectat» = the options button of a row acts on that row only, whatever is ticked (the button is drawn on every row, not only the selected one).
+Assumptions: «pentru furnizorul respectiv» means the view's invoices (angajament: its DDF's suppliers; «Cumparare»: year's invoices, same root). «doar pentru randul selectat»: each row's options act only on it regardless of ticks; buttons appear on every row, not just the selected one.
 
 ### Files touched
 `src/KBot.EFactura/Views/Primite/PrimiteListaPage.vb` + `.Designer.vb` (new), `PrimiteView.Lista.vb` (new), `PrimiteView.vb`, `PrimiteView.Designer.vb` (`pgLista`), `src/KBot.EFactura/My Project/Resources.resx` + `Resources.Designer.vb` + `Resources/check_boxes.png`, `src/KBot.Controls/Print/PdfPrinter.vb` (moved, Public), deleted `src/KBot.App/Views/Print/PdfPrinter.vb`; FileVersion KBot.EFactura 1.4.0.0 -> 1.5.0.0, KBot.Controls 1.65.0.0 -> 1.66.0.0. Help: SLICE-0000-97.
@@ -37,7 +37,7 @@ Reading of the request (assumptions): «pentru furnizorul respectiv» = the invo
 ### What changed and why
 Operator request: in the grid of 00EF-41 the column «Furnizor» is replaced by the associated RECEPTION (if there is one), with its date, description («expl») and value in the same cell.
 
-- **Server** (`PYTHON/routes/efactura/primite.py`): `lista()` now adds to every invoice `Receptii`, a list built by the new `_receptii_pe_factura`: one item per reception the invoice is linked to through `EF_PrimiteReceptii` (the link names the reception by `IDRR`, or by `IDRH` until the download resolves it): `DataR`, `Descriere` (the K-BOT marker «(IDRH: n; IDR: m)» is cut out), `Suma` (what the links of THAT invoice allocate on the reception, all classifications added) and `AsteaptaDescarcarea` (the link has no reception row yet). One query per 500 invoices, not one per invoice. If `EF_PrimiteReceptii`, `FX_Receptii_R` or `FX_Receptii_H` does not exist the list answers as before with empty `Receptii`.
+- **Server** (`PYTHON/routes/efactura/primite.py`): `lista()` adds `Receptii` via new `_receptii_pe_factura`, one item per linked reception in `EF_PrimiteReceptii` (`IDRR`, or `IDRH` until download resolution): `DataR`, `Descriere` stripped of «(IDRH: n; IDR: m)», `Suma` allocated by THAT invoice across all classifications, `AsteaptaDescarcarea` for links lacking a reception row. One query/500 invoices. Missing `EF_PrimiteReceptii`, `FX_Receptii_R` or `FX_Receptii_H` → original response with empty `Receptii`.
 - **Client**: `EFacturaPrimitaReceptie` (new, `KBot.Domain`) and `EFacturaPrimita.Receptii`; `KBot.Api` reads the new field. `PrimiteListaPage`: the column is «Recepție asociată» (key `receptie`, the fill column); the cell is `dd.MM.yyyy · description · value` per reception, several separated by «  |  », «așteaptă descărcarea din FOREXE · value» while the reception is not in K-BOT yet, empty when there is no link. The supplier is no longer in the grid (it stays in the tree tooltips and in the messages of the two actions).
 - The list is read again when the root is chosen after a link was made or removed in the «Recepții» view (`_listStale`), so the new column does not show an old state.
 

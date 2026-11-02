@@ -6,7 +6,7 @@ Continuare autorizată de utilizator: [VC09-09](SLICE-VC09-09-retururi-si-rulaje
 
 ## Cererea și constatarea
 
-Utilizatorul a cerut verificarea aceleiași situații pentru bonurile de retur. Analiza confirmă **același defect de reprezentare în Access și propagare la migrare**: `IesiriRetur.PUTVA` este `Long`, iar migratorul copiază întregul fără recuperarea zecimalelor. Exemplu explicativ: un preț cu TVA de 14,4855 ajunge 14 în această coloană. Nu există un calcul nou al cotei TVA; pierderea privește prețul care include deja TVA.
+La cererea utilizatorului, analiza retururilor confirmă **același defect Access, propagat la migrare**: `IesiriRetur.PUTVA` este `Long`, copiat fără recuperarea zecimalelor. Exemplu explicativ: 14,4855 cu TVA devine 14. Se pierde din prețul cu TVA, fără calcul nou al cotei.
 
 Atât schema legată din `VERCON/VERCON_ACCESS/tables/IesiriRetur.md`, cât și schema sursă din `VERCON/VERCON_ACCESS/Databases/TZ_SCHEMA/tables/IesiriRetur.md` declară `PUTVA` ca Long. Cantitatea este Double. În `Iesiri`, prețul și valoarea cu TVA sunt Double: bonurile de consum nu au aceeași limitare la întreg a coloanei de preț.
 
@@ -22,6 +22,6 @@ Atât schema legată din `VERCON/VERCON_ACCESS/tables/IesiriRetur.md`, cât și 
 
 ## Acoperirea curentă și limita intervenției
 
-Comanda generală din KBotAdmin implementată prin VC09-07 verifică și repară **doar `VC_IntrariStorno`**. Nu include încă `VC_IesiriRetur`; nici migratorul 0.3.14.0 nu recuperează prețul retururilor. Această etapă consemnează constatarea cerută, fără extinderea automată a reparației la altă tabelă sau alt flux.
+KBotAdmin VC09-07 verifică/repară **doar `VC_IntrariStorno`**, fără `VC_IesiriRetur`; nici migratorul 0.3.14.0 nu recuperează prețul retururilor. Etapa consemnează constatarea, fără extinderea reparației la altă tabelă/flux.
 
 Nu au fost citite date reale, deci nu este stabilit câte bonuri sunt afectate și nu se afirmă că toate retururile au diferențe. Nu au fost rulate teste, build, verificări automate, KBotAdmin, SQL, SSH sau HTTP. Fără modificări MariaDB sau publicare. S-au actualizat numai acest worklog și trimiterile din status/index.

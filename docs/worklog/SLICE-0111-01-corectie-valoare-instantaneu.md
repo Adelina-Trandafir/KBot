@@ -8,7 +8,7 @@ FOREXE's own history sometimes writes a wrong total on a reception header. Real 
 
 The operator may now correct the figure from the association window. Decisions, all the operator's:
 
-- the correction goes in the WORKING columns `FX_Receptii_H.Total` and `FX_Receptii.Valoare` (every reader already uses them: no reader changed); `TotalOrig` and `ValoareOrig`, already in the schema, keep what FOREXE said. A row is «corrected» when the two differ. (The first idea was a new `ValoareReala` column; replaced by this because every reader would have had to change and every insert path would have had to fill it, with a silent `NULL` → 0 as the failure.)
+- correction uses WORKING `FX_Receptii_H.Total` / `FX_Receptii.Valoare`, already used by all readers (none changed); existing `TotalOrig`/`ValoareOrig` retain FOREXE values. Difference marks «corrected». Replaces proposed `ValoareReala`, which required every reader/insert path to change, risking silent `NULL` → 0.
 - `FX_Istoric` is never touched, and a correction never causes a new download;
 - on save, a total that is not the sum of the lines is a BLOCKING error;
 - who / when / why on the header: `CorectatDe`, `CorectatLa`, `CorectatMotiv` (reason required);
@@ -41,10 +41,10 @@ Order: DDL on the template › AvacontPush schema sync (SAFE) › push Python �
 
 ### Second pass (06.10.2026, same day): the correction in the DOWNLOAD window
 
-The first pass exposed correction only in the anytime editor. The operator needed it after download: 0,00 versus reception 1.635,00 blocked placement/save. Phase one rolls back, so those snapshots do not yet exist in the database and the anytime route cannot correct them.
+Initially correction was anytime-editor only. After-download 0,00 versus reception 1.635,00 blocked placement/save; phase-one rollback leaves no persisted snapshot for that route to correct.
 
-- Client: `AsociereForm` offers «Corectează valoarea…» on a snapshot the download brought (not on the older ones, `Context`). `CorectieValoareForm` is reused; its save call here is local (`PastreazaCorectia`): the corrected figures go onto the snapshot (lines replaced by COPIES, the proposal shares the originals), `TotalOrig` / `ValoareOrig` keep what FOREXE gave, and the correction is remembered in `_corectii`. `DeciziiDin` attaches it to the decision of that snapshot (`DecizieAsociere.Corectie`, `PostPrelucrareDecizie.corectie`: total, reason, lines by INDICATOR). A snapshot brought back to FOREXE's figures sends nothing. The window is not reloaded.
-- Server: `normalizeaza_decizii` carries `corectie` (`normalizeaza_corectie`: shape only). In phase two, `prelucrare.py` writes the corrections FIRST (`asociere.apply_download_corrections`, the same `plan_correction` rules: reason, total = sum of the lines, no deletion row; no frozen-link or stale-value check, the snapshot is unplaced and the fingerprint was verified), RE-READS the snapshots, and only then runs the placement checks (F14 / F15 / F16) and applies the decisions. Step 4d runs at the end as always.
+- Client: `AsociereForm` offers «Corectează valoarea…» only on downloaded snapshots, not older `Context` ones. Reused `CorectieValoareForm` saves locally via `PastreazaCorectia`: replaces lines with COPIES (proposal shares originals), retains FOREXE's `TotalOrig`/`ValoareOrig`, remembers `_corectii`. `DeciziiDin` attaches `DecizieAsociere.Corectie` / `PostPrelucrareDecizie.corectie` (total, reason, lines by INDICATOR). Restoring FOREXE figures sends no correction; no window reload.
+- Server: `normalizeaza_decizii` carries `corectie` (`normalizeaza_corectie`: shape only). Phase-two `prelucrare.py` FIRST writes through `asociere.apply_download_corrections`: same `plan_correction` rules (reason, total = sum of lines, no deletion row), without frozen-link/stale-value checks (unplaced snapshot, fingerprint already verified). RE-READS snapshots before placement checks F14/F15/F16 and decisions; step 4d stays last.
 - Not done on purpose: correcting an OLDER snapshot (`instantanee_asezate`) from the download window — that needs a decision of its own to carry it; it is done in the anytime editor.
 - Giving up the download gives up the correction.
 - Never exercised: the phase-two path. The first real download with a correction is its test.

@@ -4,14 +4,14 @@
 
 ## Ce s-a schimbat și de ce
 
-Citirea codului a identificat două cauze: reconstrucția grilei procesa taxele active în ordinea începuturilor, favorizând taxa mai nouă; salvarea pe server trata reactivarea unei taxe existente ca pe deschiderea unei perioade noi și putea refuza o taxă mai veche pentru suprapunere.
+Cauze identificate în cod: grila reconstruia taxele active după început, favorizând taxa nouă; serverul trata reactivarea ca perioadă nouă, putând refuza taxa veche pentru suprapunere.
 
 - În `catalogs.js`, activările/dezactivările se reconstituie în ordinea acțiunilor operatorului. O bifă nouă debifează toate celelalte taxe, independent de date și de sortarea grilei. Ultima alegere se păstrează și după editarea altui câmp, iar payload-ul folosește starea finală a bifelor.
 - Payload-ul include și debifările automate ale taxelor inițial active, inclusiv dacă ultima bifă este ulterior scoasă și toate rămân debifate înainte de salvare.
 - Adăugarea unei taxe creează o alegere nouă în aceeași ordine. La anularea unui rând se elimină și acțiunile lui, astfel încât alegerea anterioară rămasă valabilă să poată fi refăcută.
 - Simpla bifare a unei taxe existente nu modifică Început/Sfârșit. Previzualizarea sfârșiturilor se reconstruiește numai pentru perioade noi, separat de alegerea taxei active.
 - În `service.py`, activarea unei taxe existente dezactivează celelalte taxe din subunitatea curentă, fără să le schimbe perioadele sau să impună o ordine cronologică a activărilor. Comanda care schimbă numai Activ nu validează din nou perioada istorică. Validările sumei/explicației și regulile perioadelor nou create/editate se păstrează.
-- În loturile de taxe se controlează toate versiunile revizuite înaintea primei scrieri. Pentru scrierile următoare se folosesc versiunile rezultate din modificările interne ale aceleiași tranzacții. Acest lucru permite adăugarea unei taxe urmată de reactivarea unei taxe existente din același lot, fără conflict produs de dezactivarea/închiderea internă. Modificările externe anterioare cererii rămân refuzate.
+- Loturi de taxe: toate versiunile revizuite se controlează înaintea primei scrieri, apoi se folosesc versiunile rezultate intern în tranzacție. Adăugarea urmată de reactivarea unei taxe existente din lot nu mai intră în conflict cu dezactivarea/închiderea internă; modificările externe anterioare cererii rămân refuzate.
 
 Regula se aplică în Taxe și Închidere lună, care refolosesc aceeași grilă și salvare. Nu se rescriu lunile/prezența, nu se schimbă drepturile și nu se modifică schema. Debifarea explicită poate lăsa temporar nicio taxă activă; deschiderea unei luni noi păstrează cerința existentă de exact o taxă activă.
 

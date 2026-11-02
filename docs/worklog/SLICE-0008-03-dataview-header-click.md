@@ -1,13 +1,13 @@
 # SLICE-0008-03 — `KBotDataView.HeaderClick`
 
-Cererea operatorului, 12.10.2026. Modificarea controlului `KBotDataView` cerută de fereastra «Parteneri ANAF» din VRC.Migrator (VERCON) este înregistrată aici, în ultima felie care a atins controlul (0008-02), ca sub-felie nouă.
+Cererea operatorului, 12.10.2026: `KBotDataView` pentru «Parteneri ANAF» din VRC.Migrator (VERCON), sub-felie nouă după ultima modificare a controlului (0008-02).
 
 ## What changed and why
 
 La click pe titlul unei coloane SS (01A, 02A, ...) din fereastra «Parteneri ANAF» trebuie bifate sau debifate toate casetele coloanei. Grila nu avea niciun eveniment pentru click pe antet.
 
 - `src/KBot.Controls/DataView/KBotDataView.vb`: `Public Event HeaderClick As EventHandler(Of KBotCellEventArgs)`.
-- `src/KBot.Controls/DataView/KBotDataView.Input.vb` (`OnMouseUp`): dacă antetul e vizibil și punctul e în banda de antet, se ridică `HeaderClick` cu cheia coloanei și `RowIndex = -1`, apoi se iese (nicio celulă nu se acționează). O tragere de margine (redimensionare) iese mai devreme din `OnMouseUp`, deci nu ridică evenimentul.
+- `src/KBot.Controls/DataView/KBotDataView.Input.vb` (`OnMouseUp`): în banda antetului vizibil, ridică `HeaderClick` cu cheia coloanei și `RowIndex = -1`, apoi iese fără acțiune pe celulă. Redimensionarea prin tragerea marginii iese anterior, fără eveniment.
 - Consumator: `VERCON/VRC.Migrator/VrcPartnersForm.vb` (`dgvFurnizori_HeaderClick`): pe coloanele cu cheia `ss_*` bifează toate rândurile, sau le debifează dacă sunt deja toate bifate.
 
 Nicio grilă existentă din K-BOT nu ascultă evenimentul, deci comportamentul lor nu se schimbă.

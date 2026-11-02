@@ -96,9 +96,9 @@ Branch: `SLICE-0108-credit-pe-clasificatie` (work tree shared with other slices)
 Operator request: Coada robotului shows each parallel download as a row with per-angajament progress and X (stops only it/closes its tab), plus waiting-for-tab count below. Completed rows leave, replaced by the next waiting job. One angajament gets no grid/window («la un singur angajament NU arătăm fereastra»).
 
 Decisions taken (assumptions, no question asked — confidence above 75%):
-- **Progress = main-flow steps** (operator's answer: «bara după pași»). The executor already reported `_progressCallback(step, steps)` for the main flow; the worker tabs just never passed a callback. The bar is coarse (the receptions and history sections are few big steps) but never goes backwards.
+- **Progress = main-flow steps** («bara după pași»): worker tabs now pass the existing `_progressCallback(step, steps)`. Reception/history sections remain coarse steps; progress never goes backwards.
 - **«Fereastra» = the queue window.** The grid lives INSIDE `RobotQueueForm`, between «În lucru» and the list of waiting tasks, and exists only for a run of **two or more** angajamente. With one angajament nothing is added (and the window does not open by itself for it: the old rule, more than one FOREXE action, stays).
-- **The window opens by itself** when a run of two or more starts (the task is ONE queue task, so the old rule «more than one action» would not have opened it).
+- **The window opens automatically for 2+ angajamente**: the old «more than one action» rule would miss this single queue task.
 
 **Robot (`KBot.Forexe`).**
 - `ParallelRunHooks` (`JobModels.vb`): out — `JobStarted(job, worker)`, `JobProgress(job, step, steps)`; in — `StopJob(job)`. `IForexeRunner.RunJobsParallelAsync` gets a `hooks` parameter (may be Nothing).
@@ -135,8 +135,8 @@ Operator observed the queue window beyond the shell right edge, off-screen when 
 
 Operator, after seeing the window (3 rows running, «Încă 3 în coadă.», an empty queue list):
 - **The waiting angajamente are listed**, each with an X that takes it out of the run: new grid `gridAsteapta` (code + X) under the running grid, a label «Încă N în coadă:» between them; at most 5 rows at once, more scroll. `ParallelDownloadBoard.Snapshot.WaitingCodes` + `RemoveWaiting(cod)` (drops it from the board at once and tells the runner to skip it when its turn comes — it is still in the runner's FIFO).
-- **No waiting angajament → the list is not shown and the window shrinks** (the running grid stays). The queue's own list (other robot tasks) shows only when it has tasks. `RobotQueueForm.FitWindow` sizes panel + window to what is on show, keeping the BOTTOM edge (above the footer); it gives up the form's minimum height while a multi run is on and restores it (and the old height) afterwards; `OnShown` fits again with the real scaled sizes.
-- **Status line:** with 0 successful downloads the footer no longer says «…0 reușite din 6; urmează ingestia…» (there is nothing to ingest): it goes back to «În așteptare...». With some successes the denominator no longer counts the ones the operator stopped.
+- **No waiting angajament → list hidden, window shrinks, running grid stays.** The separate robot-task list appears only with tasks. `RobotQueueForm.FitWindow` fits visible content, keeping the BOTTOM edge above the footer. During a multi run it releases minimum height, restoring it and the old height afterwards; `OnShown` refits using actual scaled sizes.
+- **Status line:** 0 successes returns to «În așteptare...» instead of «…0 reușite din 6; urmează ingestia…». With successes, the denominator excludes operator-stopped jobs.
 - Help (`coada.md`) and `NOUTATI.md` (1.1.1.7: 2 lines) updated. Build clean (0 warnings). Not seen on screen: the heights are computed from the scaled row / label sizes by hand — check 1, 3 and 8 waiting angajamente, the last one finishing (window shrinking), X on a waiting row, and the end of run.
 
 ### Follow-up 3 (03.10.2026): grids too short, scroll bars
@@ -176,7 +176,7 @@ Trigger: the operator's log of 03.10.2026 16:14, «Actualizare multiplă»: 1 of
 
 ### What changed and why
 
-- `src/KBot.Forexe/Workflows/adlop - Prelucrare Completa Reverse.wfl` (the workflow «Actualizare multiplă» and the reverse download run): every `timeout="5"` is now `timeout="15"`, the value the normal `adlop - Prelucrare Completa.wfl` already used for the same clicks. Two stay at 5 on purpose: the `IfExists` probes for the optional «Înapoi» button and the «Afișează informații complete» button (the normal workflow keeps them at 5 too; raising them would only slow the «button is not there» case by 10 s each). The two `timeout="1"` probes are untouched.
+- `src/KBot.Forexe/Workflows/adlop - Prelucrare Completa Reverse.wfl` («Actualizare multiplă» / reverse downloads): `timeout="5"` → `timeout="15"`, matching normal `adlop - Prelucrare Completa.wfl` clicks. Exceptions: the optional «Înapoi» and «Afișează informații complete» `IfExists` probes stay at 5 in both workflows, avoiding 10 s extra per absent button. Both `timeout="1"` probes remain unchanged.
 - `src/KBot.Forexe/Executor/Actions/WorkflowExecutor.Actions.Click.vb`: when the standard click fails with Playwright's «intercepts pointer events» (checked by `IsCoveredClick`) and the step is not `Force`, the element is scrolled to the MIDDLE of the window (`scrollIntoView({block:'center'})`) and clicked once more, with a console warning. The second failure, if any, is the one reported (same exception path as before). Applies to every workflow, not only Reverse.
 - FileVersion: `KBot.Forexe` 1.0.19 -> 1.0.20.
 
@@ -202,8 +202,8 @@ Trigger: the operator's log of 03.10.2026 16:14 showed two warnings per angajame
 
 ### What changed and why
 
-- The pictures of the FOREXE page are taken only by the operator flows (reception saved, DDF sent): the parallel robot (`ForexeController.Parallel.vb`) has no capture code. So after each successful parallel download `ActualizeazaMaiMulteCuCoadaAsync` asked `TrimiteCapturileAsync` to send two kinds of pictures that were never taken, and it warned about it.
-- `src/KBot.App/KbotForm.Parallel.vb`: the two direct `TrimiteCapturileAsync` calls became a loop that calls it only when `_controller.CapturileDe(cod, fel).Count > 0`. Pictures LEFT ON DISK by an earlier session (kept with «Nu») are still sent exactly as before; an empty-handed run says nothing. `TrimiteCapturileAsync` itself is unchanged: the other callers (reception / DDF flows) keep their warning, where a missing picture is news.
+- Only operator flows (reception saved, DDF sent) capture FOREXE pages; `ForexeController.Parallel.vb` does not. After each parallel success, `ActualizeazaMaiMulteCuCoadaAsync` therefore triggered `TrimiteCapturileAsync` warnings for two absent capture kinds.
+- `src/KBot.App/KbotForm.Parallel.vb`: replaces both direct calls with a loop calling `TrimiteCapturileAsync` only when `_controller.CapturileDe(cod, fel).Count > 0`. Earlier captures LEFT ON DISK (kept with «Nu») still send; empty runs stay silent. `TrimiteCapturileAsync` is unchanged, preserving missing-capture warnings for reception / DDF callers.
 
 ### Files touched
 

@@ -1,6 +1,6 @@
 # K-BOT help system — maintainer guide (slice 0000)
 
-Read this before touching anything under `src/KBot.App/HelpContent/` or `src/KBot.App/Help/`. It is written for the next thread: after the operator changes or adds a feature, you should be able to bring the help up to date from this file alone.
+Read before editing src/KBot.App/HelpContent/ or src/KBot.App/Help/. This guide lets the next thread update help after a feature change or addition.
 
 Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_STATUS_0000-0009.md) (section «Slice 0000»). Authoring syntax in detail: [../src/KBot.App/HelpContent/README.md](../src/KBot.App/HelpContent/README.md).
 
@@ -14,8 +14,8 @@ Status and history: [worklog/state/KBOT_STATUS_0000-0009.md](worklog/state/KBOT_
 - The **search** (slice 0000-18) takes a typed question: filler words, diacritics and word endings do not matter, not every word must match, and it finds SECTIONS (a hit opens the page at its `## ` heading). A hit whose topic has `open:` carries «Deschide «...»» (0000-19); one whose topic has a tour carries «Tur ghidat». The popup and the help window use the same search control.
 - **Questions and ratings** (slice 0000-21): every question typed there, with the hits shown, the hit used and a 1-5 star rating, is sent to the server WITHOUT anything about who or where (see §7).
 - The **help window**: contents tree, the search box above it (its results take the tree's place while it has text), Back / Forward, «Istoric», text smaller / larger, guided tours, «Imprimă», «Exportă». Slice 0000-32:
-  - **one page, the whole help**: the browser holds ONE document (`HelpHtml.Book`: the start page, then every visible topic in contents order, each in a `<div class='sec'>` with an id). Opening a topic scrolls to its section; scrolling by hand walks into the next topic and the contents tree follows (`HelpForm.tmrScroll`, 250 ms: one hit-test at the top of the view, only after the page has moved). A topic reached by scrolling becomes the page on screen but gets no line in «Istoric». Page names are unchanged (`home`, `t:<id>`, `t:<id>#<section>`) plus `p:<part>`; section ids in the document are `t-<id>--<section>`. Only a topic the login may not read still replaces the document with a message page;
-  - **«Imprimă»** prints that same document from the window (`WebBrowser.ShowPrintDialog`): its `@media print` rules are the paper look, and the sections outside the chosen scope get the class `noprint`. **«Exportă»** saves an HTML file that opens in the browser (printable to PDF there). Both open a menu of scopes (`HelpScope`): everything / the topic on screen / the topic with what is under it / its parent chapter. Printing everything, or more than `HelpScope.LargeTopicCount` topics, carries «(!)» and is asked about first;
+  - **One book document:** HelpHtml.Book contains the start page and every visible topic in contents order, each in `<div class='sec'>` with an id. Opening a topic scrolls there; manual scroll advances topics/contents via HelpForm.tmrScroll (250 ms, one top-of-view hit-test only after movement). Scrolled-to topics become current without history entries. Page names remain `home`, `t:<id>`, `t:<id>#<section>`, plus `p:<part>`; section ids `t-<id>--<section>`. Only a topic denied to the login replaces the document with a message page;
+  - **Imprimă** uses WebBrowser.ShowPrintDialog on that document: paper styling through `@media print`, out-of-scope sections marked with class `noprint`. **Exportă** saves browser-readable HTML, printable to PDF. Both offer HelpScope: all / current topic / topic plus descendants / parent chapter. Printing all or more than HelpScope.LargeTopicCount topics shows «(!)» and asks first;
   - **its own dialogs go inside `Using OwnDialog()`** (messages, «Save as», print): see «always on top» below -- without it the window can close under its own dialog and K-BOT freezes.
 
   Slice 0000-23:
@@ -77,11 +77,11 @@ The build copies `HelpContent\**` to `<AppDir>\Help\` (`KBot.App.vbproj`, `None 
 
 ## 3. How F1 finds a topic
 
-F1 walks from the focused control up through its parents. At each step it offers `TypeName.controlName` and `TypeName`; the first key that a VISIBLE topic lists in `screens:` wins (parts in order). Nothing found → the help start page. The Debug build shows the keys it tried in the help window's bar — copy the right one from there.
+F1 walks focus → parents. Each control offers TypeName.controlName, then TypeName; the first key listed by a VISIBLE topic wins (parts in order). No match → start page. Debug displays attempted keys in the help bar for copying.
 
 Inner pages (a tab page inside a window) need no key of their own when their window has one.
 
-The «?» popup's «Pe ecranul acesta» row uses the same keys (from the focused control of the window whose «?» was pressed). Its tours: a tour is offered on a visible, usable window where one of its screens is visible — the tour's `screens:` if it has one, else its topic's `screens:` (`HelpContent/README.md`, «Guided tours»).
+Popup «Pe ecranul acesta» uses the same keys from the focused control of the window whose «?» was pressed. Tours need a visible, usable window with at least one visible screen: tour `screens:` if it has one, else its topic `screens:` (HelpContent/README.md, Guided tours).
 
 ## 4. PROCEDURE — bringing the help up to date after a change
 

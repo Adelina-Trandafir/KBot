@@ -7,10 +7,8 @@
 - **Director / Contabil / Imputernicit** (the full K-BOT): the «Documente de semnat» window (`DirectorForm`, kept by name) reads the flow's list for every role; a director also reads the older list
   (A and B signed) and the two are joined (`DdfDeSemnatLista.Uneste`). `DirectorForm.AreListaRol` / `AreListaDeSemnat` say who has it; the ribbon button (hidden in the designer) is shown to the accountant
   and the proxy too (`AvacontMain.ApplyDirectorRibbon`); the tray's request (`KbotForm.Director.vb`) answers for these roles. The «commands refused» message is the director's only for a director.
-- **Secretar / Administrator**: `Program` opens a window of their own, `DeSemnatRestransForm` (new, all controls in the Designer), instead of the main window. It lists the documents addressed to the role
-  (unit signed in on); for the one picked it **generates the document on this PC with section A only** (`DdfPdfGenerator`, `DdfPdfMode.OnlyA`, through the DDF read that gives a restricted role only its addressed revisions), shows it in Adobe, accepts only the signature `A` (`AllowedNewRoles`), and after the upload releases Adobe, deletes the local files and reads the list again. The «pending uploads» retry and the main-window hooks are not started for it.
-- **Tray (`KBot.Tray/TrayChecker.vb`)**: every role reads the flow's list (the session no longer moves to a director unit just to read it; the older director list is added when the session is on a
-  director unit). `NoList` now only means the user has no unit.
+- **Secretar / Administrator**: `Program` replaces the main window with new `DeSemnatRestransForm` (controls in Designer), listing documents addressed to that role in the signed-in unit. Selection **generates locally, A only** (`DdfPdfGenerator`, `DdfPdfMode.OnlyA`, filtered DDF read), shows Adobe and accepts only `A` (`AllowedNewRoles`). After upload: releases Adobe, deletes local files, rereads list. No pending-upload retry or main-window hooks start.
+- **Tray (`KBot.Tray/TrayChecker.vb`)**: every role reads the flow list without moving session to a director unit; older director list is added when already on one. `NoList` now means no user unit.
 
 ## Files touched
 

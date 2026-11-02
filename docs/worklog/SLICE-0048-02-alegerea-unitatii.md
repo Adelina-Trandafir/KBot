@@ -35,8 +35,8 @@ Deci ambiguitatea **nu e un defect și nu e o noutate**: Access avea un formular
 
 Ruta `POST /api/forexe/prelucrare`, `@require_session`, baza din sesiune (o bază = o unitate), totul într-o singură tranzacție (D10).
 
-- **Pasul 1** (`Prelucrare_Angajament`): port rând cu rând. `DescriereAngajament` ▸ `Descriere`, `StareAngajament` ▸ `Stare` (**intenția**, nu defectul citat la §5.1 din plan), `DataAngajament` ▸ `DataCreare`, `DataInceputDerulare` ▸ `DataDefinitivare`. La update, un câmp gol **nu** șterge ce e deja acolo — de-asta `UPDATE`-ul se compune din bucăți, nu e unul fix. `DC` și `Preluat` se pun doar la insert și nu se ating la update, exact ca în `angajamente.py`.
-- **Pasul 2** (`Prelucrare_Indicatori`): rezolvarea unității și a clasificației, apoi upsert pe `(CodAngajament, CodIndicator)`. `NrCrt` e contorul **local** din VBA (pornește de la 0 la fiecare apel, crește doar pentru rânduri noi). D18 se respectă: `Receptii` și `Plati` nu se scriu niciodată pe calea asta.
+- **Pasul 1, Prelucrare_Angajament**, port rând cu rând: DescriereAngajament→Descriere, StareAngajament→Stare (intenția, nu defectul §5.1), DataAngajament→DataCreare, DataInceputDerulare→DataDefinitivare. Update-ul se compune numai din câmpuri ne-goale, păstrând datele existente. DC/Preluat numai la insert, ca în angajamente.py.
+- **Pasul 2, Prelucrare_Indicatori:** rezolvă unitatea/clasificația, apoi upsert (CodAngajament,CodIndicator). NrCrt este contorul VBA local: de la 0 la fiecare apel, crește numai pentru rânduri noi. D18: fără scriere Receptii/Plati aici.
 
 ### 1.2 Rezolvarea unității — `routes/forexe/prelucrare_unitate.py`
 
@@ -48,7 +48,7 @@ Traducerea interogării Access pe MariaDB:
 | `INNER JOIN Cai ... WHERE Cai.DC = DC()` | `INNER JOIN Unitati` | `cai` era registrul de fișiere `.accdb`; filtrul pe `DC` e implicit, suntem deja conectați la baza aia |
 | `Cai.AlteDetalii` | `Unitati.Detalii` | `AlteDetalii` **nu** s-a migrat (`MAPARE_NOMENCLATOARE.md` §2); `Detalii` = `cai.NumeUnitate`, eticheta din selectorul de unități al migratorului |
 
-`INNER JOIN`-ul se păstrează intenționat: `Clasificatii.IdUnitate` e NULL-abil, iar o clasificație fără unitate nu poate răspunde «care unitate» — cade la fel cum cădea și în Access. **Niciun `LIMIT 1` în fișierul ăsta**: rutele de citire îl folosesc pe același nomenclator fiindcă acolo alegerea greșită schimbă doar o etichetă; aici ar atașa un indicator la altă subunitate și nu s-ar vedea luni de zile.
+INNER JOIN păstrează comportamentul Access: Clasificatii.IdUnitate NULL nu poate răspunde «care unitate». Fără LIMIT 1 aici: în cititori ar schimba doar o etichetă, aici ar lega indicatorul de altă subunitate, cu eroare ascunsă luni întregi.
 
 Trei rezultate, ca în VBA:
 
@@ -56,9 +56,9 @@ Trei rezultate, ca în VBA:
 - **1 candidat** ▸ se folosește.
 - **mai mulți** ▸ se caută un răspuns: întâi în `alegeri` din cerere, apoi în tabela de memorie; dacă nu e niciunul, se strânge întrebarea.
 
-**Toate** perechile ambigue se rezolvă ÎNAINTE de orice scriere în `FX_Indicatori`, iar întrebările se strâng **toate** înainte de a se ridica. Access rezolva unitatea în mijlocul buclei de scriere; înăuntrul unei tranzacții diferența nu se vede (rollback-ul șterge oricum), dar așa operatorul răspunde o dată pentru tot angajamentul, nu o dată per întrerupere.
+Toate perechile ambigue se rezolvă înainte de scrieri FX_Indicatori; întrebările se strâng toate înainte de ridicare. Access întreba în bucla de scriere; rollback-ul păstrează echivalența tranzacției. Noua ordine permite un răspuns pentru tot angajamentul, fără întreruperi repetate.
 
-A doua căutare, `ClsfSal` ▸ `IdClsfAcc` în interiorul unității alese (D17 + D7), rămâne tolerantă ca în Access: negăsit = `NULL` + avertisment, nu eroare (D19). **Excepție conștientă:** dacă aceeași `ClsfSal` are `IdClsfAcc` DIFERITE în aceeași unitate, se ridică. Dicționarul VBA ar fi păstrat ultima citită, arbitrar — iar «arbitrar» acolo înseamnă indicatorul pe altă clasificație.
+A doua căutare, ClsfSal→IdClsfAcc în unitatea aleasă (D17+D7): negăsit→NULL + avertisment, ca în Access (D19). Dar aceeași ClsfSal cu IdClsfAcc diferite în aceeași unitate ridică eroare; VBA ar păstra arbitrar ultima, riscând clasificația greșită.
 
 ### 1.3 Contractul de 409
 
@@ -73,21 +73,19 @@ A doua căutare, `ClsfSal` ▸ `IdClsfAcc` în interiorul unității alese (D17 
                      "sursa_sector": "02A", "cod_program": "P75" }, … ] } ] }
 ```
 
-**409, nu 400:** cererea nu e greșită; serverului îi lipsește o informație pe care doar un om o are. `reason` e cod-motiv stabil, același tipar ca la 401-urile din `routes/auth/guard.py`, iar `KBot.Api.ApiException` îl poartă deja ca `Reason`. **Tranzacția e derulată înapoi înainte de a răspunde** — nici angajamentul scris la pasul 1 nu rămâne.
+**409, nu 400:** cererea e validă, lipsește alegerea omului. reason este cod stabil, ca 401 din routes/auth/guard.py, transmis deja de KBot.Api.ApiException.Reason. Rollback înainte de răspuns, inclusiv angajamentul din pasul 1.
 
 `indicatori` poartă TOȚI indicatorii care folosesc perechea, nu doar cel care a declanșat întrebarea, fiindcă răspunsul li se aplică tuturor.
 
 ### 1.4 Memoria — `FX_Alegeri_Unitate` (`sql/0048_alegeri_unitate.sql`)
 
-Un rând per pereche `(SS, ClsfE)`, cu `IdUnitate`, **`UN`** (cine a ales) și **`DataAlegere`**. Cheia unică pe pereche face ca o re-bifare să ÎNLOCUIASCĂ răspunsul, nu să adauge un al doilea.
-
-Urma (cine/când) e acolo tocmai pentru riscul pe care bifa îl introduce: o alegere greșită altfel ar rămâne ascunsă. Cu tabela asta, «cine a hotărât asta și când» se răspunde cu un `SELECT`, iar ștergerea rândului readuce întrebarea.
+Un rând per (SS,ClsfE): IdUnitate, UN (cine), DataAlegere (când). Unicitatea perechii face re-bifarea să înlocuiască răspunsul, fără dublare. Auditul permite urmărirea alegerii greșite, altfel ascunse: SELECT răspunde cine/când, ștergerea rândului readuce întrebarea.
 
 Trei decizii de scris pe față:
 
-1. **Scrierea alegerii e ÎN tranzacție.** Dacă rularea pică mai târziu, alegerea se derulează înapoi împreună cu ea și operatorul e întrebat din nou. Alternativa — commit separat — ar lăsa în urmă un răspuns reținut pentru o salvare care nu s-a întâmplat.
-2. **Tabela lipsă e zgomotoasă, nu tăcută.** `UnitChoiceTableMissing` numește fișierul `.sql` de rulat. Nu se degradează în «n-am alegeri reținute»: atunci bifa ar părea că merge, iar data viitoare s-ar întreba din nou fără nicio explicație. **Dar** tabela se atinge DOAR pe ramura ambiguă, deci o bază care nu întâlnește niciodată o ambiguitate merge mai departe fără ea.
-3. **O alegere reținută care nu mai e printre candidați NU se folosește** — se avertizează și se întreabă din nou. Nomenclatorul se poate schimba sub ea, iar asta e exact modul în care bifa poate deveni periculoasă.
+1. **Alegerea se scrie în tranzacție:** eșecul ulterior o derulează înapoi și întrebarea revine. Commit separat ar păstra răspunsul unei salvări care nu s-a întâmplat.
+2. **Tabela lipsă:** UnitChoiceTableMissing numește fișierul SQL necesar, fără degradare în «n-am alegeri reținute» care ar face bifa aparent funcțională. Tabela se accesează numai la ambiguitate; fără asemenea cazuri, baza funcționează fără ea.
+3. **Alegere memorată ieșită din candidați:** avertizare și întrebare nouă, fără folosirea ei. Nomenclatorul se poate schimba, făcând bifa periculoasă.
 
 `sql/0048_alegeri_unitate.sql` se aplică **și pe `AVACONT_SURSA`**, spre deosebire de cele șapte `ALTER` din transa 01: acolo scutirea exista fiindcă `AUTO_INCREMENT` dezarma o poartă de siguranță a migrării; aici se adaugă un tabel nou, gol, pe care migrarea nu-l scrie niciodată.
 

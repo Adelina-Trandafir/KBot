@@ -8,7 +8,7 @@ Consolidare documentară D001-08 (25.10.2026): toate cele șapte intervenții 00
 
 <a id="slice-0010-01"></a>
 
-Prima trecere din slice-ul 0010 (`KBotDataView`): grila owner-drawn, nelegată de date, virtualizată — widget-ul de listă partajat pentru vederile K-BOT. Această trecere livrează **scheletul** definit în planul pasului `0010-01`: proiect + bază de control double-buffered, modelele coloană/rând, enum-ul de tip, cache-ul de temă + `ApplyTheme`, și pictarea antetului + a corpului gol, tematizat. **Fără date randate** (rândurile vin în 0010-02).
+Prima trecere 0010: **scheletul `KBotDataView`**, grila owner-drawn, nelegată de date, virtualizată, partajată vederilor K-BOT. Conform planului `0010-01`: proiect, bază double-buffered, modele coloană/rând, enum de tip, cache temă/`ApplyTheme`, pictarea antetului și corpului gol tematizat. **Fără date randate** până la 0010-02.
 
 ## Ce s-a schimbat și de ce
 
@@ -25,7 +25,7 @@ Prima trecere din slice-ul 0010 (`KBotDataView`): grila owner-drawn, nelegată d
 
 ## Decizii (abateri de la textul planului — confirmate cu codul real)
 
-1. **Plasare + tematizare.** Planul spune „KBot.Controls + tematizare prin constante `KBotTheme`”. Realitatea: `KBotTheme` (în `KBot.Forexe`) e o **facadă de compatibilitate** cu doar ~9 `CLR_*`; nu are sloturile de grilă din plan. Modelul real de auto-tematizare (folosit de `KBotNavList`) este `IThemedControl.ApplyTheme(scheme As ThemeScheme)` care citește din `scheme.Palette` (`ThemePalette`). Am ales: **păstrez `KBotDataView` în `KBot.Controls`** (namespace-ul din plan, lângă `AdvancedTreeControl`) și **adaug o referință de proiect la `KBot.Theming`** (verificat: `KBot.Theming` NU referă `KBot.Controls`, deci fără ciclu). Controlul se auto-tematizează prin `IThemedControl`. Maparea sloturilor (0010-01): corp/rând = `InputBack`, antet = `ButtonBack`/ `ButtonText`, chenar/separator = `Border`. Culorile derivate (selecție, linie de grilă, disabled) se adaugă în pașii care le folosesc — fără culori literale.
+1. **Plasare + tematizare.** Plan: KBot.Controls cu constante `KBotTheme`. Real: `KBotTheme` din `KBot.Forexe` este fațadă de compatibilitate (~9 `CLR_*`), fără sloturile de grilă. Ca `KBotNavList`, controlul folosește `IThemedControl.ApplyTheme(scheme As ThemeScheme)` și `scheme.Palette` (`ThemePalette`). **Rămâne în `KBot.Controls`**, lângă `AdvancedTreeControl`, cu **referință nouă la `KBot.Theming`**, verificată fără ciclu invers. Sloturi 0010-01: corp/rând `InputBack`, antet `ButtonBack`/`ButtonText`, chenar/separator `Border`. Culorile derivate (selecție, grilă, disabled) vin în pașii care le folosesc, fără literali.
 2. **`ThemeShapes` e `Friend`** în `KBot.Theming`, deci invizibil din `KBot.Controls`. Am replicat local doar ajutoarele geometrice pure (`ScaleDpi`, alinierea textului) — NU culori.
 3. **Comentarii în română** (ca tot codul existent + regula CLAUDE.md), deși CODE_WORKFLOW zice „engleză”; 100% din codul din repo e cu comentarii românești, deci m-am aliniat la cod.
 
@@ -68,13 +68,13 @@ Trei zone: **antet** (sus), **bandă înghețată** (stânga, primele `FrozenCol
 - `RowTop(i) = HeaderHeight + i * RowHeight - vScrollOffset` Se pictează DOAR intervalul vizibil; costul unei pictări nu depinde de `RowCount`.
 
 #### Scrollbar-uri
-`UpdateScrollBars` evaluează în **două treceri** (bara verticală mănâncă lățime, cea orizontală înălțime — se influențează reciproc). Semantica WinForms respectată: `Maximum = conținut - 1`, `LargeChange = fereastra`, valoarea utilă maximă = `Maximum - LargeChange + 1`; `Value` se clamp-ează la micșorarea conținutului. Bara orizontală derulează **doar banda ne-înghețată**. `UpdateLayout` are gardă de reintrare (`_inLayout`), fiindcă schimbarea vizibilității unei bare declanșează layout. Rotița mouse-ului: vertical; `Shift`+rotiță: orizontal.
+`UpdateScrollBars`: **două treceri**, barele consumând reciproc lățime/înălțime. WinForms: `Maximum = conținut - 1`, `LargeChange = fereastra`, maxim util `Maximum - LargeChange + 1`; `Value` limitat la micșorarea conținutului. Orizontala derulează **numai banda neînghețată**. `UpdateLayout` are gardă `_inLayout` contra reintrării la schimbarea vizibilității barelor. Rotiță: vertical; `Shift`+rotiță: orizontal.
 
 #### Pictare
 Antet (bandă derulată decupată, apoi banda înghețată desenată peste ea, separatoare, linie de bază + accent), rânduri (fundal normal/alternant/selectat), celule **Text** (text formatat prin `Column.FormatString`, aliniere, elipsă) și **CheckBox** (geometria din `AdvancedTreeControl` — dreptunghi rotunjit + bifă — dar cu **culori din paletă**, nu `DodgerBlue` hardcodat ca acolo). Liniile de grilă se trag pe marginea de jos a rândului și pe marginea dreaptă a celulei.
 
 #### Evenimente de formatare (plumbing; handler-ele bogate vin în 0010-04)
-`CellFormatting` / `RowFormatting` se ridică deja, cu argumente **REFOLOSITE** (câte o singură instanță `_cellArgs` / `_rowArgs`, resetate înainte de fiecare ridicare) — zero alocări per celulă la mii de rânduri. Fundalul per-celulă/rând se pictează cu pensula cache-uită pe calea rapidă și cu o pensulă temporară doar când un handler chiar a suprascris culoarea.
+`CellFormatting` / `RowFormatting` refolosesc câte o instanță `_cellArgs` / `_rowArgs`, resetată înaintea evenimentului: zero alocări per celulă la mii de rânduri. Fundalul celulei/rândului folosește pensula cache, temporară numai dacă handlerul suprascrie culoarea.
 
 #### Maparea paletă → roluri (fără culori literale)
 Implementată conform tabelului din plan: antet = `SurfaceAlt`/`Text`/`Border`/`Accent`, rânduri = `InputBack` și `Blend(InputBack, Surface, 0.5)`, selecție = `Blend(fundalul REAL al rândului, Accent, 0.18)` (două variante precalculate: rând normal / alternant, ca textul să rămână lizibil), grilă = `Border`, bifă = `Border`/`Accent`/`AccentText`. Editorii flotanți (`editText`/`editCombo`) se tematizează direct în `ApplyTheme`.
@@ -120,7 +120,7 @@ A treia trecere din slice-ul 0010. Completează cele șase tipuri de coloană: p
 - `KBotDataColumn.OptionGroup As String` — grupul de exclusivitate pentru coloanele `OptionButton`. Grup vid => opțiune independentă.
 
 #### Semantica grupurilor de opțiuni (date, nu input)
-`KBotDataView.SetOptionValue(colKey, rowIndex, value)`: bifarea (True) stinge celelalte opțiuni **din același rând** care au **același `OptionGroup`**. Nu atinge alte rânduri, nu atinge alte grupuri, iar opțiunile fără grup rămân independente. Cheie necunoscută sau coloană de alt tip => `ArgumentException` (fără no-op tăcut). Cablarea pe click/Space vine în 0010-05.
+`KBotDataView.SetOptionValue(colKey, rowIndex, value)`: True debifează celelalte opțiuni **din același rând și `OptionGroup`**, fără afectarea altor rânduri/grupuri; cele fără grup rămân independente. Cheie necunoscută/tip greșit → `ArgumentException`, fără no-op tăcut. Click/Space vin în 0010-05.
 
 #### Pictare (stare de afișare)
 - **Combo** — textul formatat + un chevron `TextDim` în dreapta; zona de text se micșorează cu lățimea chevronului. Editorul real (ComboBox flotant) apare abia la editare (0010-06).
@@ -199,7 +199,7 @@ A cincea trecere din slice-ul 0010. Grila devine INTERACTIVĂ: celulă curentă,
 ### Ce s-a schimbat și de ce
 
 #### Selecție
-`CurrentRowIndex`, `CurrentColumnKey`, `CurrentRow` + evenimentul `SelectionChanged`. Selecția trece printr-un punct UNIC (`SetCurrentCell`), care derulează la rând (`EnsureVisible`), repictează și ridică evenimentul **o singură dată și doar la o schimbare reală** (același contract ca la `KBotNavList`). Index de rând în afara intervalului => „fără selecție” (-1); cheie de coloană necunoscută => `ArgumentException` (fără no-op tăcut). Selecție simplă în v1; rândul curent se pictează cu spălarea de accent introdusă în 0010-02.
+`CurrentRowIndex`, `CurrentColumnKey`, `CurrentRow`, `SelectionChanged`: punct unic `SetCurrentCell` → `EnsureVisible`, repictare, eveniment **o dată, numai la schimbare reală**, ca `KBotNavList`. Index invalid → fără selecție (-1); cheie necunoscută → `ArgumentException`, fără no-op tăcut. V1: selecție simplă, rând curent cu spălarea de accent din 0010-02.
 
 #### Tastatură (stil formular continuu Access)
 `IsInputKey` revendică săgețile / Tab / Enter / F2 / PageUp / PageDown / Home / End / Space — altfel WinForms le-ar folosi pentru schimbarea focusului. Apoi: Sus/Jos = rând, Stânga/Dreapta = coloană (**sar peste coloanele ascunse și dezactivate**, fără wrap), **Enter = un rând mai jos** (senzația Access), Tab/Shift+Tab = coloană dreapta/stânga, PageUp/PageDown = o pagină vizibilă, Home/End = prima/ultima coloană activă, Ctrl+Home/Ctrl+End = primul/ultimul rând, Space = comută/acționează celula curentă.
@@ -219,7 +219,7 @@ Punct comun pentru click și Space, care **verifică întâi `IsCellEnabled`** �
 Drag pe marginea dreaptă a unei coloane din antet (toleranță ~4px, DPI-scalată), doar dacă `Column.Resizable`. Cursorul devine `SizeWE` deasupra unei margini. Lățimea nu coboară sub `MinWidth` (clamp-ul e în model, din 0010-01). Reordonarea prin drag rămâne în afara scopului.
 
 #### Evenimente noi
-`KBotCellEventArgs` (bază), `KBotButtonClickEventArgs`, `KBotCellValueEventArgs` — **NU** se refolosesc, spre deosebire de argumentele de formatare: evenimentele de interacțiune sunt rare (o acțiune a operatorului), deci o alocare per eveniment e irelevantă și scapă handler-ele de capcana „nu reține instanța”.
+`KBotCellEventArgs` (bază), `KBotButtonClickEventArgs`, `KBotCellValueEventArgs` **nu se refolosesc**: interacțiunile rare justifică o alocare/eveniment, fără restricția „nu reține instanța” a argumentelor de formatare.
 
 ### Fișiere atinse
 
@@ -249,11 +249,11 @@ Ultima trecere din slice-ul 0010 — motivul pentru care grila e NELEGATĂ de da
 
 - **Editabilitate** (`CanEdit`, public): `Not ReadOnlyGrid AndAlso Not Column.ReadOnly AndAlso IsCellEnabled(...) AndAlso (tipul e Text sau Combo)`. Refolosește rezoluția de activare efectivă din 0010-04 — regula nu e reimplementată.
 - **Intrare în editare**: F2, dublu-click. Editorul se poziționează pe dreptunghiul real al celulei (`CellRect`, care ține cont de banda înghețată, de ambele derulări și de antet), se tematizează, primește valoarea formatată și select-all.
-- **Commit**: ridică `CellValidating`, care poate **respinge** (`Cancel = True` => editorul rămâne deschis și focalizat, valoarea din rând neatinsă) sau **corecta** valoarea (handler-ul rescrie `ProposedValue` — trim/normalizare/conversie de tip). Dacă trece: scrie în rând, marchează rândul editat, ascunde editorul, ridică `CellValueChanged`, apoi aplică navigația în așteptare (Enter => un rând mai jos, Tab => o coloană la dreapta).
-- **Un singur editor viu**: `BeginEdit` pe altă celulă, mutarea celulei curente și derularea comit întâi. Dacă acel commit e respins, **mutarea nu are loc** — altfel editorul ar rămâne agățat peste o celulă care nu mai e a lui.
+- **Commit**: `CellValidating` poate **respinge** (`Cancel = True`: editor deschis/focalizat, rând neatins) sau **corecta** `ProposedValue` (trim/normalizare/conversie). Succes: scrie rândul, îl marchează editat, ascunde editorul, ridică `CellValueChanged`, apoi navighează (Enter: rând următor; Tab: coloană dreapta).
+- **Un editor viu**: `BeginEdit` pe altă celulă, mutarea selecției și derularea comit întâi. Refuzul **oprește mutarea**, păstrând editorul peste celula sa.
 
 #### Semantica `IsDirty` — CONTRACT SCHIMBAT față de 0010-01
-Planul cere explicit: „murdar” = **editat de operator**, nu „scris programatic”. Prin urmare `KBotDataRow.Item` **nu mai** ridică `IsDirty` (nici `KBotDataView.Item`) — scrierea prin API e ÎNCĂRCARE de date. Steagul se ridică doar la: commit de editare, comutare de bifă, selectare de opțiune. `GetDirtyRows()` întoarce deci exact rândurile atinse de operator, iar `ClearDirty()` (nou, la nivel de grilă) + `KBotDataRow.MarkClean()` (per rând) resetează baseline-ul după încărcare sau după trimiterea modificărilor la server.
+Plan: „murdar” = **editat de operator**. `KBotDataRow.Item`/`KBotDataView.Item` **nu mai** ridică `IsDirty`: API-ul încarcă date. Numai commitul, comutarea bifei și selectarea opțiunii ridică steagul; `GetDirtyRows()` întoarce rândurile atinse de operator. Noul `ClearDirty()` pe grilă și `KBotDataRow.MarkClean()` per rând resetează baseline-ul după încărcare/trimitere la server.
 
 **Două teste din 0010-01 au fost rescrise** ca să reflecte noul contract (`Row_SetStoresWithoutMarkingDirty`, `Item_GetSetThroughControl_DoesNotDirtyTheRow`) — schimbare deliberată, nu o „reparare” a testelor ca să treacă.
 

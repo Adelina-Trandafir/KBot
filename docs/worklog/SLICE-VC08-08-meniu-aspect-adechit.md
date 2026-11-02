@@ -2,9 +2,9 @@
 
 Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
-ADECHIT este sursa pentru aspectul barei. Diferențele proveneau din reguli separate: VERCON fixa 46px prin `vercon-workspace.css`, în timp ce ADECHIT primea minimum 53px pe desktop din stilurile Portal. VERCON avea padding lateral de 12px, față de 28px în ADECHIT, și butonul nativ «ⓘ Ajutor», față de butonul compact «?» din ADECHIT.
+Referință pentru bară: ADECHIT, cu minimum 53px pe desktop din stilurile Portal, padding lateral 28px și Ajutor «?». VERCON avea 46px din `vercon-workspace.css`, padding 12px și buton nativ «ⓘ Ajutor».
 
-`js/components/menu/application-header.css` furnizează acum dimensiunile comune pentru cele două bare: 53px pe desktop, 46px pe ecrane mici, margine interioară de 28px / 8px și lățime maximă de 2048px, centrată. VERCON preia tipografia și lipsa paddingului butonului de aplicații, spațierea și aspectul acțiunilor din dreapta și marcajul «?» pentru Ajutor. Butonul Zoom păstrează dimensiunea textului și paddingul ca în ADECHIT. Culorile barei, inclusiv în tema întunecată, urmează ADECHIT; avertizarea de final de sesiune continuă să schimbe fundalul în portocaliu.
+`js/components/menu/application-header.css`: dimensiuni comune 53px desktop / 46px ecrane mici, padding 28px / 8px, lățime maximă 2048px, centrată. VERCON preia din ADECHIT tipografia și lipsa paddingului butonului de aplicații, spațierea/aspectul acțiunilor din dreapta, Ajutor «?», textul/paddingul Zoom și culorile barei inclusiv în tema întunecată. Avertizarea de final de sesiune păstrează fundalul portocaliu.
 
 Spațiul principal ADECHIT scade înălțimea efectivă a barei comune, inclusiv cei 53px de pe desktop. Pe VERCON îngust se păstrează al doilea rând al selectoarelor de context, cu înălțimea barei adaptată conținutului.
 

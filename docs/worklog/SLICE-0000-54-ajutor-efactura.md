@@ -19,7 +19,7 @@ Reper comun 0000-55/56/57/58: 07.10.2026; toate invocă regula din CLAUDE.md că
 Help sub-slice (operator rule 30.09.2026: any visual change goes into the help with its slice number).
 
 ### What changed and why
-- New topic `contabil.efactura` (`HelpContent/contabil/efactura/index.md`, order 75 under «Despre K-BOT»): what the window shows, how to get or renew the token (connect the token, «Autorizează» / «Reînnoiește tokenul», pick the certificate, PIN, result), and the messages the operator can meet. `screens:` `TokenForm`, `CertificatePickerForm`; `open: menu:efactura`. Quotes are the exact captions / messages of the code (`TokenForm.vb`, `TokenForm.Designer.vb`, `CertificatePickerForm.Designer.vb`, `TokenAuthorizer.vb`, `AnafAuthorizeClient.vb`).
+- New `contabil.efactura` (`HelpContent/contabil/efactura/index.md`, order 75 under «Despre K-BOT»): window contents, token connection, «Autorizează» / «Reînnoiește tokenul», certificate choice, PIN, result and operator messages. `screens:` `TokenForm`, `CertificatePickerForm`; `open: menu:efactura`. Exact captions/messages from `TokenForm.vb`, `TokenForm.Designer.vb`, `CertificatePickerForm.Designer.vb`, `TokenAuthorizer.vb`, `AnafAuthorizeClient.vb`.
 - `contabil.fereastra`, section MENIU: new row «E-Factura» with a link; `tur-fereastra`, step «Butonul MENIU»: the sentence names the new window.
 - `HelpContent/README.md`: `efactura` added to the `menu:` keys. No change to `KbotForm.HelpCapture.vb`: `menu:` already finds any row by key.
 - Left out on purpose (users only): how the server keeps and renews the token, the code exchange, the certificate rules' internals.
@@ -61,7 +61,7 @@ Help only: no tutorial (operator's request).
 
 ### What changed and why
 - **New topic `contabil.efactura.conturi`** (`contabil/efactura/conturi.md`): the window «E-Factura — conturile unității» (opened by «Conturile unității…» in the «Vânzător» tab): what the two columns show (the bank is filled by K-BOT from the bank code inside the IBAN, «— banca nu este în listă —» when unknown), «Cont nou», «✕», «Salvează», «Închide» with the unsaved-rows question, what is refused (empty row, wrong IBAN, repeated account, more than 50), the «tables missing» message. Tags `00EF-12, 0000-56`; `screens: ConturiForm, FacturiForm.btnVConturi`; capture tag `conturi-unitate`.
-- **New topic `contabil.efactura.token`** (`contabil/efactura/token.md`): getting and renewing the ANAF token, moved out of `contabil.efactura` (text of 00EF-05 / 0000-54 kept, one sentence added: renew in good time, after full expiry the authorisation starts again): what the window shows, the steps with the certificate and the PIN, what can happen. `screens: TokenForm, CertificatePickerForm, FacturiForm.btnToken`; the capture tag `efactura-token` moved with the text.
+- **New `contabil.efactura.token`** (`contabil/efactura/token.md`): token acquisition/renewal, moved from `contabil.efactura` with the 00EF-05 / 0000-54 text (window, certificate/PIN steps, outcomes). Added: renew early; full expiry restarts authorisation. `screens: TokenForm, CertificatePickerForm, FacturiForm.btnToken`; capture tag `efactura-token` moves with the text.
 - `contabil/efactura/index.md`: the token sections replaced by a short «Tokenul ANAF» pointer with a link; the accounts paragraph of «Fila Vânzător» shortened to a link; `screens:` reduced to `FacturiForm`; tags updated (`00EF-12`, `0000-56`).
 - `help-version.txt` not changed (already `2026-10-07`).
 

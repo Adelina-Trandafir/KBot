@@ -5,29 +5,29 @@ Actualizat: 19.10.2026, SLICE-ADE9-08/09. Acest document consolidează rezultatu
 ## Pagina principală și controalele comune
 
 <!-- slice: WB02-01 -->
-Pe calculator, rolul **Administrator** al unității curente are în meniul siglei **A** opțiunea **Înrolează Certificat Digital**, deasupra **Setări tooltip**. Pagina dedicată verifică certificatul de pe token/card și îl înrolează pe contul propriu numai după apăsarea **Înrolează certificatul acesta**. Înrolarea unui certificat nou dezactivează certificatul anterior; **Dezactivează** oprește folosirea certificatului activ. **Înapoi în aplicație** revine la ADECHIT. Opțiunea nu apare pe telefon/tabletă. Dacă sesiunea a expirat, reveniți în aplicație și autentificați-vă din nou.
+Pe calculator, **Administratorul** unității curente găsește **Înrolează Certificat Digital** în meniul siglei **A**, deasupra **Setări tooltip**. Pagina verifică certificatul tokenului/cardului; numai apăsarea **Înrolează certificatul acesta** îl înrolează pe contul propriu și dezactivează certificatul anterior. **Dezactivează** oprește certificatul activ; **Înapoi în aplicație** revine la ADECHIT. Opțiunea lipsește pe telefon/tabletă. Sesiunea expirată cere revenire în aplicație și reautentificare.
 
 <!-- slice: ADE9-08 -->
-Notificarea generală de eroare de sub antet se șterge și se ascunde la următoarea acțiune: apăsare/clic, tastare, schimbarea unei valori sau trimiterea unui formular. Dacă noua acțiune eșuează, mesajul ei este afișat. Simplul hover nu ascunde eroarea.
+Eroarea de sub antet se șterge și se ascunde la următoarea apăsare/clic, tastare, schimbare de valoare sau trimitere de formular. Dacă acțiunea eșuează, apare noua eroare. Hoverul nu o ascunde.
 
 <!-- slice: AD11-01 -->
 <!-- slice: AD11-02 -->
 <!-- slice: AD11-04 -->
-Pe mobil, selectorul copilului ocupă aceeași lățime ca elementele dashboardului. Cardurile rămân în lățimea ecranului; graficele ample se derulează în propriul card. „Imprimă” este ascuns pe mobil; „Descarcă PDF” rămâne disponibil. Portalul părinților permite scroll vertical pe mobil. Selectorul are opțiuni cu font mărit; subtotalurile și totalul final al fișei au fundaluri gri distincte în print/PDF. Portalul separat al părinților este descris în [PORTAL_PARINTI.md](PORTAL_PARINTI.md): autentificare CNP/cod permanent/cod email, numai copii fără Plecat, selector numai cu mai mulți copii, situații/grafice și fișă cont print/PDF pentru toată perioada sau Interval. În macheta părinților, „Trimite Codul de Acces” apare numai cu email completat și salvează datele înainte de trimitere. Același email la alt CNP este respins cu identificarea părintelui.
+Pe mobil, selectorul copilului are lățimea elementelor dashboardului și opțiuni cu font mărit; cardurile încap în ecran, graficele ample se derulează în card, iar portalul permite scroll vertical. „Imprimă” este ascuns; „Descarcă PDF” rămâne disponibil. Subtotalurile/totalul final al fișei au fundaluri gri distincte în print/PDF. [Portalul separat al părinților](PORTAL_PARINTI.md) oferă autentificare CNP/cod permanent/cod email, numai copii fără Plecat, selector pentru mai mulți copii, situații/grafice și fișă cont print/PDF pe toată perioada sau Interval. În macheta părinților, „Trimite Codul de Acces” apare numai cu email completat și salvează înaintea trimiterii; același email la alt CNP este refuzat cu identificarea părintelui.
 
 <!-- slice: ADE6-22 -->
-La deschidere nu este selectată nicio lună sau grupă, iar tabelul copiilor este gol. Cel mai recent an din arbore este deschis automat și numai lunile lui se încarcă la pornire; ceilalți ani sunt închiși și își încarcă lunile la deschidere. Alegerea lunii încarcă grupele, fără opțiunea Toate. Alegerea grupei încarcă numai situația copiilor acelei grupe, cu istoricul necesar calculării soldurilor. Reîncărcarea și preluarea/adăugarea copiilor sunt disponibile după alegerea lunii și grupei; închiderea/redeschiderea necesită alegerea lunii.
+La deschidere, luna/grupa sunt nealese și tabelul copiilor este gol. Numai cel mai recent an se deschide și își încarcă lunile automat; ceilalți le încarcă la deschidere. Luna aleasă încarcă grupele, fără Toate; grupa încarcă situația propriilor copii și istoricul necesar soldurilor. Reîncărcarea și preluarea/adăugarea copiilor cer lună și grupă alese; închiderea/redeschiderea cere luna.
 
 <!-- slice: ADE6-26 -->
-În arborele LUNA / ANUL, alegerea unei luni din alt an colapsează anul selectat anterior și păstrează extins anul noii luni. La prima alegere, anul anterior este cel deschis automat la pornire. Simpla extindere a unui an pentru consultarea lunilor nu colapsează anul selectat.
+În LUNA / ANUL, alegerea unei luni din alt an colapsează anul anterior (la prima alegere, cel deschis automat) și păstrează extins noul an. Simpla extindere pentru consultare nu colapsează anul selectat.
 
 Grupele din arbore și combobox, copiii, plătitorii și educatorii sunt ordonați alfabetic după nume/denumire, cu regulile limbii române. Taxele se ordonează după Explicație, iar documentele după Explicație, cu rândul nou la sfârșit. Comboboxul lunilor folosește denumirea lunii. Arborele LUNA / ANUL păstrează ordinea cronologică descrescătoare pentru ani și luni. Ordonarea inițială a grilelor se poate schimba prin apăsarea antetului unei coloane.
 
 Pe PC, bara cu luna/grupa și explicația ei este ascunsă; tabelul începe la același Y cu panoul LUNA / ANUL. Pe mobil, primul rând conține comboboxurile Anul, Luna și Grupa; mesajul de încărcare și spațiul rezervat lui sunt eliminate.
 
-Se păstrează DataGrid-ul comun în toate modurile, inclusiv pe mobil. Filtrarea există exclusiv la Nume și la Grupa (denumirea grupei), peste tot în ADECHIT. CNP, Educatori, date, valori, I și coloanele de acțiuni nu au filtre. Antetele și footerele DGV folosesc culorile DGV-ului principal. Antetele tuturor ferestrelor modale folosesc culoarea antetului paginii principale; formularele au fundal alb și același design al butoanelor, adaptat temei comune.
+DataGrid-ul comun se păstrează inclusiv pe mobil. Peste tot în ADECHIT, numai Nume și Grupa (denumirea) au filtre; CNP, Educatori, date, valori, I și acțiunile nu au. Antetele/footerele DGV preiau culorile DGV-ului principal; antetele modale, culoarea antetului paginii principale. Formularele au fundal alb și butoane cu design comun, adaptat temei.
 
-În grilele editabile, pe PC un clic intră în editare. Pe mobil un clic selectează; editarea începe cu dublu clic sau Enter. Enter confirmă și trece la următoarea celulă editabilă disponibilă, inclusiv pe rândul următor. Tab navighează la fel, iar Shift inversează direcția. Celulele needitabile sunt sărite. O eroare de validare păstrează editorul. Escape anulează numai editarea celulei, fără să închidă fereastra, inclusiv când editorul are combobox/calendar.
+În grilele editabile, un clic editează pe PC și selectează pe mobil, unde editarea cere dublu clic sau Enter. Enter confirmă și trece la următoarea celulă editabilă, inclusiv pe rândul următor; Tab navighează la fel, Shift inversând direcția. Celulele needitabile sunt sărite. Validarea eșuată păstrează editorul. Escape anulează numai editarea celulei, inclusiv în combobox/calendar, fără închiderea ferestrei.
 
 Datele calendaristice folosesc calendarul custom comun, ca la Plăți. Excepția este perioada taxelor: lună/an, fără calendar. Checkboxurile sunt editabile numai în coloanele declarate explicit astfel. Rândurile DGV ADE sunt cu 20% mai înalte pe mobil. Calculul lățimilor ține cont de borduri, scrollbarul vertical și rotunjiri; scrollul orizontal necesar unor grile late rămâne posibil pe PC.
 
@@ -37,9 +37,9 @@ Datele calendaristice folosesc calendarul custom comun, ca la Plăți. Excepția
 Mesajul introductiv „Selectați grupa, copilul și plătitorul. Folosiți Adaugă sau Modifică.” este eliminat. Fereastra nu afișează nici mesajele informative de încărcare/salvare; zona de mesaje apare numai pentru erori.
 
 <!-- slice: ADE6-21 -->
-La fiecare deschidere se încarcă numai grupele, fără selecție implicită. Copiii se descarcă după alegerea grupei, iar persoanele asociate după alegerea copilului. Schimbarea grupei golește imediat copiii și plătitorii precedenți; un răspuns întârziat pentru o selecție veche este ignorat. Anii și istoricul educatorilor se încarcă numai când se deschide editorul grupei.
+La fiecare deschidere se încarcă numai grupele, fără selecție; alegerea grupei descarcă copiii, iar alegerea copilului, persoanele asociate. Schimbarea grupei golește imediat copiii/plătitorii; răspunsurile pentru selecții vechi sunt ignorate. Anii și istoricul educatorilor se încarcă numai la deschiderea editorului grupei.
 
-Fereastra conține trei liste dependente, Grupe → Copii → Plătitori, cu Adaugă și Modifică. Listele sunt doar pentru selecție și afișare; modificările se fac în editorul elementului. Toate fostele coloane PL au antetul **I**, fără filtru:
+Cele trei liste dependente Grupe → Copii → Plătitori servesc numai selecției/afișării; Adaugă și Modifică deschid editorul elementului. Fostele coloane PL au antetul **I**, fără filtru:
 
 | Listă | Semnificația bifei I |
 |---|---|
@@ -57,7 +57,7 @@ Ferestrele sunt modale și blochează fundalul. Clicul în afară și Escape nu 
 
 CNP se verifică în JS și API după funcțiile VBA furnizate: 13 cifre, lună ≤12, zi ≤31, județ ≤52 și cifra de control cu ponderile 279146358279, modulo 11 (restul 10 devine 1). Codurile sunt 0/2/3/4/5 pentru erori și -1 pentru valid. CNP gol este permis pentru date istorice/persoane juridice; verificarea nu introduce suplimentar validarea completă a unei date calendaristice.
 
-La salvarea unui plătitor nou, acesta este activ automat și ceilalți plătitori ai **aceluiași copil** devin inactivi în aceeași tranzacție. Activarea unui plătitor existent aplică aceeași regulă. În editorul nou, Activ este bifat și blocat. Un plătitor existent poate fi dezactivat explicit: pot exista zero activi, dar nu mai mulți activi în urma acestor salvări. Importul nu curăță global eventualele dubluri istorice; persoanele asociate altor copii nu sunt afectate.
+Plătitorul nou se salvează activ (Activ bifat și blocat în editor); ceilalți plătitori ai **aceluiași copil** devin inactivi în aceeași tranzacție. Aceeași regulă se aplică activării unuia existent. Dezactivarea explicită permite zero activi; aceste salvări nu permit mai mulți activi și nu afectează alți copii. Importul nu curăță global dublurile istorice.
 
 <!-- slice: ADE6-24 -->
 Tabelul educatorilor are coloanele Email și CNP, ambele opționale, editabile ca text. Email acceptă maximum 255 de caractere și se verifică formatul; CNP acceptă 13 cifre și validarea existentă, inclusiv cifra de control. Golirea unui câmp îl salvează NULL. Datele sunt completate doar în web: Access nu are aceste coloane și migratorul nu le caută, nu le importă și nu le reconstruiește. La migrare rămân NULL. DDL-ul [AD_09_educatori_contact.sql](../sql/AD_09_educatori_contact.sql) se rulează numai pe AVACONT_SURSA; KBotAdmin sincronizează schema bazelor unităților.
@@ -84,9 +84,9 @@ Lățimea butonului se scade numai din denumire/nume. Filtrarea denumirii/numele
 ## Anularea unui document
 
 <!-- slice: AD11-01 -->
-În taburile Chitanțe și Alte documente, fiecare document salvat are în dreapta butonul ❌ «Anulare document». Butonul apare numai pentru conturile care au dreptul «Anulare documente» (rolul AD_ANULARE, dat pe cont din programul de administrare; setarea veche `AllowCancelDocuments` nu mai există) și dacă luna selectată este deschisă sau este ultima lună închisă; pentru alte luni închise nu apare. Nu apare nici la documentele deja anulate (marcate tăiat) și nici la restituiri.
+În Chitanțe și Alte documente, ❌ «Anulare document» apare în dreapta documentului salvat numai cu dreptul «Anulare documente» (AD_ANULARE, acordat pe cont din administrare; vechiul `AllowCancelDocuments` nu mai există) și în luna deschisă sau ultima lună închisă. Lipsește la celelalte luni închise, restituiri și documente deja anulate (marcate tăiat).
 
-La clic se deschide o fereastră de confirmare cu întrebarea «Ești sigur/ă că vrei să anulezi …?» și un câmp «Motivul anulării». Butonul «Anulează» (dreapta) rămâne inactiv cât timp motivul este gol. «Renunță» (stânga), Escape sau clicul în afara ferestrei închid fereastra fără să anuleze nimic. După anulare, situația copilului se recalculează, iar documentul rămâne în listă, marcat ca anulat.
+Clicul cere confirmarea «Ești sigur/ă că vrei să anulezi …?» și «Motivul anulării». «Anulează» (dreapta) este inactiv fără motiv; «Renunță» (stânga), Escape sau clicul în afară închid fără anulare. Anularea recalculează situația copilului și păstrează documentul în listă, marcat anulat.
 
 ## Chitanțe pe PC
 
@@ -97,9 +97,9 @@ La clic se deschide o fereastră de confirmare cu întrebarea «Ești sigur/ă c
 La alegerea datei unui document nou, Valoarea se propune din soldul final al copilului pentru luna selectată: SFC pozitiv la Restituiri, SFD pozitiv la Chitanțe și Alte plăți. Suma rămâne editabilă. Aceste solduri înlocuiesc propunerea anterioară din SIC/SID (soldul inițial).
 
 <!-- slice: ADE8-05 -->
-Pe PC, la Chitanțe, butonul 📥 de lângă 💾 deschide meniul ultimei chitanțe salvate pentru copilul curent. Până la prima salvare este inactiv. Fiecare chitanță existentă are și propriul buton 📥. Meniul are stil Windows, pictograme în stânga, navigare cu săgeți și închidere prin Escape sau clic în afară: 🖨️ Listare, ✉️ Trimitere pe mail, 📄 Descarcă PDF. Mailul apare numai dacă plătitorul asociat chitanței are EMail completat și rămâne inactiv.
+Pe PC, în Chitanțe, 📥 de lângă 💾 deschide meniul ultimei chitanțe salvate a copilului curent; este inactiv până la prima salvare. Chitanțele existente au și propriul 📥. Meniul Windows are pictograme în stânga, navigare cu săgeți, Escape/clic în afară pentru închidere: 🖨️ Listare, ✉️ Trimitere pe mail, 📄 Descarcă PDF. Mailul rămâne inactiv și apare numai dacă plătitorul chitanței are EMail completat.
 
-Listare deschide o fereastră cu două exemplare și dialogul browserului; butonul Listare din acea fereastră permite repetarea comenzii. Descarcă PDF generează documentul aceleiași chitanțe. Datele/suma/seria/numărul provin din chitanța și plata salvate, persoana asociată și datele comune ale unității. Chitanțele anulate sunt marcate ANULATĂ. Listarea și PDF-ul nu emit numere noi și nu salvează rândul nou. Meniul este ascuns pe mobil.
+Listare deschide două exemplare și dialogul browserului; butonul Listare permite repetarea. Descarcă PDF generează aceeași chitanță. Datele/suma/seria/numărul provin din chitanța/plata salvate, persoana asociată și datele comune ale unității; chitanțele anulate au marcajul ANULATĂ. Listarea/PDF-ul nu emit numere și nu salvează rândul nou. Meniul este ascuns pe mobil.
 
 Publicarea include fontul DejaVuSans.ttf și licența sa, șablonul receipt.html, modulele API/JS și CSS. PDF-ul necesită instalarea în mediul Python al serverului a `requirements-adechit.txt`, apoi restartul backendului. Fără DDL suplimentar. Nu s-au executat probe funcționale/vizuale; verificarea revine utilizatorului.
 
@@ -116,7 +116,7 @@ Instrucțiunile introductive sunt eliminate în toate modurile; erorile rămân 
 La adăugare, taxa nouă este activă implicit. Începutul propus este luna curentă sau luna de după ultima perioadă cunoscută. Noua perioadă trebuie să înceapă după toate începuturile cunoscute. Taxa anterior activă devine inactivă și primește ca sfârșit luna anterioară noului început; modificările se salvează atomic.
 
 <!-- slice: AD14-03 -->
-La bifarea **Activ** pe o taxă existentă, ultima bifă pusă de operator are prioritate și toate celelalte taxe se debifează automat. Poți reactiva orice taxă mai veche, indiferent de ordinea începuturilor, și poți schimba alegerea repetat înainte de salvare. Simpla activare/dezactivare nu modifică perioadele existente și nu este respinsă pentru suprapunerea cu taxa anterior activă. La adăugarea unei perioade noi se păstrează completarea automată a sfârșiturilor. Regula de bifare se aplică atât în **Taxe**, cât și în **Închidere lună**. Dacă anulezi un rând nou, alegerea anterioară încă valabilă se reconstituie. Sumele și explicațiile rămân supuse validărilor obișnuite.
+În **Taxe** și **Închidere lună**, ultima bifă **Activ** pe o taxă existentă le debifează pe celelalte. Poți reactiva orice taxă veche și schimba repetat alegerea înaintea salvării, indiferent de ordinea începuturilor. Simpla activare/dezactivare păstrează perioadele și nu este refuzată pentru suprapunerea cu taxa anterior activă. Perioadele noi păstrează completarea automată a sfârșiturilor. Anularea rândului nou reconstituie alegerea anterioară încă valabilă; sumele/explicațiile păstrează validările obișnuite.
 
 **Taxele migrate pot avea DeLa/PanaLa NULL.** Lipsa datelor nu blochează citirea, editarea, utilizarea sau importul lor și nu se inventează perioade istorice. Numai taxele noi create prin catalog necesită DeLa. IDV istoric rămâne păstrat.
 
@@ -127,23 +127,23 @@ Pe calculator, după alegerea lunii, textul simplu «Taxa zilnică» din bara al
 
 Într-o lună deschisă, cu dreptul **Catalog**, alege o altă taxă și confirmă **Aplică taxa**. Se schimbă taxa întregii luni, pentru toate grupele subunității curente, inclusiv cele neafișate. Se păstrează zilele de prezență și se recalculează valorile contractuale/totale și situația. Operația nu împarte luna pe zile sau intervale de taxe. Taxa aleasă se folosește și pentru copiii preluați ulterior în aceeași lună.
 
-Lunile închise sunt blocate inclusiv pentru conturile cu dreptul de editare a prezenței închise. Fără dreptul Catalog, taxa se poate numai consulta. Salvează sau abandonează documentul început înainte de schimbare; o celulă de prezență în editare se salvează mai întâi. În timpul salvării nu se pot începe alte editări. La succes se reîncarcă situația, păstrând sensul sortării și copilul selectat. În caz de eroare, mesajul este afișat, iar selectorul revine la taxa cunoscută; aceeași alegere poate fi reîncercată.
+Lunile închise sunt blocate inclusiv cu dreptul de editare a prezenței închise; fără Catalog, taxa se poate numai consulta. Înaintea schimbării, salvează/abandonează documentul început și salvează celula de prezență în editare. Salvarea blochează alte editări; succesul reîncarcă situația, păstrând sensul sortării și copilul selectat. Eroarea se afișează, selectorul revine la taxa cunoscută și permite reîncercarea aceleiași alegeri.
 
-Alegerea unei taxe pentru luna deschisă nu modifică valoarea sau perioadele taxelor din catalog, bifa **Activ** ori lunile anterioare. Pentru o taxă nouă folosește întâi **Meniu → Taxe**. Taxa activă din catalog rămâne cea propusă la deschiderea unei luni noi. Pe telefon, acest control din antet rămâne ascuns.
+Alegerea păstrează valorile/perioadele taxelor din catalog, bifa **Activ** și lunile anterioare. Creează întâi taxa nouă prin **Meniu → Taxe**. Taxa activă din catalog rămâne propunerea pentru o lună nouă. Controlul din antet este ascuns pe telefon.
 
 ## Închiderea lunii cu schimbarea taxei — AD14-01
 
 <!-- slice: AD14-01 -->
 
-Lacătul unei luni deschise (altele decât august) deschide fereastra «Închidere lună», modală, cu fundalul estompat ca la mesaje; confirmarea simplă a fost înlocuită. Fereastra arată taxa activă (cea cu care se deschide luna următoare) și tabelul de taxe, cu taxa activă pe primul rând și fără sortare implicită. «Adaugă taxă» creează rândul nou (activ, începând cu luna care se deschide sau cu luna de după ultimul început) și poziționează tabelul pe el; taxa activă anterioară devine inactivă și primește sfârșitul. Se refolosesc regulile și validările din Taxe (aceeași salvare `/api/adechit/catalog-save`). «Închide luna» salvează modificările de taxe, apoi închide luna; «Renunță» / Escape lasă luna deschisă și abandonează modificările. Dacă lista de taxe nu se încarcă, luna nu poate fi închisă din fereastră. Închiderea lui august păstrează fereastra anuală, fără selecția taxei.
+Lacătul lunii deschise, exceptând august, arată «Închidere lună»: fereastră modală, fundal estompat ca la mesaje, în locul confirmării simple. Arată taxa activă pentru luna următoare și tabelul taxelor, cu cea activă prima și fără sortare implicită. «Adaugă taxă» creează/selectează rândul activ, început în luna care se deschide sau în luna de după ultimul început; taxa anterior activă devine inactivă și primește sfârșitul. Se refolosesc regulile/validările Taxe și salvarea `/api/adechit/catalog-save`. «Închide luna» salvează taxele, apoi închide; «Renunță» / Escape abandonează modificările și lasă luna deschisă. Fără lista de taxe încărcată, închiderea este blocată. August păstrează fereastra anuală, fără selecția taxei.
 
 ## Închidere anuală — ADE7-04
 
 <!-- slice: ADE7-04 -->
 
-La închiderea unei luni august deschise, pe desktop apare fereastra de închidere anuală. Pe mobil (cel mult 980px) fereastra nu apare, iar închiderea lui august este dezactivată. Celelalte luni păstrează fluxul obișnuit.
+Închiderea lui august deschis arată fereastra anuală pe desktop; pe mobil (≤980px), fereastra lipsește și închiderea este dezactivată. Celelalte luni păstrează fluxul obișnuit.
 
-În stânga se află arborele custom cu grupele; în dreapta, DGV-ul custom cu copiii grupei selectate. Prima coloană bifează selecția. Ctrl adaugă/elimină copii din selecție, iar Shift bifează intervalul în ordinea afișată. Copiii selectați se trag peste grupa destinație din arbore. Alternativ, se alege destinația din comboboxul custom și se apasă „Mută copiii selectați”. Mutarea poate cuprinde un copil, mai mulți sau toată grupa. Coloana „Grupa din august” păstrează originea.
+În stânga este arborele custom al grupelor; în dreapta, DGV-ul custom al copiilor grupei alese. Prima coloană bifează selecția: Ctrl adaugă/elimină copii, Shift bifează intervalul în ordinea afișată. Trage selecția peste grupa destinație sau alege-o în comboboxul custom și apasă „Mută copiii selectați”. Poți muta unul/mai mulți copii sau toată grupa; „Grupa din august” păstrează originea.
 
 „Plecat” este o bifă separată de selecție. Copiii astfel marcați ies la 31 august; cei cu sold sunt preluați în grupa specială pentru copiii plecați în septembrie. Sub tabelul copiilor este DGV-ul custom al educatorilor noului an. Numele grupei poate fi schimbat, iar educatorii pot fi adăugați, editați sau eliminați din plan.
 
@@ -154,16 +154,16 @@ Email și CNP sunt opționale și în tabelul educatorilor noului an. Datele exi
 
 Sub tabele apare (când subunitatea are serie de chitanțe) caseta **„Reia numerotarea chitanțelor în noul an școlar”**, nebifată implicit. Bifată, seria rămâne, iar următoarea chitanță primește numărul din „Prima chitanță din septembrie” (1 propus). Nebifată, numerotarea continuă. Numărul unei chitanțe este unic pe serie și an școlar (septembrie–august), deci același număr poate reapărea în anul următor. Cere AD_13 aplicat.
 
-„Renunță” abandonează planul. „Închide august și deschide septembrie” salvează atomic situația din august cu datele vechi, aplică planul și creează septembrie. Mutările și plecările sunt jurnalizate; perioadele educatorilor anteriori se păstrează. Datele modificate între timp de alt utilizator impun reîncărcarea ferestrei. Operația necesită drepturile de închidere, catalog și transfer.
+„Renunță” abandonează planul. „Închide august și deschide septembrie” salvează atomic situația veche din august, aplică planul și creează septembrie. Mutările/plecările se jurnalizează, perioadele educatorilor se păstrează. Modificările altui utilizator impun reîncărcarea ferestrei. Sunt necesare drepturile închidere, catalog și transfer.
 
 Implementat. Aspectul, interacțiunea drag-and-drop în browser și funcționarea pe MariaDB: TESTAT, RULAT, PUBLICAT.
 
 ## O încasare bancară pentru mai mulți copii
 
 <!-- slice: AD15-01 -->
-În **Asociere extrase cu copii → Asociere manuală**, alege extrasul și luna înregistrării. Alege copilul și plătitorul activ, completează **Suma pentru copil (lei)** și **Explicație document**, apoi apasă **Adaugă copil la repartizare**. Repetă pentru fiecare copil, inclusiv din altă grupă a subunității curente. Lista se ordonează alfabetic după numele copilului. **Șterge** permite refacerea unei sume. Câmpul propune suma rămasă; totalul repartizat și restul sunt afișate sub listă.
+În **Asociere extrase cu copii → Asociere manuală**, alege extrasul, luna înregistrării, copilul și plătitorul activ. Completează **Suma pentru copil (lei)** și **Explicație document**, apoi **Adaugă copil la repartizare**. Repetă inclusiv pentru alte grupe ale subunității curente. Lista se ordonează alfabetic după numele copilului; **Șterge** permite refacerea sumei. Câmpul propune restul; totalul repartizat și restul apar sub listă.
 
-La **Asociază și înregistrează în Alte plăți**, verifică fiecare copil și suma lui din confirmare. Se acceptă numai sume pozitive în lei întregi, cu totalul exact egal cu încasarea. Se creează câte o plată și un document pentru fiecare copil, în aceeași tranzacție. Pentru un singur copil poți salva direct suma integrală, fără adăugare în listă. Previzualizarea automată rămâne pentru o încasare asociată unui singur copil; pentru repartizare revino în modul manual.
+La **Asociază și înregistrează în Alte plăți**, verifică fiecare copil/sumă în confirmare. Sumele trebuie să fie pozitive, în lei întregi, cu total egal exact cu încasarea. Aceeași tranzacție creează o plată și un document per copil. Pentru un singur copil poți salva direct întreaga sumă, fără listă. Previzualizarea automată rămâne pentru un singur copil; repartizarea cere modul manual.
 
 O încasare deja salvată nu se poate repartiza din nou, nici în altă subunitate; anularea unui document păstrează proveniența și rezervarea extrasului. La schimbarea extrasului, a lunii, a modului, la reîncărcare sau închidere, repartizarea pregătită cere confirmare înainte de abandonare. Sunt necesare drepturile Încasare și Catalog. Repartizarea între copii necesită aplicarea manuală a [AD_15_extrase_repartizare.sql](../sql/AD_15_extrase_repartizare.sql), după AD_11, în baza unității.
 
@@ -171,7 +171,7 @@ O încasare deja salvată nu se poate repartiza din nou, nici în altă subunita
 
 <!-- slice: ADE10-04 -->
 
-O unitate (DC) poate avea mai multe evidențe, numite **subunități**; fiecare are propriile grupe, copii, luni, taxe, plăți și propria serie și propriul număr de chitanțe. În antet, lângă unitate, selectorul **Subunitate** arată evidența în care lucrați. Cu o singură subunitate, aceasta se alege automat. Cu mai multe, la prima deschidere alegeți una; alegerea este valabilă numai în fila curentă, deci două file pot lucra în subunități diferite. Schimbarea subunității reîncarcă pagina; dacă există o fereastră deschisă sau un rând de document început, mai întâi salvați sau renunțați. PDF-ul și listarea chitanței numesc subunitatea. Subunitățile se creează la importul unui MDB cu ADE.Migrator (câmpul Subunitate).
+O unitate (DC) poate avea mai multe **subunități**, fiecare cu propriile grupe, copii, luni, taxe, plăți, serie și număr de chitanțe. Selectorul **Subunitate**, lângă unitate în antet, arată evidența curentă. Subunitatea unică se alege automat; dintre mai multe alegeți una la prima deschidere. Alegerea aparține filei: două file pot folosi subunități diferite. Schimbarea reîncarcă pagina; salvați/abandonați întâi fereastra deschisă sau documentul început. PDF-ul/listarea chitanței numesc subunitatea. Crearea se face prin import MDB cu ADE.Migrator (câmpul Subunitate).
 
 ## Predare și verificări efective
 
@@ -183,7 +183,7 @@ Selectorul Subunitate apare numai daca aveti acces la mai mult de o subunitate. 
 
 ## Conflicte de acces la portal (SLICE-AD11-03)
 
-În **Plătitori**, avertizarea „Portal blocat pentru părinții cu conflicte CNP/email” listează înregistrările de corectat. Apăsați fiecare intrare pentru a selecta grupa, copilul și părintele și a deschide editorul. Lista cuprinde subunitatea curentă, iar conflictul se verifică pe întregul DC. Datele vechi cu aceste conflicte nu opresc migrarea; accesul părinților implicați este blocat până la corectare. Emailurile conflictuale nou introduse sunt refuzate cu identificarea celuilalt părinte.
+În **Plătitori**, „Portal blocat pentru părinții cu conflicte CNP/email” listează înregistrările de corectat din subunitatea curentă; conflictul se verifică pe întregul DC. Apăsarea intrării selectează grupa/copilul/părintele și deschide editorul. Conflictele vechi permit migrarea, dar blochează accesul părinților până la corectare; emailurile conflictuale noi sunt refuzate cu identificarea celuilalt părinte.
 
 ## Copil nou cu părinte, linkuri și dublu clic (SLICE-AD11-05)
 <!-- slice: AD11-05 -->
@@ -204,13 +204,13 @@ Selectorul Subunitate apare numai daca aveti acces la mai mult de o subunitate. 
 Titlul, etichetele bifelor și datelor și valorile din calendarele panoului sunt cu 2pt mai mici. Textul butoanelor de raport și dimensiunea pictogramei calendarului rămân cele existente.
 
 <!-- slice: ADE9-07 -->
-La apăsarea unei comenzi, fereastra raportului apare imediat cu mesajul **Se pregătește raportul…** și indicator de încărcare. Cât timp se pregătește un raport sau export, nu se poate porni altul în aceeași pagină; clicurile repetate nu adaugă solicitări. La previzualizare, indicatorul dispare după afișarea primei pagini. La descărcare, fereastra se închide când fișierul este pregătit și trimis browserului. O eroare apare în aceeași fereastră. Închiderea ferestrei în timpul unei cereri nu permite pornirea alteia până la terminarea cererii curente. Regula se aplică și chitanțelor, dispozițiilor de plată, exporturilor PDF/Excel și fișei din portalul părinților.
+Comanda deschide imediat fereastra raportului cu **Se pregătește raportul…** și indicator de încărcare. Până la terminarea cererii nu poate porni alt raport/export în aceeași pagină, nici prin clicuri repetate sau închiderea ferestrei. Indicatorul dispare la afișarea primei pagini; la descărcare, fereastra se închide când fișierul pregătit este trimis browserului. Erorile apar în aceeași fereastră. Regula include chitanțele, dispozițiile de plată, exporturile PDF/Excel și fișa portalului părinților.
 
 <!-- slice: ADE9-06 -->
 Butoanele din panoul Rapoarte au același stil ca acțiunile VERCON: fontul interfeței, bordură simplă și contur cu umbră la trecerea mouse-ului sau la selectarea din tastatură. Butoanele indisponibile sunt estompate. Același feedback se aplică butoanelor de acțiune din ADECHIT.
 
 <!-- slice: ADE9-05 -->
-Rapoartele folosesc acum sistemul comun extras din VERCON: previzualizare PDF în aplicație, cu **Tipărește**, **Alege imprimanta**, **Descarcă PDF**, zoom, potrivire la lățime, 100%, navigare între pagini și **Închide**. **Export Excel** deschide selecția coloanelor. PDF-ul și Excel-ul pornesc din aceleași date generate, păstrate 10 minute pentru utilizatorul, unitatea și subunitatea curente. După expirare, închideți și generați raportul din nou. Pentru date actualizate generați un raport nou; exportul nu recalculează situația. Lățimile Excel configurate și valorile numerice ADECHIT se păstrează. Chitanțele se previzualizează în același control; imprimarea se pornește din bara raportului. Fișa PDF din portalul părinților folosește același motor de generare. La schimbarea contextului sau expirarea sesiunii, previzualizările se închid.
+Sistemul comun extras din VERCON oferă previzualizare PDF cu **Tipărește**, **Alege imprimanta**, **Descarcă PDF**, zoom, potrivire la lățime, 100%, navigare între pagini și **Închide**; **Export Excel** deschide selecția coloanelor. PDF/Excel folosesc aceleași date generate, păstrate 10 minute pentru utilizatorul/unitatea/subunitatea curente. După expirare, închideți și regenerați; pentru date actualizate generați un raport nou, fiindcă exportul nu recalculează. Lățimile Excel configurate și valorile numerice ADECHIT se păstrează. Chitanțele folosesc același control, cu imprimare din bara raportului; fișa PDF a părinților, același motor de generare. Schimbarea contextului sau expirarea sesiunii închide previzualizările.
 
 
 <!-- slice: ADE9-04 -->

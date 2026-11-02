@@ -10,7 +10,7 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0090 | **`KBOT_STATUS.md` împărțit: index + fișiere de câte zece felii (cererea operatorului, 28.09.2026)** | GATA (doar documente, fără cod) | `SLICE-0090-status-split.md` | Fișierul de 658 KB → 28 KB (index, decizii blocate, note transversale) + `state/KBOT_STATUS_<zeci>.md` (rândul complet + «Current focus» + «Open threads» per felie, copiate cuvânt cu cuvânt) + `state/KBOT_STATUS_SLICELESS.md` (munca fără felie + vechiul `project_state.md`, șters din rădăcină). Verificare: toate cele 1.570 de linii ale originalelor regăsite, în afară de cele două reguli vechi «How to update» înlocuite intenționat. Regula de citire în `CLAUDE.md`, `KBOT_STATUS.md`, `CODE_WORKFLOW.md`. |
+| 0090 | **`KBOT_STATUS.md` împărțit: index + fișiere de câte zece felii (cererea operatorului, 28.09.2026)** | GATA (doar documente, fără cod) | [0090](../SLICE-0090-status-split.md) | Dimensiunile inițiale/finale, repartizarea pe registre, retragerea project_state.md și comparația celor 1.570 de linii cu cele două excepții: în jurnal. |
 
 ### Open threads
 
@@ -24,7 +24,7 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0091 | **Detaliul recepției citit tăiat din FOREXE + viteză/așteptări în Setări → FOREXE (cererea operatorului, 29.09.2026)** | GATA pe cod (build curat; nimic rulat, nimic testat) | `SLICE-0091-detaliu-taiat-viteza-asteptari.md` | Server: `detaliu_incomplet` în pasul 4b (rând fără valori / linii ≠ Suma / mai puțini indicatori decât angajamentul) ▸ recepția existentă rămâne neatinsă, cea nouă se creează doar cu rândurile întregi; F14/F15 doar semnalează pe ele; `receptii_incomplete` în ambele faze. Client: întrebare «Le citesc din nou acum?» după salvare (doar zilele tăiate). Setări → FOREXE: «Testează viteza» (fast.com, Chromium ascuns), «Validează de 2×» (doar sub 20 Mb/s), multiplicator ×1/1,5/2/3 pentru timpii WFL + așteptarea Ajax. `F14_PAUSED` / `F14Paused` = True (pauza cerută de operator). |
+| 0091 | **Detaliul recepției citit tăiat din FOREXE + viteză/așteptări în Setări → FOREXE (cererea operatorului, 29.09.2026)** | GATA pe cod (build curat; nimic rulat, nimic testat) | [0091](../SLICE-0091-detaliu-taiat-viteza-asteptari.md) | Cele trei semne de detaliu incomplet, recitirea țintită, ritmul și pauza F14 sunt descrise în jurnal; ipotezele rămân istorice. |
 
 ### Open threads
 
@@ -73,21 +73,18 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0094 | **`KBotComboBox` rescris pe `Control` (nu mai moștenește `ComboBox`) și folosit ca editor de combo în `KBotDataView` (cererea operatorului, 29.09.2026)** — fără `DataSource`/`DisplayMember` (elementele în `Items`, afișate prin `CaptionSelector` sau `ToString()`); textul tastat într-o casetă fără chenar așezată ca textul pictat (rețeta 0085); O SINGURĂ listă: săgeata o deschide cu toate elementele, tastarea (`FindAsYouType`) cu cele potrivite; se închide la un clic în afara ei; bară de derulare trasă cu mouse-ul. În grilă: editorul de combo stă pe o linie, centrat ca editorul de text, peste textul celulei; săgeata celulei (pictată de grilă) deschide lista sub celulă; textul liber rămâne la `CellValidating` | GATA pe cod (build Controls/App/Migrator/Theming/Updater **0 / 0**) / **nevăzut pe ecran, fără teste** | `SLICE-0094-combo-own-control-grid-editor.md` | 14 fișiere Designer curățate de liniile ComboBox (`DrawMode`, `DropDownStyle`, `FlatStyle`, `IntegralHeight`, `ItemHeight`, `FormattingEnabled`). An/SS și unitatea de la login: `Items` în loc de `DataSource`. Controls 1.57.0.0, DevHarness 1.0.29.0. |
+| 0094 | **KBotComboBox pe Control și editor combo în KBotDataView** (cererea operatorului, 29.09.2026) | GATA pe cod (build Controls/App/Migrator/Theming/Updater **0 / 0**) / **nevăzut pe ecran, fără teste** | [0094](../SLICE-0094-combo-own-control-grid-editor.md) | Colecția/afișarea elementelor, lista unică, tastatura, alinierea, migrarea celor 14 designere și versiunile: în jurnal. |
 | 0094-02 | Editor DDF — partener principal și listă asociată | GATA pe cod (build curat, nerulat, nevăzut; SQL-ul și serverul nedeployate) | [0094-02](../SLICE-0094-02-ddfedit-pagina-parteneri.md#slice-0094-02) | Tabela/rutele/controlul: 0084-02; ajutor 0000-28. Contracte și ordine în jurnal. |
 | 0094-03 | Editor DDF — fila Parteneri urmează bifa | GATA pe cod (build curat, nevăzut) | [0094-03](../SLICE-0094-02-ddfedit-pagina-parteneri.md#slice-0094-03) | Partenerii non-principali ascunși rămân salvați; decizia este deschisă. |
 
 ### Current focus
 
-- **Slice 0094 — combo-ul propriu (29.09.2026).** `KBotComboBox` e un `Control` cu casetă de text, listă proprie și colecție de elemente proprie; grila îl folosește ca editor de combo, așezat ca editorul de text. **Next:** operatorul îl vede în aplicație (grila DDF Secțiunea A, Parteneri, combo-urile din Setări / login / MainForm).
+- **Slice 0094 — combo-ul propriu (29.09.2026). Next:** operatorul îl vede în aplicație (grila DDF Secțiunea A, Parteneri, combo-urile din Setări / login / MainForm).
 
 ### Open threads
 
-- **0094 — nimic văzut pe ecran.** Alinierea la pixel a editorului de combo cu textul celulei se sprijină pe rețeta măsurată la 0085 pentru editorul de text; pentru combo nu s-a măsurat.
-- **0094 — `AssemblyVersion` a KBot.Controls a rămas 1.0.0.0** deși tipul de bază al `KBotComboBox` s-a schimbat; merge doar pentru că actualizarea livrează tot setul.
-- **0094 — cod rămas fără folosință:** ajutoarele pentru EDIT-ul nativ din `KBot.Theming/Interop/NativeMethods.vb` (`GetComboEditBounds`, `SetComboEditMargins`, `SetComboEditBounds`, `GetComboEditTextTop`, `GetComboEditLineHeight`, `ApplyControlColors`).
+- **0094:** [limitele și diferențele de comportament](../SLICE-0094-combo-own-control-grid-editor.md#left-unverified-or-deferred) păstrează alinierea nemăsurată pentru combo, AssemblyVersion 1.0.0.0, ajutoarele EDIT-ului nativ din `KBot.Theming/Interop/NativeMethods.vb` rămase nefolosite, rotița și Items.Clear(); fără probă nouă pe ecran.
 - **0094-02:** [ordine de instalare și probe UI](../SLICE-0094-02-ddfedit-pagina-parteneri.md#slice-0094-02); nimic văzut/deployat la checkpoint.
-- **0094 — diferențe de comportament:** rotița peste un combo ÎNCHIS nu mai schimbă selecția; `Items.Clear()` pe un combo editabil păstrează textul tastat.
 
 ---
 
@@ -97,7 +94,7 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0095 | **Istoric: nod rădăcină «Tot istoricul» (cererea operatorului, 29.09.2026)** — arborele Istoric are acum un nivel rădăcină, ca celelalte arbori (Extrase: «Toate extrasele»); lunile stau sub el, zilele sub luni. Clic pe rădăcină = ce face vederea la încărcare: toate filtrele golite, toate rândurile FX_Istoric ale angajamentului | GATA pe cod (build KBot.App **0 erori**) / **nevăzut pe ecran, fără teste** | [0095](../SLICE-0022-01-istoric-endpoint.md#slice-0095) | Doar `IstoricView.vb`: `NodPerioada.Tot()` + `EsteTot`. Numărul din dreapta rădăcinii = toate rândurile, inclusiv cele fără dată (până acum fără nod în arbore). Clicul pe rădăcină renunță și la intervalul cerut de FOREXE (0073). FileVersion KBot.App nebumped (îl cere `push-update.ps1`). |
+| 0095 | **Istoric: nod rădăcină «Tot istoricul»** (cererea operatorului, 29.09.2026) | GATA pe cod (build KBot.App **0 erori**) / **nevăzut pe ecran, fără teste** | [0095](../SLICE-0022-01-istoric-endpoint.md#slice-0095) | Ierarhia, filtrele/intervalul FOREXE, numărătoarea cu rânduri fără dată și FileVersion: în jurnalul 0095. |
 | 0095-02 | Extrase — subsolul, fereastra și lățimea meniului | GATA pe cod (build KBot.App **0 avertismente, 0 erori**) / **nevăzut pe ecran, fără teste** | [0095-02](../SLICE-0096-extrase-display-menu.md#slice-0095-02) | Subpas separat de Istoric 0095; ipoteze, limite și FileVersion în jurnal. |
 
 ### Open threads
@@ -166,17 +163,11 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
-| 0099 | **`PrintCount`: de câte ori a fost trimis la imprimantă un document (cererea operatorului, 01.10.2026)** — coloană `PrintCount int NOT NULL DEFAULT 0` pe `FX_DDF_PDF`, `FX_ORD_PDF`, `FX_NoteCAB_PDF`, `FX_NoteCAB_Recipisa` și, pentru documentele NESEMNATE (fără rând de PDF), pe `FX_DDF_REV` și `FX_ORD` (`sql/0099_print_count.sql`). K-BOT nu are comandă de tipărire: operatorul tipărește din Adobe, iar K-BOT vede lucrarea în coada de tipărire Windows (`AdobePrintWatcher` + `PrintSpooler`, un singur fir pentru tot procesul, doar cât e un document afișat); fereastra de tipărire Adobe, văzută de capcana «Salvare ca», doar îndesește citirea cozii. O lucrare nouă care poartă numele fișierului afișat = o tipărire → `POST …/print` (`routes/forexe/print_count.py`); serverul alege rândul (PDF-ul păstrat, altfel rândul documentului). «Microsoft Print to PDF» se numără. Legat în `DdfView` / `OrdView` / `NoteCabView` prin `PdfPrintTarget` → `ReaderHostPreview`, și în bancul de semnare (`PdfSigningHarnessForm`). **Partea 2 (aceeași zi, tot 0099): lista de tipărire** — pe o lună sau pe rădăcina «Toate…» din ORD și DDF, dreapta arată `PrintListPage` (grilă: bifă cu meniu în antet «toate» / «doar nelistate», Document, Semnături, Semnat la, Listat, Nr. tipăriri) cu «Generează și imprimă» (documentele pregătite și trimise la imprimantă prin verbul `printto`, fără să fie deschise) și «Salvează local» (dosar ales); «Listat» bifat la 0 tipăriri întreabă o dată, «Da» = o tipărire numărată, fără mesaj după. Rutele de listă `GET /api/forexe/ddf` / `/ord` întorc `print_count` (PDF + document; 0 unde SQL-ul nu a rulat) | GATA pe cod (build KBot.App Debug + Release **0 avertismente, 0 erori**) / **nimic rulat: nicio tipărire, nicio rută chemată, SQL neaplicat; fără teste** | `SLICE-0099-print-count.md` | Partea 1 nu are nimic vizibil; partea 2 e vizibilă și e în ajutor (`contabil.vederi.ord`, `contabil.ddf`, etichetă 0099). KBot.Controls 1.59.0.0, KBot.Api 1.0.17.0, KBot.Domain 1.2.9.0; KBot.App la `push-update.ps1`. Ordinea de deploy: SQL-ul pe fiecare bază + `AVACONT_SURSA`, apoi `print_count.py` + `__init__.py` pe VPS, apoi clientul. `PrintCount` nu e afișat nicăieri. |
+| 0099 | **PrintCount și lista de tipărire ORD/DDF** (cererea operatorului, 01.10.2026): contorul din partea 1, lista și comenzile din partea 2. Contractele, câmpurile și limitele rămân în jurnal. | GATA pe cod (build KBot.App Debug + Release **0 avertismente, 0 erori**) / **nimic rulat: nicio tipărire, nicio rută chemată, SQL neaplicat; fără teste** | [0099](../SLICE-0099-print-count.md) | Partea 1 nu are nimic vizibil; partea 2 e vizibilă și e în ajutor (`contabil.vederi.ord`, `contabil.ddf`, etichetă 0099). KBot.Controls 1.59.0.0, KBot.Api 1.0.17.0, KBot.Domain 1.2.9.0; KBot.App la `push-update.ps1`. Ordinea de deploy: SQL-ul pe fiecare bază + `AVACONT_SURSA`, apoi `print_count.py` + `__init__.py` pe VPS, apoi clientul. `PrintCount` nu e afișat nicăieri. |
 
 ### Open threads
 
 - **0099 — nimic rulat.** De probat pe banc (DevHarness → semnarea PDF): Ctrl+P în Adobe, apoi liniile «[Adobe] Tipărire…» din jurnal.
-- **0099 — numele lucrării Adobe e o presupunere** (numele fișierului). Dacă e altul, nu se numără nimic; jurnalul arată lucrarea cu «nu poartă numele unui document deschis în K-BOT».
-- **0099 — titlul / clasa ferestrei de tipărire Adobe sunt presupuneri**; dacă sunt greșite se pierde doar citirea deasă (250 ms), numărarea rămâne.
-- **0099 — «Microsoft Print to PDF» și capcana «Salvare ca» (risc nemăsurat):** fereastra în care acea imprimantă cere locul fișierului e o fereastră standard de fișier; dacă aparține procesului Adobe, capcana feliei 0078 îi scrie calea documentului și apasă «Salvare». Capcana NU a fost schimbată aici.
-- **0099 — imprimante de rețea:** Windows anunță doar cozile calculatorului; pe cele de rețea lucrarea se găsește la citirea periodică (2 s / 250 ms).
-- **0099 — sesiune expirată:** apelul merge direct la client (fără reautentificare); tipărirea se scrie în jurnal ca nenumărată. O notă CAB fără PDF păstrat nu se numără.
-- **0099 (lista de tipărire) — nimic rulat, nimic văzut pe ecran.** De probat: clic pe o lună / «Toate» în ORD și DDF; meniul din antetul bifelor; «Listat» la 0 tipăriri; «Salvează local»; «Generează și imprimă» pe o imprimantă reală.
-- **0099 (lista de tipărire) — tipărirea fără fereastră merge prin verbul `printto` al programului de PDF** (Adobe Reader îl are). Fără un program de PDF care îl înregistrează, fiecare document se raportează cu mesajul shell-ului. Copiile cerute în fereastra imprimantei se fac prin repetarea trimiterii; numărătoarea crește cu 1 pe document. Nu se verifică dacă lucrarea a ajuns pe hârtie — doar că programul de PDF a terminat.
-- **0099 (lista de tipărire) — documentul semnat se tipărește așa cum e pe server** (pentru o revizie DDF semnată doar pe A și trimisă, fără Secțiunea B pusă în fișier). Cele nesemnate se generează în `TempPdf`, ca «Generează».
+- **0099 — observarea tipăririi:** [ipotezele și limitele](../SLICE-0099-print-count.md#left-unverified-or-deferred) păstrează numele lucrării, titlul/clasa ferestrei, ritmurile 2 s/250 ms, riscul nemăsurat Microsoft Print to PDF/Salvare ca (capcana neatinsă), rețeaua, sesiunea expirată fără reautentificare și nota CAB fără PDF. Nicio probă nouă.
+- **0099 — lista de tipărire, nerulată și nevăzută:** [probele UI și limitele părții 2](../SLICE-0099-print-count.md#left-unverified-or-deferred-part-2) păstrează comenzile, dependența `printto`, copiile/numărarea la terminarea programului (nu confirmarea hârtiei), PDF-ul semnat luat de pe server și generarea celui nesemnat în TempPdf. Fără handler `printto`, fiecare document raportează mesajul shellului.
 - **0099 — de deployat:** `sql/0099_print_count.sql` (în `AVACONT_SURSA` întâi `sql/0088_04`, tabela `FX_NoteCAB_Recipisa` lipsește acolo în dump-ul din 22.09.2026), `print_count.py`, `routes/forexe/__init__.py`. `sql/AVACONT_SURSA.sql` și `MariaDB_Schema/` neactualizate.

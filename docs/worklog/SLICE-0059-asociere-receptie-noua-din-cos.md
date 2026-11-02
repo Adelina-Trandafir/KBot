@@ -10,7 +10,7 @@ Cererea operatorului: în `AsociereForm`, clic dreapta pe un instantaneu din arb
 
 ## 1. Ce lipsea, de fapt
 
-Coșul din dreapta avea până acum exact două ieșiri: **pune instantaneul pe o recepție de aici** (tragere) sau **nu consemnează nicio schimbare** (F17, din meniu). Amândouă presupun că recepția lui există undeva.
+Coșul din dreapta avea două ieșiri: asociere prin tragere pe o recepție existentă sau F17 din meniu, fără schimbare consemnată. Ambele presupun că recepția există undeva.
 
 F26: recepția creată/ștearsă înaintea primei descărcări lipsește din ListaReceptii și FX_Receptii_R, dar instantaneele rămân în istoricul întreg. Fără țintă, coșul nu avea ieșire corectă; fără schimbare ar fi fost fals.
 
@@ -27,12 +27,12 @@ Nicio linie de Python nu s-a atins.
 Trei lucruri ies gratis din alegerea asta:
 
 - **Recepția dispare singură** când pleacă de pe ea și ultimul instantaneu — nu «rămâne goală» și nu trebuie ștearsă de nimeni.
-- **Toate suprafețele o văd fără să știe de ea**: arborele din stânga, graficul, benzile și țintele de tragere citesc acum `Receptiile()` (server + pornite aici) în loc de `_stare.Receptii`. Cheia de nod e `R:-1`, cheia de serie `R-1`, iar `IdrrDinCheie` le citește ca pe oricare altele.
+- **Suprafețe comune:** arborele stâng/graficul/benzile/țintele citesc `Receptiile()` (server + pornite aici), nu `_stare.Receptii`. Chei: nod `R:-1`, serie `R-1`, citite normal de `IdrrDinCheie`.
 - **`_stare` rămâne neatins**, adică rămâne adevărul de pe server, cu care se compară ce s-a schimbat.
 
 La fiecare mutare, cifrele sunt recalculate din lanț după regula de salvare a serverului: `DataR` = momentul celui mai vechi instantaneu; `SumaAntet` = totalul rândului de ștergere.
 
-`EtichetaTrimisa(-1)` = "R1". Numere nereciclate pe durata ferestrei: reutilizarea ar declara aceeași etichetă de două ori pe server, unde este permisă o singură declarare.
+EtichetaTrimisa(-1) = "R1". Numere nereciclate cât trăiește fereastra: serverul permite o singură declarare a fiecărei etichete.
 
 ---
 
@@ -40,7 +40,7 @@ La fiecare mutare, cifrele sunt recalculate din lanț după regula de salvare a 
 
 Serverul cere, pentru fiecare lanț reconstituit: exact o `reconstituire` (care declară eticheta), exact o `stergere`, iar ștergerea să fie **ultima** din lanț.
 
-`Comenzi()` (modul de oricând) și `DeciziiDin` (modul propunere) traduc la fel, prin aceeași pereche de funcții — `Declarantii…` alege **o dată** cine declară (primul instantaneu după `DataH`), iar `ActiuneaPeReceptieNoua` dă acțiunea rândului:
+Comenzi() (oricând) și DeciziiDin (propunere) folosesc aceeași pereche: Declarantii… alege primul instantaneu după DataH, o dată înaintea buclei; alegerea per rând ar putea declara eticheta de două ori sau deloc. ActiuneaPeReceptieNoua stabilește acțiunea:
 
 | rândul | acțiune | ce poartă |
 |---|---|---|
@@ -50,8 +50,6 @@ Serverul cere, pentru fiecare lanț reconstituit: exact o `reconstituire` (care 
 
 `Idrr` rămâne **nescris** pe toate trei: serverul cere exact una dintre `idrr` și `receptie_noua`, iar recepția nu are încă o cheie de numit.
 
-Declarantul se alege o dată, înaintea buclei; alegerea per rând ar putea emite două reconstituiri pentru etichetă ori niciuna.
-
 ---
 
 ## 4. Refuzurile care nu ajung la server
@@ -60,7 +58,7 @@ Declarantul se alege o dată, înaintea buclei; alegerea per rând ar putea emit
 
 **ProblemaReceptiilorNoi verifică §4c-bis înaintea salvării**, în ambele moduri: minimum două instantanee, exact o ștergere, ultima în lanț. Altfel serverul respinge tot lotul; local butonul rămâne inactiv și banda explică lipsa.
 
-**Renunțarea** e în meniul rândului-recepție: pune înapoi în coș toate instantaneele, iar recepția piere cu ele. Fără ea, o recepție pornită din greșeală s-ar desface doar desprinzând instantaneele unul câte unul.
+**Renunțare**, în meniul recepției: toate instantaneele revin în coș și recepția dispare. Altfel anularea pornirii greșite ar cere desprinderea fiecărui instantaneu.
 
 ---
 

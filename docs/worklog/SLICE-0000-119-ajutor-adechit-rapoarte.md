@@ -1,7 +1,7 @@
 # SLICE-0000-119 - Ajutor pentru filele VERCON / ADECHIT si pagina «ADECHIT Rapoarte» (21.10.2026, felia 0123-01)
 
 ## What changed and why
-- **`contabil/adechit.md`** (new topic `contabil.adechit`, `screens: AdechitRapoarteForm`): how the page works (what is chosen on the left, the six reports and what each needs, the PDF on screen, «Salveaza Excel», that a button stays grey until everything it needs is chosen, that a problem is told on the line under the report).
+- **`contabil/adechit.md`** (new `contabil.adechit`, `screens: AdechitRapoarteForm`): left-side selections, six reports/requirements, PDF preview, «Salveaza Excel», buttons grey until required choices are made, errors below the report.
 - **`contabil/ribbon.md`**: the list of tabs has VERCON and ADECHIT; two table rows (VERCON › Vercon › «Trimite la Vercon»; ADECHIT › ADECHIT › «Rapoarte»).
 - **`contabil/efactura/index.md`**: «Trimiterea la Vercon» - the button is in the **VERCON** tab now (was E-Factura).
 - **`tutorials/efactura-trimite-la-vercon.md`**: the first step is the **VERCON** tab (`ribbon-tab.vercon`, signal `ribbon-tab:vercon`).

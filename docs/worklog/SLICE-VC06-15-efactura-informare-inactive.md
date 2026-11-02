@@ -2,8 +2,8 @@
 
 ## Comportament
 
-- Informare la intrarea în gestiune pentru facturile trimise de contabil cu rest de preluat sau asociat. Include facturi parțial asociate; exclude preluările integrale și marcajele Inactiv. Funcționează și înainte de deschiderea unui ecran NIR. Nu repetă informarea la simpla reîmprospătare a aceluiași context; revenirea din altă gestiune recitește situația.
-- Marcaj **global pentru unitate**, conform corecției explicite a utilizatorului: o factură ascunsă de un gestionar este ascunsă pentru toți. Nu este o preferință pe utilizator, subunitate, gestiune sau exercițiu.
+- La intrarea în gestiune, informare despre facturile contabilului cu rest de preluat/asociat, inclusiv cele parțial asociate; exclude preluările integrale/Inactiv. Apare și înaintea ecranului NIR, fără repetare la reîmprospătarea aceluiași context; revenirea din altă gestiune recitește situația.
+- Marcaj **global unității**, conform corecției explicite: ascunderea de către un gestionar se aplică tuturor, fără preferință pe utilizator/subunitate/gestiune/exercițiu.
 - Active este filtrul implicit în lista de preluare și selectorul din asociere. Inactive și Toate permit restaurarea prin debifarea Inactiv. Facturile inactive preluate între timp integral rămân accesibile pentru restaurare. Nu se limitează răspunsul listei la primele 500 de facturi.
 - Lista de preluare folosește DGV-ul comun, cu coloană Inactiv (checkbox), tipuri reale pentru date/sume/stare și sortare cronologică implicită. Numărul pozițiilor, expeditorul și nota contabilului sunt în mesajul selecției, cu elipsis și tooltipul custom pentru textele lungi.
 - Fereastra de asociere păstrează ComboBox-ul custom și încărcarea automată. Bifa Inactiv și filtrul sunt pe aceeași bară; asocierile nesalvate sunt protejate prin confirmare înainte de schimbarea afișării.

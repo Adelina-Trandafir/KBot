@@ -16,11 +16,11 @@ Cheile citite (cele care sunt deja în `tree_image_list`, plus una nouă):
 | revizie preluată ▼ | `down` | da |
 | revizie neutră | `neutral` | **nu** → cade pe GDI până când operatorul pune poza |
 
-Câștig secundar: luna are acum două poze distincte (închis / deschis), pe care structura arborelui le suporta dintotdeauna — înainte ambele stări primeau aceeași imagine GDI.
+Luna folosește acum imaginile distincte închis/deschis deja suportate de arbore, în locul aceleiași imagini GDI pentru ambele stări.
 
-**2. `ItemHeight` 24 → 30.** Singura dimensiune care mai diferea. Fontul (`Calibri 9`) și dimensiunile iconițelor (`LeftIconSize 16`, `RightIconSize 14`) erau deja identice cu ale `RezervariView` — felia 0027-03 aliniase deja benzile de antet/subsol.
+**2. `ItemHeight` 24 → 30**, singura dimensiune încă diferită: `Calibri 9`, `LeftIconSize 16`, `RightIconSize 14` coincideau deja cu `RezervariView`; 0027-03 aliniase antetul/subsolul.
 
-**Nimic altceva.** Structura, cheile nodurilor, etichetele, valorile, tooltip-urile și comportamentul arborelui DDF sunt neatinse. `MinimumCollapsedWidth` (80 la DDF, 120 la Rezervări) a rămas cum era: e o lățime de strângere, nu o dimensiune de font/iconiță, iar arborele DDF stă într-un panou cu alte proporții.
+Structura, cheile, etichetele, valorile, tooltipurile și comportamentul rămân. `MinimumCollapsedWidth` (DDF 80, Rezervări 120) păstrează lățimea de strângere pentru panouri cu proporții diferite; nu ține de font/iconițe.
 
 Compatibil cu `PLAN_DdfSubViews` (felia 0032) în ambele sensuri: arborele rămâne în `DdfView.split.Panel1` indiferent dacă refactorizarea sub-paginilor a aterizat sau nu.
 

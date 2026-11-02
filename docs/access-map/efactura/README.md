@@ -34,11 +34,28 @@ Ignore everything named `in_lucru`, `old` or `copy` (and the `_` prefix: `_MF201
 
 ## Form-page conventions
 
-These conventions apply to the 21 form records (18 pages after grouping the three PDF viewers and the EF_F pair); every record retains its source filename, source character count and raw-export path.
+These conventions apply to the 21 form records (18 pages after grouping the three PDF viewers and the EF_F pair); every record retains its source filename, source character count and raw-export path. Each Source entry uses the full raw-export path once.
 
 Units are twips (1 inch = 1440). `Parent` is the tab page or group a control sits in, or - for a label - the control it is attached to. Positions are relative to the section that holds the control; `LayoutCached*` values are used when present.
 
 The exact RecordSource SQL is kept once in the page's Data section; its properties row links there when it previously repeated the same SQL. Different SQL, bindings, controls and event rows remain explicit per form; the EF_F_inlucru record replaces only named cells/rows of EF_F and inherits identical ones.
+
+Note_EFactura inherits only the named properties, sections and controls of MF2019_Asoc_EF, with explicit omissions and complete replacement rows. It keeps its own provenance, declarations, handler dependencies and static-scan limit; shared layout does not imply shared behaviour.
+
+### Shared form properties — P1 <a id="form-properties-p1"></a>
+
+Only property tables explicitly marked **P1** inherit the following exact exported values. Their local rows add properties or override these values; all other absent properties remain absent, without inferred defaults. This profile does not apply to unmarked records. `NotDefault` retains its exported spelling and is not converted to a Boolean.
+
+| Property | P1 value |
+|---|---|
+| NavigationButtons | NotDefault |
+| RecordSelectors | NotDefault |
+| DividingLines | NotDefault |
+| ScrollBars | 0 |
+| GridY | 10 |
+| TabularCharSet | 238 |
+| DatasheetFontName | Calibri |
+| DatasheetFontHeight | 11 |
 
 ### Module declarations
 

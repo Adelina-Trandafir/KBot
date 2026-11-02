@@ -4,9 +4,9 @@ Data: 30.10.2026. **IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.**
 
 Utilizatorul arată că, după îngroșare, conturul albastru nu se suprapune vizual peste liniile negre ale rândului. Captura a fost citită, inclusiv culorile și pozițiile liniilor, fără a fi copiată sau modificată în proiect.
 
-VC09-16 păstra intenționat conturul complet în interiorul dreptunghiului interactiv (`outline: 2px`, `outline-offset: -2px`). Acest lucru deplasează centrul grosimii spre interior față de marginea geometrică a rândului. Acum offsetul devine **-1px**, pentru a centra conturul de 2px pe acea margine.
+VC09-16 păstra intenționat conturul în interior (`outline: 2px`, `outline-offset: -2px`), deplasând centrul grosimii față de marginea geometrică a rândului. Offsetul devine **-1px**, centrând conturul de 2px pe acea margine.
 
-În plus, stratul de adnotări al previzualizării interactive VERCON este dimensionat explicit la **100% din lățimea și înălțimea conținutului paginii**, la fel ca suprafața de afișare a canvasului. Această regulă prevalează peste dimensiunile inline independente ale PDF.js. Pozițiile și dimensiunile procentuale ale rândurilor continuă să provină din dreptunghiurile PDF reale; nu se adaugă translații fixe pe X/Y. Regula `content-box` din VC09-14 rămâne activă.
+Stratul de adnotări al previzualizării interactive VERCON primește explicit **100% din lățimea și înălțimea conținutului paginii**, ca suprafața canvasului, prevalând peste dimensiunile inline independente PDF.js. Pozițiile/dimensiunile procentuale rămân din dreptunghiurile PDF reale, fără translații fixe X/Y; `content-box` din VC09-14 rămâne activ.
 
 Fișier funcțional: `PYTHON/static/css/vercon-stock-card.css`. Selectorii sunt limitați la previzualizarea interactivă VERCON; nu se modifică rendererul, coordonatele din PDF, bibliotecile terțe, datele sau exporturile. Acest worklog este legat din indicii VERCON.
 

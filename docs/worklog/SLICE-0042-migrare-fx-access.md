@@ -35,9 +35,9 @@ Două lucruri prinse la scris, care ar fi produs JSON invalid:
 
 Auto-atribuirea, și **nu** `INSERT IGNORE`: `IGNORE` degradează la avertisment și erorile de tip, trunchierile și violările de constrângere, adică ar înghiți eșecuri reale. Forma aleasă suprimă exclusiv cazul cheii duplicate. Sub ea `rowcount` e 1 pe rând inserat și 0 pe duplicat sărit, deci răspunsul poartă `inserted` și `skipped` exacte. `truncate_first` împreună cu `insert_missing` → `400`: golești tabelul și apoi ceri să nu suprascrii nimic.
 
-**`GET|POST /seed/ids`**, read-only. Allow-list **proprie și îngustă** — `{("FX_DDF","IDDF"), ("FX_DDF_REV","IDREV")}` — nu `ALLOWED_TABLES`, fiindcă ruta citește tocmai tabelele pe care seed-ul are interzis să le scrie. Valorile sunt întregi și intră în SQL doar parametrizate; identificatorii vin exclusiv din perechea de mai sus. Varianta POST există pentru loturi prea mari pentru un URL. Garda rămâne `@require_api_key`, mesajele românești cu diacritice reale, `ensure_ascii=False`.
+**`GET|POST /seed/ids`**, read-only: allow-list proprie `{("FX_DDF","IDDF"), ("FX_DDF_REV","IDREV")}`, fiindcă citește tabele interzise scrierii seed; nu folosește `ALLOWED_TABLES`. Valorile întregi sunt parametrizate, identificatorii provin exclusiv din aceste perechi. POST primește loturi prea mari pentru URL. Garda `@require_api_key`, mesajele românești cu diacritice și `ensure_ascii=False` rămân.
 
-O abatere conștientă de la `/columns`: acolo un tabel inexistent întoarce `200` cu listă goală, fiindcă lista goală e un răspuns cu sens. Aici întoarce **500 cu mesaj explicit**, nu `200` cu «toate lipsesc» — alea două sunt diagnostice complet diferite, iar al doilea ar minți.
+Spre deosebire de `/columns` (`200`, listă goală cu sens), tabelul inexistent produce aici **500 cu mesaj explicit**; `200` / «toate lipsesc» ar ascunde cauza.
 
 ### Partea C — `KBot.Migrator`
 
@@ -62,9 +62,9 @@ Structura:
 
 Detalii care merită ținute minte:
 
-- **Valorile nu se re-tipizează niciodată pe drum.** Celulele se păstrează ca `JsonElement` clonate și se scriu înapoi cu `WriteTo`. Un `Decimal(28,6)` trecut printr-un `Double` .NET s-ar rotunji tăcut, iar o migrare n-are voie să schimbe nicio valoare.
-- **Două treceri de rutare, memorie mărginită.** Verificarea rutează o dată ca să numere și să culeagă id-urile DDF, apoi uită rândurile; transferul recitește fișierele. Altfel `FX_Istoric` + `FX_Extrase_F` ar trebui ținute întregi în memorie.
-- **`FX_Extrase_F` se multiplică intenționat.** Un fișier de extras poate purta linii pentru mai multe unități, deci același rând aparține legitim mai multor baze. Contorul `Duplicated` ține copiile suplimentare, ca socoteala de la pasul 7 să închidă exact.
+- **Fără re-tipizare:** celulele rămân `JsonElement` clonate, scrise cu `WriteTo`. Conversia `Decimal(28,6)` → `Double` .NET ar rotunji tăcut; migrarea trebuie să păstreze valorile.
+- **Două treceri, memorie mărginită:** verificarea rutează pentru numărare/id-uri DDF, apoi uită rândurile; transferul recitește fișierele, evitând păstrarea integrală a `FX_Istoric` + `FX_Extrase_F` în memorie.
+- **`FX_Extrase_F` se multiplică intenționat:** extrasul poate avea linii pentru mai multe unități, deci rândul aparține mai multor baze. `Duplicated` numără copiile suplimentare pentru bilanțul exact de la pasul 7.
 - **Părinți contradictorii:** FX_Receptii_IMG/FX_Receptii_Plati încearcă primul părinte, apoi al doilea ca retragere. Ambii prezenți cu DC diferite opresc rularea; alegerea unuia ar muta date în baza greșită.
 - **Orfanii nu se pierd.** Un rând a cărui cheie de rutare nu se rezolvă nu se scrie și nu dispare: pleacă în CSV-ul de respinse cu cheia primară și motivul, iar rularea continuă.
 - **ExportArtifacts/, nu Artifacts/:** .gitignore:66 artifacts/ ignoră și majusculele pe Windows. Cinci fișiere omise de git add -A permiteau build local, dar nu pe clonă. Redenumirea evită git add -f și protejează adăugările viitoare.
@@ -95,9 +95,9 @@ Detalii care merită ținute minte:
 3. **`Cai.json` — forma nu e specificată în plan.** Am ales aceeași formă ca un chunk (`table`/`columns`/`rows`), ca migratorul să-l parseze cu același cod. `[Cai]` NU e listat printre `manifest.tables`; are o intrare proprie, `manifest.cai`.
 4. **Coloanele lui `[Cai]`** nu sunt documentate nicăieri în depozit — `cale.accdb` nu e exportat. Că are `IdUnitate` și `DC` e **verificat**, dar indirect: din `FX_System_Export/MODULES/mdl_FX_Tasks_Receive_DWN.md`, care face `INNER JOIN Cai ON CG.IdUnitate=Cai.IdUnitate ... AND Cai.DC='...'`. Că `IdUnitate` e cheia primară e presupunerea 1 din plan, confirmată de tine, nu de un fișier.
 5. **Presupunerea 3 este acum verificată:** `FX_Angajamente` **are** coloană `DC` (Text 255) — `FX_System_Export/TABLES/FX_Angajamente.md`, iar datele-eșantion o arată completată (`045_CTER`). Ramura de retragere pe `IdUnitate` rămâne implementată, ca plasă.
-6. **`rowcount` sub `mysql-connector-python`.** Driverul e `mysql.connector`, iar `inserted` / `skipped` se bazează pe faptul că `executemany` rescrie INSERT-ul cu `ON DUPLICATE KEY UPDATE` într-un singur enunț multi-rând și că `rowcount` iese 1/inserat și 0/duplicat (adică fără `CLIENT_FOUND_ROWS`). Aia e comportarea documentată, dar **nu a fost măsurată aici**. Dacă iese altfel, socoteala de la pasul 7 va reclama, ceea ce e exact ce trebuie să facă — nu va scrie greșit, va raporta greșit.
+6. **`rowcount` / `mysql-connector-python`.** Cu driverul `mysql.connector`, `inserted` / `skipped` presupun că `executemany` rescrie INSERT-ul cu `ON DUPLICATE KEY UPDATE` într-un enunț multi-rând, cu `rowcount` 1/inserat și 0/duplicat (fără `CLIENT_FOUND_ROWS`). Comportament documentat, **nemăsurat aici**; alt rezultat ar afecta raportarea, nu scrierea, și ar fi semnalat de bilanțul pasului 7.
 7. **Cheia API nu e în planul de ecran.** Rutele de seed sunt păzite cu `X-Api-Key` și fără ea utilitarul nu poate vorbi cu serverul, așa că am adăugat un câmp mascat în regiunea «Surse», preîncărcat din variabila de mediu `KBOT_SEED_API_KEY` dacă e pusă. Nu se scrie nicăieri pe disc.
-8. **Respinsele nu se pot atribui unui DC** — prin definiție, un rând respins e unul care nu se rutează nicăieri. Planul cere fișiere per DC; ca fiecare fișier să fie complet citit singur, respinsele se scriu în CSV-ul **fiecărui** DC selectat, la fel ca secțiunile globale ale jurnalului. Dacă preferi un singur fișier de respinse pe rulare, e o schimbare mică.
+8. **Respinsele nu se pot atribui unui DC:** nu se pot ruta. Planul cere fișiere per DC; CSV-ul fiecărui DC selectat include toate respinsele, ca secțiunile globale ale jurnalului, pentru citire independentă. Un singur fișier de respinse pe rulare rămâne o alternativă de ales.
 9. **`FX_PRT_EXPL` și `FX_CopacAngajamente`** rămân în afara domeniului și **neverificate**, ca în plan. Exportatorul le caută în `TableDefs` și, dacă există, le **raportează** (în `manifest.unexpected_tables` și în caseta finală) fără să le exporte.
 10. **Numărul feliei.** Planul îl lăsa în seama ta; l-am luat pe 0042, următorul liber declarat în registru. Registrul are în continuare gaura cunoscută la 0038/0039 — n-am atins-o.
 

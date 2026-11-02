@@ -9,7 +9,7 @@ Construit si probat in `KBOT_TEST`, adus in `KBOT\src` la 13.10.2026. Istoria: `
    - grupul **E-Factura**: **«Vanzare»** (`efactura_vanzare`, macheta registrului; fosta intrare «E-Factura» din MENIU, `FacturiForm`, facturile emise) si **«Cumparare»** (`efactura_cumparare`, nou: `PrimiteForm` ca pagina, toate facturile primite ale anului, cu cautare);
    - grupul **ANAF**: **«Token ANAF»** (`ef_token`, `TokenForm`, dialog) si **«Sincronizeaza facturi primite»** (`ef_primite_sync`, `SincronizarePrimiteForm`, dialog), deschise direct din `KbotForm.EFactura.vb`.
 2. **Optiunile din bara de titlu a `FacturiForm` au iesit**: `capBar.ShowOptionsButton = False`; meniul lui (Conturi Unitate, Date Unitate, Sincronizeaza facturi primite, Facturi primite) e inlocuit de butoanele din ribbon.
-3. **Fila «Configurari» › grupul «Unitate»**: **«Conturi Unitate»** (`ConturiForm`) si **«Date Unitate»** (`DateUnitateForm`), dialoguri, se deschid direct (`KbotForm.RunUnitCommand`), fara fereastra E-Factura deschisa. Daca aceea e deschisa, afla ce s-a salvat (`FacturiForm.UnitDataChangedElsewhere` / `UnitAccountsChangedElsewhere`).
+3. **«Configurari» › «Unitate»**: dialogurile **«Conturi Unitate»** (`ConturiForm`) / **«Date Unitate»** (`DateUnitateForm`) se deschid direct prin `KbotForm.RunUnitCommand`, fara E-Factura deschisa. Daca e deschisa, primeste salvarile prin `FacturiForm.UnitDataChangedElsewhere` / `UnitAccountsChangedElsewhere`.
 4. Machetele E-Factura sunt pagini (0113): «Iesire» al ferestrelor de facturi e ascuns; se inchid din «Inchide» al ribbonului. A doua cerere aduce in fata pagina deja deschisa.
 
 ## Fisiere

@@ -25,7 +25,7 @@ Operator request, 26.09.2026:
 - **Window** `ParteneriForm`: tree (code | name columns, search), filters «Arată partenerii ascunși» / «Ascunde partenerii fără activitate», details, «Coduri angajament» grid (combo of the unit's classifications, «+» / «✕»), Ieșire / Ștergere / Renunță / Adăugare / Salvare. «Adăugare» proposes the next free numeric code.
 
 ### 0087-03 KBotDropDownMenu (KBot.Controls/Menu/)
-New component + `KBotMenuItem` collection (nested for submenus), `KBotMenuWindow`. Windows never activate; a message filter reads the keys and closes on outside clicks. Doc: `src/KBot.Controls/Menu/KBotDropDownMenu.md`. Not an extension of `CustomPopup`: that one activates (it needs focus for its keyboard), which rules out several open levels.
+New component, nested `KBotMenuItem` collection for submenus, `KBotMenuWindow`. Nonactivating windows; message filter handles keys/outside-click closure. Doc: `src/KBot.Controls/Menu/KBotDropDownMenu.md`. `CustomPopup` needs keyboard focus/activation, preventing several open levels, so it was not extended.
 
 Small generic additions to existing controls, needed by the windows:
 - `KBotDataView.FooterRightIcon` (+ tooltip, event, rect) — its own corner square; `RemoveRowAt`.

@@ -11,7 +11,7 @@ New files in `src/KBot.App/HelpContent/tours/` (11 tours in all now):
 - `tur-setari.md` (6) — the pages Informații, Aplicație, FOREXE, Autentificare, Jurnal. No tour for the ORD editor or the Asocieri window: both are modal, and a modal window disables the tour's bubble.
 
 ## Fix found while writing
-`contabil/setari.md` said password change lives on «Autentificare». It is on **Informații** (`SetariInfoView`: lblTitluParola / txtParolaActuala / ...); «Autentificare» holds what the login window remembers («Uită datele memorate») and the server address. Table fixed (0000-03 error).
+Fixed the 0000-03 table error in `contabil/setari.md`: password change is on **Informații** (`SetariInfoView`: lblTitluParola / txtParolaActuala / ...), not «Autentificare», which holds remembered login data («Uită datele memorate») and server address.
 
 ## Test results
 `Check-Help.ps1`: 43 topics, 11 tours, 47 capture tags, no errors. Build App 0 warnings, 0 errors. No tour run on screen.

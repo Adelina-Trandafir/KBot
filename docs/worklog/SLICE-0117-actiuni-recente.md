@@ -7,7 +7,7 @@ Construit si probat in `KBOT_TEST`, adus in `KBOT\src` la 13.10.2026 (doar clien
 ## Ce s-a schimbat si de ce
 1. **Decizie: actiunile se scriu in tabela `Jurnal` de pe server, cu lista alba de rute.** Un hook `after_request` pe server scrie, pentru fiecare POST / PUT / DELETE reusit, cu sesiune, al carui (metoda, regula) e in lista alba `_LABELS`, un rand `Actiune = 'SCRIERE'`, `Tinta` = ruta, `Detalii` = textul romanesc din lista. Fara schimbari de schema. Textele din `_LABELS` se completeaza pe masura ce apar rute noi care scriu date.
 2. **Ruta** `GET /api/actiuni?n=10`: ultimele actiuni ale operatorului pe unitatea curenta.
-3. **Clientul**: `RecentAction` (KBot.Common), `IActionsApi` + `ApiClient.Actions.vb` (KBot.Api), `KbotForm.GetRecentActionsAsync` (lista goala cand nu e unitate, cand ruta lipseste sau apelul cade: o lista de comoditate nu ajunge niciodata la operator ca eroare). Un server vechi nu are ruta -> 404 -> lista goala.
+3. **Clientul**: `RecentAction` (KBot.Common), `IActionsApi` + `ApiClient.Actions.vb` (KBot.Api), `KbotForm.GetRecentActionsAsync`: fara unitate, ruta lipsa (404 pe server vechi) sau apel esuat → lista goala, fara eroare pentru operator.
 4. **Lista in panoul lateral** (sectiunea «Actiuni recente», 0115): textul actiunii si ora (azi «HH:mm», altfel «dd.MM HH:mm»); tooltip cu data si ora intregi. Se reciteste la fiecare reimprospatare a panoului si **live**: `ServerGateHandler.WriteSucceeded` (eveniment Shared, dupa orice scriere reusita) porneste o citire la 2 s dupa ultima scriere dintr-o rafala (un singur GET). Randurile nu se pot apasa.
 
 ## Fisiere

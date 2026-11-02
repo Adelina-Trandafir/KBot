@@ -4,7 +4,7 @@ Operator: la defilarea cu butoanele in cadrul arborelui sa existe un switch (dac
 
 ## What changed and why
 - **Nu exista** un asemenea switch: `OnKeyDown` muta doar selectia (sageti, PageUp/PageDown, Home/End), iar `NodeMouseUp` (click-ul pe care il asculta gazdele) se ridica doar la Enter sau cu mouse-ul.
-- **`KBot.Controls/Tree/AdvancedTreeControl.Keyboard.vb`**: proprietate noua `ClickOnKeyNavigation As Boolean` (Category «K-BOT», implicit **False** = comportamentul de pana acum, deci nicio schimbare pentru arborii existenti). Pe True, de fiecare data cand o tasta de navigare schimba efectiv nodul selectat, se ridica `NodeMouseUp(nodul ajuns, Left, 1 click)` - acelasi eveniment ca la mouse si la Enter - si `pOldSelectedItem` se aliniaza ca la Enter. Stanga/Dreapta care doar pliaza/desfac un nod (selectia ramane pe loc) nu ridica nimic.
+- **`KBot.Controls/Tree/AdvancedTreeControl.Keyboard.vb`**: nou `ClickOnKeyNavigation As Boolean` (Category «K-BOT»), implicit **False**, pastrand comportamentul arborilor existenti. Pe True, schimbarea efectiva a nodului prin navigare ridica `NodeMouseUp(nodul ajuns, Left, 1 click)` (ca mouse/Enter) si aliniaza `pOldSelectedItem` ca Enter. Stanga/Dreapta care doar pliaza/desfac, fara schimbarea selectiei, nu ridica nimic.
 - `KBot.Controls` FileVersion 1.69.0.0 -> 1.70.0.0.
 - Nu se vede nimic nou pe ecran cat switch-ul e oprit si nicio fereastra nu l-a aprins inca => fara ajutor de actualizat.
 

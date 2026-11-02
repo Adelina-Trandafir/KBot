@@ -1,17 +1,16 @@
 # Form `EFACTURA_UM`
 
-Source: `Forms/EFACTURA_UM.txt` (29,005 chars). [Reading conventions](../README.md#form-page-conventions).
+Source: `Surse/RawExport/Forms/EFACTURA_UM.txt` (29,005 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
+
+Inherits [P1](../README.md#form-properties-p1).
 
 | Property | Value |
 |---|---|
 | Caption | FACTURI PRIMITE |
 | RecordSource | [SQL in Data](#data) |
 | AutoCenter | NotDefault |
-| NavigationButtons | NotDefault |
-| RecordSelectors | NotDefault |
-| DividingLines | NotDefault |
 | ScrollBars | 2 |
 | AllowAdditions | NotDefault |
 | AllowDeletions | NotDefault |
@@ -21,10 +20,6 @@ Source: `Forms/EFACTURA_UM.txt` (29,005 chars). [Reading conventions](../README.
 | Right | 18408 |
 | Bottom | 10308 |
 | FitToScreen | 1 |
-| GridY | 10 |
-| TabularCharSet | 238 |
-| DatasheetFontName | Calibri |
-| DatasheetFontHeight | 11 |
 
 Form events wired: none
 
@@ -75,5 +70,3 @@ See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 ## Opened from
 
 `form:EFACTURA_ADD_SUB`
-
-Raw source: `Surse/RawExport/Forms/EFACTURA_UM.txt`

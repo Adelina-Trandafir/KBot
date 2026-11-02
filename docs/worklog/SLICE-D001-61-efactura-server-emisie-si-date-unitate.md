@@ -1,5 +1,7 @@
 # SLICE-D001-61…86 — Istoricul curățării documentației (26.10.2026)
 
+Bază comună a căilor, centralizată în D003-83: SLICE-*.md este relativ la docs/worklog/. Celelalte căi rămân explicite; numerele, rezultatele și stările istorice nu se recalculează. În loturile acestui fișier, continuarea istorică era subfelia D001 imediat următoare.
+
 Reunire documentară D001-95. Fiecare lot păstrează titlul, data, rezultatul, inventarul complet, bilanțul/cumulul și continuarea istorică. Căile din inventare sunt proveniență, inclusiv când documentul a fost retras ulterior; numărătorile sunt cele consemnate atunci.
 
 Declarațiile identice ale tuturor loturilor de mai jos sunt centralizate aici: data 26.10.2026; numai documentație, aplicat local.
@@ -26,20 +28,20 @@ Opt etape sunt reunite în trei istorice: server 06/07, ecran 08/09/16, datele u
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-00EF-06-server-facturi-xml.md` | -26 |
-| `docs/worklog/SLICE-00EF-08-ecran-facturi-emise.md` | -49 |
-| `docs/worklog/SLICE-00EF-13-date-unitate.md` | -53 |
-| `docs/worklog/SLICE-00EF-07-trimitere-anaf.md` | 65 |
-| `docs/worklog/SLICE-00EF-09-arbore-meniu-trimitere.md` | 47 |
-| `docs/worklog/SLICE-00EF-12-conturi-unitate.md` | 27 |
-| `docs/worklog/SLICE-00EF-14-date-unitate-anaf.md` | 31 |
-| `docs/worklog/SLICE-00EF-16-corectie-luni-atasament.md` | 46 |
+| `SLICE-00EF-06-server-facturi-xml.md` | -26 |
+| `SLICE-00EF-08-ecran-facturi-emise.md` | -49 |
+| `SLICE-00EF-13-date-unitate.md` | -53 |
+| `SLICE-00EF-07-trimitere-anaf.md` | 65 |
+| `SLICE-00EF-09-arbore-meniu-trimitere.md` | 47 |
+| `SLICE-00EF-12-conturi-unitate.md` | 27 |
+| `SLICE-00EF-14-date-unitate-anaf.md` | 31 |
+| `SLICE-00EF-16-corectie-luni-atasament.md` | 46 |
 | `docs/worklog/PLAN_00EF_EFactura.md` | 0 |
-| `docs/worklog/SLICE-0000-56-ajutor-conturi.md` | 0 |
+| `SLICE-0000-56-ajutor-conturi.md` | 0 |
 | `docs/worklog/state/KBOT_STATUS_0000-0009.md` | 0 |
-| `docs/worklog/SLICE-D001-61-efactura-server-emisie-si-date-unitate.md` | -38 |
+| `SLICE-D001-61-efactura-server-emisie-si-date-unitate.md` | -38 |
 
-Bilanț: **14 căi; net 4 fișiere mai puțin; 49 rânduri mai puțin**. Cumul D001-01…61: **169 fișiere și 7595 rânduri mai puțin**. Continuare D001-62.
+Bilanț: **14 căi; net 4 fișiere mai puțin; 49 rânduri mai puțin**. Cumul D001-01…61: **169 fișiere și 7595 rânduri mai puțin**.
 
 ## SLICE-D001-62 — Facturi primite: server, arhive și client <a id="slice-d001-62"></a>
 
@@ -51,19 +53,19 @@ Bilanț: **14 căi; net 4 fișiere mai puțin; 49 rânduri mai puțin**. Cumul D
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-00EF-17-primite-server.md` | -16 |
-| `docs/worklog/SLICE-00EF-18-primite-client.md` | -59 |
-| `docs/worklog/SLICE-00EF-19-primite-ecran.md` | 20 |
-| `docs/worklog/SLICE-00EF-20-selector-ddf.md` | 16 |
-| `docs/worklog/SLICE-00EF-21-fila-doar-cu-facturi.md` | 12 |
-| `docs/worklog/SLICE-00EF-22-fila-din-arbore.md` | 12 |
-| `docs/worklog/SLICE-00EF-23-arhive-anaf-zip.md` | 23 |
+| `SLICE-00EF-17-primite-server.md` | -16 |
+| `SLICE-00EF-18-primite-client.md` | -59 |
+| `SLICE-00EF-19-primite-ecran.md` | 20 |
+| `SLICE-00EF-20-selector-ddf.md` | 16 |
+| `SLICE-00EF-21-fila-doar-cu-facturi.md` | 12 |
+| `SLICE-00EF-22-fila-din-arbore.md` | 12 |
+| `SLICE-00EF-23-arhive-anaf-zip.md` | 23 |
 | `docs/worklog/PLAN_00EF_EFactura.md` | 0 |
 | `docs/worklog/state/KBOT_STATUS_0000-0009.md` | 0 |
-| `docs/worklog/SLICE-00EF-28-mediu-vps.md` | -4 |
-| `docs/worklog/SLICE-D001-62-efactura-primite-server-si-client.md` | -37 |
+| `SLICE-00EF-28-mediu-vps.md` | -4 |
+| `SLICE-D001-62-efactura-primite-server-si-client.md` | -37 |
 
-Bilanț: **13 căi; net 4 fișiere mai puțin; 34 rânduri adăugate**. Cumul D001-01…62: **173 fișiere și 7561 rânduri mai puțin**. Continuare D001-63.
+Bilanț: **13 căi; net 4 fișiere mai puțin; 34 rânduri adăugate**. Cumul D001-01…62: **173 fișiere și 7561 rânduri mai puțin**.
 
 ## SLICE-D001-63 — Facturi primite: evoluția ecranelor și popup-ul comun <a id="slice-d001-63"></a>
 
@@ -75,26 +77,26 @@ Zece etape 27/29…37 sunt grupate în istoricele existente: server/import, ecra
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-00EF-18-primite-client.md` | -200 |
-| `docs/worklog/SLICE-00EF-17-primite-server.md` | -31 |
-| `docs/worklog/SLICE-00EF-34-customPopup-combo-casuta.md` | -9 |
-| `docs/worklog/SLICE-00EF-27-primite-cpv-continut-operatii.md` | 56 |
-| `docs/worklog/SLICE-00EF-29-primite-arbore-furnizori.md` | 76 |
-| `docs/worklog/SLICE-00EF-30-primite-sincronizare-din-ribbon.md` | 33 |
-| `docs/worklog/SLICE-00EF-31-primite-fara-file-salvare-pdf.md` | 32 |
-| `docs/worklog/SLICE-00EF-32-primite-rezultat-sincronizare.md` | 34 |
-| `docs/worklog/SLICE-00EF-33-primite-actualizare-in-subsol.md` | 37 |
-| `docs/worklog/SLICE-00EF-35-primite-optiuni-arbore.md` | 29 |
-| `docs/worklog/SLICE-00EF-36-primite-xml-in-editor.md` | 47 |
-| `docs/worklog/SLICE-00EF-37-primite-meniu-actualizare-server.md` | 45 |
-| `docs/worklog/SLICE-0000-73-ajutor-efactura-ribbon.md` | 0 |
-| `docs/worklog/SLICE-0000-75-ajutor-primite-arbore.md` | 0 |
-| `docs/worklog/SLICE-0114-ribbon.md` | 0 |
-| `docs/worklog/SLICE-0119-efactura-ribbon.md` | 0 |
+| `SLICE-00EF-18-primite-client.md` | -200 |
+| `SLICE-00EF-17-primite-server.md` | -31 |
+| `SLICE-00EF-34-customPopup-combo-casuta.md` | -9 |
+| `SLICE-00EF-27-primite-cpv-continut-operatii.md` | 56 |
+| `SLICE-00EF-29-primite-arbore-furnizori.md` | 76 |
+| `SLICE-00EF-30-primite-sincronizare-din-ribbon.md` | 33 |
+| `SLICE-00EF-31-primite-fara-file-salvare-pdf.md` | 32 |
+| `SLICE-00EF-32-primite-rezultat-sincronizare.md` | 34 |
+| `SLICE-00EF-33-primite-actualizare-in-subsol.md` | 37 |
+| `SLICE-00EF-35-primite-optiuni-arbore.md` | 29 |
+| `SLICE-00EF-36-primite-xml-in-editor.md` | 47 |
+| `SLICE-00EF-37-primite-meniu-actualizare-server.md` | 45 |
+| `SLICE-0000-73-ajutor-efactura-ribbon.md` | 0 |
+| `SLICE-0000-75-ajutor-primite-arbore.md` | 0 |
+| `SLICE-0114-ribbon.md` | 0 |
+| `SLICE-0119-efactura-ribbon.md` | 0 |
 | `docs/worklog/state/KBOT_STATUS_0000-0009.md` | 0 |
-| `docs/worklog/SLICE-D001-63-efactura-primite-evolutie-si-popup.md` | -44 |
+| `SLICE-D001-63-efactura-primite-evolutie-si-popup.md` | -44 |
 
-Bilanț: **20 căi; net 8 fișiere mai puțin; 104 rânduri mai puțin**. Cumul D001-01…63: **181 fișiere și 7665 rânduri mai puțin**. Continuare D001-64.
+Bilanț: **20 căi; net 8 fișiere mai puțin; 104 rânduri mai puțin**. Cumul D001-01…63: **181 fișiere și 7665 rânduri mai puțin**.
 
 ## SLICE-D001-64 — Ajutor E-Factura: emitere și primite <a id="slice-d001-64"></a>
 
@@ -106,32 +108,32 @@ Bilanț: **20 căi; net 8 fișiere mai puțin; 104 rânduri mai puțin**. Cumul 
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-0000-54-ajutor-efactura.md` | -105 |
-| `docs/worklog/SLICE-0000-61-ajutor-facturi-primite.md` | -148 |
-| `docs/worklog/SLICE-0000-55-ajutor-facturi-emise.md` | 28 |
-| `docs/worklog/SLICE-0000-56-ajutor-conturi.md` | 20 |
-| `docs/worklog/SLICE-0000-57-ajutor-arbore-facturi.md` | 27 |
-| `docs/worklog/SLICE-0000-58-ajutor-date-unitate.md` | 21 |
-| `docs/worklog/SLICE-0000-60-ajutor-corectie-luni-atasament.md` | 7 |
-| `docs/worklog/SLICE-0000-62-ajutor-fereastra-primite.md` | 7 |
-| `docs/worklog/SLICE-0000-63-ajutor-leaga-ddf.md` | 7 |
-| `docs/worklog/SLICE-0000-64-ajutor-fila-doar-cu-facturi.md` | 4 |
-| `docs/worklog/SLICE-0000-65-ajutor-fila-din-arbore.md` | 3 |
-| `docs/worklog/SLICE-0000-66-ajutor-arhiva-zip.md` | 3 |
-| `docs/worklog/SLICE-0000-75-ajutor-primite-arbore.md` | 25 |
-| `docs/worklog/SLICE-0000-76-ajutor-ribbon-sincronizare.md` | 18 |
-| `docs/worklog/SLICE-0000-77-ajutor-primite-fara-file.md` | 12 |
-| `docs/worklog/SLICE-0000-78-ajutor-rezultat-sincronizare.md` | 11 |
-| `docs/worklog/SLICE-0000-79-ajutor-actualizare-in-subsol.md` | 13 |
-| `docs/worklog/SLICE-0000-80-ajutor-optiuni-arbore.md` | 11 |
-| `docs/worklog/SLICE-0000-81-ajutor-xml-factura.md` | 11 |
-| `docs/worklog/SLICE-0000-82-ajutor-meniu-actualizare.md` | 11 |
-| `docs/worklog/SLICE-00EF-08-ecran-facturi-emise.md` | 0 |
-| `docs/worklog/SLICE-00EF-13-date-unitate.md` | 0 |
+| `SLICE-0000-54-ajutor-efactura.md` | -105 |
+| `SLICE-0000-61-ajutor-facturi-primite.md` | -148 |
+| `SLICE-0000-55-ajutor-facturi-emise.md` | 28 |
+| `SLICE-0000-56-ajutor-conturi.md` | 20 |
+| `SLICE-0000-57-ajutor-arbore-facturi.md` | 27 |
+| `SLICE-0000-58-ajutor-date-unitate.md` | 21 |
+| `SLICE-0000-60-ajutor-corectie-luni-atasament.md` | 7 |
+| `SLICE-0000-62-ajutor-fereastra-primite.md` | 7 |
+| `SLICE-0000-63-ajutor-leaga-ddf.md` | 7 |
+| `SLICE-0000-64-ajutor-fila-doar-cu-facturi.md` | 4 |
+| `SLICE-0000-65-ajutor-fila-din-arbore.md` | 3 |
+| `SLICE-0000-66-ajutor-arhiva-zip.md` | 3 |
+| `SLICE-0000-75-ajutor-primite-arbore.md` | 25 |
+| `SLICE-0000-76-ajutor-ribbon-sincronizare.md` | 18 |
+| `SLICE-0000-77-ajutor-primite-fara-file.md` | 12 |
+| `SLICE-0000-78-ajutor-rezultat-sincronizare.md` | 11 |
+| `SLICE-0000-79-ajutor-actualizare-in-subsol.md` | 13 |
+| `SLICE-0000-80-ajutor-optiuni-arbore.md` | 11 |
+| `SLICE-0000-81-ajutor-xml-factura.md` | 11 |
+| `SLICE-0000-82-ajutor-meniu-actualizare.md` | 11 |
+| `SLICE-00EF-08-ecran-facturi-emise.md` | 0 |
+| `SLICE-00EF-13-date-unitate.md` | 0 |
 | `docs/worklog/state/KBOT_STATUS_0000-0009.md` | 0 |
-| `docs/worklog/SLICE-D001-64-ajutor-efactura-emise-si-primite.md` | -50 |
+| `SLICE-D001-64-ajutor-efactura-emise-si-primite.md` | -50 |
 
-Bilanț: **26 căi; net 17 fișiere mai puțin; 65 rânduri adăugate**. Cumul D001-01…64: **198 fișiere și 7600 rânduri mai puțin**. Continuare D001-65.
+Bilanț: **26 căi; net 17 fișiere mai puțin; 65 rânduri adăugate**. Cumul D001-01…64: **198 fișiere și 7600 rânduri mai puțin**.
 
 ## SLICE-D001-65 — Lista facturilor primite, transferul Access și trimiterea către VERCON <a id="slice-d001-65"></a>
 
@@ -143,25 +145,25 @@ Istoricele 40, 42, 44 și 47…49 sunt integrate în documentele funcționale, c
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-00EF-18-primite-client.md` | -17 |
-| `docs/worklog/SLICE-00EF-41-primite-lista-toate-facturile.md` | -28 |
-| `docs/worklog/SLICE-00EF-43-primite-access-trimite-preia.md` | -33 |
-| `docs/worklog/SLICE-00EF-45-trimitere-la-vercon-serverul.md` | -86 |
-| `docs/worklog/SLICE-00EF-38-migrator-legare-automata-receptii.md` | 18 |
-| `docs/worklog/SLICE-00EF-39-clasificatii-in-fereastra-de-legare.md` | 0 |
-| `docs/worklog/SLICE-00EF-46-combo-cu-grupe-pliabile.md` | 7 |
-| `docs/worklog/SLICE-00EF-40-arbore-primite-fara-contor-si-an.md` | 15 |
-| `docs/worklog/SLICE-00EF-42-lista-facturi-receptia-asociata.md` | 20 |
-| `docs/worklog/SLICE-00EF-44-preia-access-jurnal-mariadb.md` | 26 |
-| `docs/worklog/SLICE-00EF-47-trimite-la-vercon-fereastra.md` | 29 |
-| `docs/worklog/SLICE-00EF-48-pagina-trimite-la-vercon-in-ribbon.md` | 32 |
-| `docs/worklog/SLICE-00EF-49-vercon-cont-pentru-toate-liniile-un-furnizor.md` | 20 |
+| `SLICE-00EF-18-primite-client.md` | -17 |
+| `SLICE-00EF-41-primite-lista-toate-facturile.md` | -28 |
+| `SLICE-00EF-43-primite-access-trimite-preia.md` | -33 |
+| `SLICE-00EF-45-trimitere-la-vercon-serverul.md` | -86 |
+| `SLICE-00EF-38-migrator-legare-automata-receptii.md` | 18 |
+| `SLICE-00EF-39-clasificatii-in-fereastra-de-legare.md` | 0 |
+| `SLICE-00EF-46-combo-cu-grupe-pliabile.md` | 7 |
+| `SLICE-00EF-40-arbore-primite-fara-contor-si-an.md` | 15 |
+| `SLICE-00EF-42-lista-facturi-receptia-asociata.md` | 20 |
+| `SLICE-00EF-44-preia-access-jurnal-mariadb.md` | 26 |
+| `SLICE-00EF-47-trimite-la-vercon-fereastra.md` | 29 |
+| `SLICE-00EF-48-pagina-trimite-la-vercon-in-ribbon.md` | 32 |
+| `SLICE-00EF-49-vercon-cont-pentru-toate-liniile-un-furnizor.md` | 20 |
 | `docs/worklog/state/KBOT_STATUS_0000-0009.md` | 0 |
-| `docs/worklog/SLICE-0000-122-ajutor-vercon-cont-pentru-toate-liniile.md` | 0 |
+| `SLICE-0000-122-ajutor-vercon-cont-pentru-toate-liniile.md` | 0 |
 | `docs/EV_PLAN.md` | 56 |
-| `docs/worklog/SLICE-D001-65-efactura-lista-access-si-trimitere-vercon.md` | -43 |
+| `SLICE-D001-65-efactura-lista-access-si-trimitere-vercon.md` | -43 |
 
-Bilanț: **19 căi; net 5 fișiere mai puțin; 15 rânduri mai puțin**. Cumul D001-01…65: **203 fișiere și 7615 rânduri mai puțin**. Continuare D001-66.
+Bilanț: **19 căi; net 5 fișiere mai puțin; 15 rânduri mai puțin**. Cumul D001-01…65: **203 fișiere și 7615 rânduri mai puțin**.
 
 ## SLICE-D001-66 — Ajutorul E-Factura: lista primitelor și trimiterea către VERCON <a id="slice-d001-66"></a>
 
@@ -173,21 +175,21 @@ Amendamentele 93/94/96…98 sunt integrate în istoricele ajutorului E-Factura e
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-0000-61-ajutor-facturi-primite.md` | -62 |
-| `docs/worklog/SLICE-0000-54-ajutor-efactura.md` | -17 |
-| `docs/worklog/SLICE-0000-116-ajutor-trimitere-la-vercon.md` | -56 |
-| `docs/worklog/SLICE-0000-93-ajutor-efactura-vedere-fara-furnizor.md` | 13 |
-| `docs/worklog/SLICE-0000-94-ajutor-efactura-atasamente-in-continut.md` | 13 |
-| `docs/worklog/SLICE-0000-96-ajutor-arbore-primite-fara-contor-si-an.md` | 13 |
-| `docs/worklog/SLICE-0000-97-ajutor-primite-lista-toate-facturile.md` | 13 |
-| `docs/worklog/SLICE-0000-98-ajutor-lista-facturi-receptia-asociata.md` | 13 |
-| `docs/worklog/SLICE-0000-117-ajutor-pagina-vercon-din-ribbon.md` | 13 |
-| `docs/worklog/SLICE-0000-118-tutorial-trimite-la-vercon.md` | 15 |
-| `docs/worklog/SLICE-0000-122-ajutor-vercon-cont-pentru-toate-liniile.md` | 16 |
+| `SLICE-0000-61-ajutor-facturi-primite.md` | -62 |
+| `SLICE-0000-54-ajutor-efactura.md` | -17 |
+| `SLICE-0000-116-ajutor-trimitere-la-vercon.md` | -56 |
+| `SLICE-0000-93-ajutor-efactura-vedere-fara-furnizor.md` | 13 |
+| `SLICE-0000-94-ajutor-efactura-atasamente-in-continut.md` | 13 |
+| `SLICE-0000-96-ajutor-arbore-primite-fara-contor-si-an.md` | 13 |
+| `SLICE-0000-97-ajutor-primite-lista-toate-facturile.md` | 13 |
+| `SLICE-0000-98-ajutor-lista-facturi-receptia-asociata.md` | 13 |
+| `SLICE-0000-117-ajutor-pagina-vercon-din-ribbon.md` | 13 |
+| `SLICE-0000-118-tutorial-trimite-la-vercon.md` | 15 |
+| `SLICE-0000-122-ajutor-vercon-cont-pentru-toate-liniile.md` | 16 |
 | `docs/worklog/state/KBOT_STATUS_0000-0009.md` | 0 |
-| `docs/worklog/SLICE-D001-66-ajutor-efactura-lista-si-vercon.md` | -39 |
+| `SLICE-D001-66-ajutor-efactura-lista-si-vercon.md` | -39 |
 
-Bilanț: **15 căi; net 7 fișiere mai puțin; 66 rânduri adăugate**. Cumul D001-01…66: **210 fișiere și 7549 rânduri mai puțin**. Continuare D001-67.
+Bilanț: **15 căi; net 7 fișiere mai puțin; 66 rânduri adăugate**. Cumul D001-01…66: **210 fișiere și 7549 rânduri mai puțin**.
 
 ## SLICE-D001-67 — Recepții: model, clasificații, legare și robot <a id="slice-d001-67"></a>
 
@@ -199,23 +201,23 @@ Bilanț: **15 căi; net 7 fișiere mai puțin; 66 rânduri adăugate**. Cumul D0
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-KE01-modelul-legaturii-si-calculele.md` | -2 |
-| `docs/worklog/SLICE-KE02-angajament-si-clasificatii-pe-linii.md` | -53 |
-| `docs/worklog/SLICE-KE04-legare-de-receptie-existenta.md` | -71 |
-| `docs/worklog/SLICE-KE05-robotul-si-receptie-noua-in-forexe.md` | -32 |
-| `docs/worklog/SLICE-KE01-02-fisa-angajament.md` | 12 |
-| `docs/worklog/SLICE-KE03-vederea-receptii.md` | 19 |
-| `docs/worklog/SLICE-KE06-receptie-noua-din-factura.md` | 21 |
-| `docs/worklog/SLICE-KE07-modificarea-unei-receptii.md` | 19 |
-| `docs/worklog/SLICE-KE09-receptie-noua-format-site-si-eroare.md` | 35 |
-| `docs/worklog/SLICE-KE10-o-receptie-noua-pentru-mai-multe-facturi.md` | 22 |
-| `docs/worklog/SLICE-00EF-39-clasificatii-in-fereastra-de-legare.md` | 24 |
+| `SLICE-KE01-modelul-legaturii-si-calculele.md` | -2 |
+| `SLICE-KE02-angajament-si-clasificatii-pe-linii.md` | -53 |
+| `SLICE-KE04-legare-de-receptie-existenta.md` | -71 |
+| `SLICE-KE05-robotul-si-receptie-noua-in-forexe.md` | -32 |
+| `SLICE-KE01-02-fisa-angajament.md` | 12 |
+| `SLICE-KE03-vederea-receptii.md` | 19 |
+| `SLICE-KE06-receptie-noua-din-factura.md` | 21 |
+| `SLICE-KE07-modificarea-unei-receptii.md` | 19 |
+| `SLICE-KE09-receptie-noua-format-site-si-eroare.md` | 35 |
+| `SLICE-KE10-o-receptie-noua-pentru-mai-multe-facturi.md` | 22 |
+| `SLICE-00EF-39-clasificatii-in-fereastra-de-legare.md` | 24 |
 | `docs/worklog/state/KBOT_STATUS_KE.md` | 6 |
 | `docs/worklog/state/KBOT_STATUS_0000-0009.md` | 0 |
 | `docs/KE_PLAN.md` | 81 |
-| `docs/worklog/SLICE-D001-67-receptii-model-clasificatii-legare-si-robot.md` | -41 |
+| `SLICE-D001-67-receptii-model-clasificatii-legare-si-robot.md` | -41 |
 
-Bilanț: **17 căi; net 5 fișiere mai puțin; 39 rânduri mai puțin**. Cumul D001-01…67: **215 fișiere și 7588 rânduri mai puțin**. Continuare D001-68.
+Bilanț: **17 căi; net 5 fișiere mai puțin; 39 rânduri mai puțin**. Cumul D001-01…67: **215 fișiere și 7588 rânduri mai puțin**.
 
 ## SLICE-D001-68 — Recepții: evoluția paginii și a propunerilor <a id="slice-d001-68"></a>
 
@@ -227,23 +229,23 @@ KE11/12/12-02/12-04/13/14/15 sunt reunite în istoricul paginii, KE16/17 în ist
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-KE12-receptii-pagina-in-ribbon.md` | -210 |
-| `docs/worklog/SLICE-KE12-03-dgv-casete-de-bifat.md` | 9 |
-| `docs/worklog/SLICE-KE16-propuneri-legare-in-bloc.md` | -43 |
-| `docs/worklog/SLICE-KE11-fereastra-receptiei-dupa-macheta.md` | 73 |
-| `docs/worklog/SLICE-KE12-02-copac-cautare-si-ordine.md` | 52 |
-| `docs/worklog/SLICE-KE12-04-formularul-receptiei-in-vederi.md` | 32 |
-| `docs/worklog/SLICE-KE13-arborele-receptiilor-toate-facturile.md` | 37 |
-| `docs/worklog/SLICE-KE14-factura-rezolvata-in-pagina-receptii.md` | 28 |
-| `docs/worklog/SLICE-KE15-sume-in-formatul-ferestrei-si-rest-receptie.md` | 28 |
-| `docs/worklog/SLICE-KE17-propuneri-angajament-suma-si-grupuri.md` | 35 |
+| `SLICE-KE12-receptii-pagina-in-ribbon.md` | -210 |
+| `SLICE-KE12-03-dgv-casete-de-bifat.md` | 9 |
+| `SLICE-KE16-propuneri-legare-in-bloc.md` | -43 |
+| `SLICE-KE11-fereastra-receptiei-dupa-macheta.md` | 73 |
+| `SLICE-KE12-02-copac-cautare-si-ordine.md` | 52 |
+| `SLICE-KE12-04-formularul-receptiei-in-vederi.md` | 32 |
+| `SLICE-KE13-arborele-receptiilor-toate-facturile.md` | 37 |
+| `SLICE-KE14-factura-rezolvata-in-pagina-receptii.md` | 28 |
+| `SLICE-KE15-sume-in-formatul-ferestrei-si-rest-receptie.md` | 28 |
+| `SLICE-KE17-propuneri-angajament-suma-si-grupuri.md` | 35 |
 | `docs/worklog/state/KBOT_STATUS_KE.md` | 0 |
-| `docs/worklog/SLICE-KE02-angajament-si-clasificatii-pe-linii.md` | 0 |
-| `docs/worklog/SLICE-KE04-legare-de-receptie-existenta.md` | 0 |
+| `SLICE-KE02-angajament-si-clasificatii-pe-linii.md` | 0 |
+| `SLICE-KE04-legare-de-receptie-existenta.md` | 0 |
 | `docs/KE_PLAN.md` | 0 |
-| `docs/worklog/SLICE-D001-68-receptii-pagina-propuneri-si-checkpointuri.md` | -41 |
+| `SLICE-D001-68-receptii-pagina-propuneri-si-checkpointuri.md` | -41 |
 
-Bilanț: **17 căi; net 6 fișiere mai puțin; 1 rânduri adăugate**. Cumul D001-01…68: **221 fișiere și 7587 rânduri mai puțin**. Continuare D001-69.
+Bilanț: **17 căi; net 6 fișiere mai puțin; 1 rânduri adăugate**. Cumul D001-01…68: **221 fișiere și 7587 rânduri mai puțin**.
 
 ## SLICE-D001-69 — Ajutorul recepțiilor: vedere, pagină și propuneri <a id="slice-d001-69"></a>
 
@@ -255,24 +257,24 @@ Paisprezece jurnale ale aceleiași secțiuni sunt reunite în 0000-83, cu ancore
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-0000-83-ajutor-receptiile-facturilor-primite.md` | -148 |
-| `docs/worklog/SLICE-0000-95-ajutor-clasificatii-in-fereastra-de-legare.md` | 13 |
-| `docs/worklog/SLICE-0000-99-ajutor-o-receptie-pentru-mai-multe-facturi.md` | 14 |
-| `docs/worklog/SLICE-0000-101-ajutor-fereastra-receptiei.md` | 16 |
-| `docs/worklog/SLICE-0000-102-ajutor-pagina-receptii.md` | 16 |
-| `docs/worklog/SLICE-0000-103-ajutor-copac-receptii.md` | 14 |
-| `docs/worklog/SLICE-0000-104-ajutor-casete-de-bifat.md` | 14 |
-| `docs/worklog/SLICE-0000-105-ajutor-formularul-receptiei-in-vederi.md` | 14 |
-| `docs/worklog/SLICE-0000-108-ajutor-arborele-receptiilor.md` | 14 |
-| `docs/worklog/SLICE-0000-109-ajutor-factura-rezolvata.md` | 14 |
-| `docs/worklog/SLICE-0000-111-ajutor-sume-si-rest-receptie.md` | 5 |
-| `docs/worklog/SLICE-0000-112-ajutor-legare-in-bloc-propuneri.md` | 5 |
-| `docs/worklog/SLICE-0000-114-ajutor-pagina-receptii-angajamente-ale-furnizorului.md` | 13 |
-| `docs/worklog/SLICE-0000-115-ajutor-propuneri-angajament-suma-grupuri.md` | 5 |
+| `SLICE-0000-83-ajutor-receptiile-facturilor-primite.md` | -148 |
+| `SLICE-0000-95-ajutor-clasificatii-in-fereastra-de-legare.md` | 13 |
+| `SLICE-0000-99-ajutor-o-receptie-pentru-mai-multe-facturi.md` | 14 |
+| `SLICE-0000-101-ajutor-fereastra-receptiei.md` | 16 |
+| `SLICE-0000-102-ajutor-pagina-receptii.md` | 16 |
+| `SLICE-0000-103-ajutor-copac-receptii.md` | 14 |
+| `SLICE-0000-104-ajutor-casete-de-bifat.md` | 14 |
+| `SLICE-0000-105-ajutor-formularul-receptiei-in-vederi.md` | 14 |
+| `SLICE-0000-108-ajutor-arborele-receptiilor.md` | 14 |
+| `SLICE-0000-109-ajutor-factura-rezolvata.md` | 14 |
+| `SLICE-0000-111-ajutor-sume-si-rest-receptie.md` | 5 |
+| `SLICE-0000-112-ajutor-legare-in-bloc-propuneri.md` | 5 |
+| `SLICE-0000-114-ajutor-pagina-receptii-angajamente-ale-furnizorului.md` | 13 |
+| `SLICE-0000-115-ajutor-propuneri-angajament-suma-grupuri.md` | 5 |
 | `docs/worklog/state/KBOT_STATUS_0000-0009.md` | 0 |
-| `docs/worklog/SLICE-D001-69-ajutor-receptii-pagina-si-propuneri.md` | -42 |
+| `SLICE-D001-69-ajutor-receptii-pagina-si-propuneri.md` | -42 |
 
-Bilanț: **18 căi; net 12 fișiere mai puțin; 34 rânduri adăugate**. Cumul D001-01…69: **233 fișiere și 7553 rânduri mai puțin**. Continuare D001-70.
+Bilanț: **18 căi; net 12 fișiere mai puțin; 34 rânduri adăugate**. Cumul D001-01…69: **233 fișiere și 7553 rânduri mai puțin**.
 
 ## SLICE-D001-70 — Repararea rezervărilor și ajutorul corecțiilor DDF <a id="slice-d001-70"></a>
 
@@ -284,20 +286,20 @@ Istoricul 0114-26 este integrat în 0114-25 cu limite distincte: confirmarea ope
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-0114-25-repara-rezervari-fereastra-previzualizare.md` | -50 |
-| `docs/worklog/SLICE-0114-26-rezervari-legate-gresit.md` | 45 |
-| `docs/worklog/SLICE-0114-27-program-ddf-dupa-ss-indicatori.md` | 0 |
-| `docs/worklog/SLICE-0120-ddf-randul-de-jos.md` | 6 |
-| `docs/worklog/SLICE-0000-110-ajutor-repara-rezervari-fereastra.md` | -41 |
-| `docs/worklog/SLICE-0000-120-ajutor-rezervari-legate-gresit.md` | 15 |
-| `docs/worklog/SLICE-0000-121-ajutor-program-ddf.md` | 16 |
-| `docs/worklog/SLICE-0000-69-ajutor-machete-ca-pagini.md` | -29 |
-| `docs/worklog/SLICE-0000-74-ajutor-ddf-randul-de-jos.md` | 34 |
+| `SLICE-0114-25-repara-rezervari-fereastra-previzualizare.md` | -50 |
+| `SLICE-0114-26-rezervari-legate-gresit.md` | 45 |
+| `SLICE-0114-27-program-ddf-dupa-ss-indicatori.md` | 0 |
+| `SLICE-0120-ddf-randul-de-jos.md` | 6 |
+| `SLICE-0000-110-ajutor-repara-rezervari-fereastra.md` | -41 |
+| `SLICE-0000-120-ajutor-rezervari-legate-gresit.md` | 15 |
+| `SLICE-0000-121-ajutor-program-ddf.md` | 16 |
+| `SLICE-0000-69-ajutor-machete-ca-pagini.md` | -29 |
+| `SLICE-0000-74-ajutor-ddf-randul-de-jos.md` | 34 |
 | `docs/worklog/state/KBOT_STATUS_0000-0009.md` | 0 |
 | `docs/worklog/state/KBOT_STATUS_0110-0119.md` | 0 |
-| `docs/worklog/SLICE-D001-70-reparare-rezervari-program-si-ajutor.md` | -38 |
+| `SLICE-D001-70-reparare-rezervari-program-si-ajutor.md` | -38 |
 
-Bilanț: **14 căi; net 3 fișiere mai puțin; 43 rânduri adăugate**. Cumul D001-01…70: **236 fișiere și 7510 rânduri mai puțin**. Continuare D001-71.
+Bilanț: **14 căi; net 3 fișiere mai puțin; 43 rânduri adăugate**. Cumul D001-01…70: **236 fișiere și 7510 rânduri mai puțin**.
 
 ## SLICE-D001-71 — Adobe: compactarea istoricelor bancului și gazdei comune <a id="slice-d001-71"></a>
 
@@ -307,9 +309,9 @@ Ambele istorice au fost citite integral. Paragrafele și continuările listelor 
 
 ### Files touched
 
-Inventar: `docs/worklog/SLICE-0023-adobe-rhp-harness.md` (334); `docs/worklog/SLICE-0024-01-adobe-shared-host.md` (303); `docs/worklog/SLICE-D001-71-adobe-istorice-compactare-paragrafe.md` (-29).
+Inventar: `SLICE-0023-adobe-rhp-harness.md` (334); `SLICE-0024-01-adobe-shared-host.md` (303); `SLICE-D001-71-adobe-istorice-compactare-paragrafe.md` (-29).
 
-Bilanț: **5 căi; net -1 fișiere mai puțin; 607 rânduri mai puțin**. Cumul D001-01…71: **235 fișiere și 8117 rânduri mai puțin**. Continuare D001-72.
+Bilanț: **5 căi; net -1 fișiere mai puțin; 607 rânduri mai puțin**. Cumul D001-01…71: **235 fișiere și 8117 rânduri mai puțin**.
 
 ## SLICE-D001-72 — Designer: NavList, fonturi și arbori <a id="slice-d001-72"></a>
 
@@ -319,9 +321,9 @@ Ambele istorice au fost citite integral și compactate la nivel de paragrafe/con
 
 ### Files touched
 
-Inventar: `docs/worklog/SLICE-0025-designer-surfaces.md` (512); `docs/worklog/SLICE-0027-tree-designer-surface.md` (299); `docs/worklog/SLICE-D001-72-designer-navlist-si-arbore-compactare.md` (-29).
+Inventar: `SLICE-0025-designer-surfaces.md` (512); `SLICE-0027-tree-designer-surface.md` (299); `SLICE-D001-72-designer-navlist-si-arbore-compactare.md` (-29).
 
-Bilanț: **5 căi; net -1 fișiere mai puțin; 781 rânduri mai puțin**. Cumul D001-01…72: **234 fișiere și 8898 rânduri mai puțin**. Continuare D001-73.
+Bilanț: **5 căi; net -1 fișiere mai puțin; 781 rânduri mai puțin**. Cumul D001-01…72: **234 fișiere și 8898 rânduri mai puțin**.
 
 ## SLICE-D001-73 — Migrare: istoricul HTTP și trecerea la citirea directă <a id="slice-d001-73"></a>
 
@@ -331,9 +333,9 @@ Ambele istorice au fost citite integral. S-au compactat paragrafele și continu�
 
 ### Files touched
 
-Inventar: `docs/worklog/SLICE-0044-migrare-accdb-impins.md` (477); `docs/worklog/SLICE-0045-01-descoperire-nomenclatoare.md` (484); `docs/worklog/SLICE-D001-73-migrare-http-si-directa-compactare.md` (-29).
+Inventar: `SLICE-0044-migrare-accdb-impins.md` (477); `SLICE-0045-01-descoperire-nomenclatoare.md` (484); `SLICE-D001-73-migrare-http-si-directa-compactare.md` (-29).
 
-Bilanț: **5 căi; net -1 fișiere mai puțin; 931 rânduri mai puțin**. Cumul D001-01…73: **233 fișiere și 9829 rânduri mai puțin**. Continuare D001-74.
+Bilanț: **5 căi; net -1 fișiere mai puțin; 931 rânduri mai puțin**. Cumul D001-01…73: **233 fișiere și 9829 rânduri mai puțin**.
 
 ## SLICE-D001-74 — Recorder: gazdele browserului și urmărirea paginii <a id="slice-d001-74"></a>
 
@@ -343,9 +345,9 @@ Istoricul gazdelor 0070/0074 este integrat în 0053, păstrând ancorele origina
 
 ### Files touched
 
-Inventar: `docs/worklog/SLICE-0053-recorder.md` (111); `docs/worklog/SLICE-0070-browserul-doar-andocat.md` (267); `docs/worklog/SLICE-0073-recorder-meniu-plutitor-urmarire.md` (186); `docs/worklog/state/KBOT_STATUS_0070-0079.md` (0); `docs/worklog/SLICE-D001-74-recorder-gazde-browser-si-urmarire.md` (-31).
+Inventar: `SLICE-0053-recorder.md` (111); `SLICE-0070-browserul-doar-andocat.md` (267); `SLICE-0073-recorder-meniu-plutitor-urmarire.md` (186); `docs/worklog/state/KBOT_STATUS_0070-0079.md` (0); `SLICE-D001-74-recorder-gazde-browser-si-urmarire.md` (-31).
 
-Bilanț: **7 căi; net 0 fișiere mai puțin; 532 rânduri mai puțin**. Cumul D001-01…74: **233 fișiere și 10361 rânduri mai puțin**. Continuare D001-75.
+Bilanț: **7 căi; net 0 fișiere mai puțin; 532 rânduri mai puțin**. Cumul D001-01…74: **233 fișiere și 10361 rânduri mai puțin**.
 
 ## SLICE-D001-75 — DataView: compactarea bazei și a istoricului filtrării <a id="slice-d001-75"></a>
 
@@ -355,9 +357,9 @@ Ambele istorice au fost citite integral. Numai compactarea paragrafelor și cont
 
 ### Files touched
 
-Inventar: `docs/worklog/SLICE-0028-dataview-footer-collapse-tooltip.md` (486); `docs/worklog/SLICE-0010-01-kbotdataview-skeleton.md` (215); `docs/worklog/SLICE-D001-75-dataview-contracte-si-filtrare-compactare.md` (-29).
+Inventar: `SLICE-0028-dataview-footer-collapse-tooltip.md` (486); `SLICE-0010-01-kbotdataview-skeleton.md` (215); `SLICE-D001-75-dataview-contracte-si-filtrare-compactare.md` (-29).
 
-Bilanț: **5 căi; net -1 fișiere mai puțin; 671 rânduri mai puțin**. Cumul D001-01…75: **232 fișiere și 11032 rânduri mai puțin**. Continuare D001-76.
+Bilanț: **5 căi; net -1 fișiere mai puțin; 671 rânduri mai puțin**. Cumul D001-01…75: **232 fișiere și 11032 rânduri mai puțin**.
 
 ## SLICE-D001-76 — ADECHIT: migratorul, reconcilierea și amendamentele <a id="slice-d001-76"></a>
 
@@ -369,27 +371,27 @@ Cincisprezece jurnale ADE5-01…14/ADE10-07 sunt reunite în două istorice: pip
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-ADE5-01-extract-read-only.md` | -15 |
-| `docs/worklog/SLICE-ADE5-04-ade-migrator.md` | -225 |
-| `docs/worklog/SLICE-ADE5-02-import-repetabil.md` | 5 |
-| `docs/worklog/SLICE-ADE5-03-reconciliere.md` | 5 |
-| `docs/worklog/SLICE-ADE5-05-migrator-oprire-jurnal.md` | 59 |
-| `docs/worklog/SLICE-ADE5-06-migrator-log-formular.md` | 47 |
-| `docs/worklog/SLICE-ADE5-07-migrator-dc-editabil.md` | 34 |
-| `docs/worklog/SLICE-ADE5-08-grupa-plecati.md` | 19 |
-| `docs/worklog/SLICE-ADE5-09-cnp-parinte.md` | 27 |
-| `docs/worklog/SLICE-ADE5-10-log-nou-pornire.md` | 26 |
-| `docs/worklog/SLICE-ADE5-11-cnp-lipsa-null.md` | 28 |
-| `docs/worklog/SLICE-ADE5-12-taxe-lipsa-null.md` | 24 |
-| `docs/worklog/SLICE-ADE5-13-chei-randuri-generate.md` | 21 |
-| `docs/worklog/SLICE-ADE5-14-oprire-fara-exceptie.md` | 26 |
-| `docs/worklog/SLICE-ADE10-07-migrator-chitante-dublate-si-platitori-reconstituiti.md` | 47 |
+| `SLICE-ADE5-01-extract-read-only.md` | -15 |
+| `SLICE-ADE5-04-ade-migrator.md` | -225 |
+| `SLICE-ADE5-02-import-repetabil.md` | 5 |
+| `SLICE-ADE5-03-reconciliere.md` | 5 |
+| `SLICE-ADE5-05-migrator-oprire-jurnal.md` | 59 |
+| `SLICE-ADE5-06-migrator-log-formular.md` | 47 |
+| `SLICE-ADE5-07-migrator-dc-editabil.md` | 34 |
+| `SLICE-ADE5-08-grupa-plecati.md` | 19 |
+| `SLICE-ADE5-09-cnp-parinte.md` | 27 |
+| `SLICE-ADE5-10-log-nou-pornire.md` | 26 |
+| `SLICE-ADE5-11-cnp-lipsa-null.md` | 28 |
+| `SLICE-ADE5-12-taxe-lipsa-null.md` | 24 |
+| `SLICE-ADE5-13-chei-randuri-generate.md` | 21 |
+| `SLICE-ADE5-14-oprire-fara-exceptie.md` | 26 |
+| `SLICE-ADE10-07-migrator-chitante-dublate-si-platitori-reconstituiti.md` | 47 |
 | `ADECHIT/PLAN_IMPLEMENTARE.md` | 35 |
 | `docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md` | 0 |
 | `docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md` | 0 |
-| `docs/worklog/SLICE-D001-76-adechit-migrator-istoric-si-plan.md` | -45 |
+| `SLICE-D001-76-adechit-migrator-istoric-si-plan.md` | -45 |
 
-Bilanț: **21 căi; net 12 fișiere mai puțin; 117 rânduri mai puțin**. Cumul D001-01…76: **244 fișiere și 11149 rânduri mai puțin**. Continuare D001-77.
+Bilanț: **21 căi; net 12 fișiere mai puțin; 117 rânduri mai puțin**. Cumul D001-01…76: **244 fișiere și 11149 rânduri mai puțin**.
 
 ## SLICE-D001-77 — ADECHIT: cataloage, prezență, taxe și amendamente UI <a id="slice-d001-77"></a>
 
@@ -401,35 +403,35 @@ Cele 25 jurnale ADE6 existente sunt citite integral și organizate în cinci doc
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-ADE6-01-cataloage.md` | -268 |
-| `docs/worklog/SLICE-ADE6-05-ferestre-platitori-taxe.md` | 55 |
-| `docs/worklog/SLICE-ADE6-06-machete-platitori.md` | 85 |
-| `docs/worklog/SLICE-ADE6-07-editare-dgv-formulare.md` | 41 |
-| `docs/worklog/SLICE-ADE6-10-platitori-mobil.md` | 41 |
-| `docs/worklog/SLICE-ADE6-11-coloane-inchis.md` | 17 |
-| `docs/worklog/SLICE-ADE6-12-butoane-deschidere-mobil.md` | 32 |
-| `docs/worklog/SLICE-ADE6-13-margine-fereastra-mobil.md` | 14 |
-| `docs/worklog/SLICE-ADE6-14-filtre-culori-dgv.md` | 19 |
-| `docs/worklog/SLICE-ADE6-16-latimi-scroll-dgv.md` | 21 |
-| `docs/worklog/SLICE-ADE6-17-platitor-activ-unic.md` | 22 |
-| `docs/worklog/SLICE-ADE6-23-fara-mesaj-platitori.md` | 14 |
-| `docs/worklog/SLICE-ADE6-24-educatori-email-cnp.md` | 70 |
-| `docs/worklog/SLICE-ADE6-02-prezenta.md` | -141 |
-| `docs/worklog/SLICE-ADE6-04-workspace-prezenta.md` | 25 |
-| `docs/worklog/SLICE-ADE6-08-bara-selectie-mobil.md` | 24 |
-| `docs/worklog/SLICE-ADE6-09-mobil-fara-mesaj.md` | 12 |
-| `docs/worklog/SLICE-ADE6-21-incarcare-lazy.md` | 56 |
-| `docs/worklog/SLICE-ADE6-22-ordonare-ultimul-an.md` | 35 |
-| `docs/worklog/SLICE-ADE6-26-colapsare-an-anterior.md` | 36 |
-| `docs/worklog/SLICE-ADE6-15-taxe-perioade.md` | -6 |
-| `docs/worklog/SLICE-ADE6-19-taxe-formular-compact.md` | 13 |
-| `docs/worklog/SLICE-ADE6-20-rand-nou-escape-validare-taxe.md` | 32 |
-| `docs/worklog/SLICE-ADE6-18-documentatie-thread.md` | 13 |
-| `docs/worklog/SLICE-ADE6-25-deadlock-lock-row.md` | 28 |
+| `SLICE-ADE6-01-cataloage.md` | -268 |
+| `SLICE-ADE6-05-ferestre-platitori-taxe.md` | 55 |
+| `SLICE-ADE6-06-machete-platitori.md` | 85 |
+| `SLICE-ADE6-07-editare-dgv-formulare.md` | 41 |
+| `SLICE-ADE6-10-platitori-mobil.md` | 41 |
+| `SLICE-ADE6-11-coloane-inchis.md` | 17 |
+| `SLICE-ADE6-12-butoane-deschidere-mobil.md` | 32 |
+| `SLICE-ADE6-13-margine-fereastra-mobil.md` | 14 |
+| `SLICE-ADE6-14-filtre-culori-dgv.md` | 19 |
+| `SLICE-ADE6-16-latimi-scroll-dgv.md` | 21 |
+| `SLICE-ADE6-17-platitor-activ-unic.md` | 22 |
+| `SLICE-ADE6-23-fara-mesaj-platitori.md` | 14 |
+| `SLICE-ADE6-24-educatori-email-cnp.md` | 70 |
+| `SLICE-ADE6-02-prezenta.md` | -141 |
+| `SLICE-ADE6-04-workspace-prezenta.md` | 25 |
+| `SLICE-ADE6-08-bara-selectie-mobil.md` | 24 |
+| `SLICE-ADE6-09-mobil-fara-mesaj.md` | 12 |
+| `SLICE-ADE6-21-incarcare-lazy.md` | 56 |
+| `SLICE-ADE6-22-ordonare-ultimul-an.md` | 35 |
+| `SLICE-ADE6-26-colapsare-an-anterior.md` | 36 |
+| `SLICE-ADE6-15-taxe-perioade.md` | -6 |
+| `SLICE-ADE6-19-taxe-formular-compact.md` | 13 |
+| `SLICE-ADE6-20-rand-nou-escape-validare-taxe.md` | 32 |
+| `SLICE-ADE6-18-documentatie-thread.md` | 13 |
+| `SLICE-ADE6-25-deadlock-lock-row.md` | 28 |
 | `docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md` | 40 |
-| `docs/worklog/SLICE-D001-77-adechit-cataloage-prezenta-si-taxe.md` | -53 |
+| `SLICE-D001-77-adechit-cataloage-prezenta-si-taxe.md` | -53 |
 
-Bilanț: **29 căi; net 19 fișiere mai puțin; 276 rânduri mai puțin**. Cumul D001-01…77: **263 fișiere și 11425 rânduri mai puțin**. Continuare D001-78.
+Bilanț: **29 căi; net 19 fișiere mai puțin; 276 rânduri mai puțin**. Cumul D001-01…77: **263 fișiere și 11425 rânduri mai puțin**.
 
 ## SLICE-D001-78 — ADECHIT: ciclul financiar, încasări și rapoarte <a id="slice-d001-78"></a>
 
@@ -441,29 +443,29 @@ Bilanț: **29 căi; net 19 fișiere mai puțin; 276 rânduri mai puțin**. Cumul
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-ADE7-01-faze-calcul.md` | -54 |
-| `docs/worklog/SLICE-ADE7-02-ciclu-m05.md` | 5 |
-| `docs/worklog/SLICE-ADE7-03-fixtures-comparator.md` | 5 |
-| `docs/worklog/SLICE-ADE7-04-inchidere-anuala.md` | 66 |
-| `docs/worklog/SLICE-ADE8-01-documente.md` | -86 |
-| `docs/worklog/SLICE-ADE8-02-chitante.md` | 4 |
-| `docs/worklog/SLICE-ADE8-03-idempotency.md` | 4 |
-| `docs/worklog/SLICE-ADE8-04-taburi-incasari.md` | 27 |
-| `docs/worklog/SLICE-ADE8-05-meniu-listare-pdf.md` | 38 |
-| `docs/worklog/SLICE-AD11-01-anulare-document.md` | 36 |
-| `docs/worklog/SLICE-ADE9-01-rapoarte.md` | -195 |
-| `docs/worklog/SLICE-ADE9-04-situatie-plata-html.md` | 67 |
-| `docs/worklog/SLICE-ADE9-05-sistem-rapoarte-comun-vercon.md` | 94 |
-| `docs/worklog/SLICE-ADE9-06-butoane-stil-vercon.md` | 41 |
-| `docs/worklog/SLICE-ADE9-07-rapoarte-loading-blocare.md` | 93 |
-| `docs/worklog/SLICE-ADE9-09-text-rapoarte-minus-2pt.md` | 23 |
-| `docs/worklog/SLICE-ADE9-10-help-capturi-extrase.md` | 13 |
-| `docs/worklog/SLICE-ADE9-08-resetare-eroare-la-actiune.md` | 13 |
+| `SLICE-ADE7-01-faze-calcul.md` | -54 |
+| `SLICE-ADE7-02-ciclu-m05.md` | 5 |
+| `SLICE-ADE7-03-fixtures-comparator.md` | 5 |
+| `SLICE-ADE7-04-inchidere-anuala.md` | 66 |
+| `SLICE-ADE8-01-documente.md` | -86 |
+| `SLICE-ADE8-02-chitante.md` | 4 |
+| `SLICE-ADE8-03-idempotency.md` | 4 |
+| `SLICE-ADE8-04-taburi-incasari.md` | 27 |
+| `SLICE-ADE8-05-meniu-listare-pdf.md` | 38 |
+| `SLICE-AD11-01-anulare-document.md` | 36 |
+| `SLICE-ADE9-01-rapoarte.md` | -195 |
+| `SLICE-ADE9-04-situatie-plata-html.md` | 67 |
+| `SLICE-ADE9-05-sistem-rapoarte-comun-vercon.md` | 94 |
+| `SLICE-ADE9-06-butoane-stil-vercon.md` | 41 |
+| `SLICE-ADE9-07-rapoarte-loading-blocare.md` | 93 |
+| `SLICE-ADE9-09-text-rapoarte-minus-2pt.md` | 23 |
+| `SLICE-ADE9-10-help-capturi-extrase.md` | 13 |
+| `SLICE-ADE9-08-resetare-eroare-la-actiune.md` | 13 |
 | `docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md` | -1 |
 | `implementare_vercon_v2.md` | 0 |
-| `docs/worklog/SLICE-D001-78-adechit-ciclu-incasari-si-rapoarte.md` | -47 |
+| `SLICE-D001-78-adechit-ciclu-incasari-si-rapoarte.md` | -47 |
 
-Bilanț: **23 căi; net 13 fișiere mai puțin; 145 rânduri mai puțin**. Cumul D001-01…78: **276 fișiere și 11570 rânduri mai puțin**. Continuare D001-79.
+Bilanț: **23 căi; net 13 fișiere mai puțin; 145 rânduri mai puțin**. Cumul D001-01…78: **276 fișiere și 11570 rânduri mai puțin**.
 
 ## SLICE-D001-79 — Portal părinți: implementare și corecturi <a id="slice-d001-79"></a>
 
@@ -473,9 +475,9 @@ AD11-02…05 integrate cronologic în AD11-01, cu ancore și confirmarea comună
 
 ### Files touched
 
-Inventar: `docs/worklog/SLICE-AD11-01-portal-parinti.md` (-74); `docs/worklog/SLICE-AD11-02-font-totaluri-scroll.md` (27); `docs/worklog/SLICE-AD11-03-conflicte-query-avacontpush.md` (35); `docs/worklog/SLICE-AD11-04-latimi-mobil.md` (17); `docs/worklog/SLICE-AD11-05-copil-parinte-linkuri.md` (68); `docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md` (0); `ADECHIT/PORTAL_PARINTI.md` (59); `docs/worklog/SLICE-D001-79-portal-parinti.md` (-34).
+Inventar: `SLICE-AD11-01-portal-parinti.md` (-74); `SLICE-AD11-02-font-totaluri-scroll.md` (27); `SLICE-AD11-03-conflicte-query-avacontpush.md` (35); `SLICE-AD11-04-latimi-mobil.md` (17); `SLICE-AD11-05-copil-parinte-linkuri.md` (68); `docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md` (0); `ADECHIT/PORTAL_PARINTI.md` (59); `SLICE-D001-79-portal-parinti.md` (-34).
 
-Bilanț: **10 căi; net 3 fișiere mai puțin; 97 rânduri mai puțin**. Cumul D001-01…79: **279 fișiere și 11667 rânduri mai puțin**. Continuare D001-80.
+Bilanț: **10 căi; net 3 fișiere mai puțin; 97 rânduri mai puțin**. Cumul D001-01…79: **279 fișiere și 11667 rânduri mai puțin**.
 
 ## SLICE-D001-80 — ADECHIT: pagina, preview și editare DataGrid <a id="slice-d001-80"></a>
 
@@ -487,19 +489,19 @@ Etapele ADE1-02…06 sunt într-un jurnal, iar ADE2-01…03 într-altul, cu anco
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-ADE1-01-implementare-partiala.md` | 25 |
-| `docs/worklog/SLICE-ADE1-02-pagina-aplicatie.md` | -83 |
-| `docs/worklog/SLICE-ADE1-03-preview-local.md` | 5 |
-| `docs/worklog/SLICE-ADE1-04-ecran-prezenta-access.md` | 28 |
-| `docs/worklog/SLICE-ADE1-05-initializare-blueprint.md` | 22 |
-| `docs/worklog/SLICE-ADE1-06-pornire-preview.md` | 48 |
-| `docs/worklog/SLICE-ADE2-01-editori-datagrid.md` | -15 |
-| `docs/worklog/SLICE-ADE2-02-salvare-validare.md` | 4 |
-| `docs/worklog/SLICE-ADE2-03-proba-browser.md` | 5 |
+| `SLICE-ADE1-01-implementare-partiala.md` | 25 |
+| `SLICE-ADE1-02-pagina-aplicatie.md` | -83 |
+| `SLICE-ADE1-03-preview-local.md` | 5 |
+| `SLICE-ADE1-04-ecran-prezenta-access.md` | 28 |
+| `SLICE-ADE1-05-initializare-blueprint.md` | 22 |
+| `SLICE-ADE1-06-pornire-preview.md` | 48 |
+| `SLICE-ADE2-01-editori-datagrid.md` | -15 |
+| `SLICE-ADE2-02-salvare-validare.md` | 4 |
+| `SLICE-ADE2-03-proba-browser.md` | 5 |
 | `docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md` | 0 |
-| `docs/worklog/SLICE-D001-80-pagina-preview-editare.md` | -37 |
+| `SLICE-D001-80-pagina-preview-editare.md` | -37 |
 
-Bilanț: **13 căi; net 5 fișiere mai puțin; 1 rânduri mai puțin**. Cumul D001-01…80: **284 fișiere și 11668 rânduri mai puțin**. Continuare D001-81.
+Bilanț: **13 căi; net 5 fișiere mai puțin; 1 rânduri mai puțin**. Cumul D001-01…80: **284 fișiere și 11668 rânduri mai puțin**.
 
 ## SLICE-D001-81 — ADECHIT: subunități de la schemă la predare <a id="slice-d001-81"></a>
 
@@ -511,17 +513,17 @@ ADE10-01…05 și completările ADE10-06 reunite în jurnalul AD10-01-schema-sub
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-AD10-01-schema-subunitati.md` | -131 |
-| `docs/worklog/SLICE-AD10-02-api-subunitati.md` | 71 |
-| `docs/worklog/SLICE-AD10-03-migrator-subunitati.md` | 42 |
-| `docs/worklog/SLICE-AD10-04-interfata-subunitati.md` | 57 |
-| `docs/worklog/SLICE-AD10-05-predare-subunitati.md` | 59 |
+| `SLICE-AD10-01-schema-subunitati.md` | -131 |
+| `SLICE-AD10-02-api-subunitati.md` | 71 |
+| `SLICE-AD10-03-migrator-subunitati.md` | 42 |
+| `SLICE-AD10-04-interfata-subunitati.md` | 57 |
+| `SLICE-AD10-05-predare-subunitati.md` | 59 |
 | `docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md` | 0 |
 | `ADECHIT/plan_subunitati.md` | 0 |
 | `ADECHIT_STATUS.md` | 0 |
-| `docs/worklog/SLICE-D001-81-subunitati-schema-api-predare.md` | -35 |
+| `SLICE-D001-81-subunitati-schema-api-predare.md` | -35 |
 
-Bilanț: **11 căi; net 3 fișiere mai puțin; 62 rânduri mai puțin**. Cumul D001-01…81: **287 fișiere și 11730 rânduri mai puțin**. Continuare D001-82.
+Bilanț: **11 căi; net 3 fișiere mai puțin; 62 rânduri mai puțin**. Cumul D001-01…81: **287 fișiere și 11730 rânduri mai puțin**.
 
 ## SLICE-D001-82 — KBotAdmin: interfață, registru și limitele probelor <a id="slice-d001-82"></a>
 
@@ -533,17 +535,17 @@ ME01-02/05/06 reunite cronologic cu ME01, inclusiv diagnosticul tray și cauza d
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-ME01-admin-desktop.md` | -53 |
-| `docs/worklog/SLICE-ME01-02-drepturi-adechit-vercon-macheta.md` | 16 |
-| `docs/worklog/SLICE-ME01-05-ribbon-si-ajustari-vizuale.md` | 52 |
-| `docs/worklog/SLICE-ME01-06-arbore-cu-bife-si-moduri.md` | 33 |
-| `docs/worklog/SLICE-ME01-03-privilegii-mariadb.md` | 58 |
-| `docs/worklog/SLICE-ME01-04-clonare-demo.md` | 7 |
+| `SLICE-ME01-admin-desktop.md` | -53 |
+| `SLICE-ME01-02-drepturi-adechit-vercon-macheta.md` | 16 |
+| `SLICE-ME01-05-ribbon-si-ajustari-vizuale.md` | 52 |
+| `SLICE-ME01-06-arbore-cu-bife-si-moduri.md` | 33 |
+| `SLICE-ME01-03-privilegii-mariadb.md` | 58 |
+| `SLICE-ME01-04-clonare-demo.md` | 7 |
 | `docs/worklog/state/KBOT_STATUS_ME01.md` | 11 |
 | `KBotAdmin/README.md` | 34 |
-| `docs/worklog/SLICE-D001-82-kbotadmin-interfata-si-stari.md` | -35 |
+| `SLICE-D001-82-kbotadmin-interfata-si-stari.md` | -35 |
 
-Bilanț: **11 căi; net 2 fișiere mai puțin; 122 rânduri mai puțin**. Cumul D001-01…82: **289 fișiere și 11852 rânduri mai puțin**. Continuare D001-83.
+Bilanț: **11 căi; net 2 fișiere mai puțin; 122 rânduri mai puțin**. Cumul D001-01…82: **289 fișiere și 11852 rânduri mai puțin**.
 
 ## SLICE-D001-83 — ADECHIT: planul subunităților și continuările distincte <a id="slice-d001-83"></a>
 
@@ -553,9 +555,9 @@ Lectură integrală și compactare de paragrafe/liste în plan_subunitati, auten
 
 ### Files touched
 
-Inventar: `docs/worklog/SLICE-AD10-01-drepturi-pe-sectiuni.md` (29); `docs/worklog/SLICE-AD10-11-zile-lucratoare-subunitate-rapoarte.md` (63); `docs/worklog/SLICE-AD12-01-ajutor-adechit.md` (15); `ADECHIT/plan_subunitati.md` (120); `docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md` (1); `docs/worklog/SLICE-D001-83-adechit-plan-si-continuari.md` (-32).
+Inventar: `SLICE-AD10-01-drepturi-pe-sectiuni.md` (29); `SLICE-AD10-11-zile-lucratoare-subunitate-rapoarte.md` (63); `SLICE-AD12-01-ajutor-adechit.md` (15); `ADECHIT/plan_subunitati.md` (120); `docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md` (1); `SLICE-D001-83-adechit-plan-si-continuari.md` (-32).
 
-Bilanț: **8 căi; net -1 fișiere mai puțin; 195 rânduri mai puțin**. Cumul D001-01…83: **288 fișiere și 12047 rânduri mai puțin**. Continuare D001-84.
+Bilanț: **8 căi; net -1 fișiere mai puțin; 195 rânduri mai puțin**. Cumul D001-01…83: **288 fișiere și 12047 rânduri mai puțin**.
 
 ## SLICE-D001-84 — ADECHIT: planificare și decizii succesive <a id="slice-d001-84"></a>
 
@@ -567,20 +569,20 @@ Nouă jurnale ADE0 reunite în trei: 01…05 (planificare/mapare/reguli), 06…0
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-ADE0-01-plan-initial.md` | -107 |
-| `docs/worklog/SLICE-ADE0-02-mapare-access-web.md` | 50 |
-| `docs/worklog/SLICE-ADE0-03-documentare-toate-feliile.md` | 45 |
-| `docs/worklog/SLICE-ADE0-04-reguli-proiect.md` | 31 |
-| `docs/worklog/SLICE-ADE0-05-memorie-access.md` | 32 |
-| `docs/worklog/SLICE-ADE0-06-decizii-schema-ad.md` | -33 |
-| `docs/worklog/SLICE-ADE0-07-decizii-grupe-istoric-ddl-final.md` | 48 |
-| `docs/worklog/SLICE-ADE0-08-plan-subunitati.md` | -17 |
-| `docs/worklog/SLICE-ADE0-09-verificare-mdb-subunitati.md` | 39 |
+| `SLICE-ADE0-01-plan-initial.md` | -107 |
+| `SLICE-ADE0-02-mapare-access-web.md` | 50 |
+| `SLICE-ADE0-03-documentare-toate-feliile.md` | 45 |
+| `SLICE-ADE0-04-reguli-proiect.md` | 31 |
+| `SLICE-ADE0-05-memorie-access.md` | 32 |
+| `SLICE-ADE0-06-decizii-schema-ad.md` | -33 |
+| `SLICE-ADE0-07-decizii-grupe-istoric-ddl-final.md` | 48 |
+| `SLICE-ADE0-08-plan-subunitati.md` | -17 |
+| `SLICE-ADE0-09-verificare-mdb-subunitati.md` | 39 |
 | `docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md` | 1 |
 | `ADECHIT/PLAN_IMPLEMENTARE.md` | 0 |
-| `docs/worklog/SLICE-D001-84-adechit-analiza-si-decizii.md` | -38 |
+| `SLICE-D001-84-adechit-analiza-si-decizii.md` | -38 |
 
-Bilanț: **14 căi; net 5 fișiere mai puțin; 50 rânduri mai puțin**. Cumul D001-01…84: **293 fișiere și 12097 rânduri mai puțin**. Continuare D001-85.
+Bilanț: **14 căi; net 5 fișiere mai puțin; 50 rânduri mai puțin**. Cumul D001-01…84: **293 fișiere și 12097 rânduri mai puțin**.
 
 ## SLICE-D001-85 — ADECHIT: contracte și inventar fără tratamente repetitive <a id="slice-d001-85"></a>
 
@@ -590,9 +592,9 @@ Lectură integrală a contractului calculelor, registrului M/D, mapării, reguli
 
 ### Files touched
 
-Inventar: `ADECHIT/CONTRACT_CALCULE.md` (61); `ADECHIT/DECIZII_DESCHISE.md` (9); `ADECHIT/MAPARE_ACCESS_WEB.md` (63); `ADECHIT/REGULI_PROIECT.md` (53); `ADECHIT/INVENTAR_OBIECTE.md` (117); `docs/worklog/SLICE-D001-85-adechit-contracte-si-inventar.md` (-32).
+Inventar: `ADECHIT/CONTRACT_CALCULE.md` (61); `ADECHIT/DECIZII_DESCHISE.md` (9); `ADECHIT/MAPARE_ACCESS_WEB.md` (63); `ADECHIT/REGULI_PROIECT.md` (53); `ADECHIT/INVENTAR_OBIECTE.md` (117); `SLICE-D001-85-adechit-contracte-si-inventar.md` (-32).
 
-Bilanț: **8 căi; net -1 fișiere mai puțin; 270 rânduri mai puțin**. Cumul D001-01…85: **292 fișiere și 12367 rânduri mai puțin**. Continuare D001-86.
+Bilanț: **8 căi; net -1 fișiere mai puțin; 270 rânduri mai puțin**. Cumul D001-01…85: **292 fișiere și 12367 rânduri mai puțin**.
 
 ## SLICE-D001-86 — ME02: copii locale și limitele confirmării operatorului <a id="slice-d001-86"></a>
 
@@ -602,6 +604,6 @@ Cele trei jurnale rămase ME02 și registrul au fost citite integral și compact
 
 ### Files touched
 
-Inventar: `docs/worklog/SLICE-ME02-01-date-creare-modificare.md` (15); `docs/worklog/SLICE-ME02-02-copie-manuala-toate-bazele.md` (9); `docs/worklog/SLICE-ME02-03-format-si-motor.md` (27); `docs/worklog/state/KBOT_STATUS_ME02.md` (8); `docs/worklog/SLICE-D001-86-copii-locale-istorice-compacte.md` (-31).
+Inventar: `SLICE-ME02-01-date-creare-modificare.md` (15); `SLICE-ME02-02-copie-manuala-toate-bazele.md` (9); `SLICE-ME02-03-format-si-motor.md` (27); `docs/worklog/state/KBOT_STATUS_ME02.md` (8); `SLICE-D001-86-copii-locale-istorice-compacte.md` (-31).
 
-Bilanț: **7 căi; net -1 fișiere mai puțin; 27 rânduri mai puțin**. Cumul D001-01…86: **291 fișiere și 12394 rânduri mai puțin**. Continuare D001-87.
+Bilanț: **7 căi; net -1 fișiere mai puțin; 27 rânduri mai puțin**. Cumul D001-01…86: **291 fișiere și 12394 rânduri mai puțin**.

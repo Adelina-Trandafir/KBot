@@ -7,11 +7,9 @@ Then: **on every table where the operator edits, and this is the default of the 
 **Grid (`KBot.Controls/DataView`)**
 - Esc in an open editor cancels the edit of the cell (as before) and **arms** a second Esc (`_escArmed`).
 - `EscapeCancelsRow` (Boolean, **default True**, `K-BOT` category): off = only the cell is cancelled.
-- The **baseline** of a row (`KBotDataRow`, Friend `CaptureBaseline` / `TakeBaseline`): a copy of its cells taken right before the operator's first write to it (text/combo commit, check box, option
-  button, group tick); dropped by `MarkClean` / `ClearDirty` and by `ClearRows`. A row the host created and marked dirty by hand (the «+» rows) gets its baseline at the first write too.
+- Row **baseline** (`KBotDataRow`, Friend `CaptureBaseline` / `TakeBaseline`): cells copied before the first operator write (text/combo commit, check box, option button, group tick), including host-created dirty «+» rows. Dropped by `MarkClean` / `ClearDirty` / `ClearRows`.
 - The second Esc belongs to the grid only while the current row HAS a baseline (`IsInputKey`): if the operator changed nothing in the row, Esc goes on to the form, so a dialog still closes on it.
-- Second Esc: `RowCancelRequested` (`KBotRowCancelEventArgs` = column, row, `Handled`) goes to the host first; when it is not handled the grid runs `RevertRow` (public): the cells go back to the baseline,
-  `CellValueChanged` is raised for each cell that changes (so a host that mirrors cells into a model stays right), the row is clean again.
+- Second Esc: host first via `RowCancelRequested` (`KBotRowCancelEventArgs`: column, row, `Handled`); unhandled → public `RevertRow` restores the baseline, raises `CellValueChanged` per changed cell (keeping host models aligned) and marks the row clean.
 - The arming is dropped by anything else: another key, a mouse press, a change of the current cell, the next `BeginEdit`.
 
 **Hosts with their own handler** (a row the operator just made is REMOVED; the rest use the default revert)

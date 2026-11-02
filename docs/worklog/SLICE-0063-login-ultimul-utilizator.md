@@ -9,17 +9,17 @@
 **`KBot.Common\LastLoginStore.vb`** (nou). Un fișier JSON per utilizator Windows, `%APPDATA%\AVACONT\KBot\last_login.json`, în același folder cu `settings.json` (`SetariFoldere.DirectorSetari()`), cu exact două câmpuri: `Username` și `UnitDc`.
 
 * **Niciodată parola, niciodată token-ul.** API-ul magazinului nu le primește deloc, deci fișierul nu le poate conține. Testul `TheFile_NeverContainsAPassword` păzește asta.
-* `Load()` nu aruncă și nu loghează: fișier lipsă / gol / stricat / cu formă greșită = magazin gol, iar operatorul își scrie numele o dată în plus. Rulează înainte ca orice altceva să fie pornit — același raționament ca la `SetariFoldere.Incarca`.
+* `Load()` nu aruncă și nu loghează: fișier lipsă/gol/stricat/cu formă greșită = magazin gol, operatorul rescrie numele. Rulează înaintea celorlalte componente, ca `SetariFoldere.Incarca`.
 * `Save(username, unitDc)` e frontieră de I/O: loghează și rearuncă (regula casei). Refuză un nume gol.
 
 **`LoginForm`**:
 
-* La `Load`, numele ținut minte se pune în `txtUser` (peste implicitul de Debug — e numele pe care operatorul l-ar tasta altfel).
+* La `Load`, numele memorat intră în `txtUser`, peste implicitul de Debug.
 * `ShowPhaseCreds` pune cursorul în **parolă** când numele e deja completat (ținut minte sau rămas după «Înapoi»); altfel în nume, ca înainte.
 * La faza 2, dacă e ACELAȘI utilizator ca data trecută și unitatea lui mai e pe listă, combo-ul pornește pe ea; altfel pe prima, ca înainte.
-* `Save` se cheamă **doar după ce serverul a spus da** (`LoginAsync` a întors token), într-un `Try` propriu: un fișier de comoditate care nu se poate scrie nu are voie să strice un login care tocmai a reușit. `Save` a logat deja motivul.
+* `Save` se cheamă **numai după token-ul din `LoginAsync`**, într-un `Try` propriu: eșecul scrierii nu invalidează autentificarea reușită; motivul este deja logat de `Save`.
 
-Unitatea ținută minte e o extensie mică a cererii («numele»), făcută fiindcă e același gest și același fișier: a doua întrebare a formularului e chiar «care unitate».
+Memorarea unității extinde cererea («numele») pentru a doua întrebare a formularului, folosind același gest și fișier.
 
 ## Fișiere atinse
 

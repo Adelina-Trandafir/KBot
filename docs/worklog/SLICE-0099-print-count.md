@@ -27,7 +27,7 @@ No tests and no git, as always.
   - `/api/forexe/ord/pdf/<idordp>/print`
   - `/api/forexe/nc/pdf/<idnc>/print`
   - `/api/forexe/note-cab/recipisa/<idrcp>/print`
-- **The server decides which row takes the count**, in one transaction: the PDF row when there is one; otherwise, for a DDF / ORD, the document row. The client never chooses.
+- **The server chooses the counted row** in one transaction: the PDF row if present; otherwise the DDF / ORD document row. The client never chooses.
 - A CAB note with no stored PDF has no row for the count (`FX_NoteCAB` was not given the column): the answer is 200 with `numarat = false`, and a log line.
 - Answers: `{"numarat", "tinta", "print_count"}` (ASCII keys); 404 when the document does not exist; **409 naming the SQL file** when the column is not there yet. Nothing is written then.
 - The table / key / parent names are imported from `pdf.py` (one description, not two).
@@ -48,9 +48,9 @@ K-BOT has no print command. The operator prints from inside Adobe.
   - a file stays watched for 15 s after its viewer lets it go, so a late job is still counted against the right document;
   - the queues are read at once when Windows announces a job, every 250 ms for 60 s after Adobe's Print window was seen, otherwise every 2 s. A slow pass stretches both intervals.
 - **`AdobePrintJobFilter.vb`** — the pure decisions (job name ↔ file, same user, Print-window title), kept apart so they can be unit-tested later.
-- **`AdobeSaveTrap.vb`** (changed, four lines): the trap already looks at every Adobe dialog on each sweep. A dialog whose title is a Print window's is now reported to the watcher. The dialog itself is left alone, as before.
+- **`AdobeSaveTrap.vb`** (changed, four lines): its existing sweep reports dialogs with Print-window titles to the watcher, leaving the dialogs untouched.
 
-**Adobe messages.** Reading another process's print-window messages requires loading code into it; K-BOT does not inject into Adobe, and protected mode would refuse it. The watcher therefore observes the Print window appearing/disappearing from outside. The queue distinguishes Print from Cancel: cancellation creates no job.
+**Adobe messages.** Cross-process print-window messages require code injection, which K-BOT does not use and Adobe protected mode would refuse. The watcher observes the window's appearance/disappearance externally; the queue distinguishes Print from Cancel, which creates no job.
 
 ### 4. The client call (`KBot.Api`)
 - `IPrintCountApi` + `ApiClient.PrintCount.vb`: `RecordPrintAsync(kind, id)`.
@@ -58,7 +58,7 @@ K-BOT has no print command. The operator prints from inside Adobe.
 - It is a write: while the FOREXE robot runs it waits at the server gate (slice 0098) and goes out when the robot is done.
 
 ### 5. The wiring (`KBot.App`)
-- **`PdfPrintTarget`** (new): which server document the file on screen is (kind + id). It makes the call and writes the outcome to `adobe_preview.log`.
+- **`PdfPrintTarget`** (new): identifies the displayed server document (kind + id), makes the call and logs the outcome in `adobe_preview.log`.
 - The three views build it next to the signing session and put it in the page context: `DdfView` (IDREV), `OrdView` (IDORDP), `NoteCabView` (IDNC, and IDRCP for the receipt).
 - The four pages hand it to the preview before the document is shown: `DdfDocumentPage`, `OrdDocumentPage`, `CabNoteDocumentPage`, `CabNoteReceiptPage`.
 - **`ReaderHostPreview`** registers every document it shows with the watcher, and lets it go when the document changes or the pane is cleared. New event `DocumentPrinted`.

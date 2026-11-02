@@ -94,7 +94,7 @@ Politica Save: loghează în GlobalErrorLog ȘI consola operatorului, returneaz�
 
 Felia 0055 leagă apelantul lipsă diagnosticat în [0054](#slice-0054): pachetul local ajunge la conducta de scriere existentă.
 
-Pachetul descărcat pe 07.09.2026 (`AAB2MAACHXB`, trimis de operator) a fost verificat câmp cu câmp împotriva a ceea ce citește conducta din `PYTHON/routes/forexe/`: `TabelIndicatori_results` cu `BugetIndicator` imbricat, `TabelIstoric` cu `Timp` / `Utilizator` / `Descriere` / `Observatii`, `ListaReceptii_results` cu `Detaliu[]`, și scalarii `DescriereAngajament`, `StareAngajament`, `DataAngajament`, `DataInceputDerulare` în forma ZZ/LL/AAAA. **Tot ce cere serverul există în ce aduce robotul** — deci nu lipsea o mapare, lipsea legătura.
+Pachetul operatorului din 07.09.2026 (`AAB2MAACHXB`) a fost comparat câmp cu câmp cu cititorii `PYTHON/routes/forexe/`: `TabelIndicatori_results`/`BugetIndicator` imbricat; `TabelIstoric` cu `Timp`/`Utilizator`/`Descriere`/`Observatii`; `ListaReceptii_results`/`Detaliu[]`; scalarii `DescriereAngajament`, `StareAngajament`, `DataAngajament`, `DataInceputDerulare`, datele ZZ/LL/AAAA. **Robotul aduce toate câmpurile cerute**: lipsea legătura, nu maparea.
 
 ### Două constatări care au decis forma feliei
 

@@ -51,7 +51,7 @@ Every ordonanțare needs the reception total **as it stood on the payment date**
 | 03/01 | reception increased by 100 | | | | |
 | 04/01 | payment 50 | 200 | 100 | 50 | 50 |
 
-Put a January snapshot on the wrong reception and the figures for every payment after that date are wrong. Nothing raises. No later step compares them against anything. The error surfaces months later, if at all, as a reconciliation that will not close.
+A January snapshot on the wrong reception corrupts every later payment's figures, without an error or subsequent comparison. It may surface months later as a reconciliation that will not close.
 
 ## 1.4 What the form actually is
 
@@ -59,15 +59,13 @@ Put a January snapshot on the wrong reception and the figures for every payment 
 
 ## 1.5 What the data can check for us
 
-These cannot identify the right reception. They can only rule out wrong ones. Since most angajamente carry a single indicator, and since the date rule turned out not to be a rule at all (see below), what is really left is the chain-end mark and the operator's memory — so the form's job is not to be clever. **It cannot usefully refuse a placement, so it must instead make every placement cheap to undo and instantly visible in its consequences.** That is the whole design brief.
+Checks rule out wrong receptions, without identifying the right one. Most angajamente have one indicator; the date rule was withdrawn (below), leaving the chain-end mark and operator memory. **The form cannot usefully refuse a placement; it must make each placement cheap to undo and its consequences instantly visible.**
 
 The checks have one definition each: [F13](#f13) records withdrawal of the date veto, the temporary day-level sign and its later removal in 0058; [F14](#f14) is the weak indicator-subset veto; [F15](#f15) is the visible chain-end mark (with its later line-comparison amendment); [F16](#f16) keeps growing indicator sets; [F17](#f17) makes no-op similarity relative to the chain currently built, informational only and recomputed on every move.
 
 ## 1.6 Why ignoring beats forcing, for no-op saves
 
-A save that changed nothing carries zero information. Discarding it loses nothing at all. Placing it on the wrong reception injects a false value into that reception's timeline at that date, and the chain-end check will not catch it if it lands mid-chain.
-
-So "everything must be placed" is the wrong rule for this class of row. Ignoring is lossless, placing is lossy. `Sters` survives from the Access form, but reframed: not a hiding mechanism, but the statement *this records no change*.
+A no-change save carries no information: ignoring it is lossless, whereas wrong placement inserts a false value into the reception's timeline, undetected by the chain-end check if mid-chain. Hence "everything must be placed" is wrong for these rows. Access's `Sters` survives as *this records no change*, not a hiding mechanism.
 
 ## 1.7 Deletions
 
@@ -222,7 +220,7 @@ Two real foreign keys, so `FX_ORD_TBL` and `FX_Plati` must both be written befor
 > «IDRP IS DEAD» · «NOT used anymore. it contains no data anymore. Excluded completely from
 > migration» — operator, 26.08.2026
 
-`FX_Receptii_Plati` was an early attempt to join a reception to a payment directly, made before the flow was fully understood. It is empty and excluded from migration entirely. `FX_ORD_TBL_REC.IDRP` pointed at it and is therefore dead as well — consistent with what the data already showed: 0 on all sample rows, absent from the payload built by `mdl_FX_ORD_SYNC_TO_MARIADB`, and carrying no FK constraint on MariaDB. The column stays in the schema, unmapped and unwritten.
+`FX_Receptii_Plati`, an early direct reception/payment link, is empty and excluded from migration. Its reference `FX_ORD_TBL_REC.IDRP` is also dead: 0 on every sample row, absent from `mdl_FX_ORD_SYNC_TO_MARIADB`'s payload, no MariaDB FK. The column stays in the schema, unmapped and unwritten.
 
 ## C3 — D1 and D3 are amended
 
@@ -238,13 +236,13 @@ D4 said an unmatched header is written with `IDRR` NULL and the run continues. U
 
 ## C5 — `PLAN_ForexeIngestSteps3to8.md` is not in the repository, and its §6 was wrong
 
-Two document corrections were asked for on 26.08.2026 and **could not be applied where they were meant to go**, because the target files are not there. Recorded here instead, because this document is the one that survives.
+Two corrections requested on 26.08.2026 are recorded here because their **target files were absent**.
 
-**The plan file itself is absent.** `PLAN_ForexeIngestSteps3to8.md` is referenced by F26 (§4c-bis), by O1, by the slice 0048-03 worklog and by the headers of `routes/forexe/prelucrare.py` — but it is in neither `docs/` nor anywhere else on the machine, and it appears in no commit. It was written and worked from, never committed. Everything it decided that still matters has been carried into this document or into the code comments; anyone looking for the file should stop looking.
+**Absent plan:** `PLAN_ForexeIngestSteps3to8.md`, referenced by F26 (§4c-bis), O1, worklog 0048-03 and `routes/forexe/prelucrare.py` headers, was found neither on the machine (including `docs/`) nor in any commit. Written and used but never committed; its still-relevant decisions survive here or in code comments, so further searching is unnecessary.
 
-**Its §6 asked for two things that cannot both be true.** It wanted the local decisions store in `KBot.App` *and* exercised from `KBot.DevHarness`. `KBot.App` **references** `KBot.DevHarness` (on Debug, `KBot.App.vbproj:82`), so the arrow runs App ▸ DevHarness and a type in App is invisible to the harness. Corrected: `AsociereStore` lives in **`KBot.Common`**, beside `KBotPaths` — the other file-backed store next to the executable, and the shape §6 itself named as the one to follow — and the POCO `AsociereDosar` lives in `KBot.Domain`. Both are visible to App and to the harness. This is settled; it is not to be re-opened.
+**§6 had incompatible requirements:** store in `KBot.App`, exercised from `KBot.DevHarness`. Debug references run App ▸ DevHarness (`KBot.App.vbproj:82`), hiding App types from the harness. Settled correction: `AsociereStore` in **`KBot.Common`**, beside file-backed `KBotPaths` near the executable (the model §6 named), POCO `AsociereDosar` in `KBot.Domain`; both visible to App/harness. Do not reopen this decision.
 
-**Its §5.3 asked for a 400 on a missing `TipReceptie`. Withdrawn.** In Access the column existed so the code could decide, after filling the temporary tables, whether a real row needed inserting or updating. That decision does not exist here, and nothing reads the field — `FX_Receptii_H_GetHashIdent` is built from `Tip`, not `TipReceptie`, and `FX_Receptii_R.TipReceptie` is computed (`NOU`/`EDIT`). The rejection is not written. The key stays in `collectFields` in the `.wfl` — D11's purpose was to make the two workflow files match, and carrying one unread column costs nothing — with a comment at the reading site recording that nothing consumes it.
+**§5.3's missing-`TipReceptie` 400 was withdrawn, never implemented.** Access used the column after filling temporary tables to choose insert/update; that decision is absent here. Nothing reads it: `FX_Receptii_H_GetHashIdent` uses `Tip`, while `FX_Receptii_R.TipReceptie` is computed (`NOU`/`EDIT`). The unused key stays in `.wfl` `collectFields` to preserve D11's matching workflows, with a reading-site comment documenting the absence of consumers.
 
 **And the stale copy of this document is already gone.** It was moved from the repository root into `docs/` during slice 0048-03 (worklog §0.1). There is no second revision in circulation.
 
@@ -323,7 +321,7 @@ Reasoning in §1.8. Sources are marked as in the rest of the document.
   7. the originals are filled FIRST, only where still `NULL`, so the figure FOREXE gave is never lost whatever the one-time query has or has not done.
 * **At birth.** `_H_INSERT_SQL` / `_H_INSERT_CU_ID_SQL` (`prelucrare_pasi.py`) write `TotalOrig` equal to `Total` (the expression `Total` in the value list, so no caller's parameters change). The rows that exist are filled by the one-time query `sql/0111_02_interogare_unica.sql`. Counted on 06.10.2026 on the 18 databases of the operator: no row has an original that differs from its working value, so nothing shows as «corrected» before anyone corrects anything.
 * **In the form.** Context menu of a snapshot › «Corectează valoarea…» (anytime editor only, not on a frozen snapshot, not on the deletion row): `CorectieValoareForm`. The correction is saved at once and the window reloads; a snapshot with a corrected value reads `[corectat]` in the tree and its tooltip says what FOREXE gave and who / when / why corrected it.
-* **In the download window** (same day, second pass). The operator hit the case there: the snapshot with the wrong 0 cannot be dropped on its reception (the values differ) and the download cannot be saved before every snapshot has a decision. The snapshots of a download are NOT in the base while the operator decides (phase one rolls back), so the correction is kept in the window, shown on the snapshot, and travels with the DECISION that names the snapshot (`corectie`: total, reason, lines named by INDICATOR because a line born in this run has no key yet). Phase two writes it FIRST (`asociere.apply_download_corrections`, same `plan_correction` rules), re-reads the snapshots, and only then checks and applies the placements, so F14 / F15 / F16 see the corrected figures. Only snapshots the download brought; an older one (`instantanee_asezate`) is corrected in the anytime editor. Giving up the download gives up the correction.
+* **Download window** (same-day second pass): wrong 0 prevented placement (unequal totals), blocking save until every snapshot had a decision. Phase-one rollback leaves downloaded snapshots outside the base: correction stays visible locally and travels with the snapshot's DECISION (`corectie`: total, reason, lines by INDICATOR because new lines lack keys). Phase two writes it FIRST (`asociere.apply_download_corrections`, same `plan_correction` rules), re-reads snapshots, then checks/applies placements: F14/F15/F16 see corrected figures. Only downloaded snapshots qualify; older `instantanee_asezate` use the anytime editor. Abandoning download abandons correction.
 * **`UNVERIFIED`**: nothing ran against a live MariaDB. In particular that a value list may read a column set earlier in the same list (`TotalOrig` ← `Total`) is MariaDB's documented behaviour, not something run here.
 
 ---

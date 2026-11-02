@@ -1,6 +1,6 @@
 # Form `MF2019_Asoc_EF`
 
-Source: `Forms/MF2019_Asoc_EF.txt` (51,392 chars). [Reading conventions](../README.md#form-page-conventions).
+Source: `Surse/RawExport/Forms/MF2019_Asoc_EF.txt` (51,392 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
 
@@ -94,5 +94,3 @@ See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 ## Opened from
 
 `form:MF2019_1`
-
-Raw source: `Surse/RawExport/Forms/MF2019_Asoc_EF.txt`

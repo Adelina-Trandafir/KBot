@@ -8,9 +8,9 @@ PDF-ul pentru descărcare este implicit fără acțiunile interne. Adaptorul VER
 
 Numai cererea explicită a previzualizării PDF (`preview=1`) păstrează adnotările interne pentru popup. Rendererul comun are opțiune de subliniere, cu comportamentul anterior implicit; adaptorul VERCON o dezactivează. Rendererul NIR/FCS elimină sublinierea propriilor linkuri. PDF-ul exportat are text simplu, fără culoarea de link și fără adnotări către fișa de magazie.
 
-Modulul nou `report-pdf-source.js` livrează previzualizarea și un callback separat pentru PDF-ul exportat, legat de același snapshot/context. Varianta curată se cere la prima descărcare/tipărire și se reutilizează ulterior; nu se descarcă preventiv două PDF-uri la deschiderea raportului. La eroare, cererea poate fi reluată. Rapoartele fără acțiuni interne reutilizează direct octeții deja încărcați. Integrarea acoperă rapoartele, documentele salvate și regenerarea prin schimbarea perioadei.
+Noul `report-pdf-source.js` livrează previzualizarea și callbackul PDF-ului exportat pentru același snapshot/context. Varianta curată se cere numai la prima descărcare/tipărire, apoi se reutilizează; cererea e reluabilă la eroare. Fără acțiuni interne se reutilizează octeții încărcați. Integrare: rapoarte, documente salvate, regenerare prin schimbarea perioadei.
 
-Viewerul comun acceptă opțional `exportPdf`; descărcarea și tipărirea îl folosesc când este furnizat. În lipsa lui folosesc PDF-ul afișat, ca până acum. Callbackul se schimbă împreună cu raportul după regenerare; operațiile în curs nu descarcă/tipăresc raportul anterior dacă previzualizarea a fost închisă sau înlocuită. Pentru conținutul PDF cu acțiuni de produs se dezactivează tooltipurile prin mecanismul existent `data-kbot-tooltip="off"`; tooltipurile barei de instrumente se păstrează. CSS-ul linkurilor interactive nu adaugă subliniere.
+Viewerul comun descarcă/tipărește prin `exportPdf` opțional, altfel PDF-ul afișat, ca înainte. Callbackul urmează regenerarea; operațiile în curs nu exportă raportul anterior după închiderea/înlocuirea previzualizării. `data-kbot-tooltip="off"` existent oprește tooltipurile numai în conținutul PDF cu acțiuni de produs, păstrându-le pe bara de instrumente. CSS-ul linkurilor interactive nu adaugă subliniere.
 
 Fișiere funcționale:
 

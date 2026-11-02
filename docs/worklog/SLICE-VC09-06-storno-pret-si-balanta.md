@@ -8,7 +8,7 @@ Sesizarea privește `047_GR47`, Grădinița 47 / Alimente, produsul `10043` (iau
 
 ## Cauza prețului și corecția
 
-Schema Access exportată (`VERCON/VERCON_ACCESS/Databases/TZ_SCHEMA/tables/IntrariStorno.md`) declară `PUTVA` ca `Long`, spre deosebire de prețul zecimal al variantei din `ProduseP`. Migratorul copia întregul fără un calcul de TVA: diferența 14,0000 / 14,4855 exista deja în datele sursă. Formularul FCS folosește `QFCS` cu `ProduseP.PUTVA`; și raportul Access `NIR_Storno.txt` folosește direct prețul variantei, nu întregul din `IntrariStorno`.
+Schema Access (`VERCON/VERCON_ACCESS/Databases/TZ_SCHEMA/tables/IntrariStorno.md`) declară `PUTVA` ca `Long`, față de prețul zecimal din `ProduseP`. Migratorul copia întregul, fără calcul TVA: diferența 14,0000 / 14,4855 era în sursă. FCS prin `QFCS` și raportul `NIR_Storno.txt` folosesc însă `ProduseP.PUTVA`, nu întregul din `IntrariStorno`.
 
 În `VrcRunner.Storno.vb`, `PrepareStornoRow` recuperează prețul din `ProduseP` numai din aceeași sursă și partiție/gestiune. Cheia de cache este sursa planului, iar cheia produsului este `IdProdus` local acelei surse; același număr din alte gestiuni nu este consultat. Recuperarea se face numai pentru valori Access `Int32` egale cu rotunjirea la întreg a prețului variantei (ToEven). Prețurile deja zecimale, nule și egale cu varianta rămân neschimbate. Dacă întregul diferă de rotunjirea variantei, rămâne neschimbat și este semnalat N21. Nu se recalculează cota TVA și nu se adaugă TVA peste un preț care o include deja.
 

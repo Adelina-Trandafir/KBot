@@ -4,7 +4,7 @@ Descrierea asocierii este urmată de ajustările din 13.10.2026: [macheta și as
 
 Antetul are butonul „☰ Meniu” lângă numele aplicației. Iconița A are dimensiunea de 30 px și antetul folosește padding-ul portalului (4 px vertical, 28 px orizontal pe desktop).
 
-Din Meniu → Asociere extrase cu copii se deschide o machetă care reutilizează panourile și DataGrid din Plătitori. Extrasele sunt comune bazei unității; grupele, copiii, plătitorii și lunile aparțin exclusiv subunității selectate. Pentru altă subunitate, operatorul închide macheta și schimbă subunitatea în antet.
+Meniu → Asociere extrase cu copii reutilizează panourile/DataGrid din Plătitori. Extrasele sunt comune unității; grupele, copiii, plătitorii și lunile aparțin subunității selectate. Schimbarea subunității cere închiderea machetei și alegerea din antet.
 
 ## Asociere manuală
 
@@ -61,12 +61,12 @@ Stare: implementat în surse. Nu s-au rulat teste, verificări executabile sau S
 
 ### Machetă
 
-- Fereastra de asociere ocupă întregul viewport, fără margini, limite de 1680/900 px sau colțuri rotunjite, și se suprapune modal peste pagina principală. Înălțimea folosește 100dvh cu fallback 100vh. Antetul are 46 px, ca aplicația principală; subsolul are minimum 38 px, butoane de minimum 28 px și padding vertical de 4 px. La rezoluții mici, zona de lucru derulează separat, păstrând antetul și acțiunile din subsol vizibile. Subsolul poate crește când butoanele sau mesajul necesită mai multe rânduri. Padding-ul interior este redus pentru mai mult spațiu util.
+- Fereastră modală peste pagina principală, pe întregul viewport: fără margini, limite 1680/900 px sau colțuri rotunjite; înălțime 100dvh, fallback 100vh. Antet 46 px ca aplicația; subsol minimum 38 px, butoane minimum 28 px, padding vertical 4 px. Zona de lucru derulează separat la rezoluții mici, cu antet/acțiuni vizibile; subsolul crește pentru butoane/mesaje pe mai multe rânduri. Padding interior redus pentru spațiu util.
 - Zona explicativă de sus și rezumatul permanent de jos au fost eliminate.
 - Butoanele Asociere manuală / Previzualizare automată sunt în subsol, lângă acțiuni.
 - Arborele Lună/An folosește controlul TreeView din pagina principală și stă în stânga extraselor, cu lățimea de 258 px pe desktop. Datele lui sunt lunile extraselor din întreaga unitate; implicit se selectează ultima lună disponibilă.
 - Luna extraselor filtrează sursa; Luna înregistrării este un câmp separat pentru documentul ADE. Alegerea unui extras nu mai schimbă luna înregistrării.
-- Căutarea face substring (*text*) în FX_Extrase.Explicatii după minimum două caractere și 300 ms de pauză; sub prag filtrul dispare. Ignoră majusculele/minusculele (`gr` găsește `Gr40` și `Grădinița 40`), fără a cere numele copilului sau o denumire consecventă a grădiniței. Prefixul bancar dinaintea primei cratime este exclus numai dacă se potrivește cu Referinta. Explicația originală rămâne pentru afișare, amprentă și proveniență. Aceleași reguli în previzualizare.
+- Căutare substring (*text*) în FX_Extrase.Explicatii, după minimum două caractere și 300 ms; sub prag, fără filtru. Insensibilă la majuscule (`gr` găsește `Gr40` și `Grădinița 40`), fără nume de copil sau denumire consecventă a grădiniței obligatorii. Exclude prefixul bancar până la prima cratimă numai dacă se potrivește cu Referinta; originalul rămâne pentru afișare/amprentă/proveniență. Identic în previzualizare.
 - ID-ul extrasului și ReferintaDest nu se afișează în tabel. Codul fiscal și Încasarea rămân, la 90 / 80 px. Detalii extras umple spațiul rămas. Autosizing-ul inițial este dezactivat, astfel încât lățimile explicite să fie respectate.
 - Grupele au un panou compact, copiii păstrează CNP-ul într-o coloană de 100 px, iar Plătitorii primesc spațiul rămas dintre aceste liste și formular.
 - Luna înregistrării și Explicație document sunt în dreapta Plătitorilor, una sub alta, într-un formular de 260 px (230 px pe desktop mai îngust). Explicația are textarea compactă, editabilă.
@@ -81,7 +81,7 @@ Când rândul lunar lipsește, tranzacția creează legătura AD_Prezenta cu zer
 
 Se păstrează regulile existente privind lunile eligibile. Mai multe extrase pentru același copil în aceeași lună generează în continuare plăți și documente distincte, inclusiv când rândul lunar este creat de primul element al lotului.
 
-Previzualizarea automată folosește copilul drept cheie a opțiunii, nu ID-ul prezenței. Căutarea în timpul tastării păstrează editările și bifele rândurilor revăzute, inclusiv la revenirea unui rând după ștergerea filtrului. Se generează numai rândurile bifate din rezultatul vizibil. Amprenta sursei și versiunile țintei revăzute se păstrează; o căutare nu acceptă implicit date schimbate între timp. Reîncărcarea explicită sau schimbarea lunii cer confirmare înainte de abandonarea editărilor.
+Previzualizarea folosește cheia copilului, nu ID-ul prezenței. Căutarea păstrează editările/bifele rândurilor revăzute, inclusiv după ștergerea filtrului; generează numai rândurile bifate vizibile. Păstrează amprenta sursei și versiunile țintei revăzute, fără acceptarea implicită a datelor schimbate între timp. Reîncărcarea explicită/schimbarea lunii cer confirmarea abandonării editărilor.
 
 ### Fișiere și stare
 
@@ -98,6 +98,6 @@ Nu sunt necesare modificări suplimentare de schemă față de SQL-ul AD_11 preg
 - Cont: 168 px, față de 210 px (−20%).
 - Coloana nouă Banca are 152 px, conform aceleiași imagini. Închis are 60 px. Istoricul are o lățime de bază de 757 px; numai Plătitor preia spațiul liber. Valoarea de afișare BancaCont se calculează din cont, folosind aceeași regulă ca Parteneri: IBAN fără spații, în majuscule, caracterele 5–8 căutate în AVACONT_COMUN.BIC (Cod → Banca). Conturile fără cod cunoscut au banca goală. Valoarea Banca păstrată în istoricul existent nu este rescrisă de această citire.
 - Endpoint-ul bank-extracts/payers citește copilul și plătitorii numai din subunitatea autorizată, apoi consultă BIC prin conexiunea comună K-BOT. Conexiunea și cursorul se închid după citire; nu se execută modificări SQL.
-- Butonul Asociere manuală este ascuns în modul manual; butonul Previzualizare automată este ascuns în modul automat. Rămâne vizibil butonul de trecere la celălalt mod. Starea se reaplică la fiecare deschidere a ferestrei.
+- Fiecare mod ascunde propriul buton (Asociere manuală / Previzualizare automată), păstrând trecerea la celălalt. Starea se reaplică la deschiderea ferestrei.
 
 Modificate: bank-associations.js, adechit.html, bank_associations.py și routes/adechit/__init__.py. Nu sunt necesare modificări de schemă. Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).

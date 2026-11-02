@@ -77,8 +77,8 @@ Adică exact «recepțiile vechi nu mai vin». Erau acolo; povestea lor nu era.
 
 Propunerea poartă acum, pe lângă rândurile de decis:
 
-* **`instantanee_asezate`** — restul instantaneelor angajamentului, în aceeași formă ca cele ale editorului de oricând (aceleași DTO-uri, ca să nu existe două conversii care alunecă una față de alta);
-* **`plati`** — plățile angajamentului. §1.3 din fundament: fiecare ordonanțare citește totalul recepției **așa cum stătea la data plății**, deci partea pe care cade un instantaneu față de o plată e diferența dintre o cifră corectă și una greșită, tăcut și pentru totdeauna (F12). Reperele trebuie să fie pe ecran **când** se așază, nu abia după.
+* **`instantanee_asezate`** — restul instantaneelor angajamentului, în forma/DTO-urile editorului de oricând, fără conversii paralele divergente;
+* **`plati`** — plățile angajamentului. Ordonanțarea citește totalul recepției **la data plății** (fundament §1.3): poziționarea greșită a instantaneului față de plată alterează permanent cifra, fără eroare (F12). Reperele trebuie afișate **în timpul așezării**.
 
 **Contextul este complementul mulțimii de decis.** `citeste_instantanee_context` îl calculează pe `IDRH` în Python, astfel încât niciun rând nu lipsește din ambele liste, inclusiv cele al căror istoric nu apare în descărcarea curentă și care înainte produceau doar avertisment.
 

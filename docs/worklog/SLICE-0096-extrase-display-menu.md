@@ -23,7 +23,7 @@ Operator request, 29.09.2026 ("this is slice 95"). Slice 0095 already held the I
   - `DeschideExtrasele()`: the window standalone (modeless, `Show(Me)`), one at a time like Clasificatii / Parteneri (asking again activates the open one). On close the Extrase view reloads (`ReloadExtraseView`, shared with the footer).
 - `KbotForm.Nomenclatoare.vb`:
   - `MenuNou_ItemClicked`: `Case "extrase"` -> `DeschideExtrasele()`.
-  - `NavViews_CollapseStateChanged` + `NavViews_SizeChanged` -> `SyncMenuButtonWidth`: column 0 of `tlyHeader` = `navViews.Width + btnMeniu.Margin.Horizontal`, device px divided by `tlyHeader.DpiScale` (the table takes logical px). Active only after the first collapse (`_menuFollowsNav`), so the designer width stands until the operator touches the bar; after that it also follows DPI / zoom changes of the bar.
+  - `NavViews_CollapseStateChanged` + `NavViews_SizeChanged` → `SyncMenuButtonWidth`: `tlyHeader` column 0 = (`navViews.Width + btnMeniu.Margin.Horizontal`) / `tlyHeader.DpiScale`, converting device to logical px. `_menuFollowsNav` activates at first collapse; Designer width stays until then, followed by bar width/DPI/zoom tracking.
   - `ApplyMenuButtonText`: while the bar is not Expanded the button shows only its icon (no text fits); expanded it shows «Meniu» / «Meniu (!)».
 - `KbotForm.CabNotes.vb`: `MarkUncorrelated` stores the mark in `_menuMarked` and goes through `ApplyMenuButtonText`, so a refresh while collapsed does not put the text back.
 - `Views/ExtraseForm.vb`: class summary updated (opened from the menu, modeless).
@@ -61,7 +61,7 @@ Both hosts use `ExtrasePanel`, so the change is there only.
   - `ExtraseDisplayMode` enum (`AntetOperatii` / `OperatiiDetalii`), `DisplayMode` property (not serialized), default `AntetOperatii`.
   - `Tree_HeaderRightIconClicked` -> `CustomPopup` with the two rows (current one checked), same pattern as the main tree options menu; unknown key -> `ArgumentException`.
   - Root and month nodes now also carry their operations (root = all, month = its days'), ordered by DataBanca then IdFxe. In `OperatiiDetalii` every node goes the «day» path: `gridZi` on top + `detailPane` below (the existing grid and detail, reused).
-  - `ApplyDisplayColumns`: on `gridZi`, in `OperatiiDetalii` the columns `o_data_banca`, `o_platitor`, `o_cui` get `ShowColumnFilter = True` + `AllowGrouping = True` (CUI takes the same filter icon as Plătitor). In `AntetOperatii` the designer values come back, except that «Data bancă» loses grouping (the request says grouping by date only in the new mode); the grouping is lifted and a filter left on a column that loses its filter button is cleared.
+  - `ApplyDisplayColumns`: `gridZi` in `OperatiiDetalii` sets `ShowColumnFilter = True` + `AllowGrouping = True` on `o_data_banca`, `o_platitor`, `o_cui` (CUI: same filter icon as Plătitor). `AntetOperatii` restores Designer values except «Data bancă» grouping (new mode only); removes disallowed grouping and clears filters on columns losing their filter button.
 
 ### Assumptions
 

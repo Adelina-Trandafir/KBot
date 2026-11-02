@@ -3,10 +3,10 @@
 Help work for feature slice **0101** (`SLICE-0101-lanturi-neinchise-si-ord-lot.md`), branch `SLICE-0100-Multithreading`. Tags: `<!-- slice: 0101 -->` (added to the ids already there).
 
 ## What changed and why
-- `contabil.fereastra` («Lista angajamentelor»): new bullet — an angajament written in **red** has receptions whose chain does not close; the hover text lists each reception (date, last snapshot value, reception value); a chain ending in the deletion row does not count; link to the cases topic.
-- `contabil.asocieri.fereastra` («Stânga»): the «⚠ Lanțul nu se închide…» paragraph now also says the reception and its last snapshot are written in red over any other colour, that it goes away once the chain closes, and that the same red marks the angajament in the main list.
+- `contabil.fereastra` («Lista angajamentelor»): new bullet: **red** angajamente have unclosed reception chains (except chains ending in deletion); hover lists each reception's date, last snapshot value and reception value; link to cases.
+- `contabil.asocieri.fereastra` («Stânga», «⚠ Lanțul nu se închide…»): reception / last snapshot in red over any other colour until the chain closes; the same red marks the main-list angajament.
 - `contabil.asocieri.cazuri` («Lanțul nu se închide» oprește descărcările…): new paragraph «Cum îl găsești dinainte».
-- `contabil.vederi.ord-generare` («Generare în lot») and `contabil.vederi.plati` («+»): after confirming, the batch ends with no final message when all days were generated (an error box still shows the day and the reason).
+- `contabil.vederi.ord-generare` («Generare în lot») and `contabil.vederi.plati` («+»): after confirmation, successful generation of all days ends silently; errors still show the day and reason.
 - `tours/tur-asocieri.md`, step «Recepțiile și lanțurile lor»: one clause about the red.
 - `help-version.txt` → `2026-10-02`. Nothing in the help names the server, the query or any file (help rule: users only).
 

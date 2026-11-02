@@ -1,8 +1,10 @@
 # Form `EFACTURA_PickIBAN`
 
-Source: `Forms/EFACTURA_PickIBAN.txt` (10,146 chars). [Reading conventions](../README.md#form-page-conventions).
+Source: `Surse/RawExport/Forms/EFACTURA_PickIBAN.txt` (10,146 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
+
+Inherits [P1](../README.md#form-properties-p1).
 
 | Property | Value |
 |---|---|
@@ -12,10 +14,6 @@ Source: `Forms/EFACTURA_PickIBAN.txt` (10,146 chars). [Reading conventions](../R
 | Modal | NotDefault |
 | BorderStyle | 0 |
 | ControlBox | NotDefault |
-| NavigationButtons | NotDefault |
-| RecordSelectors | NotDefault |
-| DividingLines | NotDefault |
-| ScrollBars | 0 |
 | Width | 6723 |
 | Left | 4610 |
 | Top | 4330 |
@@ -24,9 +22,6 @@ Source: `Forms/EFACTURA_PickIBAN.txt` (10,146 chars). [Reading conventions](../R
 | FitToScreen | 1 |
 | GridX | 24 |
 | GridY | 24 |
-| TabularCharSet | 238 |
-| DatasheetFontName | Calibri |
-| DatasheetFontHeight | 11 |
 
 Form events wired: `OnUnload` = VBA, `OnLoad` = VBA
 
@@ -75,5 +70,3 @@ See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 ## Opened from
 
 Nothing found by static scan (probably opened by name from a ribbon, a menu string or a variable).
-
-Raw source: `Surse/RawExport/Forms/EFACTURA_PickIBAN.txt`

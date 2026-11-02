@@ -2,7 +2,7 @@
 
 ## What changed and why
 
-Slice 0097 first REFUSED a unit switch while FOREXE was connected. The operator (30.09.2026): «nu e motiv de eroare. se deconectează și apoi se schimbă unitatea în mod automat». The code now closes the FOREXE session first (`ForexeController.DisconnectAsync`, see `SLICE-0097-corective.md`) and refuses only while a FOREXE operation is running. Then (operator, same day): the remembered certificate is forgotten on a switch ONLY through a new option in «Setări → FOREXE», unticked at start, documented in the help. The help brought in line:
+0097 initially REFUSED unit switching while FOREXE connected. Operator (30.09.2026): «nu e motiv de eroare. se deconectează și apoi se schimbă unitatea în mod automat». Now closes via `ForexeController.DisconnectAsync` (`SLICE-0097-corective.md`), refusing only during an operation. Same-day request: forget remembered certificate on switch ONLY through new, initially unticked «Setări → FOREXE» option. Help aligned:
 
 - `contabil.fereastra` § «Unitatea de lucru» (tag `slice: 0097`): connected → K-BOT closes the connection; «Conectare» on the new unit uses the remembered certificate, unless the option is ticked, then it asks again; refused only while the robot is working, and toward a «Director» unit.
 - `contabil.setari`: table row «FOREXE» + new section «Pagina «FOREXE»: certificatul memorat» (tag `slice: 0072, 0097`): «Certificatul memorat», «Uită certificatul», and the new «Uită certificatul memorat când schimb unitatea din bara de titlu» (unticked at start, what each state does); keywords `certificat memorat, uita certificatul, schimbare unitate`.

@@ -86,13 +86,13 @@ New properties on `KBotDataColumn` (category «K-BOT: Button»; only `Button` co
 | `ButtonSize` | face size (logical px), 0 on an axis = fill that axis | 0,0 |
 | `ButtonFont` | caption font | not set = column font, then grid font |
 
-`ButtonSize` was NOT in the request. It is needed: with a face that always fills the cell, alignment has nothing to move. At 0,0 the button is the full-cell button of before.
+ButtonSize was added beyond the request: alignment needs a movable face, not one filling the cell. At 0,0 it remains the former full-cell button.
 
 Behaviour changes worth knowing:
 
 - **A click acts only on the face.** Before, the whole cell (including the 4/3 px margin) fired `ButtonClick`. With a smaller button, clicking empty cell space must not fire it. Space on the current cell still fires. `CellClick` still fires for any click.
 - **`Transparent` also drops the border** (until pass 2: unless `ButtonBorderColor` is set).
-- Picture and caption are laid out as one group, centred in the padded face; picture keeps its pixel size scaled by the DPI and is shrunk to fit, keeping proportions; wider than the face = picture left, caption cut with an ellipsis. Disabled = picture drawn at 40% opacity.
+- Picture/caption form one centred group in the padded face. Picture keeps DPI-scaled pixel size, shrinking proportionally to fit; if wider than the face, left picture/ellipsized caption. Disabled picture opacity: 40%.
 - Width measuring (`ToContent`) now needs caption + picture + gap + padding + margin; a fixed `ButtonSize.Width` makes it that width + margin.
 - `ButtonFont` goes through `CellFontFor`, the single font source for painting and measuring.
 - All metrics are logical and scaled with `ScaleDpi` at use (painter, measuring, hit-test share `ButtonFaceRect`).
@@ -119,8 +119,8 @@ The operator meant the borders of the cells themselves, on every element; the bu
 - `KBotCellFormattingEventArgs.BorderColor` / `.Borders`, pre-filled from the column, so a handler can change the borders of one cell.
 - The enum is now shared: `KBotButtonBorders` renamed `KBotBorderSides` (file `KBotBorderSides.vb`); the button keeps `ButtonBorders` with the same type.
 - Drawing (`KBotDataView.CellBorders.vb`): each cell draws its chosen sides on its outermost pixels, after its content. The row keeps its single full-width line (see the fast path below); the stretch of row to the right of the last column keeps it only while the LAST column still has a Bottom side. With the defaults the picture is meant to be the same as before; not compared pixel by pixel.
-- **Fast path on the default (agreed 03.10.2026, after a /btw side chat on cost).** The line under a row is again ONE `DrawLine` across the row. A cell whose bottom side is not the plain grid line (no Bottom, or a custom colour — from the column or from `CellFormatting`) reports its span in `_rowGaps` while it is painted; the row line is drawn around those spans (`DrawRowBottomLine`) and the cell draws its own bottom. Default cells draw only their right side, so the default cost is what it was before this slice: one line per cell + one per row, no allocation. Scroll-band spans are clamped so they never cut the line under the frozen band. (The first version of this pass drew a bottom line per cell; replaced by this.)
-- Cost of the non-default cells: up to four lines each; no allocation per cell. The theme colour uses the cached grid-line pen; custom colours share ONE pen kept for the last colour (rebuilt only when the colour changes), disposed with the other pens.
+- **Default fast path**, agreed 03.10.2026 after /btw on cost: ONE DrawLine under each row. Cells with no Bottom or a custom column/CellFormatting bottom colour report spans in _rowGaps; DrawRowBottomLine skips them and each cell draws its own bottom. Defaults draw right sides only: one line/cell + one/row, no allocation. Scroll spans clamp outside the frozen band. This replaces the initial bottom line per cell.
+- Non-defaults: up to four lines/cell, no per-cell allocation. Theme uses cached grid-line pen; custom colours share one last-colour pen, rebuilt only on colour change and disposed with the other pens.
 - Two neighbours that both draw the edge they share (A's Right + B's Left, or a row's Bottom + the next row's Top) make a double line. Not prevented: it is what was asked for; pick one side per edge for a single line.
 - Playground (`DataViewPlaygroundForm`): in the column inspector, `CellBorderColor`, the four `CellBorders` sides (loaded from / written to the column picked in the inspector) and a checkbox that turns on a per-cell demo (a red box on every 4th row of «Cod», through `CellFormatting`). Builds: Controls and DevHarness 0 warnings, 0 errors; nothing opened on screen.
 

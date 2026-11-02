@@ -1,17 +1,16 @@
 # Form `_MF2019_Asoc_EF`
 
-Source: `Forms/_MF2019_Asoc_EF.txt` (58,344 chars). [Reading conventions](../README.md#form-page-conventions).
+Source: `Surse/RawExport/Forms/_MF2019_Asoc_EF.txt` (58,344 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
+
+Inherits [P1](../README.md#form-properties-p1).
 
 | Property | Value |
 |---|---|
 | Caption | Asociere E-Factură pentru `Part` |
 | AutoCenter | NotDefault |
 | BorderStyle | 3 |
-| NavigationButtons | NotDefault |
-| RecordSelectors | NotDefault |
-| DividingLines | NotDefault |
 | ScrollBars | 2 |
 | AllowAdditions | NotDefault |
 | AllowDeletions | NotDefault |
@@ -23,9 +22,6 @@ Source: `Forms/_MF2019_Asoc_EF.txt` (58,344 chars). [Reading conventions](../REA
 | FitToScreen | 1 |
 | GridX | 24 |
 | GridY | 24 |
-| TabularCharSet | 238 |
-| DatasheetFontName | Calibri |
-| DatasheetFontHeight | 11 |
 
 Form events wired: `OnLoad` = VBA
 
@@ -87,5 +83,3 @@ See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 ## Opened from
 
 `form:MF2019_Asoc_EF`
-
-Raw source: `Surse/RawExport/Forms/_MF2019_Asoc_EF.txt`

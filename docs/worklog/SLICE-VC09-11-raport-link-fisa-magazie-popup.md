@@ -8,7 +8,7 @@ Utilizatorul a autorizat denumiri de produse clicabile în raportul afișat în 
 
 Denumirea produsului este colorată și subliniată în PDF. Linkul este pus numai pe rânduri care identifică **o singură variantă de produs/preț**. Totalurile, antetele, rândurile anulate și agregările care combină mai multe variante nu primesc link către o variantă arbitrară. În agregările de date se transportă separat `stock_variant`, fără schimbarea sumelor sau a cheilor de grupare existente. Machetele personalizate folosesc cheia stabilă `name`, independent de eticheta vizibilă a coloanei.
 
-Linkurile există în rapoartele oficiale generate din pagina Rapoarte și din documentele salvate, inclusiv forma PDF NIR/FCS și tabelele dispuse pe mai multe coloane. După schimbarea perioadei în vizualizator, linkurile folosesc modelul și perioada raportului regenerat. Previzualizările locale ale ciornelor nesalvate și cele construite doar din secțiuni locale nu sunt convertite în rapoarte oficiale și nu primesc această navigare.
+Linkuri în rapoartele oficiale din Rapoarte/documente salvate, inclusiv PDF NIR/FCS și tabele pe mai multe coloane; schimbarea perioadei folosește modelul/perioada regenerate. Previzualizările ciornelor nesalvate sau construite doar din secțiuni locale nu devin rapoarte oficiale și nu primesc navigarea.
 
 ## Contextul și datele popupului
 
@@ -20,7 +20,7 @@ Clientul acceptă numai URL-ul de pe aceeași origine, calea de stoc cunoscută,
 
 Popupul afișează gestiunea, perioada, codul, UM și prețul cu TVA; sumarul SI / Intrări nete / Ieșiri nete / SF, cantitativ și valoric; apoi grila cu sold inițial și fiecare mișcare (data, document/factură, tip, intrări, ieșiri, sold și valoarea soldului). Storno este negativ la Intrări, returul negativ la Ieșiri. Valorile zecimale sunt afișate prin formatterul exact existent, fără conversie în float. Ordinea este cea cronologică a motorului de stoc; sortarea/filtrarea grilei este dezactivată pentru a păstra sensul soldului după fiecare document și poziția soldului inițial.
 
-Fișa citește datele curente la click, în contextul și perioada raportului; nu pretinde că este un al doilea snapshot istoric al bazei. O variantă care nu mai este disponibilă sau un refuz de acces produce un mesaj în popup. Lipsa mișcărilor din interval este afișată explicit, păstrând soldul inițial disponibil.
+Fișa citește datele curente la click în contextul/perioada raportului, fără a reprezenta un al doilea snapshot istoric. Variantă indisponibilă / acces refuzat → mesaj în popup; lipsa mișcărilor este explicită, cu soldul inițial disponibil păstrat.
 
 ## PDF și ciclul de viață
 
@@ -28,7 +28,7 @@ Rendererul comun PDF primește opțional `href` pe o celulă și produce linkuri
 
 PDF.js primește opțional `docBaseUrl` pentru rezolvarea linkurilor relative. Numai adaptorul VERCON activează rezolvarea; vizualizatoarele celorlalte aplicații păstrează configurarea existentă. Vizualizatorul comun are un callback opțional `onLink`, iar CSS-ul VERCON permite click numai pe adnotările linkurilor de stoc, când acel callback este prezent. Formularele PDF/XFA și celelalte adnotări rămân inactive ca înainte.
 
-Clickul este interceptat înaintea navigării PDF.js. Popupul este un dialog separat deținut de raport; butonul Închide și Escape îl închid, fără reîncărcarea, derularea sau schimbarea zoomului PDF-ului principal. Există o singură fișă deschisă per model; cererea este anulată la închiderea popupului, iar închiderea raportului eliberează și fișa. Răspunsurile întârziate nu reconstruiesc ferestre închise. La înlocuirea raportului pentru o altă perioadă, suprafața PDF este temporar inertă până când modelul și callbackul noii perioade sunt instalate.
+Click interceptat înainte de navigarea PDF.js. Raportul deține un dialog separat, închis prin Închide/Escape fără reîncărcarea, derularea sau schimbarea zoomului PDF-ului principal. O singură fișă/model; închiderea ei anulează cererea, închiderea raportului eliberează fișa. Răspunsurile întârziate nu redeschid ferestre. La schimbarea perioadei, PDF-ul rămâne inert până la instalarea noului model și callback.
 
 Popupul este o funcție a aplicației autentificate. Nu este o fereastră inclusă în fișierul PDF descărcat și deschis separat într-un cititor extern. Rapoartele deja generate fără metadatele/linkurile noi trebuie regenerate.
 

@@ -254,9 +254,9 @@ AlegereUnitateForm.Designer.vb
 
 Cerut de operator: editoarele DDF și ORD pornesc **cât fereastra principală și în centrul ecranului**.
 
-`StartPosition = CenterScreen` era deja pe toate trei, și e corect — ce lipsea era mărimea. `ClientSize` a trecut de la `1300×1000` la `1641×1000` pe `DdfEditForm` și `OrdEditForm`, adică fix mărimea lui `MainForm`.
+Toate trei aveau deja `StartPosition = CenterScreen`; `DdfEditForm` / `OrdEditForm` primesc `ClientSize` `1641×1000` în loc de `1300×1000`, cât `MainForm`.
 
-**Distribuția lățimii.** Ambele formulare au `tlyMain` cu o coloană `Percent 100`, andocată `Fill`; `tlyAntet` are șapte coloane `Absolute` și ultima `Percent 100`. Cei 341 px suplimentari intră în ultima coloană, fără mutarea sau întinderea câmpurilor.
+**Lățime:** în ambele, `tlyMain` este `Fill`, cu o coloană `Percent 100`; `tlyAntet` are șapte coloane `Absolute` și ultima `Percent 100`. Aceasta primește cei 341 px suplimentari; câmpurile nu se mută/întind.
 
 ---
 

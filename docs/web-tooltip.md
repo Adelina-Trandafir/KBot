@@ -1,10 +1,10 @@
 # Tooltip comun ADECHIT / K-BOT / VERCON
 
-În meniul deschis din sigla aplicației, **Setări tooltip** deschide configurarea comună. Preferințele sunt salvate în localStorage, sub cheia `kbot-tooltip-settings-v1`, pentru același browser și aceeași origine web. Modificările sunt preluate și de celelalte file deschise ale aplicațiilor. Dacă stocarea este blocată, setările se aplică doar paginii curente; formularul explică această limitare după apăsarea Salvare.
+Sigla aplicației → Setări tooltip: configurare comună, salvată în localStorage, cheia `kbot-tooltip-settings-v1` pentru browserul și originea curente, preluată și de celelalte file ale aplicațiilor. Stocare blocată → setări numai în pagina curentă; formularul explică limita după Salvare.
 
 Opțiuni: aspect pastel / colorat / simplu, paletă pentru informări, poziție, lățime maximă, emoticon și text de antet. Antetul este opțional, **dezactivat implicit** în toate aplicațiile (`showHeader: false`). Se poate activa din setări sau la un apel explicit `showTooltip(..., { showHeader: true })`. Cu antet activ, textul gol folosește titlul corespunzător nivelului mesajului. Erorile, avertizările și succesele au culori distincte.
 
-Timpii sunt în milisecunde: întârziere înainte de afișare (implicit 0), animație (180) și durata după apariție (6000). Durata 0 cere închidere manuală. Durata se suspendă la hover, focus în notificare și cât timp fila este ascunsă. Setările se pot previzualiza înainte de salvare; Implicit resetează formularul, iar Salvare memorează valorile.
+Timpi (ms): întârziere 0 implicit, animație 180, durată după apariție 6000; durata 0 cere închidere manuală. Durata se suspendă la hover/focus în notificare sau filă ascunsă. Previzualizare înainte de salvare; Implicit resetează formularul, Salvare memorează.
 
 ## Integrare
 
@@ -21,11 +21,11 @@ notice.close();
 // notice.closed se rezolvă la solicitarea închiderii.
 ```
 
-`showMessage(element, text, level, options)` din `portal/messages.js` livrează mesajul contextual și tooltip-ul, păstrând jurnalul din sesiune și evenimentul `ui:message` fără text de business. Un mesaj nou pentru același element îl înlocuiește pe cel anterior; textul gol îl anulează. `options.tooltip: false` permite mesaje exclusiv contextuale, inclusiv cele cu linkuri din formulare; `options.inline: false` permite notificări fără bandă în pagină. Opțiunile de aspect și timpi pot fi suprascrise pentru fiecare apel.
+`showMessage(element,text,level,options)` din `portal/messages.js` oferă mesaj contextual și tooltip, păstrând jurnalul sesiunii și evenimentul `ui:message` fără text de business. Același element: mesajul nou îl înlocuiește pe cel vechi, textul gol anulează. `options.tooltip: false`: numai contextual, inclusiv linkuri; `options.inline: false`: numai notificare, fără bandă în pagină. Aspectul și timpii se pot suprascrie per apel.
 
 ADECHIT folosește tooltip-ul pentru confirmările informative, iar erorile rămân și lângă zona de lucru. VERCON și K-BOT păstrează mesajele contextuale. Notificările temporare ale monitorului de sesiune folosesc aceeași componentă. Confirmările cu Da/Nu și avertizările de expirare a sesiunii își păstrează comportamentul de confirmare și de numărătoare inversă.
 
-Cel mult trei notificări sunt afișate simultan pentru fiecare context (pagina sau un dialog nativ); celelalte așteaptă în coadă. Dialogurile au cozi independente, astfel încât previzualizarea setărilor să poată apărea și când pagina din fundal are notificări cu închidere manuală. Durata începe după apariția efectivă, nu în coadă. Opțiunea `source: element` anulează mesajul când sursa este eliminată, ascunsă printr-un părinte `hidden` sau când dialogul nativ care o conține se închide. Notificările sunt grupate după poziție, cu derulare pe ecrane mici. Popover API permite afișarea peste dialoguri native, cu fallback prin z-index. Componenta nu mută focusul. Conținutul este text simplu, iar notificările au roluri ARIA status / alert.
+Maximum trei notificări simultane per context (pagină/dialog nativ); restul în coadă. Cozi independente per dialog permit previzualizarea setărilor chiar dacă fundalul are notificări manuale. Durata începe la apariția efectivă. `source: element` anulează la eliminarea sursei, ascunderea prin părinte `hidden` sau închiderea dialogului nativ care o conține. Grupare după poziție, derulare pe ecrane mici; Popover API peste dialoguri native, fallback z-index. Fără mutarea focusului; text simplu, ARIA status/alert.
 
 Numele `tooltip` este intern: exporturile ES modules nu creează obiecte globale. Clasele și variabilele CSS folosesc prefixul `kbot-tooltip`, fără selectori generici `.tooltip` sau modificări ale tooltipurilor din alte controale. Containerul are `title=""`, pentru a opri tooltipurile native moștenite din strămoșii DOM; mesajul și butonul de închidere nu au texte native `title`.
 
@@ -33,7 +33,7 @@ Stare: TESTAT, RULAT, PUBLICAT (confirmat de operator, 23.10.2026).
 
 ## Texte din title și proba în RAPOARTE
 
-`tooltip-titles.js` este încărcat în ADECHIT, K-BOT, VERCON și în pagina HTML de raport ADECHIT. Preia exact textele atributelor `title`, le păstrează în memorie și elimină atributele din DOM, inclusiv pentru controalele adăugate sau actualizate ulterior. Pentru iframe-uri, numele accesibil este transferat în `aria-label`, fără tooltip. Elementul HTML `<title>` al paginii este păstrat.
+tooltip-titles.js în ADECHIT/K-BOT/VERCON și raportul HTML ADECHIT: memorează exact textele title și elimină atributele DOM, inclusiv la adăugări/actualizări. Iframe: numele accesibil trece în aria-label, fără tooltip. Elementul `<title>` al paginii rămâne.
 
 Pe desktop, textele apar la hover sau focus, lângă control. Escape, activarea controlului și părăsirea lui închid tooltipul; trecerea cursorului pe tooltip îl păstrează deschis. Un singur tooltip de control este activ la un moment dat, independent de coada notificărilor. Legătura accesibilă folosește `aria-describedby` și `role="tooltip"`.
 
@@ -45,7 +45,7 @@ Pentru publicare se includ toate fișierele componentei, entry point-urile JS mo
 
 ## Aspect compact și blocare după click
 
-Fontul tooltipului este `--fs-2xs`, cel mai mic din `typography.css`, bold (`--fw-strong`) și italic. Paddingul exterior este de 2 px pe fiecare latură, iar textul nu are padding sau margini suplimentare. Lățimea se adaptează conținutului, până la maximul configurat; valorile de lățime salvate anterior nu mai produc bule largi pentru texte scurte. Paleta implicită are fundal galben pal, distinct de fundalul aplicației, cu variantă contrastantă în tema întunecată. Un mic indicator pointează către centrul controlului, deasupra sau dedesubtul bulei, după spațiul disponibil.
+Font: `--fs-2xs` (minimul `typography.css`), bold `--fw-strong` și italic. Padding exterior 2 px/latură, fără padding/margini pe text. Lățime după conținut până la maximul configurat; valorile vechi salvate nu mai lățesc textele scurte. Paletă implicită galben pal, distinctă de aplicație, cu variantă contrastantă pentru tema întunecată. Indicator spre centrul controlului, sus/jos după spațiul disponibil.
 
 Clickul sau pointerdown pe control închide tooltipul imediat, inclusiv înainte de terminarea animației. Reapariția este blocată până la mișcarea efectivă a mouse-ului în afara controlului apăsat. Schimbările de focus, deschiderea unui meniu și înlocuirea DOM-ului sub cursor nu eliberează blocarea.
 

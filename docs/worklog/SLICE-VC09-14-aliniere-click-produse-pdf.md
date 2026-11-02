@@ -4,7 +4,7 @@ Data: 30.10.2026. **IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.**
 
 Utilizatorul semnalează, printr-o captură, decalajul dintre produsul desenat în raport și zona lui interactivă.
 
-Analiza CSS identifică o incompatibilitate: `vercon.html` încarcă `static/site/site.css`, care aplică global `box-sizing: border-box`. PDF.js dimensionează `.pdfViewer .page` după viewportul PDF și adaugă bordura definită prin `--page-border` (implicit 9px pe fiecare latură). Canvasul are dimensiuni de afișare de 100% din conținutul paginii. Cu modelul global border-box, bordurile se scad din suprafața desenată, dar stratul de adnotări păstrează dimensiunile viewportului. Coordonatele nu mai reprezintă aceeași suprafață, iar diferența se acumulează cu poziția în pagină.
+Cauză identificată prin CSS: `static/site/site.css`, încărcat de `vercon.html`, aplică global `box-sizing: border-box`. PDF.js dimensionează `.pdfViewer .page` după viewport și adaugă `--page-border` (implicit 9px/latură). Canvasul ocupă 100% din conținut: border-box îi scade bordurile din suprafață, în timp ce adnotările păstrează viewportul. Diferența de coordonate crește cu poziția în pagină.
 
 `PYTHON/static/css/vercon-stock-card.css` restabilește explicit `box-sizing: content-box` numai pentru paginile din previzualizarea interactivă VERCON (`.vc-page .report-view-pdf--product-links .pdfViewer .page`). Canvasul și adnotările folosesc astfel aceeași dimensiune de conținut, inclusiv la redimensionarea prin zoom. Nu se adaugă deplasări fixe în pixeli și nu se modifică bibliotecile PDF.js sau rendererul rapoartelor. Celelalte aplicații și previzualizările fără acțiuni de produs nu primesc această regulă.
 

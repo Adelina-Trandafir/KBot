@@ -33,7 +33,7 @@ Left out on purpose (HELP_SYSTEM §5): the table, the routes, how the list is st
 ## SLICE-0000-84 - Help for 0084-03: «Asociaza parteneri» is a modal popup (16.10.2026) <a id="slice-0000-84"></a>
 
 ### What changed and why
-The Sumar button now opens `SumarPartnersForm` as a modal popup (slice 0084-03), so the help no longer says «page of the main window» and «Inchide from the ribbon». `contabil/vederi/sumar.md` (section «Asociaza parteneri») and `tours/tur-sumar.md` (same step) describe the popup: it waits, «Salveaza» sends and closes, «Renunta» / Esc close without associating. Tags `0084-03, 0000-84`.
+For modal `SumarPartnersForm` (0084-03), `contabil/vederi/sumar.md` («Asociaza parteneri») and the same `tours/tur-sumar.md` step replace «page of the main window» / «Inchide from the ribbon»: popup waits; «Salveaza» sends/closes, «Renunta» / Esc close without associating. Tags `0084-03, 0000-84`.
 
 ### Files touched
 `src/KBot.App/HelpContent/contabil/vederi/sumar.md`, `tours/tur-sumar.md`. (Superseded in part by 0000-85, same day: the button moved to the ribbon.)

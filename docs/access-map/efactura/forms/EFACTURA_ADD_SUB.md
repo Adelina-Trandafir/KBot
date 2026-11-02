@@ -1,15 +1,14 @@
 # Form `EFACTURA_ADD_SUB`
 
-Source: `Forms/EFACTURA_ADD_SUB.txt` (44,031 chars). [Reading conventions](../README.md#form-page-conventions).
+Source: `Surse/RawExport/Forms/EFACTURA_ADD_SUB.txt` (44,031 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
+
+Inherits [P1](../README.md#form-properties-p1).
 
 | Property | Value |
 |---|---|
 | RecordSource | [SQL in Data](#data) |
-| NavigationButtons | NotDefault |
-| RecordSelectors | NotDefault |
-| DividingLines | NotDefault |
 | ScrollBars | 2 |
 | Width | 6971 |
 | Left | 11880 |
@@ -17,10 +16,6 @@ Source: `Forms/EFACTURA_ADD_SUB.txt` (44,031 chars). [Reading conventions](../RE
 | Right | 18860 |
 | Bottom | 9120 |
 | FitToScreen | 1 |
-| GridY | 10 |
-| TabularCharSet | 238 |
-| DatasheetFontName | Calibri |
-| DatasheetFontHeight | 11 |
 
 Form events wired: `BeforeUpdate` = VBA, `OnLoad` = VBA
 
@@ -89,5 +84,3 @@ See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 ## Opened from
 
 `form:EFACTURA_ADD`
-
-Raw source: `Surse/RawExport/Forms/EFACTURA_ADD_SUB.txt`

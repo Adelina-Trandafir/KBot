@@ -1,16 +1,15 @@
 # Form `EFACTURA_ADD_FACTURI`
 
-Source: `Forms/EFACTURA_ADD_FACTURI.txt` (19,638 chars). [Reading conventions](../README.md#form-page-conventions).
+Source: `Surse/RawExport/Forms/EFACTURA_ADD_FACTURI.txt` (19,638 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
+
+Inherits [P1](../README.md#form-properties-p1).
 
 | Property | Value |
 |---|---|
 | RecordSource | [SQL in Data](#data) |
 | BorderStyle | 3 |
-| NavigationButtons | NotDefault |
-| RecordSelectors | NotDefault |
-| DividingLines | NotDefault |
 | ScrollBars | 2 |
 | AllowAdditions | NotDefault |
 | AllowEdits | NotDefault |
@@ -21,10 +20,6 @@ Source: `Forms/EFACTURA_ADD_FACTURI.txt` (19,638 chars). [Reading conventions](.
 | Right | 7770 |
 | Bottom | 7220 |
 | FitToScreen | 1 |
-| GridY | 10 |
-| TabularCharSet | 238 |
-| DatasheetFontName | Calibri |
-| DatasheetFontHeight | 11 |
 
 Form events wired: none
 
@@ -82,5 +77,3 @@ See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 ## Opened from
 
 `form:EFACTURA_ADD`
-
-Raw source: `Surse/RawExport/Forms/EFACTURA_ADD_FACTURI.txt`

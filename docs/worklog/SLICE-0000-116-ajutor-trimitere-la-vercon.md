@@ -16,7 +16,7 @@
 
 No capture added (the window and the column are new; a capture `efactura-vercon` can be taken when the operator has seen the screen). `Check-Help.ps1 -Coverage`: the new window is covered; the errors it prints about `KE12-03` / `KE12-04` / tutorials are older and not from this change; `0000-116` has its row in `state/KBOT_STATUS_0000-0009.md` and this worklog.
 
-**What the help says before it is true:** the words «Preluată în NIR …» and «Returnată: motivul» of the column, and «Dacă un NIR făcut din ea este anulat în Vercon...», describe the VERCON half (slices EV04/EV05 of `docs/EV_PLAN.md`), which is NOT written yet: until then an invoice sent stays «Trimisă, așteaptă Administratorul». Revisit the section when EV04/EV05 land.
+**Help ahead of implementation:** «Preluată în NIR …», «Returnată: motivul» and «Dacă un NIR făcut din ea este anulat în Vercon...» describe the unwritten VERCON EV04/EV05 (`docs/EV_PLAN.md`). Until then, sent invoices stay «Trimisă, așteaptă Administratorul»; revisit the section after EV04/EV05.
 
 ## SLICE-0000-117 - Help for the page «Trimite la Vercon» of the ribbon (00EF-48, 21.10.2026) <a id="slice-0000-117"></a>
 

@@ -4,7 +4,7 @@
 
 ## What changed
 
-- **Read** (`KBot.Forexe`): `WorkflowExecutor.ReadUncorrectedOperationsAsync` (new partial `WorkflowExecutor.PageTables.vb`) finds the `<h4>` whose text without diacritics is "Operatiuni necorectate", reads the table under it (columns keyed by header, ASCII lower case), and counts the pages in the pagination. Exposed via `IForexeRunner.ReadUncorrectedOperationsAsync`.
+- **Read** (`KBot.Forexe`): `WorkflowExecutor.ReadUncorrectedOperationsAsync` (new partial `WorkflowExecutor.PageTables.vb`) finds `<h4>` "Operatiuni necorectate" ignoring diacritics, reads the table below it (keys = ASCII-lower-case headers) and counts pagination pages. Exposed via `IForexeRunner.ReadUncorrectedOperationsAsync`.
 - **Model** (`KBot.Domain/UncorrectedOperations.vb`): parses that JSON (date `dd/MM/yyyy`, amount in Romanian format), builds the operator message (max 25 lines, total, warning when the table has more than one page: only page 1 is read).
 - **Trigger** (`ForexeController`): after BOTH `ConnectAsync` overloads succeed, the table is read; rows → event `UncorrectedOperationsFound`. A failed read never fails the connection.
 - **Shell** (`KbotForm.UncorrectedOperations.vb`): saves first, then ONE `KBotMessage` with the list and a last line saying what was saved (or why not).
@@ -30,4 +30,4 @@
 
 ## NEXT — correlation with angajamente (requested, not done)
 
-The saved operations will next be **correlated with the angajamente in the database** (the page shows them as «ERRRRRRRRRR» / «Neidentificat»: FOREXE could not attach them). Likely inputs: Program + IdClsf/CodSSI + Suma + DataPlata against `FX_Angajamente` / `FX_Indicatori` / `FX_Plati`. The rule and where the link is stored (a new column on `FX_Operatiuni`?) are still to be decided with the operator. Because the save only ever inserts, a link written later is not lost on the next login.
+Next: **correlate saved operations with angajamente** («ERRRRRRRRRR» / «Neidentificat» = FOREXE could not attach them). Likely inputs: Program + IdClsf/CodSSI + Suma + DataPlata against `FX_Angajamente` / `FX_Indicatori` / `FX_Plati`. Rule/storage (new `FX_Operatiuni` column?) await operator decision. Insert-only saving preserves a later link across logins.

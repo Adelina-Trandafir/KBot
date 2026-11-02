@@ -1,6 +1,6 @@
 # Form `EF_F`
 
-Source: `Forms/EF_F.txt` (62,535 chars). [Reading conventions](../README.md#form-page-conventions).
+Source: `Surse/RawExport/Forms/EF_F.txt` (62,535 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
 
@@ -107,11 +107,9 @@ See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 
 Nothing found by static scan (probably opened by name from a ribbon, a menu string or a variable).
 
-Raw source: `Surse/RawExport/Forms/EF_F.txt`
-
 ## Form `EF_F_inlucru` <a id="ef-f-inlucru"></a>
 
-Source: `Forms/EF_F_inlucru.txt` (60,032 chars). Raw source: `Surse/RawExport/Forms/EF_F_inlucru.txt`.
+Source: `Surse/RawExport/Forms/EF_F_inlucru.txt` (60,032 chars).
 
 This is a distinct static record, not an implementation stage of EF_F. Reconstruct it from the EF_F record above with only the replacements below. Unlisted properties, wired form events, all three section rows, module declarations (including the common attribute prefix), control cells and handler cells are identical. The same static-scan limits and the same “Nothing found by static scan” Opened from result apply. The later [operator scope decision](../README.md#scope-decisions-operator-06102026-that-these-maps-pre-date) excludes this variant and the accounting flow; these records retain the earlier snapshot.
 

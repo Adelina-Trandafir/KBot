@@ -10,7 +10,7 @@ Permisiunea limitată `parteneri_anaf` este acum disponibilă oricui are dreptul
 
 Se păstrează autentificarea, dreptul VR al unității, verificarea contextului, lock-ul de scriere, versiunea rândului și toate restricțiile de câmp: denumirea/adresa vin numai din ANAF; manual se poate salva numai CodFiscal, după răspuns explicit „negăsit”. Mesajul serverului pentru un cod găsit între timp indică noua etichetă „Sincronizează cu ANAF”. Nu se acordă drepturi generale de nomenclatoare sau recepție.
 
-Combinarea partenerilor folosea prezența `parteneri_anaf` drept indicator al rolului Gestionar. Pentru a păstra exact restricția existentă numai asupra Gestionarului, verifică acum rolul real din unitate prin helperul deja existent. Altfel, noua disponibilitate ANAF ar fi blocat neintenționat combinarea pentru toate rolurile. Drepturile de combinare ale celorlalte roluri nu sunt extinse sau retrase.
+Combinarea partenerilor identifica Gestionarul prin `parteneri_anaf`; extinderea ANAF ar fi blocat astfel toate rolurile. Acum helperul existent verifică rolul real din unitate, păstrând restricția numai asupra Gestionarului și drepturile celorlalte roluri.
 
 Fișiere de aplicație:
 

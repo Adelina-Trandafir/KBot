@@ -6,7 +6,7 @@ Starea din antet este consemnată pentru implementare și corecturile de mai jos
 
 ## Rapoarte
 
-Modelele generate prin catalogul de rapoarte primesc subunitatea selectată când denumirea ei diferă de cea a unității. Comparația ignoră diferențele de majuscule și spațiere. Subunitatea se adaugă la antetul existent sau deasupra titlului când raportul nu are antet, inclusiv pe secțiunile separate explicit prin pagină nouă. Modificarea este în modelul comun pentru HTML, PDF și Excel, inclusiv Situație de plată. Rapoartele deja generate trebuie regenerate.
+Modelul comun HTML/PDF/Excel din catalog, inclusiv Situație de plată, adaugă subunitatea selectată dacă numele diferă de unitate, ignorând majusculele/spațierea. Loc: antetul existent sau deasupra titlului fără antet, inclusiv în secțiunile cu pagină nouă explicită. Rapoartele deja generate cer regenerare.
 
 ## Meniu → Zile lucrătoare pe luni
 
@@ -18,7 +18,7 @@ Modelele generate prin catalogul de rapoarte primesc subunitatea selectată cân
 - Salvarea este explicită, atomică și folosește mecanismul existent de idempotency. Versiunea include subunitatea, anul, configurarea și versiunile lunilor, pentru a refuza suprascrieri pe date depășite.
 - Lunile închise sunt read-only și sunt păstrate inclusiv la import. O lună deschisă nu poate fi redusă sub prezențele deja înregistrate.
 
-Valorile se păstrează compact în `AD_Settings`, pe cheie `WorkingDays:<an>` și subunitate, în limita câmpului existent `SettingValue` de 255 caractere. Lunile existente deschise primesc valoarea în `AD_LunaD.ZileLuna`; rapoartele și validarea prezenței folosesc deja acest câmp. La deschiderea lunii următoare, `create_next_month` folosește configurarea salvată pentru acea lună. Fără configurare, fallback-ul existent este numărul zilelor luni–vineri. Prezențele individuale, încasările și situațiile financiare închise nu sunt rescrise de această machetă.
+Stocare compactă în `AD_Settings`, cheie `WorkingDays:<an>` pe subunitate, în cei 255 de caractere ai `SettingValue`. Actualizează lunile deschise existente prin `AD_LunaD.ZileLuna`, folosit deja de rapoarte/validarea prezenței. `create_next_month` preia configurarea lunii următoare, altfel fallbackul existent luni–vineri. Nu rescrie prezențe individuale, încasări sau situații financiare închise.
 
 Nu sunt necesare modificări de schemă sau scripturi DDL/seed.
 

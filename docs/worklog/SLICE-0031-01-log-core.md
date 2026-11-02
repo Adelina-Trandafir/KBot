@@ -22,7 +22,7 @@ Prima trecere din felia 0031 (vizualizator de jurnale), după `docs/PLAN_LogView
 
 #### 2. Rotația păstrează istoric (`LogRotation`)
 
-10 MB, cinci generații, exact politica pe care serverul o are deja prin `RotatingFileHandler` din `utils/logger.py` (verificat: `maxBytes=10*1024*1024, backupCount=5`) — o singură regulă peste ambele jumătăți ale sistemului. Doar redenumiri, niciodată citire-și-rescriere, deci costul nu depinde de mărimea fișierului. Consum maxim mărginit: 60 MB pe familie.
+10 MB, cinci generații, aceeași politică server/client (`utils/logger.py`, `RotatingFileHandler`: verificat `maxBytes=10*1024*1024, backupCount=5`). Numai redenumiri, fără citire/rescriere: cost independent de mărimea fișierului, maximum 60 MB/familie.
 
 Rotația se cheamă înaintea fiecărei adăugări în cei patru scriitori; în vizualizator ar limita fișierele numai la deschiderea lui.
 
@@ -34,7 +34,7 @@ Două refuzuri explicite, ambele testate: `backupCount < 1` și `maxBytes <= 0` 
 
 Fișierul trece de la directorul executabilului la `LogPaths.EnsureLogsDirectory()`. Numele (`log_{treeId}.txt`) și parametrul opțional de cale rămân neschimbate.
 
-Cele două `Catch`-uri (`Write`: «Eșec silențios la scriere»; `Init`: fallback Temp) scriu acum motivul pe `Trace`, fără rearuncare, ca `GlobalErrorLog` / `AdobeHostLog`. Citirea codului confirmă apeluri din `TooltipPopup.OnPaint` și `AdvancedTreeControl.Painting.DrawContent`; propagarea unei erori de jurnal din pictare ar opri procesul. Față de înghițirea anterioară, rămâne o urmă.
+Cele două `Catch`-uri (`Write`: «Eșec silențios la scriere»; `Init`: fallback Temp) scriu motivul pe `Trace`, fără rearuncare, ca `GlobalErrorLog` / `AdobeHostLog`. Apelurile citite din `TooltipPopup.OnPaint` și `AdvancedTreeControl.Painting.DrawContent` cer această limită: eroarea propagată din pictare ar opri procesul. Înghițirea anterioară primește astfel o urmă.
 
 #### 4. Citire, analiză, filtrare (`KBot.Common\Logging\`)
 
@@ -230,9 +230,7 @@ Soluția e o punte tipizată: `ILogViewerLauncher` în `KBot.DevHarness\Abstract
 
 `capBar.OptionButtonClick` deschide `CustomPopup` cu «&Arată jurnal», ancorat la `OptionButtonBounds`. `CustomPopup.ClosedJustNow` împiedică redeschiderea la al doilea clic, ca la meniul de teme. Formularul este nemodal, fără `Using`.
 
-`FeatureSwitches.VizualizatorJurnaleActiv` (modul nou KBot.Common) este constant True la acest reper, conform cererii. False oprește meniul cu un singur rând, fără popup gol. Viitoarea sursă rol/manifest/configurare se schimbă numai în modul, nu la apelanți.
-
-Instanță nemodală unică; redeschiderea o aduce în față, ca InternalInfoForm.
+`FeatureSwitches.VizualizatorJurnaleActiv` (modul nou KBot.Common), constant True la acest reper, oprește meniul pe False, fără popup gol. Viitoarea sursă rol/manifest/configurare se schimbă numai în modul. Instanță nemodală unică, readusă în față la redeschidere, ca InternalInfoForm.
 
 #### 6. Fereastra de pornire înlocuiește `MessageBox`-ul (CERUT de operator)
 

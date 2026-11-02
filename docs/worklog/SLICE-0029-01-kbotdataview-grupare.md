@@ -2,6 +2,8 @@
 
 **Cerere operator:** «grila trebuie să suporte grupare EXACT ca raportul Access: agregare, culori diferite și fonturi diferite. Atenție la sortare / filtrare pe o grilă grupată.»
 
+Formularea originală păstrată din registru: «i need the dgv to support grouping JUST like the access report does. it must support aggregation, different coloring and fonts. be careful when ordering / filtering a grouped dgv».
+
 **Trei hotărâri confirmate de operator înainte de a scrie o linie** (grupurile se pot STRÂNGE; agregatele merg pe AMÂNDOUĂ benzile, alese pe nivel; o sortare pe o coloană negrupată ordonează ÎNĂUNTRUL grupurilor). Toate trei erau recomandarea, dar niciuna nu se putea deduce din cerere.
 
 ---
@@ -12,13 +14,13 @@
 
 Peste indicii de MODEL (ordinea încărcării, folosită de API) și pozițiile de VEDERE (după filtrare/sortare) din 0028-03, gruparea adaugă indicii de BANDĂ: rândurile desenate, inclusiv antetele/subsolurile de grup fără rând de model.
 
-Regula veche NU s-a mișcat: `Item(cheie, index)`, `CurrentRowIndex`, `CellClick`, `EnsureVisible` înseamnă azi exact ce însemnau înainte de felie. Ce s-a mutat e geometria, care lucrează acum în benzi.
+`Item(cheie, index)`, `CurrentRowIndex`, `CellClick`, `EnsureVisible` își păstrează semantica; numai geometria trece la benzi.
 
 `_view` păstrează rândurile de DATE care trec filtrele, inclusiv cele ascunse de grupuri strânse. Subsolul general și măsurarea coloanelor lucrează astfel neschimbat.
 
 ### 2. Înălțimi variabile fără să se piardă virtualizarea
 
-Virtualizarea se sprijinea pe o înmulțire: `poziție × RowHeight`. O bandă de grup poate avea înălțimea ei (`HeaderHeight`/`FooterHeight` pe nivel), deci înmulțirea nu mai ține.
+`poziție × RowHeight` nu mai ajunge: benzile de grup au înălțimi proprii (`HeaderHeight`/`FooterHeight` pe nivel).
 
 Soluția: **offset-uri cumulate + căutare binară** (`BandIndexAtOffset`). Costul unei pictări rămâne al FERESTREI, nu al modelului — proba e în test: 5.000 de rânduri și 50 de grupuri pictează sub 40 de rânduri de date.
 
@@ -37,10 +39,8 @@ Clicul pe antetul unei chei de grupare schimbă SENSUL nivelului, fără sortare
 
 ### 4. Filtrarea schimbă totalurile, strângerea NU
 
-Distincția asta e cea mai ușor de stricat și cea mai vizibilă când e stricată:
-
-- un **filtru** scoate rânduri din pagină → grupul rămas fără niciun rând dispare cu antet și subsol cu tot (nu rămâne un antet gol), iar totalurile scad, fiindcă pagina chiar s-a schimbat;
-- o **strângere** doar ascunde → totalul grupului și cel general rămân NESCHIMBATE. Dacă cele două s-ar purta la fel, un operator care închide o lună ar vedea totalul general mișcându-se singur sub ochii lui, ceea ce se citește ca o greșeală de calcul, nu ca o comoditate de afișare.
+- **Filtrul** scoate rânduri din pagină: grupul gol dispare cu antet/subsol, iar totalurile scad.
+- **Strângerea** doar ascunde: totalul grupului și cel general rămân NESCHIMBATE. Închiderea unei luni nu trebuie să pară o schimbare a calculului.
 
 **Rândul filtrat pierde selecția; cel ascuns într-un grup strâns o păstrează.** Astfel `Ctrl+Dreapta` poate redeschide grupul închis cu `Ctrl+Stânga`. Rândul fără bandă se ancorează pe antet prin `AnchorBandOfRow`; săgeata în jos pleacă de acolo și sare peste grup.
 
@@ -54,11 +54,11 @@ Cache-ul e leneș, pe nod: o grilă cu zece mii de grupuri și cinci coloane agr
 
 ### 6. Culori și fonturi
 
-Roluri PROPRII în temă (`_cGroupHeaderBack` / `_cGroupFooterBack` / …), nu împrumutate de la antetul sau subsolul grilei — o schemă trebuie să poată distinge «titlul unei secțiuni» de «titlurile coloanelor». Antetul de grup e spălat spre accent mai tare (0,28) decât subsolul grilei (0,1): el desparte secțiuni, nu încheie o pagină.
+Roluri proprii în temă (`_cGroupHeaderBack` / `_cGroupFooterBack` / …) disting titlul secțiunii de coloanele/subsolul grilei. Antetul de grup se amestecă spre accent cu 0,28, mai puternic decât subsolul grilei (0,1), pentru delimitarea secțiunilor.
 
-**Nuanța pe adâncime se calculează, nu se configurează:** nivelul 0 e cel mai apăsat, fiecare nivel de sub el se apropie de fundalul rândurilor. Așa ierarhia se citește fără ca nimeni să aleagă cinci culori, iar un nivel adăugat nu cere un slot nou de paletă.
+**Nuanța se calculează pe adâncime:** nivelul 0 cel mai apăsat, cele inferioare apropiate de fundalul rândurilor. Ierarhie fără alegerea a cinci culori sau slot nou de paletă la adăugarea nivelului.
 
-Peste asta, trei straturi de control, în ordinea puterii: culoarea/fontul fixate PE NIVEL bat tema; evenimentul `GroupFormatting` bate nivelul (acolo se colorează grupul care iese din tipar — luna cu depășire pe roșu); iar sub o schemă ÎNTUNECATĂ culorile fixate se ignoră, exact ca la benzile grilei (regula din 0028-03: la întuneric contrastul bate preferința). **Fontul fixat rămâne al operatorului în orice schemă** — un font nu devine ilizibil pe fundal închis.
+Priorități: culoare/font PE NIVEL peste temă; `GroupFormatting` peste nivel (ex.: lună cu depășire, roșu). Tema ÎNTUNECATĂ ignoră culorile fixate, ca benzile grilei din 0028-03, pentru contrast. **Fontul fixat rămâne în orice schemă**, fiind lizibil și pe fundal închis.
 
 ### 7. Regula `ShouldSerialize` — verificată, nu presupusă
 

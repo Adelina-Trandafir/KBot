@@ -4,7 +4,7 @@ Reference implementation: [`LoginForm`](../src/KBot.App/LoginForm.vb) + [`LoginF
 
 ## 1. Layout is built from docked `TableLayoutPanel`s
 
-The form's body is a tree of the house [`KBotTableLayoutPanel`](../src/KBot.Controls/Table/KBotTableLayoutPanel.md) (TLPs; 0066), each **docked**, never positioned by absolute `Location`/`Size`. A form resizes and DPI-scales correctly only when every region is a docked TLP.
+The body is a tree of docked house [`KBotTableLayoutPanel`](../src/KBot.Controls/Table/KBotTableLayoutPanel.md) containers (TLPs; 0066), never absolute `Location`/`Size`: required for correct resizing and DPI scaling.
 
 - The outermost container docks `Fill`.
 - Header/caption regions dock `Top`.
@@ -26,7 +26,7 @@ Rows/columns are sized with `RowStyles`/`ColumnStyles` (`Percent` for elastic re
 
 ## 2. Every child control is docked inside its logical TLP
 
-Controls do **not** carry meaningful `Location`/`Size` — they are placed in a TLP cell via `Controls.Add(ctrl, col, row)` and set `Dock = Fill` (use `SetColumnSpan`/`SetRowSpan` for controls that span cells, e.g. a full-width button). The cell — not the control — owns the geometry. This keeps alignment stable across themes, fonts and DPI.
+Place children in TLP cells with `Controls.Add(ctrl,col,row)`, `Dock=Fill`; use `SetColumnSpan`/`SetRowSpan` for spanning controls (e.g. full-width button). The cell owns geometry, not meaningful control `Location`/`Size`, keeping alignment stable across themes/fonts/DPI.
 
 ## 3. Everything is flat so the theme can paint it
 
@@ -44,7 +44,7 @@ Per the standing rule, all controls are declared and built in `InitializeCompone
 
 ## 6. Layout changes go in the Designer, not a runtime helper
 
-If a change belongs to the Designer — moving/re-parenting/re-docking a control, resizing, adding a control — make it **in `*.Designer.vb` directly**. Do not write a code-behind method that mutates the layout at `Load` time to work around the Designer. Code-behind is for behavior (event handlers, phase logic, data binding), not for relocating controls the Designer owns.
+Move/re-parent/re-dock/resize/add controls directly in `*.Designer.vb`. No code-behind `Load` helper to work around Designer layout. Code-behind owns behaviour (events, phases, data binding); Designer owns placement.
 
 ## 7. No comments in `*.Designer.vb`
 
@@ -52,7 +52,7 @@ Do not add explanatory comments to any form's `.Designer.vb`. Keep only the defa
 
 ## 8. Custom K-BOT controls are declared and configured in the Designer too
 
-`AdvancedTreeControl` and `KBotDataView` are Toolbox controls (`<ToolboxItem(True)>`), so the standing rule (§5/§6) applies to them exactly like stock controls: **declare the instance in `*.Designer.vb` and set its initial/static properties there**, via the property grid — not by `New`-ing it and configuring it in code-behind.
+`AdvancedTreeControl`/`KBotDataView` are Toolbox controls (`<ToolboxItem(True)>`): §5/§6 applies. Declare instances and initial/static properties in `*.Designer.vb` via the property grid, without `New`/configuration in code-behind.
 
 - **Initial/static props go in the Designer**: appearance and fixed behavior — `ItemHeight`, `Indent`, `RootExpander`, `CheckBoxes`, `HeaderVisible`, `HeaderCaption`, `ScrollBarThickness`, the color properties, `TreeListView`/ `DynamicColumns`/`ColumnsLevel`, etc. (These now carry `<Category>`/`<Description>`/ `<DefaultValue>` so the grid is self-documenting.)
 - **Code-behind is for runtime data only**: building the node tree / rows, wiring event handlers, resolving image keys against the runtime icon cache, and anything driven by the session or API response. Runtime-only members (`SelectedNode`, `Items`, resolved header `Image`s, …) are `<Browsable(False)>` and never appear in the grid by design.

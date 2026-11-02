@@ -6,7 +6,7 @@ Stare: **IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT**.
 
 Cererea utilizatorului: în VERCON, rolul **Gestionar** vede lista partenerilor și îi poate actualiza numai prin ANAF; dacă nu sunt găsiți în ANAF, poate salva manual numai `CodFiscal`. Utilizatorul a corectat explicit formularea inițială „admin” în „Gestionar” și a cerut layout/look existent, cu controale CUSTOM.
 
-Pagina existentă în meniu `Configurări → Furnizori (Parteneri)` era un placeholder. Acum folosește workspace-ul nomenclatoarelor: DataGrid CUSTOM în stânga, detalii în dreapta, TextBox CUSTOM pentru căutare/câmpuri și bara comună de acțiuni/status. Adresa folosește TextBox multiline. Confirmările și notificările sunt dialogurile comune ale aplicației. CSS separat, limitat la această pagină; adaptare pentru ecrane înguste.
+Placeholderul `Configurări → Furnizori (Parteneri)` devine workspace de nomenclatoare: DataGrid CUSTOM stânga, detalii dreapta, TextBox CUSTOM pentru căutare/câmpuri (adresă multiline), bară comună de acțiuni/status și dialoguri comune pentru confirmări/notificări. CSS separat, limitat la pagină, adaptat ecranelor înguste.
 
 Lista conține partenerii vizibili de tip furnizor (`Tip=1`, `Ascuns=0`), inclusiv cei fără cod fiscal. Arată Denumire, Cod fiscal, Cod partener și detaliile partenerului selectat. Ordinea implicită este alfabetică în limba română, cu chei explicite; sortarea/filtrele grilei se păstrează la căutare, reîmprospătare și salvare. ID-ul intern identifică rândul, fără a stabili ordinea afișării.
 

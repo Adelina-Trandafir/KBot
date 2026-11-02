@@ -2,9 +2,9 @@
 
 Data: 30.10.2026. Stare: **IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT**.
 
-În meniul aplicațiilor VERCON, ADECHIT și al paginii comune `/portal`, rolul Administrator al unității curente primește „Înrolează Certificat Digital”, imediat deasupra „Setări tooltip”. Rolul se citește la deschiderea meniului; opțiunea lipsește pe telefon/tabletă și când accesul nu poate fi citit. Navigarea păstrează mecanismele existente ale aplicației pentru modificări nesalvate și eliberarea gestiunii.
+Meniurile VERCON, ADECHIT și `/portal` oferă Administratorului unității curente „Înrolează Certificat Digital”, deasupra „Setări tooltip”. Rol recitit la deschiderea meniului; opțiune absentă pe telefon/tabletă sau la acces necitibil. Navigarea păstrează protecția modificărilor nesalvate și eliberarea gestiunii.
 
-Ruta `/certificat-administrator` deschide o pagină dedicată, cu revenire numai către `/adechit`, `/vercon` sau `/portal`. Nu depinde de accesul Administratorului la ecranele KBOT. Pagina HTML este o carcasă publică fără date personale; accesul și datele sunt citite numai cu `X-Portal-Token`. Fără sesiune se afișează refuzul și revenirea pentru autentificare.
+Pagina dedicată `/certificat-administrator`, independentă de accesul la ecranele KBOT, permite revenire numai la `/adechit`, `/vercon`, `/portal`. HTML public fără date personale; acces/date numai cu `X-Portal-Token`. Fără sesiune: refuz și revenire la autentificare.
 
 API: `GET /api/portal/certificat/administrator/acces`, `GET .../stare`, `POST .../inroleaza`, `POST .../dezactiveaza`. Fiecare apel recitește apartenența și rolul Administrator în unitatea curentă din baza comună; rol lipsă, schimbat, alt rol sau eroare de citire nu permit operația. Contul nu este primit din formular. Înrolarea, starea și dezactivarea reutilizează implementarea portalului: certificat prezentat prin mTLS și validat de nginx, amprentă SHA-256, refuz dacă aparține altui cont, un singur certificat activ, dezactivare numai pe contul propriu și jurnalizare. Se folosește tabela existentă `Utilizatori_Certificate`; nu se creează tabele și nu se primește cheia privată. Lista noii pagini este ordonată alfabetic în limba română după subiect.
 

@@ -5,10 +5,10 @@
 ```
 js/components/session-monitoring/
 ├── session-monitoring-manager.js       # Core + orchestrator
-├── session-monitoring-timers.js        # Programare timere
-├── session-monitoring-extension.js     # Prelungire + verificare server
-├── session-monitoring-ui.js            # UI: warnings, notifications, CSS loading
-└── session-monitoring-activity.js      # User activity + event listeners
+├── session-monitoring-timers.js
+├── session-monitoring-extension.js
+├── session-monitoring-ui.js
+└── session-monitoring-activity.js
 
 static/css/
 └── monitoring.css                      # Stiluri CSS separate

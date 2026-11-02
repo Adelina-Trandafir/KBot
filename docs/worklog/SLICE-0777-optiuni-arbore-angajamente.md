@@ -18,7 +18,7 @@ Operator request, 23.09.2026. Slice number **0777** given by the operator (the r
 ## Second pass (same slice, operator 23.09.2026)
 
 8. **No column title band in the tree.** New `AdvancedTreeControl.ColumnHeaderVisible` (default True, so every other tree keeps its band); the main tree sets it False in the designer. Hidden = the band is not drawn, takes no height and has no header click (so no column filter popup from it). The columns stay a real table in the rows — the `~~~` left-text~~~right-text fallback was not needed.
-9. **Column widths on the KBOT tab.** Two `KBotTextField`s: CODANGAJAMENT (default 140) and SURSE (default 90), logical px at 100%, accepted 30–600, saved on Enter or on leaving the field (not per keystroke). Bad input: the band says why and the field goes back to the stored value. New keys `TreeCodColumnWidth` / `TreeSurseColumnWidth` (same under both sorts; an out-of-range value in the file is ignored at load). The shell re-lays the columns when a width changes. `COD_COLUMN_WIDTH` in `KbotForm.vb` removed.
+9. **KBOT tab widths.** Two `KBotTextField`s: CODANGAJAMENT default 140, SURSE 90; logical px at 100%, range 30–600. Enter/Leave saves, not each keystroke; invalid input shows the reason in the band and restores the stored value. New `TreeCodColumnWidth` / `TreeSurseColumnWidth`, shared by both sorts; out-of-range file values ignored at load. Width changes re-lay columns; removed `KbotForm.vb`'s `COD_COLUMN_WIDTH`.
 
 ## Third pass (same slice, operator 23.09.2026)
 
@@ -32,7 +32,7 @@ Operator request, 23.09.2026. Slice number **0777** given by the operator (the r
 
 ## Fifth pass (same slice, operator 23.09.2026)
 
-14. **The date sort orders on `FX_Istoric.DataFX`**, taken from the row whose `Descriere` is «Angajament nou.» (Access literal with the trailing dot; matched with or without it), one per CodAngajament (`MIN()` keeps the subquery scalar). DataFX is DATETIME and the time part is kept end to end: server field `DataAngajamentNou` (ISO datetime) → `GetTreeRow.DataAngajamentNou` → `AngajamentTreeInfo.DataAngajamentNou` → `SortRows`. The row tooltip shows it as «Angajament nou (FOREXE): dd.MM.yyyy HH:mm:ss». `FX_Angajamente.DataCreare` still drives the YEAR filter only. Not built, not run.
+14. **Date sort: `FX_Istoric.DataFX`** from `Descriere` «Angajament nou.» (Access literal; matches with/without final dot), one per CodAngajament (`MIN()` scalar subquery). DATETIME/time preserved: server `DataAngajamentNou` (ISO datetime) → `GetTreeRow.DataAngajamentNou` → `AngajamentTreeInfo.DataAngajamentNou` → `SortRows`. Tooltip: «Angajament nou (FOREXE): dd.MM.yyyy HH:mm:ss». `FX_Angajamente.DataCreare` remains YEAR filter only. Not built, not run.
 
 ## Files touched
 

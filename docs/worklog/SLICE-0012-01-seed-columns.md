@@ -6,7 +6,7 @@
 
 ## Ce s-a schimbat și de ce
 
-Utilitarul de migrare are nevoie de lista **reală** de coloane a fiecărui tabel `FX_` din MariaDB ca să construiască payload-ul pentru `POST /api/forexe/seed/rows`. Până acum singura sursă de adevăr era `TableDef`-ul Access, introspectat pe partea VBA — adică schema **sursă**, nu cea **destinație**. Dacă cele două diverg (coloană redenumită la migrare, coloană Access rămasă în urmă), insertul pică pe o eroare SQL opacă, la rulare, per chunk.
+Migratorul cere coloanele reale ale țintei MariaDB FX_ pentru payload-ul POST /api/forexe/seed/rows. Până aici, VBA introspecta numai TableDef Access: divergențele sursă/țintă (redenumiri, coloane Access rămase în urmă) produceau erori SQL opace per chunk la scriere.
 
 Ruta nouă mută verificarea înainte de prima scriere:
 
@@ -19,7 +19,7 @@ Doar numele, în ordinea din tabel (`SHOW COLUMNS`), ca apelantul să poată con
 
 ### De ce NU 404 pentru tabel inexistent
 
-Cerință explicită din brief, și e cea corectă: apelantul trebuie să distingă „tabelul nu are coloane aici" (migrarea nu a rulat pentru el) de „cererea nu a ajuns" (rețea, cheie greșită, proxy). Un 404 le confundă — clienții HTTP tratează 4xx generic. Deci:
+Brief-ul cere distingerea tabelului fără coloane aici (încă nemigrat) de cererea neajunsă (rețea/cheie/proxy). 404 le-ar confunda în tratarea generică 4xx a clienților; contractul este:
 
 | Situație | Răspuns |
 |---|---|
@@ -32,7 +32,7 @@ Cerință explicită din brief, și e cea corectă: apelantul trebuie să distin
 
 ### Detaliu de implementare: `SHOW TABLES LIKE` înainte de `SHOW COLUMNS`
 
-`SHOW COLUMNS FROM` pe un tabel inexistent **aruncă** (errno 1146). Ca să nu ajung să adulmec codul de eroare din excepție — fragil, și ar înghiți la fel de bine o eroare reală de permisiuni — existența se testează întâi cu `SHOW TABLES LIKE %s`, care nu aruncă și primește numele **ca valoare parametrizată**, nu ca identificator. Abia dacă rândul există se rulează `SHOW COLUMNS`. Două round-trip-uri, zero ghicit de errno.
+SHOW COLUMNS FROM pe tabel absent aruncă errno 1146. Mai întâi SHOW TABLES LIKE %s verifică existența fără eroare pentru tabel absent, cu numele ca valoare parametrizată; SHOW COLUMNS rulează numai dacă există. Două round-trip-uri evită deducția fragilă din errno și înghițirea erorilor reale de permisiuni.
 
 Alternativa (`information_schema.columns ... ORDER BY ORDINAL_POSITION`) ar fi fost un singur query, dar brief-ul cere `SHOW COLUMNS`; iar `information_schema` cere privilegii pe care contul de seed nu le are garantat.
 
@@ -56,9 +56,9 @@ Alternativa (`information_schema.columns ... ORDER BY ORDINAL_POSITION`) ar fi f
 
 ## Decizia blocată: `seed/schema` rămâne, dar nu se apelează
 
-**Varianta A, nedistructivă.** Tabelele `FX_` există deja în MariaDB cu DDL curat (scris de mână, cu tipuri și indecși potriviți). A le recrea din tipurile DAO ale Access-ului ar fi o regresie: `_dao_to_mariadb` produce `LONGTEXT` pentru orice tip necunoscut și `VARCHAR(255)` implicit, iar `/schema` face `DROP TABLE IF EXISTS` înainte de `CREATE` — deci ar șterge date reale ca să pună o schemă mai slabă.
+**Varianta A, nedistructivă:** FX_ există în MariaDB cu DDL manual, tipuri/indecși potriviți. Recrearea din DAO ar pierde date și calitatea schemei: _dao_to_mariadb produce LONGTEXT pentru necunoscute/VARCHAR(255) implicit, iar /schema execută DROP TABLE IF EXISTS înaintea CREATE.
 
-Ruta rămâne în cod (nu e ștearsă: e utilă pentru o bază complet goală), dar utilitarul de migrare **nu o cheamă**. `/columns` există exact ca să nu fie nevoie de ea.
+Ruta /schema rămâne pentru baze complet goale; migratorul nu o apelează, folosind /columns.
 
 ## Rezultate teste
 

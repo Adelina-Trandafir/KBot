@@ -341,9 +341,7 @@ Raport de operator:
 
 MainForm tree/pnlTree sunt Fill în split.Panel1, cu lățime din SplitterDistance; ApplyCollapseExtent scria Width = 100, imediat suprascris de layout, provocând pâlpâirea. Playground Left în gazdă Fill deține lățimea și făcea proba vizibilă.
 
-Contractul era deja scris în worklog («gazda ascultă `CollapsedChanged` și mută splitter-ul»), dar
-**nimeni nu-l implementa, iar controlul se bătea cu layout-ul în loc să tacă**. Ambele jumătăți au
-fost reparate:
+Contractul «gazda ascultă CollapsedChanged și mută splitter-ul» exista, dar nu era implementat; controlul concura cu layout-ul. Reparat în ambele părți:
 
 - **Control:** `HostOwnsWidth` (orice `Dock` sau ancorare pe ambele laturi) și `ExpandedWidth` (ultima lățime desfășurată). Dacă lățimea aparține gazdei, `ApplyCollapseExtent` schimbă numai starea și emite evenimentul, fără scrierea care provoca pâlpâirea.
 - **MainForm:** tree_CollapsedChanged setează SplitterDistance la MinimumCollapsedWidth + split.Panel1.Padding.Left, citit. Panel1MinSize 240 (peste ținta 111) scade la strângere/revine la desfacere; IsSplitterFixed = True exclude intermediarele, ClampSplitter respectă limitele SplitContainer în ferestre înguste, evitând InvalidOperationException.
@@ -370,8 +368,7 @@ Regula acum, într-un singur loc (`RightIconGutter`):
 
 `ReserveRightIconSpace` era deja `False` implicit, dar guverna doar banda de coloane; acum e comutatorul care spune «ține locul fix» și pentru text. Descrierea din grila de proprietăți s-a rescris ca atare.
 
-**Banda de coloane rămâne DELIBERAT ne-condiționată de hover** (`ReservedRightIconWidth`): o
-geometrie pe tot controlul care se re-așază la fiecare trecere a cursorului ar fi de nefolosit. Doar textul de nod se îngustează. Cele două funcții stau una lângă alta, cu motivul scris între ele.
+**ReservedRightIconWidth nu depinde de hover:** banda de coloane nu se reașază la fiecare mișcare a cursorului; se îngustează doar textul nodului. Cele două funcții sunt alăturate, cu justificarea între ele.
 
 OnMouseDown folosea margine 6 în loc de RightIconRightPadding; schimbarea proprietății despărțea hit-testul de desen. Acum citește proprietatea.
 
@@ -408,8 +405,7 @@ Cerere de operator:
 
 `FooterRightIcon` + `FooterRightIconKey`, perechea celor din stânga, cu evenimentul `FooterRightIconClicked(e As MouseEventArgs)` — sora lui `HeaderRightIconClicked`, aceeași semnătură, ca gazda să nu aibă de învățat un al doilea tipar.
 
-**Regula de capăt e acum SIMETRICĂ și scrisă o singură dată** (`ButonPeLatura`): latura pe care
-stă butonul de strângere îi aparține, iar iconița de acolo nu se mai desenează. Până acum exista doar jumătatea din stânga, cu regula împrăștiată în `DrawFooter`; s-a mutat în `ShowFooterLeftIcon` / `ShowFooterRightIcon`, care spun ce e pe ecran ACUM și sunt publice (le citește și playground-ul ca să-și stingă comutatoarele fără să reproducă regula).
+**ButonPeLatura, simetric:** latura butonului de strângere nu mai desenează iconița. Vechea regulă doar-stânga din DrawFooter devine ShowFooterLeftIcon/ShowFooterRightIcon publice, citite și de playground pentru stingerea comutatoarelor fără duplicarea regulii.
 
 ComputeFooterRightIconRect este geometria pură comună desenului/hit-testului, independentă de repictarea anterioară. FooterRightIconRect o expune, ca FooterCollapseButtonRect.
 

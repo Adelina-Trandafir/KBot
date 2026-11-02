@@ -7,7 +7,7 @@ Istoric din 06.10.2026. 07 înlocuiește corecția prin PUT cu retrimiterea tip 
 
 ## SLICE-00EF-06 - Server: issued invoices (CRUD), UBL XML, validation (code written, py_compile only, NEVER RUN) <a id="slice-00EF-06"></a>
 
-Slice 00EF (operator, 06.10.2026). The server half of the issued invoices: what the screens of 00EF-08 / 00EF-09 will call. Upload, status and download from ANAF are 00EF-07 (not here). No client code, no help: nothing the operator sees changed.
+Slice 00EF (operator, 06.10.2026): issued-invoice server for screens 00EF-08/09. ANAF upload/status/download belong to 00EF-07. No client/help changes visible to the operator.
 
 ### What changed and why
 New files in `PYTHON/routes/efactura/` (all registered through `__init__.py`; `main.py` already registers the blueprint):
@@ -20,11 +20,11 @@ New files in `PYTHON/routes/efactura/` (all registered through `__init__.py`; `m
 - `tools/efactura/compare_xml.py` - compares the XML Access wrote with the one the server writes (whitespace and attribute order ignored).
 
 #### Answers found in the Access code (they close open questions of the plan)
-- **`ValideazaXML_Local` is not local.** It POSTs the XML (without `xsi:schemaLocation`) to `https://webservicesp.anaf.ro/prod/FCTEL/rest/validare/FACT1`, no token, and accepts on `"stare":"ok"`. The new server does the same call (`valideaza` with `{"anaf": true}`) and ADDS its own offline checks, which Access did not have.
+- **`ValideazaXML_Local` is not local:** tokenless XML POST without `xsi:schemaLocation` to `https://webservicesp.anaf.ro/prod/FCTEL/rest/validare/FACT1`, accepting `"stare":"ok"`. The server repeats this call (`valideaza`, `{"anaf": true}`), adding offline checks absent from Access.
 - **`Factura.Corectata` / `TipFactura`**: an uploaded-and-accepted invoice (numeric `id_descarcare`) is corrected by resending it with type 384; only the comment and the order reference change and `Corectata` becomes true. (Written first as `PUT /facturi/<id>` on an accepted invoice; **moved in 00EF-07**: the correction is now made by `POST /facturi/<id>/trimite` with a `corectie`, and that PUT answers `SE_CORECTEAZA_PRIN_TRIMITERE`.)
-- **`IdFacturaA`**: set on the cancelling invoice (storno) = the invoice it cancels; the storno repeats the original's lines with `Cant` and `Valoare` negated, is uploaded first, and is made in the SAME save that creates the replacement invoice. Access did not fill `SerieFacturaA` / `NumarFacturaA` in that code; the server fills them (series and number of the original, informational). Access did NOT write a `cac:BillingReference` in the storno XML; neither does this.
+- **`IdFacturaA`** identifies the cancelled invoice on its storno. Storno negates the original lines' `Cant`/`Valoare`, uploads first and is created in the SAME save as the replacement. Unlike Access, the server fills informational `SerieFacturaA`/`NumarFacturaA` from the original; like Access, it omits `cac:BillingReference` from storno XML.
 - **Edit rules** (`bMod_Click`): no `id_incarcare` = editable; uploaded without `id_descarcare` = «do not touch until it is known»; `id_descarcare` = `Err` = never edited again; numeric = may be corrected or cancelled; an invoice that has `IdFacturaA` is never modified.
-- **Numbering** (`DMAX_EFACTURA`): highest `NumarFactura` + 1, or `Scheme.C5` when there is none. 00EF-02 dropped C5; it is back as `NumarInitial`. The number and the series are always the server's (the form made the number read-only); the series is `EF_Furnizor.SerieFactura`.
+- **Numbering** (`DMAX_EFACTURA`): highest `NumarFactura` + 1, else `Scheme.C5` (dropped in 00EF-02, restored as `NumarInitial`). Server supplies number and `EF_Furnizor.SerieFactura`; the form's number was read-only.
 
 ### Decisions taken here (state them, change if wrong)
 - **Wire names**: the table columns as they are (ASCII, PascalCase / the Access words); computed fields are lower-case Romanian snake_case (`stare`, `total`, `linii`, `client`, `poate_modifica`, `poate_corecta`, `poate_storna`, `poate_sterge`, `este_storno`). Money and quantities are JSON numbers.
@@ -45,17 +45,17 @@ New: `PYTHON/routes/efactura/{ubl,validare,facturi_store,facturi,factura_routes}
 
 ### Unverified / deferred
 - **The whole thing on a real unit**: the DDL (00EF-02 + this slice's column) has not been run anywhere; the SQL of `facturi_store.py` was never executed (an error in a statement would show up on the first call).
-- **The XML against Access's**: not compared. First step for the operator: write the same invoice in Access and in K-BOT (or take an Access `UPL\*.xml` and recreate its data), then `python tools/efactura/compare_xml.py <access.xml> <server.xml>`. Expected differences are only the ones in the header of `ubl.py`. Whether the supplier `CodFiscal` carries `RO` the way `UNIT.cui` did is a data question: `EF_Furnizor.CodFiscal`.
-- **ANAF's validation service**: URL, request shape and the `"stare":"ok"` answer come from the Access code; never called from here. The shape of the failure answer (`Messages[].message`) is an assumption; unknown shapes fall back to the cut text of the answer.
+- **XML/Access parity unprobed.** Operator: write the same invoice in Access/K-BOT (or recreate an Access `UPL\*.xml`), then `python tools/efactura/compare_xml.py <access.xml> <server.xml>`. Only differences in the `ubl.py` header are expected. Whether `EF_Furnizor.CodFiscal` carries `RO` like `UNIT.cui` is a data question.
+- **ANAF validation uncalled:** URL, request and `"stare":"ok"` come from Access; failure shape `Messages[].message` is assumed. Unknown shapes fall back to truncated answer text.
 - `User-Agent: K-BOT` instead of Access's fake MSIE string: unverified that ANAF accepts it.
 - The Migrator tab «E-Factura» does NOT import `Scheme.C5` into `NumarInitial` (the operator sets it with `PUT /furnizor`); the first number of a series with no invoice is 1 until then. It matters only for such a series.
-- Open question 3 of the plan is ANSWERED by the operator (06.10.2026): the Access invoices ARE imported, through the Migrator tab of 00EF-03 (read: it imports `Factura`/`FacturaC` with their own `SerieFactura`/`NumarFactura`, and the series of `EF_Furnizor` from `Scheme.T3`). So the numbering continues after the highest imported number of the series. Unverified: an old invoice whose series differs from T3 would make the current series restart at `NumarInitial`.
+- Plan question 3 ANSWERED by operator (06.10.2026): Access invoices ARE imported through Migrator 00EF-03 (`Factura`/`FacturaC` retain `SerieFactura`/`NumarFactura`; `EF_Furnizor` series comes from `Scheme.T3`). Numbering continues after the series' highest imported number. Unverified: an old invoice with a different series from T3 would restart the current series at `NumarInitial`.
 - The client side (`IEFacturaApi` methods, Domain POCOs) for these routes is 00EF-08.
 - Rounding: VBA rounds half to even on doubles, the server half-up on exact decimals; identical for every amount the tables can hold (two decimals).
 
 ## SLICE-00EF-07 - Server: send to ANAF, state, download, messages (code written, py_compile only, NEVER RUN) <a id="slice-00EF-07"></a>
 
-Slice 00EF (operator, 06.10.2026). The server half that talks to ANAF with the unit's stored token. No client code, no help: nothing the operator sees changed. The screens that use these routes are 00EF-08 / 00EF-09.
+Slice 00EF (operator, 06.10.2026): ANAF server calls with the unit's stored token, for screens 00EF-08/09. No client/help changes visible to the operator.
 
 ### Operator decisions (06.10.2026)
 1. **Production addresses, exactly as the VBA flow** (`mdl_EFactura.bas.txt`, `mdl_EFactura_Add.bas.txt`): the Access upload "is always right". No test environment. (`StareMesaj` of the VBA points at `/test/`, but it is not the one `TrimiteFactura` uses: `StatusFactura` is, on `/prod/`.)
@@ -74,7 +74,7 @@ Edited: `facturi.py` (flags `poate_trimite`, `poate_verifica`, `poate_descarca`;
 `trimite`: lock the invoice row -> state must allow sending -> our checks (00EF-06) -> ANAF validation service (as Access did before every upload, now enforced by the server) -> token -> upload. **Nothing is written unless ANAF took the file**; then `id_incarcare` stored, `id_descarcare` cleared, `Trimisa` = 1, old `EroareAnaf` cleared. `verifica`: ANAF state -> «ok» + `id_descarcare` = acceptata; an error text or «nok» (also «XML cu erori nepreluat») = `id_descarcare` = `Err` + the reason in `EroareAnaf` (read from ANAF's error zip when it gives one) = refuzata; «in prelucrare» or an unknown state changes nothing, so `verifica` can be repeated.
 
 ### Decisions taken here (state them, change if wrong)
-- **Correction (type 384) is done BY `trimite`** with `{"corectie": {"Comentarii", "BT_13"}}` on an accepted invoice; the change and type 384 are written only after ANAF took the new file. Why: the 00EF-06 design (store 384 with PUT, send later) cannot tell «correction waiting to be sent» from «correction already accepted» (both: 384 + numeric `id_descarcare`), and Access never wrote `Trimisa`, so imported rows cannot help. **This replaces the 00EF-06 PUT-on-accepted**, which now answers `SE_CORECTEAZA_PRIN_TRIMITERE` (409).
+- **Correction 384 uses `trimite`** with `{"corectie": {"Comentarii", "BT_13"}}` on an accepted invoice; changes/type 384 persist only after ANAF takes the new file. The 00EF-06 PUT-then-send design confused pending/accepted corrections (both 384 + numeric `id_descarcare`); imported `Trimisa` cannot help because Access never wrote it. **Accepted-invoice PUT is replaced** and returns `SE_CORECTEAZA_PRIN_TRIMITERE` (409).
 - A key other than `Comentarii` / `BT_13` in `corectie`, or a `corectie` on a draft, is refused (`CAMP_NEPERMIS`).
 - **`Trimisa` = 1** when ANAF took the file (new meaning: Access never wrote the column). `state` does not use it.
 - **A validator that cannot be reached blocks sending** (`VALIDARE_INDISPONIBILA`), as in Access, where a failed validation call returned False.
@@ -91,9 +91,9 @@ New: `PYTHON/routes/efactura/{anaf_api,trimitere,trimitere_routes}.py`, `sql/00E
 `py_compile` of the modules, clean. **No test code written and no test run** (standing rule), nothing started, nothing deployed, **nothing called at ANAF**, no database touched. The operator said a test unit is needed: it does not exist here.
 
 ### Unverified / deferred
-- **Everything against the real ANAF**: the exact XML of the upload and state answers (root attributes `index_incarcare`, `stare`, `id_descarcare`, an error child whose FIRST attribute is the text) is taken from how the VBA read them with MSXML, not from a captured answer. Namespaces in the answer are ignored (attributes are read by name).
+- **Real ANAF unprobed:** upload/state XML shape comes from VBA/MSXML, not captured answers: root attributes `index_incarcare`, `stare`, `id_descarcare`; error child's FIRST attribute = text. Attributes are read by name, ignoring answer namespaces.
 - The names of the message keys (`id_solicitare`, `cif_emitent`, `tip`, ...) come from `clsEF_element.Add` and the VBA filters; the real JSON was not seen.
-- What an ANAF error zip contains: assumed to be an XML whose root children carry the text in their first attribute (as `ParseXML_ERR` reads); unreadable -> the refusal is still recorded, without the reasons.
+- Error zip assumed to contain XML with text in each root child's first attribute (`ParseXML_ERR`); unreadable → refusal recorded without reasons.
 - `User-Agent: K-BOT` instead of Access's fake MSIE string (also in 00EF-06): unverified that ANAF accepts it.
 - The token step (00EF-04/05) has never been run either: `tokens.access_token` is the first thing every call here depends on.
 - Whether an upload of the SAME number as type 384 is accepted by ANAF is what Access relied on (`TipFactura = 384`); not tested here.

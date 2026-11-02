@@ -139,10 +139,10 @@ The core step. Button «Trimite în FOREXE», enabled only in state S1.
 4. **Check** the grid against the derived Section B, per SSI. A difference → stop, message, state S1x.
 5. One server POST, one transaction: real `CodAngajament` replaces the `!` code everywhere the DDF carries it (header, revision, A and B lines, attachments); row codes into B; captures stored as `PrtScr = 1` attachments; `Incarcat = 1`.
 6. Run the **existing import** for that angajament, unchanged (parent document §5).
-7. **New angajament (Rev 0 from «Angajament nou»):** state S2a. No final PDF yet: the operator goes on with «Definitivează» and «Derulează» from the Rezervări menu, and only then «Generează PDF final» (variant (a) — see the menu table). **Any other send** (Rev ≥ 1, or Rev 0 on an existing angajament): no S2a — the final PDF is generated right away. Either way: final PDF (0081-05 adds the captures), uploaded with an empty `X-Semnatura` → S2b → opened in the signing viewer.
+7. **New angajament, Rev 0 from «Angajament nou»:** S2a, then Rezervări «Definitivează» → «Derulează» → «Generează PDF final» (variant (a), menu table). **Other sends** (Rev ≥ 1 / Rev 0 on existing angajament): immediate final PDF, no S2a. Both paths: final PDF with captures (0081-05), upload with empty `X-Semnatura` → S2b → signing viewer.
 
 **Partial failure — the dangerous case.** forexecab may be changed halfway. The revision is past the point of no return.
-- `Creare Angajament` must **never run twice** for one revision — a second run creates a second angajament. As soon as the angajament header exists, its code is saved on the revision (the workflow already reads it after every row: `CodAng_<Cheie>`). A resume continues with `Incarca Rezervare` for the rows not yet in the grid (`!NOU`).
+- `Creare Angajament` must **never run twice** per revision (duplicate angajament). Save the code on the revision as soon as the header exists; the workflow already reads `CodAng_<Cheie>` after every row. Resume via `Incarca Rezervare` for rows absent from the grid (`!NOU`).
 - `Incarca Rezervare` on an existing row is safe to repeat (it sets a value, it does not add).
 - State S1x = «Trimitere întreruptă», with the list of what is and is not in forexecab, and one action: «Reia trimiterea».
 

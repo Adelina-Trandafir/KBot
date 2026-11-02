@@ -8,9 +8,9 @@ Data: 2026-08-17 · Plan: „Slice 00XX: Server-side PDF storage" (dat în conve
 
 ## 1. Ce s-a schimbat și de ce
 
-PDF-urile **semnate** (revizii DDF, ordonanțări ORD) nu mai trăiesc doar pe discul unui operator: se stochează în MariaDB, o tabelă per familie de document. Discul devine **cache**.
+PDF-urile **semnate** (revizii DDF, ordonanțări ORD) se stochează în MariaDB, o tabelă per familie; discul devine **cache**.
 
-Trei reguli au condus toată implementarea, fiindcă un PDF semnat digital trebuie să se întoarcă de pe server **bit cu bit**:
+Trei reguli păstrează PDF-ul semnat **bit cu bit**:
 
 1. **Octeți bruți pe fir.** `application/octet-stream` la încărcare, `application/pdf` la descărcare. Niciodată JSON, niciodată base64, niciun pas prin mod text.
 2. **SHA-256 la ambele capete/sensuri:** serverul recalculează suma corpului primit, respinge nepotrivirea cu 400 fără scriere; la descărcare trimite suma stocată ca ETag. Clientul recalculează octeții primiți și scrie cache-ul numai dacă suma corespunde.
@@ -32,7 +32,7 @@ PDF-urile nesemnate folosesc separat `<AppDir>\TempPdf\`, golit la fiecare porni
 ### Server (`PYTHON/`)
 | Fișier | Ce s-a făcut |
 |---|---|
-| `routes/forexe/pdf.py` | **NOU.** Cele patru rute. Logica stă o singură dată, parametrizată pe un dicționar (tabelă / coloană-cheie / tabelă părinte) — rutele DDF și ORD sunt identice în afara acestor trei nume. |
+| `routes/forexe/pdf.py` | **NOU.** Patru rute cu logică comună; numai dicționarul tabelă / coloană-cheie / tabelă părinte diferă între DDF și ORD. |
 | `routes/forexe/__init__.py` | Import + comentariu de inventar pentru `pdf.py`. |
 | `routes/forexe/ddf.py` | `LEFT JOIN FX_DDF_PDF` → `pdf_sha256` / `pdf_dimensiune` / `pdf_data_modif` pe fiecare rând de revizie. Aditiv; nimic existent nu s-a schimbat. Adăugat `_iso_dt` (ISO **cu oră** — două semnări din aceeași zi trebuie să se deosebească). |
 | `routes/forexe/ord.py` | Idem, `LEFT JOIN FX_ORD_PDF` pe antete. Coloanele noi stau **înaintea** fragmentului opțional `{cale_pdf}`, ca pozițiile fixe din despachetare să nu depindă de proba de schemă. |
@@ -45,17 +45,17 @@ PDF-urile nesemnate folosesc separat `<AppDir>\TempPdf\`, golit la fiecare porni
 |---|---|
 | `KBot.Common/PdfHash.vb` | **NOU.** SHA-256 hex minuscule: `Compute` (octeți), `ComputeFile` (flux; `Nothing` când fișierul lipsește = „n-am cache"), `AreEqual`. O singură implementare pentru amândouă sensurile. |
 | `KBot.Common/TempPdfStore.vb` | **NOU.** `<AppDir>\TempPdf\` + `Wipe()` care **nu aruncă niciodată** (fișier ținut deschis de Adobe → se sare cu avertisment, pornirea continuă). |
-| `KBot.Api/PdfDownloadResult.vb` | **NOU.** `Content` / `NotModified` / `NotFound` ca tip explicit — un `Byte()` care poate fi `Nothing` din două motive diferite ar amesteca „nu are PDF" cu „cache-ul e bun". Plus `PutPdfResponse`. |
+| `KBot.Api/PdfDownloadResult.vb` | **NOU.** Tip explicit `Content` / `NotModified` / `NotFound`: `Byte() = Nothing` ar confunda PDF-ul absent cu un cache valid. Plus `PutPdfResponse`. |
 | `KBot.Api/ApiClient.vb` + `IApiClient.vb` | Patru metode noi (download/upload × DDF/ORD) peste două helper-e private. Maparea celor trei câmpuri noi în POCO-uri. |
 | `KBot.Api/UpsertAngajamenteRequest.vb` | Câmpurile de fir `pdf_sha256` / `pdf_dimensiune` / `pdf_data_modif` pe `GetDdfRevizieRow` și `GetOrdHeaderRow`. |
 | `KBot.Domain/DdfInfo.vb`, `OrdInfo.vb` | `RevizieRow` / `OrdHeaderRow`: `PdfSha256`, `PdfDimensiune`, `PdfDataModif` + `ArePdfSemnat`. |
-| `KBot.App/Views/PdfCache.vb` | **NOU.** Rezolvarea cache-or-download, comună celor două vederi. Scrie prin `.part` + `File.Move(overwrite)` — o întrerupere la jumătate ar lăsa altfel un PDF trunchiat purtând numele unui document semnat valid. |
+| `KBot.App/Views/PdfCache.vb` | **NOU.** Cache-or-download comun ambelor vederi; `.part` + `File.Move(overwrite)` împiedică prezentarea unui PDF trunchiat drept document semnat valid după întrerupere. |
 | `KBot.App/Views/DdfView.vb` | `EnsureSignedPdfAsync` pe click de frunză (stale-guard pe `Idrev`); generarea NESEMNATĂ scrie acum în `TempPdf\`, nu în cache-ul persistent. |
 | `KBot.App/Views/OrdView.vb` | `EnsureSignedPdfAsync`, sora celei de mai sus. |
 | `KBot.App/Program.vb` | `TempPdfStore.Wipe()` la pornire, după `ThemeManager.Initialize()`. |
 | `tests/KBot.App.Tests/*.vb` (7 fișiere) | Cele patru metode noi adăugate ca `Throw New NotSupportedException()` în dublurile `IApiClient` — contractul le cere, dar niciun test nu le exercită. |
 
-Ce **NU** s-a schimbat, deși ar fi fost tentant: convențiile de nume și de folder ale PDF-urilor (`DdfPdfLocator` / `OrdPdfLocator` sunt neatinse), enumerarea de disc din `DdfFileBrowser` (repointarea ei e o decizie separată), și câmpul `pdf` (vechiul `CalePDF`) din ruta ORD.
+Neschimbate: convențiile de nume/folder (`DdfPdfLocator` / `OrdPdfLocator`), enumerarea discului din `DdfFileBrowser` (redirecționare de decis separat) și câmpul `pdf` (vechiul `CalePDF`) din ruta ORD.
 
 ---
 

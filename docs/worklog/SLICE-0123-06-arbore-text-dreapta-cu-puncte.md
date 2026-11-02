@@ -3,7 +3,7 @@
 Operator: in `AdvancedTreeControl`, cand datele sunt afisate pe doua parti (`stanga~~~dreapta`, ca la arborele din Plan de conturi) si textul din dreapta nu incape, trebuie sa nu dispara complet, ci sa apara «...» in dreapta. Slice-ul: ultimul folosit pe arbore (0123-02), primul sub-slice liber (0123-06).
 
 ## What changed and why
-- **`KBot.Controls/Tree/AdvancedTreeControl.Painting.vb`, `DrawRichText`, cazul A** (nici `LeftTextWidth`, nici `RightTextWidth` setate - cazul arborelui din Plan de conturi): inainte, daca partea din dreapta nu incapea dupa cea din stanga, ramura facea `Return` si textul disparea. Acum: spatiul ramas intre capatul stangii (plus `PaddingSeparatorGapPx`) si marginea dreapta merge la `DrawRichPartsInZone`, care scrie cat incape si pune «...» fix la capatul drept. Daca nici «...» nu incape in spatiul ramas, nu se deseneaza nimic (ca inainte). Cand textul incape, comportamentul ramane cel vechi (aliniat la dreapta).
+- **`KBot.Controls/Tree/AdvancedTreeControl.Painting.vb`, `DrawRichText`, cazul A** (fara `LeftTextWidth` / `RightTextWidth`, ca in Plan de conturi): textul drept care nu incapea disparea prin `Return`. Acum `DrawRichPartsInZone` foloseste spatiul dintre capatul stangii + `PaddingSeparatorGapPx` si marginea dreapta: scrie cat incape, cu «...» la capatul drept. Fara loc nici pentru «...», nu deseneaza nimic; textul care incape ramane aliniat la dreapta, ca inainte.
 - Cazurile B/C/D si `RightTextColumn` aveau deja taiere cu «...»; neschimbate.
 - `KBot.Controls` FileVersion 1.68.0.0 -> 1.69.0.0.
 - Ajutor: `contabil/nomenclatoare/plan-conturi.md` (sectiunea Conturile, eticheta `0123-06`).

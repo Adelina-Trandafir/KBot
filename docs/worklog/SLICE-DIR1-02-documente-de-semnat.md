@@ -3,7 +3,7 @@
 ## What it does
 The list of slice 0081-06 (`DirectorForm`, `GET /api/forexe/ddf/director/de-semnat`) is the director's ribbon button «Documente de semnat».
 
-- **Button** `director_de_semnat` (Designer, `Visible = False`, shown by `ApplyDirectorRibbon`); `KbotForm.Director.vb` opens `DirectorForm` modally after `PutAway` (its document view shares the one Acrobat broker). The window is `ShowInTaskbar = False` (it is not a second application). The tray application (TRAY-01) opens documents in the same window.
+- **Button** `director_de_semnat` (Designer `Visible = False`, shown by `ApplyDirectorRibbon`): `KbotForm.Director.vb` opens modal `DirectorForm` after `PutAway` (shared Acrobat broker), with `ShowInTaskbar = False` (no second app). TRAY-01 opens documents in the same window.
 - **Current unit only, no «Unitate» column**: the server lists every director unit, the form filters on `_session.DbName`; another unit is chosen from the title bar (DIR1-01).
 - **`KBotDataView`** (`lstDocumente`: cod / obiect / rev / data / total, read-only, `ColumnFillMode = SpecificColumn` on «Obiect», so the columns fill the panel). Selection is `CurrentRow` / `SelectionChanged`; `SelecteazaRevizia` sets `CurrentRowIndex`. The old per-row tooltip (`DescScurta`) was not carried over.
 - **The document opens without the revisions tree**: `DdfView.ArboreAscuns` (= `split.Panel1Collapsed`) and `DdfView.ArataRevizia(info, idrev)`, which sets revision and context together, so there is ONE load and, with the tree hidden, the reselect path lands on the «Document PDF» page.

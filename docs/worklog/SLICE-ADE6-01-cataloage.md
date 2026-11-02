@@ -6,6 +6,8 @@ Repere comune pentru etapele indicate: 09.10.2026 — ADE6-06, ADE6-07, ADE6-10,
 
 Nota comună Rezolvat din 05/06/24: *Rezolvat: operatorul a confirmat, la 23.10.2026, că nu mai este nimic nevalidat sau deschis.* Limitele inițiale și rezultatele locale rămân în etapa lor; această confirmare nu este o probă nouă a consolidării.
 
+Predarea inițială comună etapelor **10/11/12/13/14/16/17**: modificări locale, fără teste sau probe vizuale, commit/push ori publicare din chat, conform preferinței utilizatorului; 11/12/13/14/16 fără SQL, 10/17 fără SQL nou. Utilizatorul publică fișierele runtime prin AvacontPush; cele statice se preiau după reîncărcare. Particularitățile și fișierele fiecărei etape rămân mai jos; confirmarea ulterioară din antet nu devine probă locală inițială.
+
 [ADE6-01](#slice-ADE6-01) · [ADE6-05](#slice-ADE6-05) · [ADE6-06](#slice-ADE6-06) · [ADE6-07](#slice-ADE6-07) · [ADE6-10](#slice-ADE6-10) · [ADE6-11](#slice-ADE6-11) · [ADE6-12](#slice-ADE6-12) · [ADE6-13](#slice-ADE6-13) · [ADE6-14](#slice-ADE6-14) · [ADE6-16](#slice-ADE6-16) · [ADE6-17](#slice-ADE6-17) · [ADE6-23](#slice-ADE6-23) · [ADE6-24](#slice-ADE6-24)
 
 ## SLICE-ADE6-01 — cataloage <a id="slice-ADE6-01"></a>
@@ -16,7 +18,7 @@ Nota comună Rezolvat din 05/06/24: *Rezolvat: operatorul a confirmat, la 23.10.
 
 ### Ce s-a schimbat și de ce
 
-Din antet se deschid două ferestre modale. Fundalul este inert, Escape și clicul pe fundal nu închid fereastra. Editarea folosește DataGrid comun. Plătitori afișează copiii și persoanele asociate copilului selectat; se pot edita copiii și edita/adăuga persoane. Taxe permite editare și rânduri noi. Câmpurile Da/Nu sunt editabile ca text validat. «Salvează și închide» confirmă inclusiv celula încă deschisă și trimite toate modificările printr-o comandă atomică, autorizată catalog, cu versiuni și idempotency key. La eroare fereastra și editările rămân; reîncercarea aceluiași corp refolosește cheia. Fără modificări, butonul închide fără scriere. Dacă încărcarea eșuează, se permite închiderea ferestrei goale. Navigarea cu editări nesalvate cere confirmarea browserului. Activarea taxei dezactivează vechea taxă prin serviciul existent; nu rescrie IDV istoric. Ajutorul din pagină a fost actualizat cu referința ADE6-05.
+Antetul deschide două ferestre modale cu DataGrid comun: Plătitori (editează copiii și editează/adaugă persoanele copilului selectat) și Taxe (editare/rânduri noi). Fundal inert; Escape/clic exterior nu închid. Da/Nu se editează ca text validat. «Salvează și închide» confirmă și celula deschisă, apoi trimite toate modificările atomic, cu drept catalog, versiuni și idempotency key. Eroarea păstrează fereastra/editările; același corp refolosește cheia. Fără modificări, închide fără scriere; încărcarea eșuată permite închiderea ferestrei goale. Navigarea cu editări nesalvate cere confirmarea browserului. Serviciul existent dezactivează vechea taxă la activarea alteia, fără rescrierea IDV istoric. Ajutor actualizat cu ADE6-05.
 
 ### Fișiere atinse
 
@@ -43,7 +45,7 @@ Publicați cele șase fișiere de implementare enumerate mai sus prin AvacontPus
 
 ### Ce s-a schimbat și de ce
 
-Plătitori urmează cele patru machete furnizate: trei liste dependente Grupe → Copii → Plătitori, fiecare cu Adaugă/Modifică, și formulare separate, uniforme, pe fundal alb. Listele permit selecție; nu permit editare în celule. PL este exclusiv checkbox pentru afișare, modificabil numai în editorul elementului: Grupă închisă la grupe, Plecat la copii, conform precizării utilizatorului. ACT este tot checkbox pentru afișare. Bifa grupei păstrează anul de închidere existent sau folosește anul curent la prima închidere; debifarea elimină închiderea. Nu există câmp suplimentar de an în formular.
+Plătitori urmează cele patru machete: trei liste dependente Grupe → Copii → Plătitori, fiecare cu Adaugă/Modifică, și formulare separate, uniforme, albe. Listele selectează fără editare în celule. PL se modifică numai în editor: Grupă închisă la grupe, Plecat la copii, conform utilizatorului. PL și ACT sunt checkboxuri de afișare. Bifarea grupei păstrează anul de închidere existent ori folosește anul curent la prima închidere; debifarea elimină închiderea, fără câmp suplimentar de an.
 
 Editorul grupei include numele, bifa, lista ANI și perioadele educatorilor. Editările grupei și perioadelor se salvează atomic; perioadele aceluiași educator nu se suprapun. Editorul copilului include numele, CNP, combobox comun pentru grupă, calendar pentru intrare/ieșire și bifa Plecat. Editorul plătitorului include toate câmpurile machetei, inclusiv telefon, email și Activ. CNP se validează în JS și API după algoritmul VBA: 13 cifre, limitele superioare pentru lună/zi/județ, checksum 279146358279, rest 10 → 1. CNP necompletat rămâne permis; nu reinterpretăm regulile VBA drept validare calendaristică.
 
@@ -76,7 +78,7 @@ Lucrarea și modificările preexistente rămân locale, fără commit/publicare.
 
 ### Schimbări și motiv
 
-Conform cerințelor operatorului, Enter confirmă și deschide următoarea celulă editabilă în ordinea vizibilă, inclusiv pe rândul următor; celulele indisponibile sunt sărite. Tab păstrează aceeași navigare, Shift inversează sensul. Erorile păstrează celula curentă. Pe PC (lățime peste 980px și pointer precis), clicul unic deschide editorul. Clicul pe altă celulă confirmă mai întâi editarea curentă. Pe mobil clicul simplu selectează; dublu clic/Enter rămân disponibile pentru editare. Grilele fără drepturi rămân read-only.
+Conform operatorului, Enter/Tab confirmă și deschid următoarea celulă editabilă în ordinea vizibilă, inclusiv pe rândul următor, sărind celulele indisponibile; Shift inversează sensul. Erorile păstrează celula curentă. Pe PC (>980px, pointer precis), clicul unic editează; clicul pe altă celulă confirmă întâi editarea curentă. Pe mobil clicul simplu selectează, dublu clic/Enter editează. Fără drepturi, grila rămâne read-only.
 
 Celulele de dată folosesc DatePicker comun, cu introducere zz.ll.aaaa și calendarul folosit la plăți; sursa păstrează valoarea ISO. Controlul este distrus la finalul editării.
 
@@ -98,7 +100,7 @@ Modificările sunt locale, fără commit/publicare. Fișierele runtime enumerate
 
 ### Schimbări
 
-Pe mobil, dialogul Plătitori ocupă 100vw și 100dvh, fără margini/padding lateral. Antetul și footerul rămân pe loc; un singur tabel ocupă restul înălțimii. Listele nu mai sunt stivuite într-un container cu scroll. Derularea este numai în tabel. Mesajul informativ este ascuns; erorile de încărcare rămân afișabile controlat.
+Pe mobil, Plătitori ocupă 100vw × 100dvh fără margini/padding lateral: antet/footer fixe, un singur tabel în restul înălțimii, cu derulare proprie în locul listelor stivuite într-un container cu scroll. Mesajul informativ este ascuns; erorile de încărcare se pot afișa controlat.
 
 Navigarea este pe niveluri: Grupe, Copii, Plătitori. Clicul scurt selectează rândul, apăsarea lungă de 550ms pe grupă trece la copiii săi, cea pe copil la plătitorii săi. Deplasarea de peste 10px, anularea pointerului și ieșirea din tabel anulează gestul. Clicul generat după apăsarea lungă este consumat pentru a nu selecta accidental rândul de pe noul nivel. Butonul ↩️, în dreapta antetului, revine la nivelul anterior; din Grupe închide dialogul. Selecția este păstrată la revenire.
 
@@ -112,7 +114,7 @@ PYTHON/static/js/adechit/payers.js, js/dgv/datagrid.js, css/adechit.css, adechit
 
 ### Verificare și predare
 
-Nu au fost rulate teste sau probe de browser/vizuale, conform preferinței utilizatorului. Autorizarea anterioară pentru teste privea numai pornirea serverului/aplicației. Nu am modificat backendul, schema sau datele. Lucrarea este locală, fără commit/push. Se preia prin reîncărcarea paginii; publicarea runtime aparține utilizatorului prin AvacontPush. Nu există SQL nou. Următoarea subfelie liberă: ADE6-11.
+Fără probe de browser; autorizarea anterioară privea numai pornirea serverului/aplicației. Backendul, schema și datele rămân. Se aplică predarea comună din antet. Următoarea subfelie liberă: ADE6-11.
 
 ## SLICE-ADE6-11 — coloane I <a id="slice-ADE6-11"></a>
 
@@ -120,7 +122,7 @@ Toate coloanele checkbox de stare din listele Grupe/Copii/Plătitori au titlul I
 
 La Grupe bifa reflectă închiderea grupei, la Copii reflectă Plecat. La Platitori_sub se calculează numai pentru afișare Closed = !Boolean(Activ): activ → nebifat, inactiv → bifat. Nu se inversează valoarea stocată în Activ și nu se schimbă semantica checkboxului Activ din editor. Bifele listelor rămân read-only.
 
-Fișiere: PYTHON/static/js/adechit/payers.js, ajutorul adechit.html și statusul ADE. Nu am rulat teste sau probe vizuale, conform cerinței utilizatorului. Fără modificări backend/schema/date, fără SQL, commit sau publicare. Fișierele statice se preiau după reîncărcare; utilizatorul publică prin AvacontPush. Următoarea subfelie: ADE6-12.
+Fișiere: PYTHON/static/js/adechit/payers.js, ajutorul adechit.html și statusul ADE. Fără modificări backend/schema/date; predarea comună din antet. Următoarea subfelie: ADE6-12.
 
 ## SLICE-ADE6-12 — deschidere explicită pe mobil <a id="slice-ADE6-12"></a>
 
@@ -128,19 +130,19 @@ Fișiere: PYTHON/static/js/adechit/payers.js, ajutorul adechit.html și statusul
 
 Plătitori mobil păstrează pagina pe întregul ecran și scrollul numai în tabel, dar primește 8px de padding la margini. Grupe și Copii au o coloană suplimentară de 40px, cu antet gol, fără filtru/sortare și cu buton ➡️ pe fiecare rând. Butonul deschide copiii grupei sau plătitorii copilului. Apăsarea lungă pentru navigare a fost eliminată; clicul pe restul rândului rămâne selecție. Platitori_sub nu primește coloană de deschidere, conform excepției solicitate.
 
-Lățimea acțiunii se scade numai din denumire: Grupa = 85% minus 40px, Copil = 50% minus 40px, CNP rămâne 35%, I rămâne 15%. La plătitori proporțiile rămân 50/35/15. DataGrid comun permite explicit o coloană de lățime fixă și deducerea ei dintr-o coloană proporțională, plus buton de acțiune în celulă. Opțiunile sunt folosite numai de aceste liste mobile.
+Acțiunea scade numai din denumire: Grupa = 85% − 40px, Copil = 50% − 40px; CNP = 35%, I = 15%. Plătitori păstrează 50/35/15. Numai aceste liste mobile folosesc noile opțiuni DataGrid: coloană fixă dedusă dintr-una proporțională și buton de acțiune în celulă.
 
-Rândurile DGV din ADE (Prezență, Taxe, liste și educatorii din editor) cresc pe mobil cu exact 20%: 28px → 33,6px. Opțiunea mobileRowScale a componentei comune este activată explicit din ADE; alte aplicații nu sunt afectate. La schimbarea modului PC/mobil geometria DGV este recalculată. ANI păstrează înălțimea rândurilor aliniată cu tabelul educatorilor.
+Rândurile DGV ADE (Prezență, Taxe, liste, educatorii din editor) cresc pe mobil cu exact 20%: 28px → 33,6px. ADE activează explicit mobileRowScale, fără efect în alte aplicații. Geometria se recalculează la schimbarea PC/mobil; ANI păstrează înălțimea rândurilor aliniată cu tabelul educatorilor.
 
 ### Fișiere și predare
 
-PYTHON/static/js/dgv/datagrid.js, css/dgv.css, js/adechit/payers.js, catalogs.js, app.js, css/adechit.css, ajutorul adechit.html și statusul ADE. Nu au fost rulate teste sau verificări vizuale, conform cerinței utilizatorului. Fără schimbări backend/date/SQL, commit sau publicare. Utilizatorul preia fișierele runtime prin AvacontPush. Următoarea subfelie liberă: ADE6-13.
+PYTHON/static/js/dgv/datagrid.js, css/dgv.css, js/adechit/payers.js, catalogs.js, app.js, css/adechit.css, ajutorul adechit.html și statusul ADE. Fără schimbări backend/date; predarea comună din antet. Următoarea subfelie liberă: ADE6-13.
 
 ## SLICE-ADE6-13 — margine exterioară pe mobil <a id="slice-ADE6-13"></a>
 
 Clarificarea utilizatorului cere spațiu între fereastră și marginile ecranului, păstrând paddingul interior deja implementat. Dialogul Plătitori mobil are acum margin:10px și lățime/înălțime egală cu viewportul minus 20px. Se folosește dvh pentru înălțimea disponibilă, cu fallback vh. Paddingul interior de 8px se păstrează.
 
-Fișiere: PYTHON/static/css/adechit.css, ajutorul adechit.html și statusul ADE. Nu am rulat teste sau verificări vizuale, conform preferinței utilizatorului. Modificare locală, fără backend/SQL, commit sau publicare. Fișierele statice se preiau după reîncărcare; utilizatorul publică prin AvacontPush. Următoarea subfelie: ADE6-14.
+Fișiere: PYTHON/static/css/adechit.css, ajutorul adechit.html și statusul ADE. Fără backend; predarea comună din antet. Următoarea subfelie: ADE6-14.
 
 ## SLICE-ADE6-14 — filtre și culori DGV <a id="slice-ADE6-14"></a>
 
@@ -148,25 +150,25 @@ Filtrarea coloanelor rămâne exclusiv pentru Nume și Grupa, în toate DGV ADE,
 
 Am eliminat suprascrierea culorilor antetului/footerului listelor Plătitori cu fundalul alb. Ele folosesc variabilele și tema DataGrid comună, la fel ca DGV principal din Prezență, inclusiv în tema întunecată. Nu există culori noi.
 
-Fișiere: PYTHON/static/js/adechit/payers.js, catalogs.js, app.js, css/adechit.css, ajutorul adechit.html și statusul ADE. Nu am rulat teste sau verificări vizuale, conform cerinței utilizatorului. Fără modificări backend/SQL/date, commit sau publicare. Se preia după reîncărcare; utilizatorul publică prin AvacontPush. Următoarea subfelie: ADE6-15.
+Fișiere: PYTHON/static/js/adechit/payers.js, catalogs.js, app.js, css/adechit.css, ajutorul adechit.html și statusul ADE. Fără modificări backend/date; predarea comună din antet. Următoarea subfelie: ADE6-15.
 
 ## SLICE-ADE6-16 — lățimi DGV fără depășire accidentală <a id="slice-ADE6-16"></a>
 
 Utilizatorul a raportat scroll orizontal în toate cele trei liste Plătitori pe PC. În componenta comună, DGV avea width:100% plus borduri (content-box), iar lățimea disponibilă folosea offsetWidth întreg, care poate rotunji în sus la zoom.
 
-Rootul și benzile header/footer folosesc border-box; containerul de scroll poate scădea în flex fără min-size implicit. Lățimea coloanelor este limitată la spațiul interior real, calculat din clientWidth și getBoundingClientRect minus borduri și scrollbarul existent. Dacă este anticipat un scrollbar vertical, se rezervă numai lățimea încă neocupată. Rezultatul este rotunjit în jos pentru a evita depășirile fracționare. Nu am ascuns scrollbarul orizontal ca soluție pe PC; rămâne disponibil când coloanele sunt efectiv mai late decât spațiul disponibil.
+Rootul și benzile header/footer folosesc border-box; containerul de scroll poate scădea în flex fără min-size implicit. Coloanele sunt limitate la interiorul real: clientWidth/getBoundingClientRect minus borduri și scrollbarul existent; pentru scrollbarul vertical anticipat se rezervă numai lățimea neocupată. Rotunjire în jos contra depășirilor fracționare. Scrollbarul orizontal pe PC rămâne disponibil când coloanele depășesc efectiv spațiul.
 
-Fișiere: PYTHON/static/css/dgv.css, js/dgv/datagrid.js, ajutorul adechit.html și statusul ADE. Nu am rulat teste sau verificări vizuale, conform instrucțiunilor. Fără backend/schema/date/SQL, commit sau publicare. Fișierele statice comune se preiau după reîncărcare; utilizatorul publică prin AvacontPush. Următoarea subfelie: ADE6-17.
+Fișiere: PYTHON/static/css/dgv.css, js/dgv/datagrid.js, ajutorul adechit.html și statusul ADE. Fără backend/schema/date; predarea comună din antet. Următoarea subfelie: ADE6-17.
 
 ## SLICE-ADE6-17 — plătitor activ unic per copil <a id="slice-ADE6-17"></a>
 
-La crearea prin catalog a unui Platitori_sub, API forțează Activ=True și dezactivează ceilalți plătitori activi cu același IDP. La salvarea unui plătitor existent activ, ceilalți plătitori ai copilului sunt dezactivați în același mod. Nu sunt afectate persoanele asociate altor copii. Un plătitor existent poate fi dezactivat explicit.
+La crearea prin catalog a unui Platitori_sub, API forțează Activ=True; la creare sau salvarea unui existent activ dezactivează ceilalți plătitori activi cu același IDP, fără afectarea altor copii. Un plătitor existent poate fi dezactivat explicit.
 
 Toate scrierile sunt în tranzacția și sub lockul de unitate existente, cu rollback, versiuni și idempotency. Regula se aplică și apelurilor API și catalog-save, nu doar interfeței. Nu este o curățare globală a datelor migrate sau o modificare a importului.
 
 Editorul unui plătitor nou arată Activ bifat și blocat; salvarea trimite True. Pentru un plătitor existent bifa rămâne editabilă. Reîncărcarea catalogului după salvare arată I nebifat pentru cel activ și bifat pentru ceilalți, conform ADE6-11.
 
-Fișiere: PYTHON/routes/adechit/service.py, static/js/adechit/payers.js, ajutorul adechit.html și statusul ADE. Nu am rulat teste sau verificări vizuale, conform cerinței utilizatorului. Fără SQL nou, commit sau publicare. Preview-ul trebuie repornit pentru schimbarea backendului; publicarea aparține utilizatorului prin AvacontPush. Următoarea subfelie liberă: ADE6-18.
+Fișiere: PYTHON/routes/adechit/service.py, static/js/adechit/payers.js, ajutorul adechit.html și statusul ADE. Predarea comună din antet; preview-ul necesită restart pentru schimbarea backendului. Următoarea subfelie liberă: ADE6-18.
 
 ## ADE6-23 — Eliminarea mesajului introductiv din Plătitori <a id="slice-ADE6-23"></a>
 

@@ -32,7 +32,7 @@ Noi: `acasa`, `panou-lateral`, `panou-lateral-strans` (doar `prepare:`).
 ## SLICE-0000-87 - Help for 0115-01: side panel (17.10.2026) <a id="slice-0000-87"></a>
 
 ### What changed and why
-`contabil/panou-lateral.md` (tag `0115-01` on the page and on «Machete deschise» / «Actiuni recente»): the fold button is at the bottom of the panel, the state is kept between runs, a tooltip lists the section when the panel is folded, an open macheta shows a picture of itself on hover (a closed one shows nothing), «Actiuni recente» shows only today and empties at midnight. Captures `panou-lateral` and `panou-lateral-strans` marked `redo:`. `help-version.txt` = `2026-10-17`.
+`contabil/panou-lateral.md` (tag `0115-01` on page and «Machete deschise» / «Actiuni recente»): bottom fold button, state kept between runs, section tooltip when folded, hover preview only for open machete; today's actions only, cleared at midnight. Captures `panou-lateral` / `panou-lateral-strans`: `redo:`. `help-version.txt` = `2026-10-17`.
 
 ### Files touched
 `src/KBot.App/HelpContent/contabil/panou-lateral.md`, `src/KBot.App/HelpContent/help-version.txt`.

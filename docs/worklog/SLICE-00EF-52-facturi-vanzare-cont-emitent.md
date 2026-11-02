@@ -2,7 +2,7 @@
 
 ## What changed and why
 - The combo «Cont emitent (IBAN)» of «Generale» lists only the unit's own accounts (the list «Conturi Unitate» edits); the accounts of earlier invoices are no longer mixed in (`FillContPlata`).
-- An account typed there that the unit does not have yet (compared without spaces/case) is added to the unit's accounts when the invoice is SAVED (`EnsureUnitAccountAsync`, before the invoice itself): the whole list is sent through `SaveConturiAsync` (it replaces the list, so the existing accounts go along), the combo is refilled, the invoice keeps the account as the server wrote it. If the server refuses the IBAN, the message is shown and the invoice is not saved.
+- A typed account absent from the unit's list (ignoring spaces/case) is added on invoice SAVE, before saving the invoice (`EnsureUnitAccountAsync`). `SaveConturiAsync` replaces the list, so existing accounts are sent too; the combo is refilled and the invoice keeps the server-written account. IBAN rejection displays the server message and prevents invoice saving.
 - Tooltip of the combo updated.
 
 ## Files touched

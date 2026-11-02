@@ -118,7 +118,7 @@ Coloana are `HeaderLeftIcon` / `HeaderRightIcon`, cu `HeaderLeftIconSize` / `Hea
 
 **Podeaua:** `KBotDataColumn.EffectiveMinWidth = max(MinWidth, HeaderIconsWidth)`, cu `HeaderIconsWidth = 2×Pad + stânga + Gap + dreapta` (Pad 8, Gap 4, px logici). `ClampWidth`, `MeasureColumnToContent` și `ShrinkToFit` o respectă; bate `MaxWidth` pentru a evita suprapunerile. Setarea pictogramei limitează lățimea imediat.
 
-Așezarea celor trei piese stă într-o funcție pură, `KBotDataView.ComputeHeaderCellLayout`, pe care o cheamă și pictarea, și hit-testul, și testele — o a doua formulă ar însemna o pictogramă desenată unde nu se apasă.
+Funcția pură `KBotDataView.ComputeHeaderCellLayout` așază cele trei piese pentru pictare, hit-test și teste, evitând geometria divergentă a desenului/apăsării.
 
 #### 3. `Format` — proprietatea numită, în stil Access
 
@@ -126,8 +126,8 @@ Așezarea celor trei piese stă într-o funcție pură, `KBotDataView.ComputeHea
 
 Două lucruri deliberate:
 
-- **Formatul numit CITEȘTE valoarea**, nu doar o formatează: o coloană `ValueType.Text` care poartă numere (cazul DdfView/PlatiView) se scrie „Standard” corect. O valoare care nu se poate citi în tipul cerut cade pe calea obișnuită și tot se vede — nu se stinge într-o celulă goală.
-- **`Format` / `FormatString` sunt exclusive:** setarea ambelor aruncă `ArgumentException`, amânată până la `EndInit` în inițializarea designerului, ca la `ValueType × Aggregate`. Nicio proprietate nu rămâne aparent activă dar ignorată.
+- **Formatul numit CITEȘTE valoarea**: „Standard” afișează corect și numere din `ValueType.Text` (DdfView/PlatiView). Conversia imposibilă revine la calea obișnuită, păstrând valoarea vizibilă.
+- **`Format` / `FormatString` exclusive:** ambele setate → `ArgumentException`, amânată la `EndInit` în designer, ca `ValueType × Aggregate`; fără proprietate aparent activă, ignorată.
 
 Câte zecimale scrie un format vine din `DecimalPlaces` când e fixat, altfel 2 (implicitul Access), deci cele două proprietăți nu se contrazic. `AggregateFormatString` rămâne deasupra tuturor.
 

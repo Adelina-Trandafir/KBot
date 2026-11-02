@@ -17,7 +17,7 @@ Reunire documentară D001-25. Etapa inițială aduce marcarea și citirea jurnal
 
 ### The problem
 
-`api_server.log` has IP and usually unit, but no user; `[forexe.ord_edit] genereaza: …` and tracebacks have neither. Operators can share an IP, so existing lines cannot identify the user and must be tagged at write time. Timing blocks usually have `dc=` / `user=`, but no login/session identifier.
+`api_server.log` lacks user (usually IP/unit); `[forexe.ord_edit] genereaza: …` and tracebacks lack both. Shared IPs cannot identify users: tag at write time. Timing blocks usually have `dc=`/`user=`, without login/session id.
 
 ### What changed
 
@@ -28,7 +28,7 @@ Reunire documentară D001-25. Etapa inițială aduce marcarea și citirea jurnal
 - `routes/logs.py` (new, `logs_bp`, registered in `main.py`), both `@require_session`:
   - `GET /api/logs/server?sessions=N` — the caller's `[forexe]` / `[forexe.xxx]` lines (plus their traceback lines) from `api_server.log` + `.1`..`.5`, session mark removed;
   - `GET /api/logs/timing?sessions=N` — the caller's blocks from `forexe_timing.log` + rotations, `====` separators removed.
-  - The user comes from the session, never from the query. N defaults to 3, clamped 1..50. "Last N sessions" = the N logins with the most recent activity. Files are read newest first; once N sessions are known, older files are read only while they still contain them. Answer capped at 4 M characters (oldest dropped, `truncated: true`).
+  - User comes only from session; N defaults to 3, clamped 1..50. "Last N sessions" = logins with most recent activity. Read files newest first; after finding N sessions, continue older files only while containing them. Answer cap: 4 M characters, oldest dropped (`truncated: true`).
   - Body: `text`, `truncated`, `sessions` (`session`, `dc`, `first`, `last`, `entries`, `errors`, `warnings`, newest first), `sessions_requested`, `server_time`.
 
 #### Client
@@ -42,8 +42,8 @@ Reunire documentară D001-25. Etapa inițială aduce marcarea și citirea jurnal
   - failures and "nothing of yours yet" go into `noticeGol`; «Deschide dosarul» / «Golește» disabled for server journals;
   - the old `/api/logs/files` + `/api/logs/tail` code removed (those routes never existed); `noticeServer` removed from the designer (it sat in the hidden file panel). Test hooks `DebugAduListaServerAsync` / `DebugNoticeServerAfisat` kept, now on the new path.
   - Filter row re-laid for the extra column (144 dpi designer numbers).
-  - Day grouping (correction 4): `HeaderCaptionFormat` / `FooterCaptionFormat` = `{1}`, replacing `{0}: {1} ({2})` (`{0}` = «Ora»); `CollapsedByDefault = True`. Since that flag collapses each day only on first encounter, `IncarcaSelectiaAsync(strangeZilele)` also calls `grila.CollapseAllGroups()` when file/kind/session count changes. Refresh or page activation passes False to retain open days. Applies to local and server journals.
-  - Export (correction 5): `btnExporta` takes only the rows that pass the filters AND sit in an expanded day, through the new public `KBotDataView.IsRowShown(rowIndex)` (a public form of the existing `RowIsOnScreen`). No day expanded = no dialog, status line «Nimic de exportat: deschideți zilele pe care vreți să le exportați.». Tooltip updated. «Copiază» unchanged (selected row, or every filtered row when nothing is selected).
+  - Day grouping (correction 4), local/server: `HeaderCaptionFormat` / `FooterCaptionFormat` = `{1}`, replacing `{0}: {1} ({2})` (`{0}` = «Ora»); `CollapsedByDefault = True` collapses only first encounters. Thus `IncarcaSelectiaAsync(strangeZilele)` calls `grila.CollapseAllGroups()` on file/kind/session-count change; refresh/page activation passes False, retaining open days.
+  - Export (correction 5): `btnExporta` requires filtered rows AND expanded day, using new public `KBotDataView.IsRowShown(rowIndex)` from `RowIsOnScreen`. No expanded day: no dialog, status «Nimic de exportat: deschideți zilele pe care vreți să le exportați.». Tooltip updated; «Copiază» keeps selected row, else all filtered rows.
 - `KBot.Controls`: `KBotDataView.IsRowShown` added (+ `KBotDataView.md`). FileVersion 1.54.0.0 → 1.55.0.0.
 
 ### Files touched
@@ -72,7 +72,7 @@ Operator: the server journals are tied to the advanced options switch; with it o
 
 `SetariJurnalView`:
 - `PotrivesteTipuriCuClientul`: «Server FOREXE» / «Timpi FOREXE» are listed only with an `IApiClient` AND `AppSettings.AdvancedOptions`; otherwise only «Jurnale locale» exists.
-- `ArataCombinatiileDeTip` (called from `Activated`): `CmbTipJurnal` and `cmbSesiuni` are hidden when the server journals are off, and the first two columns of `tlyFilterActual` collapse to 0 so no gap is left. The designer widths are remembered the first time they are collapsed and restored when the combos come back. It is only called from `Activated` (not the constructor) so the widths are read after the DPI scaling.
+- `ArataCombinatiileDeTip`, only from `Activated` after DPI scaling (not constructor): server journals off hides `CmbTipJurnal`/`cmbSesiuni` and collapses the first two `tlyFilterActual` columns to 0 without gap. Remembers designer widths at first collapse, restoring them with the combos.
 - The switch lives on another settings page, so it can only change while the journal page is away; activation re-reads it. Switching it off while a server journal was selected falls back to «Jurnale locale» and reloads.
 
 ### Assumption

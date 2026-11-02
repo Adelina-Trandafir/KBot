@@ -21,9 +21,9 @@ Plan: `docs/PLAN_help_assistant.md` § 0000-18.
 
 Result model: `HelpHit(TopicId, SectionAnchor, Title, SectionTitle, Snippet, Score)` + `Key` (`topicId#anchor`, the id the question log will store in 0000-21).
 
-**Anchors:** `HelpSearch.AnchorFor(heading)` joins folded words (`pagina-forexe-certificatul-memorat`), unique per topic with -2/-3. `HelpHtml.AddSectionAnchors` assigns the same level-2 ids from heading text/order, without stored mapping. Printed manual omits ids to avoid cross-topic clashes.
+**Anchors:** `HelpSearch.AnchorFor(heading)` joins folded words (`pagina-forexe-certificatul-memorat`), unique per topic via -2/-3. `HelpHtml.AddSectionAnchors` derives matching level-2 ids from heading text/order, without mapping. Printed manual omits ids against cross-topic clashes.
 
-**Help window:** `HelpForm.ShowTopic(id, sectionAnchor)`, page key `t:<id>#<anchor>` retained in history/Înapoi. `DocumentCompleted` scrolls; busy browser keeps the anchor in pending page. `HelpHtml.SearchPage` lists Topic › Section/snippet with `topic:<id>#<anchor>`; `topic:id#anchor` also works inside topics.
+**Help window:** `HelpForm.ShowTopic(id, sectionAnchor)`, history/Înapoi key `t:<id>#<anchor>`. `DocumentCompleted` scrolls, busy browser retains pending anchor. `HelpHtml.SearchPage`: Topic › Section/snippet via `topic:<id>#<anchor>`, also supported inside topics.
 
 ### Files touched
 
@@ -98,8 +98,8 @@ Caption «?» now opens a search/topic/tours popup under the button, replacing d
    - `KBotHelpList` — painted list: headers, hits (title › section, two lines of text, «Deschide «...»» / «Tur ghidat» buttons), the screen's topic, tours, folders of tours; own scroll bar; hover tooltips;
    - `KBotHelpSearchPanel` (UserControl, designer) — box + list; types → local search after 150 ms; Up / Down / Enter drive the list; Esc raised to the host;
    - `KBotHelpPopup` (Form/Designer): panel and «Deschide ajutorul complet (F1)» footer, below/above button by space; closes on Esc, outside click or row handoff deferred through BeginInvoke. All controls use IThemedControl/palette fields (no host-designer serialization), logical pixels scaled at layout, AutoScaleMode.Dpi 96/96.
-3. **Tours** (`HelpPopupTours`): EnumWindows z-order, excluding minimized/disabled/help windows. Ownership requires a VISIBLE screen (form/control/selected main view) through `HelpTourRunner.FindInWindow`, split from FindTarget; hidden views do not qualify. Offer each tour once on its top eligible window, only VisibleParts. One window → direct list; several → caption folders, top open. Optional tour `screens:` (`HelpTour.Screens`, `$TourKeys`/check/README) serves `tur-avansat` (`screens: SetariForm`), whose topic names only a checkbox.
-4. **Actions** (`HelpSearchSession` per popup/fereastra panel): hit → section via HelpService.ShowHit, transferring popup query/results through HelpForm.TakeOverSearch; Deschide → OpenScreen (19); Tur ghidat/tour row → StartTour; topic row → topic; full help → F1 target for that window. No hits gives a short note row.
+3. **Tours** (`HelpPopupTours`): EnumWindows z-order excludes minimized/disabled/help windows. `HelpTourRunner.FindInWindow`, split from FindTarget, requires VISIBLE form/control/selected main view; hidden views do not qualify. Each tour appears once on its top eligible window, only VisibleParts. One window: direct list; several: caption folders, top open. Optional `screens:` (`HelpTour.Screens`, `$TourKeys`/check/README) serves checkbox-only topic's `tur-avansat` (`screens: SetariForm`).
+4. **Actions** (`HelpSearchSession` per popup/window panel): hit → section via HelpService.ShowHit, popup query/results via HelpForm.TakeOverSearch; Deschide → OpenScreen (19); Tur ghidat/tour row → StartTour; topic row → topic; full help → window F1 target. No hits: short note row.
 5. **Window:** HelpForm.Designer replaces txtCauta with pnlCautare/KBotHelpSearchPanel. Empty: box above contents; results: whole left side; clear/Esc restores contents. Removes HelpHtml.SearchPage and s: HTML results pages in favour of the list. Updates start-page F1/«?»/search sentence.
 6. **Tours, content**: five new tours for screens that had none — `tur-sumar`, `tur-istoric`, `tur-notecab`, `tur-clasificatii`, `tur-parteneri` (text only from what their topics already say; targets checked against the designers). Left without a tour on purpose: the DDF and ORD editors (operator's decision in 0000-07 / 0000-11), `BrowserView` (its buttons are in `tur-forexe`), `RobotQueueForm` (0098, has no topic yet).
 

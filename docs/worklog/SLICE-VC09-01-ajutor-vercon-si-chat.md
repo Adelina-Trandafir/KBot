@@ -10,7 +10,7 @@ Sunt descrise explicit limitele versiunii: Furnizori (Parteneri) și Închidere 
 
 ADECHIT și VERCON primesc același capitol DISCUȚII: audiența conversației comune, filtrele V/A/K, aplicația sursă la trimitere, pseudonim/nume, limitele textului, Enter/Ctrl+Enter, răspunsuri și citate, istoric, necitite, actualizare, păstrarea ciornei în pagină și expirarea sesiunii. ADECHIT are și o trimitere către chat în Primii pași.
 
-Randarea JS este extrasă în `PYTHON/static/js/help/help.js`, cu intrări mici pentru fiecare aplicație. Clasele de prezentare ade-help sunt păstrate pentru compatibilitatea aspectului ADECHIT. VERCON adaugă numai cadrul său de dialog în `PYTHON/static/css/vercon-help.css`, importat din vercon.css. Rendererul PDF comun este `PYTHON/reporting/help_pdf.py`; fiecare aplicație alege propriul JSON și autor. Noua rută `/api/vercon/help/pdf` folosește guardul VERCON pentru read, fără a necesita selectarea unei gestiuni.
+Randare JS comună în `PYTHON/static/js/help/help.js`, cu intrări mici pe aplicație și clase ade-help păstrate pentru compatibilitatea aspectului ADECHIT. VERCON adaugă doar cadrul dialogului în `PYTHON/static/css/vercon-help.css`, importat din vercon.css. PDF comun: `PYTHON/reporting/help_pdf.py`, cu JSON/autor proprii fiecărei aplicații. Noua rută `/api/vercon/help/pdf`: guard VERCON read, fără gestiune selectată.
 
 Fișiere:
 

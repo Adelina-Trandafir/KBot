@@ -16,7 +16,7 @@ Documentele și lunile VERCON folosesc explicit chei calendaristice, cu numărul
 
 Mesajul generic era ridicat de report_data.balances pentru un preț NULL sau negativ. Politica importului din 14.10.2026 păstrează explicit semnul prețurilor istorice; citirea rapoartelor nu trebuie să le respingă.
 
-stock_valuation.price validează existența și caracterul finit al prețului, acceptând semnul istoric. Este reutilizat de rapoartele magaziei, OI/MF și serviciul de stoc. Calculele folosesc prețul cu semnul său; nu se modifică prețurile, cantitățile, stocurile sau documentele salvate. Regulile de introducere a documentelor noi nu sunt relaxate.
+`stock_valuation.price`, comun rapoartelor magaziei, OI/MF și serviciului de stoc, validează prețul existent și finit, păstrând semnul istoric în calcule. Prețurile, cantitățile, stocurile și documentele salvate rămân; regulile documentelor noi nu sunt relaxate.
 
 În rapoartele finale, rândurile cu stoc final zero sunt eliminate înaintea validării prețului; în balanță sunt eliminate mai întâi rândurile pe care opțiunea de afișare le ascunde deja. Un preț lipsă pentru o poziție care trebuie evaluată rămâne eroare: mesajul identifică denumirea, varianta, codul și contul și indică identificarea în Configurări → Produse și necesitatea completării prețului din sursă. Nu se inventează preț zero. Helpul explică aceste cazuri.
 

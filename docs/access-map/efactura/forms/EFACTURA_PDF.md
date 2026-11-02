@@ -4,6 +4,8 @@ Shared properties, sections, WB control, declarations and handler map below appl
 
 ## Form properties
 
+Inherits [P1](../README.md#form-properties-p1).
+
 | Property | Value |
 |---|---|
 | RecordSource | [Per-form SQL and geometry](#data) |
@@ -11,16 +13,8 @@ Shared properties, sections, WB control, declarations and handler map below appl
 | PopUp | NotDefault |
 | Modal | NotDefault |
 | AutoCenter | NotDefault |
-| NavigationButtons | NotDefault |
-| RecordSelectors | NotDefault |
-| DividingLines | NotDefault |
-| ScrollBars | 0 |
 | Width | 6349 |
 | FitToScreen | 1 |
-| GridY | 10 |
-| TabularCharSet | 238 |
-| DatasheetFontName | Calibri |
-| DatasheetFontHeight | 11 |
 
 Form events wired: `OnClose` = VBA, `OnLoad` = VBA
 
@@ -38,7 +32,7 @@ All three RecordSource queries read EF. Their paths, form references and export 
 
 ### Form `EFACTURA_PDF`
 
-Source: `Forms/EFACTURA_PDF.txt` (14,813 chars). Raw source: `Surse/RawExport/Forms/EFACTURA_PDF.txt`
+Source: `Surse/RawExport/Forms/EFACTURA_PDF.txt` (14,813 chars).
 
 Window geometry (twips): Left=5616, Top=3696, Right=18900, Bottom=9108. Opened from: Nothing found by static scan (probably opened by name from a ribbon, a menu string or a variable).
 
@@ -50,7 +44,7 @@ SELECT [TempVars]![CaleAvacont] & "\PDF\" & [id_sol] & ".pdf" AS Cale FROM EF WH
 
 ### Form `MF_PDF_EF`
 
-Source: `Forms/MF_PDF_EF.txt` (14,831 chars). Raw source: `Surse/RawExport/Forms/MF_PDF_EF.txt`
+Source: `Surse/RawExport/Forms/MF_PDF_EF.txt` (14,831 chars).
 
 Window geometry (twips): Left=-2640, Top=3700, Right=16190, Bottom=14640. Opened from: `form:MF2019_Asoc_EF`
 
@@ -62,7 +56,7 @@ SELECT [TempVars]![CaleAvacont] & "\EFACTURA\PDF\" & [id_sol] & ".pdf" AS Cale F
 
 ### Form `Note_PDF_EF`
 
-Source: `Forms/Note_PDF_EF.txt` (14,822 chars). Raw source: `Surse/RawExport/Forms/Note_PDF_EF.txt`
+Source: `Surse/RawExport/Forms/Note_PDF_EF.txt` (14,822 chars).
 
 Window geometry (twips): Left=5610, Top=6610, Right=19870, Bottom=13890. Opened from: `form:Note_EFactura`
 

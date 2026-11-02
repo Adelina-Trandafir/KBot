@@ -26,13 +26,13 @@ Jetoanele curg stânga→dreapta și trec pe rând nou la depășirea lățimii.
 
 ### 4. `MinimumRequiredChecked`: un refuz care se VEDE, nu o excepție
 
-La 1, stingerea ultimului jeton bifat cu mouse-ul sau cu `Space` se refuză: jetonul clipește 140 ms și rămâne bifat, **fără excepție și fără eveniment**. E un gest de operator, nu un apel de API — de aceea `SetChecked` / `UncheckAll` **nu** sunt oprite de prag (codul care cere explicit o stare o primește). Distincția e fixată cu două teste, în ambele sensuri.
+La 1, mouse/`Space` nu pot debifa ultimul jeton: clipește 140 ms, rămâne bifat, **fără excepție/eveniment**. Pragul privește gestul operatorului, nu API-ul: `SetChecked` / `UncheckAll` pot cere explicit orice stare. Două teste fixează ambele sensuri.
 
 Pragul contează fiindcă `LogFilter` tratează mulțimea goală ca «nimic», nu ca «toate»: fără el, debifarea ultimului jeton ar goli grila fără nicio explicație.
 
 ### 5. Ce s-a memorat și ce NU
 
-Conform planului, `_borderPen` și `_badgeBrush` se memorează, se refac în `ApplyTheme` și se eliberează în `Dispose`. Sunt singurele independente de starea jetonului. `ThemeShapes.FillModern` și `TextRenderer` primesc culori, fără pensule de memorat.
+Conform planului, numai `_borderPen`/`_badgeBrush` sunt independente de starea jetonului: cache, refacere în `ApplyTheme`, eliberare în `Dispose`. `ThemeShapes.FillModern`/`TextRenderer` primesc culori, fără pensule de memorat.
 
 ---
 

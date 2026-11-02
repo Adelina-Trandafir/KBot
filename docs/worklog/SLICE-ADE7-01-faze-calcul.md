@@ -22,11 +22,11 @@ Etapele păstrează separat trace-ul calculelor, M05, comparatorul și planul an
 
 ### Ce s-a schimbat și de ce
 
-Închiderea lui august necesită acum planul anual. Conform cererii utilizatorului, fereastra există exclusiv pe desktop: TreeView custom în stânga, DataGrid custom cu copiii în dreapta și DataGrid custom cu educatorii dedesubt. Prima coloană selectează copiii, Ctrl/Shift permit selecție multiplă, iar drag-and-drop pe arbore sau comboboxul custom mută selecția în grupa destinație. Plecat este o coloană separată. Se pot păstra/muta toți copiii sau se pot muta individual.
+Închiderea lui august necesită planul anual. Fereastra cerută exclusiv pe desktop folosește controale custom: TreeView în stânga, DataGrid cu copiii în dreapta și cu educatorii dedesubt. Prima coloană selectează copiii, Ctrl/Shift permit selecție multiplă; drag-and-drop pe arbore sau comboboxul mută selecția în grupa destinație. Plecat are coloană separată. Se pot păstra/muta toți copiii ori muta individual.
 
 DataGrid primește opțional multiSelect, selectionCheckbox și dragRows; utilizările existente păstrează selecția simplă. Intervalele folosesc ordinea filtrată/sortată a grilei, inclusiv rândurile virtualizate.
 
-Grupele noi se creează numai la confirmarea planului și necesită nume unic, cel puțin un educator și cel puțin un copil care rămâne. Copiii pleacă la 31 august, iar mutările și noii educatori se aplică la 1 septembrie. Situația din august se salvează înaintea modificării cataloagelor. Tot fluxul rulează în tranzacția și blocarea existente; eșecul anulează toate scrierile. Idempotency-Key păstrează aceeași cheie la reîncercarea aceluiași plan. Serverul verifică versiunile copiilor, grupelor, lunii și istoricului educatorilor, precum și drepturile close/catalog/transfer. Nu s-au schimbat formulele financiare.
+Grupele noi se creează la confirmarea planului, cu nume unic, minimum un educator și un copil care rămâne. Plecări: 31 august; mutări și educatori noi: 1 septembrie. Situația din august se salvează înaintea modificării cataloagelor. Tranzacția și blocarea existente acoperă întregul flux; eșecul anulează toate scrierile. Reîncercarea aceluiași plan păstrează Idempotency-Key. Serverul verifică versiunile copiilor, grupelor, lunii și istoricului educatorilor și drepturile close/catalog/transfer. Formulele financiare rămân.
 
 ### Fișiere
 

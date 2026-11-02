@@ -16,7 +16,7 @@ Reunire documentară D001-26. 01 conține deciziile inițiale; 03 corectează ch
 
 Prima vedere reală din cele nouă primește sursa de date: portul lui `qFX_MAIN_SUMAR` (v1) pe MariaDB, expus ca `GET /api/forexe/sumar?cod=<CodAngajament>`.
 
-Granulația e **un rând per indicator** al angajamentului. Coloanele de antet (`CodAngajament .. Preluat`) se repetă identic pe fiecare rând în Access; aici sunt ridicate o singură dată în `header`, ca să nu călătorească duplicate pe fir.
+Granulație: un rând per indicator. Antetul CodAngajament..Preluat, repetat pe fiecare rând în Access, apare o singură dată în header.
 
 #### Blocantul `Clsf` — REZOLVAT, ramura A
 
@@ -30,7 +30,7 @@ Verdict: **`Clasificatii.Clsf` EXISTĂ**, ca o coloană generată stocată:
 `Titlu` varchar(10) GENERATED ALWAYS AS (left(coalesce(`Articol`,''),2)) STORED,
 ```
 
-Deci se selectează **direct** `C.Clsf` — nicio compunere în SQL, nicio invenție de format. Are și index (`idx_Clsf`), deci și `ORDER BY C.Clsf` e ieftin. Formatul rezultat se potrivește cu datele reale din `FX_System_Export/TABLES/FX_Receptii.md` (coloana `Clsf` = `65.02.04.02.20.01.03`). Bonus: `Titlu = left(Articol,2)` explică `Mid(Clsf,13,2)` din interogările Access — `Capitol`(5) + `.` + `Subcapitol`(5) + `.` = 12 caractere, deci poziția 13 e începutul lui `Articol`.
+Se selectează direct C.Clsf, fără recompunere. Indexul idx_Clsf susține ORDER BY C.Clsf. Formatul corespunde FX_System_Export/TABLES/FX_Receptii.md: 65.02.04.02.20.01.03. Titlu=left(Articol,2) explică Mid(Clsf,13,2) din Access: Capitol(5)+punct+Subcapitol(5)+punct ocupă 12 caractere; Articol începe la 13.
 
 #### Convenția cheilor MariaDB vs Access — regula generală (citește asta prima)
 
@@ -50,7 +50,7 @@ Cele două lovituri, în ordine:
 1. `aggOrd` a fost scris `R.IDORDTBL = T.IDORDTBL` (portare literală din Access). Corect: **`R.IDORDTBLP = T.IDORDTBLP`**. Corectat de operator după prima rulare.
 2. Cheia spre `Clasificatii` — vezi secțiunea următoare.
 
-**Urmează vederea ORD, care lucrează NUMAI cu familia `FX_ORD`.** Regula de mai sus e prima verificare de făcut la fiecare join de acolo. Convenția e notată și în capul lui `sumar.py`, ca să fie sub ochi la următoarea portare.
+ORD urmează și folosește exclusiv familia FX_ORD; convenția de mai sus se verifică la fiecare join. Este notată și în antetul sumar.py.
 
 #### A doua capcană, găsită pe drum: cheia de join spre `Clasificatii`
 
@@ -124,9 +124,9 @@ Cele 15 teste noi din `test_forexe_sumar.py` sunt **host-only și s-au SĂRIT** 
 
 ### Ce s-a schimbat și de ce
 
-`MainForm.CreateView("sumar")` întorcea `New PlaceholderView("sumar", "Sumar")`. Acum întoarce un `SumarView` real — **prima dintre cele nouă vederi** care nu mai e un placeholder, și primul consumator al lui `KBotDataView`.
+MainForm.CreateView("sumar"): PlaceholderView este înlocuit cu SumarView, prima vedere reală dintre cele nouă și primul consumator KBotDataView.
 
-Structura oglindește `frmFX_MAIN_Sumar`: un bloc de antet cu datele angajamentului (care în Access sunt textbox-uri legate la coloanele repetate ale query-ului) plus o grilă continuă dedesubt, cu un rând per indicator.
+Ca frmFX_MAIN_Sumar: antetul angajamentului (textbox-uri legate la coloanele repetate în Access), apoi grila cu un rând per indicator.
 
 ### Fișiere atinse
 
@@ -144,19 +144,19 @@ Structura oglindește `frmFX_MAIN_Sumar`: un bloc de antet cu datele angajamentu
 
 ### Decizii de proiectare
 
-**DI — semnătura constructorului.** Planul avertiza că scaffolding-ul a greșit o dată o semnătură DI. S-a citit `MainForm.vb` înainte: câmpurile reale sunt `_forexeRunner, _session, _apiClient, _authApi, _loginFactory`. `SumarView` ia doar ce îi trebuie: `(apiClient, withReauth)`.
+**DI:** după avertismentul planului despre semnătura greșită din scaffolding, MainForm.vb a fost citit: câmpuri `_forexeRunner`/`_session`/`_apiClient`/`_authApi`/`_loginFactory`. SumarView primește numai (apiClient, withReauth).
 
 **401 rămâne în shell:** `MainForm.WithReauth(Of T)` este `Private`; vederea primește specializarea `Func(Of Func(Of Task(Of SumarInfo)), Task(Of SumarInfo))`, furnizată ca `Function(op) WithReauth(Of SumarInfo)(op)`, fără duplicarea politicii de re-login.
 
-**snake_case numai pe fir:** `/sumar` îl emite, spre deosebire de PascalCase din `/tree`. Cu `PropertyNamingPolicy = Nothing`, DTO-urile păstrează numele verbatim; `ApiClient` le mapează pe POCO, astfel încât `SumarView` nu vede `total_rezervari`.
+**snake_case pe fir:** /sumar diferă de /tree PascalCase. PropertyNamingPolicy=Nothing păstrează numele DTO; ApiClient le mapează pe POCO, fără total_rezervari în SumarView.
 
-**Coloane de bani = `Text` + `FormatString = "N2"` + aliniere dreapta.** Nu se editează nimic (`ReadOnlyGrid = True`), deci un tip numeric de coloană ar fi degeaba. `FrozenColumnCount = 1` ține Clasificația fixă la stânga la derulare orizontală.
+**Bani:** Text, FormatString="N2", aliniere dreapta; ReadOnlyGrid=True face inutil editorul numeric. FrozenColumnCount=1 fixează Clasificația la derulare orizontală.
 
 **Răspunsuri depășite:** `SumarView` reține `_requestedCod` și respinge răspunsul cu altă cheie, deoarece cererile din navigarea rapidă pot reveni în altă ordine și ar amesteca grila/antetul angajamentelor. Probă dedicată.
 
 **Fără apel de rețea pe context gol.** `SetContext(Nothing)` sau `CodAngajament` gol golește antetul + grila și arată starea goală, fără să atingă rețeaua. Are test.
 
-**Erori:** `SetContext` pornește `LoadAsync` fără `await`, evitând blocarea UI din handlerul sincron. Metoda își tratează toate excepțiile: `GlobalErrorLog` și mesajul românesc `error` al serverului, fără JSON brut. `ApplyTheme` loghează și înghite la frontiera pictării/temei, ca `PlaceholderView`.
+**Erori:** SetContext pornește LoadAsync fără await din handlerul sincron, evitând blocarea UI. LoadAsync tratează toate excepțiile prin GlobalErrorLog și mesajul românesc error al serverului, fără JSON brut. ApplyTheme loghează și înghite la frontiera pictării/temei, ca PlaceholderView.
 
 **Temă.** Zero culori literale. Grila **nu** se atinge în `ApplyTheme`: `KBotDataView` implementează el însuși `IThemedControl`, iar `ThemeManager.Traverse` ajunge la el.
 
@@ -219,9 +219,9 @@ Un rând per indicator **garantat**, indiferent de duplicate; „fără clasific
 
 #### Extindere față de brief: același defect era și la `Parteneri`
 
-Brief-ul cerea numai `Clasificatii`; regula generalizată la nomenclatoare partajate a găsit același defect în `LEFT JOIN Parteneri P ON SA.CodPartener = P.CodPartener`, fără `IdUnitate`, deși `FX_DDF_REV_SA` o are (`FX_System_Export/TABLES/ FX_DDF_REV_SA.md:26`).
+Brief-ul privea numai Clasificatii; aplicarea regulii nomenclatoarelor partajate a găsit aceeași lipsă IdUnitate în `LEFT JOIN Parteneri P ON SA.CodPartener = P.CodPartener`, deși FX_DDF_REV_SA are coloana (FX_System_Export/TABLES/FX_DDF_REV_SA.md:26).
 
-Join-ul preceda `GROUP BY`: duplicatul multiplica `SUM(SA.ValCur)` și umfla **`TotalRevizii`**, afectând suma, nu numai afișarea. A fost mutat în subinterogare scalară:
+Join-ul anterior GROUP BY multiplica SUM(SA.ValCur), umflând TotalRevizii, nu doar afișarea. Înlocuit cu subinterogarea scalară:
 
 ```sql
 MIN((SELECT P.DenumirePartener FROM Parteneri P

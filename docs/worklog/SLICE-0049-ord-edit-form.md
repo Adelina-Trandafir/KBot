@@ -18,15 +18,15 @@ Felia 0033 a adus ordonanțările pe ecran. Felia asta le face **editabile**: se
 
 #### 1.1 Arhitectura, în trei propoziții
 
-**Generarea este pe server** (D4): `Genereaza_ORD` folosește SQL peste `FX_Plati`, `FX_Receptii*`, `FX_Indicatori`, `Parteneri` din MariaDB. Clientul trimite `cod` + `data` și opțional o plată, primind graful propus. Obiectele din memoria clientului înlocuiesc cele șase `tmpFX_ORD*`; fără SQLite sau tabele de pregătire.
+**Generare pe server** (D4): `Genereaza_ORD`, SQL pe `FX_Plati`, `FX_Receptii*`, `FX_Indicatori`, `Parteneri` MariaDB. Clientul trimite `cod`/`data` și opțional plata, primește graful; memoria înlocuiește cele șase `tmpFX_ORD*`, fără SQLite/tabele de pregătire.
 
-**Salvarea e o singură trimitere, o singură tranzacție** (D5). Lanțul VBA în cinci pași — `FX_Curatare_Staging_ORD` ▸ `FX_Adauga_Ord` ▸ salvare locală „de probă" ▸ `FX_Confirma_ORD` ▸ `FX_Confirma_Local_ORD` ▸ commit real ▸ `FX_ActualizeazaAccessIds_ORD`, cu mesajele lui de «EROARE CRITICĂ: datele sunt pe server dar nu local» — **nu s-a portat**. Tot graful urcă într-un POST, serverul îl scrie într-o tranzacție și întoarce cheile reale. Nu mai există stare care să poată rămâne pe jumătate.
+**Un POST, o tranzacție** (D5) scriu întregul graf și întorc cheile reale, fără stare parțială. **Neportat:** lanțul VBA în cinci pași `FX_Curatare_Staging_ORD` ▸ `FX_Adauga_Ord` ▸ salvare locală „de probă" ▸ `FX_Confirma_ORD` ▸ `FX_Confirma_Local_ORD` ▸ commit real ▸ `FX_ActualizeazaAccessIds_ORD`, cu «EROARE CRITICĂ: datele sunt pe server dar nu local».
 
 **Cele trei popup-uri devin pagini** (D2) prin `KBotNavList` orizontal, ca în `OrdView`/`DdfView`. Dispare `frmFX_ORD_DOC.btnSav`: salvarea formularului acoperă întregul graf.
 
 #### 1.2 Punctul unde cele două faze sunt inevitabile
 
-Octeții imaginilor atașate **nu pot** urca odată cu graful: un `IDORDATTP` trebuie să existe înainte ca ei să poată atârna de el. Deci formularul salvează întâi documentul, citește harta `temp_id ▸ cheie reală`, apoi urcă fiecare imagine.
+Imaginile cer `IDORDATTP` existent: se salvează întâi documentul, se citește harta `temp_id ▸ cheie reală`, apoi se încarcă octeții fiecărei imagini.
 
 La eșecul unei încărcări după salvare, ordonanțarea rămâne salvată; se indică imaginea lipsă și se oferă reluarea, fără rollback.
 
@@ -259,9 +259,7 @@ Deci: **ziua deschide editorul, luna rulează lotul** — două lucruri diferite
 
 #### 1.2 Ce a trebuit schimbat ca ramurile să se potrivească
 
-Cele patru comenzi ale feliei 0049 fuseseră croite pentru singurul apelant de atunci, `OrdView`, care **nu știe nimic** despre zile: «Adaugă» cerea ziua operatorului prin `OrdZiuaForm`, iar «Lot» lua tot angajamentul. Din arborele de plăți, amândouă informațiile sunt chiar nodul apăsat.
-
-Deci `OrdComanda` a căpătat patru câmpuri — `Ziua`, `IdPlataFx`, `Luna`, `An` — și două funcții de construcție numite după ce înseamnă (`DinPlati`, `LotPeLuna`). Constructorul vechi a rămas neatins, deci **`OrdView` nu s-a modificat deloc**. În shell:
+Cele patru comenzi 0049 deserveau numai `OrdView`: «Adaugă» cerea ziua prin `OrdZiuaForm`, «Lot» lua întregul angajament. Arborele plăților dă ziua/luna prin nod. `OrdComanda` primește `Ziua`, `IdPlataFx`, `Luna`, `An` și funcțiile de construcție `DinPlati`/`LotPeLuna`; constructorul vechi și **`OrdView` rămân neatinse**. În shell:
 
 * `AdaugaOrdonantareAsync` primește `ziCeruta`; `Nothing` = **întreabă operatorul**, ca până acum. Nu s-a mutat dialogul din shell în vedere și nu s-a duplicat — ziua fie vine gata, fie se cere, în același loc.
 * `GenereazaInLotAsync` primește `luna` / `an` și le trimite mai departe la `GET /api/forexe/ord/zile`, care le acceptă de la felia 0049.
@@ -286,7 +284,7 @@ Access rula, după fiecare din cele două ramuri, `RefreshTreeQuery` și (pe ram
 2. **vederea PLĂȚI**, dacă a fost deschisă vreodată, inclusiv când este inactivă: plățile tocmai acoperite schimbă ziua cu «+» și stările; fără refresh, operatorul ar putea repeta comanda pe ziua deja ordonanțată până la schimbarea angajamentului;
 3. **poarta vederilor**: prima ordonanțare a unui angajament îi aprinde `AreORD`, deci intrarea «ord» din navigație trebuie să apară.
 
-**Punctul 3 este LOCAL, abatere de la `RefreshTreeQuery` din Access.** `LoadTreeAsync` ▸ `PopulateTree` ar goli selecția (`_currentInfo = Nothing`, `ApplyViewGating(Nothing)`) și ar reveni la «sumar» după salvare. Se ridică flagul în `AngajamentTreeInfo` curent și se reaplică poarta; valoarea se recitește de la server la schimbarea anului/SS sau la descărcare.
+**Punctul 3 este LOCAL**, diferit de Access `RefreshTreeQuery`: `LoadTreeAsync` ▸ `PopulateTree` ar goli selecția (`_currentInfo = Nothing`, `ApplyViewGating(Nothing)`) și reveni la «sumar». Se ridică flagul din `AngajamentTreeInfo` curent și se reaplică poarta; recitire server la schimbarea anului/SS sau descărcare.
 
 Ștergerea cheamă aceeași metodă cu `maiExistaOrdonantari:=False`: o ștergere poate doar să STINGĂ `AreORD`, iar câte au mai rămas nu se poate ști de aici. Lotul o cheamă cu `reusite > 0` — poarta se aprinde doar dacă s-a scris ceva.
 
@@ -389,7 +387,7 @@ adică pe rândul sintetic «< TOȚI BENEFICIARII >» **și pe toată ramura «g
 Două urmări au trebuit tratate, fiindcă beneficiarul editat nu mai e neapărat rândul pe care stă cursorul din stânga:
 
 - rescrierea numelui în lista din stânga **caută rândul după cheie**, nu-l mai ia pe cel curent;
-- pe ramura «clasificații» coloana a doua a grilei arată IBAN-ul, deci editarea lui `ContIBAN` rescrie acum și celulele liniilor acelui beneficiar — două locuri care arată același lucru nu au voie să se poată contrazice pe ecran (aceeași regulă ca la «Ramas» în felia 0049).
+- pe ramura «clasificații», editarea `ContIBAN` actualizează și coloana a doua (IBAN) a liniilor beneficiarului, păstrând afișările concordante, ca «Ramas» din 0049.
 
 **Fișier:** `src/KBot.App/Views/Ord/OrdBeneficiariPage.vb`.
 
@@ -475,7 +473,7 @@ N copii ale imaginii cer N urcări după salvare, per `IDORDATTP` (faza a doua d
 
 ### 4. Un defect găsit în trecere: rândul text nou apărea în grila FIȘIERELOR
 
-`GrupuriVizibile` a moștenit de la `DocumenteVizibile` împărțirea pe `OrdDraftDoc.EsteText`, care cere `NumeDoc` gol **și** `DocJust` necompletat. Un rând text proaspăt adăugat are `DocJust = ""`, deci `EsteText = False`, deci ateriza în grila fișierelor — acolo unde operatorul tocmai nu se uită. Butonul «Adaugă rând» părea că nu face nimic.
+`GrupuriVizibile` moștenea filtrul `DocumenteVizibile` pe `OrdDraftDoc.EsteText` (`NumeDoc` gol **și** `DocJust` necompletat). Rândul nou cu `DocJust = ""` avea `EsteText = False` și ajungea în grila fișierelor, făcând «Adaugă rând» să pară inert.
 
 Împărțirea între cele două grile se face acum pe `NumeDoc` **singur**, ca în Access (`Form_Load`: `If IsNull(!NumeDoc)` ▸ temp1 text, altfel temp2 fișiere). `EsteText` rămâne ce este — proba de VALIDARE din `btnSav` (`IsNull(NumeDoc) And Not IsNull(DocJust)`), folosită de `OrdEditForm.Valideaza`. Nu s-a atins.
 
@@ -483,9 +481,7 @@ N copii ale imaginii cer N urcări după salvare, per `IDORDATTP` (faza a doua d
 
 ### 5. Butoanele nu urmau tema — și de ce
 
-Cauza e o regulă a motorului, nu o scăpare de culoare. `ThemeManager.Traverse` se oprește din regulile GENERICE de îndată ce dă peste un `IThemedControl` și coboară mai departe **doar** în copiii care sunt și ei `IThemedControl` (`ApplyToNestedThemed`). Cele trei pagini SUNT `IThemedControl`; grilele dinăuntru sunt și ele, deci se colorau; `Button`-urile simple de sub ele nu sunt, deci rămâneau gri de sistem sub orice schemă.
-
-Reparația e cea a casei: `ButtonStyles`, chemat din `ApplyTheme`-ul fiecărei pagini — «Adaugă» poartă accentul (`ApplyPrimary`), «Șterge» și «Lipește» rămân secundare (`ApplySecondary`), fiindcă un buton distructiv nu se îmbracă în culoarea care cheamă degetul.
+`ThemeManager.Traverse` oprește regulile GENERICE la `IThemedControl`, coborând numai în copii de același tip (`ApplyToNestedThemed`). Paginile și grilele se tematizau; `Button`-urile simple rămâneau gri de sistem. `ApplyTheme`-ul fiecărei pagini cheamă acum `ButtonStyles`: «Adaugă» cu accent (`ApplyPrimary`), «Șterge»/«Lipește» secundare (`ApplySecondary`), fără accentuarea acțiunii distructive.
 
 Motivul e scris în comentariul de deasupra fiecărui `ApplyTheme`, ca următorul control care ajunge aici să nu mai reia diagnosticul.
 
@@ -543,11 +539,11 @@ Două cerințe noi ale operatorului, primite după ce pasul de mai sus era gata 
 
 - `OrdDocumentePage.ReumpleListele` pune `grdText.ReadOnlyGrid = (_cheieBene = 0)`. `grdFisiere` era oricum doar-citire — numele și extensia vin din fișierul ales, nu de la tastatură.
 - `OrdAtasamentePage.ReumpleLista` pune la fel `grdAtasamente.ReadOnlyGrid`.
-- Ca doar-citirea să nu pară o grilă stricată, titlul primește un sufix cât ține rândul sintetic: «Documente justificative (text)  ·  rânduri comune (doar citire)». Titlurile din designer se păstrează în constructor (`_titluText` / `_titluFisiere` / `_titluLista`) și se pun la loc neschimbate când se alege un beneficiar — nu se rescriu cu constante, ca să nu se desincronizeze de `.Designer.vb`.
+- Rândul sintetic explică doar-citirea prin sufixul «Documente justificative (text)  ·  rânduri comune (doar citire)». Constructorul păstrează titlurile din designer în `_titluText` / `_titluFisiere` / `_titluLista`, restaurate la alegerea beneficiarului; fără constante care să desincronizeze `.Designer.vb`.
 
 #### Adăugarea rămâne deschisă — deci textul se cere în dialog
 
-**`OrdTextForm`** nou (`Views/Ord/`, `KBotThemedForm` + `.Designer.vb`, ca `OrdZiuaForm`) evită rândul gol imposibil de completat în grila doar-citire. Are bandă de titlu, `TextBox` multilinie, «Renunță» / «Adaugă» și introducerea «se adaugă la TOȚI beneficiarii, câte o copie fiecăruia» sau «pentru beneficiarul selectat». Fără `AcceptButton`: Enter trece la rândul următor în text. Textul gol este refuzat în dialog, înainte de salvare.
+Noul **`OrdTextForm`** (`Views/Ord/`, `KBotThemedForm` + `.Designer.vb`, ca `OrdZiuaForm`) cere textul în locul rândului gol needitabil: titlu, `TextBox` multilinie, «Renunță» / «Adaugă», introducere «se adaugă la TOȚI beneficiarii, câte o copie fiecăruia» sau «pentru beneficiarul selectat». Fără `AcceptButton` (Enter = rând nou); text gol refuzat înaintea salvării.
 
 `btnAdaugaText` folosește dialogul și pe beneficiarul individual: rândul nou gol părea uitat, iar validarea `btnSav` refuză documentul fără text. Fișierele și cele două adăugări din «Atașamente» nu cer dialog, valorile provenind din fișierul ales sau memoria temporară.
 
@@ -555,7 +551,7 @@ Două cerințe noi ale operatorului, primite după ce pasul de mai sus era gata 
 
 #### Unde se năștea duplicatul
 
-`Adauga_Ord_Doc` din Access scria un document per rând-sursă, cu `Descriere` a plății în majuscule. Trei plăți ale aceluiași beneficiar cu aceeași descriere produceau trei rânduri identice, fără informație în plus pe ecran/PDF, fiecare cu propriul rând în grupare. 0049 păstrase literal acest comportament.
+Access `Adauga_Ord_Doc` scria per rând-sursă, cu `Descriere` în majuscule: trei plăți identic descrise ale aceluiași beneficiar produceau trei rânduri identice, fiecare cu rând propriu în grupare, fără informație suplimentară pe ecran/PDF. 0049 păstrase comportamentul.
 
 #### Ce s-a făcut, pe trei niveluri
 

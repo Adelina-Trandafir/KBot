@@ -4,7 +4,7 @@ Data: 30.10.2026.
 
 Stare: **IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT**.
 
-La cererea utilizatorului, grila Furnizori folosește proprietatea CUSTOM `proportionalWidths: true`, ca nomenclatoarele existente. Lățimile Denumire / Cod fiscal / Cod partener sunt ponderi ale spațiului disponibil, cu `minWidth: 0`; coloana de opțiuni păstrează lățimea fixă de 36. `layout: {}` înlocuiește umplerea exclusivă a coloanei Denumire. Controlul repartizează lățimea disponibilă ținând cont de scrollbarul vertical. Nu se maschează overflow-ul prin CSS și nu se modifică DGV-ul comun.
+La cererea utilizatorului, Furnizori folosește proprietatea CUSTOM `proportionalWidths: true`, ca nomenclatoarele: Denumire / Cod fiscal / Cod partener au ponderi din spațiul disponibil, cu `minWidth: 0`; opțiunile rămân fixe la 36. `layout: {}` înlocuiește umplerea exclusivă a Denumirii. Controlul ține cont de scrollbarul vertical, fără mascarea overflow-ului prin CSS sau modificarea DGV-ului comun.
 
 Fișier de aplicație: `PYTHON/static/js/vercon/partners.js`.
 

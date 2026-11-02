@@ -8,7 +8,7 @@ Code (no slice):
 - The caption bar of the main window no longer has the options («Setări») button (`KbotForm.Designer.vb`: `ShowOptionsButton`, option image and tint removed).
 - `KbotForm.Chrome.vb`: the popup menu of that button (`CapBar_OptionButtonClick`, `MeniuOptiuni_ItemClicked`, the `OPT_*` keys) is gone. `ShowLog()` and the new `ShowSettings()` stay, each with its own Try/Catch and operator message.
 - `KbotForm.Nomenclatoare.vb` (`MenuNou_ItemClicked`): the keys `jurnal` -> `ShowLog()` (Setari window on the «Jurnal» page) and `setari` -> `ShowSettings()`. The rows already existed in the designer (`KBotMenuItem12/13`), they were not wired.
-- `KbotForm.HelpCapture.vb` (`MenuNou_Opening`): the «Jurnal activitate» row follows `FeatureSwitches.VizualizatorJurnaleActiv` at every opening (the old rule: the log row only when the operator's switch is on). Before, with the switch off the button opened Setari directly; now the row is hidden.
+- `KbotForm.HelpCapture.vb` (`MenuNou_Opening`): each opening shows «Jurnal activitate» only with `FeatureSwitches.VizualizatorJurnaleActiv`, preserving the old log-row rule. With the switch off, the former button opened Setari directly; now the row is hidden.
 - Operator-visible text that named the old row: the checkbox in Setari > Aplicatie now reads «Rândul «Jurnal activitate» în meniul MENIU al ferestrei principale» (+ tooltip + the confirmation line). Stale comments/XML docs updated.
 
 Help (tag `0000-29`, `fara-felie`):

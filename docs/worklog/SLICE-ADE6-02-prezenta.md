@@ -57,11 +57,11 @@ Fișiere: PYTHON/static/css/adechit.css, ajutorul din adechit.html și statusul 
 
 ### Ce s-a schimbat și de ce
 
-Pagina nu mai selectează ultima lună sau toate grupele la pornire și nu cere situația copiilor până la alegerea lunii și grupei. Contextul conține numai metadate/drepturi. Endpointul years citește anii DISTINCT, fără lunile lor; arborele pornește restrâns, iar deschiderea anului cere numai lunile acelui an. Pe mobil selecția folosește Anul, Luna și Grupa. Grupele se încarcă după alegerea lunii. Opțiunea Toate este eliminată din arbore și combobox.
+Pagina pornește fără ultima lună/toate grupele selectate și cere situația copiilor numai după alegerea lunii și grupei. Contextul are doar metadate/drepturi. Endpointul years citește anii DISTINCT fără luni; arborele pornește restrâns și cere lunile anului deschis. Pe mobil: Anul, Luna, Grupa. Grupele se încarcă după alegerea lunii; Toate dispare din arbore și combobox.
 
-Situația primește IDG și descarcă numai copiii grupei. Citirea SQL păstrează istoricul copiilor selectați din toate grupele/lunile lor pentru soldurile inițiale. Formulele calculate sunt nemodificate. Lunile închise citesc snapshotul filtrat după IDL și IDG. Endpointul situației păstrează citirea nefiltrată pentru compatibilitate, dar pagina trimite întotdeauna grupa.
+Situația primește IDG și descarcă numai copiii grupei, păstrând în citirea SQL istoricul lor din toate grupele/lunile pentru soldurile inițiale. Formulele rămân; lunile închise citesc snapshotul după IDL și IDG. Endpointul păstrează citirea nefiltrată pentru compatibilitate; pagina trimite mereu grupa.
 
-Plătitori încarcă inițial numai grupele. Se cer copiii după IDG și persoanele după IDP, cu resetarea listelor dependente și ignorarea răspunsurilor vechi. Editorul grupei citește separat anii și numai istoricul educatorilor săi. Filtrele rows sunt validate și aplicate SQL, nu după descărcarea întregii tabele.
+Plătitori încarcă inițial doar grupele, apoi copiii după IDG și persoanele după IDP; resetează listele dependente și ignoră răspunsurile vechi. Editorul grupei citește separat anii și numai istoricul educatorilor săi. Filtrele rows se validează/aplică SQL înainte de descărcare.
 
 ### Fișiere
 
@@ -101,7 +101,7 @@ Fără schimbare API, DDL, commit, push sau restart executat din chat. Următoar
 
 ### Ce s-a schimbat și de ce
 
-La alegerea unei luni din alt an în arborele LUNA / ANUL, ramura anului selectat anterior se colapsează, iar ramura anului noii luni rămâne extinsă. Prima alegere folosește drept an anterior anul deschis automat la pornire. Schimbarea între luni ale aceluiași an păstrează ramurile existente. Extinderea manuală a unui an pentru consultare nu colapsează anul selectat.
+Alegerea unei luni din alt an în LUNA / ANUL colapsează anul selectat anterior și păstrează extins anul noii luni. Prima alegere consideră anterior anul deschis automat la pornire. Lunile aceluiași an păstrează ramurile; extinderea manuală pentru consultare nu colapsează anul selectat.
 
 Logica este în chooseMonth, înaintea sincronizării selecției și încărcării grupelor. Starea ramurilor este păstrată de mecanismul existent la salvare și reîncărcare; nu se schimbă componenta TreeView comună.
 

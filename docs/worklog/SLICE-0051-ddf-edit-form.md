@@ -72,15 +72,11 @@ Three §13 stop-and-report conditions were genuine stops, and two further defect
 
 #### 2.1 `Desc_Lunga_ANSI` is not dead — D9 is reversed
 
-D9 incorrectly declared `Desc_Lunga_ANSI` dead: `PYTHON/routes/forexe/ddf.py` emits it as `desc_lunga`, `ApiClient` maps `DescLunga`, and `DdfXmlBuilder` writes `DescrieObFundRevizuireLung` plus `Left(…, 500)` into section-A `obiect_fd_reviz_lung`. Writing only `Desc_Lunga` would leave the generated long description empty; D19 forbids changing that read route.
-
-**Operator's answer: write both columns.** Both `Desc_Lunga` and `Desc_Lunga_ANSI` receive the same text; this deliberate duplication preserves the signed-document read path outside this slice.
+D9 wrongly declared `Desc_Lunga_ANSI` dead: `PYTHON/routes/forexe/ddf.py` emits `desc_lunga`, `ApiClient` maps `DescLunga`, `DdfXmlBuilder` writes `DescrieObFundRevizuireLung` and `Left(…, 500)` into section-A `obiect_fd_reviz_lung`. Only writing `Desc_Lunga` would empty generated text; D19 protects that reader. **Operator: write identical text to both columns**, preserving the signed-document path outside this slice.
 
 #### 2.2 `Comp` — read the existing values, but let the operator type a new one
 
-The plan gave no source for the `Comp` field. **Operator's answer:** list the values already used on earlier DDFs; if there are none the list is empty; the operator may always type a value that is not in the list.
-
-Server side that is `SELECT DISTINCT Comp FROM FX_DDF` (`GET /api/forexe/ddf/comp`).
+Plan omitted `Comp` source. **Operator:** list earlier DDF values, empty if none, always permit new typed values. Server: `SELECT DISTINCT Comp FROM FX_DDF` (`GET /api/forexe/ddf/comp`).
 
 The initial workaround uses authoritative `txtComp` (`KBotTextField`) plus picker `cmbComp`, documented in `DdfEditForm.Designer.vb`. At this checkpoint `KBotComboBox` throws unless `DropDownStyle = DropDownList`: owner drawing cannot theme native `EDIT`. Editable-combo work is listed separately in `possible_future_directions.md`.
 
@@ -96,7 +92,7 @@ The plan referred to a function whose source was not in the export. The operator
 
 It is ported in `DdfDraft.vb` as `CaracterAleator` / `GenereazaUnic`, attribution kept.
 
-The original comment incorrectly gives each character class 1/3 probability: banker rounding in `Round(Rnd * 2 + 1)` yields 1/4 digits, 1/2 uppercase, 1/4 lowercase. Behaviour is ported unchanged, comment corrected. `GenereazaUnic` retries up to twenty times against draft codes, then throws rather than returning a duplicate that would collide on save.
+Original comment's 1/3 probabilities were wrong: banker rounding `Round(Rnd * 2 + 1)` yields 1/4 digits, 1/2 uppercase, 1/4 lowercase. Behaviour preserved, comment corrected. `GenereazaUnic` retries against draft codes up to twenty times, then throws to prevent a duplicate save.
 
 #### 2.4 `FX_DDF_REV_ATT_IMG` is missing from the schema — DDL delivered
 

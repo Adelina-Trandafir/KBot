@@ -32,11 +32,11 @@ Emailul și CNP-ul educatorilor (`AD_Grupe_Educator.EMail/CNP`) sunt opționale 
 
 <!-- slice: ADE5-06 -->
 
-Sub buton apare permanent starea migrării. Când este blocată, primul motiv apare acolo, iar lista completă este în **Jurnal de operații și erori**, în partea de jos. Jurnalul păstrează mesajele sesiunii, blocajele Access/MariaDB și excepțiile complete. **Încarcă logul erorilor** adaugă ultimele maximum 256 KiB din jurnalul comun `harness_errors.log`; încărcarea se face numai la apăsarea butonului. Reîncărcarea nu șterge diagnosticul sesiunii. Conexiunea înregistrează gazda/portul, fără parolă.
+Sub buton: starea permanentă a migrării și primul motiv de blocaj. **Jurnal de operații și erori**, jos, păstrează toate motivele, mesajele sesiunii, blocajele Access/MariaDB și excepțiile complete. **Încarcă logul erorilor** adaugă, numai la apăsare, ultimele maximum 256 KiB din `harness_errors.log`, fără ștergerea diagnosticului sesiunii. Conexiunea înregistrează gazda/portul, fără parolă.
 
 <!-- slice: ADE5-10 -->
 
-La fiecare lansare, logul anterior este arhivat în același dosar, cu numele `harness_errors_ADE_<data_ora>_<identificator>.log`, și se creează un `harness_errors.log` gol pentru rularea nouă. Caseta de jos pornește goală; mesajele obișnuite de inițializare nu sunt adăugate în ea. Erorile reale de inițializare sunt afișate și jurnalizate. Jurnalele SQL de migrare nu sunt resetate.
+La lansare, logul anterior se arhivează în același dosar ca `harness_errors_ADE_<data_ora>_<identificator>.log`; noul `harness_errors.log` și caseta de jos pornesc goale. Inițializarea obișnuită nu umple caseta; erorile reale sunt afișate și jurnalizate. Jurnalele SQL de migrare nu se resetează.
 
 Un `Connect Timeout expired` la Testează înseamnă că serverul nu a confirmat conexiunea în timpul alocat. Verificați gazda, portul și accesul la server și repetați Testează. Conectarea reușită fără un plan citit nu activează Migrează: întâi Citește, apoi Testează. Eșecul salvării preferințelor locale este afișat și jurnalizat, dar permite continuarea verificării sursei/destinației.
 

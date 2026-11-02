@@ -26,7 +26,7 @@ Robotul a citit pagina recepției în timp ce FOREXE încă o trimitea. Pasul 4b
 ### Client
 - `KBot.Domain/AsociereInfo.vb`: `PrelucrarePropunere.ReceptiiIncomplete`, `ReceptieIncompleta`, `ReceptiePropusa.DetaliuIncomplet`. `KBot.Api`: DTO-urile și citirea lor.
 - `AsociereForm.vb`: vetoul F14 din client, oprit (`F14Paused`) și sărit pe recepțiile tăiate.
-- `KbotForm.Ingest.vb`: `OferaReimprospatareaReceptiilorAsync`. După salvare, dacă au existat recepții tăiate, operatorul le vede (dată · sumă · motiv) și e întrebat «Le citesc din nou acum, doar pe ele?». La «Da» se citesc numai acele zile: toate celelalte zile locale intră în lista de sărit din felia 0060. Dacă a doua citire vine iar tăiată, întrebarea revine.
+- `KbotForm.Ingest.vb`, `OferaReimprospatareaReceptiilorAsync`: după salvare, arată recepțiile tăiate (dată · sumă · motiv) și întreabă «Le citesc din nou acum, doar pe ele?». «Da» recitește acele zile, sărind restul zilelor locale prin lista din 0060. Dacă vin iar tăiate, repetă întrebarea.
 - `KBot.Forexe/Executor/WorkflowExecutor.Pacing.vb` (nou):
   - `TimeoutMultiplier` înmulțește o singură dată, pe fiecare acțiune, `Timeout` și `Wait.Seconds`, plus plafonul așteptării Ajax (`WaitForWicketIdleAsync`). Fișierele WFL nu se ating.
   - `ValidateReadsTwice`: fiecare pagină `ScrapeTable` se citește până când două citiri consecutive ies la fel (așteptare Ajax + 750 ms × multiplicator între ele, maximum 4 citiri).

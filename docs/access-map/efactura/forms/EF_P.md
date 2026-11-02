@@ -1,8 +1,10 @@
 # Form `EF_P`
 
-Source: `Forms/EF_P.txt` (26,816 chars). [Reading conventions](../README.md#form-page-conventions).
+Source: `Surse/RawExport/Forms/EF_P.txt` (26,816 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
+
+Inherits [P1](../README.md#form-properties-p1).
 
 | Property | Value |
 |---|---|
@@ -10,10 +12,6 @@ Source: `Forms/EF_P.txt` (26,816 chars). [Reading conventions](../README.md#form
 | RecordSource | `tmpDoc2017P` |
 | DefaultView | 0 |
 | AutoCenter | NotDefault |
-| NavigationButtons | NotDefault |
-| RecordSelectors | NotDefault |
-| DividingLines | NotDefault |
-| ScrollBars | 0 |
 | AllowAdditions | NotDefault |
 | Width | 9097 |
 | Left | 3490 |
@@ -24,8 +22,6 @@ Source: `Forms/EF_P.txt` (26,816 chars). [Reading conventions](../README.md#form
 | GridX | 60 |
 | GridY | 60 |
 | TabularCharSet | 204 |
-| DatasheetFontName | Calibri |
-| DatasheetFontHeight | 11 |
 
 Form events wired: `OnClose` = VBA, `OnLoad` = VBA, `OnError` = VBA
 
@@ -91,5 +87,3 @@ See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 ## Opened from
 
 Nothing found by static scan (probably opened by name from a ribbon, a menu string or a variable).
-
-Raw source: `Surse/RawExport/Forms/EF_P.txt`

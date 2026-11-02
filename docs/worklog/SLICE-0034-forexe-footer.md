@@ -53,21 +53,21 @@ If Not IsNull(lastDate) Then … Reverse … AddVariable "DATA_IESIRE", Format(l
 Else … varianta completă
 ```
 
-Deci formatul `dd/MM/yyyy HH:mm:ss` este **citit**, nu ghicit (planul îl dădea ca fallback), și se scrie cu `InvariantCulture`: valoarea intră într-o expresie regulată comparată cu textul din pagină, deci un separator schimbat de Windows ar rupe oprirea.
+Formatul `dd/MM/yyyy HH:mm:ss` este **citit** (planul îl propunea ca fallback). `InvariantCulture` păstrează separatorii expresiei regulate comparate cu pagina; schimbarea lor de Windows ar rupe oprirea.
 
 Echivalentul K-BOT al lui `DMax`: `IApiClient.GetIstoricAsync(cod, ct)` → `IstoricInfo.Randuri` → `MAX(DataFx)`, chemat prin `WithReauth` ca orice altă citire a shell-ului.
 
-⚠️ **Caveat păstrat din plan:** fiindcă descărcările noi rămân locale, istoricul local reflectă doar ce era deja în bază — calea REVERSE se aprinde numai pentru coduri care au deja istoric în DB. E comportament corect, dar rar exercitat până când vor exista upsert-uri.
+⚠️ **Limita din plan:** descărcările noi rămân locale; istoricul citit reflectă numai baza, deci REVERSE se activează doar pentru coduri cu istoric în DB. Comportament corect, dar rar exercitat înaintea upsert-urilor.
 
 ## 3. `KBot.Controls` — `FooterLeftIconClicked` (adăugare, nu schimbare)
 
 `FooterLeftIcon` se desena, dar nu avea dreptunghi, hover sau eveniment, contrar planului. Completarea oglindește iconița din dreapta:
 
 - `FooterLeftIconClicked` în `.Events.vb`
-- `ComputeFooterLeftIconRect` + `FooterLeftIconRect` în `.Footer.vb` (aceeași funcție pură pentru desen și hit-test — o a doua formulă ar fi o iconiță care se desenează unde nu se apasă)
+- `ComputeFooterLeftIconRect` + `FooterLeftIconRect` în `.Footer.vb`: funcție pură comună desenului și hit-testului, evitând geometria divergentă.
 - `_footerLeftIconHover` + `FooterLeftIconHoverColor` (cu `ShouldSerialize`/`Reset`) în `.ButtonHover.vb`
 
-Pur aditiv: niciun arbore existent nu-și schimbă comportamentul (fără iconiță setată, totul e gol). Desenul iconiței trece acum prin dreptunghiul calculat, deci `midY` a rămas fără folosință și a fost șters (altfel: avertisment de variabilă nefolosită).
+Aditiv: fără iconiță setată, arborii existenți rămân neschimbați. Desenul folosește dreptunghiul calculat; `midY`, devenit nefolosit, a fost șters pentru a evita avertismentul.
 
 Când iconița se vede, butonul de strângere **nu** e pe stânga (`ShowFooterLeftIcon`), deci începutul benzii îi aparține — de aici `PaddingTreeStart` în geometrie.
 
@@ -105,17 +105,17 @@ Trei cereri, plus consecințele lor.
 
 ### `KBotProgressBar` — control nou (`src/KBot.Controls/Progress/KBotProgressBar.vb`)
 
-`System.Windows.Forms.ProgressBar` e desenat de Windows, deci **tema nu-l poate atinge**: rămânea verde pe schemă întunecată. Controlul nou e fratele DETERMINAT al lui `KBotBusyBar` (acela e indeterminatul) și îi copiază deciziile: același `SetStyle`, același `KBotDesignTime.IsDesignTime` în `OnPaint` (fără log din procesul designerului), aceeași formă de `ApplyTheme`.
+`System.Windows.Forms.ProgressBar`, desenat de Windows, rămânea verde pe tema întunecată. Noul control DETERMINAT preia din `KBotBusyBar` (indeterminat) `SetStyle`, `ApplyTheme` și `KBotDesignTime.IsDesignTime` în `OnPaint`, fără log din designer.
 
 Regulile casei respectate cap-coadă: `BarColor` / `TrackColor` / `PercentTextColor` au `Color.Empty` = «din temă» cu perechea `ShouldSerialize`/`Reset` fiecare, iar `Font` — care **nu poate purta `<DefaultValue>`** (atributul cere o constantă) — are perechea lui plus steagul «operatorul l-a scris», ca designerul să nu-l pinuiască în fiecare gazdă.
 
-`Value` **prinde** valorile din afara intervalului în loc să arunce: sursa e un `IProgress(Of Integer)` venit de pe firul robotului, iar o excepție acolo ar opri descărcarea din cauza unei bare de progres. Umplerea se decupează la forma șinei, ca marginea rotunjită să rămână rotunjită și la 100%.
+`Value` **limitează** valorile primite prin `IProgress(Of Integer)` de pe firul robotului, fără excepții care ar opri descărcarea. Umplerea se decupează la șină, păstrând colțurile rotunjite și la 100%.
 
-⚠️ **Capcana IThemedControl, a treia oară.** `ForexeFooterView` este ea însăși `IThemedControl`, deci `ThemeManager` **nu recurge în copiii ei** — bara ar fi rămas pe culorile implicite la fiecare comutare. `ApplyTheme` al benzii o împinge explicit mai departe. (În consolă nu e nevoie: acolo părintele e un `Panel` obișnuit, deci traversarea ajunge singură la ea.)
+⚠️ **Capcana IThemedControl, a treia oară:** `ThemeManager` nu traversează copiii `ForexeFooterView` (`IThemedControl`); `ApplyTheme` al benzii transmite explicit tema barei. În consolă, părintele `Panel` permite traversarea normală.
 
 ### Vizibilitate condiționată în bandă
 
-`pbProgress` se vede **doar cât rulează ceva**; `lblCert` **doar după ce s-a ales un certificat** (fără el n-are ce spune, iar un «Certificat: —» permanent e zgomot). Amândouă sunt andocate la stânga, deci ascunse nu lasă gol în urmă — banda se strânge singură.
+`pbProgress` apare **numai în timpul rulării**, `lblCert` **după alegerea certificatului**. Andocate la stânga, nu lasă gol când sunt ascunse.
 
 Steagurile pornesc din **constructor, nu din designer**: pe suprafața de proiectare cele două rămân vizibile (altfel operatorul n-ar mai avea ce apuca), iar la rulare pornesc ascunse.
 

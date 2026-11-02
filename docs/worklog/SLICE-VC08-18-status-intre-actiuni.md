@@ -9,10 +9,10 @@ Cerere: `vc-save-status` trebuie să stea între ieșire/renunțare și Modific�
 - `docs.js`, `lista.js`, `editor.js`, `mf.js`, `nomenclatoare.js`: mesajul precedă acțiunile Modifică/Salvează, după acțiunile din stânga; restricția de perioadă închisă folosește aceeași zonă centrală.
 - `efactura-association.js`, `efactura-intake.js`, `depreciation.js`: statusul este în footer între Închide și acțiunile din dreapta. `vercon-efactura.css` păstrează aspectul butoanelor din noile grupuri.
 - `ui.js`: toate elementele `vc-save-status`, inclusiv cele independente din nomenclatoare și selectoarele CPV, primesc opt-in pentru tooltip la trunchiere și acces prin tastatură.
-- `components/tooltip/tooltip-titles.js`: opt-in generic `data-kbot-tooltip-overflow`; textul integral vine din conținutul actual, iar tooltipul custom apare numai când textul depășește lățimea disponibilă. Redimensionarea și înlocuirea textului închid tooltipul devenit neactual. Preferințele comune pentru tooltip și comportamentul touch rămân aplicate.
+- `components/tooltip/tooltip-titles.js`: opt-in `data-kbot-tooltip-overflow`, tooltip custom cu textul integral actual numai la depășirea lățimii. Redimensionarea/înlocuirea textului închid tooltipul neactual; preferințele comune și comportamentul touch se păstrează.
 - `PYTHON/static/help/vercon.json`: explicație pentru mesaje și elipsis.
 
-Nu se adaugă butoane de ieșire acolo unde ecranul nu avea asemenea acțiuni. Mesajele existente din nomenclatoare/selectoare fără footer de acțiuni primesc același elipsis și tooltip; nu se inventează operații suplimentare.
+Niciun ecran nu primește butoane de ieșire inexistente anterior. Nomenclatoarele/selectoarele fără footer primesc același elipsis și tooltip, fără operații suplimentare.
 
 ## Stare și limite
 

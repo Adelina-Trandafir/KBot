@@ -37,10 +37,7 @@ The two versions **must match**.
    ```
 4. Re-deploy and **re-test the live FOREXE connect**: the cert must be auto-selected with no dialog. If the dialog reappears, the new Chromium build doesn't honour the registry policy — revert to 1.49.0.
 
-> Note: a smartcard certificate has a non-exportable private key, so Playwright's
-> `BrowserNewContextOptions.ClientCertificates` API is **not** an alternative —
-> the OS/registry-policy path is required. That's why staying on 1.49.0 is the
-> right call.
+> Smartcard certificates have non-exportable private keys: Playwright `BrowserNewContextOptions.ClientCertificates` is not an alternative. The OS/registry-policy path is required.
 
 ## Deploying to a client PC (`C:\KBOT`)
 

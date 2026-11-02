@@ -4,6 +4,8 @@ Actualizările din 17.10 (93, 96…98) descriu vederea fără furnizor, etichete
 
 14 etape 61…66 și 75…82 din 09–16.10.2026. Pentru 61/62/63 se aplică aceeași limită: numai ajutor pentru utilizatori, fără server/tabele/jurnale; nevăzut pe ecran, fără captură. Restul probelor și capturilor rămân pe etapă. Regula de vizibilitate, sincronizarea, vederile și popup-ul evoluează conform [istoricului ecranelor](SLICE-00EF-18-primite-client.md). Numărul 0000-61 exista și la ajutorul grupelor 0008-02; acel rând rămâne distinct, neatins, fără renumerotare.
 
+Metadate comune **0000-78/79/80/81**: fișiere atinse `src/KBot.App/HelpContent/contabil/efactura/index.md` și statusurile; proba consemnată în fiecare: `Check-Help.ps1 -Coverage`, fără erori noi. Textele descriu cod nevăzut funcționând; capturile și diferențele rămân la etapa lor. Această centralizare nu extinde rezultatul la alte etape.
+
 [0000-61](#slice-0000-61) · [0000-62](#slice-0000-62) · [0000-63](#slice-0000-63) · [0000-64](#slice-0000-64) · [0000-65](#slice-0000-65) · [0000-66](#slice-0000-66) · [0000-75](#slice-0000-75) · [0000-76](#slice-0000-76) · [0000-77](#slice-0000-77) · [0000-78](#slice-0000-78) · [0000-79](#slice-0000-79) · [0000-80](#slice-0000-80) · [0000-81](#slice-0000-81) · [0000-82](#slice-0000-82) · [0000-93](#slice-0000-93) · [0000-96](#slice-0000-96) · [0000-97](#slice-0000-97) · [0000-98](#slice-0000-98)
 
 ## SLICE 0000-61 — help for 00EF-18 (09.10.2026) <a id="slice-0000-61"></a>
@@ -93,44 +95,22 @@ Help sub-slice of 0000 for [00EF-29](SLICE-00EF-18-primite-client.md#slice-00EF-
 ### What changed and why
 `contabil/efactura/index.md`, section «Sincronizarea facturilor primite»: what the operator sees at the end (the table of new invoices, or «Nu există facturi noi pe serverul ANAF.»). Tags `00EF-32, 0000-78`; `help-version.txt` stays `2026-10-15`.
 
-### Files touched
-`src/KBot.App/HelpContent/contabil/efactura/index.md`, the status files.
-
-### Test results / unverified
-`Check-Help.ps1 -Coverage`: no new error. The text describes code not seen working.
-
 ## SLICE-0000-79 - Help for 00EF-33 (15.10.2026) <a id="slice-0000-79"></a>
 
 ### What changed and why
 `contabil/efactura/index.md`: «Sincronizarea facturilor primite» (the footer «Actualizare…» and its popup: list of periods, box for 1-60 days with Enter) and the page «Cumparare» (no «Reimprospateaza»; the sync starts from the footer or the ribbon). Tags `00EF-33, 0000-79`; `help-version.txt` stays `2026-10-15`.
 
-### Files touched
-`src/KBot.App/HelpContent/contabil/efactura/index.md`, the status files.
-
-### Test results / unverified
-`Check-Help.ps1 -Coverage`: no new error. Capture `efactura-cumparare` is already marked to redo (the footer is new in it). The text describes code not seen working.
+Capture `efactura-cumparare` is already marked to redo (the footer is new in it).
 
 ## SLICE-0000-80 - Help for 00EF-35 (15.10.2026) <a id="slice-0000-80"></a>
 
 ### What changed and why
 `contabil/efactura/index.md`, section «Facturile primite»: the options of the header button (the two filters, the grouping, the orders). Tags `00EF-35, 0000-80`; `help-version.txt` stays `2026-10-15`. Capture `efactura-cumparare` is already marked to redo.
 
-### Files touched
-`src/KBot.App/HelpContent/contabil/efactura/index.md`, the status files.
-
-### Test results / unverified
-`Check-Help.ps1 -Coverage`: no new error. The text describes code not seen working.
-
 ## SLICE-0000-81 - Help for 00EF-36 (15.10.2026) <a id="slice-0000-81"></a>
 
 ### What changed and why
 `contabil/efactura/index.md`, section «Facturile primite»: the view «XML Factura» (right end of the bar of views): map without the cac / cbc prefixes, coloured text, read only, long values cut. Tags `00EF-36, 0000-81`; `help-version.txt` stays `2026-10-15`.
-
-### Files touched
-`src/KBot.App/HelpContent/contabil/efactura/index.md`, the status files.
-
-### Test results / unverified
-`Check-Help.ps1 -Coverage`: no new error. The text describes code not seen working.
 
 ## SLICE-0000-82 - Help for 00EF-37 (16.10.2026) <a id="slice-0000-82"></a>
 

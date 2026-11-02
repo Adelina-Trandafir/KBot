@@ -1,26 +1,20 @@
 # Form `EFACTURA_VANZATOR`
 
-Source: `Forms/EFACTURA_VANZATOR.txt` (70,328 chars). [Reading conventions](../README.md#form-page-conventions).
+Source: `Surse/RawExport/Forms/EFACTURA_VANZATOR.txt` (70,328 chars). [Reading conventions](../README.md#form-page-conventions).
 
 ## Form properties
+
+Inherits [P1](../README.md#form-properties-p1).
 
 | Property | Value |
 |---|---|
 | DefaultView | 0 |
-| NavigationButtons | NotDefault |
-| RecordSelectors | NotDefault |
-| DividingLines | NotDefault |
-| ScrollBars | 0 |
 | Width | 5840 |
 | Left | 8280 |
 | Top | 3756 |
 | Right | 15228 |
 | Bottom | 7224 |
 | FitToScreen | 1 |
-| GridY | 10 |
-| TabularCharSet | 238 |
-| DatasheetFontName | Calibri |
-| DatasheetFontHeight | 11 |
 
 Form events wired: `OnLoad` = VBA
 
@@ -78,5 +72,3 @@ See [static-scan limits](../README.md#how-it-was-made-and-its-limits).
 ## Opened from
 
 `form:EFACTURA_ADD`
-
-Raw source: `Surse/RawExport/Forms/EFACTURA_VANZATOR.txt`
