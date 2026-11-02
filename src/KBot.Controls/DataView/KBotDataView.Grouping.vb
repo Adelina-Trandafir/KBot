@@ -1,6 +1,7 @@
 Option Strict On
 Imports System.ComponentModel
 Imports System.Drawing
+Imports System.Globalization
 Imports KBot.Common
 
 ''' <summary>
@@ -488,7 +489,45 @@ Partial Class KBotDataView
         If Not _columnIndex.TryGetValue(nivel.ColumnKey, col) Then Return String.Empty
         Dim brut As Object = row(nivel.ColumnKey)
         If KBotFilterEngine.IsBlank(brut) Then Return String.Empty
+        If nivel.DatePart <> KBotGroupDatePart.None Then
+            Dim k_date As Date
+            If TryDate(brut, k_date) Then Return DatePartText(k_date, nivel.DatePart)
+        End If
         Return nivel.KeyOf(FormatValue(brut, col))
+    End Function
+
+    ''' <summary>The readable group title of a date for a DatePart level: dd.MM.yyyy, MM.yyyy or yyyy (the time of day never counts).</summary>
+    Friend Shared Function DatePartText(k_date As Date, k_part As KBotGroupDatePart) As String
+        Select Case k_part
+            Case KBotGroupDatePart.Month
+                Return k_date.ToString("MM.yyyy", CultureInfo.InvariantCulture)
+            Case KBotGroupDatePart.Year
+                Return k_date.ToString("yyyy", CultureInfo.InvariantCulture)
+            Case Else
+                Return k_date.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture)
+        End Select
+    End Function
+
+    ''' <summary>
+    ''' The key the groups of a level are ORDERED by: for a DatePart level yyyyMMdd / yyyyMM / yyyy (plain text order is date order),
+    ''' else the same text the groups break on (<see cref="GroupKeyText"/>).
+    ''' </summary>
+    Friend Function GroupSortText(row As KBotDataRow, nivel As KBotGroupLevel) As String
+        If nivel.DatePart <> KBotGroupDatePart.None AndAlso _columnIndex.ContainsKey(nivel.ColumnKey) Then
+            Dim k_raw As Object = row(nivel.ColumnKey)
+            Dim k_date As Date
+            If Not KBotFilterEngine.IsBlank(k_raw) AndAlso TryDate(k_raw, k_date) Then
+                Select Case nivel.DatePart
+                    Case KBotGroupDatePart.Month
+                        Return k_date.ToString("yyyyMM", CultureInfo.InvariantCulture)
+                    Case KBotGroupDatePart.Year
+                        Return k_date.ToString("yyyy", CultureInfo.InvariantCulture)
+                    Case Else
+                        Return k_date.ToString("yyyyMMdd", CultureInfo.InvariantCulture)
+                End Select
+            End If
+        End If
+        Return GroupKeyText(row, nivel)
     End Function
 
     ' Prima construcție a unui grup îi aplică CollapsedByDefault — o singură dată pe cale, ca o

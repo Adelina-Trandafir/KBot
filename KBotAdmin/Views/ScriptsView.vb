@@ -226,7 +226,7 @@ Public Class ScriptsView
         Dim k_command As String = ScriptCatalog.DisplayCommand(k_def, k_args)
         Dim k_question As String = "Pornesc într-o fereastră PowerShell nouă, în " & k_root & ":" & vbLf & vbLf & k_command & vbLf & vbLf
         If k_def.Detached Then
-            k_question &= "KBotAdmin se închide acum; scriptul pornește după ce programul s-a oprit. Redeschideți-l apoi din _Admin\KBotAdmin.exe." & vbLf & vbLf
+            k_question &= "KBotAdmin se închide acum; scriptul pornește după ce programul s-a oprit, iar dacă se termină cu bine, KBotAdmin pornește singur din nou din _Admin\KBotAdmin.exe." & vbLf & vbLf
         End If
         If Not UiRun.Confirm(k_question & "Continuați?", "Scripturi") Then Return
         If k_def.Detached Then

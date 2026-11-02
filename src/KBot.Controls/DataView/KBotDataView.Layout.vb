@@ -210,7 +210,7 @@ Partial Class KBotDataView
         If _vScrollShown Then Return Math.Max(0, vScroll.Left)
         ' Slice 0107: the space of the bar stays out of the viewport even while the bar is hidden.
         If _reserveVScrollSpace Then
-            Return Math.Max(0, ClientSize.Width - BorderDevicePx() - SystemInformation.VerticalScrollBarWidth)
+            Return Math.Max(0, ClientSize.Width - BorderDevicePx() - ScrollBarThicknessPx())
         End If
         Return Math.Max(0, ClientSize.Width)
     End Function
@@ -532,8 +532,8 @@ Partial Class KBotDataView
             Return
         End If
 
-        Dim vw As Integer = SystemInformation.VerticalScrollBarWidth
-        Dim hh As Integer = SystemInformation.HorizontalScrollBarHeight
+        Dim vw As Integer = ScrollBarThicknessPx()
+        Dim hh As Integer = vw
         Dim headerH As Integer = HeaderBandHeight()
         ' Banda de subsol stă între corp și bara orizontală, deci se scade din înălțimea
         ' disponibilă a corpului exact ca antetul.
@@ -615,7 +615,7 @@ Partial Class KBotDataView
 
     ' Setează intervalul unei bare. Semantica WinForms: valoarea maximă atinsă efectiv este
     ' Maximum - LargeChange + 1, deci Maximum = conținut - 1 și LargeChange = fereastra.
-    Private Shared Sub ConfigureScrollBar(bar As ScrollBar, contentSize As Integer,
+    Private Shared Sub ConfigureScrollBar(bar As KBotScrollBar, contentSize As Integer,
                                           viewportSize As Integer, smallChange As Integer)
         Dim viewport As Integer = Math.Max(1, viewportSize)
         bar.Minimum = 0
@@ -664,6 +664,14 @@ Partial Class KBotDataView
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Thickness of both bars in DEVICE px: the logical default scaled like the rest of the grid.
+    ''' The bars are <see cref="KBotScrollBar"/> (themed), not the native ones, so the number is ours.
+    ''' </summary>
+    Private Function ScrollBarThicknessPx() As Integer
+        Return ScaleDpi(KBotScrollBar.GrosimeImplicita)
+    End Function
+
     ' ── Rotița mouse-ului ───────────────────────────────────────────────────────
 
     Protected Overrides Sub OnMouseWheel(e As MouseEventArgs)
@@ -673,7 +681,7 @@ Partial Class KBotDataView
             If notches = 0 Then Return
 
             ' Shift + rotiță => derulare orizontală (convenție Windows).
-            Dim bar As ScrollBar = If((ModifierKeys And Keys.Shift) = Keys.Shift, CType(hScroll, ScrollBar), CType(vScroll, ScrollBar))
+            Dim bar As KBotScrollBar = If((ModifierKeys And Keys.Shift) = Keys.Shift, hScroll, vScroll)
             If bar Is Nothing OrElse Not bar.Visible Then Return
 
             Dim linesPerNotch As Integer = Math.Max(1, SystemInformation.MouseWheelScrollLines)

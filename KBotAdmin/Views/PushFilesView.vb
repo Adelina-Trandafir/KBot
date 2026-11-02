@@ -81,9 +81,10 @@ Public Class PushFilesView
         FillFiles()
         FillRules()
         ShowRoots()
-        Dim k_send As Integer = _scan.Files.Where(Function(k_f) k_f.State <> PushState.Identical).Count()
+        Dim k_send As Integer = _scan.Files.Where(Function(k_f) k_f.State = PushState.NewOnServer OrElse k_f.State = PushState.Modified).Count()
+        Dim k_debug As Integer = _scan.Files.Where(Function(k_f) k_f.DebugHash <> String.Empty).Count()
         lblState.Text = _scan.Files.Count.ToString(CultureInfo.InvariantCulture) & " fișiere permise, " &
-                        k_send.ToString(CultureInfo.InvariantCulture) & " noi sau modificate; " &
+                        k_send.ToString(CultureInfo.InvariantCulture) & " noi sau modificate; " & k_debug.ToString(CultureInfo.InvariantCulture) & " debugging de finalizat; " &
                         _scan.PushIgnoreSkipped.ToString(CultureInfo.InvariantCulture) & " oprite de .pushignore."
         _log.Add(KBotLogLevel.Info, lblState.Text)
         _context.Say(lblState.Text)
@@ -92,6 +93,8 @@ Public Class PushFilesView
     Private Sub SetButtons(k_on As Boolean)
         btnScan.Enabled = k_on
         btnSend.Enabled = k_on
+        btnFinalizeDebug.Enabled = k_on
+        chkDebugging.Enabled = k_on
     End Sub
 
     Private Sub FillFiles()
@@ -107,13 +110,16 @@ Public Class PushFilesView
                 k_row("send") = (k_file.State <> PushState.Identical)
                 k_row("path") = k_file.RelativePath
                 k_row("state") = StateText(k_file.State)
+                k_row("debug") = k_file.DebugHash <> String.Empty
                 k_row("ext") = k_file.Extension
-                k_row("size") = UiRun.FormatBytes(k_file.LocalSize)
-                k_row("srvsize") = If(k_file.State = PushState.NewOnServer, String.Empty, UiRun.FormatBytes(k_file.RemoteSize))
-                k_row("local") = k_file.LocalMtimeUtc.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
-                k_row("server") = If(k_file.RemoteMtimeUtc = DateTime.MinValue, String.Empty,
-                                     k_file.RemoteMtimeUtc.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture))
+                k_row("slices") = If(k_file.RegisteredSlices = String.Empty, "FĂRĂ GIT", k_file.RegisteredSlices)
+                k_row("reasons") = k_file.RegisteredReasons
+                k_row("size") = If(k_file.LocalMtimeUtc = DateTime.MinValue, Nothing, CType(k_file.LocalSize, Object))
+                k_row("srvsize") = If(k_file.State = PushState.NewOnServer, Nothing, CType(k_file.RemoteSize, Object))
+                k_row("local") = If(k_file.LocalMtimeUtc = DateTime.MinValue, Nothing, CType(k_file.LocalMtimeUtc, Object))
+                k_row("server") = If(k_file.RemoteMtimeUtc = DateTime.MinValue, Nothing, CType(k_file.RemoteMtimeUtc, Object))
             Next
+            If gridFiles.SortDirection = KBotSortDirection.None Then gridFiles.ApplySort("path", KBotSortDirection.Ascending)
         Finally
             gridFiles.EndUpdate()
             _filling = False
@@ -124,6 +130,7 @@ Public Class PushFilesView
         Select Case k_state
             Case PushState.NewOnServer : Return "NOU"
             Case PushState.Modified : Return "MODIFICAT"
+            Case PushState.AwaitingGit : Return "DEBUGGING"
             Case Else : Return "IDENTIC"
         End Select
     End Function
@@ -136,6 +143,7 @@ Public Class PushFilesView
             Select Case k_file.State
                 Case PushState.NewOnServer : e.ForeColor = k_pal.SuccessColor
                 Case PushState.Modified : e.ForeColor = k_pal.WarningColor
+                Case PushState.AwaitingGit : e.ForeColor = k_pal.WarningColor
                 Case Else : e.ForeColor = k_pal.DisabledTextColor
             End Select
         Catch ex As Exception
@@ -193,9 +201,18 @@ Public Class PushFilesView
                 KBotMessage.Show("Nu este bifat niciun fișier pentru trimitere. Scanați întâi, apoi bifați fișierele.", "Publicare", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return
             End If
+            _running = True
+            SetButtons(False)
+            _context.Say("Se pregătesc fișierele și se citește nomenclatorul...")
+            Dim k_settings As AdminSettings = Settings
+            Dim k_debugging As Boolean = chkDebugging.Checked
+            Dim k_plan As DeploymentPlan = Await Task.Run(Function() DeploymentRegistry.Prepare(k_settings, k_files, k_debugging))
             Dim k_restart As Boolean = chkRestart.Checked
+            Dim k_gitText As String = If(k_plan.GitCount = 0, "Fără Git. Fișierele vor fi păstrate în evidența debugging.",
+                "Cu Git: " & k_plan.GitCount.ToString(CultureInfo.InvariantCulture) & " fișiere; fără Git: " &
+                (k_plan.Items.Count - k_plan.GitCount).ToString(CultureInfo.InvariantCulture) & "." & vbCrLf & "Commit:" & vbCrLf & k_plan.Message)
             Dim k_yes As Boolean = UiRun.Confirm("Trimit " & k_files.Count.ToString(CultureInfo.InvariantCulture) & " fișiere pe server" &
-                                                 If(k_restart, " și repornesc serviciul avacont", String.Empty) & "?", "Publicare")
+                If(k_restart, " și repornesc serviciul avacont", String.Empty) & "?" & vbCrLf & vbCrLf & k_gitText, "Publicare")
             RunLog.Write("Trimite: răspuns la confirmare = " & If(k_yes, "Da", "Nu"))
             If Not k_yes Then
                 _context.Say("Trimiterea a fost anulată (ați răspuns Nu).")
@@ -208,18 +225,17 @@ Public Class PushFilesView
             _log.Clear()
             _log.Add(KBotLogLevel.Info, "== Trimitere " & k_files.Count.ToString(CultureInfo.InvariantCulture) & " fișiere ==")
             _context.Say("Se trimit " & k_files.Count.ToString(CultureInfo.InvariantCulture) & " fișiere...")
-            Dim k_settings As AdminSettings = Settings
             Dim k_failed As Integer = -1
             Await UiRun.Guard("PushFilesView.BtnSend_Click", _context,
                 Async Function()
-                    k_failed = Await Task.Run(Function() PushService.Upload(k_settings, k_files,
+                    k_failed = Await Task.Run(Function() PushService.Upload(k_settings, k_plan,
                         Sub(k_done, k_file, k_error)
                             If k_error = String.Empty Then
                                 _log.Add(KBotLogLevel.Info, "OK      " & k_file.RelativePath)
                             Else
                                 _log.Add(KBotLogLevel.Error, "EROARE  " & k_file.RelativePath & " - " & k_error)
                             End If
-                        End Sub))
+                        End Sub, Sub(k_line) _log.Add(KBotLogLevel.Info, k_line)))
                     If k_failed = 0 AndAlso k_restart Then
                         _log.Add(KBotLogLevel.Info, "== Repornire serviciu avacont ==")
                         Await RunRemote("systemctl daemon-reload")
@@ -238,18 +254,60 @@ Public Class PushFilesView
             _log.Add(If(k_failed = 0, KBotLogLevel.Info, KBotLogLevel.Error), k_summary)
             _context.Say(k_summary)
             ' Rescan at once: the list now shows what the server really holds (sent files disappear from it).
-            Dim k_before As Integer = k_files.Count
             Await ScanAsync()
             RunLog.Write("Trimite: rescanare gata")
-            Dim k_left As Integer = If(_scan Is Nothing, 0, _scan.Files.Where(Function(k_f) k_f.State <> PushState.Identical).Count())
-            Dim k_after As String = If(k_left = 0, "Verificat pe server: toate fișierele sunt identice.",
-                                       "Verificat pe server: au rămas " & k_left.ToString(CultureInfo.InvariantCulture) & " fișiere noi sau modificate.")
+            Dim k_left As Integer = If(_scan Is Nothing, 0, _scan.Files.Where(Function(k_f) k_f.State = PushState.NewOnServer OrElse k_f.State = PushState.Modified).Count())
+            Dim k_debugLeft As Integer = If(_scan Is Nothing, 0, _scan.Files.Where(Function(k_f) k_f.DebugHash <> String.Empty).Count())
+            Dim k_after As String = "Fișiere noi/modificate rămase: " & k_left.ToString(CultureInfo.InvariantCulture) &
+                ". Fișiere debugging de finalizat: " & k_debugLeft.ToString(CultureInfo.InvariantCulture) & "."
             _log.Add(If(k_left = 0, KBotLogLevel.Info, KBotLogLevel.Warn), k_after)
             lblState.Text = k_summary & " " & k_after
             KBotMessage.Show(k_summary & vbLf & k_after, "Publicare", MessageBoxButtons.OK, If(k_failed = 0 AndAlso k_left = 0, MessageBoxIcon.Information, MessageBoxIcon.Warning))
         Catch ex As Exception
             GlobalErrorLog.Write("PushFilesView.BtnSend_Click", ex)
             KBotMessage.Show("Trimiterea a eșuat: " & ex.Message, "Publicare", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        Finally
+            _running = False
+            SetButtons(True)
+        End Try
+    End Sub
+
+    Private Async Sub BtnFinalizeDebug_Click(k_sender As Object, e As EventArgs) Handles btnFinalizeDebug.Click
+        If _running Then Return
+        Try
+            Dim k_files As New List(Of PushFile)
+            For k_i As Integer = 0 To gridFiles.Rows.Count - 1
+                Dim k_file As PushFile = TryCast(gridFiles.Rows(k_i).Tag, PushFile)
+                If k_file IsNot Nothing AndAlso k_file.DebugHash <> String.Empty AndAlso
+                    Convert.ToBoolean(gridFiles("send", k_i), CultureInfo.InvariantCulture) Then k_files.Add(k_file)
+            Next
+            If k_files.Count = 0 Then
+                KBotMessage.Show("Scanați și bifați fișierele publicate debugging pe care le-ați testat și doriți să le salvați în Git.",
+                    "Finalizare debugging", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            _running = True
+            SetButtons(False)
+            _log.Clear()
+            _context.Say("Se finalizează debugging: numai Git pe server...")
+            Dim k_settings As AdminSettings = Settings
+            Dim k_finished As Boolean = False
+            Await UiRun.Guard("PushFilesView.BtnFinalizeDebug_Click", _context,
+                Async Function()
+                    ' Finalization consumes the per-file metadata already approved and registered by the agents.
+                    Dim k_plan As DeploymentPlan = Await Task.Run(Function() DeploymentRegistry.PrepareDebugFinalization(k_settings, k_files))
+                    _log.Add(KBotLogLevel.Info, k_plan.Message)
+                    Await Task.Run(Sub() DeploymentPublisher.Publish(k_settings, k_plan, Sub(k_line) _log.Add(KBotLogLevel.Info, k_line)))
+                    k_finished = True
+                End Function)
+            If Not k_finished Then Return
+            Await ScanAsync()
+            Dim k_message As String = "Finalizate " & k_files.Count.ToString(CultureInfo.InvariantCulture) & " fișiere debugging: numai Git pe server, fără reîncărcare și fără repornirea serviciului."
+            _context.Say(k_message)
+            KBotMessage.Show(k_message, "Finalizare debugging", MessageBoxButtons.OK, MessageBoxIcon.Information)
+        Catch ex As Exception
+            GlobalErrorLog.Write("PushFilesView.BtnFinalizeDebug_Click", ex)
+            KBotMessage.Show("Finalizarea debugging a eșuat: " & ex.Message, "Finalizare debugging", MessageBoxButtons.OK, MessageBoxIcon.Error)
         Finally
             _running = False
             SetButtons(True)

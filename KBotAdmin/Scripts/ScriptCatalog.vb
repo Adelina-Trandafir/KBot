@@ -142,7 +142,7 @@ Public NotInheritable Class ScriptCatalog
                    "Readuce o versiune mai veche ca actualizare pe server (clienții care s-au actualizat deja rămân pe versiunea nouă).",
                    Flags(FlagForce, {"-Force"}, FlagSkipUpload, {"-SkipUpload"}, FlagAccess, k_audience, FlagNoAccess, k_noAudience), True),
             Script(GroupPush, "Push-Changed.ps1 (PYTHON)", "tools\Push-Changed.ps1",
-                   "Trimite pe server doar fișierele din PYTHON schimbate de la ultima trimitere și repornește serviciul dacă s-a schimbat un .py. Prima dată: «-Baseline», ca să nu trimită tot.",
+                   "Blocat în KBOTADMIN: folosiți pagina Publicare, care gestionează modul debugging fără Git, evidența fișierelor și finalizarea Git pe server.",
                    Flags(FlagDryRun, {"-DryRun"}, FlagBaseline, {"-Baseline"}, FlagRestart, {"-Restart"}, FlagNoRestart, {"-NoRestart"}, FlagForget, {"-Forget"}), False),
             Script(GroupPublish, "publish-release.ps1", "publish-release.ps1",
                    "Construiește pachetul Release (zip, setup, driver) în artifacts\, fără să-l trimită pe server. Ce rămâne nebifat, scriptul întreabă.",
@@ -161,7 +161,7 @@ Public NotInheritable Class ScriptCatalog
                    "Publică DOAR AVC.Migrator în folderul _AvcMigrator (Release; «-Configuration Debug» schimbă configurația, «-Clean» golește întâi). Setările și jurnalele din folder se păstrează.",
                    Flags(FlagDebug, {"-Configuration", "Debug"}, FlagClean, {"-Clean"}), False),
             New ScriptDef(GroupPublish, "publish-admin.ps1", "publish-admin.ps1", Array.Empty(Of String)(),
-                          "Publică KBotAdmin în _Admin. Fiind chiar acest program, el se închide, scriptul pornește după aceea; redeschideți programul din _Admin\KBotAdmin.exe.",
+                          "Publică KBotAdmin în _Admin. Fiind chiar acest program, el se închide, scriptul pornește după aceea, iar la final KBotAdmin pornește singur din nou din _Admin\KBotAdmin.exe.",
                           Flags(), False, True)}
     End Function
 
@@ -208,15 +208,25 @@ Public NotInheritable Class ScriptCatalog
 
     ''' <summary>
     ''' Starts the script in its own visible PowerShell window, so its questions and the sftp password prompt work as when typed by hand.
-    ''' The window stays open until Enter is pressed; its exit code is that of the script. A detached script first waits for THIS program to end.
+    ''' The window closes by itself when the script ends well; when it fails it stays open until Enter is pressed, so the error can be read.
+    ''' The exit code is that of the script. A detached script first waits for THIS program to end and, when it ends well, starts the
+    ''' published <c>_Admin\KBotAdmin.exe</c> again before the window closes.
     ''' </summary>
     Public Shared Function Start(k_def As ScriptDef, k_root As String, k_args As IEnumerable(Of String)) As Process
         Try
+            If String.Equals(k_def.RelPath.Replace("\"c, "/"c), "tools/Push-Changed.ps1", StringComparison.OrdinalIgnoreCase) Then
+                Throw New ApplicationException("Folosiți pagina Publicare: permite debugging fără Git și finalizarea numai Git a versiunilor testate. Push-Changed nu păstrează această evidență și nu poate fi lansat din KBOTADMIN.")
+            End If
             Dim k_script As String = Path.Combine(k_root, k_def.RelPath)
             If Not File.Exists(k_script) Then Throw New FileNotFoundException("Scriptul nu există: " & k_script)
+            Dim k_onSuccess As String = "exit 0"
+            If k_def.Detached Then
+                Dim k_exe As String = Path.Combine(k_root, "_Admin", "KBotAdmin.exe")
+                k_onSuccess = "if (Test-Path " & Literal(k_exe) & ") { Start-Process " & Literal(k_exe) & " -WorkingDirectory " & Literal(Path.GetDirectoryName(k_exe)) & " }; exit 0"
+            End If
             Dim k_call As String = "& " & Literal(k_script) & " " & String.Join(" ", k_args.Select(Function(k_a) Literal(k_a))) &
-                                   "; $ok = $?; $code = $LASTEXITCODE; Read-Host 'Enter = inchide fereastra' | Out-Null; " &
-                                   "if ($ok) { exit 0 } elseif ($code) { exit $code } else { exit 1 }"
+                                   "; $ok = $?; $code = $LASTEXITCODE; if ($ok) { " & k_onSuccess & " }; " &
+                                   "Read-Host 'Enter = inchide fereastra' | Out-Null; if ($code) { exit $code } else { exit 1 }"
             If k_def.Detached Then
                 k_call = "Write-Host 'Astept sa se inchida KBotAdmin...'; Wait-Process -Id " &
                          Environment.ProcessId.ToString(CultureInfo.InvariantCulture) & " -ErrorAction SilentlyContinue; " & k_call

@@ -59,12 +59,31 @@ Friend Class KBotFilterPopupGroupView
             chkGroupCollapsible.Checked = If(n Is Nothing, True, n.Collapsible)
             chkGroupStartCollapsed.Checked = If(n Is Nothing, False, n.CollapsedByDefault)
 
+            ' A date column groups on the day, the month or the year (never on the time of day); the row is hidden for every other column.
+            Dim part As KBotGroupDatePart = If(n Is Nothing OrElse n.DatePart = KBotGroupDatePart.None, KBotGroupDatePart.Day, n.DatePart)
+            rbPartDay.Checked = part = KBotGroupDatePart.Day
+            rbPartMonth.Checked = part = KBotGroupDatePart.Month
+            rbPartYear.Checked = part = KBotGroupDatePart.Year
+            If Not IsDateColumn Then
+                pnlGroupDatePart.Visible = False
+                tlyGroup.SetRowCollapsed(2, True)
+            End If
+
             RefreshLevels()
             EnableOptions()
         Finally
             _syncing = False
         End Try
     End Sub
+
+    ' The column holds dates (the grid says so through its ValueType): only then the day / month / year choice exists.
+    Private ReadOnly Property IsDateColumn As Boolean
+        Get
+            If _grid Is Nothing Then Return False
+            Dim col As KBotDataColumn = _grid.Columns.FirstOrDefault(Function(c) String.Equals(c.Key, _columnKey, StringComparison.Ordinal))
+            Return col IsNot Nothing AndAlso col.ValueType = KBotValueType.DateTime
+        End Get
+    End Property
 
     Public ReadOnly Property ViewKey As String Implements IKBotFilterMenuView.ViewKey
         Get
@@ -112,6 +131,9 @@ Friend Class KBotFilterPopupGroupView
         n.ShowHeaderAggregates = chkGroupHeaderAggregates.Checked
         n.Collapsible = chkGroupCollapsible.Checked
         n.CollapsedByDefault = chkGroupStartCollapsed.Checked
+        If IsDateColumn Then
+            n.DatePart = If(rbPartYear.Checked, KBotGroupDatePart.Year, If(rbPartMonth.Checked, KBotGroupDatePart.Month, KBotGroupDatePart.Day))
+        End If
         Return n
     End Function
 
@@ -189,6 +211,9 @@ Friend Class KBotFilterPopupGroupView
         Dim grouped As Boolean = chkGroupBy.Checked
         rbGroupAsc.Enabled = grouped
         rbGroupDesc.Enabled = grouped
+        rbPartDay.Enabled = grouped
+        rbPartMonth.Enabled = grouped
+        rbPartYear.Enabled = grouped
         chkGroupHeader.Enabled = grouped
         chkGroupFooter.Enabled = grouped
         chkGroupHeaderAggregates.Enabled = grouped AndAlso chkGroupHeader.Checked
@@ -201,6 +226,7 @@ Friend Class KBotFilterPopupGroupView
     ' forget a line in.
     Private Sub Options_Changed(sender As Object, e As EventArgs) _
         Handles chkGroupBy.CheckedChanged, rbGroupAsc.CheckedChanged, rbGroupDesc.CheckedChanged,
+                rbPartDay.CheckedChanged, rbPartMonth.CheckedChanged, rbPartYear.CheckedChanged,
                 chkGroupHeader.CheckedChanged, chkGroupFooter.CheckedChanged,
                 chkGroupHeaderAggregates.CheckedChanged, chkGroupCollapsible.CheckedChanged,
                 chkGroupStartCollapsed.CheckedChanged

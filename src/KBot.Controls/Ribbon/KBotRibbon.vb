@@ -376,7 +376,11 @@ Public NotInheritable Class KBotRibbon
     Private Sub MakeFieldControl(k_field As KBotRibbonField)
         If k_field Is Nothing OrElse k_field.Control IsNot Nothing Then Return
         Dim k_control As Control
-        If k_field.Kind = KBotRibbonFieldKind.Text Then
+        If k_field.Kind = KBotRibbonFieldKind.Check Then
+            Dim k_check As New KBotCheckBox() With {.Text = k_field.Caption, .Checked = k_field.PendingChecked, .Visible = False}
+            AddHandler k_check.CheckedChanged, Sub(k_s, k_e) FieldCheckedChanged(k_field)
+            k_control = k_check
+        ElseIf k_field.Kind = KBotRibbonFieldKind.Text Then
             Dim k_box As New KBotTextBox() With {
                 .PlaceholderText = k_field.PlaceholderText, .MaxLength = k_field.MaxLength, .Visible = False, .Text = k_field.PendingText}
             AddHandler k_box.TextChanged, Sub(k_s, k_e) FieldTextChanged(k_field, k_box)
@@ -403,6 +407,15 @@ Public NotInheritable Class KBotRibbon
         k_field.Control = Nothing
         Controls.Remove(k_control)
         k_control.Dispose()
+    End Sub
+
+    ' UI boundary (control event): a tick box of the ribbon changed.
+    Private Sub FieldCheckedChanged(k_field As KBotRibbonField)
+        Try
+            k_field.RaiseCheckedChanged()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotRibbon.FieldCheckedChanged", ex)
+        End Try
     End Sub
 
     ' DigitsOnly: what is not a digit is dropped as soon as it appears (typed or pasted).

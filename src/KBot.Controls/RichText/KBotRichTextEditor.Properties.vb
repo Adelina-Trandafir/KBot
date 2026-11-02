@@ -441,12 +441,15 @@ Partial Public Class KBotRichTextEditor
     <DefaultValue(RichTextBoxScrollBars.Vertical)>
     Public Property ScrollBars As RichTextBoxScrollBars
         Get
-            Return rtb.ScrollBars
+            Return _scrollBars
         End Get
         Set(value As RichTextBoxScrollBars)
-            If rtb.ScrollBars = value Then Return
-            rtb.ScrollBars = value
+            If _scrollBars = value Then Return
+            _scrollBars = value
+            ' The vertical bar is our own KBotScrollBar; the native box keeps only a horizontal one.
+            rtb.ScrollBars = NativeScrollBars()
             RebuildLayout()
+            SyncVerticalBar()
         End Set
     End Property
 

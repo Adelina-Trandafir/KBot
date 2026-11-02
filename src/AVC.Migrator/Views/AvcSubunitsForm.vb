@@ -145,7 +145,7 @@ Public Class AvcSubunitsForm
     End Sub
 
     Private Shared Function LabelOf(k_unit As CaiUnit) As String
-        Return $"{k_unit.IdUnitate} ({k_unit.NumeUnitate})"
+        Return AvcContext.LabelOf(k_unit, k_unit.IdUnitate)
     End Function
 
     Private Sub BtnPorteaza_Click(sender As Object, e As EventArgs) Handles btnPorteaza.Click

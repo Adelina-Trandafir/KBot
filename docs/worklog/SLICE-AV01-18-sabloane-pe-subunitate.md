@@ -42,3 +42,9 @@ The step `SablonSalarii` already wrote per subunit.
 - Common templates (a NULL `IdSubunitate` valid for all subunits of a source) are deliberately NOT offered; they come back only when the operator asks, after the port.
 - Other Avacont windows (Jurnale, future notes / orders of payment) must still read `CurrentSubunitId`; journals stay per source.
 - Salary templates: their window still picks its own subunit.
+
+## Clean-up of the migration (02.11.2026)
+`sql/AVACONT/IntroducereDate/Operatii/AV02_01b_stergere_migrare_operatii_si_sabloane.sql` deletes what AVC.Migrator wrote (operations: `TZ_Debit/Credit` of the migrated operations, `TZ_Oper` with
+`IdOperatieAccess`, `TZ_Documente` with `IdDocumentAccess` once empty, `TZ_NoteC` with `UN IS NULL` once empty; templates: all salary templates and every operation template no operation points at),
+in one transaction; it covers `AV01_18b`. The optional step 1b (commented) turns `EF_PrimiteOperatii.IdOperatie` back into Access numbers and is for a migration that reached COMMIT once. Not run.
+The first migration run failed before COMMIT (`AvcSql.TableExists` without the transaction, fixed: optional `k_transaction`), so nothing was written.

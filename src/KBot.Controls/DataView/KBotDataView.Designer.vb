@@ -22,17 +22,17 @@ Partial Class KBotDataView
     Friend WithEvents groupCombo As KBotComboBox
 
     ''' <summary>The vertical scroll bar.</summary>
-    Friend WithEvents vScroll As VScrollBar
+    Friend WithEvents vScroll As KBotScrollBar
 
     ''' <summary>The horizontal scroll bar.</summary>
-    Friend WithEvents hScroll As HScrollBar
+    Friend WithEvents hScroll As KBotScrollBar
 
     Private Sub InitializeComponent()
         Me.editText = New TextBox()
         Me.editCombo = New KBotComboBox()
         Me.groupCombo = New KBotComboBox()
-        Me.vScroll = New VScrollBar()
-        Me.hScroll = New HScrollBar()
+        Me.vScroll = New KBotScrollBar()
+        Me.hScroll = New KBotScrollBar()
         Me.SuspendLayout()
         '
         ' editText -- floating text editor
@@ -51,10 +51,12 @@ Partial Class KBotDataView
         '
         ' vScroll -- vertical bar (placed/shown by virtualization, slice 0010-02)
         '
+        Me.vScroll.Orientation = Orientation.Vertical
         Me.vScroll.Visible = False
         '
         ' hScroll -- horizontal bar (placed/shown by virtualization, slice 0010-02)
         '
+        Me.hScroll.Orientation = Orientation.Horizontal
         Me.hScroll.Visible = False
         '
         ' KBotDataView

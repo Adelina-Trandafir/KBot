@@ -19,7 +19,7 @@ Imports KBot.Theming
 ''' </summary>
 <ToolboxItem(True)>
 Public Class KBotSqlBox
-    Inherits RichTextBox
+    Inherits KBotRichScrollBox
     Implements IThemedControl
 
     ''' <summary>Past this length the colouring is skipped: it would make typing lag, and no query is this long.</summary>
@@ -189,6 +189,7 @@ Public Class KBotSqlBox
     Public Sub ApplyTheme(k_scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try
             ApplyColors()
+            ApplyBarTheme(k_scheme)
             Highlight()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotSqlBox.ApplyTheme", ex)

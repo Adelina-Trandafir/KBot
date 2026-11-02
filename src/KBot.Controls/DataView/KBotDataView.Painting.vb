@@ -108,11 +108,17 @@ Partial Class KBotDataView
 
         ' Muchia dreaptă a titlului. Creion propriu (felia 0038): `Nothing` = operatorul a cerut
         ' lățime 0, adică titluri fără linii între ele.
-        If _pHeaderColSep IsNot Nothing Then
+        If _pHeaderColSep IsNot Nothing AndAlso Not RightEdgeTouchesBorder(cellRect.Right) Then
             Dim sepX As Integer = cellRect.Right - 1
             g.DrawLine(_pHeaderColSep, sepX, 0, sepX, headerH - 1)
         End If
     End Sub
+
+    ' English: true when a cell's right edge reaches the control's own border. The border IS that
+    ' edge, so a separator beside it would read as a second, thicker border.
+    Private Function RightEdgeTouchesBorder(k_right As Integer) As Boolean
+        Return _pBorder IsNot Nothing AndAlso k_right >= ClientSize.Width - BorderDevicePx()
+    End Function
 
     ''' <summary>
     ''' Titlul coloanei ajunge pe mai multe rânduri? Două motive independente, și AMÂNDOUĂ contează:
@@ -271,7 +277,7 @@ Partial Class KBotDataView
         End If
 
         If _pFooterColSep IsNot Nothing Then
-            If FooterDrawsRightSeparator(col) Then
+            If FooterDrawsRightSeparator(col) AndAlso Not RightEdgeTouchesBorder(cellRect.Right) Then
                 Dim sepX As Integer = cellRect.Right - 1
                 g.DrawLine(_pFooterColSep, sepX, bandTop, sepX, bandTop + bandH - 1)
             End If

@@ -223,7 +223,10 @@ Partial Class KBotDataView
                     g.SmoothingMode = k_oldSmooth
                 Else
                     If k_fill Then g.FillRectangle(k_brush, k_face)
-                    If k_border Then DrawButtonSides(g, k_face, col.EffectiveButtonBorders, k_pen)
+                    ' A face that reaches the control's own border leaves its right side to that border.
+                    Dim k_sides As KBotBorderSides = col.EffectiveButtonBorders
+                    If RightEdgeTouchesBorder(k_face.Right) Then k_sides = k_sides And Not KBotBorderSides.Right
+                    If k_border Then DrawButtonSides(g, k_face, k_sides, k_pen)
                 End If
             Finally
                 k_brushOwn?.Dispose()

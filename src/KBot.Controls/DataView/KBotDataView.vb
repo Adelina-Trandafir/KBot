@@ -89,6 +89,12 @@ Public Class KBotDataView
     ''' <summary>Dublu-click pe o celulă.</summary>
     Public Event CellDoubleClick As EventHandler(Of KBotCellEventArgs)
 
+    ''' <summary>
+    ''' ME01-08: mouse-ul se mișcă peste o celulă de date; handler-ul poate alege cursorul (de ex. mâna peste o celulă-link). Argumentele sunt
+    ''' proaspete, cu cursorul implicit al grilei deja în ele.
+    ''' </summary>
+    Public Event CellCursor As EventHandler(Of KBotCellCursorEventArgs)
+
     ''' <summary>Celulă de tip Button acționată (click sau Space).</summary>
     Public Event ButtonClick As EventHandler(Of KBotButtonClickEventArgs)
 

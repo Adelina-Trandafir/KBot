@@ -11,7 +11,7 @@ Friend NotInheritable Class AvcSubunitRules
     End Sub
 
     Public Shared Function LabelOf(k_unit As CaiUnit) As String
-        Return $"{k_unit.IdUnitate} ({k_unit.NumeUnitate})"
+        Return AvcContext.LabelOf(k_unit, k_unit.IdUnitate)
     End Function
 
     ''' <summary>The Romanian reason the drafts cannot be written, or Nothing. The store re-checks what only the server knows.</summary>

@@ -32,7 +32,7 @@ Friend NotInheritable Class AvcRunner
     ''' Reads the Access table of every step (ticked or not, so the grid shows all the counts) and records the file hash.
     ''' A step that cannot be read does not stop the others: its error comes back as a blocking finding.
     ''' </summary>
-    Public Shared Function ReadAll(k_context As AvcContext, k_steps As IEnumerable(Of AvcStep)) As List(Of Finding)
+    Public Shared Function ReadAll(k_context As AvcContext, k_steps As IEnumerable(Of AvcStep), Optional k_report As IProgress(Of AvcProgressInfo) = Nothing) As List(Of Finding)
         Try
             If k_context.Units.Count = 0 Then Throw New InvalidOperationException("Bifați cel puțin o unitate.")
             Dim k_errors As New List(Of Finding)()
@@ -40,7 +40,7 @@ Friend NotInheritable Class AvcRunner
             For Each k_unit In k_context.Units
                 If Not k_unit.HasUnitFile Then
                     k_errors.Add(New Finding(AvcKinds.SURSA_LIPSA, FindingClass.Blocant, String.Empty, String.Empty,
-                                             $"Unitatea {k_unit.IdUnitate} ({k_unit.NumeUnitate}) nu are fișier de nomenclatoare pe acest disc: " &
+                                             $"Unitatea {AvcContext.LabelOf(k_unit, k_unit.IdUnitate)} nu are fișier de nomenclatoare pe acest disc: " &
                                              If(k_unit.UnitFilePath.Length = 0, "registrul nu numește niciunul.", k_unit.UnitFilePath)))
                 End If
             Next
@@ -50,7 +50,11 @@ Friend NotInheritable Class AvcRunner
                 Next
                 Return k_errors
             End If
-            For Each k_step In k_steps
+            Dim k_all = k_steps.ToList()
+            Dim k_index As Integer = 0
+            For Each k_step In k_all
+                k_index += 1
+                k_report?.Report(New AvcProgressInfo("Citire", k_index, k_all.Count, k_step.Title, $"tabelul Access «{k_step.AccessTable}»", (k_index - 1) / k_all.Count))
                 k_step.Reset()
                 Try
                     k_step.ReadAccess(k_context)
@@ -63,6 +67,7 @@ Friend NotInheritable Class AvcRunner
             Next
             ' Hashed AFTER the reads: the Access driver rewrites bytes of the file header when it opens and closes it, so a hash
             ' taken before the first open never matches again. From here on only an outside change alters the hash.
+            k_report?.Report(New AvcProgressInfo("Citire", k_all.Count, k_all.Count, String.Empty, "amprentele fișierelor", 1.0))
             For Each k_unit In k_context.Units
                 k_context.FileHashes(k_unit.UnitFilePath) = HashOf(k_unit.UnitFilePath)
             Next
@@ -77,7 +82,7 @@ Friend NotInheritable Class AvcRunner
     ''' Checks the ticked steps against the unit database. Read-only on the server. Server I/O: logs and rethrows
     ''' (a database that does not exist, a wrong password).
     ''' </summary>
-    Public Shared Function Verify(k_context As AvcContext, k_steps As IReadOnlyList(Of AvcStep)) As VerificationReport
+    Public Shared Function Verify(k_context As AvcContext, k_steps As IReadOnlyList(Of AvcStep), Optional k_progress As IProgress(Of AvcProgressInfo) = Nothing) As VerificationReport
         Try
             RequireTarget(k_context)
             Dim k_report As New VerificationReport()
@@ -98,6 +103,7 @@ Friend NotInheritable Class AvcRunner
                 Next
             Next
 
+            k_progress?.Report(New AvcProgressInfo("Verificare", 0, k_selected.Count, String.Empty, "număr rândurile din țintă", 0.0))
             Using k_cn = k_context.Server.Open(k_context.TargetDatabase)
                 For Each k_step In k_steps
                     k_step.ExistingRows.Clear()
@@ -106,7 +112,10 @@ Friend NotInheritable Class AvcRunner
                     Next
                 Next
 
+                Dim k_verified As Integer = 0
                 For Each k_step In k_selected
+                    k_verified += 1
+                    k_progress?.Report(New AvcProgressInfo("Verificare", k_verified, k_selected.Count, k_step.Title, String.Empty, (k_verified - 1) / k_selected.Count))
                     If k_step.AccessRows < 0 Then
                         k_report.Add(AvcKinds.SURSA_LIPSA, FindingClass.Blocant, k_step.AccessTable, String.Empty,
                                      $"«{k_step.Title}» nu a fost citit din Access. Apăsați «Citește» și rezolvați eroarea.")
@@ -136,7 +145,8 @@ Friend NotInheritable Class AvcRunner
     ''' before COMMIT (rollback confirmed). Server I/O: any failure rolls everything back and is rethrown.
     ''' </summary>
     Public Shared Function Run(k_context As AvcContext, k_steps As IReadOnlyList(Of AvcStep),
-                               k_progress As IProgress(Of String), k_cancel As CancellationToken) As List(Of AvcWritten)
+                               k_progress As IProgress(Of String), k_cancel As CancellationToken,
+                               Optional k_report As IProgress(Of AvcProgressInfo) = Nothing) As List(Of AvcWritten)
         Try
             RequireTarget(k_context)
             Dim k_selected = k_steps.Where(Function(s) s.Selected).ToList()
@@ -156,7 +166,7 @@ Friend NotInheritable Class AvcRunner
                     "Bază destinație: " & k_context.TargetDatabase,
                     "Cod fiscal: " & If(k_context.CodFiscal.Length = 0, "(necompletat)", k_context.CodFiscal),
                     "Server: " & k_context.Server.Describe(),
-                    "Unități: " & String.Join(", ", k_context.Units.Select(Function(u) $"{u.IdUnitate} {u.NumeUnitate}")),
+                    "Unități: " & String.Join(", ", k_context.Units.Select(Function(u) $"{u.IdUnitate} {AvcContext.LabelOf(u, u.IdUnitate)}")),
                     "Fișiere Access (SHA-256): " & String.Join("; ", k_context.FileHashes.Select(Function(h) $"{Path.GetFileName(h.Key)} {h.Value}")),
                     "An: " & k_context.Year.ToString(CultureInfo.InvariantCulture),
                     "Pași: " & String.Join(", ", k_selected.Select(Function(s) s.Key))})
@@ -165,14 +175,36 @@ Friend NotInheritable Class AvcRunner
                     Using k_tx = k_cn.BeginTransaction()
                         Dim k_commitAttempted = False
                         Try
+                            ' The bar moves by rows to write (a step with more rows weighs more); a step with none weighs one.
+                            Dim k_weights = k_selected.Select(Function(s) CDbl(Math.Max(s.RowsToWrite, 1))).ToList()
+                            Dim k_totalWeight As Double = k_weights.Sum()
+                            Dim k_doneWeight As Double = 0
+                            Dim k_stepNo As Integer = 0
                             For Each k_step In k_selected
                                 If RollbackIfStopped(k_tx, k_cancel, k_dump) Then Return Nothing
+                                k_stepNo += 1
+                                Dim k_no = k_stepNo
+                                Dim k_title = k_step.Title
+                                Dim k_before = k_doneWeight
+                                Dim k_weight = k_weights(k_no - 1)
                                 k_progress.Report($"Pasul «{k_step.Title}»...")
+                                k_report?.Report(New AvcProgressInfo("Scriere", k_no, k_selected.Count, k_title, String.Empty, k_before / k_totalWeight))
+                                If k_report IsNot Nothing Then
+                                    k_context.OnTick = Sub(k_done, k_total, k_what)
+                                                           Dim k_share = If(k_total <= 0, 0.0, Math.Min(1.0, k_done / k_total))
+                                                           k_report.Report(New AvcProgressInfo("Scriere", k_no, k_selected.Count, k_title,
+                                                                                               $"{k_what} {k_done} din {k_total}", (k_before + k_weight * k_share) / k_totalWeight))
+                                                       End Sub
+                                End If
                                 k_written.AddRange(k_step.Write(k_context, k_cn, k_tx, k_dump, k_progress, k_cancel))
+                                k_doneWeight += k_weight
                             Next
+                            k_context.OnTick = Nothing
                             If RollbackIfStopped(k_tx, k_cancel, k_dump) Then Return Nothing
+                            k_report?.Report(New AvcProgressInfo("Scriere", k_selected.Count, k_selected.Count, String.Empty, "confirm tranzacția (COMMIT)", 0.99))
                             k_commitAttempted = True
                             k_tx.Commit()
+                            k_report?.Report(New AvcProgressInfo("Scriere", k_selected.Count, k_selected.Count, String.Empty, "terminat", 1.0))
                             k_dump.WriteFinal(True, k_written.Select(Function(w) $"{w.Table}: {w.Rows} rânduri"), Nothing)
                         Catch ex As OperationCanceledException
                             k_tx.Rollback()
@@ -202,6 +234,8 @@ Friend NotInheritable Class AvcRunner
         Catch ex As Exception
             GlobalErrorLog.Write("AvcRunner.Run", ex)
             Throw
+        Finally
+            k_context.OnTick = Nothing
         End Try
     End Function
 

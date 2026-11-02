@@ -917,3 +917,9 @@ La salvare, daca valoarea din antet difera de totalul liniilor cu cel mult 1 leu
 ### [2026-10-30 — SLICE-VC09-16: Chenar de hover mai vizibil în raport](docs/worklog/SLICE-VC09-16-chenar-hover-mai-vizibil.md)
 
 ### [2026-10-30 — SLICE-VC09-17: Alinierea chenarului de hover cu grila PDF](docs/worklog/SLICE-VC09-17-aliniere-chenar-hover-cu-grila.md)
+
+### [2026-11-02 — SLICE-VC06-28: Luna activă este ultima lună cu date](docs/worklog/SLICE-VC06-28-luna-activa-ultima-luna-cu-date.md)
+
+### [2026-11-02 — SLICE-VC06-28: Verificarea erorii de stoc APA 19L](docs/worklog/SLICE-VC06-28-luna-activa-ultima-luna-cu-date.md#verificare-solicitată-ulterior--02112026)
+
+### [2026-11-02 — SLICE-VC06-29: Stocul folosește data NIR-ului](docs/worklog/SLICE-VC06-29-stoc-dupa-data-nir.md)

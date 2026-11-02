@@ -40,7 +40,7 @@ End Class
 ''' </summary>
 <ToolboxItem(True)>
 Public Class KBotLogBox
-    Inherits RichTextBox
+    Inherits KBotRichScrollBox
     Implements IThemedControl
 
     Private ReadOnly _lines As New List(Of KBotLogLine)()
@@ -264,6 +264,7 @@ Public Class KBotLogBox
     Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try
             ApplyColors()
+            ApplyBarTheme(scheme)
             If _lines.Count > 0 Then Render(IsAtBottom())
         Catch ex As Exception
             GlobalErrorLog.Write("KBotLogBox.ApplyTheme", ex)

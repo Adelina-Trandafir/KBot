@@ -271,7 +271,7 @@ Friend NotInheritable Class AvcSablonSalariiStep
             End If
             If _set.UnitsWithoutTable.Count > 0 Then
                 k_findings.Add(New Finding(Finding.TABEL_LIPSA, FindingClass.Informativ, AccessTable, String.Empty,
-                                           "Fișierul Access nu are tabelele șablonului de salarii la unitățile: " & String.Join(", ", _set.UnitsWithoutTable) & "."))
+                                           "Fișierul Access nu are tabelele șablonului de salarii la unitățile: " & String.Join(", ", _set.UnitsWithoutTable.Select(Function(k_uid) k_context.UnitLabel(k_uid))) & "."))
             End If
             If _set.MissingColumns.Count > 0 Then
                 k_findings.Add(New Finding(AvcKinds.SABLON_INVALID, FindingClass.Blocant, "TZ_SablonSalarii", String.Empty,
@@ -296,7 +296,7 @@ Friend NotInheritable Class AvcSablonSalariiStep
                 Where(Function(k_u) Not k_context.PlannedSubunits.ContainsKey(k_u) AndAlso Not AvcSubunitStore.UnitMap(k_cn, Nothing).ContainsKey(k_u)).ToList()
             If k_noSub.Count > 0 Then
                 k_findings.Add(New Finding(AvcKinds.SUBUNITATE_LIPSA, FindingClass.Blocant, "TZ_SablonSalarii", "IdSubunitate",
-                                           $"Articolele unităților {String.Join(", ", k_noSub)} merg la subunitatea lor, iar ele nu au încă subunitate. " &
+                                           $"Articolele unităților {String.Join(", ", k_noSub.Select(Function(k_uid) k_context.UnitLabel(k_uid)))} merg la subunitatea lor, iar ele nu au încă subunitate. " &
                                            "Bifați pasul «Subunități» (le creează în aceeași migrare) și verificați din nou."))
                 Return k_findings
             End If
@@ -307,7 +307,7 @@ Friend NotInheritable Class AvcSablonSalariiStep
             If k_left.Count > 0 Then
                 k_findings.Add(New Finding(AvcKinds.SABLON_INVALID, FindingClass.Atentie, "TZ_SablonSalarii", "Explicatie",
                                            "articole lăsate pe dinafară (se scriu doar cele fără probleme); fiecare rând spune de ce", k_left.Count).
-                    WithDetail(String.Join(vbLf, k_left.Select(Function(k_r) $"unitatea {k_r.Row.IdUnitate}, «{k_r.Row.Clsf}» {k_r.Row.Explicatie}: {String.Join("; ", k_r.Problems)}"))))
+                    WithDetail(String.Join(vbLf, k_left.Select(Function(k_r) $"unitatea {k_context.UnitLabel(k_r.Row.IdUnitate)}, «{k_r.Row.Clsf}» {k_r.Row.Explicatie}: {String.Join("; ", k_r.Problems)}"))))
             End If
             If _set.HiddenRows > 0 Then
                 k_findings.Add(New Finding(AvcKinds.SABLON_INVALID, FindingClass.Informativ, "TZ_SablonSalarii", String.Empty,
@@ -499,6 +499,7 @@ Friend NotInheritable Class AvcSablonSalariiStep
                         Next
                         For Each k_item In k_toWrite
                             k_cancel.ThrowIfCancellationRequested()
+                            k_context.Tick(k_written + k_skipped + 1, k_toWrite.Count, "«TZ_SablonSalarii»: articole")
                             k_exists.Parameters("@sub").Value = k_item.IdSubunitate.Value
                             k_exists.Parameters("@cls").Value = k_item.Clasificatie
                             k_exists.Parameters("@expl").Value = k_item.Row.Explicatie

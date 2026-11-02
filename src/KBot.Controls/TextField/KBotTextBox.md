@@ -9,7 +9,7 @@ Difference from [KBotTextField](KBotTextField.md): that one is the LoginForm fie
 ## API
 Text: `Text`, `Lines`, `Multiline = True`, `WordWrap = True`, `ReadOnly = False`, `MaxLength = 32767`, `PlaceholderText`, `TextAlign`, `UseSystemPasswordChar = False`, `PasswordChar`, `AcceptsReturn`, `AcceptsTab`, `CharacterCasing`, `HideSelection`, `ShortcutsEnabled` (all forwarded to the inner box, all in the F4 grid under «K-BOT»), `AppendText(text)`, `FocusInput()`, `InnerTextBox`.
 
-Scrolling: `ScrollBars = Vertical`, `AutoHideScrollBars = True`, `ScrollBarThickness = KBotScrollBar.GrosimeImplicita`, `VerticalScrollBar` / `HorizontalScrollBar` (the real `KBotScrollBar` instances), `SincronizeazaBare()`, `ViewChanged` event.
+Scrolling: `ScrollBars = Vertical`, `AutoHideScrollBars = True`, `ScrollBarThickness = KBotScrollBar.GrosimeImplicita`, `VerticalScrollBar` / `HorizontalScrollBar` (the real `KBotScrollBar` instances), `SincronizeazaBare()`, `ViewChanged` event. The mouse wheel scrolls the box also over the text (slice 00EF-54): the inner edit has no native bars, so it hands the wheel to the frame.
 
 Frame: `BorderColor`, `FocusBorderColor` (Empty = accent), `BorderWidth = 1`, `FocusBorderWidth = 1`, `CornerRadius = 4`, `ContentBounds`, `GetPreferredSize`.
 

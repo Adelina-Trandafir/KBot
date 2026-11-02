@@ -31,7 +31,7 @@ Layout order, left to right: the five command buttons, `GroupSpacing`, the font 
 - `EditorBackColor` / `EditorForeColor` — Empty = `InputBackColor` / `InputTextColor`. It is a field the operator types into, so it follows the INPUT colours, not the surface ones. Runs the operator coloured from the toolbar keep THEIR colour: that choice is stored in the RTF and belongs to the document.
 - `EditorBorderWidth: Integer = 1` + `EditorBorderColor` (Empty = `InputBorderColor`) — the frame is painted by the control. `BorderStyle` on the inner box is `None` on purpose: the system border ignores the theme and stayed white on a dark scheme.
 - `EditorFont` (Nothing = the scheme's font) — the BASE font of the document, not the font of a run.
-- `ScrollBars: RichTextBoxScrollBars = Vertical`
+- `ScrollBars: RichTextBoxScrollBars = Vertical` (slice 0051-04: the vertical bar is the editor's own themed `KBotScrollBar` beside the surface, which is a `KBotRichEdit` with the native bar off; a horizontal bar, if asked for, stays native)
 - `EffectiveEditorBackColor` / `EffectiveEditorForeColor` (read-only) — what is actually painted.
 
 ## Footer band

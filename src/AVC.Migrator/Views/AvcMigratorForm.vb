@@ -26,6 +26,10 @@ Public Class AvcMigratorForm
     ''' <summary>The last verification; Nothing = none yet, or an input changed since.</summary>
     Private _report As VerificationReport
     Private _busy As Boolean
+    ''' <summary>Started with every read / verification / migration; the progress line shows it and estimates the time left from it.</summary>
+    Private ReadOnly _opClock As New Stopwatch()
+    ''' <summary>The last read / verification step written to the log, so each one is logged once.</summary>
+    Private _lastLoggedStep As String = String.Empty
     Private _cancellation As CancellationTokenSource
     Private _operationFinished As TaskCompletionSource(Of Boolean)
     Private _initializing As Boolean = True
@@ -93,10 +97,14 @@ Public Class AvcMigratorForm
         btnCiteste.Enabled = Not k_busy
         btnVerifica.Enabled = Not k_busy
         btnStop.Enabled = k_busy AndAlso _cancellation IsNot Nothing
+        pbProgres.Value = 0
         If k_busy Then
+            _opClock.Restart()
+            _lastLoggedStep = String.Empty
             _operationFinished = New TaskCompletionSource(Of Boolean)(TaskCreationOptions.RunContinuationsAsynchronously)
             btnMigreaza.Enabled = False
         Else
+            _opClock.Reset()
             _cancellation?.Dispose()
             _cancellation = Nothing
             _operationFinished?.TrySetResult(True)
@@ -114,6 +122,43 @@ Public Class AvcMigratorForm
         KBotMessage.Show(k_message & Environment.NewLine & Environment.NewLine & k_error.Message,
                          AppTitle, MessageBoxButtons.OK, MessageBoxIcon.Error)
     End Sub
+
+    ''' <summary>
+    ''' The reporter a background operation sends its progress to: posted to this thread, ignored once that operation is over.
+    ''' Call it after <see cref="SetBusy"/>(True), which names the operation.
+    ''' </summary>
+    Private Function NewReporter() As IProgress(Of AvcProgressInfo)
+        Dim k_run = _operationFinished
+        Return New Progress(Of AvcProgressInfo)(
+            Sub(k_info)
+                Try
+                    If _busy AndAlso _operationFinished Is k_run Then ShowProgress(k_info)
+                Catch ex As Exception
+                    GlobalErrorLog.Write("AvcMigratorForm.ShowProgress", ex)
+                End Try
+            End Sub)
+    End Function
+
+    ''' <summary>Moves the bar and writes the step / table line with the time passed and, once the pace is known, the time left.</summary>
+    Private Sub ShowProgress(k_info As AvcProgressInfo)
+        pbProgres.Value = CInt(k_info.Fraction * pbProgres.Maximum)
+        Dim k_elapsed = _opClock.Elapsed
+        Dim k_text = k_info.Describe() & " · au trecut " & ClockText(k_elapsed)
+        If k_info.Fraction >= 0.03 AndAlso k_info.Fraction < 1.0 AndAlso k_elapsed.TotalSeconds >= 5 Then
+            k_text &= " · mai durează cca " & ClockText(TimeSpan.FromSeconds(k_elapsed.TotalSeconds * (1.0 - k_info.Fraction) / k_info.Fraction))
+        End If
+        lblStare.Text = k_text
+        ' The run logs its own steps and tables; the read and the verification only show the bar, so their steps go in the log here.
+        Dim k_key = k_info.Phase & "|" & k_info.StepNo.ToString(CultureInfo.InvariantCulture)
+        If k_info.Phase <> "Scriere" AndAlso k_info.Title.Length > 0 AndAlso k_key <> _lastLoggedStep Then
+            _lastLoggedStep = k_key
+            AppendLog("INFO", k_info.Describe())
+        End If
+    End Sub
+
+    Private Shared Function ClockText(k_span As TimeSpan) As String
+        Return If(k_span.TotalHours >= 1, k_span.ToString("h\:mm\:ss", CultureInfo.InvariantCulture), k_span.ToString("mm\:ss", CultureInfo.InvariantCulture))
+    End Function
 
     Private Sub Say(k_text As String)
         lblStare.Text = k_text
@@ -431,7 +476,8 @@ Public Class AvcMigratorForm
                 _context = New AvcContext(k_dc, k_ticked)
                 Dim k_contextNow = _context
                 Dim k_stepsNow = _steps
-                _readFindings = Await Task.Run(Function() AvcRunner.ReadAll(k_contextNow, k_stepsNow))
+                Dim k_reporter = NewReporter()
+                _readFindings = Await Task.Run(Function() AvcRunner.ReadAll(k_contextNow, k_stepsNow, k_reporter))
                 FillSteps()
                 ShowFindings()
                 For Each k_finding In _readFindings
@@ -603,7 +649,8 @@ Public Class AvcMigratorForm
                 _report = Nothing
                 Dim k_contextNow = _context
                 Dim k_stepsNow = _steps
-                _report = Await Task.Run(Function() AvcRunner.Verify(k_contextNow, k_stepsNow))
+                Dim k_reporter = NewReporter()
+                _report = Await Task.Run(Function() AvcRunner.Verify(k_contextNow, k_stepsNow, k_reporter))
                 FillSteps()
                 ShowFindings()
                 Say(_report.Summary())
@@ -721,7 +768,7 @@ Public Class AvcMigratorForm
             Dim k_total = k_selected.Sum(Function(s) Math.Max(s.RowsToWrite, 0))
             Dim k_answer = KBotMessage.Show(
                 $"Se scriu {k_total} rânduri (pașii: {String.Join(", ", k_selected.Select(Function(s) s.Title))}) în baza «{_context.TargetDatabase}» de pe {_settings.Host}."& Environment.NewLine &
-                $"Unități: {String.Join(", ", _context.Units.Select(Function(u) u.NumeUnitate))}. An: {_context.Year}." & Environment.NewLine &
+                $"Unități: {String.Join(", ", _context.Units.Select(Function(u) AvcContext.LabelOf(u, u.IdUnitate)))}. An: {_context.Year}." & Environment.NewLine &
                 "Scrierea folosește o singură tranzacție. Dacă rezultatul nu poate fi confirmat, verificați serverul înainte de reluare." & Environment.NewLine & Environment.NewLine &
                 "Continuați?", AppTitle, MessageBoxButtons.YesNo, MessageBoxIcon.Question)
             If k_answer <> DialogResult.Yes Then Return
@@ -736,12 +783,13 @@ Public Class AvcMigratorForm
                 Dim k_progress As IProgress(Of String) = New Progress(Of String)(
                     Sub(k_message)
                         Try
-                            If _busy AndAlso _operationFinished Is k_run AndAlso Not k_cancel.IsCancellationRequested Then Say(k_message)
+                            If _busy AndAlso _operationFinished Is k_run AndAlso Not k_cancel.IsCancellationRequested Then AppendLog("INFO", k_message)
                         Catch ex As Exception
                             ShowOperationError("AvcMigratorForm.Progress", "Afișarea progresului a eșuat.", ex)
                         End Try
                     End Sub)
-                Dim k_written = Await Task.Run(Function() AvcRunner.Run(k_contextNow, k_stepsNow, k_progress, k_cancel))
+                Dim k_reporter = NewReporter()
+                Dim k_written = Await Task.Run(Function() AvcRunner.Run(k_contextNow, k_stepsNow, k_progress, k_cancel, k_reporter))
                 If k_written Is Nothing Then
                     _report = Nothing
                     RecordRun("Migrare oprită înainte de COMMIT: nu s-a scris nimic (rollback confirmat).", "warning", Nothing)

@@ -37,11 +37,11 @@ Friend NotInheritable Class AvcSql
         Return Convert.ToString(k_value, CultureInfo.InvariantCulture).Trim()
     End Function
 
-    ''' <summary>True when <paramref name="k_table"/> exists in <paramref name="k_database"/>. Server I/O: logs and rethrows.</summary>
-    Public Shared Function TableExists(k_cn As MySqlConnection, k_database As String, k_table As String) As Boolean
+    ''' <summary>True when <paramref name="k_table"/> exists in <paramref name="k_database"/>. Inside a transaction (the write) the command must carry it. Server I/O: logs and rethrows.</summary>
+    Public Shared Function TableExists(k_cn As MySqlConnection, k_database As String, k_table As String, Optional k_transaction As MySqlTransaction = Nothing) As Boolean
         Try
             Using k_cmd As New MySqlCommand(
-                "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = @db AND TABLE_NAME = @t", k_cn)
+                "SELECT COUNT(*) FROM information_schema.TABLES WHERE TABLE_SCHEMA = @db AND TABLE_NAME = @t", k_cn, k_transaction)
                 k_cmd.Parameters.AddWithValue("@db", k_database)
                 k_cmd.Parameters.AddWithValue("@t", k_table)
                 Return Convert.ToInt64(k_cmd.ExecuteScalar(), CultureInfo.InvariantCulture) > 0

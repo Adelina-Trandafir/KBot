@@ -113,8 +113,8 @@ Partial Public Class AdvancedTreeControl
 
         Dim chkSize As Integer = _checkBoxSize
         Dim chkRect As New Rectangle(xBase, midY - (chkSize \ 2), chkSize, chkSize)
-        Dim accentColor As Color = If(it.CheckLocked, Color.FromArgb(170, 170, 170), Color.DodgerBlue)
-        Dim borderColor As Color = Color.FromArgb(180, 180, 180)
+        Dim accentColor As Color = If(it.CheckLocked, _autoCheckLocked, _autoCheckAccent)
+        Dim borderColor As Color = _autoCheckBorder
 
         Dim oldSmooth = g.SmoothingMode
         g.SmoothingMode = SmoothingMode.AntiAlias
@@ -127,9 +127,9 @@ Partial Public Class AdvancedTreeControl
                 Dim dotMargin As Integer = CInt(chkSize * 0.28F)
                 Dim dotRect As New Rectangle(chkRect.X + dotMargin, chkRect.Y + dotMargin,
                                          chkSize - dotMargin * 2, chkSize - dotMargin * 2)
-                Using brush As New SolidBrush(Color.White) : g.FillEllipse(brush, dotRect) : End Using
+                Using brush As New SolidBrush(_autoCheckMark) : g.FillEllipse(brush, dotRect) : End Using
             Else
-                g.FillEllipse(Brushes.White, chkRect)
+                Using brush As New SolidBrush(_autoCheckBack) : g.FillEllipse(brush, chkRect) : End Using
                 Using pen As New Pen(borderColor, 1) : g.DrawEllipse(pen, chkRect) : End Using
             End If
         Else
@@ -139,7 +139,7 @@ Partial Public Class AdvancedTreeControl
                     Case TreeCheckState.Checked
                         Using brush As New SolidBrush(accentColor) : g.FillPath(brush, path) : End Using
                         Using pen As New Pen(accentColor) : g.DrawPath(pen, path) : End Using
-                        Using penTick As New Pen(Color.White, CheckMarkPenWidthPx)
+                        Using penTick As New Pen(_autoCheckMark, CheckMarkPenWidthPx)
                             penTick.StartCap = LineCap.Round
                             penTick.EndCap = LineCap.Round
                             penTick.LineJoin = LineJoin.Round
@@ -153,7 +153,7 @@ Partial Public Class AdvancedTreeControl
                     Case TreeCheckState.Indeterminate
                         Using brush As New SolidBrush(accentColor) : g.FillPath(brush, path) : End Using
                         Using pen As New Pen(accentColor) : g.DrawPath(pen, path) : End Using
-                        Using penDash As New Pen(Color.White, CheckMarkPenWidthPx)
+                        Using penDash As New Pen(_autoCheckMark, CheckMarkPenWidthPx)
                             penDash.StartCap = LineCap.Round
                             penDash.EndCap = LineCap.Round
                             Dim yMid As Single = chkRect.Y + (chkRect.Height / 2.0F)
@@ -162,7 +162,7 @@ Partial Public Class AdvancedTreeControl
                         End Using
 
                     Case Else ' Unchecked
-                        g.FillPath(Brushes.White, path)
+                        Using brush As New SolidBrush(_autoCheckBack) : g.FillPath(brush, path) : End Using
                         Using pen As New Pen(borderColor, 1) : g.DrawPath(pen, path) : End Using
                 End Select
             End Using
@@ -177,13 +177,15 @@ Partial Public Class AdvancedTreeControl
         If it.Level = 0 AndAlso Not _RootExpander Then showExpander = False
         If Not showExpander Then Return
 
-        g.FillRectangle(Brushes.White, expanderRect)
-        g.DrawRectangle(New Pen(LineColor), expanderRect)
+        Using brush As New SolidBrush(_autoExpanderBack) : g.FillRectangle(brush, expanderRect) : End Using
+        Using penBox As New Pen(LineColor) : g.DrawRectangle(penBox, expanderRect) : End Using
         Dim marja As Integer = ExpanderSignInsetPx
-        g.DrawLine(Pens.Black, expanderRect.Left + marja, midY, expanderRect.Right - marja, midY)
-        If Not it.Expanded Then
-            g.DrawLine(Pens.Black, expanderCenterX, expanderRect.Top + marja, expanderCenterX, expanderRect.Bottom - marja)
-        End If
+        Using penSign As New Pen(_autoExpanderSign)
+            g.DrawLine(penSign, expanderRect.Left + marja, midY, expanderRect.Right - marja, midY)
+            If Not it.Expanded Then
+                g.DrawLine(penSign, expanderCenterX, expanderRect.Top + marja, expanderCenterX, expanderRect.Bottom - marja)
+            End If
+        End Using
     End Sub
 
     Private Sub DrawContent(g As Graphics, it As TreeItem, y As Integer, xBase As Integer)

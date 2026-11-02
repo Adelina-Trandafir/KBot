@@ -28,6 +28,7 @@ Partial Class MainForm
         Dim rbSursa As KBotRibbonButton = New KBotRibbonButton()
         Dim rbSincronizare As KBotRibbonButton = New KBotRibbonButton()
         Dim rbDemo As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbTabele As KBotRibbonButton = New KBotRibbonButton()
         Dim rbDrepturi As KBotRibbonButton = New KBotRibbonButton()
         Dim rbRightsAd As KBotRibbonButton = New KBotRibbonButton()
         Dim rbRightsVr As KBotRibbonButton = New KBotRibbonButton()
@@ -49,6 +50,7 @@ Partial Class MainForm
         Dim rbRapoarte As KBotRibbonButton = New KBotRibbonButton()
         Dim rbImportMf As KBotRibbonButton = New KBotRibbonButton()
         Dim rbScripturi As KBotRibbonButton = New KBotRibbonButton()
+        Dim rgRasfoire As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgRulare As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgSchema As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgPagina As KBotRibbonGroup = New KBotRibbonGroup()
@@ -63,6 +65,7 @@ Partial Class MainForm
         Dim rgFisiere As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgVercon As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgScripturi As KBotRibbonGroup = New KBotRibbonGroup()
+        Dim fldNavLog As KBotRibbonField = New KBotRibbonField()
         Dim rtBaze As KBotRibbonTab = New KBotRibbonTab()
         Dim rtDrepturi As KBotRibbonTab = New KBotRibbonTab()
         Dim rtMonitorizare As KBotRibbonTab = New KBotRibbonTab()
@@ -108,6 +111,7 @@ Partial Class MainForm
         viewScripts = New ScriptsView()
         viewSchemaGraph = New SchemaGraphView()
         viewSchemaHistory = New SchemaHistoryView()
+        viewDbBrowser = New DbBrowserView()
         CType(navMode, ComponentModel.ISupportInitialize).BeginInit()
         pnlRoot.SuspendLayout()
         pnlStatus.SuspendLayout()
@@ -148,7 +152,7 @@ Partial Class MainForm
         capBar.OnCloseMinimizeToTray = True
         capBar.ShowMaximize = True
         capBar.ShowMinimize = True
-        capBar.ShowThemeButton = False
+        capBar.ShowThemeButton = True
         capBar.Size = New Size(1278, 44)
         capBar.TabIndex = 0
         capBar.TabStop = False
@@ -156,6 +160,13 @@ Partial Class MainForm
         '
         ' ribbon: the pages and the actions, grouped by what they are for
         '
+        rbTabele.Image = AdminIcons.Get("database")
+        rbTabele.Key = "tabele"
+        rbTabele.Text = "Tabele"
+        rbTabele.ToolTipHeader = "Tabele"
+        rbTabele.ToolTipText = "Deschide, doar pentru citire, tabelele bazei alese: rândurile, informațiile despre tabel și despre coloana aleasă, cu cheile primare și străine."
+        rgRasfoire.Buttons.Add(rbTabele)
+        rgRasfoire.Text = "Răsfoire"
         rbComenzi.Image = AdminIcons.Get("database")
         rbComenzi.Key = "comenzi"
         rbComenzi.Text = "Comenzi"
@@ -188,6 +199,7 @@ Partial Class MainForm
         rgSchema.Buttons.Add(rbSincronizare)
         rgSchema.Buttons.Add(rbDemo)
         rgSchema.Text = "Schemă și date"
+        rtBaze.Groups.Add(rgRasfoire)
         rtBaze.Groups.Add(rgRulare)
         rtBaze.Groups.Add(rgSchema)
         rtBaze.Text = "Baze de date"
@@ -347,6 +359,14 @@ Partial Class MainForm
         rtPublicare.Text = "Publicare"
         ribbon.Dock = DockStyle.Top
         ribbon.Location = New Point(0, 44)
+        fldNavLog.Caption = "Jurnal navigare"
+        fldNavLog.Key = "tabele_log"
+        fldNavLog.Kind = KBotRibbonFieldKind.Check
+        fldNavLog.ToolTipHeader = "Jurnal navigare"
+        fldNavLog.ToolTipText = "Scrie în Logs\tabele_navigare.log tot ce face pagina la plimbarea prin tabele: clicurile pe celulele legate, legăturile găsite, valorile cerute, ce se citește din memorie sau de pe server, listele de înapoi / înainte și istoricul." & vbLf & "Oprit la fiecare pornire a programului."
+        fldNavLog.Visible = False
+        fldNavLog.Width = 150
+        ribbon.RightGroup.Fields.Add(fldNavLog)
         ribbon.Margin = New Padding(0)
         ribbon.Name = "ribbon"
         ribbon.SelectedTabIndex = 0
@@ -486,8 +506,6 @@ Partial Class MainForm
         treeDb.RootExpander = False
         treeDb.Size = New Size(292, 446)
         treeDb.TabIndex = 1
-        tips.SetToolTipHeader(treeDb, "Bazele de date și conturile lor")
-        tips.SetToolTipText(treeDb, "Alege baza pe care lucrează paginile din dreapta." & vbLf & "<TOATE BAZELE> = toate bazele de unitate (fără AVACONT_SURSA și AVACONT_COMUN)." & vbLf & "Un cont legat de mai multe baze apare sub fiecare." & vbLf & "Un clic pe un cont alege baza lui și contul, pentru pagina «Conturi și drepturi»." & vbLf & "Căsuțele bifează rândurile; bifa unui rând cu copii bifează și copiii lui.")
         '
         ' chkAll: ticks (or unticks) every row of the tree
         '
@@ -524,6 +542,9 @@ Partial Class MainForm
         pnlViews.Controls.Add(viewScripts)
         pnlViews.Controls.Add(viewSchemaGraph)
         pnlViews.Controls.Add(viewSchemaHistory)
+        pnlViews.Controls.Add(viewDbBrowser)
+        viewDbBrowser.Dock = DockStyle.Fill
+        viewDbBrowser.Visible = False
         viewSchemaHistory.Dock = DockStyle.Fill
         viewSchemaHistory.Visible = False
         viewSchemaGraph.Dock = DockStyle.Fill
@@ -767,4 +788,5 @@ Partial Class MainForm
     Friend WithEvents viewScripts As ScriptsView
     Friend WithEvents viewSchemaGraph As SchemaGraphView
     Friend WithEvents viewSchemaHistory As SchemaHistoryView
+    Friend WithEvents viewDbBrowser As DbBrowserView
 End Class

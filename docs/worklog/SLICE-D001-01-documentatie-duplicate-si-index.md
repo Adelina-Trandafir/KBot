@@ -2,6 +2,8 @@
 
 Reunire documentară SLICE-D003-23: etapele, bilanțurile, inventarele și limitele sunt cele consemnate la data lor. Rubricile administrative sunt marcate în paragrafe; ancorele fiecărei etape păstrează navigarea.
 
+Cadru istoric comun D001-01…06 (centralizat în D003-84): numai lectură și analiză documentară/de proiectare, fără teste, builduri, aplicații sau SQL; fără verificatoare de ajutor în 01/02, fără verificatoare în 03…06. Nu s-au executat Git în 01…04 sau acces MariaDB în 02…04/06. Reorganizarea nu certifică funcționalitățile, publicarea ori mediul utilizatorului și nu extinde confirmările operatorului. Probele din documentele absorbite rămân istorice, nererulate. În inventare, căile `SLICE-*.md` sunt relative la `docs/worklog/`; celelalte păstrează baza indicată.
+
 ## SLICE-D001-01 — Documentație: duplicate și index <a id="slice-d001-01"></a>
 
 Data: 24.10.2026. Familia documentară `SLICE-Dnnn-nn`, stabilită de utilizator.
@@ -14,9 +16,9 @@ Data: 24.10.2026. Familia documentară `SLICE-Dnnn-nn`, stabilită de utilizator
 
 - README-ul generic devine un index de documentație. Cerințele specifice noutăților sunt păstrate, iar formatul este delegat ghidului existent, fără redefinirea lui. Bilanțul lotului: 227 de rânduri mai puțin, incluzând cele două fișiere noi necesare urmăririi familiei D (registrul și acest jurnal).
 
-<a id="slice-d001-01-files-touched"></a><a id="files-touched"></a>**Files touched** — `README.md`; `implementare_vercon_v2.md`; `docs/worklog/SLICE-KE01-02-fisa-angajament.md`; `docs/worklog/KBOT_STATUS.md`; registrul `state/KBOT_STATUS_D000-D009.md`; acest jurnal.
+<a id="slice-d001-01-files-touched"></a><a id="files-touched"></a>**Files touched** — `README.md`; `implementare_vercon_v2.md`; `SLICE-KE01-02-fisa-angajament.md`; `docs/worklog/KBOT_STATUS.md`; registrul `state/KBOT_STATUS_D000-D009.md`; acest jurnal.
 
-<a id="slice-d001-01-test-results"></a><a id="test-results"></a>**Test results** — Numai analiză de text și de proiectare: cele șase corpuri retrase au fost comparate integral cu destinațiile, cu normalizarea sfârșiturilor de rând. Nu s-au rulat teste, builduri, aplicații, verificatoare de ajutor, comenzi Git sau SQL. Nu se schimbă starea validării vreunei funcționalități.
+<a id="slice-d001-01-test-results"></a><a id="test-results"></a>**Test results** — Cadrul comun; cele șase corpuri retrase au fost comparate integral cu destinațiile, cu normalizarea sfârșiturilor de rând.
 
 <a id="slice-d001-01-unverified--deferred"></a><a id="unverified--deferred"></a>**Unverified / deferred**
 
@@ -41,7 +43,7 @@ Data: 24.10.2026. Continuarea curățării documentației D001. Bilanț: 41 de r
 
 <a id="slice-d001-02-files-touched"></a>**Files touched** — `docs/worklog/KBOT_STATUS.md`; `implementare_vercon_v2.md`; worklogurile ADE9-05 și VC08-03; registrul `state/KBOT_STATUS_D000-D009.md`; acest jurnal.
 
-<a id="slice-d001-02-test-results"></a>**Test results** — Numai citire și analiză de proiectare a textelor sursă/destinație. Nu s-au rulat teste, builduri, verificatoare de ajutor, aplicații, Git, SQL sau acces MariaDB. Nu se modifică stările de probare/publicare ale funcționalităților.
+<a id="slice-d001-02-test-results"></a>**Test results** — Cadrul comun; comparație sursă/destinație.
 
 <a id="slice-d001-02-unverified--deferred"></a>**Unverified / deferred** — Modificările sunt locale, fără commit/push. Restul jurnalului general, statusurile/modulele rămase și comasarea fișierelor se continuă separat. AVACONT, documentația activă AV/AVACONT, fișierele CLAUDE și ajutorul runtime rămân excluse.
 
@@ -62,7 +64,7 @@ Trimiterile de navigare folosesc acum planurile din worklog. Referințele la că
 
 <a id="slice-d001-03-files-touched"></a>**Files touched** — Planurile Tier1/MainForm/TreeDataApi și jurnalul 0008; stările 0000–0009 și 0020–0029; jurnalul 0020-05; indexul global și registrul D; acest jurnal. Cele patru fișiere din tabel sunt eliminate după transfer.
 
-<a id="slice-d001-03-test-results"></a>**Test results** — Numai citire, căutarea trimiterilor și analiza documentară sursă/destinație. Nu s-au rulat teste, builduri, verificatoare, aplicații, Git, SQL sau acces MariaDB. Rezultatele de test din documentele absorbite sunt istorice; nu au fost rerulate.
+<a id="slice-d001-03-test-results"></a>**Test results** — Cadrul comun; căutarea trimiterilor și comparație sursă/destinație.
 
 <a id="slice-d001-03-unverified--deferred"></a>**Unverified / deferred** — Modificări locale, fără commit/push. AVACONT, documentația activă AV/AVACONT, fișierele CLAUDE și ajutorul runtime rămân excluse. Navigarea și mecanismele runtime nu au fost executate. Restul consolidării continuă în D001-04.
 
@@ -181,19 +183,19 @@ Secțiunea de theming trimite la C1/C5 pentru controalele custom. Modelul vechi 
 | Fișier | Operație | Diferență rânduri |
 |---|---|---:|
 | implementare_vercon_v2.md | Actualizat | -1696 |
-| docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md | Actualizat | 2 |
-| docs/worklog/SLICE-VC06-11-efactura-asociere-nir-partiala.md | Actualizat | 4 |
+| SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md | Actualizat | 2 |
+| SLICE-VC06-11-efactura-asociere-nir-partiala.md | Actualizat | 4 |
 | ADECHIT/STARE_LA_PAUZA.md | Absorbit și retras | -70 |
 | ADECHIT_STATUS.md | Actualizat | -201 |
 | docs/worklog/state/ADECHIT_STATUS_ADE0-ADE9.md | Actualizat | 0 |
-| docs/worklog/SLICE-ADE6-24-educatori-email-cnp.md | Actualizat | 8 |
+| SLICE-ADE6-24-educatori-email-cnp.md | Actualizat | 8 |
 | PYTHON/AGENTS.md | Actualizat | 0 |
 | docs/worklog/state/KBOT_STATUS_D000-D009.md | Actualizat | 1 |
 | docs/worklog/KBOT_STATUS.md | Actualizat | 0 |
-| docs/worklog/SLICE-VC09-05-reglare-registru-oi-si-produs-la-migrare.md | Actualizat | 4 |
-| docs/worklog/SLICE-VC06-07-nir-din-efactura-lista-si-completare.md | Actualizat | 4 |
-| docs/worklog/SLICE-VC06-08-nir-din-efactura-inchiderea-trimiterii.md | Actualizat | 4 |
-| docs/worklog/SLICE-VC09-01-ajutor-vercon-si-chat.md | Actualizat | 2 |
+| SLICE-VC09-05-reglare-registru-oi-si-produs-la-migrare.md | Actualizat | 4 |
+| SLICE-VC06-07-nir-din-efactura-lista-si-completare.md | Actualizat | 4 |
+| SLICE-VC06-08-nir-din-efactura-inchiderea-trimiterii.md | Actualizat | 4 |
+| SLICE-VC09-01-ajutor-vercon-si-chat.md | Actualizat | 2 |
 | PYTHON/docs/chat/PROIECT.md | Actualizat | 52 |
 | PYTHON/docs/worklog/INTERVENTII_WEB_2026-10.md | Creat | 94 |
 | PYTHON/docs/worklog/ADECHIT-cautare-copii-in-luna.md | Absorbit și retras | -27 |
@@ -210,22 +212,22 @@ Secțiunea de theming trimite la C1/C5 pentru controalele custom. Modelul vechi 
 | PYTHON/docs/worklog/UI-tooltip-noduri-doar-text-trunchiat.md | Absorbit și retras | -27 |
 | PYTHON/docs/worklog/VERCON-meniu-intrari-efactura.md | Absorbit și retras | -14 |
 | docs/worklog/state/KBOT_STATUS_CHAT.md | Actualizat | 0 |
-| docs/worklog/SLICE-CHAT-08-robot-si-balon.md | Actualizat | 0 |
+| SLICE-CHAT-08-robot-si-balon.md | Actualizat | 0 |
 | docs/HANDOFF_0081_DDF_Trimitere.md | Absorbit și retras | -89 |
 | docs/PLAN_DDF_Trimitere.md | Actualizat | 10 |
-| docs/worklog/SLICE-0081-01-starea-reviziei.md | Actualizat | 0 |
+| SLICE-0081-01-starea-reviziei.md | Actualizat | 0 |
 | docs/worklog/state/KBOT_STATUS_0080-0089.md | Actualizat | 0 |
-| docs/worklog/SLICE-0048-05-graficul-evolutiei.md | Actualizat | 607 |
-| docs/worklog/SLICE-0048-06-culorile-graficului-si-clic-pe-punct.md | Absorbit și retras | -210 |
-| docs/worklog/SLICE-0048-07-benzi-si-retragerea-f13.md | Absorbit și retras | -390 |
-| docs/worklog/SLICE-0048-08-benzi-lizibile-si-doua-vederi.md | Absorbit și retras | -234 |
-| docs/worklog/SLICE-0048-09-total-receptii-pe-reperul-platii.md | Absorbit și retras | -118 |
+| SLICE-0048-05-graficul-evolutiei.md | Actualizat | 607 |
+| SLICE-0048-06-culorile-graficului-si-clic-pe-punct.md | Absorbit și retras | -210 |
+| SLICE-0048-07-benzi-si-retragerea-f13.md | Absorbit și retras | -390 |
+| SLICE-0048-08-benzi-lizibile-si-doua-vederi.md | Absorbit și retras | -234 |
+| SLICE-0048-09-total-receptii-pe-reperul-platii.md | Absorbit și retras | -118 |
 | docs/worklog/state/KBOT_STATUS_0040-0049.md | Actualizat | -91 |
-| docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md | Actualizat | 66 |
+| SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md | Actualizat | 66 |
 | VERCON/REGISTRU_OI_MF.md | Actualizat | 19 |
-| docs/worklog/SLICE-VC06-04-br-si-fcs.md | Actualizat | 25 |
+| SLICE-VC06-04-br-si-fcs.md | Actualizat | 25 |
 | VERCON/VRC.Migrator/README.md | Actualizat | 10 |
-| docs/worklog/SLICE-VC07-OI-conturi-documente-rapoarte.md | Actualizat | 2 |
+| SLICE-VC07-OI-conturi-documente-rapoarte.md | Actualizat | 2 |
 | VERCON/CODEX_SCHIMBARI_MIGRATOR_2026-10-18.md | Absorbit și retras | -116 |
 | VERCON/PROBE_ACCES.md | Actualizat | 121 |
 | VERCON/PROBE_BROWSER.md | Absorbit și retras | -81 |
@@ -233,24 +235,24 @@ Secțiunea de theming trimite la C1/C5 pentru controalele custom. Modelul vechi 
 | VERCON/MOCKUPURI/2026-10-12-corectate/INDEX.md | Actualizat | 0 |
 | VERCON/MOCKUPURI/2026-10-12-corectate-v2/INDEX.md | Actualizat | 0 |
 | VERCON/VERCON_STATUS.md | Actualizat | -36 |
-| docs/worklog/SLICE-VC02-05-probe-browser-si-ajutor.md | Actualizat | 0 |
-| docs/worklog/SLICE-VC07-05-verificare-end-to-end-pe-tipuri.md | Actualizat | 0 |
+| SLICE-VC02-05-probe-browser-si-ajutor.md | Actualizat | 0 |
+| SLICE-VC07-05-verificare-end-to-end-pe-tipuri.md | Actualizat | 0 |
 | VERCON/ANALIZA_FLUX_NIR_2026-10-16.md | Actualizat | -132 |
 | docs/PLAN_AutoProvisioning.md | Actualizat | -40 |
 | ADECHIT/DECIZII_DESCHISE.md | Actualizat | -22 |
 | docs/KE_PLAN.md | Actualizat | 0 |
 | docs/EV_PLAN.md | Actualizat | 0 |
 | docs/web-tooltip.md | Actualizat | 10 |
-| docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md | Actualizat | 23 |
-| docs/worklog/SLICE-0048-03-pasii-3-8-si-contractul-in-doua-faze.md | Actualizat | 4 |
-| docs/worklog/SLICE-0048-03-completare.md | Actualizat | 4 |
+| SLICE-VC08-03-rapoarte-magazie-alimente.md | Actualizat | 23 |
+| SLICE-0048-03-pasii-3-8-si-contractul-in-doua-faze.md | Actualizat | 4 |
+| SLICE-0048-03-completare.md | Actualizat | 4 |
 | docs/PLAN_ForexeIngest.md | Actualizat | -42 |
 | docs/kbot-forms-ui-convention.md | Actualizat | -9 |
-| docs/worklog/SLICE-D001-04-consolidare-extinsa-documentatie.md | Creat; jurnalul prezent | Inclus în bilanț |
+| SLICE-D001-04-consolidare-extinsa-documentatie.md | Creat; jurnalul prezent | Inclus în bilanț |
 
 Bilanț D001-04: 67 căi atinse; 20 fișiere și 2539 rânduri mai puține net. Cumulat D001-01…04: 3128 rânduri și 20 fișiere mai puține. Nu este doar mutare într-o arhivă; conținutul duplicat este înlocuit efectiv cu trimiteri.
 
-<a id="slice-d001-04-test-results"></a>**Test results** — Numai lectură, căutarea referințelor și analiză documentară sursă → destinație. Fără teste, builduri, verificatoare, aplicații, SQL, MariaDB sau Git. Confirmările istorice ale operatorului nu reprezintă verificări efectuate acum.
+<a id="slice-d001-04-test-results"></a>**Test results** — Cadrul comun; căutarea referințelor și comparație sursă → destinație.
 
 <a id="slice-d001-04-unverified--deferred"></a>**Unverified / deferred** — Lot închis la 9% rămas din limita de 5 ore, conform pragului utilizatorului. Modificări locale, fără commit/push. AVACONT, documentația activă AV/AVACONT, orice CLAUDE.md și variantele sale istorice rămân excluse. Nu s-au modificat ajutorul runtime sau sursele importate; navigarea nu a fost executată. Restul consolidării rămâne pentru SLICE-D001-05; exporturile de sursă, ajutorul funcțional și documentele cu dependențe de nume cer mapare separată înaintea unei eventuale absorbții. Inventarul inițial este o fotografie anterioară modificărilor, nu un contor curent.
 
@@ -278,32 +280,32 @@ Data: 24–25.10.2026. Continuarea loturilor documentare D001, aplicată local. 
 | `VERCON/FLUXURI_UI.md` | 27 |
 | `VERCON/SCHEMA_VC.md` | 17 |
 | `VERCON/CONTRACT_CALCULE.md` | 6 |
-| `docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md` | 44 |
+| `SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md` | 44 |
 | `VERCON/FACTURI_NIR_IMPLEMENTARE.md` | -1 |
-| `docs/worklog/SLICE-0078-07-adobe-redimensionat-singur.md` | 64 |
-| `docs/worklog/SLICE-0078-08-arbore-blocat-cat-se-deschide-pdf.md` | 86 |
-| `docs/worklog/SLICE-0078-09-intrebarea-adobe-la-inchidere.md` | 80 |
-| `docs/worklog/SLICE-0078-11-procese-adobe-fantoma-la-inchidere.md` | 45 |
-| `docs/worklog/SLICE-0078-12-fereastra-gazduita-adobe-vechi.md` | 98 |
-| `docs/worklog/SLICE-0078-13-confirmare-suprascriere-si-f8.md` | 30 |
-| `docs/worklog/SLICE-0078-14-avertisment-adobe-vechi.md` | 46 |
-| `docs/worklog/SLICE-0078-05-fereastra-gazduita-ctrl-h.md` | -490 |
+| `SLICE-0078-07-adobe-redimensionat-singur.md` | 64 |
+| `SLICE-0078-08-arbore-blocat-cat-se-deschide-pdf.md` | 86 |
+| `SLICE-0078-09-intrebarea-adobe-la-inchidere.md` | 80 |
+| `SLICE-0078-11-procese-adobe-fantoma-la-inchidere.md` | 45 |
+| `SLICE-0078-12-fereastra-gazduita-adobe-vechi.md` | 98 |
+| `SLICE-0078-13-confirmare-suprascriere-si-f8.md` | 30 |
+| `SLICE-0078-14-avertisment-adobe-vechi.md` | 46 |
+| `SLICE-0078-05-fereastra-gazduita-ctrl-h.md` | -490 |
 | `docs/worklog/state/KBOT_STATUS_0070-0079.md` | 0 |
-| `docs/worklog/SLICE-D001-05-contracte-nir-si-istoric-adobe.md` | -56 |
+| `SLICE-D001-05-contracte-nir-si-istoric-adobe.md` | -56 |
 | `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -2 |
 | `docs/worklog/KBOT_STATUS.md` | 0 |
-| `docs/worklog/SLICE-0078-04-sectiunea-b-peste-semnat.md` | -152 |
-| `docs/worklog/SLICE-0078-06-sectiunea-b-angajament-nou.md` | 145 |
-| `docs/worklog/SLICE-0078-03-jurnal-activex.md` | -42 |
-| `docs/worklog/SLICE-0078-16-lane-jurnal-activex.md` | 35 |
+| `SLICE-0078-04-sectiunea-b-peste-semnat.md` | -152 |
+| `SLICE-0078-06-sectiunea-b-angajament-nou.md` | 145 |
+| `SLICE-0078-03-jurnal-activex.md` | -42 |
+| `SLICE-0078-16-lane-jurnal-activex.md` | 35 |
 | `VERCON/CONTROALE_CUSTOM_THREAD.md` | -14 |
 | `implementare_vercon_v2.md` | 587 |
-| `docs/worklog/SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md` | -96 |
-| `docs/worklog/SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md` | -39 |
+| `SLICE-VC06-01-nomenclatoare-si-configurarea-gestiunii.md` | -96 |
+| `SLICE-VC08-11-rapoarte-oi-structura-si-selectie.md` | -39 |
 
 Bilanț: 25 de căi atinse, 9 fișiere retrase și un jurnal nou; **8 fișiere și 418 rânduri eliminate net** în lot. Cumul D001-01…05: **28 de fișiere și 3546 rânduri eliminate net**.
 
-<a id="slice-d001-05-test-results"></a>**Test results** — Numai citire și analiză documentară sursă/destinație. Nu s-au rulat teste, builduri, verificatoare, aplicații sau SQL. Rezultatele din jurnalele absorbite sunt istorice. Stage-ul cerut de utilizator pentru D001-01…04 conține numai Markdown-ul propriu; fragmentele AVACONT din registrele comune sunt excluse. Fără commit/push.
+<a id="slice-d001-05-test-results"></a>**Test results** — Cadrul comun; comparație sursă/destinație. Stage-ul cerut de utilizator pentru D001-01…04 conține numai Markdown-ul propriu; fragmentele AVACONT din registrele comune sunt excluse. Fără commit/push.
 
 <a id="slice-d001-05-unverified--deferred"></a>**Unverified / deferred** — Lot închis documentar; consolidarea continuă în D001-06. AVACONT, documentația activă AV și fișierele CLAUDE sunt excluse. Ajutorul runtime, codul și exporturile sursă nu sunt modificate. Nu se certifică funcționarea linkurilor în aplicație sau starea mediului utilizatorului prin reorganizare editorială.
 
@@ -327,21 +329,21 @@ Data: 25.10.2026. Lot documentar aplicat local, continuarea D001-05.
 
 | Cale | Rânduri |
 |---|---|
-| `docs/worklog/SLICE-VC07-01-lista-alimente.md` | -46 |
+| `SLICE-VC07-01-lista-alimente.md` | -46 |
 | `implementare_vercon_v2.md` | 648 |
-| `docs/worklog/SLICE-VC08-03-rapoarte-magazie-alimente.md` | -38 |
-| `docs/worklog/SLICE-D001-06-liste-si-rapoarte-vercon.md` | -44 |
+| `SLICE-VC08-03-rapoarte-magazie-alimente.md` | -38 |
+| `SLICE-D001-06-liste-si-rapoarte-vercon.md` | -44 |
 | `docs/worklog/state/KBOT_STATUS_D000-D009.md` | -2 |
 | `docs/worklog/KBOT_STATUS.md` | 0 |
-| `docs/worklog/SLICE-VC05-03-writer-atomic-si-maparea-cheilor.md` | -12 |
-| `docs/worklog/SLICE-VC05-09-rezultat-colorat-si-ordinea-butoanelor.md` | -6 |
-| `docs/worklog/SLICE-VC06-04-br-si-fcs.md` | -27 |
-| `docs/worklog/SLICE-VC06-03-bc-si-controlul-disponibilului.md` | -15 |
-| `docs/worklog/SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md` | -26 |
+| `SLICE-VC05-03-writer-atomic-si-maparea-cheilor.md` | -12 |
+| `SLICE-VC05-09-rezultat-colorat-si-ordinea-butoanelor.md` | -6 |
+| `SLICE-VC06-04-br-si-fcs.md` | -27 |
+| `SLICE-VC06-03-bc-si-controlul-disponibilului.md` | -15 |
+| `SLICE-VC06-06-facturi-comune-corectii-nir-si-schema-unica.md` | -26 |
 | `VERCON/CONTROALE_CUSTOM_THREAD.md` | -2 |
 
 Bilanț: **12 căi, 430 rânduri eliminate net**, un jurnal nou și niciun fișier retras în acest lot. Cumul D001-01…06: **27 fișiere și 3976 rânduri mai puțin**.
 
-<a id="slice-d001-06-test-results"></a>**Test results** — Numai citire și analiză documentară; fără teste, builduri, verificatoare, aplicații, SQL sau acces MariaDB. Probe și operații de publicare descrise în istoric nu sunt executate acum. Stage selectiv numai pentru Markdown propriu, conform cererii utilizatorului; fără commit/push.
+<a id="slice-d001-06-test-results"></a>**Test results** — Cadrul comun; operațiile de publicare istorice nu sunt executate acum. Stage selectiv numai pentru Markdown propriu, conform cererii utilizatorului; fără commit/push.
 
 <a id="slice-d001-06-unverified--deferred"></a>**Unverified / deferred** — Lot închis documentar; consolidarea continuă în D001-07. AVACONT, documentația activă AV, fișierele CLAUDE, ajutorul runtime și exporturile sursă sunt excluse. Nu se certifică starea funcțională prin reorganizare.

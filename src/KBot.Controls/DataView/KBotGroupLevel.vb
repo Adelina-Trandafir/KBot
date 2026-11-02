@@ -146,6 +146,26 @@ Public NotInheritable Class KBotGroupLevel
     Private _keyPattern As String
     Private _keyRegex As Regex
 
+    ''' <summary>
+    ''' Which part of a DATE the level groups on: <see cref="KBotGroupDatePart.Day"/> (the time of day is ignored), Month or Year. Default
+    ''' <see cref="KBotGroupDatePart.None"/> = the displayed text is the key. Read only for a DateTime column whose cell holds a date; the
+    ''' group title is dd.MM.yyyy, MM.yyyy or yyyy and the groups are ordered by the date, not by that text. Wins over <see cref="KeyPattern"/>.
+    ''' </summary>
+    <Category("K-BOT: Grupare")>
+    <Description("Partea din data dupa care se grupeaza (zi, luna, an); ora nu conteaza. None = textul afisat.")>
+    <DefaultValue(KBotGroupDatePart.None)>
+    Public Property DatePart As KBotGroupDatePart
+        Get
+            Return _datePart
+        End Get
+        Set(value As KBotGroupDatePart)
+            If _datePart = value Then Return
+            _datePart = value
+            Notifica(structural:=True)
+        End Set
+    End Property
+    Private _datePart As KBotGroupDatePart = KBotGroupDatePart.None
+
     ''' <summary>The level cuts its key with a pattern (see <see cref="KeyPattern"/>).</summary>
     <Browsable(False)>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>

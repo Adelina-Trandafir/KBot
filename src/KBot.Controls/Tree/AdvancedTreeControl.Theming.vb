@@ -37,6 +37,14 @@ Partial Public Class AdvancedTreeControl
     Private _autoSelectedBorder As Color = Color.FromArgb(150, 180, 255)
     Private _autoLine As Color = Color.FromArgb(160, 160, 160)
     Private _autoBorder As Color = Color.Transparent
+    ' Check boxes / radio buttons and the [+]/[-] expander: the pre-theme look (white box, blue fill).
+    Private _autoCheckBack As Color = Color.White
+    Private _autoCheckBorder As Color = Color.FromArgb(180, 180, 180)
+    Private _autoCheckAccent As Color = Color.DodgerBlue
+    Private _autoCheckLocked As Color = Color.FromArgb(170, 170, 170)
+    Private _autoCheckMark As Color = Color.White
+    Private _autoExpanderBack As Color = Color.White
+    Private _autoExpanderSign As Color = Color.Black
     Private _autoTooltipBack As Color = Color.FromArgb(255, 255, 232)
     Private _autoTooltipFore As Color = Color.FromArgb(50, 50, 60)
 
@@ -248,6 +256,13 @@ Partial Public Class AdvancedTreeControl
             _autoSelectedBack = p.ButtonPressedColor
             _autoSelectedBorder = p.AccentColor
             _autoLine = p.BorderColor
+            _autoCheckBack = p.InputBackColor
+            _autoCheckBorder = p.InputBorderColor
+            _autoCheckAccent = p.AccentColor
+            _autoCheckLocked = p.DisabledTextColor
+            _autoCheckMark = p.AccentTextColor
+            _autoExpanderBack = p.InputBackColor
+            _autoExpanderSign = p.TextColor
             _autoBorder = Color.Transparent
             _autoTooltipBack = p.SurfaceColor
             _autoTooltipFore = p.TextColor

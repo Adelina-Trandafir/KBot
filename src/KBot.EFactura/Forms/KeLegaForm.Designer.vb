@@ -190,8 +190,6 @@ Partial Class KeLegaForm
         tree.RightTextWidth = 90
         tree.Size = New System.Drawing.Size(345, 371)
         tree.TabIndex = 0
-        tips.SetToolTipHeader(tree, "Facturile de recepționat")
-        tips.SetToolTipText(tree, "Facturile primite, pe furnizori. Bifați cele care intră în această recepție. Cele deja recepționate sunt bifate și nu se mai pot schimba; un clic pe ele arată recepția și produsele lor. Lupa din antet caută după furnizor sau după numărul facturii.")
         '
         ' pnlLinii: the title and the lines of the ticked invoices
         '

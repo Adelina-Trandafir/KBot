@@ -374,7 +374,7 @@ Public Class KBotDataViewAutoSizeTests
 
     Private Shared Function VScrollVisible(dv As KBotDataView) As Boolean
         For Each c As Control In dv.Controls
-            If TypeOf c Is VScrollBar Then Return c.Visible
+            If TypeOf c Is KBotScrollBar AndAlso DirectCast(c, KBotScrollBar).Orientation = Orientation.Vertical Then Return c.Visible
         Next
         Return False
     End Function

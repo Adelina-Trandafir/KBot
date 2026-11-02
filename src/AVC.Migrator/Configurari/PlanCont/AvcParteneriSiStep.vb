@@ -213,7 +213,7 @@ Friend NotInheritable Class AvcParteneriSiStep
             End If
             If _set.UnitsWithoutTable.Count > 0 Then
                 k_findings.Add(New Finding(Finding.TABEL_LIPSA, FindingClass.Informativ, AccessTable, String.Empty,
-                                           "Fișierul Access nu are tabelul «ParteneriSI» la unitățile: " & String.Join(", ", _set.UnitsWithoutTable) & "."))
+                                           "Fișierul Access nu are tabelul «ParteneriSI» la unitățile: " & String.Join(", ", _set.UnitsWithoutTable.Select(Function(k_uid) k_context.UnitLabel(k_uid))) & "."))
             End If
             If _set.MissingColumns.Count > 0 Then
                 k_findings.Add(New Finding(AvcKinds.SOLD_PARTENER_INVALID, FindingClass.Blocant, "TZ_SoldInitial", String.Empty,
@@ -368,8 +368,7 @@ Friend NotInheritable Class AvcParteneriSiStep
     End Function
 
     Private Shared Function UnitLabel(k_context As AvcContext, k_idUnitate As Integer) As String
-        Dim k_unit = k_context.Units.FirstOrDefault(Function(u) u.IdUnitate = k_idUnitate)
-        Return If(k_unit Is Nothing, k_idUnitate.ToString(CultureInfo.InvariantCulture), $"{k_idUnitate} ({k_unit.NumeUnitate})")
+        Return k_context.UnitLabel(k_idUnitate)
     End Function
 
     Public Overrides Function Write(k_context As AvcContext, k_cn As MySqlConnection, k_transaction As MySqlTransaction,
@@ -415,6 +414,7 @@ Friend NotInheritable Class AvcParteneriSiStep
                     k_dump.WriteStatement("TZ_SoldInitial", AvcSql.RenderStatement(k_sql, k_values))
                     k_cmd.ExecuteNonQuery()
                     k_written += 1
+                    k_context.Tick(k_written, k_toWrite.Count, "«TZ_SoldInitial»: solduri pe parteneri")
                     If k_written Mod 100 = 0 Then
                         k_dump.FlushAll()
                         k_progress.Report($"«TZ_SoldInitial»: {k_written} din {k_toWrite.Count} solduri pe parteneri pregătite (confirmate la COMMIT).")

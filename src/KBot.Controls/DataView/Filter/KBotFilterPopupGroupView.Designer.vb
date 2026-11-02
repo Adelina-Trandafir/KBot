@@ -34,6 +34,10 @@ Partial Class KBotFilterPopupGroupView
         pnlGroupDirection = New Panel()
         rbGroupDesc = New RadioButton()
         rbGroupAsc = New RadioButton()
+        pnlGroupDatePart = New Panel()
+        rbPartYear = New RadioButton()
+        rbPartMonth = New RadioButton()
+        rbPartDay = New RadioButton()
         sepGroup = New Panel()
         chkGroupHeader = New CheckBox()
         chkGroupFooter = New CheckBox()
@@ -44,6 +48,7 @@ Partial Class KBotFilterPopupGroupView
         lstLevels = New ListBox()
         tlyGroup.SuspendLayout()
         pnlGroupDirection.SuspendLayout()
+        pnlGroupDatePart.SuspendLayout()
         SuspendLayout()
         '
         ' tlyGroup
@@ -52,20 +57,22 @@ Partial Class KBotFilterPopupGroupView
         tlyGroup.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100.0F))
         tlyGroup.Controls.Add(chkGroupBy, 0, 0)
         tlyGroup.Controls.Add(pnlGroupDirection, 0, 1)
-        tlyGroup.Controls.Add(sepGroup, 0, 2)
-        tlyGroup.Controls.Add(chkGroupHeader, 0, 3)
-        tlyGroup.Controls.Add(chkGroupFooter, 0, 4)
-        tlyGroup.Controls.Add(chkGroupHeaderAggregates, 0, 5)
-        tlyGroup.Controls.Add(chkGroupCollapsible, 0, 6)
-        tlyGroup.Controls.Add(chkGroupStartCollapsed, 0, 7)
-        tlyGroup.Controls.Add(lblLevels, 0, 8)
-        tlyGroup.Controls.Add(lstLevels, 0, 9)
+        tlyGroup.Controls.Add(pnlGroupDatePart, 0, 2)
+        tlyGroup.Controls.Add(sepGroup, 0, 3)
+        tlyGroup.Controls.Add(chkGroupHeader, 0, 4)
+        tlyGroup.Controls.Add(chkGroupFooter, 0, 5)
+        tlyGroup.Controls.Add(chkGroupHeaderAggregates, 0, 6)
+        tlyGroup.Controls.Add(chkGroupCollapsible, 0, 7)
+        tlyGroup.Controls.Add(chkGroupStartCollapsed, 0, 8)
+        tlyGroup.Controls.Add(lblLevels, 0, 9)
+        tlyGroup.Controls.Add(lstLevels, 0, 10)
         tlyGroup.Dock = DockStyle.Fill
         tlyGroup.Location = New Point(0, 0)
         tlyGroup.Margin = New Padding(0)
         tlyGroup.Name = "tlyGroup"
-        tlyGroup.RowCount = 10
+        tlyGroup.RowCount = 11
         tlyGroup.RowStyles.Add(New RowStyle(SizeType.Absolute, 34.0F))
+        tlyGroup.RowStyles.Add(New RowStyle(SizeType.Absolute, 30.0F))
         tlyGroup.RowStyles.Add(New RowStyle(SizeType.Absolute, 30.0F))
         tlyGroup.RowStyles.Add(New RowStyle(SizeType.Absolute, 13.0F))
         tlyGroup.RowStyles.Add(New RowStyle(SizeType.Absolute, 28.0F))
@@ -75,7 +82,7 @@ Partial Class KBotFilterPopupGroupView
         tlyGroup.RowStyles.Add(New RowStyle(SizeType.Absolute, 28.0F))
         tlyGroup.RowStyles.Add(New RowStyle(SizeType.Absolute, 26.0F))
         tlyGroup.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
-        tlyGroup.Size = New Size(334, 452)
+        tlyGroup.Size = New Size(334, 482)
         tlyGroup.TabIndex = 0
         '
         ' chkGroupBy
@@ -126,6 +133,51 @@ Partial Class KBotFilterPopupGroupView
         rbGroupDesc.TabIndex = 1
         rbGroupDesc.Text = "Descrescător"
         rbGroupDesc.UseVisualStyleBackColor = True
+        '
+        ' pnlGroupDatePart: which part of a date the groups are made on (shown only for a date column)
+        '
+        pnlGroupDatePart.AutoSize = True
+        pnlGroupDatePart.AutoSizeMode = AutoSizeMode.GrowAndShrink
+        pnlGroupDatePart.Controls.Add(rbPartYear)
+        pnlGroupDatePart.Controls.Add(rbPartMonth)
+        pnlGroupDatePart.Controls.Add(rbPartDay)
+        pnlGroupDatePart.Dock = DockStyle.Top
+        pnlGroupDatePart.Location = New Point(26, 64)
+        pnlGroupDatePart.Margin = New Padding(26, 0, 8, 0)
+        pnlGroupDatePart.Name = "pnlGroupDatePart"
+        pnlGroupDatePart.Size = New Size(300, 25)
+        pnlGroupDatePart.TabIndex = 10
+        '
+        ' rbPartDay
+        '
+        rbPartDay.AutoSize = True
+        rbPartDay.Location = New Point(0, 3)
+        rbPartDay.Name = "rbPartDay"
+        rbPartDay.Size = New Size(60, 19)
+        rbPartDay.TabIndex = 0
+        rbPartDay.TabStop = True
+        rbPartDay.Text = "Pe zi"
+        rbPartDay.UseVisualStyleBackColor = True
+        '
+        ' rbPartMonth
+        '
+        rbPartMonth.AutoSize = True
+        rbPartMonth.Location = New Point(84, 3)
+        rbPartMonth.Name = "rbPartMonth"
+        rbPartMonth.Size = New Size(66, 19)
+        rbPartMonth.TabIndex = 1
+        rbPartMonth.Text = "Pe lună"
+        rbPartMonth.UseVisualStyleBackColor = True
+        '
+        ' rbPartYear
+        '
+        rbPartYear.AutoSize = True
+        rbPartYear.Location = New Point(174, 3)
+        rbPartYear.Name = "rbPartYear"
+        rbPartYear.Size = New Size(60, 19)
+        rbPartYear.TabIndex = 2
+        rbPartYear.Text = "Pe an"
+        rbPartYear.UseVisualStyleBackColor = True
         '
         ' sepGroup
         '
@@ -226,11 +278,13 @@ Partial Class KBotFilterPopupGroupView
         Controls.Add(tlyGroup)
         Margin = New Padding(0)
         Name = "KBotFilterPopupGroupView"
-        Size = New Size(334, 452)
+        Size = New Size(334, 482)
         tlyGroup.ResumeLayout(False)
         tlyGroup.PerformLayout()
         pnlGroupDirection.ResumeLayout(False)
         pnlGroupDirection.PerformLayout()
+        pnlGroupDatePart.ResumeLayout(False)
+        pnlGroupDatePart.PerformLayout()
         ResumeLayout(False)
     End Sub
 
@@ -239,6 +293,10 @@ Partial Class KBotFilterPopupGroupView
     Friend WithEvents pnlGroupDirection As Panel
     Friend WithEvents rbGroupAsc As RadioButton
     Friend WithEvents rbGroupDesc As RadioButton
+    Friend WithEvents pnlGroupDatePart As Panel
+    Friend WithEvents rbPartYear As RadioButton
+    Friend WithEvents rbPartMonth As RadioButton
+    Friend WithEvents rbPartDay As RadioButton
     Friend WithEvents sepGroup As Panel
     Friend WithEvents chkGroupHeader As CheckBox
     Friend WithEvents chkGroupFooter As CheckBox

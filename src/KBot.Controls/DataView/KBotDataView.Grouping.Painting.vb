@@ -134,7 +134,15 @@ Partial Class KBotDataView
         ' Slice KE12-02: the frame of a header band (a little more visible than the grid lines).
         If antet AndAlso nivel.HeaderBorder Then
             Using k_pen As New Pen(Blend(_cGroupSep, If(_schemeIsDark, Color.White, Color.Black), 0.35))
-                g.DrawRectangle(k_pen, bandRect.Left, bandRect.Top, bandRect.Width - 1, bandRect.Height - 1)
+                If RightEdgeTouchesBorder(bandRect.Right) Then
+                    ' The right side is the control's own border: leave it out of the frame.
+                    Dim k_top As Integer = bandRect.Top
+                    Dim k_bottom As Integer = bandRect.Bottom - 1
+                    g.DrawLines(k_pen, New Point() {New Point(bandRect.Right - 1, k_top), New Point(bandRect.Left, k_top),
+                                                    New Point(bandRect.Left, k_bottom), New Point(bandRect.Right - 1, k_bottom)})
+                Else
+                    g.DrawRectangle(k_pen, bandRect.Left, bandRect.Top, bandRect.Width - 1, bandRect.Height - 1)
+                End If
             End Using
         End If
 

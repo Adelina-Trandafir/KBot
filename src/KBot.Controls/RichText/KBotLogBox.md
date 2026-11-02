@@ -10,7 +10,7 @@ Read-only rich text surface for logs (slice ME01): per line the time in the acce
 Theme: `BackColor`/`ForeColor`/`Font` follow the scheme until the operator pins one (C4); a scheme change re-renders the lines with the new palette.
 
 ## Limits
-The scroll bars are the native ones. Selection and copy are the RichTextBox's own.
+The scroll bars are our own `KBotScrollBar`s (slice ME01-14): the box (and `KBotSqlBox`) derive from `KBotRichScrollBox`, which turns the native bars off and measures the document extent itself, so the bars follow the scheme; they show only while there is something to scroll (`AutoHideScrollBars`, default on) and the cursor over them is the arrow. Selection and copy are the RichTextBox's own.
 
 ## Mouse wheel
 

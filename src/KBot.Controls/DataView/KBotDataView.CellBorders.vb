@@ -78,10 +78,15 @@ Partial Class KBotDataView
     Private Sub DrawCellBorders(g As Graphics, k_cellRect As Rectangle, k_sides As KBotBorderSides, k_color As Color)
         ' Fast path: the default (right + bottom, theme colour) is nearly every cell. One line,
         ' the cached grid-line pen, no side tests, no pen lookup.
+        ' A cell that reaches the control's own border does not draw its right side: the border
+        ' is that edge, and a grid line beside it would read as a second, thicker border.
+        Dim k_touchesBorder As Boolean = RightEdgeTouchesBorder(k_cellRect.Right)
+
         If k_sides = KBotDataColumn.DefaultCellBorders AndAlso k_color.IsEmpty Then
-            g.DrawLine(_pGridLine, k_cellRect.Right - 1, k_cellRect.Top, k_cellRect.Right - 1, k_cellRect.Bottom - 1)
+            If Not k_touchesBorder Then g.DrawLine(_pGridLine, k_cellRect.Right - 1, k_cellRect.Top, k_cellRect.Right - 1, k_cellRect.Bottom - 1)
             Return
         End If
+        If k_touchesBorder Then k_sides = k_sides And Not KBotBorderSides.Right
 
         Dim k_plainBottom As Boolean = (k_sides And KBotBorderSides.Bottom) <> 0 AndAlso k_color.IsEmpty
         If Not k_plainBottom Then _rowGaps.Add(New Point(k_cellRect.Left, k_cellRect.Right))

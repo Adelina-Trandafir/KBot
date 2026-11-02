@@ -123,6 +123,7 @@ Public NotInheritable Class KBotTextBox
         AddHandler _inner.KeyDown, AddressOf OnInnerKeyDown
         AddHandler _inner.TextChanged, AddressOf OnInnerTextChanged
         AddHandler _inner.ViewChanged, AddressOf OnInnerViewChanged
+        AddHandler _inner.WheelTurned, AddressOf OnInnerWheel
 
         _vBar.Orientation = Orientation.Vertical
         _hBar.Orientation = Orientation.Horizontal
@@ -1047,7 +1048,7 @@ Public NotInheritable Class KBotTextBox
 
         Dim pozitie As Integer = SendMessage(_inner.Handle, EM_POSFROMCHAR, New IntPtr(indice), IntPtr.Zero).ToInt32()
         If pozitie = -1 Then Return 0
-        Dim x As Integer = CInt(CShort(pozitie And &HFFFF))
+        Dim x As Integer = ((pozitie And &HFFFF) Xor &H8000) - &H8000   ' signed low word (CShort throws on a negative X)
 
         Dim r As RECT = Nothing
         SendMessage(_inner.Handle, EM_GETRECT, IntPtr.Zero, r)
@@ -1082,16 +1083,26 @@ Public NotInheritable Class KBotTextBox
 
     Protected Overrides Sub OnMouseWheel(e As MouseEventArgs)
         MyBase.OnMouseWheel(e)
+        ScrolleazaCuRotita(e.Delta)
+    End Sub
+
+    ' The inner edit has no native bars, so a native EDIT ignores the wheel: the inner box hands
+    ' the wheel here (OnInnerWheel) and the frame scrolls it by lines, like the bars do.
+    Private Sub OnInnerWheel(sender As Object, e As MouseEventArgs)
+        ScrolleazaCuRotita(e.Delta)
+    End Sub
+
+    Private Sub ScrolleazaCuRotita(k_delta As Integer)
         Try
             If Not _vBar.Visible Then Return
             Dim linii As Integer = SystemInformation.MouseWheelScrollLines
             If linii <= 0 Then linii = 3
-            Dim pasi As Integer = -(e.Delta \ SystemInformation.MouseWheelScrollDelta) * linii
+            Dim pasi As Integer = -(k_delta \ SystemInformation.MouseWheelScrollDelta) * linii
             If pasi = 0 Then Return
             _vBar.Value = _vBar.Value + pasi
             OnVBarScroll(_vBar, New ScrollEventArgs(ScrollEventType.ThumbPosition, _vBar.Value))
         Catch ex As Exception
-            GlobalErrorLog.Write("KBotTextBox.OnMouseWheel", ex)
+            GlobalErrorLog.Write("KBotTextBox.ScrolleazaCuRotita", ex)
         End Try
     End Sub
 
@@ -1157,6 +1168,9 @@ Public NotInheritable Class KBotTextBox
         ''' <summary>Vederea S-AR PUTEA să se fi mutat — gazda recitește și pune barele la loc.</summary>
         Public Event ViewChanged As EventHandler
 
+        ''' <summary>The wheel turned over the inner box (a native edit without bars would ignore it).</summary>
+        Public Event WheelTurned As MouseEventHandler
+
         ''' <summary>Slice 00EF-37: the placeholder is drawn here also while the box is focused and empty.</summary>
         Public KeepPlaceholder As Boolean
         Public PlaceholderColor As Color = SystemColors.GrayText
@@ -1164,6 +1178,12 @@ Public NotInheritable Class KBotTextBox
         ' WndProc rămâne NEîmbrăcat în Try (regula casei: contractul de mesaje al ferestrei nu se
         ' rupe; plasa e Application.ThreadException).
         Protected Overrides Sub WndProc(ByRef m As Message)
+            If m.Msg = WM_MOUSEWHEEL Then
+                ' High word as a SIGNED 16-bit number (CShort throws on a negative one: wheel down).
+                Dim k_delta As Integer = ((CInt((m.WParam.ToInt64() >> 16) And &HFFFFL) Xor &H8000) - &H8000)
+                RaiseEvent WheelTurned(Me, New MouseEventArgs(MouseButtons.None, 0, 0, 0, k_delta))
+                Return
+            End If
             MyBase.WndProc(m)
             If m.Msg = WM_PAINT AndAlso KeepPlaceholder AndAlso Focused AndAlso TextLength = 0 AndAlso
                Not String.IsNullOrEmpty(PlaceholderText) Then

@@ -38,6 +38,7 @@ Partial Class AvcMigratorForm
     ' --- log ---
     Friend WithEvents grpLog As System.Windows.Forms.GroupBox
     Friend WithEvents rtbLog As System.Windows.Forms.RichTextBox
+    Friend WithEvents pbProgres As KBot.Controls.KBotProgressBar
     Friend WithEvents lblStare As System.Windows.Forms.Label
 
     Friend WithEvents tipAvc As KBot.Controls.KBotToolTip
@@ -89,6 +90,7 @@ Partial Class AvcMigratorForm
         rtbConstatari = New RichTextBox()
         grpLog = New GroupBox()
         rtbLog = New RichTextBox()
+        pbProgres = New KBot.Controls.KBotProgressBar()
         lblStare = New Label()
         tipAvc = New KBot.Controls.KBotToolTip(components)
         BtnRaportHTML = New Button()
@@ -113,17 +115,19 @@ Partial Class AvcMigratorForm
         tlpRoot.Controls.Add(tlpActiune, 0, 1)
         tlpRoot.Controls.Add(tlpJos, 0, 2)
         tlpRoot.Controls.Add(grpLog, 0, 3)
-        tlpRoot.Controls.Add(lblStare, 0, 4)
+        tlpRoot.Controls.Add(pbProgres, 0, 4)
+        tlpRoot.Controls.Add(lblStare, 0, 5)
         tlpRoot.Dock = DockStyle.Fill
         tlpRoot.Location = New Point(0, 0)
         tlpRoot.Margin = New Padding(4)
         tlpRoot.Name = "tlpRoot"
         tlpRoot.Padding = New Padding(8)
-        tlpRoot.RowCount = 5
+        tlpRoot.RowCount = 6
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 300F))
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 50F))
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 250F))
+        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 22F))
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 30F))
         tlpRoot.Size = New Size(1617, 966)
         tlpRoot.TabIndex = 0
@@ -631,6 +635,17 @@ Partial Class AvcMigratorForm
         rtbLog.TabIndex = 0
         rtbLog.Text = ""
         ' 
+        ' pbProgres
+        '
+        pbProgres.Dock = DockStyle.Fill
+        pbProgres.Location = New Point(12, 906)
+        pbProgres.Margin = New Padding(4, 2, 4, 2)
+        pbProgres.Maximum = 1000
+        pbProgres.Name = "pbProgres"
+        pbProgres.ShowPercentText = True
+        pbProgres.Size = New Size(1593, 22)
+        pbProgres.TabIndex = 4
+        '
         ' lblStare
         ' 
         lblStare.Dock = DockStyle.Fill

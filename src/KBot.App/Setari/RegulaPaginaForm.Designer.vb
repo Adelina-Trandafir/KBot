@@ -111,8 +111,6 @@ Partial Class RegulaPaginaForm
         arbore.SearchShow = True
         arbore.Size = New Size(747, 740)
         arbore.TabIndex = 0
-        tips.SetToolTipHeader(arbore, "Elementele paginii")
-        tips.SetToolTipText(arbore, "Un clic pe un element îi pune selectorul și stilul de acum în câmpurile din dreapta și îl încadrează în pagina FOREXE." & vbLf & "Dublu clic = «Adaugă regula».")
         '
         ' lblFaraPagina
         '

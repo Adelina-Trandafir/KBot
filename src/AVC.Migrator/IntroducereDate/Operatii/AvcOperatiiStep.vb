@@ -56,6 +56,14 @@ Friend NotInheritable Class AvcOperatiiPlan
     Public ReadOnly Property Omise As New SortedDictionary(Of String, List(Of String))(StringComparer.Ordinal)
     Public ReadOnly Property UnitatiFaraSubunitate As New SortedSet(Of Integer)()
 
+    ''' <summary>IdUnitate ▸ the name the operator knows the unit by (<c>AlteDetalii</c>); the bare id when no context was given.</summary>
+    Public Property UnitName As Func(Of Integer, String) = Function(k_id) k_id.ToString(CultureInfo.InvariantCulture)
+
+    ''' <summary>The unit names of <see cref="UnitatiFaraSubunitate"/>, for the messages.</summary>
+    Public Function UnitatiFaraSubunitateText() As String
+        Return String.Join(", ", UnitatiFaraSubunitate.Select(Function(k_id) UnitName(k_id)))
+    End Function
+
     Public Sub Omit(k_reason As String, k_what As String)
         Dim k_list As List(Of String) = Nothing
         If Not Omise.TryGetValue(k_reason, k_list) Then
@@ -64,6 +72,11 @@ Friend NotInheritable Class AvcOperatiiPlan
         End If
         k_list.Add(k_what)
     End Sub
+
+    ''' <summary>The line that names an operation in the list of what was left out.</summary>
+    Public Function Describe(k_op As AvcOperRow) As String
+        Return $"operația {k_op.IdOperatie.ToString(CultureInfo.InvariantCulture)} (unitatea {UnitName(k_op.IdUnitate)}): {k_op.Explicatie}"
+    End Function
 
     Public Function OperatiiCount() As Integer
         Return Note.Sum(Function(k_n) k_n.Documente.Sum(Function(k_d) k_d.Operatii.Count))
@@ -201,15 +214,15 @@ Friend NotInheritable Class AvcOperatiiStep
     End Function
 
     ''' <summary>Resolves every operation against the lookups; nothing is written. Pure: the same lookups give the same plan.</summary>
-    Private Function BuildPlan(k_look As AvcOperatiiLookups) As AvcOperatiiPlan
-        Dim k_plan As New AvcOperatiiPlan()
+    Private Function BuildPlan(k_look As AvcOperatiiLookups, k_context As AvcContext) As AvcOperatiiPlan
+        Dim k_plan As New AvcOperatiiPlan() With {.UnitName = AddressOf k_context.UnitLabel}
         Dim k_notes = _set.Note.GroupBy(Function(k_n) Key2(k_n.IdUnitate, k_n.NumarNC.ToString(CultureInfo.InvariantCulture))).ToDictionary(Function(k_g) k_g.Key, Function(k_g) k_g.First(), StringComparer.Ordinal)
         Dim k_opsByDoc = _set.Operatii.Where(Function(k_o) k_o.IdDocument.HasValue).GroupBy(Function(k_o) Key2(k_o.IdUnitate, k_o.IdDocument.Value.ToString(CultureInfo.InvariantCulture))).
             ToDictionary(Function(k_g) k_g.Key, Function(k_g) k_g.ToList(), StringComparer.Ordinal)
         Dim k_debit = _set.Debit.GroupBy(Function(k_l) Key2(k_l.IdUnitate, k_l.IdOperatie.ToString(CultureInfo.InvariantCulture))).ToDictionary(Function(k_g) k_g.Key, Function(k_g) k_g.ToList(), StringComparer.Ordinal)
         Dim k_credit = _set.Credit.GroupBy(Function(k_l) Key2(k_l.IdUnitate, k_l.IdOperatie.ToString(CultureInfo.InvariantCulture))).ToDictionary(Function(k_g) k_g.Key, Function(k_g) k_g.ToList(), StringComparer.Ordinal)
         For Each k_op In _set.Operatii.Where(Function(k_o) Not k_o.IdDocument.HasValue)
-            k_plan.Omit("Operații fără document în Access", Label(k_op))
+            k_plan.Omit("Operații fără document în Access", k_plan.Describe(k_op))
         Next
 
         Dim k_groups = _set.Documente.GroupBy(Function(k_d) New With {k_d.IdUnitate, .Nota = k_d.NumarNC.GetValueOrDefault(0)})
@@ -221,7 +234,7 @@ Friend NotInheritable Class AvcOperatiiStep
             End If
             If k_group.Key.Nota = 0 Then
                 For Each k_doc In k_group
-                    k_plan.Omit("Documente fără număr de notă contabilă", $"{k_doc.NumarDocument} (unitatea {k_doc.IdUnitate})")
+                    k_plan.Omit("Documente fără număr de notă contabilă", $"{k_doc.NumarDocument} (unitatea {k_context.UnitLabel(k_doc.IdUnitate)})")
                 Next
                 Continue For
             End If
@@ -234,7 +247,7 @@ Friend NotInheritable Class AvcOperatiiStep
                 Dim k_ops As List(Of AvcOperRow) = Nothing
                 If Not k_opsByDoc.TryGetValue(Key2(k_doc.IdUnitate, k_doc.IdDocument.ToString(CultureInfo.InvariantCulture)), k_ops) Then k_ops = New List(Of AvcOperRow)()
                 If Not k_doc.DataDocument.HasValue Then
-                    k_plan.Omit("Documente fără dată", $"{k_doc.NumarDocument} (unitatea {k_doc.IdUnitate})")
+                    k_plan.Omit("Documente fără dată", $"{k_doc.NumarDocument} (unitatea {k_context.UnitLabel(k_doc.IdUnitate)})")
                     Continue For
                 End If
                 For Each k_op In k_ops.OrderBy(Function(k_o) k_o.IdOperatie)
@@ -242,7 +255,7 @@ Friend NotInheritable Class AvcOperatiiStep
                     If k_planOp IsNot Nothing Then k_planDoc.Operatii.Add(k_planOp)
                 Next
                 If k_planDoc.Operatii.Count = 0 Then
-                    If k_ops.Count = 0 Then k_plan.Omit("Documente fără operații", $"{k_doc.NumarDocument} (unitatea {k_doc.IdUnitate})")
+                    If k_ops.Count = 0 Then k_plan.Omit("Documente fără operații", $"{k_doc.NumarDocument} (unitatea {k_context.UnitLabel(k_doc.IdUnitate)})")
                     Continue For
                 End If
                 k_nota.Documente.Add(k_planDoc)
@@ -252,21 +265,17 @@ Friend NotInheritable Class AvcOperatiiStep
         Return k_plan
     End Function
 
-    Private Shared Function Label(k_op As AvcOperRow) As String
-        Return $"operația {k_op.IdOperatie.ToString(CultureInfo.InvariantCulture)} (unitatea {k_op.IdUnitate.ToString(CultureInfo.InvariantCulture)}): {k_op.Explicatie}"
-    End Function
-
     Private Shared Function ResolveOperation(k_op As AvcOperRow, k_sub As AvcSubunitRef, k_look As AvcOperatiiLookups,
                                              k_debit As Dictionary(Of String, List(Of AvcLinieRow)), k_credit As Dictionary(Of String, List(Of AvcLinieRow)),
                                              k_plan As AvcOperatiiPlan) As AvcPlanOper
         Dim k_result As New AvcPlanOper() With {.Row = k_op}
         If Not k_op.DataOperatie.HasValue Then
-            k_plan.Omit("Operații fără dată", Label(k_op))
+            k_plan.Omit("Operații fără dată", k_plan.Describe(k_op))
             Return Nothing
         End If
         Dim k_journal As Integer
         If Not k_look.Jurnale.TryGetValue(k_sub.SursaSector & "|" & k_op.CodJurnal.ToUpperInvariant(), k_journal) Then
-            k_plan.Omit($"Jurnal «{k_op.CodJurnal}» negăsit în TZ_Jurnale (rulați pasul «Jurnale»)", Label(k_op))
+            k_plan.Omit($"Jurnal «{k_op.CodJurnal}» negăsit în TZ_Jurnale (rulați pasul «Jurnale»)", k_plan.Describe(k_op))
             Return Nothing
         End If
         k_result.IdJurnal = k_journal
@@ -279,7 +288,7 @@ Friend NotInheritable Class AvcOperatiiStep
                 If k_look.ClasificatiiDupaAcc.TryGetValue(k_op.IdClsfAccess.Value, k_candidates) AndAlso k_candidates.Count = 1 Then
                     k_result.IdClsf = k_candidates(0)
                 Else
-                    k_plan.Omit("Clasificație negăsită în Clasificatii (migrată de KBot.Migrator)", Label(k_op))
+                    k_plan.Omit("Clasificație negăsită în Clasificatii (migrată de KBot.Migrator)", k_plan.Describe(k_op))
                     Return Nothing
                 End If
             End If
@@ -288,7 +297,7 @@ Friend NotInheritable Class AvcOperatiiStep
         Dim k_d As List(Of AvcLinieRow) = Nothing
         Dim k_c As List(Of AvcLinieRow) = Nothing
         If Not k_debit.TryGetValue(k_key, k_d) OrElse Not k_credit.TryGetValue(k_key, k_c) Then
-            k_plan.Omit("Operații fără linii de debit sau de credit", Label(k_op))
+            k_plan.Omit("Operații fără linii de debit sau de credit", k_plan.Describe(k_op))
             Return Nothing
         End If
         For Each k_pair In {Tuple.Create(k_d, k_result.Debit), Tuple.Create(k_c, k_result.Credit)}
@@ -297,14 +306,14 @@ Friend NotInheritable Class AvcOperatiiStep
                 Dim k_cont As Integer
                 If Not k_look.SimbolComp.TryGetValue(Key2(k_line.IdUnitate, k_line.SimbolCont), k_composed) OrElse
                    Not k_look.Conturi.TryGetValue(Key2(k_sub.IdSubunitate, k_composed), k_cont) Then
-                    k_plan.Omit($"Cont «{k_line.SimbolCont}» negăsit în TZ_PlanCont (rulați pasul «Plan de conturi»)", Label(k_op))
+                    k_plan.Omit($"Cont «{k_line.SimbolCont}» negăsit în TZ_PlanCont (rulați pasul «Plan de conturi»)", k_plan.Describe(k_op))
                     Return Nothing
                 End If
                 Dim k_partner As Integer? = Nothing
                 If k_line.CodPartener.Length > 0 Then
                     Dim k_id As Integer
                     If Not k_look.Parteneri.TryGetValue(Key2(k_line.IdUnitate, k_line.CodPartener), k_id) Then
-                        k_plan.Omit("Partener negăsit în Parteneri (migrat de KBot.Migrator)", Label(k_op) & $" (partener {k_line.CodPartener})")
+                        k_plan.Omit("Partener negăsit în Parteneri (migrat de KBot.Migrator)", k_plan.Describe(k_op) & $" (partener {k_line.CodPartener})")
                         Return Nothing
                     End If
                     k_partner = k_id
@@ -313,7 +322,7 @@ Friend NotInheritable Class AvcOperatiiStep
             Next
         Next
         If k_result.Debit.Sum(Function(k_l) k_l.Suma) <> k_result.Credit.Sum(Function(k_l) k_l.Suma) Then
-            k_plan.Omit("Operații cu debitul diferit de credit", Label(k_op))
+            k_plan.Omit("Operații cu debitul diferit de credit", k_plan.Describe(k_op))
             Return Nothing
         End If
         Return k_result
@@ -335,7 +344,7 @@ Friend NotInheritable Class AvcOperatiiStep
             End If
             If _set.UnitsWithoutTable.Count > 0 Then
                 k_findings.Add(New Finding(Finding.TABEL_LIPSA, FindingClass.Informativ, AccessTable, String.Empty,
-                                           "Unitățile fără tabelele operațiilor: " & String.Join(", ", _set.UnitsWithoutTable) & "."))
+                                           "Unitățile fără tabelele operațiilor: " & String.Join(", ", _set.UnitsWithoutTable.Select(Function(k_uid) k_context.UnitLabel(k_uid))) & "."))
             End If
             If _set.MissingColumns.Count > 0 Then
                 k_findings.Add(New Finding(Finding.COLOANA_OBLIGATORIE, FindingClass.Blocant, AccessTable, String.Empty, "Coloane lipsă în Access: " & String.Join(", ", _set.MissingColumns) & "."))
@@ -360,10 +369,10 @@ Friend NotInheritable Class AvcOperatiiStep
             Next
             If k_findings.Any(Function(f) f.IsBlocking) Then Return k_findings
 
-            Dim k_plan = BuildPlan(LoadLookups(k_cn, Nothing))
+            Dim k_plan = BuildPlan(LoadLookups(k_cn, Nothing), k_context)
             If k_plan.UnitatiFaraSubunitate.Count > 0 Then
                 k_findings.Add(New Finding(AvcKinds.SUBUNITATE_LIPSA, FindingClass.Blocant, "TZ_NoteC", "IdSubunitate",
-                                           $"Unitățile {String.Join(", ", k_plan.UnitatiFaraSubunitate)} nu au încă subunitate. Rulați întâi pașii «Subunități», «Plan de conturi» și «Jurnale» într-o migrare anterioară."))
+                                           $"Unitățile {k_plan.UnitatiFaraSubunitateText()} nu au încă subunitate. Rulați întâi pașii «Subunități», «Plan de conturi» și «Jurnale» într-o migrare anterioară."))
             End If
             For Each k_pair In k_plan.Omise
                 k_findings.Add(New Finding(AvcKinds.REZUMAT, FindingClass.Atentie, "TZ_Oper", String.Empty,
@@ -420,8 +429,8 @@ Friend NotInheritable Class AvcOperatiiStep
                                     k_cancel As CancellationToken) As List(Of AvcWritten)
         Try
             If _set Is Nothing Then Throw New InvalidOperationException("«Operații» nu a fost citit din Access.")
-            Dim k_plan = BuildPlan(LoadLookups(k_cn, k_transaction))
-            If k_plan.UnitatiFaraSubunitate.Count > 0 Then Throw New InvalidOperationException($"Unitățile {String.Join(", ", k_plan.UnitatiFaraSubunitate)} nu au subunitate.")
+            Dim k_plan = BuildPlan(LoadLookups(k_cn, k_transaction), k_context)
+            If k_plan.UnitatiFaraSubunitate.Count > 0 Then Throw New InvalidOperationException($"Unitățile {k_plan.UnitatiFaraSubunitateText()} nu au subunitate.")
             k_dump.WriteComment("TZ_NoteC", "Fostele NoteC / Documente / Oper / Debit / Credit; CreatedAt = DTQ din Access; id-urile Access în coloanele *Access (o repetare adaugă doar ce lipsește).")
 
             ' What is already there (a repeat adds only what is missing).
@@ -441,6 +450,8 @@ Friend NotInheritable Class AvcOperatiiStep
 
             Dim k_count As New Dictionary(Of String, Integer)(StringComparer.Ordinal) From {{"TZ_NoteC", 0}, {"TZ_Documente", 0}, {"TZ_Oper", 0}, {"TZ_Debit", 0}, {"TZ_Credit", 0}}
             Dim k_remap As New List(Of Tuple(Of Integer, Integer, Long))()
+            Dim k_docsTotal As Integer = k_plan.DocumenteCount()
+            Dim k_docsDone As Integer = 0
             For Each k_nota In k_plan.Note
                 k_cancel.ThrowIfCancellationRequested()
                 Dim k_noteKey As String = $"{k_nota.IdSubunitate.ToString(CultureInfo.InvariantCulture)}|{AvcContext.TransferYear.ToString(CultureInfo.InvariantCulture)}|{k_nota.NumarNC.ToString(CultureInfo.InvariantCulture)}"
@@ -453,6 +464,8 @@ Friend NotInheritable Class AvcOperatiiStep
                     k_count("TZ_NoteC") += 1
                 End If
                 For Each k_doc In k_nota.Documente
+                    k_docsDone += 1
+                    k_context.Tick(k_docsDone, k_docsTotal, "«TZ_Oper»: documente")
                     Dim k_docKey As String = $"{k_idNota.ToString(CultureInfo.InvariantCulture)}|{k_doc.Row.IdDocument.ToString(CultureInfo.InvariantCulture)}"
                     Dim k_idDoc As Integer
                     If Not k_docs.TryGetValue(k_docKey, k_idDoc) Then
@@ -506,7 +519,7 @@ Friend NotInheritable Class AvcOperatiiStep
     Private Shared Sub RemapInvoiceLinks(k_cn As MySqlConnection, k_transaction As MySqlTransaction, k_dump As SqlDumpWriter,
                                          k_remap As List(Of Tuple(Of Integer, Integer, Long)), k_keptByKbot As Boolean, k_progress As IProgress(Of String))
         If k_remap.Count = 0 Then Return
-        If k_keptByKbot OrElse Not AvcSql.TableExists(k_cn, k_cn.Database, "EF_PrimiteOperatii") Then
+        If k_keptByKbot OrElse Not AvcSql.TableExists(k_cn, k_cn.Database, "EF_PrimiteOperatii", k_transaction) Then
             k_progress.Report("«EF_PrimiteOperatii»: legăturile facturilor nu s-au actualizat (există operații făcute în K-BOT sau tabelul lipsește).")
             Return
         End If

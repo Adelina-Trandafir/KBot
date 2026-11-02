@@ -156,7 +156,7 @@ Friend NotInheritable Class AvcJurnaleStep
             End If
             If _set.UnitsWithoutTable.Count > 0 Then
                 k_findings.Add(New Finding(Finding.TABEL_LIPSA, FindingClass.Informativ, AccessTable, String.Empty,
-                                           "Fișierul Access nu are tabelul «Jurnale» la unitățile: " & String.Join(", ", _set.UnitsWithoutTable) & "."))
+                                           "Fișierul Access nu are tabelul «Jurnale» la unitățile: " & String.Join(", ", _set.UnitsWithoutTable.Select(Function(k_uid) k_context.UnitLabel(k_uid))) & "."))
             End If
             If _set.MissingColumns.Count > 0 Then
                 k_findings.Add(New Finding(AvcKinds.JURNAL_INVALID, FindingClass.Blocant, "TZ_Jurnale", String.Empty,
@@ -185,7 +185,7 @@ Friend NotInheritable Class AvcJurnaleStep
             If Not ResolveSs(k_context, k_cn, Nothing, k_findings) Then Return k_findings
 
             Dim k_bad = _set.Rows.Where(Function(k_r) Not CodRegex.IsMatch(k_r.CodTinta)).
-                Select(Function(k_r) $"unitatea {k_r.IdUnitate}: «{k_r.Cod}»").Distinct(StringComparer.Ordinal).ToList()
+                Select(Function(k_r) $"unitatea {k_context.UnitLabel(k_r.IdUnitate)}: «{k_r.Cod}»").Distinct(StringComparer.Ordinal).ToList()
             If k_bad.Count > 0 Then
                 k_findings.Add(New Finding(AvcKinds.JURNAL_INVALID, FindingClass.Blocant, "TZ_Jurnale", "Cod",
                                            "coduri de jurnal pe care fereastra nu le-ar primi (de la 1 la 10 caractere: litere, cifre, _)", k_bad.Count).
@@ -195,7 +195,7 @@ Friend NotInheritable Class AvcJurnaleStep
             ' The same code in capitals with different names: one journal, the first name wins.
             Dim k_conflicts = _set.Rows.GroupBy(Function(k_r) k_r.SursaSector & "|" & k_r.CodTinta, StringComparer.Ordinal).
                 Where(Function(k_g) k_g.Select(Function(k_r) k_r.Denumire).Distinct(StringComparer.OrdinalIgnoreCase).Count() > 1).
-                Select(Function(k_g) $"{k_g.Key.Replace("|", " ")}: " & String.Join(" / ", k_g.Select(Function(k_r) $"«{k_r.Denumire}» (unitatea {k_r.IdUnitate})"))).ToList()
+                Select(Function(k_g) $"{k_g.Key.Replace("|", " ")}: " & String.Join(" / ", k_g.Select(Function(k_r) $"«{k_r.Denumire}» (unitatea {k_context.UnitLabel(k_r.IdUnitate)})"))).ToList()
             If k_conflicts.Count > 0 Then
                 k_findings.Add(New Finding(AvcKinds.JURNAL_INVALID, FindingClass.Atentie, "TZ_Jurnale", "Denumire",
                                            "același cod, la același sector și sursă, cu denumiri diferite în fișierele unităților; se păstrează prima denumire", k_conflicts.Count).
@@ -240,7 +240,7 @@ Friend NotInheritable Class AvcJurnaleStep
             Next
             If k_missing.Count > 0 AndAlso k_findings IsNot Nothing Then
                 k_findings.Add(New Finding(AvcKinds.SUBUNITATE_LIPSA, FindingClass.Blocant, "TZ_Jurnale", "SursaSector",
-                                           $"Jurnalele unităților {String.Join(", ", k_missing)} iau sectorul și sursa subunității lor, iar ele nu au încă subunitate. " &
+                                           $"Jurnalele unităților {String.Join(", ", k_missing.Select(Function(k_uid) k_context.UnitLabel(k_uid)))} iau sectorul și sursa subunității lor, iar ele nu au încă subunitate. " &
                                            "Bifați pasul «Subunități» (le creează în aceeași migrare) și verificați din nou."))
             End If
             Return k_missing.Count = 0

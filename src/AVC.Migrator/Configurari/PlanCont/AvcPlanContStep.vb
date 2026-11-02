@@ -97,7 +97,7 @@ Friend NotInheritable Class AvcPlanContStep
             End If
             If _set.UnitsWithoutTable.Count > 0 Then
                 k_findings.Add(New Finding(Finding.TABEL_LIPSA, FindingClass.Informativ, AccessTable, String.Empty,
-                                           "Fișierul Access nu are tabelul «PlanCont» la unitățile: " & String.Join(", ", _set.UnitsWithoutTable) & "."))
+                                           "Fișierul Access nu are tabelul «PlanCont» la unitățile: " & String.Join(", ", _set.UnitsWithoutTable.Select(Function(k_uid) k_context.UnitLabel(k_uid))) & "."))
             End If
             If _set.MissingColumns.Count > 0 Then
                 k_findings.Add(New Finding(AvcKinds.PLAN_CONT_INVALID, FindingClass.Blocant, "TZ_PlanCont", String.Empty,
@@ -195,8 +195,7 @@ Friend NotInheritable Class AvcPlanContStep
     End Function
 
     Private Shared Function UnitLabel(k_context As AvcContext, k_idUnitate As Integer) As String
-        Dim k_unit = k_context.Units.FirstOrDefault(Function(u) u.IdUnitate = k_idUnitate)
-        Return If(k_unit Is Nothing, k_idUnitate.ToString(CultureInfo.InvariantCulture), $"{k_idUnitate} ({k_unit.NumeUnitate})")
+        Return k_context.UnitLabel(k_idUnitate)
     End Function
 
     ''' <summary>
@@ -327,6 +326,7 @@ Friend NotInheritable Class AvcPlanContStep
                                 k_soldWritten += 1
                             End If
 
+                            k_context.Tick(k_accountsWritten, k_active.Count, "«TZ_PlanCont»: conturi")
                             If k_accountsWritten Mod 100 = 0 Then
                                 k_dump.FlushAll()
                                 k_progress.Report($"«TZ_PlanCont»: {k_accountsWritten} din {k_active.Count} conturi pregătite (confirmate la COMMIT).")

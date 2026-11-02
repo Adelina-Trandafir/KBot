@@ -61,7 +61,8 @@ Partial Class KBotRichTextEditor
         lblChars = New Label()
         lblWords = New Label()
         lblSize = New Label()
-        rtb = New RichTextBox()
+        rtb = New KBotRichEdit()
+        vBar = New KBotScrollBar()
         pnlHeader.SuspendLayout()
         pnlFooter.SuspendLayout()
         SuspendLayout()
@@ -252,16 +253,22 @@ Partial Class KBotRichTextEditor
         rtb.Location = New Point(1, 65)
         rtb.Margin = New Padding(0)
         rtb.Name = "rtb"
-        rtb.ScrollBars = RichTextBoxScrollBars.Vertical
+        rtb.ScrollBars = RichTextBoxScrollBars.None
         rtb.Size = New Size(997, 427)
         rtb.TabIndex = 1
         rtb.Text = ""
+        ' 
+        ' vBar -- the editor's own vertical bar (shown by the scroll sync, beside the surface)
+        ' 
+        vBar.Orientation = Orientation.Vertical
+        vBar.Visible = False
         ' 
         ' KBotRichTextEditor
         ' 
         AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(rtb)
+        Controls.Add(vBar)
         Controls.Add(pnlHeader)
         Controls.Add(pnlFooter)
         Margin = New Padding(0)
@@ -284,7 +291,8 @@ Partial Class KBotRichTextEditor
     Friend WithEvents btnCollapse As KBotNoFocusButton
     Friend WithEvents cmbFont As KBot.Controls.KBotComboBox
     Friend WithEvents cmbSize As KBot.Controls.KBotComboBox
-    Friend WithEvents rtb As RichTextBox
+    Friend WithEvents rtb As KBotRichEdit
+    Friend WithEvents vBar As KBot.Controls.KBotScrollBar
     Friend WithEvents lblChars As Label
     Friend WithEvents lblWords As Label
     Friend WithEvents lblSize As Label

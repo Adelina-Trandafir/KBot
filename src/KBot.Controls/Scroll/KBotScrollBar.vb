@@ -88,6 +88,13 @@ Public NotInheritable Class KBotScrollBar
     ''' linie <c>Size</c> în fiecare gazdă (regula casei despre proprietățile care nu pot purta
     ''' <c>DefaultValue</c>).
     ''' </summary>
+    ''' <summary>The normal arrow over the bar, whatever the host shows (a text box's I-beam is inherited by its children).</summary>
+    Protected Overrides ReadOnly Property DefaultCursor As Cursor
+        Get
+            Return Cursors.Arrow
+        End Get
+    End Property
+
     Protected Overrides ReadOnly Property DefaultSize As Size
         Get
             Return New Size(GrosimeImplicita, 80)

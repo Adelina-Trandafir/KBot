@@ -676,6 +676,16 @@ Public NotInheritable Class KBotDataColumn
     Public Property AllowGrouping As Boolean = True
 
     ''' <summary>
+    ''' The column menu of THIS column offers the «Filtrare» tab (default True). Turned off, the menu of a column that carries the
+    ''' header button (<see cref="ShowColumnFilter"/>) has no filter tab: with <see cref="AllowGrouping"/> off too it is a sort-only menu
+    ''' (a tick-box column, say).
+    ''' </summary>
+    <Category("K-BOT: Filtrare")>
+    <Description("Meniul acestei coloane arata fila Filtrare. Oprit, meniul are doar Sortare (si Grupare, daca e permisa).")>
+    <DefaultValue(True)>
+    Public Property AllowFiltering As Boolean = True
+
+    ''' <summary>
     ''' Imaginea butonului de filtrare. <c>Nothing</c> (implicit) = pâlnia desenată din culoarea
     ''' temei — plină cât timp coloana chiar are un filtru așezat.
     ''' </summary>

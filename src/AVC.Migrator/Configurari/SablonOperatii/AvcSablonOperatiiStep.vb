@@ -291,7 +291,7 @@ Friend NotInheritable Class AvcSablonOperatiiStep
             End If
             If _set.UnitsWithoutTable.Count > 0 Then
                 k_findings.Add(New Finding(Finding.TABEL_LIPSA, FindingClass.Informativ, AccessTable, String.Empty,
-                                           "Fișierul Access nu are «DefaNoteA» / «DefaNote» la unitățile: " & String.Join(", ", _set.UnitsWithoutTable) & "."))
+                                           "Fișierul Access nu are «DefaNoteA» / «DefaNote» la unitățile: " & String.Join(", ", _set.UnitsWithoutTable.Select(Function(k_uid) k_context.UnitLabel(k_uid))) & "."))
             End If
             If _set.MissingColumns.Count > 0 Then
                 k_findings.Add(New Finding(AvcKinds.SABLON_INVALID, FindingClass.Blocant, "TZ_SablonOperatii", String.Empty,
@@ -330,7 +330,7 @@ Friend NotInheritable Class AvcSablonOperatiiStep
             Dim k_missingUnits As List(Of Integer) = UnitsWithoutSubunit(k_context, k_cn, Nothing)
             If k_missingUnits.Count > 0 Then
                 k_findings.Add(New Finding(AvcKinds.SUBUNITATE_LIPSA, FindingClass.Blocant, "TZ_SablonOperatii", "IdJurnal",
-                                           $"Jurnalele șabloanelor unităților {String.Join(", ", k_missingUnits)} iau sectorul și sursa subunității lor, iar ele nu au încă subunitate. " &
+                                           $"Jurnalele șabloanelor unităților {String.Join(", ", k_missingUnits.Select(Function(k_uid) k_context.UnitLabel(k_uid)))} iau sectorul și sursa subunității lor, iar ele nu au încă subunitate. " &
                                            "Bifați pasul «Subunități» (le creează în aceeași migrare) și verificați din nou."))
                 Return k_findings
             End If
@@ -341,7 +341,7 @@ Friend NotInheritable Class AvcSablonOperatiiStep
             If k_left.Count > 0 Then
                 k_findings.Add(New Finding(AvcKinds.SABLON_INVALID, FindingClass.Atentie, "TZ_SablonOperatii", "Explicatie",
                                            "șabloane lăsate pe dinafară (se scriu doar cele fără probleme); fiecare rând spune de ce", k_left.Count).
-                    WithDetail(String.Join(vbLf, k_left.Select(Function(k_r) $"unitatea {k_r.Row.IdUnitate}, «{k_r.Row.Explicatie}»: {String.Join("; ", k_r.Problems)}"))))
+                    WithDetail(String.Join(vbLf, k_left.Select(Function(k_r) $"unitatea {k_context.UnitLabel(k_r.Row.IdUnitate)}, «{k_r.Row.Explicatie}»: {String.Join("; ", k_r.Problems)}"))))
             End If
             Dim k_unique As List(Of Resolved) = k_clean.GroupBy(Function(k_r) k_r.DedupKey, StringComparer.Ordinal).Select(Function(k_g) k_g.First()).ToList()
             If k_unique.Count < k_clean.Count Then
@@ -697,6 +697,7 @@ Friend NotInheritable Class AvcSablonOperatiiStep
                         Next
                         For Each k_item In k_toWrite
                             k_cancel.ThrowIfCancellationRequested()
+                            k_context.Tick(k_written + k_skipped + 1, k_toWrite.Count, "«TZ_SablonOperatii»: șabloane")
                             k_exists.Parameters("@IdJurnal").Value = k_item.IdJurnal.Value
                             k_exists.Parameters("@IdSubunitate").Value = k_item.IdSubunitate.Value
                             k_exists.Parameters("@Tip").Value = k_item.Tip

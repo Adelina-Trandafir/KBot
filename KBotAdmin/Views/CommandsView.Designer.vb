@@ -23,6 +23,9 @@ Partial Class CommandsView
         btnRun = New KBotButton()
         btnCopy = New KBotButton()
         btnRepair = New KBotButton()
+        btnExplain = New KBotButton()
+        btnLanturi = New KBotButton()
+        btnFix = New KBotButton()
         txtParam = New KBotTextBox()
         txtOutput = New KBotTextBox()
         txtExplain = New KBotTextBox()
@@ -84,6 +87,48 @@ Partial Class CommandsView
         tips.SetToolTipHeader(btnRepair, "Repară")
         tips.SetToolTipText(btnRepair, "Apare doar după o comandă care a găsit ceva de reparat, și doar când e aleasă o singură bază." & vbLf & "Scrie în baza aleasă (cere confirmare), notează în Jurnal și arată apoi ce a mai rămas.")
         btnRepair.Visible = False
+        '
+        ' btnExplain (same cell as btnRepair: they are never visible together)
+        '
+        btnExplain.AccessibleRole = AccessibleRole.PushButton
+        btnExplain.Dock = DockStyle.Fill
+        btnExplain.Location = New Point(1125, 3)
+        btnExplain.Margin = New Padding(0, 3, 0, 9)
+        btnExplain.Name = "btnExplain"
+        btnExplain.Size = New Size(210, 54)
+        btnExplain.TabIndex = 5
+        btnExplain.Text = "Explică"
+        tips.SetToolTipHeader(btnExplain, "Explică")
+        tips.SetToolTipText(btnExplain, "Apare doar după verificarea documentelor de fundamentare, când a găsit probleme." & vbLf & "Scrieți în casetă codul angajamentului: arată ce are baza pentru cod și ce ar strica ștergerea fiecărui antet. Nu schimbă nimic.")
+        btnExplain.Visible = False
+        '
+        ' btnLanturi (same cell as btnRepair and btnExplain: never visible together)
+        '
+        btnLanturi.AccessibleRole = AccessibleRole.PushButton
+        btnLanturi.Dock = DockStyle.Fill
+        btnLanturi.Location = New Point(1125, 3)
+        btnLanturi.Margin = New Padding(0, 3, 0, 9)
+        btnLanturi.Name = "btnLanturi"
+        btnLanturi.Size = New Size(210, 54)
+        btnLanturi.TabIndex = 7
+        btnLanturi.Text = "Repară recepțiile"
+        tips.SetToolTipHeader(btnLanturi, "Repară recepțiile")
+        tips.SetToolTipText(btnLanturi, "Apare doar după verificarea lanțurilor de recepții, când a găsit cazuri reparabile." & vbLf & "Scrieți în casetă codul angajamentului din listă. Mută instantaneele de pe recepția greșită pe a lor, pune recepția rescrisă la valorile din lanțul ei, recalculează diferențele și mută cifrele salvate ale ordonanțărilor (ele se listează din nou, nu se generează din nou). Scrie în baza aleasă (cere confirmare), într-o singură tranzacție, și notează în Jurnal.")
+        btnLanturi.Visible = False
+        '
+        ' btnFix
+        '
+        btnFix.AccessibleRole = AccessibleRole.PushButton
+        btnFix.Dock = DockStyle.Fill
+        btnFix.Location = New Point(1335, 3)
+        btnFix.Margin = New Padding(9, 3, 0, 9)
+        btnFix.Name = "btnFix"
+        btnFix.Size = New Size(210, 54)
+        btnFix.TabIndex = 6
+        btnFix.Text = "Repară codul"
+        tips.SetToolTipHeader(btnFix, "Repară codul")
+        tips.SetToolTipText(btnFix, "Apare doar după «Explică», când explicația spune REPARABIL." & vbLf & "Reviziile antetelor în plus care există deja în antetul angajamentului (aceeași dată și aceeași sumă) se șterg, fără mutare (rezervările lor, unice, trec pe revizia care rămâne); cele care nu există deja se mută sub el; antetele rămase goale se șterg. Scrie în baza aleasă (cere confirmare), într-o singură tranzacție, și notează în Jurnal.")
+        btnFix.Visible = False
         '
         ' txtParam
         ' 
@@ -173,17 +218,21 @@ Partial Class CommandsView
         ' tlyBar
         ' 
         tlyBar.AutoFitToTheme = False
-        tlyBar.ColumnCount = 5
+        tlyBar.ColumnCount = 6
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 480F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 210F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 195F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 210F))
+        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 219F))
         tlyBar.Controls.Add(cmbCommand, 0, 0)
         tlyBar.Controls.Add(btnRun, 1, 0)
         tlyBar.Controls.Add(btnCopy, 2, 0)
         tlyBar.Controls.Add(txtParam, 3, 0)
         tlyBar.Controls.Add(btnRepair, 4, 0)
+        tlyBar.Controls.Add(btnExplain, 4, 0)
+        tlyBar.Controls.Add(btnLanturi, 4, 0)
+        tlyBar.Controls.Add(btnFix, 5, 0)
         tlyBar.Dock = DockStyle.Fill
         tlyBar.Location = New Point(8, 8)
         tlyBar.Margin = New Padding(0)
@@ -213,6 +262,9 @@ Partial Class CommandsView
     Friend WithEvents btnRun As KBotButton
     Friend WithEvents btnCopy As KBotButton
     Friend WithEvents btnRepair As KBotButton
+    Friend WithEvents btnExplain As KBotButton
+    Friend WithEvents btnLanturi As KBotButton
+    Friend WithEvents btnFix As KBotButton
     Friend WithEvents txtParam As KBotTextBox
     Friend WithEvents txtOutput As KBotTextBox
     Friend WithEvents txtExplain As KBotTextBox

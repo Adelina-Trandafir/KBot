@@ -58,10 +58,18 @@ Public Class MainForm
         _views("scripturi") = viewScripts
         _views("schema-graf") = viewSchemaGraph
         _views("schema-istoric") = viewSchemaHistory
+        _views("tabele") = viewDbBrowser
         For Each k_view As Control In _views.Values
             DirectCast(k_view, IAdminView).Attach(_context)
         Next
+        ' The tick box of the view group of the ribbon (right side), shown only on the page «Tabele»: the log of the walk through tables, off at every start.
+        Dim k_navLog As KBotRibbonField = ribbon.FindField(KeyNavLog)
+        If k_navLog Is Nothing Then Throw New InvalidOperationException("Lipseste caseta '" & KeyNavLog & "' din ribbon.")
+        AddHandler k_navLog.CheckedChanged, AddressOf NavLog_CheckedChanged
     End Sub
+
+    Private Const KeyNavLog As String = "tabele_log"
+    Private Const KeyTabele As String = "tabele"
 
     ' ------------------------------------------------------------------
     ' The window closes into the tray; only the tray menu closes the program
@@ -711,8 +719,39 @@ Public Class MainForm
         _views(k_key).BringToFront()
         ButtonFit.Apply(_views(k_key))
         SelectRibbonTabOf(k_key)
+        UpdateViewGroup()
         Await DirectCast(_views(k_key), IAdminView).ActivatedAsync()
     End Function
+
+    ''' <summary>
+    ''' The ribbon's view group (right side): what the page on screen offers. Only the page «Tabele» has something, the tick box «Jurnal navigare»;
+    ''' on every other page the group is not shown.
+    ''' </summary>
+    Private Sub UpdateViewGroup()
+        Dim k_field As KBotRibbonField = ribbon.FindField(KeyNavLog)
+        Dim k_show As Boolean = String.Equals(_activeKey, KeyTabele, StringComparison.Ordinal)
+        If k_field Is Nothing OrElse k_field.Visible = k_show Then Return
+        k_field.Visible = k_show
+        ribbon.RightGroup.Text = If(k_show, "Tabele", String.Empty)
+        ribbon.InvalidateLayout()
+    End Sub
+
+    ''' <summary>The tick box «Jurnal navigare»: switches the log of the walk through tables on or off (off at every start).</summary>
+    Private Sub NavLog_CheckedChanged(k_sender As Object, e As EventArgs)
+        Try
+            Dim k_on As Boolean = ribbon.FindField(KeyNavLog).Checked
+            TableNavLog.SetEnabled(k_on)
+            If k_on Then
+                viewDbBrowser.LogCurrentState()
+                lblStatus.Text = "Jurnalul navigării prin tabele e pornit: " & TableNavLog.LogPath
+            Else
+                lblStatus.Text = "Jurnalul navigării prin tabele e oprit."
+            End If
+        Catch ex As Exception
+            ' UI boundary (control event): the log is a diagnostic, it must not break the window.
+            GlobalErrorLog.Write("MainForm.NavLog_CheckedChanged", ex)
+        End Try
+    End Sub
 
     Private Sub SelectRibbonTabOf(k_key As String)
         For k_index As Integer = 0 To ribbon.Tabs.Count - 1

@@ -313,10 +313,14 @@ Public Class KBotRichTextEditor
             Dim bodyHeight As Integer = Math.Max(0, Height - headerH - footerH)
             rtb.Visible = Not _collapsed AndAlso bodyHeight > border * 2
             If rtb.Visible Then
+                Dim barW As Integer = VerticalBarWidthPx()
                 rtb.SetBounds(border, bodyTop + border,
-                              Math.Max(0, Width - border * 2),
+                              Math.Max(0, Width - border * 2 - barW),
                               Math.Max(0, bodyHeight - border * 2))
+                If barW > 0 Then vBar.SetBounds(rtb.Right, rtb.Top, barW, rtb.Height)
                 ApplyEditorPadding()
+            Else
+                vBar.Visible = False
             End If
 
             If _headerVisible Then LayoutHeader(headerH)
@@ -779,6 +783,7 @@ Public Class KBotRichTextEditor
         Try
             ' EM_SETRECT needs a window; the first layout pass usually runs before there is one.
             ApplyEditorPadding()
+            SyncVerticalBar()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotRichTextEditor.Rtb_HandleCreated", ex)
         End Try

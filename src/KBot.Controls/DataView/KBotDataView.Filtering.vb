@@ -161,12 +161,12 @@ Partial Class KBotDataView
             Dim nivel As KBotGroupLevel = _activeLevels(d)
             Dim gc As KBotDataColumn = _columnIndex(nivel.ColumnKey)
             cheiGrup(d) = gc.Key
-            tipuriGrup(d) = gc.ValueType
+            tipuriGrup(d) = If(nivel.DatePart <> KBotGroupDatePart.None, KBotValueType.Text, gc.ValueType)   ' a DatePart key is yyyyMMdd text
             descrescatorGrup(d) = (nivel.SortDirection = KBotSortDirection.Descending)
-            If nivel.HasKeyPattern Then
+            If nivel.HasKeyPattern OrElse nivel.DatePart <> KBotGroupDatePart.None Then
                 Dim chei(Math.Max(0, _rows.Count - 1)) As String
                 For Each mi As Integer In _view
-                    chei(mi) = GroupKeyText(_rows(mi), nivel)
+                    chei(mi) = GroupSortText(_rows(mi), nivel)
                 Next
                 cheiTaiate(d) = chei
             End If

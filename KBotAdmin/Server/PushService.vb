@@ -6,6 +6,7 @@ Public Enum PushState
     NewOnServer
     Modified
     Identical
+    AwaitingGit
 End Enum
 
 ''' <summary>One local file that is allowed to be pushed, compared with the server.</summary>
@@ -18,6 +19,9 @@ Public NotInheritable Class PushFile
     Public Property RemoteMtimeUtc As DateTime = DateTime.MinValue
     Public Property LocalSize As Long
     Public Property RemoteSize As Long
+    Public Property RegisteredSlices As String = String.Empty
+    Public Property RegisteredReasons As String = String.Empty
+    Public Property DebugHash As String = String.Empty
     Public ReadOnly Property Extension As String
         Get
             Return Path.GetExtension(RelativePath).TrimStart("."c).ToLowerInvariant()
@@ -71,6 +75,15 @@ Public NotInheritable Class PushService
             End If
             Dim k_remoteRoot As String = k_settings.RemoteRoot.TrimEnd("/"c)
             Dim k_result As New PushScan With {.LocalRoot = k_localRoot}
+            Dim k_repo As String = DeploymentRegistry.RepositoryRoot(k_localRoot)
+            Dim k_records As List(Of DeploymentRecord) = DeploymentRegistry.Read(k_localRoot)
+            Dim k_debug As New Dictionary(Of String, DebugDeployment)(StringComparer.Ordinal)
+            For Each k_entry As DebugDeployment In DeploymentPublisher.ListDebug(k_settings, k_onLine)
+                If Not DeploymentRegistry.SafePath(k_entry.path) OrElse Not Regex.IsMatch(k_entry.sha256, "^[a-f0-9]{64}$") Then
+                    Throw New ApplicationException("Evidență debugging invalidă pe server.")
+                End If
+                k_debug.Add(k_entry.path, k_entry)
+            Next
             Dim k_ignoreFile As PushIgnore = PushIgnore.Load(k_localRoot)
             k_result.PushIgnoreRules = k_ignoreFile.Count
             If k_ignoreFile.Count > 0 Then k_onLine?.Invoke(PushIgnore.FileNameOnly & ": " & k_ignoreFile.Count & " reguli din " & k_ignoreFile.SourcePath)
@@ -92,6 +105,7 @@ Public NotInheritable Class PushService
                 k_sftp.Connect()
                 For Each k_localFile As String In Directory.EnumerateFiles(k_localRoot, "*", SearchOption.AllDirectories)
                     Dim k_rel As String = k_localFile.Substring(k_localRoot.Length + 1)
+                    If k_rel.Replace("\"c, "/"c).Split("/"c).Any(Function(k_part) k_part.Equals(".kbotadmin-deployment", StringComparison.OrdinalIgnoreCase)) Then Continue For
                     ' .pushignore has the last word: a "!" line there can put back a file the fixed list skips.
                     Dim k_ruled As Boolean? = k_ignoreFile.Match(k_rel)
                     If k_ruled.HasValue Then
@@ -137,15 +151,43 @@ Public NotInheritable Class PushService
                     Else
                         k_state = PushState.Identical
                     End If
-                    If k_state <> PushState.Identical Then k_extSend(k_ext) = k_extSend.GetValueOrDefault(k_ext) + 1
-                    k_result.Files.Add(New PushFile With {
+                    Dim k_file As New PushFile With {
                         .RelativePath = k_relRemote, .LocalFullPath = k_localFile, .RemotePath = k_remotePath,
                         .State = k_state, .LocalMtimeUtc = k_localUtc, .RemoteMtimeUtc = If(k_exists, k_remoteUtc, DateTime.MinValue),
                         .LocalSize = New FileInfo(k_localFile).Length, .RemoteSize = k_remoteSize
-                    })
+                    }
+                    Dim k_debugEntry As DebugDeployment = Nothing
+                    If k_debug.TryGetValue(k_relRemote, k_debugEntry) Then
+                        k_file.DebugHash = k_debugEntry.sha256
+                        If k_file.State = PushState.Identical Then k_file.State = PushState.AwaitingGit
+                    End If
+                    Dim k_entries As List(Of DeploymentRecord) = DeploymentRegistry.ForFile(k_records, k_repo, k_file)
+                    If k_entries.Count > 0 Then
+                        Dim k_message As String = DeploymentRegistry.CommitMessage(k_entries)
+                        k_file.RegisteredSlices = k_message.Split(ControlChars.Cr)(0)
+                        k_file.RegisteredReasons = String.Join(" | ", k_entries.Select(Function(k_entry) k_entry.reason).Distinct().
+                            OrderBy(Function(k_reason) k_reason, StringComparer.Create(Globalization.CultureInfo.GetCultureInfo("ro-RO"), True)))
+                        ' A failed or interrupted publish can leave matching mtimes but pending records.
+                        If k_file.State = PushState.Identical Then k_file.State = PushState.Modified
+                    End If
+                    If k_file.State <> PushState.Identical Then k_extSend(k_ext) = k_extSend.GetValueOrDefault(k_ext) + 1
+                    k_result.Files.Add(k_file)
                 Next
                 k_result.ObservedFingerprint = String.Empty
             End Using
+
+            ' A server debugging version can be finalized even if the local file is gone or excluded now.
+            Dim k_scanned As New HashSet(Of String)(k_result.Files.Select(Function(k_file) k_file.RelativePath), StringComparer.Ordinal)
+            For Each k_debugEntry As DebugDeployment In k_debug.Values
+                If k_scanned.Contains(k_debugEntry.path) Then Continue For
+                Dim k_remoteEntry As RemoteEntry = Nothing
+                Dim k_hasRemote As Boolean = k_listing IsNot Nothing AndAlso k_listing.TryGetValue(k_debugEntry.path, k_remoteEntry)
+                k_result.Files.Add(New PushFile With {.RelativePath = k_debugEntry.path,
+                    .LocalFullPath = Path.Combine(k_localRoot, k_debugEntry.path), .RemotePath = k_remoteRoot & "/" & k_debugEntry.path,
+                    .DebugHash = k_debugEntry.sha256, .State = PushState.AwaitingGit,
+                    .RemoteSize = If(k_hasRemote, k_remoteEntry.Size, 0),
+                    .RemoteMtimeUtc = If(k_hasRemote, k_remoteEntry.MtimeUtc, DateTime.MinValue)})
+            Next
 
             ' Every extension the settings know, plus every one the scan met.
             Dim k_all As New SortedSet(Of String)(k_accepted, StringComparer.OrdinalIgnoreCase)
@@ -164,7 +206,8 @@ Public NotInheritable Class PushService
             For Each k_pair As KeyValuePair(Of String, Integer) In k_ruleHits
                 k_result.Rules.Add(New PushRuleStat With {.Pattern = k_pair.Key, .Skipped = k_pair.Value})
             Next
-            k_result.Files.Sort(Function(k_a, k_b) String.Compare(k_a.RelativePath, k_b.RelativePath, StringComparison.OrdinalIgnoreCase))
+            Dim k_sort As StringComparer = StringComparer.Create(Globalization.CultureInfo.GetCultureInfo("ro-RO"), True)
+            k_result.Files.Sort(Function(k_a, k_b) k_sort.Compare(k_a.RelativePath, k_b.RelativePath))
             Return k_result
         Catch ex As Exception
             GlobalErrorLog.Write("PushService.Scan", ex)
@@ -217,32 +260,18 @@ Public NotInheritable Class PushService
     End Function
 
     ''' <summary>Uploads the files; returns how many failed. <paramref name="k_onFile"/> gets (done, file, error or empty).</summary>
-    Public Shared Function Upload(k_settings As AdminSettings, k_files As IReadOnlyList(Of PushFile),
-                                  k_onFile As Action(Of Integer, PushFile, String)) As Integer
+    Public Shared Function Upload(k_settings As AdminSettings, k_plan As DeploymentPlan,
+                                  k_onFile As Action(Of Integer, PushFile, String), k_onLine As Action(Of String)) As Integer
         Try
-            Dim k_failed As Integer = 0
-            RunLog.Write("Upload: conectare SFTP")
-            Using k_sftp As New SftpSession(k_settings)
-                k_sftp.Connect()
-                RunLog.Write("Upload: conectat, " & k_files.Count.ToString(Globalization.CultureInfo.InvariantCulture) & " fișiere")
-                Dim k_dirs As New HashSet(Of String)(StringComparer.Ordinal)
-                Dim k_done As Integer = 0
-                For Each k_file As PushFile In k_files
-                    Dim k_error As String = String.Empty
-                    RunLog.Write("Upload: " & k_file.RelativePath & " -> " & k_file.RemotePath)
-                    Try
-                        k_sftp.UploadFile(k_file.LocalFullPath, k_file.RemotePath, k_settings.PreserveMTime, k_dirs)
-                    Catch ex As Exception
-                        GlobalErrorLog.Write("PushService.Upload", ex)
-                        k_failed += 1
-                        k_error = ex.Message
-                    End Try
-                    k_done += 1
-                    RunLog.Write("Upload: gata " & k_file.RelativePath & If(k_error = String.Empty, " OK", " EROARE " & k_error))
-                    k_onFile?.Invoke(k_done, k_file, k_error)
-                Next
-            End Using
-            Return k_failed
+            DeploymentPublisher.Publish(k_settings, k_plan,
+                Sub(k_line)
+                    RunLog.Write(k_line)
+                    k_onLine?.Invoke(k_line)
+                End Sub)
+            For k_i As Integer = 0 To k_plan.Items.Count - 1
+                k_onFile?.Invoke(k_i + 1, k_plan.Items(k_i).PushFile, String.Empty)
+            Next
+            Return 0
         Catch ex As Exception
             GlobalErrorLog.Write("PushService.Upload", ex)
             Throw

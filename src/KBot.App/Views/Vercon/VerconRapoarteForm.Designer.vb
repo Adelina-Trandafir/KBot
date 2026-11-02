@@ -476,8 +476,6 @@ Partial Class VerconRapoarteForm
         treeRapoarte.PaddingTreeStart = 8
         treeRapoarte.Size = New System.Drawing.Size(340, 300)
         treeRapoarte.TabIndex = 0
-        tips.SetToolTipHeader(treeRapoarte, "Tipul raportului")
-        tips.SetToolTipText(treeRapoarte, "Grupele de rapoarte ale gestiunii. Alege un raport; apoi alege datele din coloana următoare.")
 
         '
         ' treeSel: the data of the report: a box on each row, the branches are read from the server when they are opened
@@ -508,8 +506,6 @@ Partial Class VerconRapoarteForm
         treeSel.SearchDefaultText = "... minim 3 caractere ..."
         treeSel.Size = New System.Drawing.Size(340, 300)
         treeSel.TabIndex = 0
-        tips.SetToolTipHeader(treeSel, "Selectare date")
-        tips.SetToolTipText(treeSel, "Datele raportului. Deschide o ramură ca să o citești de pe server, bifează ce vrei în raport. Fără nicio bifă se folosesc toate datele. Lupa din antet caută în tot arborele, minim 3 caractere.")
 
         '
         ' lblPerTitlu: the heading of the period rows

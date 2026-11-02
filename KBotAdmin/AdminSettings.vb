@@ -27,6 +27,9 @@ Public Class AdminSettings
     ''' <summary>The folder pushed to the server. Empty = the PYTHON folder next to KBot.sln (see <see cref="EffectiveLocalRoot"/>).</summary>
     Public Property LocalRoot As String = String.Empty
 
+    ''' <summary>The folder of the queries of the group «_Interogari» (page «Tabele»). Empty = KBotAdmin\Interogari of the repository this exe sits in (see <see cref="EffectiveQueriesFolder"/>).</summary>
+    Public Property QueriesFolder As String = String.Empty
+
     ''' <summary>After an upload the remote time is set to the local one, so a new scan sees the file as identical.</summary>
     Public Property PreserveMTime As Boolean = True
 
@@ -59,6 +62,20 @@ Public Class AdminSettings
     Public Property IncludeExtensions As List(Of String) = New List(Of String) From {
         "cfg", "css", "html", "ico", "ini", "jpg", "js", "json", "md", "png", "py", "sql", "svg", "toml", "txt", "webp", "xml", "yaml", "yml"
     }
+
+    ''' <summary>
+    ''' The queries folder: the setting, else <c>KBotAdmin\Interogari</c> next to KBot.sln (walking up from the exe, so it works from bin\Debug and from _Admin).
+    ''' Empty = not found.
+    ''' </summary>
+    Public Function EffectiveQueriesFolder() As String
+        If Not String.IsNullOrWhiteSpace(QueriesFolder) Then Return QueriesFolder.Trim()
+        Dim k_dir As DirectoryInfo = New DirectoryInfo(AppContext.BaseDirectory)
+        Do While k_dir IsNot Nothing
+            If File.Exists(Path.Combine(k_dir.FullName, "KBot.sln")) Then Return Path.Combine(k_dir.FullName, "KBotAdmin", "Interogari")
+            k_dir = k_dir.Parent
+        Loop
+        Return String.Empty
+    End Function
 
     ''' <summary>The folder to push: the setting, else the PYTHON folder of the repository this exe was built in.</summary>
     Public Function EffectiveLocalRoot() As String

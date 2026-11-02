@@ -231,7 +231,9 @@ Partial Class KBotDataView
             editCombo.ForeColor = p.InputTextColor
 
             BackColor = _cRowBack
-            ApplyScrollBarTheme()
+            ' The bars are KBotScrollBar (palette-coloured, like the tree's): hand them the scheme directly.
+            vScroll.ApplyTheme(scheme)
+            hScroll.ApplyTheme(scheme)
             RebuildThemeResources()
             ' English (slice 0013): theme changes can swap fonts, so re-measure the columns.
             UpdateLayout()
@@ -241,35 +243,11 @@ Partial Class KBotDataView
         End Try
     End Sub
 
-    ''' <summary>
-    ''' Trece barele de derulare pe varianta întunecată a temei vizuale Windows (slice 0028-03).
-    '''
-    ''' <para><b>De ce nu sunt pictate de noi.</b> <c>VScrollBar</c>/<c>HScrollBar</c> sunt ferestre
-    ''' native: fața lor o desenează Windows, nu <c>OnPaint</c>-ul nostru, deci nicio culoare din
-    ''' paletă n-ar ajunge la ele. <c>SetWindowTheme</c> cu «DarkMode_Explorer» e exact trucul pe
-    ''' care ThemeManager îl folosește deja pentru liste și pentru <c>KBotComboBox</c> — nu ne
-    ''' aduce culorile schemei, ci griul întunecat al Windows-ului, dar aceea e singura variantă
-    ''' care nu cere un control de derulare scris de la zero.</para>
-    '''
-    ''' <para><b>Limita, spusă pe față:</b> barele urmează DOAR perechea întuneric/lumină. Sub o
-    ''' schemă colorată ele rămân cele de sistem, iar accentul paletei nu ajunge niciodată pe ele.
-    ''' Un <c>KBotScrollBar</c> owner-drawn ar rezolva și asta — vezi worklog-ul feliei.</para>
-    '''
-    ''' <para>Se re-aplică și la <c>OnHandleCreated</c>: <c>SetWindowTheme</c> cere un handle, iar
-    ''' prima aplicare de temă poate cădea înaintea lui.</para>
-    ''' </summary>
-    Private Sub ApplyScrollBarTheme()
-        Dim tema As String = If(_schemeIsDark, "DarkMode_Explorer", "Explorer")
-        NativeMethods.ApplyWindowTheme(vScroll, tema)
-        NativeMethods.ApplyWindowTheme(hScroll, tema)
-    End Sub
-
     Protected Overrides Sub OnHandleCreated(e As EventArgs)
         MyBase.OnHandleCreated(e)
         Try
             ' Abia acum DeviceDpi spune adevărul — vezi KBotDataView.Dpi.vb.
             SyncDpiScale()
-            ApplyScrollBarTheme()
         Catch ex As Exception
             ' Boundary UI: crearea handle-ului nu are voie să arunce în bucla de mesaje.
             GlobalErrorLog.Write("KBotDataView.OnHandleCreated", ex)

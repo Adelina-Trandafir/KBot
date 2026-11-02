@@ -1,5 +1,15 @@
 # VERCON — status (registru separat, ca ADECHIT_STATUS)
 
+## SLICE-VC06-29 — Stoc după data NIR — 02.11.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Data NIR (`VC_NIR.Data`) determină cronologia intrărilor/stornărilor în registrul comun, disponibil, validări, fișe, balanțe, selecții de perioadă, ajustări, surse FCS și evenimentele de recepție/storno MF. Data facturii rămâne informația facturii. Sursele de rapoarte salvate sunt adaptate în memorie; exporturile vechi dependente cer regenerare. Utilizatorul confirmă manual că deficitul APA 19L provine din mutarea datei NIR după un consum. [Worklog VC06-29](../docs/worklog/SLICE-VC06-29-stoc-dupa-data-nir.md). Fără teste, compilare, verificări automate de execuție, browser, SQL, modificări ale datelor istorice, DDL sau publicare.
+
+## SLICE-VC06-28 — Luna activă: ultima lună cu date — 02.11.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Pentru modificarea BC în Alimente, luna activă este cea mai recentă lună cu liste sau bonuri de consum neanulate; o listă mai veche nu mai ascunde bonurile mai recente. Materiale păstrează ultima lună cu BC neanulate. Calcul pe gestiune, pe toate exercițiile, fără fallback la calendar; mesaj explicit „ultima lună cu date”. [Worklog VC06-28](../docs/worklog/SLICE-VC06-28-luna-activa-ultima-luna-cu-date.md). Fără teste, verificări automate, browser, build, SQL sau publicare.
+
+Actualizare 02.11.2026, la cererea explicită de verificare: **COD PREZENT PE SERVER, DIAGNOSTIC CONFIRMAT PRIN CITIRE ȘI PROBĂ IZOLATĂ.** Funcțiile relevante coincid local/server. Eroarea APA 19L, −4 la 19.05.2026, provine dintr-un deficit deja prezent în datele salvate. Controlul istoric existent poate bloca inclusiv editări care nu agravează deficitul; nu a fost modificat în acest slice. Consultate jurnalul serverului și mișcările produsului într-o tranzacție READ ONLY; fără scrieri în bază, modificări ale codului aplicației, salvare de probă, publicare sau restart. Detalii în worklog.
+
 ## SLICE-VC09-17 — Alinierea chenarului de hover cu grila — 30.10.2026
 
 **IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Conturul de 2px este centrat pe marginea rândului, iar stratul interactiv folosește 100% din suprafața de conținut a paginii, ca și canvasul. Fără translații fixe ale rândurilor; exporturile se păstrează. [Worklog VC09-17](../docs/worklog/SLICE-VC09-17-aliniere-chenar-hover-cu-grila.md). Fără teste, browser, build, SQL sau publicare; analiză din cod și captura utilizatorului.

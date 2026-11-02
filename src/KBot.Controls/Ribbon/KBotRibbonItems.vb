@@ -118,6 +118,9 @@ Public Enum KBotRibbonFieldKind
 
     ''' <summary>A one-line text box (KBotTextBox).</summary>
     Text = 1
+
+    ''' <summary>A tick box (KBotCheckBox) with the caption <see cref="KBotRibbonField.Caption"/>; <see cref="KBotRibbonField.CheckedChanged"/> tells when it is ticked or cleared (ME01-08).</summary>
+    Check = 2
 End Enum
 
 ''' <summary>
@@ -130,6 +133,7 @@ Public NotInheritable Class KBotRibbonField
 
     Private _text As String = String.Empty
     Private _selectedIndex As Integer
+    Private _checked As Boolean
     Private ReadOnly _items As New Collection(Of String)()
 
     Public Sub New()
@@ -140,9 +144,44 @@ Public NotInheritable Class KBotRibbonField
     Public Property Key As String
 
     <Category("K-BOT")>
-    <Description("Combo = pick from Items, no typing. Text = a text box.")>
+    <Description("Combo = pick from Items, no typing. Text = a text box. Check = a tick box (Caption, CheckedChanged).")>
     <DefaultValue(KBotRibbonFieldKind.Combo)>
     Public Property Kind As KBotRibbonFieldKind = KBotRibbonFieldKind.Combo
+
+    <Category("K-BOT")>
+    <Description("Check kind: the text beside the tick box.")>
+    <DefaultValue("")>
+    Public Property Caption As String = String.Empty
+
+    ''' <summary>Check kind: is it ticked. Runtime state, never serialized; a value written before the ribbon made the control is applied when it does.</summary>
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property Checked As Boolean
+        Get
+            Dim k_box As KBot.Controls.KBotCheckBox = TryCast(Control, KBot.Controls.KBotCheckBox)
+            If k_box IsNot Nothing Then Return k_box.Checked
+            Return _checked
+        End Get
+        Set(k_value As Boolean)
+            _checked = k_value
+            Dim k_box As KBot.Controls.KBotCheckBox = TryCast(Control, KBot.Controls.KBotCheckBox)
+            If k_box IsNot Nothing Then k_box.Checked = k_value
+        End Set
+    End Property
+
+    ''' <summary>Check kind: the operator ticked or cleared the box (or <see cref="Checked"/> was written).</summary>
+    Public Event CheckedChanged As EventHandler
+
+    ''' <summary>The ribbon's tick box changed: tells whoever listens.</summary>
+    Friend Sub RaiseCheckedChanged()
+        RaiseEvent CheckedChanged(Me, EventArgs.Empty)
+    End Sub
+
+    Friend ReadOnly Property PendingChecked As Boolean
+        Get
+            Return _checked
+        End Get
+    End Property
 
     <Category("K-BOT")>
     <Description("The rows of a Combo field.")>

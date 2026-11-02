@@ -13,13 +13,13 @@ Data: 2026-09-06
 
 ### Ce s-a schimbat și de ce
 
-Formular nou în `KBot.Forexe` care andochează browserul Playwright deja pornit, înregistrează ce face operatorul pe CABWeb și generează un fișier `.wfl`. Câștigul urmărit: dispare munca de găsit selectori care supraviețuiesc unui rerender Wicket.
+Formular nou `KBot.Forexe`: andochează browserul Playwright pornit, înregistrează acțiunile CABWeb și generează `.wfl`, urmărind selectori rezistenți la rerender Wicket.
 
 #### Faza A — andocare falsă
 `WorkflowExecutor.Docking.vb`: fereastra Chromium **nu** e reparentată (fără `SetParent`) — e doar ținută peste `pnlBrowser` și imediat deasupra formularului în z-order. Coordonatele WinForms (pixeli fizici, PerMonitorV2) se convertesc în DIP pentru `Browser.setWindowBounds` cu `* 96 / DeviceDpi`. Gărzi `_isDocked` adăugate în `HideBrowserWindowAsync`, `ShowBrowserWindowAsync` și `ExecuteMinimizeAsync` — altfel un workflow ar arunca browserul off-screen în timpul înregistrării. `UndockBrowserAsync` își face propriul `setWindowBounds`, ca să nu fie blocat de propria gardă.
 
 #### Faza B — `Recorder.js`
-Resursă embedded nouă, callback propriu `_kbotRecorderCallback` (numele `_clickMonitorCallback` / `_keyMonitorCallback` sunt deja ocupate de `ClickMonitor.vb`, iar `ExposeFunctionAsync` aruncă la a doua expunere). Gardă `_kbotRecorderInstalled`. Listeneri în faza de capture: `mousedown`, `input`, `change`, `focusout`, `keydown` (doar Enter/Tab). Clasificare widget (select2-mask / -open / -search / -pick, wicket-select, paginator, row-action). Până la 5 candidați de selector rankați; **`id` nu e niciodată sursă de selector** (Wicket regenerează id-urile). `matchCount` pentru `:has-text()` se numără manual, `querySelectorAll` nu înțelege sintaxa Playwright.
+Resursă embedded nouă cu `_kbotRecorderCallback`: `_clickMonitorCallback` / `_keyMonitorCallback` sunt ocupate de `ClickMonitor.vb`, iar `ExposeFunctionAsync` aruncă la reexpunere. Gardă `_kbotRecorderInstalled`; capture pentru `mousedown`, `input`, `change`, `focusout`, `keydown` (numai Enter/Tab). Clasifică select2-mask / -open / -search / -pick, wicket-select, paginator, row-action; rankează maximum 5 selectori, **niciodată din `id`**, regenerat de Wicket. `matchCount` pentru `:has-text()` se numără manual: `querySelectorAll` nu înțelege sintaxa Playwright.
 
 #### Faza C — captura în .NET
 `RecordedStep`, `SelectorCandidate`, `RecordedAncestor`, `RecorderComment` + `WorkflowExecutor.Recorder.vb`. Instalarea se face o singură dată per executor; `StopRecording` doar comută un boolean. Scriptul se injectează **și** prin `AddInitScriptAsync` (navigări viitoare) **și** printr-un `EvaluateAsync` pe pagina curentă — fără al doilea, primul click nu s-ar înregistra niciodată. Corelarea AJAX folosește monitorul Wicket: `#animlogo` care iese din `display:none` în 1500 ms după un pas ⇒ `TriggeredAjax`; intrarea `IDLE` următoare dă `IdleAfterMs`. `#statlogo` e ignorat complet.
@@ -28,10 +28,10 @@ Resursă embedded nouă, callback propriu `_kbotRecorderCallback` (numele `_clic
 Clasă pură (fără UI, fără browser, fără stare globală). Cele nouă reguli din plan: zgomot eliminat, select2 cu căutare (bloc fix de 5 acțiuni), select2 fără căutare (3 acțiuni), `<select>` Wicket + regula sursă→indicator (`<Wait seconds="1">` obligatoriu), Fill colapsat, Click, WaitFor automat, notă de buclă la paginator, bloc de reset.
 
 #### Faza E — `WflWriter.vb`
-`IWorkflowAction` → XML. Atributele se scriu doar când diferă de ce ar reface `WorkflowParser`. Selectorii cu `:has-text('…')` care conțin apostrof se trunchiază la cel mai lung fragment fără apostrof de minimum 6 caractere; dacă nu există, aruncă `InvalidOperationException` cu mesaj în română (fail-fast, nu scrie un selector rupt).
+`IWorkflowAction` → XML; atribute numai dacă diferă de ce reface `WorkflowParser`. Pentru apostrof în `:has-text('…')`, folosește cel mai lung fragment fără apostrof, minimum 6 caractere; lipsa lui aruncă `InvalidOperationException` cu mesaj românesc, înainte de scrierea unui selector invalid.
 
 #### Faza F — `RecorderForm`
-`SplitContainer` vertical: stânga `pnlBrowser` (gazda), dreapta bara de andocare, bara de înregistrare, opțiunile, lista de pași, panoul de detaliu, bara de generare și previzualizarea. Orice modificare (candidat, bifă, ștergere, reordonare, opțiune globală) regenerează previzualizarea. Ștergerea e logică (`Deleted`), ca numerotarea traseului brut să rămână coerentă. `TopMost` rămâne `False` — un formular TopMost ar acoperi browserul andocat. Repoziționarea browserului la mutare/redimensionare/splitter e debounce-uită la 150 ms.
+`SplitContainer` vertical: stânga gazda `pnlBrowser`; dreapta andocare, înregistrare, opțiuni, pași, detaliu, generare și preview. Candidatul, bifa, ștergerea, reordonarea sau opțiunea globală regenerează preview-ul. Ștergere logică (`Deleted`) pentru numerotarea traseului brut. `TopMost = False` evită acoperirea browserului; repoziționarea la mutare/redimensionare/splitter are debounce 150 ms.
 
 ### Fișiere atinse
 
@@ -41,14 +41,14 @@ Modificate: `src/KBot.Forexe/Executor/WorkflowExecutor.Browser.vb` — gărzi `_
 
 ### Abateri de la documentul de predare (motivate)
 
-1. **Faza A NU era livrată.** Documentul o marca „Livrat"; în repo nu exista niciun fișier `Docking` sau `RecorderForm` (nici urmărit, nici neurmărit). A fost implementată în cadrul acestei felii.
-2. **`waitNavigation` — documentul greșește.** Documentul spune că `True` e implicit și se omite. `ClickAction.WaitNavigation` e `True` în model, dar `WorkflowParser` îl citește cu `GetBoolAttribute(e, "waitNavigation", False)`. Parserul e cel care recitește fișierul, deci `waitNavigation="true"` se scrie **explicit**. Verificat prin round-trip.
+1. **Faza A NU era livrată**, deși documentul o marca „Livrat": lipseau `Docking` și `RecorderForm`, urmărite sau neurmărite. Implementată în această felie.
+2. **`waitNavigation` — documentul greșește** cerând omiterea valorii implicite `True`: modelul `ClickAction.WaitNavigation` are `True`, dar cititorul `WorkflowParser` folosește `GetBoolAttribute(e, "waitNavigation", False)`. De aceea se scrie **explicit** `waitNavigation="true"`; verificat prin round-trip.
 3. **Comentarii și identificatori în engleză**, nu în română. RULE 0 din `CLAUDE.md` și memoria `code-english-only` au prioritate; româna rămâne doar în textele pe care le vede operatorul (log, UI, MsgBox, `LogValue`). Numele controalelor rămân cele din plan (`btnAndocheaza`, `btnSalveaza`…) — e vocabularul folosit unanim de restul formularelor.
 4. **Fără blocuri `Namespace`** (regulă de casă). Modelele recorderului stau în namespace-ul rădăcină, nu în `WorkflowModels` — cerința reală a planului („zero proprietăți noi pe clasele din `WorkflowModels`") e respectată.
 5. **Membri redenumiți în engleză**: `InsereazaWaitFor` → `InsertWaitFor`, `Sters` → `Deleted`, `SelectorAles` → `ChosenSelector`, `Comprima` → `Compact`, `Scrie` → `Write`, `InsereazaWaitForAutomat` → `InsertWaitForAutomatically`, `AdaugaBlocReset` → `AddResetBlock`, `TimeoutImplicit` → `DefaultTimeout`.
-6. **Câmp nou în payload: `keyName`.** Structura din plan nu distinge Enter de Tab, deși `keydown` prinde ambele. Fără el pasul `key` era inutilizabil.
-7. **`RecorderComment`** — regulile 8 și 9 cer comentarii XML în output, dar semnătura cerută returnează `List(Of IWorkflowAction)`. Comentariile călătoresc ca acțiune-marcaj, pe care `WflWriter` o transformă în `XComment`; `WorkflowParser` nu le vede (comentariile nu sunt elemente).
-8. **ListView desenat manual.** `ThemeManager` nu acoperă `ListView` — în temă întunecată rămânea alb. Rândurile și antetul se desenează din paleta activă (fără culori literale).
+6. **Payload nou `keyName`** distinge Enter/Tab, ambele capturate de `keydown`; structura din plan făcea pasul `key` inutilizabil.
+7. **`RecorderComment`** împacă XML-ul cerut de regulile 8/9 cu semnătura `List(Of IWorkflowAction)`: acțiune-marcaj transformată de `WflWriter` în `XComment`, ignorat de `WorkflowParser` (nu este element).
+8. **ListView desenat manual:** `ThemeManager` nu-l acoperă și rămânea alb în Dark; rânduri/antet din paleta activă, fără culori literale.
 
 ### Rezultate teste
 
@@ -72,13 +72,13 @@ Modificate: `src/KBot.Forexe/Executor/WorkflowExecutor.Browser.vb` — gărzi `_
 
 Data: 2026-09-07
 
-Continuarea feliei 0053 ([SLICE-0053-recorder.md](#slice-0053-baza)), care lăsase formularul scris dar neajuns de nicăieri. Aici se rezolvă punctul (1) din firele deschise: **RecorderForm are acum call-site**, iar `WicketMonitorForm` — care nici el nu se instanția nicăieri — se deschide din interiorul recorderului.
+Continuă [0053](#slice-0053-baza), rezolvând restanța (1): **RecorderForm primește call-site**, iar `WicketMonitorForm`, anterior neinstanțiat, se deschide din recorder.
 
 ### Ce s-a schimbat și de ce
 
 #### Seam-ul: `ShowRecorder`, nu `Executor`
 
-`WorkflowExecutor` rămâne privat în `ForexeRunner`; interfața primește intenția de deschidere, evitând trecerea motorului prin `KBot.App` înapoi în formularul din `KBot.Forexe`:
+`WorkflowExecutor` rămâne privat în `ForexeRunner`; interfața cere deschiderea fără a trece motorul prin `KBot.App` înapoi în formularul `KBot.Forexe`:
 
 ```
 IForexeRunner:  Sub ShowRecorder(owner As IWin32Window)
@@ -128,7 +128,7 @@ Monitorul anulează FormClosing și se ascunde la închiderea operatorului; numa
 
 Data: 2026-09-07
 
-Trei observații ale operatorului după prima încercare de a folosi recorderul cablat în pasul 02 ([SLICE-0053-02-recorder-cablare.md](#slice-0053-02)). Toate trei sunt piedici în calea verificării pe viu a andocării — punctul (2) din firele deschise ale feliei.
+Trei observații după prima încercare a operatorului cu recorderul [cablat în 02](#slice-0053-02); toate împiedicau probarea andocării pe viu, restanța (2).
 
 ### 1. Nedocat, browserul cădea în spatele formularului
 

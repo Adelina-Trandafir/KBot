@@ -413,6 +413,9 @@ Partial Public Class KBotRichTextEditor
         Try
             If scheme Is Nothing Then Return
             ApplyResolvedColors()
+            ' The bar is an IThemedControl child, but hand it the scheme directly so it is right even when
+            ' the host is themed by hand (same wiring as KBotTextBox).
+            vBar.ApplyTheme(scheme)
             ' The base font may have moved with the scheme, so anything measured from it
             ' (the footer counters) has to be placed again.
             RebuildLayout()

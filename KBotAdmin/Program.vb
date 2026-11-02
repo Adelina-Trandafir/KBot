@@ -3,7 +3,7 @@ Imports System.Threading
 
 ''' <summary>
 ''' KBotAdmin entry point (slice ME01). Explicit Sub Main: no VB application framework. The scaling is the
-''' one K-BOT uses; the theme is fixed to Classic, the message boxes are
+''' one K-BOT uses; the theme is the saved one and can be switched like in K-BOT, the message boxes are
 ''' K-BOT's own, and every unhandled error goes to the same error log (<AppDir>\Logs\harness_errors.log).
 ''' </summary>
 Friend Module Program
@@ -32,8 +32,8 @@ Friend Module Program
             Else
                 Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)
             End If
-            ' KBotAdmin is ALWAYS Classic, whatever theme K-BOT has saved; nothing is written to the theme settings.
-            ThemeManager.InitializeFixed(BuiltInSchemes.Classic())
+            ' Same as K-BOT: the saved theme (Classic when none) and the theme button of the caption bar switches it.
+            ThemeManager.Initialize()
             KBotMessageBox.Install()
 
             Dim k_client As AdminClient = Nothing

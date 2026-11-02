@@ -113,6 +113,8 @@ Gazda/profilurile și observațiile reale sunt în [0024](../SLICE-0024-01-adobe
 
 ### Current focus
 
+- **0027-04 (02.11.2026):** bifele (checkbox / radio) și expanderele [+]/[-] ale arborelui își iau culorile din paleta schemei (erau alb / albastru / negru scrise în cod, deci albe pe Dark); KBot.Controls 1.79.0.0; ÎNCHISĂ, rulat și verificat de operator; [jurnal](../SLICE-0027-04-arbore-bife-si-expandere-pe-tema.md).
+
 Baza are acceptare vizuală la 08.08; subsolul/strângerea din 02 au verdict parțial și corecții nereprobate, iar cele patru vederi din 03 sunt nevăzute pe ecran. Contractele, lecțiile, exportul designer și restanțele sunt în [0027](../SLICE-0027-tree-designer-surface.md), pe etapă.
 
 ---

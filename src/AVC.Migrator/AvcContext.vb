@@ -54,6 +54,43 @@ Friend NotInheritable Class AvcContext
     ''' </summary>
     Public Property SubunitDrafts As IReadOnlyList(Of AvcSubunit) = New List(Of AvcSubunit)()
 
+    ''' <summary>Set by <see cref="AvcRunner"/> for the step being written: (done, total, what) -> the console. Nothing = nobody is watching.</summary>
+    Friend Property OnTick As Action(Of Integer, Integer, String)
+
+    Private ReadOnly _tickClock As Stopwatch = Stopwatch.StartNew()
+    Private _lastTickMs As Long = -1000
+
+    ''' <summary>
+    ''' A step calls this inside its row loop ("<paramref name="k_done"/> of <paramref name="k_total"/> <paramref name="k_what"/>"). Costs one
+    ''' clock read per call and passes on at most five times a second (the last one of a table always), so it does not slow the write.
+    ''' </summary>
+    Public Sub Tick(k_done As Integer, k_total As Integer, k_what As String)
+        Dim k_callback = OnTick
+        If k_callback Is Nothing Then Return
+        Dim k_now = _tickClock.ElapsedMilliseconds
+        If k_done < k_total AndAlso k_now - _lastTickMs < 200 Then Return
+        _lastTickMs = k_now
+        k_callback(k_done, k_total, k_what)
+    End Sub
+
+    ''' <summary>
+    ''' How the operator recognises a unit in a message or in the report: the <c>AlteDetalii</c> of <c>cale.accdb</c>, then the registry name,
+    ''' then the bare id (an id such as 75 tells the operator nothing). Looks in the ticked units first, then in every unit of the DC.
+    ''' </summary>
+    Public Function UnitLabel(k_idUnitate As Integer) As String
+        Dim k_unit = Units.FirstOrDefault(Function(k_u) k_u.IdUnitate = k_idUnitate)
+        If k_unit Is Nothing Then k_unit = DcUnits.FirstOrDefault(Function(k_u) k_u.IdUnitate = k_idUnitate)
+        Return LabelOf(k_unit, k_idUnitate)
+    End Function
+
+    ''' <summary>The label of <paramref name="k_unit"/>; <paramref name="k_idUnitate"/> stands in when the unit is not known.</summary>
+    Public Shared Function LabelOf(k_unit As CaiUnit, k_idUnitate As Integer) As String
+        If k_unit Is Nothing Then Return k_idUnitate.ToString(Globalization.CultureInfo.InvariantCulture)
+        If Not String.IsNullOrWhiteSpace(k_unit.AlteDetalii) Then Return k_unit.AlteDetalii.Trim()
+        If Not String.IsNullOrWhiteSpace(k_unit.NumeUnitate) Then Return k_unit.NumeUnitate.Trim()
+        Return k_unit.IdUnitate.ToString(Globalization.CultureInfo.InvariantCulture)
+    End Function
+
     ''' <summary>IdUnitate ▸ the subunit the run will CREATE for it; filled by the subunits step's verification so the steps after it know the unit gets one.</summary>
     Public ReadOnly Property PlannedSubunits As New Dictionary(Of Integer, AvcSubunit)()
 

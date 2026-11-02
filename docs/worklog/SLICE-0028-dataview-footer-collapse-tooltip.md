@@ -249,7 +249,7 @@ Grila expune și `ColumnFilterOpening` (anulabil) plus `ShowColumnFilterMenu(che
 - În `IsDark`, `HeaderBackResolved` / `HeaderForeResolved` / `FooterBackResolved` / `FooterForeResolved` folosesc paleta, ignorând culorile de designer (`DarkOverridesDesignerColors`) pentru lizibilitate. Pe scheme luminoase rămâne regula culorii explicite. Culorile sunt păstrate și revin la ieșirea din întuneric.
 - Se aplică numai CULORILOR. **Un font fixat rămâne al operatorului în orice schemă** — un font nu devine ilizibil pe fundal închis.
 - Celulele luau deja culorile din paletă în orice schemă (`_cRowBack` / `_cCellText`), deci acolo n-a fost nimic de schimbat.
-- Barele de derulare: `SetWindowTheme` cu «DarkMode_Explorer» / «Explorer», prin `NativeMethods.ApplyWindowTheme` — același truc pe care ThemeManager îl folosește deja pentru liste și pentru `KBotComboBox`. Se re-aplică la `OnHandleCreated`, fiindcă apelul cere un handle.
+- Barele de derulare: de la 0010-10 sunt `KBotScrollBar` (tematizate din paletă); trucul `SetWindowTheme` cu «DarkMode_Explorer» a fost scos din grilă.
 
 ### 6. Bug găsit pe drum: tema nu ajungea în NICIO vedere
 

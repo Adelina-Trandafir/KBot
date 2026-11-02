@@ -21,7 +21,7 @@
     <OptionCompare>Binary</OptionCompare>
     <Nullable>disable</Nullable>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.2.0.0</FileVersion>
+    <FileVersion>1.2.0.3</FileVersion>
     <ApplicationIcon>KBotAdmin.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -52,6 +52,7 @@
 
   <ItemGroup>
     <EmbeddedResource Include="KBotAdmin.ico" LogicalName="KBotAdmin.ico" />
+    <EmbeddedResource Include="Server\PublishServer.py" LogicalName="publish.server.py" />
   </ItemGroup>
 
   <!-- ME01-05: the ribbon icons come from K-BOT's own icon stock, linked (not copied) so there is one source.

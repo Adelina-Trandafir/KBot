@@ -1,0 +1,51 @@
+# SLICE-ME01-12 - KBotAdmin «Tabele»: tree group «_Interogari» (02.11.2026)
+
+Owner's tool only (KBotAdmin, never published to clients). The tree of the page «Tabele» (ribbon Baze de date > Răsfoire) gets a first group, **«_Interogari»**: queries the owner defines, run on the chosen database, with typed parameters. The owner writes the queries together with Claude, one file each.
+
+## Decision: the queries stay LOCAL
+Two ways were possible: (a) a stored procedure in every database, (b) the text kept in KBotAdmin (as files) and sent at every run. (b) was chosen (the operator allowed it): nothing is created in the databases, so there is no per-database deployment, no drift between databases, and the schema sync does not have to carry anything. The server keeps nothing either: the text travels with each run, is checked and runs once.
+
+## What it does
+- **Tree:** group «_Interogari» (count at the right) above «_Fara Grupare» and the table groups; one row per query (title, «interogare» at the right, tooltip = title + what it does). A query opens on a **left click** or **Enter** (the arrows do not open it, so walking down the tree never throws a window).
+- **Window `QueryParamsForm`** (modal): what the query does, «Rulează pe baza X (doar citește, nu schimbă nimic)», then one row per parameter: label, field, and the explanation next to it (also the field's tooltip). Room for 6 parameters (declared in the Designer; unused rows collapse and the form shrinks). «Rulează» checks every value against the parameter's type (text, whole number, decimal number, date `31.12.2026` -> ISO) and says what is wrong. The texts typed are offered again the next time the same query opens (until the program closes). A query with no parameters still opens the window, so it is read before it runs.
+- **Result:** in the same rows grid as a table (types decide width / format / alignment, header menu sort / filter / group). Upper fact grid: query, database, what it does, the values used, rows, time on the server. No «Încarcă încă», no links, no history (◀ ▶ off). The result is cut at 5.000 rows and the page says so. «Reîncarcă» runs the query again with the same values. A blob cell cannot be opened (message in the status line).
+
+## The catalog (how a query is added)
+`KBotAdmin/Interogari/<id>.sql`, plain files in the repository, **read from disk every time, never embedded in the exe** (changed 02.11.2026 at the operator's request: adding or changing a query must need NO publish, local or online, and a `publish-admin.ps1` must not lose them). The folder is found like the PYTHON folder: walking up from the exe to `KBot.sln` (works from `bin\Debug` and from `_Admin`) -> `<repo>\KBotAdmin\Interogari`; the setting `QueriesFolder` of `admin_settings.json` overrides it (that file survives a publish). `QueryCatalog.Load(folder)` reads the tree (on every tree build, so «Reîncarcă» shows new files and new titles); `QueryCatalog.Find(folder, id)` reads ONE file when its row is clicked, so an edit of the parameters or the text counts at once, without even «Reîncarcă». Header of `-- @` lines, then read-only SQL:
+```
+-- @title Tabele cu o coloană
+-- @description What it does (several lines are joined).
+-- @param coloana | Coloana | text | Explanation shown next to the field
+-- @param pana_la? | Până la | date | A «?» after the name = optional (empty -> NULL)
+SELECT ... WHERE x = :coloana
+```
+Types: `text`, `int`, `number`, `date`. The parameter in the text is `:name`. A broken header (unknown key / type, parameter not used in the text, no title) does NOT stop the others: the file shows in the tree as a row «<file> (greșit)» (type «citește-mă»), and a click says what is wrong; a missing folder is one row saying where it was looked for. A mistake never becomes a silently missing query. First query: `tabele_cu_coloana.sql` (example, uses only `information_schema`).
+
+Queries so far:
+- `tabele_cu_coloana` - tables with a column whose name contains a text (example).
+- `istoric_cod_angajament` - **Istoric / CodAngajament** (parameter `cod`): every FX_Istoric row of an angajament code plus what hangs on it by IDH (FX_Rezervari with its DDF revision, FX_Plati, FX_Receptii, FX_Receptii_H, FX_Receptii_R, FX_Receptii_RHR). The operator's own script with `SET @cod = ...` turned into `:cod` (the server runs one statement, so the `SET` could not stay); the rest of the text is unchanged. Two columns were added at the operator's request (02.11.2026): `descriere` and `observatii` = the whole `FX_Istoric.Descriere` / `Observatii`, first filled on the FX_Istoric row only; then (operator, 02.11.2026) on EVERY row: each of the six other branches joins `FX_Istoric ih ON ih.ID = <alias>.IDH` and shows the text of the history row it hangs on. Only the `.sql` changed (KBotAdmin side), nothing on the server. Not run on a server. Checked: every `alias.column` of the text exists in `MariaDB_Schema/000_DEMO.sql` (the unqualified `ID` / `IDH` inside the subqueries were not checked).
+
+## Server half: `PYTHON/routes/admin_cli/admin_query.py` (verb `query-run`, registered in `admin_cli.py`)
+`query-run --db D --sql-b64 B [--params-b64 P] [--limit N]`. Checks before anything runs: one statement; starts with SELECT / WITH / SHOW / DESCRIBE / EXPLAIN; no `INTO OUTFILE/DUMPFILE`, no `FOR UPDATE` / `LOCK IN SHARE MODE`, no executable `/*! */` comment. The connection runs `START TRANSACTION READ ONLY`, `max_statement_time = 60`, `sql_select_limit = limit+1`. The database must be one unit database (`_resolve_db`; never SURSA / COMUN, never ALL).
+`:name` is replaced by a literal made in `_scan` / `_literal` (strings escaped, numbers checked, quotes and comments skipped) and the text is executed WITHOUT a parameter list, so a literal `%` (LIKE patterns) reaches the server untouched (see the memory «mysql.connector and %%»). The answer has the shape of `db-table` without keys (columns with a data type guessed from the type code and the values, `page.rows`, `elapsed_ms`), so the page reuses its grid code.
+
+## Frozen primary key (02.11.2026, same page)
+The rows grid of the page «Tabele» keeps the primary key columns on screen when it scrolls to the right (`KBotDataView.FrozenColumnCount` = number of key columns). The grid builds the key columns FIRST (in key order), then the rest as the table has them (`DisplayOrder`), so a key that is not the first column of the table is moved to the left in the grid; for the usual table (key first) nothing moves. `_kinds` / `_formats` / `_maxWidths` stay indexed like `_current.Columns`. If the key columns together would take more than half of the grid, `LimitFrozenBand` freezes only as many as fit (down to none). A table or a query result without a key freezes nothing. Not looked at on screen: the scroll itself, a composite key, the half-width limit on a narrow window.
+
+## Locked columns of a query (02.11.2026, same page)
+While the rows grid shows a QUERY, the bottom-right grid (facts about the chosen column, `gridColumn`) is replaced by `gridQueryColumns` (declared in the Designer, `Visible` swapped by `SyncSidePanel`): one row per column of the result with a tick «Fix», the name and the type. Ticking columns keeps them on the left when the rows scroll right; any number can be ticked and the locks ADD UP (the frozen band is the ticked columns, in the order of the query). `KBotDataView` has no way to move a column (only the first N visible columns freeze), so a tick builds the grid again with the ticked columns first (`FrozenIndexes` -> `DisplayOrder`, then `ShowTable(_current)`): the rows are not read again, but a sort or a filter the operator set in the rows grid is lost. The ticks are kept per query (`_queryLocks`, until the program closes) and applied every time that query runs, including «Reîncarcă». In query mode `LimitFrozenBand` does nothing (the operator's ticks are theirs); on a table the grid keeps freezing the primary key. Not looked at on screen: the swap of the two grids, the tick event, the rebuild with several columns, a locked band wider than the grid.
+
+## Files touched
+- `PYTHON/routes/admin_cli/admin_query.py` (new), `admin_cli.py` (register + usage line).
+- `KBotAdmin/Server/QueryCatalog.vb` (new: `QueryParamDef`, `QueryDef`, `QueryCatalogResult`, `QueryCatalog`), `KBotAdmin/Interogari/*.sql` (new), `KBotAdmin/AdminSettings.vb` (`QueriesFolder`, `EffectiveQueriesFolder`). `KBotAdmin.vbproj` embeds nothing of it.
+- `KBotAdmin/QueryParamsForm.vb` + `.Designer.vb` (new).
+- `KBotAdmin/Views/DbBrowserView.vb` (group, click, run, query mode of the grid), `KBotAdmin/Server/DbBrowserDtos.vb` (`ElapsedMs`), `KBotAdmin/README.md`.
+
+## Verified / unverified
+- Verified by the operator (02.11.2026): the verb `query-run` was tested on the server and works. Not looked at by me: the window and the page on screen.
+- Verified (reading from disk, 02.11.2026): build clean; the exe no longer holds the `.sql` files. NOT run: the tree with broken files, the missing-folder row, the walk-up from `_Admin`.
+- Verified: `dotnet build KBotAdmin\KBotAdmin.vbproj` clean (0 warnings, 0 errors); the query file is in the assembly's resources; both Python files parse.
+- **NOT run by me:** the window and the page were never opened here; the Python verb was never run here (no test, no server call; the operator pushed `PYTHON` by hand and tested it).
+- To confirm on the first run: the group appears first and opens; Enter / left click only; the window layout (the form shrinks by the collapsed rows; 6 slots authored for 96 dpi); the result of `tabele_cu_coloana` shows text (not «<BLOB>»: `information_schema` may hand text back as bytes, `_as_text` decodes it); a `decimal` result column shows its decimals; the READ ONLY transaction and `max_statement_time` are accepted by the server's MariaDB version; `sql_select_limit` cuts a plain SELECT at 5.001 rows; `%` inside `CONCAT('%', ...)` arrives untouched; a text parameter with a quote or a backslash.
+- Not done: writing queries (UPDATE / DELETE) are refused on purpose; if the owner wants them later they need their own, explicit mark and confirmation. The group needs the repository (or `QueriesFolder`): an exe copied elsewhere without `KBot.sln` above it shows the «folder not found» row.
+- Not in the K-BOT help: KBotAdmin is the owner's tool and has no help topics.

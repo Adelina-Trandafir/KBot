@@ -130,6 +130,8 @@ Partial Friend NotInheritable Class KBotFilterPopup
 
         ' The grouping tab exists only if the grid offers it (KBotDataView.EnableGrouping).
         navFile.SetItemVisible("grupare", HasGrouping)
+        navFile.SetItemVisible("filtrare", HasFiltering)
+        If Not HasFiltering Then navFile.SelectedKey = "sortare"
 
         _built = True
         ActivateView(navFile.SelectedKey)
@@ -157,6 +159,16 @@ Partial Friend NotInheritable Class KBotFilterPopup
             Dim col As KBotDataColumn = _grid.Columns.FirstOrDefault(
                 Function(c) String.Equals(c.Key, _columnKey, StringComparison.Ordinal))
             Return col Is Nothing OrElse col.AllowGrouping
+        End Get
+    End Property
+
+    ' Does the column offer the filter tab? Its own AllowFiltering narrows it (a sort-only menu for a tick-box column).
+    Private ReadOnly Property HasFiltering As Boolean
+        Get
+            If _grid Is Nothing Then Return True
+            Dim col As KBotDataColumn = _grid.Columns.FirstOrDefault(
+                Function(c) String.Equals(c.Key, _columnKey, StringComparison.Ordinal))
+            Return col Is Nothing OrElse col.AllowFiltering
         End Get
     End Property
 
@@ -226,7 +238,7 @@ Partial Friend NotInheritable Class KBotFilterPopup
         Try
             Dim group As Boolean = String.Equals(key, "grupare", StringComparison.Ordinal) AndAlso HasGrouping
             Dim sort As Boolean = String.Equals(key, "sortare", StringComparison.Ordinal)
-            _activeKey = If(group, "grupare", If(sort, "sortare", "filtrare"))
+            _activeKey = If(group, "grupare", If(sort OrElse Not HasFiltering, "sortare", "filtrare"))
 
             Dim view As IKBotFilterMenuView = ViewFor(_activeKey)
             Dim previous As IKBotFilterMenuView = _activeView

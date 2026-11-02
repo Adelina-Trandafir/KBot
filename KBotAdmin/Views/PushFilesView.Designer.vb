@@ -26,6 +26,9 @@ Partial Class PushFilesView
         Dim gridFilesCol6 As KBotDataColumn = New KBotDataColumn()
         Dim gridFilesCol7 As KBotDataColumn = New KBotDataColumn()
         Dim gridFilesCol8 As KBotDataColumn = New KBotDataColumn()
+        Dim gridFilesSlices As KBotDataColumn = New KBotDataColumn()
+        Dim gridFilesReasons As KBotDataColumn = New KBotDataColumn()
+        Dim gridFilesDebug As KBotDataColumn = New KBotDataColumn()
         Dim gridExtCol1 As KBotDataColumn = New KBotDataColumn()
         Dim gridExtCol2 As KBotDataColumn = New KBotDataColumn()
         Dim gridExtCol3 As KBotDataColumn = New KBotDataColumn()
@@ -35,6 +38,10 @@ Partial Class PushFilesView
         tips = New KBotToolTip(components)
         tlyMain = New KBotTableLayoutPanel()
         tlyBar = New KBotTableLayoutPanel()
+        tlyDebug = New KBotTableLayoutPanel()
+        chkDebugging = New KBotCheckBox()
+        btnFinalizeDebug = New KBotButton()
+        lblDebug = New Label()
         btnScan = New KBotButton()
         btnSend = New KBotButton()
         chkRestart = New KBotCheckBox()
@@ -72,16 +79,18 @@ Partial Class PushFilesView
         tlyMain.ColumnCount = 1
         tlyMain.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyMain.Controls.Add(tlyBar, 0, 0)
-        tlyMain.Controls.Add(lblRoot, 0, 1)
-        tlyMain.Controls.Add(tlyMid, 0, 2)
-        tlyMain.Controls.Add(logBox, 0, 3)
-        tlyMain.Controls.Add(lblState, 0, 4)
+        tlyMain.Controls.Add(tlyDebug, 0, 1)
+        tlyMain.Controls.Add(lblRoot, 0, 2)
+        tlyMain.Controls.Add(tlyMid, 0, 3)
+        tlyMain.Controls.Add(logBox, 0, 4)
+        tlyMain.Controls.Add(lblState, 0, 5)
         tlyMain.Dock = DockStyle.Fill
         tlyMain.Location = New Point(0, 0)
         tlyMain.Margin = New Padding(0)
         tlyMain.Name = "tlyMain"
         tlyMain.Padding = New Padding(8)
-        tlyMain.RowCount = 5
+        tlyMain.RowCount = 6
+        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 44F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 44F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 24F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
@@ -116,6 +125,35 @@ Partial Class PushFilesView
         tlyBar.Size = New Size(900, 560)
         tlyBar.TabIndex = 1
         '
+        ' Debugging publication and explicit Git-only finalization (ME01-09).
+        '
+        tlyDebug.AutoFitToTheme = False
+        tlyDebug.Dock = DockStyle.Fill
+        tlyDebug.Margin = New Padding(0)
+        tlyDebug.ColumnCount = 3
+        tlyDebug.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 260F))
+        tlyDebug.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 220F))
+        tlyDebug.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyDebug.RowCount = 1
+        tlyDebug.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyDebug.Controls.Add(chkDebugging, 0, 0)
+        tlyDebug.Controls.Add(btnFinalizeDebug, 1, 0)
+        tlyDebug.Controls.Add(lblDebug, 2, 0)
+        chkDebugging.Dock = DockStyle.Fill
+        chkDebugging.Margin = New Padding(0)
+        chkDebugging.Text = "Publicare debugging (fără Git)"
+        btnFinalizeDebug.Dock = DockStyle.Fill
+        btnFinalizeDebug.Margin = New Padding(0, 2, 6, 6)
+        btnFinalizeDebug.Text = "Finalizează debugging"
+        lblDebug.Dock = DockStyle.Fill
+        lblDebug.AutoEllipsis = True
+        lblDebug.TextAlign = ContentAlignment.MiddleLeft
+        lblDebug.Text = "După test: bifați fișierele debugging și finalizați numai Git."
+        tips.SetToolTipHeader(chkDebugging, "Publicare debugging")
+        tips.SetToolTipText(chkDebugging, "Trimite toate fișierele bifate fără Git, chiar dacă au slice și motiv. Datele Git existente sunt păstrate. Fără această bifă, fișierele fără informații Git sunt tot publicate fără Git.")
+        tips.SetToolTipHeader(btnFinalizeDebug, "Finalizare debugging — numai Git")
+        tips.SetToolTipText(btnFinalizeDebug, "Dintre fișierele bifate, finalizează numai cele din evidența debugging a serverului. Folosește direct slice-urile și motivele deja înregistrate pentru fiecare fișier și face numai Git, fără dialog suplimentar, reîncărcare sau repornire.")
+        '
         ' btnScan
         '
         btnScan.Dock = DockStyle.Fill
@@ -139,7 +177,7 @@ Partial Class PushFilesView
         btnSend.TabIndex = 3
         btnSend.Text = "Trimite bifatele"
         tips.SetToolTipHeader(btnSend, "Trimite bifatele")
-        tips.SetToolTipText(btnSend, "Încarcă pe server fișierele bifate, creând dosarele care lipsesc." & vbLf & "Ora serverului se aliniază cu a fișierului local, ca o nouă scanare să le vadă identice.")
+        tips.SetToolTipText(btnSend, "Încarcă pe server fișierele bifate. În modul debugging sau fără informații Git nu face Git și reține versiunile pentru finalizare. Altfel salvează în Git versiunile existente înainte de suprascriere.")
         '
         ' chkRestart
         '
@@ -263,9 +301,11 @@ Partial Class PushFilesView
         gridFilesCol4.Width = 54
         gridFilesCol5.AggregateFormatString = Nothing
         gridFilesCol5.FormatString = Nothing
-        gridFilesCol5.HeaderText = "Mărime locală"
+        gridFilesCol5.HeaderText = "Mărime locală (B)"
         gridFilesCol5.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridFilesCol5.Key = "size"
+        gridFilesCol5.ValueType = KBotValueType.Number
+        gridFilesCol5.FormatString = "N0"
         gridFilesCol5.MinWidth = 60
         gridFilesCol5.OptionGroup = Nothing
         gridFilesCol5.ReadOnly = True
@@ -273,9 +313,11 @@ Partial Class PushFilesView
         gridFilesCol5.Width = 96
         gridFilesCol6.AggregateFormatString = Nothing
         gridFilesCol6.FormatString = Nothing
-        gridFilesCol6.HeaderText = "Mărime server"
+        gridFilesCol6.HeaderText = "Mărime server (B)"
         gridFilesCol6.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridFilesCol6.Key = "srvsize"
+        gridFilesCol6.ValueType = KBotValueType.Number
+        gridFilesCol6.FormatString = "N0"
         gridFilesCol6.MinWidth = 60
         gridFilesCol6.OptionGroup = Nothing
         gridFilesCol6.ReadOnly = True
@@ -286,6 +328,8 @@ Partial Class PushFilesView
         gridFilesCol7.HeaderText = "Local (UTC)"
         gridFilesCol7.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridFilesCol7.Key = "local"
+        gridFilesCol7.ValueType = KBotValueType.DateTime
+        gridFilesCol7.FormatString = "yyyy-MM-dd HH:mm:ss"
         gridFilesCol7.MinWidth = 90
         gridFilesCol7.OptionGroup = Nothing
         gridFilesCol7.ReadOnly = True
@@ -295,6 +339,8 @@ Partial Class PushFilesView
         gridFilesCol8.HeaderText = "Server (UTC)"
         gridFilesCol8.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridFilesCol8.Key = "server"
+        gridFilesCol8.ValueType = KBotValueType.DateTime
+        gridFilesCol8.FormatString = "yyyy-MM-dd HH:mm:ss"
         gridFilesCol8.MinWidth = 90
         gridFilesCol8.OptionGroup = Nothing
         gridFilesCol8.ReadOnly = True
@@ -302,6 +348,22 @@ Partial Class PushFilesView
         gridFiles.Columns.Add(gridFilesCol1)
         gridFiles.Columns.Add(gridFilesCol2)
         gridFiles.Columns.Add(gridFilesCol3)
+        gridFilesDebug.Key = "debug"
+        gridFilesDebug.HeaderText = "Debugging"
+        gridFilesDebug.ColumnType = KBotColumnType.CheckBox
+        gridFilesDebug.ReadOnly = True
+        gridFilesDebug.Width = 90
+        gridFiles.Columns.Add(gridFilesDebug)
+        gridFilesSlices.Key = "slices"
+        gridFilesSlices.HeaderText = "Slice / nomenclator"
+        gridFilesSlices.ReadOnly = True
+        gridFilesSlices.Width = 190
+        gridFilesReasons.Key = "reasons"
+        gridFilesReasons.HeaderText = "Motiv"
+        gridFilesReasons.ReadOnly = True
+        gridFilesReasons.Width = 300
+        gridFiles.Columns.Add(gridFilesSlices)
+        gridFiles.Columns.Add(gridFilesReasons)
         gridFiles.Columns.Add(gridFilesCol4)
         gridFiles.Columns.Add(gridFilesCol5)
         gridFiles.Columns.Add(gridFilesCol6)
@@ -551,6 +613,10 @@ Partial Class PushFilesView
     Friend WithEvents tips As KBotToolTip
     Friend WithEvents tlyMain As KBotTableLayoutPanel
     Friend WithEvents tlyBar As KBotTableLayoutPanel
+    Friend WithEvents tlyDebug As KBotTableLayoutPanel
+    Friend WithEvents chkDebugging As KBotCheckBox
+    Friend WithEvents btnFinalizeDebug As KBotButton
+    Friend WithEvents lblDebug As Label
     Friend WithEvents btnScan As KBotButton
     Friend WithEvents btnSend As KBotButton
     Friend WithEvents chkRestart As KBotCheckBox
