@@ -148,6 +148,7 @@ Partial Class ParteneriForm
         KBotDataColumn4.Width = 90
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.ColumnType = KBotColumnType.Button
+        KBotDataColumn5.ButtonKind = KBotButtonKind.Delete
         KBotDataColumn5.FormatString = Nothing
         KBotDataColumn5.HeaderText = ""
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleLeft
@@ -271,6 +272,7 @@ Partial Class ParteneriForm
         KBotDataColumn12.Width = 110
         KBotDataColumn13.AggregateFormatString = Nothing
         KBotDataColumn13.ColumnType = KBotColumnType.Button
+        KBotDataColumn13.ButtonKind = KBotButtonKind.Delete
         KBotDataColumn13.FormatString = Nothing
         KBotDataColumn13.HeaderText = ""
         KBotDataColumn13.HeaderTextAlign = ContentAlignment.MiddleLeft

@@ -29,8 +29,8 @@ Partial Class KBotDataView
     ''' caption when it has one, otherwise the formatted value.
     ''' </summary>
     Private Shared Function DefaultCellText(k_value As Object, col As KBotDataColumn) As String
-        If col.ColumnType = KBotColumnType.Button AndAlso Not String.IsNullOrEmpty(col.ButtonText) Then
-            Return col.ButtonText
+        If col.ColumnType = KBotColumnType.Button AndAlso Not String.IsNullOrEmpty(col.EffectiveButtonText) Then
+            Return col.EffectiveButtonText
         End If
         Return FormatValue(k_value, col)
     End Function
@@ -41,13 +41,13 @@ Partial Class KBotDataView
     ''' </summary>
     Private Shared Function ButtonCaptionFor(col As KBotDataColumn, k_text As String) As String
         If Not String.IsNullOrEmpty(k_text) Then Return k_text
-        If col.ButtonImage IsNot Nothing Then Return String.Empty
+        If col.EffectiveButtonImage IsNot Nothing Then Return String.Empty
         Return col.HeaderText
     End Function
 
     ''' <summary>True when the button face is flat: no fill and no border.</summary>
     Private Shared Function ButtonIsFlat(col As KBotDataColumn) As Boolean
-        Dim k_color As Color = col.ButtonBackColor
+        Dim k_color As Color = col.EffectiveButtonBackColor
         Return Not k_color.IsEmpty AndAlso k_color.A = 0
     End Function
 
@@ -56,14 +56,14 @@ Partial Class KBotDataView
     ''' placed by the alignment. A size of 0 on an axis fills that axis.
     ''' </summary>
     Friend Function ButtonFaceRect(col As KBotDataColumn, k_cellRect As Rectangle) As Rectangle
-        Dim k_margin As Padding = col.ButtonMargin
+        Dim k_margin As Padding = col.EffectiveButtonMargin
         Dim k_left As Integer = ScaleDpi(k_margin.Left)
         Dim k_top As Integer = ScaleDpi(k_margin.Top)
         Dim k_avail As New Rectangle(k_cellRect.Left + k_left, k_cellRect.Top + k_top,
                                      Math.Max(0, k_cellRect.Width - k_left - ScaleDpi(k_margin.Right)),
                                      Math.Max(0, k_cellRect.Height - k_top - ScaleDpi(k_margin.Bottom)))
 
-        Dim k_size As Size = col.ButtonSize
+        Dim k_size As Size = col.EffectiveButtonSize
         Dim k_w As Integer = If(k_size.Width > 0, Math.Min(ScaleDpi(k_size.Width), k_avail.Width), k_avail.Width)
         Dim k_h As Integer = If(k_size.Height > 0, Math.Min(ScaleDpi(k_size.Height), k_avail.Height), k_avail.Height)
 
@@ -94,6 +94,12 @@ Partial Class KBotDataView
     Private _hoverButtonColumn As String
     Private _hoverButtonRow As Integer = -1
 
+    ' The wash drawn over the face while the mouse is on it: the column's own colour, or for the standard delete button the error colour of the theme.
+    Private Function ButtonHoverColorFor(col As KBotDataColumn) As Color
+        If col.ButtonKind = KBotButtonKind.Delete Then Return _cDeleteHover
+        Return col.ButtonHoverBackColor
+    End Function
+
     Private Function IsButtonHovered(k_columnKey As String, k_rowIndex As Integer) As Boolean
         Return k_rowIndex = _hoverButtonRow AndAlso String.Equals(k_columnKey, _hoverButtonColumn, StringComparison.Ordinal)
     End Function
@@ -106,7 +112,7 @@ Partial Class KBotDataView
             Dim k_r As Integer = RowAtPoint(k_pt)
             Dim k_col As KBotDataColumn = If(k_r < 0, Nothing, ColumnAtX(k_pt.X))
             If k_col IsNot Nothing AndAlso k_col.ColumnType = KBotColumnType.Button AndAlso
-               Not k_col.ButtonHoverBackColor.IsEmpty AndAlso IsOnCellButton(k_col, k_r, k_pt) Then
+               k_col.ButtonHasHover AndAlso IsOnCellButton(k_col, k_r, k_pt) Then
                 k_row = k_r
                 k_key = k_col.Key
             End If
@@ -127,7 +133,7 @@ Partial Class KBotDataView
 
     ' The face minus the inner padding: where the picture and the caption go.
     Private Function ButtonContentRect(col As KBotDataColumn, k_face As Rectangle) As Rectangle
-        Dim k_pad As Padding = col.ButtonPadding
+        Dim k_pad As Padding = col.EffectiveButtonPadding
         Dim k_left As Integer = ScaleDpi(k_pad.Left)
         Dim k_top As Integer = ScaleDpi(k_pad.Top)
         Return New Rectangle(k_face.Left + k_left, k_face.Top + k_top,
@@ -151,13 +157,13 @@ Partial Class KBotDataView
     ''' the content is cut to it, so the need is just that width plus the margin.
     ''' </summary>
     Private Function ButtonColumnNeed(col As KBotDataColumn) As Integer
-        Dim k_margin As Padding = col.ButtonMargin
+        Dim k_margin As Padding = col.EffectiveButtonMargin
         Dim k_marginX As Integer = ScaleDpi(k_margin.Left) + ScaleDpi(k_margin.Right)
-        If col.ButtonSize.Width > 0 Then Return ScaleDpi(col.ButtonSize.Width) + k_marginX
+        If col.EffectiveButtonSize.Width > 0 Then Return ScaleDpi(col.EffectiveButtonSize.Width) + k_marginX
 
-        Dim k_pad As Padding = col.ButtonPadding
+        Dim k_pad As Padding = col.EffectiveButtonPadding
         Dim k_textW As Integer = MeasureSampledCells(col)
-        Dim k_imageW As Integer = If(col.ButtonImage Is Nothing, 0, ScaleDpi(col.ButtonImage.Width))
+        Dim k_imageW As Integer = If(col.EffectiveButtonImage Is Nothing, 0, ScaleDpi(col.EffectiveButtonImage.Width))
         Dim k_gap As Integer = If(k_textW > 0 AndAlso k_imageW > 0, ScaleDpi(ButtonImageGap), 0)
         Return k_textW + k_imageW + k_gap + ScaleDpi(k_pad.Left) + ScaleDpi(k_pad.Right) + k_marginX
     End Function
@@ -165,8 +171,8 @@ Partial Class KBotDataView
     ' Is any border line drawn? Not when no side is chosen, nor when the border colour is
     ' transparent, nor on a flat button (transparent face) whose border colour was never set.
     Private Shared Function ButtonBorderVisible(col As KBotDataColumn) As Boolean
-        If col.ButtonBorders = KBotBorderSides.None Then Return False
-        Dim k_color As Color = col.ButtonBorderColor
+        If col.EffectiveButtonBorders = KBotBorderSides.None Then Return False
+        Dim k_color As Color = col.EffectiveButtonBorderColor
         If k_color.IsEmpty Then Return Not ButtonIsFlat(col)
         Return k_color.A > 0
     End Function
@@ -176,10 +182,13 @@ Partial Class KBotDataView
     Private Sub DrawButtonFace(g As Graphics, col As KBotDataColumn, k_face As Rectangle, k_enabled As Boolean,
                                Optional k_hover As Boolean = False)
         ' Slice 0126-02: the hover colour goes under the border and the caption, over the row (or over the face).
-        If k_hover AndAlso k_enabled AndAlso Not col.ButtonHoverBackColor.IsEmpty Then
-            Using k_hoverBrush As New SolidBrush(col.ButtonHoverBackColor)
-                g.FillRectangle(k_hoverBrush, k_face)
-            End Using
+        If k_hover AndAlso k_enabled Then
+            Dim k_hoverColor As Color = ButtonHoverColorFor(col)
+            If Not k_hoverColor.IsEmpty Then
+                Using k_hoverBrush As New SolidBrush(k_hoverColor)
+                    g.FillRectangle(k_hoverBrush, k_face)
+                End Using
+            End If
         End If
         Dim k_fill As Boolean = Not ButtonIsFlat(col)
         Dim k_border As Boolean = ButtonBorderVisible(col)
@@ -190,21 +199,21 @@ Partial Class KBotDataView
         Dim k_pen As Pen = _pButtonBorder
         If Not k_enabled Then
             k_pen = _pDisabledMark
-        ElseIf Not col.ButtonBorderColor.IsEmpty Then
-            k_ownPen = New Pen(col.ButtonBorderColor)
+        ElseIf Not col.EffectiveButtonBorderColor.IsEmpty Then
+            k_ownPen = New Pen(col.EffectiveButtonBorderColor)
             k_pen = k_ownPen
         End If
 
         Try
             Dim k_brushOwn As SolidBrush = Nothing
             Dim k_brush As SolidBrush = _bButtonFace
-            If k_fill AndAlso Not col.ButtonBackColor.IsEmpty Then
-                k_brushOwn = New SolidBrush(col.ButtonBackColor)
+            If k_fill AndAlso Not col.EffectiveButtonBackColor.IsEmpty Then
+                k_brushOwn = New SolidBrush(col.EffectiveButtonBackColor)
                 k_brush = k_brushOwn
             End If
 
             Try
-                If col.ButtonBorders = KBotBorderSides.All Then
+                If col.EffectiveButtonBorders = KBotBorderSides.All Then
                     Dim k_oldSmooth As SmoothingMode = g.SmoothingMode
                     g.SmoothingMode = SmoothingMode.AntiAlias
                     Using k_path As GraphicsPath = RoundedRect(k_face, ScaleDpi(3))
@@ -214,7 +223,7 @@ Partial Class KBotDataView
                     g.SmoothingMode = k_oldSmooth
                 Else
                     If k_fill Then g.FillRectangle(k_brush, k_face)
-                    If k_border Then DrawButtonSides(g, k_face, col.ButtonBorders, k_pen)
+                    If k_border Then DrawButtonSides(g, k_face, col.EffectiveButtonBorders, k_pen)
                 End If
             Finally
                 k_brushOwn?.Dispose()
@@ -246,7 +255,7 @@ Partial Class KBotDataView
         Dim k_content As Rectangle = ButtonContentRect(col, k_face)
         If k_content.Width <= 0 OrElse k_content.Height <= 0 Then Return
 
-        Dim k_image As Image = col.ButtonImage
+        Dim k_image As Image = col.EffectiveButtonImage
         Dim k_imageSize As Size = ButtonImageSize(k_image, k_content)
         Dim k_textW As Integer = If(String.IsNullOrEmpty(k_caption), 0,
                                     TextRenderer.MeasureText(k_caption, k_font).Width)

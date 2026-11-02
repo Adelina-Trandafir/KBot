@@ -191,8 +191,6 @@ Partial Class DeSemnatRestransForm
         lstDocumente.ShrinkColumnsToFit = False
         lstDocumente.Size = New Size(512, 676)
         lstDocumente.TabIndex = 0
-        tips.SetToolTipHeader(lstDocumente, "Documente de semnat")
-        tips.SetToolTipText(lstDocumente, "Documentele care vă sunt adresate, ale unității la care sunteți conectat." & vbLf & "Selectați unul ca să-l deschideți în dreapta și să-l semnați.")
         '
         ' pnlDocument
         '

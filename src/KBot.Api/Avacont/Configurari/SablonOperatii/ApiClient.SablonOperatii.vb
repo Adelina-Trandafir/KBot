@@ -54,6 +54,7 @@ Partial Public Class ApiClient
     Private NotInheritable Class SablonWire
         Public Property idsablon As Integer?
         Public Property idjurnal As Integer
+        Public Property idsubunitate As Integer?
         Public Property tip As String
         Public Property fel As String
         Public Property explicatie As String
@@ -174,7 +175,7 @@ Partial Public Class ApiClient
     ' Pure mapping, reached only through the two wrapped methods above.
     Private Shared Function ToSablon(k_w As SablonWire) As SablonOperatieInfo
         Return New SablonOperatieInfo() With {
-            .IdSablon = If(k_w.idsablon, 0), .IdJurnal = k_w.idjurnal, .Tip = If(k_w.tip, "M"), .Fel = If(k_w.fel, "E"),
+            .IdSablon = If(k_w.idsablon, 0), .IdJurnal = k_w.idjurnal, .IdSubunitate = If(k_w.idsubunitate, 0), .Tip = If(k_w.tip, "M"), .Fel = If(k_w.fel, "E"),
             .Explicatie = If(k_w.explicatie, String.Empty), .Compartiment = If(k_w.compartiment, String.Empty),
             .FelOP = If(k_w.felop, String.Empty), .Cheie = If(k_w.cheie, String.Empty),
             .Linii = If(k_w.linii, New List(Of SablonLinieWire)()).Select(
@@ -190,7 +191,8 @@ Partial Public Class ApiClient
 
     Private Shared Function ToWire(k_s As SablonOperatieInfo) As SablonWire
         Return New SablonWire() With {
-            .idsablon = If(k_s.IdSablon > 0, CType(k_s.IdSablon, Integer?), Nothing), .idjurnal = k_s.IdJurnal, .tip = k_s.Tip, .fel = k_s.Fel,
+            .idsablon = If(k_s.IdSablon > 0, CType(k_s.IdSablon, Integer?), Nothing), .idjurnal = k_s.IdJurnal,
+            .idsubunitate = If(k_s.IdSubunitate > 0, CType(k_s.IdSubunitate, Integer?), Nothing), .tip = k_s.Tip, .fel = k_s.Fel,
             .explicatie = k_s.Explicatie, .compartiment = k_s.Compartiment, .felop = k_s.FelOP, .cheie = k_s.Cheie,
             .linii = k_s.Linii.Select(
                 Function(k_l) New SablonLinieWire() With {

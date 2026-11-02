@@ -680,6 +680,8 @@ Partial Class KBotDataView
                 Cursor = If(IsOnComboChevron(tipCol, tipRow, e.Location) OrElse IsOnDateButton(tipCol, tipRow, e.Location),
                             Cursors.Default, Cursors.IBeam)
             End If
+            ' Slice 0010-09: the hand over a button that reacts to the mouse (the standard delete button).
+            If _hoverButtonRow >= 0 Then Cursor = Cursors.Hand
             UpdateCellTooltip(If(tipCol Is Nothing, Nothing, tipCol.Key), If(tipCol Is Nothing, -1, tipRow))
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.OnMouseMove", ex)

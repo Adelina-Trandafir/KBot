@@ -106,7 +106,6 @@ Partial Class BackupsView
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.HeaderText = "Fișier"
-        KBotDataColumn1.HeaderTooltip = "Numele fișierului de copie."
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "name"
         KBotDataColumn1.MinWidth = 120
@@ -116,7 +115,6 @@ Partial Class BackupsView
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.FormatString = Nothing
         KBotDataColumn2.HeaderText = "Fel"
-        KBotDataColumn2.HeaderTooltip = "Felul copiei (bază de unitate sau altceva)."
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "kind"
         KBotDataColumn2.MinWidth = 60
@@ -126,7 +124,6 @@ Partial Class BackupsView
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.FormatString = Nothing
         KBotDataColumn3.HeaderText = "Mărime"
-        KBotDataColumn3.HeaderTooltip = "Mărimea fișierului pe disc."
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "size"
         KBotDataColumn3.MinWidth = 60
@@ -137,7 +134,6 @@ Partial Class BackupsView
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.FormatString = Nothing
         KBotDataColumn4.HeaderText = "Data"
-        KBotDataColumn4.HeaderTooltip = "Când a fost făcută copia."
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "modified"
         KBotDataColumn4.MinWidth = 90
@@ -147,7 +143,6 @@ Partial Class BackupsView
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.FormatString = Nothing
         KBotDataColumn6.HeaderText = "Motiv"
-        KBotDataColumn6.HeaderTooltip = "Motivul scris când s-a făcut copia (din jurnalul serverului). Gol la planurile de schemă și la copiile mai vechi."
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn6.Key = "reason"
         KBotDataColumn6.MinWidth = 120
@@ -157,7 +152,6 @@ Partial Class BackupsView
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.FormatString = Nothing
         KBotDataColumn5.HeaderText = "Calea pe server"
-        KBotDataColumn5.HeaderTooltip = "Unde se află fișierul pe server."
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "path"
         KBotDataColumn5.MinWidth = 120
@@ -179,8 +173,6 @@ Partial Class BackupsView
         grid.ReadOnlyGrid = True
         grid.Size = New Size(884, 472)
         grid.TabIndex = 1
-        tips.SetToolTipHeader(grid, "Fișierele")
-        tips.SetToolTipText(grid, "Copiile bazelor (cu motivul lor) și planurile de schemă scrise de sincronizare, cele mai noi sus." & vbLf & "Cu o bază aleasă în stânga se văd doar copiile ei și planurile care o numesc." & vbLf & "Dublu clic pe un rând arată textul SQL al fișierului." & vbLf & "Fișierele nu se șterg și nu se descarcă de aici.")
         '
         ' lblState
         '

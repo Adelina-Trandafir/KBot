@@ -140,7 +140,6 @@ Partial Class DiffView
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.HeaderText = "Tabelă"
-        KBotDataColumn1.HeaderTooltip = "Tabela la care se referă diferența."
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "table"
         KBotDataColumn1.MinWidth = 90
@@ -150,7 +149,6 @@ Partial Class DiffView
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.FormatString = Nothing
         KBotDataColumn2.HeaderText = "Obiect"
-        KBotDataColumn2.HeaderTooltip = "Coloana, cheia sau obiectul care diferă."
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "object"
         KBotDataColumn2.MinWidth = 80
@@ -160,7 +158,6 @@ Partial Class DiffView
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.FormatString = Nothing
         KBotDataColumn3.HeaderText = "Fel"
-        KBotDataColumn3.HeaderTooltip = "Felul obiectului: coloană, index, cheie străină, vedere etc."
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "kind"
         KBotDataColumn3.MinWidth = 50
@@ -170,7 +167,6 @@ Partial Class DiffView
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.FormatString = Nothing
         KBotDataColumn4.HeaderText = "Acțiune"
-        KBotDataColumn4.HeaderTooltip = "Ce ar face sincronizarea: adaugă, modifică sau șterge."
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "action"
         KBotDataColumn4.MinWidth = 50
@@ -180,7 +176,6 @@ Partial Class DiffView
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.FormatString = Nothing
         KBotDataColumn5.HeaderText = "Distructiv"
-        KBotDataColumn5.HeaderTooltip = "Da = operația poate pierde date; cere confirmare dublă la sincronizare."
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "destructive"
         KBotDataColumn5.MinWidth = 50
@@ -191,7 +186,6 @@ Partial Class DiffView
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.FormatString = Nothing
         KBotDataColumn6.HeaderText = "Problemă"
-        KBotDataColumn6.HeaderTooltip = "Motivul pentru care diferența nu se poate aplica automat, dacă e cazul."
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn6.Key = "error"
         KBotDataColumn6.MinWidth = 80
@@ -213,8 +207,6 @@ Partial Class DiffView
         grid.ReadOnlyGrid = True
         grid.Size = New Size(884, 290)
         grid.TabIndex = 2
-        tips.SetToolTipHeader(grid, "Diferențele")
-        tips.SetToolTipText(grid, "În ordinea de execuție. Galben = distructiv, roșu = instrucțiune care nu se poate construi." & vbLf & "SQL-ul rândului ales se vede dedesubt.")
         '
         ' txtSql
         '

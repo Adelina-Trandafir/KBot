@@ -487,7 +487,7 @@ Partial Class KBotDataView
             Using b As New SolidBrush(_cellArgs.BackColor)
                 g.FillRectangle(b, cellRect)
             End Using
-        ElseIf Not enabled Then
+        ElseIf Not enabled AndAlso Not _cellArgs.HideGlyph Then
             ' Spălarea de „dezactivat” se aplică doar când nimeni n-a impus alt fundal —
             ' altfel am călca peste o regulă de formatare condiționată a caller-ului.
             g.FillRectangle(_bDisabledWash, cellRect)
@@ -504,9 +504,9 @@ Partial Class KBotDataView
 
         Select Case col.ColumnType
             Case KBotColumnType.CheckBox
-                DrawCheckCell(g, contentRect, ToBool(value), enabled)
+                If Not _cellArgs.HideGlyph Then DrawCheckCell(g, contentRect, ToBool(value), enabled)
             Case KBotColumnType.OptionButton
-                DrawOptionCell(g, contentRect, ToBool(value), enabled)
+                If Not _cellArgs.HideGlyph Then DrawOptionCell(g, contentRect, ToBool(value), enabled)
             Case KBotColumnType.Button
                 ' A button holds no value: its caption is the cell text (the column's ButtonText
                 ' unless a handler replaced it), then the column header, e.g. a "Detalii" column

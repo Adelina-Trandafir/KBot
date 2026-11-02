@@ -8,35 +8,11 @@ Imports KBot.Theming
 ' main window, one at a time; asking again brings the open one to the front. Same shape as «Parteneri»
 ' (KbotForm.Nomenclatoare.vb).
 Partial Public Class KbotForm
-    Implements IPlanContHost
+    Implements IPlanContHost, Global.KBot.EFactura.ISubunitHost
 
     Private _planContForm As PlanContForm
 
-    ' ── The subunit selector of the title bar (slice AV01-06) ───────────────────
-
-    Public Event SubunitPicked As Action(Of String) Implements IPlanContHost.SubunitPicked
-
-    Public Sub SetSubunitChoices(k_items As IEnumerable(Of KeyValuePair(Of String, String)), k_selectedKey As String) Implements IPlanContHost.SetSubunitChoices
-        Try
-            capBar.SetSelectorItems(KBotCaptionBar.SelectorSubunit, k_items, k_selectedKey)
-        Catch ex As Exception
-            GlobalErrorLog.Write("KbotForm.SetSubunitChoices", ex)
-            Throw
-        End Try
-    End Sub
-
-    Public Sub SetSubunitKey(k_key As String) Implements IPlanContHost.SetSubunitKey
-        capBar.SetSelectorKey(KBotCaptionBar.SelectorSubunit, k_key)
-    End Sub
-
-    Public Sub SetSubunitShown(k_shown As Boolean) Implements IPlanContHost.SetSubunitShown
-        capBar.SetSelectorShown(KBotCaptionBar.SelectorSubunit, k_shown)
-    End Sub
-
-    ' The operator picked a subunit in the title bar (called from CapBar_PeriodChanged); the window decides.
-    Private Sub OnSubunitPicked(k_key As String)
-        RaiseEvent SubunitPicked(k_key)
-    End Sub
+    ' The subunit selector of the title bar is the application's (KbotForm.Subunit.vb): this window reads the subunit in force and hears the picks.
 
     Friend Sub DeschidePlanCont()
         Try

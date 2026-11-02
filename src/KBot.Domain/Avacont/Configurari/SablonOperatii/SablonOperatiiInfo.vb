@@ -47,6 +47,8 @@ Public NotInheritable Class SablonOperatieInfo
     ''' <summary>0 = a template not saved yet.</summary>
     Public Property IdSablon As Integer
     Public Property IdJurnal As Integer
+    ''' <summary>The subunit the template belongs to (slice AV01-18; as in Access nothing is common between subunits for now); 0 = none yet (a template from before the column).</summary>
+    Public Property IdSubunitate As Integer
     ''' <summary><c>M</c> = classification + partner on one side; <c>A</c> = other operations.</summary>
     Public Property Tip As String = "M"
     ''' <summary><c>E</c> evidence, <c>P</c> payment, <c>A</c> other operations.</summary>

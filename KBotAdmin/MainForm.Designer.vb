@@ -48,6 +48,7 @@ Partial Class MainForm
         Dim rbPublicare As KBotRibbonButton = New KBotRibbonButton()
         Dim rbRapoarte As KBotRibbonButton = New KBotRibbonButton()
         Dim rbImportMf As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbScripturi As KBotRibbonButton = New KBotRibbonButton()
         Dim rgRulare As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgSchema As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgPagina As KBotRibbonGroup = New KBotRibbonGroup()
@@ -61,6 +62,7 @@ Partial Class MainForm
         Dim rgPeCalculator As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgFisiere As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgVercon As KBotRibbonGroup = New KBotRibbonGroup()
+        Dim rgScripturi As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rtBaze As KBotRibbonTab = New KBotRibbonTab()
         Dim rtDrepturi As KBotRibbonTab = New KBotRibbonTab()
         Dim rtMonitorizare As KBotRibbonTab = New KBotRibbonTab()
@@ -103,6 +105,7 @@ Partial Class MainForm
         viewDemo = New DemoCloneView()
         viewLocalBackup = New LocalBackupView()
         viewMdHistory = New MdHistoryView()
+        viewScripts = New ScriptsView()
         viewSchemaGraph = New SchemaGraphView()
         viewSchemaHistory = New SchemaHistoryView()
         CType(navMode, ComponentModel.ISupportInitialize).BeginInit()
@@ -331,8 +334,16 @@ Partial Class MainForm
         rbImportMf.ToolTipText = "Aduce mijloacele fixe active dintr-un mf.mdb vechi într-o gestiune MF a unei unități, în contul de magazie ales, fără primitor."
         rgVercon.Buttons.Add(rbImportMf)
         rgVercon.Text = "VERCON"
+        rbScripturi.Image = AdminIcons.Get("publish")
+        rbScripturi.Key = "scripturi"
+        rbScripturi.Text = "Scripturi"
+        rbScripturi.ToolTipHeader = "Scripturi"
+        rbScripturi.ToolTipText = "Pornește scripturile push-*.ps1 și publish-*.ps1 ale proiectului, cu parametrii bifați, într-o fereastră PowerShell."
+        rgScripturi.Buttons.Add(rbScripturi)
+        rgScripturi.Text = "Scripturi"
         rtPublicare.Groups.Add(rgFisiere)
         rtPublicare.Groups.Add(rgVercon)
+        rtPublicare.Groups.Add(rgScripturi)
         rtPublicare.Text = "Publicare"
         ribbon.Dock = DockStyle.Top
         ribbon.Location = New Point(0, 44)
@@ -510,12 +521,15 @@ Partial Class MainForm
         pnlViews.Controls.Add(viewDemo)
         pnlViews.Controls.Add(viewLocalBackup)
         pnlViews.Controls.Add(viewMdHistory)
+        pnlViews.Controls.Add(viewScripts)
         pnlViews.Controls.Add(viewSchemaGraph)
         pnlViews.Controls.Add(viewSchemaHistory)
         viewSchemaHistory.Dock = DockStyle.Fill
         viewSchemaHistory.Visible = False
         viewSchemaGraph.Dock = DockStyle.Fill
         viewSchemaGraph.Visible = False
+        viewScripts.Dock = DockStyle.Fill
+        viewScripts.Visible = False
         viewMdHistory.Dock = DockStyle.Fill
         viewMdHistory.Visible = False
         viewLocalBackup.Dock = DockStyle.Fill
@@ -750,6 +764,7 @@ Partial Class MainForm
     Friend WithEvents viewDemo As DemoCloneView
     Friend WithEvents viewLocalBackup As LocalBackupView
     Friend WithEvents viewMdHistory As MdHistoryView
+    Friend WithEvents viewScripts As ScriptsView
     Friend WithEvents viewSchemaGraph As SchemaGraphView
     Friend WithEvents viewSchemaHistory As SchemaHistoryView
 End Class

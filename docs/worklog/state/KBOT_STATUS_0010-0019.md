@@ -14,6 +14,7 @@ Moved verbatim out of `../KBOT_STATUS.md` (28.09.2026). The index there says wha
 
 ### Current focus
 
+- **0010-09 (31.10.2026):** `KBotColumnType.Button` columns get `ButtonKind` (`Custom` | `Delete`): the standard delete button, defined once in the grid (glyph «✕», fills the whole cell, flat so it takes the row colour, hover wash from the theme's error colour, hand cursor); new `ButtonHoverBackColor` for custom buttons; all 14 delete columns of the solution switched to it; code built clean, nothing seen on screen; [worklog](../SLICE-0010-09-dataview-butonul-standard-de-stergere.md).
 - **0010-08 (29.10.2026):** `EscapeCancelsRow` (ON by default, every table) + `RowCancelRequested` / `RevertRow` - a second Esc after the one that closed the editor cancels the row (default: the cells go back to the baseline taken at the first operator write; hosts with new rows remove them); code built clean, nothing seen on screen; [worklog](../SLICE-0010-08-dataview-esc-anuleaza-randul.md).
 - **0010 — historical checkpoint:** code landed; headless results and unresolved visual/input checks are in the [consolidated worklog](../SLICE-0010-01-kbotdataview-skeleton.md). Human harness verdict still unrecorded at this checkpoint; next was Sumar. Later slice-specific acceptance is not inferred here.
 

@@ -75,6 +75,7 @@ Partial Class ConturiForm
         KBotDataColumn2.Width = 300
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.ColumnType = KBotColumnType.Button
+        KBotDataColumn3.ButtonKind = KBotButtonKind.Delete
         KBotDataColumn3.FormatString = Nothing
         KBotDataColumn3.HeaderText = ""
         KBotDataColumn3.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleLeft

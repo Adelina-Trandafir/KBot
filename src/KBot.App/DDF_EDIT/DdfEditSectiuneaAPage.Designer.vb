@@ -246,6 +246,7 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn11.Width = 90
         KBotDataColumn12.AggregateFormatString = Nothing
         KBotDataColumn12.ColumnType = KBotColumnType.Button
+        KBotDataColumn12.ButtonKind = KBotButtonKind.Delete
         KBotDataColumn12.FormatString = Nothing
         KBotDataColumn12.HeaderText = ""
         KBotDataColumn12.HeaderTextAlign = ContentAlignment.MiddleCenter

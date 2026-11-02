@@ -73,7 +73,6 @@ Partial Class RightsForm
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.HeaderText = "Explicație"
-        KBotDataColumn1.HeaderTooltip = "Ce îi permite dreptul."
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn1.Key = "expl"
         KBotDataColumn1.MinWidth = 200
@@ -84,7 +83,6 @@ Partial Class RightsForm
         KBotDataColumn2.ColumnType = KBotColumnType.CheckBox
         KBotDataColumn2.FormatString = Nothing
         KBotDataColumn2.HeaderText = "Bifă"
-        KBotDataColumn2.HeaderTooltip = "Bifa dă dreptul pe loc, fără bifă dreptul se retrage. Click pe titlu: bifează sau debifează tot."
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "bifa"
         KBotDataColumn2.MinWidth = 60
@@ -102,8 +100,6 @@ Partial Class RightsForm
         grid.Name = "grid"
         grid.Size = New Size(612, 374)
         grid.TabIndex = 1
-        tips.SetToolTipHeader(grid, "Drepturile")
-        tips.SetToolTipText(grid, "Un rând = un drept. Bifa dă dreptul pe loc, fără bifă dreptul se retrage." & vbLf & "Click pe titlul coloanei «Bifă» bifează sau debifează toate drepturile.")
         '
         ' tlyButtons
         '

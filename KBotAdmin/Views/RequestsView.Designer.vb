@@ -166,7 +166,6 @@ Partial Class RequestsView
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.HeaderText = "Nr."
-        KBotDataColumn1.HeaderTooltip = "Numărul cererii."
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "id"
         KBotDataColumn1.MinWidth = 40
@@ -177,7 +176,6 @@ Partial Class RequestsView
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.FormatString = Nothing
         KBotDataColumn2.HeaderText = "Data cererii"
-        KBotDataColumn2.HeaderTooltip = "Când a fost trimisă cererea."
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "date"
         KBotDataColumn2.MinWidth = 80
@@ -187,7 +185,6 @@ Partial Class RequestsView
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.FormatString = Nothing
         KBotDataColumn3.HeaderText = "Starea"
-        KBotDataColumn3.HeaderTooltip = "În așteptare, aprobată sau respinsă."
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "state"
         KBotDataColumn3.MinWidth = 60
@@ -197,7 +194,6 @@ Partial Class RequestsView
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.FormatString = Nothing
         KBotDataColumn4.HeaderText = "Unitatea"
-        KBotDataColumn4.HeaderTooltip = "Numele unității care cere cont."
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "name"
         KBotDataColumn4.MinWidth = 100
@@ -207,7 +203,6 @@ Partial Class RequestsView
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.FormatString = Nothing
         KBotDataColumn5.HeaderText = "E-mail"
-        KBotDataColumn5.HeaderTooltip = "Adresa solicitantului; aici ajunge linkul de parolă sau motivul respingerii."
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "email"
         KBotDataColumn5.MinWidth = 100
@@ -217,7 +212,6 @@ Partial Class RequestsView
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.FormatString = Nothing
         KBotDataColumn6.HeaderText = "CF"
-        KBotDataColumn6.HeaderTooltip = "Codul fiscal al unității."
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn6.Key = "cf"
         KBotDataColumn6.MinWidth = 60
@@ -227,7 +221,6 @@ Partial Class RequestsView
         KBotDataColumn7.AggregateFormatString = Nothing
         KBotDataColumn7.FormatString = Nothing
         KBotDataColumn7.HeaderText = "An"
-        KBotDataColumn7.HeaderTooltip = "Anul de lucru cerut."
         KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn7.Key = "year"
         KBotDataColumn7.MinWidth = 40
@@ -238,7 +231,6 @@ Partial Class RequestsView
         KBotDataColumn8.AggregateFormatString = Nothing
         KBotDataColumn8.FormatString = Nothing
         KBotDataColumn8.HeaderText = "Rânduri"
-        KBotDataColumn8.HeaderTooltip = "Numărul de rânduri de date trimise cu cererea."
         KBotDataColumn8.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn8.Key = "rows"
         KBotDataColumn8.MinWidth = 50
@@ -249,7 +241,6 @@ Partial Class RequestsView
         KBotDataColumn9.AggregateFormatString = Nothing
         KBotDataColumn9.FormatString = Nothing
         KBotDataColumn9.HeaderText = "Baza creată / decis de"
-        KBotDataColumn9.HeaderTooltip = "Baza creată la aprobare sau cine a decis."
         KBotDataColumn9.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn9.Key = "decision"
         KBotDataColumn9.MinWidth = 100
@@ -274,8 +265,6 @@ Partial Class RequestsView
         grid.ReadOnlyGrid = True
         grid.Size = New Size(884, 190)
         grid.TabIndex = 1
-        tips.SetToolTipHeader(grid, "Cererile")
-        tips.SetToolTipText(grid, "Cele mai noi sus. Alegeți un rând: dedesubt se vede cererea cu planul aprobării.")
         '
         ' tlyEdit
         '

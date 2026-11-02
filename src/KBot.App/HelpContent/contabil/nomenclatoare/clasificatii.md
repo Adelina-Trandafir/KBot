@@ -8,7 +8,7 @@ screens: ClasificatiiForm, ClasificatiiBugetView, ClasificatiiVenituriView, Clas
 keywords: clasificatii, clasificatie bugetara, venituri, clasificatii venituri, buget venituri, paragraf, bara verticala, indicatori, buget, trimestre, rectificari, capitol, subcapitol, articol, alineat, verificare buget, credit bugetar, diferenta, trimite in access
 open: menu:clasificatii
 ---
-<!-- slice: 0087, 0075-00, 0102, 0103-04, 0103-06, 0105, 0107-02, 0107, 0113, AV01-11, AV01-12, AV01-13, 0000-137, 0126-01, 0126-02 -->
+<!-- slice: 0087, 0075-00, 0102, 0103-04, 0103-06, 0105, 0107-02, 0107, 0113, AV01-11, AV01-12, AV01-13, 0000-137, 0126-01, 0126-02, 0010-09 -->
 <!-- capture: clasificatii | caption: Fereastra «Clasificații cheltuieli» | goto: menu:clasificatii | prepare: Alegeți în arbore un alineat care are buget și rectificări. | redo: 2026-10-26 17:10 | why: numele ferestrei («Clasificații cheltuieli») și paginile «Cheltuieli» / «Venituri» din bara verticală -->
 
 Fereastra are în stânga o **bară verticală**, ca cea a ferestrei principale, cu două pagini: **Cheltuieli** (cea care se deschide) și **Venituri**. O alegi cu un clic sau cu săgețile sus / jos. Dacă pagina de pe ecran are modificări nesalvate, K-BOT te întreabă ce faci cu ele înainte să treci pe cealaltă. Tot ce urmează, în afară de secțiunea [Venituri](#venituri), descrie pagina **Cheltuieli**.

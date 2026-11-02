@@ -19,3 +19,13 @@ NOU `PYTHON/routes/forexe/rezervari_reanaliza.py` (+ import in `routes/forexe/__
 - Ca ordinea crescatoare a `ID` reproduce ordinea FOREXE la randurile migrate din Access.
 - Reluarea intr-o singura bucata (ingestia reseteaza steagurile initial/definitivare la fiecare descarcare).
 - Fara numar de felie: de atribuit. Ajutorul (`contabil/vederi/rezervari.md`, tabelul «Iconitele arborelui», randul «subsol, stanga») trebuie completat cu intrarea noua.
+
+## Corectie 31.10.2026 — «Repara» rescrie si `R_Definitiva`
+**Simptom (jurnalul unui utilizator, 000_DEMO, AAB2MAACHXB):** dupa «Repara» (`aplica=True`, 10 rezervari corectate) arborele de angajamente ramanea rosu, iar proba urmatoare spunea `rezervari_de_corectat: 0`. Nici la redeschiderea aplicatiei rosul nu disparea.
+**Cauza:** arborele (`tree.py`, `_REZERVARI_GRESITE`) compara `R_Anterioara` a fiecarei rezervari cu `R_Definitiva` a celei dinainte; reparatia scria doar `R_Anterioara` / `R_Valoare` / `EMarire` / `EMicsorare`. `R_Definitiva` (scrisa o singura data, la descarcare, din `Val_AngLeg`) ramanea veche, uneori inversata intre doua rezervari din aceeasi zi.
+**Schimbat:** `PYTHON/routes/forexe/rezervari_reanaliza.py` — `R_Definitiva` se citeste, se compara si se rescrie cu `round(Val_AngLeg, 2)` al randului de istoric (doar pe randuri de contract, neinitiale); `detalii` primeste `definitiva_veche` / `definitiva_noua`.
+**Verificat:** fisierul se compileaza cu `.venv`. Simulare in node pe fisa AAB2MAACHXB: 10 randuri de schimbat, 0 randuri gresite dupa corectie (verificarea arborelui). Nimic rulat pe MariaDB, teste nerulate.
+**Neverificat / amanat:**
+- Fereastra de previzualizare («Repara») nu arata coloanele `definitiva_*`; un rand corectat doar la `R_Definitiva` apare cu aceleasi valori vechi/noi. Clientul VB (`RezervareCorectata`, `ApiClient.vb`, `RezervariReparaForm`) neatins.
+- O luna cu revizii DDF ramane nereparata (regula veche); un rand cu `R_Definitiva` gresita intr-o astfel de luna ramane rosu.
+- Serverul trebuie actualizat de operator, de mana.

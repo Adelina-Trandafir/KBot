@@ -108,7 +108,6 @@ Partial Class RightsView
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.HeaderText = "Cont"
-        KBotDataColumn1.HeaderTooltip = "Contul (e-mail) al utilizatorului."
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "un"
         KBotDataColumn1.MinWidth = 120
@@ -118,7 +117,6 @@ Partial Class RightsView
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.FormatString = Nothing
         KBotDataColumn2.HeaderText = "Baza"
-        KBotDataColumn2.HeaderTooltip = "Baza de date a unității."
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "dc"
         KBotDataColumn2.MinWidth = 70
@@ -128,7 +126,6 @@ Partial Class RightsView
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.FormatString = Nothing
         KBotDataColumn3.HeaderText = "Rol K-BOT"
-        KBotDataColumn3.HeaderTooltip = "Rolul contului în K-BOT."
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "rol"
         KBotDataColumn3.MinWidth = 60
@@ -148,8 +145,6 @@ Partial Class RightsView
         grid.Name = "grid"
         grid.Size = New Size(884, 468)
         grid.TabIndex = 1
-        tips.SetToolTipHeader(grid, "Drepturile pe conturi")
-        tips.SetToolTipText(grid, "Un rând = un cont într-o bază." & vbLf & "Drepturile ADECHIT și VERCON se dau din butoanele de sus, pe contul din rândul ales.")
         '
         ' tlyFoot
         '

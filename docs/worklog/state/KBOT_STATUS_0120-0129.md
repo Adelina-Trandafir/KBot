@@ -50,7 +50,7 @@ Operator, 20.10.2026: end the dependence of `FX_DDF_REV_SA`, `FX_DDF_REV_SB`, `F
 | 0122-03 | Cititori și protecția la ștergere | CONSTRUIT (py_compile), NEPORNIT, netestat; the old by-id test stays until the keys are dropped | [0122-03](../SLICE-0122-parteneri-fara-idpartener.md#slice-0122-03) |
 | 0122-08 | Ascunderea partenerilor nefolosiți, cu previzualizare | SCRIS, NERULAT; nothing is deleted, reversible; preview first | [0122-08](../SLICE-0122-parteneri-fara-idpartener.md#slice-0122-08) |
 | 0122-09 | DDF edit: «Recepții» din revizia din rezervare însumează `DIF`, nu `Valoare` | SCRIS, NERULAT, netestat; server nedeployat; nu are legătură cu partenerii (slice-ul e doar cel mai recent care a atins `ddf_edit.py`) | [0122-09](../SLICE-0122-09-ddf-receptii-dif.md) |
-| 0122-10 | Recepții vs rezervări: prag de o lună la așezarea automată (server + Asocieri) și detector în tooltipul arborelui | SCRIS + build curat (App 0/0; py_compile); NERULAT, netestat; server nedeployat; fără excepția «suma se potrivește» (cazul real avea suma identică) | [0122-10](../SLICE-0122-10-receptii-vs-rezervari-o-luna.md) |
+| 0122-10 | Recepții vs rezervări: prag de o lună la așezarea automată (server + Asocieri) și detector în tooltipul arborelui | SCRIS + build curat (App 0/0; py_compile); NERULAT, netestat; server nedeployat; fără excepția «suma se potrivește» (cazul real avea suma identică). 31.10.2026: nu mai arată ziua în care recepția vine doar mai târziu (suma lipsă o aduce întreagă următoarea zi cu recepții, înainte de următoarea rezervare); verificat doar pe două jurnale, codul Python nerulat | [0122-10](../SLICE-0122-10-receptii-vs-rezervari-o-luna.md) |
 
 ---
 

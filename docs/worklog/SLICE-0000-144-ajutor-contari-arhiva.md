@@ -1,0 +1,3 @@
+# SLICE-0000-144 — help for «Contari» and the archive of the received invoices
+
+Topic `contabil.efactura` (`src/KBot.App/HelpContent/contabil/efactura/index.md`): two new sections, «Contări» (01EF-02) and «Arhiva facturilor primite» (01EF-03), before «Trimiterea la Vercon»; keywords `contare, contari, arhiva, arhivare, arhiveaza factura`. Tags `01EF-02, 0000-144` / `01EF-03, 0000-144`. No new capture was made; the captures of the tree of the received invoices may need redoing (tick boxes in the new view, new menu rows). `Check-Help.ps1 -Coverage` prints no message about this topic (the messages it prints belong to older tutorials). Not seen on screen.

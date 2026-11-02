@@ -55,6 +55,7 @@ Public Class MainForm
         _views("demo") = viewDemo
         _views("copii-locale") = viewLocalBackup
         _views("istoric-md") = viewMdHistory
+        _views("scripturi") = viewScripts
         _views("schema-graf") = viewSchemaGraph
         _views("schema-istoric") = viewSchemaHistory
         For Each k_view As Control In _views.Values
@@ -246,6 +247,27 @@ Public Class MainForm
 
     Private Sub MnuShow_Click(k_sender As Object, e As EventArgs) Handles mnuShow.Click
         ShowFromTray()
+    End Sub
+
+    ''' <summary>The scripts page is about to start publish-admin.ps1 (which replaces this program): refuses while an operation is still running.</summary>
+    Private Sub ViewScripts_CloseProgramQuery(ByRef k_allowed As Boolean) Handles viewScripts.CloseProgramQuery
+        Try
+            If busy.Running AndAlso Not UiRun.Confirm("O operație rulează încă pe server. Închid programul oricum?", "KBotAdmin") Then k_allowed = False
+        Catch ex As Exception
+            k_allowed = False
+            GlobalErrorLog.Write("MainForm.ViewScripts_CloseProgramQuery", ex)
+        End Try
+    End Sub
+
+    ''' <summary>The detached script was started: the program ends (like the tray menu's «Închide») so that the script can replace it.</summary>
+    Private Sub ViewScripts_CloseProgramRequested() Handles viewScripts.CloseProgramRequested
+        Try
+            _exiting = True
+            notify.Visible = False
+            BeginInvoke(New Action(AddressOf Close))
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ViewScripts_CloseProgramRequested", ex)
+        End Try
     End Sub
 
     Private Sub MnuExit_Click(k_sender As Object, e As EventArgs) Handles mnuExit.Click

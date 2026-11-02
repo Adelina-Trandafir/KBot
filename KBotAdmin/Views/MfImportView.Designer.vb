@@ -270,7 +270,6 @@ Partial Class MfImportView
         gridCol1.ColumnType = KBotColumnType.CheckBox
         gridCol1.FormatString = Nothing
         gridCol1.HeaderText = "Alege"
-        gridCol1.HeaderTooltip = "Bifați mijloacele fixe care se importă."
         gridCol1.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol1.Key = "sel"
         gridCol1.MinWidth = 50
@@ -279,7 +278,6 @@ Partial Class MfImportView
         gridCol2.AggregateFormatString = Nothing
         gridCol2.FormatString = Nothing
         gridCol2.HeaderText = "Nr. inventar"
-        gridCol2.HeaderTooltip = "CodProdus din Access; devine numărul de inventar."
         gridCol2.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol2.Key = "code"
         gridCol2.MinWidth = 70
@@ -289,7 +287,6 @@ Partial Class MfImportView
         gridCol3.AggregateFormatString = Nothing
         gridCol3.FormatString = Nothing
         gridCol3.HeaderText = "Denumire"
-        gridCol3.HeaderTooltip = "Denumirea mijlocului fix."
         gridCol3.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol3.Key = "name"
         gridCol3.MinWidth = 100
@@ -299,7 +296,6 @@ Partial Class MfImportView
         gridCol4.AggregateFormatString = Nothing
         gridCol4.FormatString = Nothing
         gridCol4.HeaderText = "Data intrării"
-        gridCol4.HeaderTooltip = "DataIntrare din Access; documentul de stoc inițial se datează la ea."
         gridCol4.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol4.Key = "entry"
         gridCol4.MinWidth = 70
@@ -309,7 +305,6 @@ Partial Class MfImportView
         gridCol5.AggregateFormatString = Nothing
         gridCol5.FormatString = Nothing
         gridCol5.HeaderText = "Valoare"
-        gridCol5.HeaderTooltip = "ValoareIntrare din Access, păstrată ca atare (fără TVA în plus)."
         gridCol5.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol5.Key = "value"
         gridCol5.MinWidth = 70
@@ -320,7 +315,6 @@ Partial Class MfImportView
         gridCol6.AggregateFormatString = Nothing
         gridCol6.FormatString = Nothing
         gridCol6.HeaderText = "DNF"
-        gridCol6.HeaderTooltip = "Durata normală de funcționare, în luni."
         gridCol6.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol6.Key = "dnf"
         gridCol6.MinWidth = 40
@@ -331,7 +325,6 @@ Partial Class MfImportView
         gridCol7.AggregateFormatString = Nothing
         gridCol7.FormatString = Nothing
         gridCol7.HeaderText = "DF"
-        gridCol7.HeaderTooltip = "Durata deja folosită înainte de prima predare, în luni."
         gridCol7.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol7.Key = "df"
         gridCol7.MinWidth = 40
@@ -342,7 +335,6 @@ Partial Class MfImportView
         gridCol8.AggregateFormatString = Nothing
         gridCol8.FormatString = Nothing
         gridCol8.HeaderText = "Clasificare"
-        gridCol8.HeaderTooltip = "Categorie din Access; trebuie să existe în catalogul comun al clasificărilor MF."
         gridCol8.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol8.Key = "cc"
         gridCol8.MinWidth = 70
@@ -352,7 +344,6 @@ Partial Class MfImportView
         gridCol9.AggregateFormatString = Nothing
         gridCol9.FormatString = Nothing
         gridCol9.HeaderText = "Verificare"
-        gridCol9.HeaderTooltip = "Rezultatul verificării de pe server."
         gridCol9.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol9.Key = "verdict"
         gridCol9.MinWidth = 80
@@ -376,8 +367,6 @@ Partial Class MfImportView
         grid.Name = "grid"
         grid.Size = New Size(984, 300)
         grid.TabIndex = 15
-        tips.SetToolTipHeader(grid, "Mijloace fixe")
-        tips.SetToolTipText(grid, "Un rând = un mijloc fix activ din fișierul Access." & vbLf & "Rândurile refuzate la verificare apar în roșu, cu motivul în ultima coloană.")
         '
         ' lblState
         '

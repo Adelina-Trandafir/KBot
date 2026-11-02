@@ -30,7 +30,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.1.4.0</FileVersion>
+    <FileVersion>1.1.5.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -69,7 +69,7 @@
   <!-- Two harness forms own a .resx; with their whole class inside #If DEBUG, MSBuild cannot find the class
        to name the resource (MSB3042). So the files carry no #If and are left out of non-Debug builds here. -->
   <ItemGroup Condition="'$(Configuration)' != 'Debug'">
-    <Compile Remove="HarnessTests\DdfSectiuneaBHarnessForm*.vb;HarnessTests\PdfSigningHarnessForm*.vb;HarnessTests\RecordingPdfApi.vb;HarnessTests\PdfSignatureReport.vb;HarnessTests\PdfSaveTimeline.vb" />
+    <Compile Remove="HarnessTests\DdfSectiuneaBHarnessForm*.vb;HarnessTests\DdfFluxServerHarnessForm*.vb;HarnessTests\PdfSigningHarnessForm*.vb;HarnessTests\RecordingPdfApi.vb;HarnessTests\PdfSignatureReport.vb;HarnessTests\PdfSaveTimeline.vb" />
     <EmbeddedResource Remove="HarnessTests\DdfSectiuneaBHarnessForm.resx;HarnessTests\PdfSigningHarnessForm.resx" />
   </ItemGroup>
 

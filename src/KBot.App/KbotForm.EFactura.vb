@@ -76,6 +76,7 @@ Partial Public Class KbotForm
             Dim k_gate As ReauthGate = Nothing
             If Not EFacturaContext("E-Factura Cumpărare", k_api, k_gate) Then Return
             _primiteForm = New PrimiteForm(k_api, k_gate, _session.NumeUnitate, _session.An, Function() New FacturaPdfViewer(True))
+            _primiteForm.SubunitHost = Me   ' slice 01EF-02: the subunit selector of «Contari» is in the title bar
             AddHandler _primiteForm.FormClosed, Sub() _primiteForm = Nothing
             If Not ShowMachetaPage(_primiteForm, MachetaRef.Create(MachetaEFacturaCumparare)) Then
                 _primiteForm.Dispose()

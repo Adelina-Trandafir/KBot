@@ -132,7 +132,6 @@ Partial Class RecordHistoryForm
         VersionColumn1.AggregateFormatString = Nothing
         VersionColumn1.FormatString = Nothing
         VersionColumn1.HeaderText = "Copia din"
-        VersionColumn1.HeaderTooltip = "Când s-a terminat copia."
         VersionColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         VersionColumn1.Key = "when"
         VersionColumn1.MinWidth = 100
@@ -142,7 +141,6 @@ Partial Class RecordHistoryForm
         VersionColumn2.AggregateFormatString = Nothing
         VersionColumn2.FormatString = Nothing
         VersionColumn2.HeaderText = "Starea rândului"
-        VersionColumn2.HeaderTooltip = "Nu există încă, apare, neschimbat, modificat, a dispărut."
         VersionColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         VersionColumn2.Key = "state"
         VersionColumn2.MinWidth = 90
@@ -152,7 +150,6 @@ Partial Class RecordHistoryForm
         VersionColumn3.AggregateFormatString = Nothing
         VersionColumn3.FormatString = Nothing
         VersionColumn3.HeaderText = "Fel"
-        VersionColumn3.HeaderTooltip = "manual sau periodic."
         VersionColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         VersionColumn3.Key = "kind"
         VersionColumn3.MinWidth = 50
@@ -162,7 +159,6 @@ Partial Class RecordHistoryForm
         VersionColumn4.AggregateFormatString = Nothing
         VersionColumn4.FormatString = Nothing
         VersionColumn4.HeaderText = "Coloane schimbate"
-        VersionColumn4.HeaderTooltip = "Coloanele care au altă valoare decât în copia precedentă în care rândul exista."
         VersionColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         VersionColumn4.Key = "changed"
         VersionColumn4.MinWidth = 120
@@ -182,8 +178,6 @@ Partial Class RecordHistoryForm
         gridVersions.ReadOnlyGrid = True
         gridVersions.Size = New Size(876, 220)
         gridVersions.TabIndex = 1
-        tips.SetToolTipHeader(gridVersions, "Copiile")
-        tips.SetToolTipText(gridVersions, "Câte un rând pe copie, de la cea mai veche la cea mai nouă. Alegeți una ca să vedeți mai jos valorile rândului atunci.")
         '
         ' gridValues
         '
@@ -192,7 +186,6 @@ Partial Class RecordHistoryForm
         ValueColumn1.AggregateFormatString = Nothing
         ValueColumn1.FormatString = Nothing
         ValueColumn1.HeaderText = "Coloana"
-        ValueColumn1.HeaderTooltip = "Coloanele tabelei."
         ValueColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         ValueColumn1.Key = "column"
         ValueColumn1.MinWidth = 100
@@ -202,7 +195,6 @@ Partial Class RecordHistoryForm
         ValueColumn2.AggregateFormatString = Nothing
         ValueColumn2.FormatString = Nothing
         ValueColumn2.HeaderText = "Valoarea în copia aleasă"
-        ValueColumn2.HeaderTooltip = "Valoarea coloanei la acel moment. [NULL] = fără valoare; [binar] = conținut binar (PDF, imagine)."
         ValueColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         ValueColumn2.Key = "value"
         ValueColumn2.MinWidth = 120
@@ -212,7 +204,6 @@ Partial Class RecordHistoryForm
         ValueColumn3.AggregateFormatString = Nothing
         ValueColumn3.FormatString = Nothing
         ValueColumn3.HeaderText = "Valoarea înainte"
-        ValueColumn3.HeaderTooltip = "Valoarea din copia precedentă în care rândul exista; se vede doar la coloanele care s-au schimbat."
         ValueColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         ValueColumn3.Key = "before"
         ValueColumn3.MinWidth = 120
@@ -231,8 +222,6 @@ Partial Class RecordHistoryForm
         gridValues.ReadOnlyGrid = True
         gridValues.Size = New Size(876, 262)
         gridValues.TabIndex = 2
-        tips.SetToolTipHeader(gridValues, "Valorile")
-        tips.SetToolTipText(gridValues, "Valorile rândului în copia aleasă sus; la coloanele schimbate se vede și valoarea de dinainte.")
         '
         ' lblState
         '

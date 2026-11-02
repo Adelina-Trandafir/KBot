@@ -72,6 +72,9 @@ Public Class SablonOperatiiView
     Private _api As ISablonOperatiiApi
     Private _gate As ReauthGate = ReauthGate.Direct
     Private _session As SessionContext
+    ' Slice AV01-18: the subunit in force when the (modal) window opened, and its sector+source. As in Access, a template belongs to ONE subunit: only its templates show.
+    Private _idSubunitate As Integer?
+    Private _subunitSs As String = String.Empty
     Private _tip As String = "M"
     Private _catalog As SabloaneOperatiiCatalog
     ' The templates of THIS type as read, with the edits typed since.
@@ -107,7 +110,10 @@ Public Class SablonOperatiiView
     ''' The window calls it once, the first time the page is shown.
     ''' </summary>
     ''' <param name="k_tip"><c>M</c> or <c>A</c>.</param>
-    Public Sub Bind(k_api As ISablonOperatiiApi, k_gate As ReauthGate, k_session As SessionContext, k_tip As String)
+    ''' <param name="k_idSubunitate">The subunit in force (the title bar's); the templates of that subunit show and a new template belongs to it. Nothing = the unit has none.</param>
+    ''' <param name="k_subunitSs">The sector+source of that subunit: with «Toate» in the title bar it is the source that shows.</param>
+    Public Sub Bind(k_api As ISablonOperatiiApi, k_gate As ReauthGate, k_session As SessionContext, k_tip As String,
+                    Optional k_idSubunitate As Integer? = Nothing, Optional k_subunitSs As String = Nothing)
         Try
             ArgumentNullException.ThrowIfNull(k_api)
             ArgumentNullException.ThrowIfNull(k_gate)
@@ -118,6 +124,8 @@ Public Class SablonOperatiiView
             _api = k_api
             _gate = k_gate
             _session = k_session
+            _idSubunitate = k_idSubunitate
+            _subunitSs = If(k_subunitSs, String.Empty)
             _tip = k_tip
             If Not _bound Then
                 _bound = True
@@ -276,16 +284,19 @@ Public Class SablonOperatiiView
 
     ' ── Which templates show ────────────────────────────────────────────────────
 
-    ' The sector+source of the title bar, Nothing on «Toate» (or when it is unknown): then everything shows.
+    ' The sector+source of the title bar; on «Toate» (or when it is unknown) the one of the subunit in force, Nothing when there is none: then everything shows.
     Private Function SsFilter() As String
-        If _session Is Nothing OrElse _session.ToateSursele OrElse String.IsNullOrEmpty(_session.SectorSursa) Then Return Nothing
+        If _session Is Nothing OrElse _session.ToateSursele OrElse String.IsNullOrEmpty(_session.SectorSursa) Then Return If(_subunitSs.Length = 0, Nothing, _subunitSs)
         Return _session.SectorSursa
     End Function
 
+    ' The templates of the subunit in force (nothing is common between subunits), in the sector+source of the title bar.
     Private Function ShownTemplates() As IEnumerable(Of SablonOperatieInfo)
         Dim k_ss As String = SsFilter()
-        If k_ss Is Nothing Then Return _all
-        Return _all.Where(Function(k_s) IsInSs(k_s.IdJurnal, k_ss))
+        Dim k_list As IEnumerable(Of SablonOperatieInfo) = _all
+        If _idSubunitate.HasValue Then k_list = k_list.Where(Function(k_s) k_s.IdSubunitate = _idSubunitate.Value)
+        If k_ss Is Nothing Then Return k_list
+        Return k_list.Where(Function(k_s) IsInSs(k_s.IdJurnal, k_ss))
     End Function
 
     Private Function IsInSs(k_idJurnal As Integer, k_ss As String) As Boolean
@@ -589,9 +600,15 @@ Public Class SablonOperatiiView
                              "Șabloane de operații", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return
         End If
+        If Not _idSubunitate.HasValue Then
+            KBotMessage.Show(Me, "Unitatea nu are nicio subunitate pentru această sursă: un șablon aparține unei subunități.",
+                             "Șabloane de operații", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
         Dim k_isM As Boolean = IsTypeM()
         Dim k_new As New SablonOperatieInfo() With {
-            .Tip = _tip, .Fel = If(k_isM, "E", "A"), .IdJurnal = _shownJournals(0).IdJurnal, .Cheie = If(k_isM, k_cheie, String.Empty)}
+            .Tip = _tip, .Fel = If(k_isM, "E", "A"), .IdJurnal = _shownJournals(0).IdJurnal, .IdSubunitate = _idSubunitate.Value,
+            .Cheie = If(k_isM, k_cheie, String.Empty)}
         Dim k_forms As List(Of String) = If(k_isM, FormsOf(k_cheie, SsFilter()), New List(Of String)())
         If k_forms.Count = 0 Then k_forms.Add(String.Empty)
         For Each k_f As String In k_forms

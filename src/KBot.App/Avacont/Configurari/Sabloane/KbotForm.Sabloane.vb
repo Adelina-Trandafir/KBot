@@ -19,7 +19,7 @@ Partial Public Class KbotForm
             Dim k_api As ISablonOperatiiApi = TryCast(_apiClient, ISablonOperatiiApi)
             If k_api Is Nothing Then Throw New InvalidOperationException("The API client does not implement ISablonOperatiiApi.")
             Dim k_gate As New ReauthGate(Function(k_action) WithReauth(Of Object)(k_action))
-            Using k_form As New SabloaneForm(k_api, TryCast(_apiClient, ISablonSalariiApi), k_gate, _session)
+            Using k_form As New SabloaneForm(k_api, TryCast(_apiClient, ISablonSalariiApi), k_gate, _session, CurrentSubunitId, CurrentSubunitSs)
                 Await ShowModalAsync(k_form, MachetaRef.Create(MachetaSabloane)).ConfigureAwait(True)
             End Using
         Catch ex As Exception

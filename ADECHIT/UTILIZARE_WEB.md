@@ -55,7 +55,7 @@ Editorul copilului conține nume, CNP, combobox grupă, data intrării, Plecat �
 
 Ferestrele sunt modale și blochează fundalul. Clicul în afară și Escape nu le închid. Salvarea închide editorul numai după succes; eroarea/conflictul păstrează datele nesalvate. Renunță abandonează explicit editările, conform machetelor.
 
-CNP se verifică în JS și API după funcțiile VBA furnizate: 13 cifre, lună ≤12, zi ≤31, județ ≤52 și cifra de control cu ponderile 279146358279, modulo 11 (restul 10 devine 1). Codurile sunt 0/2/3/4/5 pentru erori și -1 pentru valid. CNP gol este permis pentru date istorice/persoane juridice; verificarea nu introduce suplimentar validarea completă a unei date calendaristice.
+CNP se verifică în JS și API după funcțiile VBA furnizate: 13 cifre, lună ≤12, zi ≤31, județ ≤52 sau 80/81 (nu sunt județe: persoane născute în străinătate, cu CNP românesc obținut ulterior) și cifra de control cu ponderile 279146358279, modulo 11 (restul 10 devine 1). Codurile sunt 0/2/3/4/5 pentru erori și -1 pentru valid. CNP gol este permis pentru date istorice/persoane juridice; verificarea nu introduce suplimentar validarea completă a unei date calendaristice.
 
 Plătitorul nou se salvează activ (Activ bifat și blocat în editor); ceilalți plătitori ai **aceluiași copil** devin inactivi în aceeași tranzacție. Aceeași regulă se aplică activării unuia existent. Dezactivarea explicită permite zero activi; aceste salvări nu permit mai mulți activi și nu afectează alți copii. Importul nu curăță global dublurile istorice.
 

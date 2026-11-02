@@ -22,6 +22,7 @@ Partial Class KBotDataView
     ' o schemă nu putea distinge banda de sumar de banda de titluri nici dacă voia.
     Private _cFooterBack As Color
     Private _cFooterText As Color
+    Private _cDeleteHover As Color = Color.FromArgb(70, Color.Firebrick)
     Private _cFooterSep As Color
     Private _cFooterBaseline As Color
     ' Benzile de GRUP (slice 0029) au și ele roluri proprii — nici antet, nici subsol de grilă:
@@ -214,6 +215,8 @@ Partial Class KBotDataView
             _cButtonFace = p.ButtonBackColor
             _cButtonBorder = p.ButtonBorderColor
             _cButtonText = p.ButtonTextColor
+            ' Slice 0010-09: the wash of the standard delete button (it is drawn OVER the row, so it needs an alpha).
+            _cDeleteHover = Color.FromArgb(70, p.ErrorColor)
             _cProgressTrack = Blend(_cRowBack, p.BorderColor, 0.4)
             _cProgressFill = p.AccentColor
 

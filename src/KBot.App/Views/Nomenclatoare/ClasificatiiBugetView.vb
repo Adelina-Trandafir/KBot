@@ -1354,10 +1354,6 @@ Public Class ClasificatiiBugetView
             lblAngajamente.BackColor = p.SurfaceAltColor
             lblAngajamente.ForeColor = p.TextColor
             lblStare.ForeColor = p.TextDimColor
-            ' Slice 0126-02: the «✕» buttons are flat (they show the row colour); only the hover takes a wash of the error colour.
-            Dim k_hover As Color = Color.FromArgb(70, p.ErrorColor)
-            gridBuget.Column(ColDelete).ButtonHoverBackColor = k_hover
-            gridRectificari.Column(ColDelete).ButtonHoverBackColor = k_hover
             ' The footer colour of the grids is part of the theme: the heights and the «footer-like» row follow it.
             If IsHandleCreated AndAlso _api IsNot Nothing Then BeginInvoke(New Action(AddressOf ApplyGridHeights))
             gridTotal.Invalidate()

@@ -155,7 +155,6 @@ Partial Class LoginResetView
         gridCol1.ColumnType = KBotColumnType.CheckBox
         gridCol1.FormatString = Nothing
         gridCol1.HeaderText = "Alege"
-        gridCol1.HeaderTooltip = "Bifați utilizatorii ale căror încercări se resetează."
         gridCol1.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol1.Key = "sel"
         gridCol1.MinWidth = 50
@@ -164,7 +163,6 @@ Partial Class LoginResetView
         gridCol2.AggregateFormatString = Nothing
         gridCol2.FormatString = Nothing
         gridCol2.HeaderText = "Cont"
-        gridCol2.HeaderTooltip = "Adresa de e-mail a utilizatorului."
         gridCol2.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol2.Key = "un"
         gridCol2.MinWidth = 100
@@ -174,7 +172,6 @@ Partial Class LoginResetView
         gridCol3.AggregateFormatString = Nothing
         gridCol3.FormatString = Nothing
         gridCol3.HeaderText = "Baza"
-        gridCol3.HeaderTooltip = "Baza de unitate la care e legat contul."
         gridCol3.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol3.Key = "dc"
         gridCol3.MinWidth = 60
@@ -184,7 +181,6 @@ Partial Class LoginResetView
         gridCol4.AggregateFormatString = Nothing
         gridCol4.FormatString = Nothing
         gridCol4.HeaderText = "Unitatea"
-        gridCol4.HeaderTooltip = "Denumirea unității."
         gridCol4.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol4.Key = "unit"
         gridCol4.MinWidth = 80
@@ -194,7 +190,6 @@ Partial Class LoginResetView
         gridCol5.AggregateFormatString = Nothing
         gridCol5.FormatString = Nothing
         gridCol5.HeaderText = "Rol K-BOT"
-        gridCol5.HeaderTooltip = "Rolul contului în K-BOT."
         gridCol5.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol5.Key = "rol"
         gridCol5.MinWidth = 60
@@ -204,7 +199,6 @@ Partial Class LoginResetView
         gridCol6.AggregateFormatString = Nothing
         gridCol6.FormatString = Nothing
         gridCol6.HeaderText = "Ultima perioadă"
-        gridCol6.HeaderTooltip = "Ultima perioadă (SS) deschisă de utilizator."
         gridCol6.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol6.Key = "last"
         gridCol6.MinWidth = 60
@@ -214,7 +208,6 @@ Partial Class LoginResetView
         gridCol7.AggregateFormatString = Nothing
         gridCol7.FormatString = Nothing
         gridCol7.HeaderText = "Eșecuri"
-        gridCol7.HeaderTooltip = "Încercări de login eșuate în contorul serverului."
         gridCol7.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol7.Key = "fails"
         gridCol7.MinWidth = 50
@@ -225,7 +218,6 @@ Partial Class LoginResetView
         gridCol8.AggregateFormatString = Nothing
         gridCol8.FormatString = Nothing
         gridCol8.HeaderText = "Blocat"
-        gridCol8.HeaderTooltip = "Da (minute rămase) dacă serverul îl blochează acum."
         gridCol8.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol8.Key = "blocked"
         gridCol8.MinWidth = 60
@@ -235,7 +227,6 @@ Partial Class LoginResetView
         gridCol9.AggregateFormatString = Nothing
         gridCol9.FormatString = Nothing
         gridCol9.HeaderText = "Parola"
-        gridCol9.HeaderTooltip = "«de schimbat» = trebuie schimbată la următoarea conectare; altfel data ultimei schimbări, dacă există."
         gridCol9.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol9.Key = "pwd"
         gridCol9.MinWidth = 80
@@ -259,8 +250,6 @@ Partial Class LoginResetView
         grid.Name = "grid"
         grid.Size = New Size(600, 300)
         grid.TabIndex = 4
-        tips.SetToolTipHeader(grid, "Utilizatorii")
-        tips.SetToolTipText(grid, "Un rând = un cont pe o unitate, cu starea încercărilor de login de pe serverul care rulează." & vbLf & "Rândurile blocate apar în roșu.")
         '
         ' lblState
         '

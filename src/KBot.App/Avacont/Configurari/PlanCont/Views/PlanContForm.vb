@@ -86,11 +86,12 @@ Public Class PlanContForm
         End Try
     End Sub
 
-    ' The subunit selector of the title bar belongs to this window only while it is on screen (a page put away is hidden).
+    ' The subunit selector is the application's: when the page comes back on screen it takes the subunit in force (the operator may have picked another one meanwhile).
     Protected Overrides Sub OnVisibleChanged(e As EventArgs)
         Try
             MyBase.OnVisibleChanged(e)
-            If _host IsNot Nothing Then _host.SetSubunitShown(Visible)
+            If Visible AndAlso _host IsNot Nothing AndAlso _host.CurrentSubunitId.HasValue AndAlso _ctx IsNot Nothing AndAlso _ctx.Subunitate IsNot Nothing AndAlso
+               _host.CurrentSubunitId.Value <> _ctx.Subunitate.IdSubunitate Then HostSubunitPicked(_host.CurrentSubunitId.Value.ToString(CultureInfo.InvariantCulture))
         Catch ex As Exception
             GlobalErrorLog.Write("PlanContForm.OnVisibleChanged", ex)
         End Try
@@ -123,10 +124,7 @@ Public Class PlanContForm
     Protected Overrides Sub OnFormClosed(e As FormClosedEventArgs)
         Try
             If _ctx IsNot Nothing Then RemoveHandler _ctx.Session.PeriodChanged, AddressOf SessionPeriodChanged
-            If _host IsNot Nothing Then
-                RemoveHandler _host.SubunitPicked, AddressOf HostSubunitPicked
-                _host.SetSubunitChoices(Nothing, Nothing)
-            End If
+            If _host IsNot Nothing Then RemoveHandler _host.SubunitPicked, AddressOf HostSubunitPicked
             MyBase.OnFormClosed(e)
         Catch ex As Exception
             GlobalErrorLog.Write("PlanContForm.OnFormClosed", ex)
@@ -174,17 +172,17 @@ Public Class PlanContForm
     ' default one or the first. None = the source has no subunit (the chart is empty).
     Private Sub ApplySource(k_select As Integer?)
         Dim k_choices As List(Of SubunitateInfo) = _ctx.SubunitatiForSource()
-        Dim k_keep As Integer? = If(k_select, _ctx.Subunitate?.IdSubunitate)
+        Dim k_keep As Integer? = If(k_select, If(_host IsNot Nothing AndAlso _host.CurrentSubunitId.HasValue, _host.CurrentSubunitId, _ctx.Subunitate?.IdSubunitate))
         Dim k_pick As SubunitateInfo = k_choices.FirstOrDefault(Function(k_s) k_keep.HasValue AndAlso k_s.IdSubunitate = k_keep.Value)
         If k_pick Is Nothing Then k_pick = k_choices.FirstOrDefault(Function(k_s) k_s.Implicita)
         If k_pick Is Nothing Then k_pick = k_choices.FirstOrDefault()
         _ctx.Subunitate = k_pick
-        If _host IsNot Nothing Then
-            _host.SetSubunitChoices(
-                k_choices.Select(Function(k_s) New KeyValuePair(Of String, String)(KeyOf(k_s), SubunitateCaption(k_s))),
-                If(k_pick Is Nothing, Nothing, KeyOf(k_pick)))
-        End If
         RefreshButtons()
+    End Sub
+
+    ' Puts the title bar's selector back on the subunit this window shows.
+    Private Sub RestoreSubunitKey()
+        If _host IsNot Nothing AndAlso _ctx IsNot Nothing AndAlso _ctx.Subunitate IsNot Nothing Then _host.SetSubunitKey(KeyOf(_ctx.Subunitate))
     End Sub
 
     Private Shared Function KeyOf(k_sub As SubunitateInfo) As String
@@ -240,12 +238,20 @@ Public Class PlanContForm
     ' it moves here, once the view in front has settled what it had pending. UI boundary: started without await.
     Private Async Sub HostSubunitPicked(k_key As String)
         Try
-            If IsDisposed OrElse _busy OrElse _ctx Is Nothing Then Return
+            ' The selector has already moved: when this window cannot follow, it puts the selector back on the subunit it shows.
+            If IsDisposed OrElse Not Visible OrElse _ctx Is Nothing Then Return
+            If _busy Then
+                RestoreSubunitKey()
+                Return
+            End If
             Dim k_id As Integer
             If Not Integer.TryParse(k_key, NumberStyles.Integer, CultureInfo.InvariantCulture, k_id) Then Return
             Dim k_new As SubunitateInfo = _ctx.Subunitati.FirstOrDefault(Function(k_s) k_s.IdSubunitate = k_id)
             If k_new Is Nothing OrElse (_ctx.Subunitate IsNot Nothing AndAlso k_new.IdSubunitate = _ctx.Subunitate.IdSubunitate) Then Return
-            If Not Await ActiveView.CommitAsync().ConfigureAwait(True) Then Return
+            If Not Await ActiveView.CommitAsync().ConfigureAwait(True) Then
+                RestoreSubunitKey()
+                Return
+            End If
             If IsDisposed Then Return
             _ctx.Subunitate = k_new
             _host.SetSubunitKey(k_key)

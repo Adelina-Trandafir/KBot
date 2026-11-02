@@ -133,14 +133,11 @@ Partial Class VisitsView
         '
         ' grid
         '
-        tips.SetToolTipHeader(grid, "Vizite")
-        tips.SetToolTipText(grid, "Un rând = o vizită pe pagina de prezentare. Coloana «Secțiuni» arată ce a citit vizitatorul.")
         grid.AutoSizeColumnsMode = KBotAutoSizeMode.None
         grid.ColumnFillMode = KBotFillMode.SpecificColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.HeaderText = "Prima"
-        KBotDataColumn1.HeaderTooltip = "Momentul primei deschideri a paginii."
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "first"
         KBotDataColumn1.MinWidth = 90
@@ -150,7 +147,6 @@ Partial Class VisitsView
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.FormatString = Nothing
         KBotDataColumn2.HeaderText = "Durată (s)"
-        KBotDataColumn2.HeaderTooltip = "Cât timp a stat vizitatorul pe pagină."
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "seconds"
         KBotDataColumn2.MinWidth = 50
@@ -161,7 +157,6 @@ Partial Class VisitsView
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.FormatString = Nothing
         KBotDataColumn3.HeaderText = "IP"
-        KBotDataColumn3.HeaderTooltip = "Adresa vizitatorului."
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "ip"
         KBotDataColumn3.MinWidth = 60
@@ -171,7 +166,6 @@ Partial Class VisitsView
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.FormatString = Nothing
         KBotDataColumn4.HeaderText = "Țară"
-        KBotDataColumn4.HeaderTooltip = "Țara, după adresa IP."
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "country"
         KBotDataColumn4.MinWidth = 40
@@ -182,7 +176,6 @@ Partial Class VisitsView
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.FormatString = Nothing
         KBotDataColumn5.HeaderText = "Fel"
-        KBotDataColumn5.HeaderTooltip = "Om sau robot (indexare)."
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "kind"
         KBotDataColumn5.MinWidth = 50
@@ -192,7 +185,6 @@ Partial Class VisitsView
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.FormatString = Nothing
         KBotDataColumn6.HeaderText = "Pagina"
-        KBotDataColumn6.HeaderTooltip = "Pagina deschisă."
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn6.Key = "page"
         KBotDataColumn6.MinWidth = 60
@@ -202,7 +194,6 @@ Partial Class VisitsView
         KBotDataColumn7.AggregateFormatString = Nothing
         KBotDataColumn7.FormatString = Nothing
         KBotDataColumn7.HeaderText = "Provine din"
-        KBotDataColumn7.HeaderTooltip = "De unde a venit vizitatorul."
         KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn7.Key = "referrer"
         KBotDataColumn7.MinWidth = 60
@@ -212,7 +203,6 @@ Partial Class VisitsView
         KBotDataColumn8.AggregateFormatString = Nothing
         KBotDataColumn8.FormatString = Nothing
         KBotDataColumn8.HeaderText = "Secțiuni văzute"
-        KBotDataColumn8.HeaderTooltip = "Secțiunile citite și timpul pe fiecare."
         KBotDataColumn8.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn8.Key = "sections"
         KBotDataColumn8.MinWidth = 80

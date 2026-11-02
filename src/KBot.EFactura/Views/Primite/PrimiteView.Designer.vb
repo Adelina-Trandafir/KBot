@@ -23,6 +23,7 @@ Partial Class PrimiteView
         Dim KBotNavItem4 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem6 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem7 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem8 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         tlyBody = New KBotTableLayoutPanel()
         pnlArbore = New System.Windows.Forms.Panel()
@@ -31,6 +32,7 @@ Partial Class PrimiteView
         pnlNav = New System.Windows.Forms.Panel()
         pnlPages = New System.Windows.Forms.Panel()
         pgLinii = New PrimiteLiniiPage()
+        pgContare = New PrimiteContarePage()
         pgPdf = New PrimitePdfPage()
         pgMesaje = New PrimiteMesajePage()
         pgReceptii = New PrimiteReceptiiPage()
@@ -158,6 +160,7 @@ Partial Class PrimiteView
         '
         ' pnlPages
         '
+        pnlPages.Controls.Add(pgContare)
         pnlPages.Controls.Add(pgLinii)
         pnlPages.Controls.Add(pgPdf)
         pnlPages.Controls.Add(pgMesaje)
@@ -178,6 +181,16 @@ Partial Class PrimiteView
         pgLinii.Name = "pgLinii"
         pgLinii.Size = New System.Drawing.Size(680, 476)
         pgLinii.TabIndex = 0
+        '
+        ' pgContare: slice 01EF-02, the first view (the accounting of the ticked invoices)
+        '
+        pgContare.Dock = System.Windows.Forms.DockStyle.Fill
+        pgContare.Location = New System.Drawing.Point(0, 0)
+        pgContare.Margin = New System.Windows.Forms.Padding(0)
+        pgContare.Name = "pgContare"
+        pgContare.Size = New System.Drawing.Size(680, 476)
+        pgContare.TabIndex = 6
+        pgContare.Visible = False
         '
         ' pgPdf
         '
@@ -250,6 +263,11 @@ Partial Class PrimiteView
         KBotNavItem4.Key = "mesaje"
         KBotNavItem4.Text = "Mesaje"
         KBotNavItem4.Visible = False
+        KBotNavItem8.AutoSize = True
+        KBotNavItem8.Image = My.Resources.Resources.cells
+        KBotNavItem8.Key = "contare"
+        KBotNavItem8.Text = "Contări"
+        navDetaliu.Items.Add(KBotNavItem8)
         navDetaliu.Items.Add(KBotNavItem1)
         navDetaliu.Items.Add(KBotNavItem2)
         navDetaliu.Items.Add(KBotNavItem4)
@@ -309,6 +327,7 @@ Partial Class PrimiteView
     Friend WithEvents pnlNav As System.Windows.Forms.Panel
     Friend WithEvents pnlPages As System.Windows.Forms.Panel
     Friend WithEvents pgLinii As PrimiteLiniiPage
+    Friend WithEvents pgContare As PrimiteContarePage
     Friend WithEvents pgPdf As PrimitePdfPage
     Friend WithEvents pgMesaje As PrimiteMesajePage
     Friend WithEvents pgReceptii As PrimiteReceptiiPage

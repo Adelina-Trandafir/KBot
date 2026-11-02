@@ -323,7 +323,6 @@ Partial Class SablonOperatiiView
         KBotDataColumn4.FormatString = Nothing
         KBotDataColumn4.HeaderText = "P. Debit"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn4.HeaderTooltip = "Partenerul variabil" & vbLf & "Bifat: se folosește partenerul operației, înlocuit la întocmirea operației."
         KBotDataColumn4.Key = "pd"
         KBotDataColumn4.MinWidth = 60
         KBotDataColumn4.OptionGroup = Nothing
@@ -344,7 +343,6 @@ Partial Class SablonOperatiiView
         KBotDataColumn6.FormatString = Nothing
         KBotDataColumn6.HeaderText = "P. Credit"
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn6.HeaderTooltip = "Partenerul variabil" & vbLf & "Bifat: se folosește partenerul operației, înlocuit la întocmirea operației."
         KBotDataColumn6.Key = "pc"
         KBotDataColumn6.MinWidth = 60
         KBotDataColumn6.OptionGroup = Nothing
@@ -375,7 +373,6 @@ Partial Class SablonOperatiiView
         KBotDataColumn9.FormatString = Nothing
         KBotDataColumn9.HeaderText = "O"
         KBotDataColumn9.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn9.HeaderTooltip = "Ordonanțare"
         KBotDataColumn9.Key = "o"
         KBotDataColumn9.MinWidth = 30
         KBotDataColumn9.OptionGroup = Nothing
@@ -386,7 +383,6 @@ Partial Class SablonOperatiiView
         KBotDataColumn10.FormatString = Nothing
         KBotDataColumn10.HeaderText = "P/A"
         KBotDataColumn10.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn10.HeaderTooltip = "Propunere / Angajament"
         KBotDataColumn10.Key = "pa"
         KBotDataColumn10.MinWidth = 30
         KBotDataColumn10.OptionGroup = Nothing
@@ -397,16 +393,14 @@ Partial Class SablonOperatiiView
         KBotDataColumn11.FormatString = Nothing
         KBotDataColumn11.HeaderText = "C"
         KBotDataColumn11.HeaderTextAlign = ContentAlignment.MiddleCenter
-        KBotDataColumn11.HeaderTooltip = "Cheltuială"
         KBotDataColumn11.Key = "c"
         KBotDataColumn11.MinWidth = 30
         KBotDataColumn11.OptionGroup = Nothing
         KBotDataColumn11.Resizable = False
         KBotDataColumn11.Width = 30
         KBotDataColumn12.AggregateFormatString = Nothing
-        KBotDataColumn12.ButtonBorders = KBotBorderSides.None
-        KBotDataColumn12.ButtonMargin = New Padding(0)
         KBotDataColumn12.ColumnType = KBotColumnType.Button
+        KBotDataColumn12.ButtonKind = KBotButtonKind.Delete
         KBotDataColumn12.FormatString = Nothing
         KBotDataColumn12.HeaderText = ""
         KBotDataColumn12.HeaderTextAlign = ContentAlignment.MiddleCenter

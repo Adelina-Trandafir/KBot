@@ -229,7 +229,6 @@ Partial Class PushFilesView
         gridFilesCol1.ColumnType = KBotColumnType.CheckBox
         gridFilesCol1.FormatString = Nothing
         gridFilesCol1.HeaderText = "Trimite"
-        gridFilesCol1.HeaderTooltip = "Bifat = fișierul se trimite la «Trimite bifatele». Fișierele noi și cele modificate vin bifate."
         gridFilesCol1.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridFilesCol1.Key = "send"
         gridFilesCol1.MinWidth = 50
@@ -238,7 +237,6 @@ Partial Class PushFilesView
         gridFilesCol2.AggregateFormatString = Nothing
         gridFilesCol2.FormatString = Nothing
         gridFilesCol2.HeaderText = "Fișier"
-        gridFilesCol2.HeaderTooltip = "Calea față de rădăcina locală; pe server ajunge sub rădăcina de pe server."
         gridFilesCol2.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridFilesCol2.Key = "path"
         gridFilesCol2.MinWidth = 120
@@ -248,7 +246,6 @@ Partial Class PushFilesView
         gridFilesCol3.AggregateFormatString = Nothing
         gridFilesCol3.FormatString = Nothing
         gridFilesCol3.HeaderText = "Stare"
-        gridFilesCol3.HeaderTooltip = "NOU = nu există pe server; MODIFICAT = local e mai nou cu peste 2 secunde; IDENTIC = nimic de trimis."
         gridFilesCol3.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridFilesCol3.Key = "state"
         gridFilesCol3.MinWidth = 60
@@ -258,7 +255,6 @@ Partial Class PushFilesView
         gridFilesCol4.AggregateFormatString = Nothing
         gridFilesCol4.FormatString = Nothing
         gridFilesCol4.HeaderText = "Ext."
-        gridFilesCol4.HeaderTooltip = "Extensia fișierului."
         gridFilesCol4.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridFilesCol4.Key = "ext"
         gridFilesCol4.MinWidth = 40
@@ -268,7 +264,6 @@ Partial Class PushFilesView
         gridFilesCol5.AggregateFormatString = Nothing
         gridFilesCol5.FormatString = Nothing
         gridFilesCol5.HeaderText = "Mărime locală"
-        gridFilesCol5.HeaderTooltip = "Mărimea fișierului de pe acest calculator."
         gridFilesCol5.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridFilesCol5.Key = "size"
         gridFilesCol5.MinWidth = 60
@@ -279,7 +274,6 @@ Partial Class PushFilesView
         gridFilesCol6.AggregateFormatString = Nothing
         gridFilesCol6.FormatString = Nothing
         gridFilesCol6.HeaderText = "Mărime server"
-        gridFilesCol6.HeaderTooltip = "Mărimea fișierului de pe server (gol dacă nu există)."
         gridFilesCol6.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridFilesCol6.Key = "srvsize"
         gridFilesCol6.MinWidth = 60
@@ -290,7 +284,6 @@ Partial Class PushFilesView
         gridFilesCol7.AggregateFormatString = Nothing
         gridFilesCol7.FormatString = Nothing
         gridFilesCol7.HeaderText = "Local (UTC)"
-        gridFilesCol7.HeaderTooltip = "Ora ultimei modificări a fișierului local."
         gridFilesCol7.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridFilesCol7.Key = "local"
         gridFilesCol7.MinWidth = 90
@@ -300,7 +293,6 @@ Partial Class PushFilesView
         gridFilesCol8.AggregateFormatString = Nothing
         gridFilesCol8.FormatString = Nothing
         gridFilesCol8.HeaderText = "Server (UTC)"
-        gridFilesCol8.HeaderTooltip = "Ora ultimei modificări a fișierului de pe server."
         gridFilesCol8.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridFilesCol8.Key = "server"
         gridFilesCol8.MinWidth = 90
@@ -323,8 +315,6 @@ Partial Class PushFilesView
         gridFiles.Name = "gridFiles"
         gridFiles.Size = New Size(600, 300)
         gridFiles.TabIndex = 10
-        tips.SetToolTipHeader(gridFiles, "Fișierele")
-        tips.SetToolTipText(gridFiles, "Un rând = un fișier permis de reguli. Bifa din prima coloană spune dacă se trimite." & vbLf & "Coloanele arată mărimea și ora locală față de server, ca să vedeți ce s-a schimbat.")
         '
         ' tlySide
         '
@@ -395,7 +385,6 @@ Partial Class PushFilesView
         gridExtCol1.AggregateFormatString = Nothing
         gridExtCol1.FormatString = Nothing
         gridExtCol1.HeaderText = "Extensie"
-        gridExtCol1.HeaderTooltip = "Extensia fără punct. Se poate edita direct; o extensie nouă se adaugă cu butonul de sub tabel."
         gridExtCol1.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridExtCol1.Key = "ext"
         gridExtCol1.MinWidth = 50
@@ -405,7 +394,6 @@ Partial Class PushFilesView
         gridExtCol2.ColumnType = KBotColumnType.CheckBox
         gridExtCol2.FormatString = Nothing
         gridExtCol2.HeaderText = "Acceptată"
-        gridExtCol2.HeaderTooltip = "Bifat = fișierele cu această extensie se compară și se trimit. Debifat = sunt ignorate. Modificarea se salvează pe loc; se vede la următoarea scanare."
         gridExtCol2.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridExtCol2.Key = "accepted"
         gridExtCol2.MinWidth = 60
@@ -414,7 +402,6 @@ Partial Class PushFilesView
         gridExtCol3.AggregateFormatString = Nothing
         gridExtCol3.FormatString = Nothing
         gridExtCol3.HeaderText = "Găsite"
-        gridExtCol3.HeaderTooltip = "Câte fișiere cu această extensie are folderul local (fără cele oprite de reguli de ignorare)."
         gridExtCol3.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridExtCol3.Key = "found"
         gridExtCol3.MinWidth = 50
@@ -425,7 +412,6 @@ Partial Class PushFilesView
         gridExtCol4.AggregateFormatString = Nothing
         gridExtCol4.FormatString = Nothing
         gridExtCol4.HeaderText = "De trimis"
-        gridExtCol4.HeaderTooltip = "Câte dintre ele sunt noi sau modificate (se numără doar pentru extensiile acceptate)."
         gridExtCol4.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridExtCol4.Key = "tosend"
         gridExtCol4.MinWidth = 50
@@ -445,8 +431,6 @@ Partial Class PushFilesView
         gridExt.Name = "gridExt"
         gridExt.Size = New Size(600, 300)
         gridExt.TabIndex = 15
-        tips.SetToolTipHeader(gridExt, "Extensii")
-        tips.SetToolTipText(gridExt, "Ce extensii se trimit (bifate) și care sunt ignorate (debifate), cu câte fișiere s-au găsit." & vbLf & "Se poate edita direct; setările se salvează în admin_settings.json.")
         '
         ' tlyPatBar
         '
@@ -496,7 +480,6 @@ Partial Class PushFilesView
         gridPatCol1.AggregateFormatString = Nothing
         gridPatCol1.FormatString = Nothing
         gridPatCol1.HeaderText = "Regulă de ignorare"
-        gridPatCol1.HeaderTooltip = "Un nume de dosar sau fișier (oriunde în arbore) ori *.extensie. Se poate edita direct; salvarea e automată."
         gridPatCol1.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridPatCol1.Key = "pattern"
         gridPatCol1.MinWidth = 80
@@ -505,7 +488,6 @@ Partial Class PushFilesView
         gridPatCol2.AggregateFormatString = Nothing
         gridPatCol2.FormatString = Nothing
         gridPatCol2.HeaderText = "Sărite"
-        gridPatCol2.HeaderTooltip = "Câte fișiere a oprit regula la ultima scanare."
         gridPatCol2.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridPatCol2.Key = "skipped"
         gridPatCol2.MinWidth = 50
@@ -523,8 +505,6 @@ Partial Class PushFilesView
         gridPat.Name = "gridPat"
         gridPat.Size = New Size(600, 300)
         gridPat.TabIndex = 19
-        tips.SetToolTipHeader(gridPat, "Reguli de ignorare")
-        tips.SetToolTipText(gridPat, "Dosare, nume de fișiere și *.extensii care nu se scanează niciodată." & vbLf & "Pentru reguli în stil gitignore (cu excepții) folosiți fișierul .pushignore din folderul local.")
         '
         ' logBox
         '

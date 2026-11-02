@@ -20,6 +20,16 @@ Public Class PrimiteForm
     Private ReadOnly _gate As ReauthGate
     Private ReadOnly _year As Integer
 
+    ''' <summary>Slice 01EF-02: the main window's title bar, for the subunit selector of «Contari» (set by the shell after the window is made).</summary>
+    Public Property SubunitHost As ISubunitHost
+        Get
+            Return primite.SubunitHost
+        End Get
+        Set(k_value As ISubunitHost)
+            primite.SubunitHost = k_value
+        End Set
+    End Property
+
     ''' <summary>Designer only.</summary>
     Public Sub New()
         InitializeComponent()

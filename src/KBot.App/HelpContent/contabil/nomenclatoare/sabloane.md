@@ -7,7 +7,7 @@ parent: contabil.nomenclatoare
 screens: SabloaneForm, SablonOperatiiView, SablonSalariiView
 keywords: șabloane salarii, articole salarii, rețineri, viramente, plăți cu numerar, șabloane, sabloane, operații contabile automate, operații diverse, operații implicite, configurare operații, șablon operație
 ---
-<!-- slice: AV01-14, AV01-15, AV01-16, AV01-17 -->
+<!-- slice: AV01-14, AV01-15, AV01-16, AV01-17, AV01-18 -->
 Din ribbon, fila **Date › Șabloane** se deschide fereastra **«Șabloane»**, cu operațiile contabile pe care aplicația le face automat:
 pentru fiecare operație spui care sunt conturile de la **debit** și de la **credit** și cine este partenerul. Fereastra se deschide
 peste cea principală și trebuie închisă ca să lucrezi mai departe în aplicație. Bara verticală din stânga alege felul șabloanelor:
@@ -18,6 +18,8 @@ peste cea principală și trebuie închisă ca să lucrezi mai departe în aplic
 
 Fereastra arată șabloanele sectorului și sursei alese în bara de titlu a aplicației în clipa deschiderii (pe **«Toate»** le arată pe toate);
 sursa apare și în titlul ferestrei. Ca să lucrezi pe altă sursă, închizi fereastra, schimbi sursa și o deschizi din nou.
+
+Șabloanele de operații aparțin **subunității** aleasă în bara de titlu a aplicației (lista **Subunitate** stă înaintea sursei și apare când sursa are cel puțin două subunități). Fereastra arată doar șabloanele subunității din clipa deschiderii, iar un șablon nou se salvează în ea; șabloanele unei subunități nu se văd în alta. Ca să lucrezi pe altă subunitate, închizi fereastra, o alegi în bara de titlu și deschizi fereastra din nou.
 
 În toate cele trei liste arborele din stânga ocupă **40%** din lățime, iar în dreapta partea de lucru este **blocată** până apeși
 **«Modifică»** pe o operație (sau **«+»** pentru una nouă). Singurul buton al ferestrei este **«Salvează»**, care se activează

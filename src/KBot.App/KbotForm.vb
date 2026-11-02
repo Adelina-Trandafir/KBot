@@ -117,6 +117,7 @@ Partial Public Class KbotForm
         tree.AutoHideTooltipMs = 0
         _forexeRunner = forexeRunner
         _session = session
+        AddHandler _session.PeriodChanged, AddressOf SubunitSessionPeriodChanged   ' slice 01EF-02: the subunit selector follows the source
         _apiClient = apiClient
         _authApi = authApi
         _loginFactory = loginFactory

@@ -139,9 +139,8 @@ Partial Class VanzareContinutPage
         KBotDataColumn12.Resizable = False
         KBotDataColumn12.Width = 34
         KBotDataColumn13.AggregateFormatString = Nothing
-        KBotDataColumn13.ButtonBorders = KBotBorderSides.None
-        KBotDataColumn13.ButtonMargin = New System.Windows.Forms.Padding(0)
         KBotDataColumn13.ColumnType = KBotColumnType.Button
+        KBotDataColumn13.ButtonKind = KBotButtonKind.Delete
         KBotDataColumn13.FormatString = Nothing
         KBotDataColumn13.HeaderText = ""
         KBotDataColumn13.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleLeft

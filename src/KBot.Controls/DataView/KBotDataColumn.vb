@@ -1298,6 +1298,94 @@ Public NotInheritable Class KBotDataColumn
         ButtonBackColor = Color.Empty
     End Sub
 
+    ''' <summary>The caption of the standard delete button (<see cref="KBotButtonKind.Delete"/>).</summary>
+    Public Const DeleteGlyph As String = "✕"
+
+    Private _buttonKind As KBotButtonKind = KBotButtonKind.Custom
+
+    ''' <summary>
+    ''' Custom (default) = the button the other Button properties describe. Delete = the standard delete button of K-BOT (slice 0010-09):
+    ''' the same glyph, size, look and hover in every grid; the other Button properties are then ignored.
+    ''' </summary>
+    <Category("K-BOT: Button")>
+    <Description("Custom = the button described by the other Button properties. Delete = the standard K-BOT delete button (glyph, full cell, flat, hover wash and hand cursor); the other Button properties are ignored.")>
+    <DefaultValue(KBotButtonKind.Custom)>
+    Public Property ButtonKind As KBotButtonKind
+        Get
+            Return _buttonKind
+        End Get
+        Set(value As KBotButtonKind)
+            If Not [Enum].IsDefined(GetType(KBotButtonKind), value) Then
+                Throw New ArgumentException($"Unknown button kind: {value}.", NameOf(value))
+            End If
+            If _buttonKind = value Then Return
+            _buttonKind = value
+            Owner?.Invalidate()
+        End Set
+    End Property
+
+    Private ReadOnly Property IsDeleteButton As Boolean
+        Get
+            Return _buttonKind = KBotButtonKind.Delete
+        End Get
+    End Property
+
+    ' What the view reads (never the raw properties): the standard delete button overrides them.
+    Friend ReadOnly Property EffectiveButtonText As String
+        Get
+            Return If(IsDeleteButton, DeleteGlyph, _buttonText)
+        End Get
+    End Property
+
+    Friend ReadOnly Property EffectiveButtonImage As Image
+        Get
+            Return If(IsDeleteButton, Nothing, _buttonImage)
+        End Get
+    End Property
+
+    Friend ReadOnly Property EffectiveButtonBackColor As Color
+        Get
+            Return If(IsDeleteButton, Color.Transparent, _buttonBackColor)
+        End Get
+    End Property
+
+    Friend ReadOnly Property EffectiveButtonBorderColor As Color
+        Get
+            Return If(IsDeleteButton, Color.Empty, _buttonBorderColor)
+        End Get
+    End Property
+
+    Friend ReadOnly Property EffectiveButtonBorders As KBotBorderSides
+        Get
+            Return If(IsDeleteButton, KBotBorderSides.None, _buttonBorders)
+        End Get
+    End Property
+
+    Friend ReadOnly Property EffectiveButtonPadding As Padding
+        Get
+            Return If(IsDeleteButton, Padding.Empty, _buttonPadding)
+        End Get
+    End Property
+
+    Friend ReadOnly Property EffectiveButtonMargin As Padding
+        Get
+            Return If(IsDeleteButton, Padding.Empty, _buttonMargin)
+        End Get
+    End Property
+
+    Friend ReadOnly Property EffectiveButtonSize As Size
+        Get
+            Return If(IsDeleteButton, Size.Empty, _buttonSize)
+        End Get
+    End Property
+
+    ''' <summary>True when the mouse over the button must be tracked: the delete button always, a custom one when it has a hover colour.</summary>
+    Friend ReadOnly Property ButtonHasHover As Boolean
+        Get
+            Return IsDeleteButton OrElse Not _buttonHoverBackColor.IsEmpty
+        End Get
+    End Property
+
     Private _buttonHoverBackColor As Color = Color.Empty
 
     ''' <summary>

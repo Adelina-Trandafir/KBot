@@ -49,6 +49,12 @@ Public Class AdminSettings
         ".git", ".venv", "venv", "__pycache__", "*.pyc", ".vscode", ".vs", "bin", "obj", "*.sql", "AGENTS.md", "CLAUDE.md"
     }
 
+    ''' <summary>
+    ''' The switches ticked on the «Scripturi» page: script key (<see cref="ScriptDef.Key"/>) -> keys of the ticked switches. Kept between
+    ''' runs and between publishes of KBotAdmin (publish-admin.ps1 keeps this file). The -Notes text is never kept.
+    ''' </summary>
+    Public Property ScriptSwitches As Dictionary(Of String, List(Of String)) = New Dictionary(Of String, List(Of String))(StringComparer.Ordinal)
+
     ''' <summary>The only extensions that are pushed (no leading dot).</summary>
     Public Property IncludeExtensions As List(Of String) = New List(Of String) From {
         "cfg", "css", "html", "ico", "ini", "jpg", "js", "json", "md", "png", "py", "sql", "svg", "toml", "txt", "webp", "xml", "yaml", "yml"
@@ -87,6 +93,7 @@ Public Module AdminSettingsStore
             If String.IsNullOrWhiteSpace(k_result.RemotePython) Then k_result.RemotePython = k_defaults.RemotePython
             If k_result.IgnorePatterns Is Nothing OrElse k_result.IgnorePatterns.Count = 0 Then k_result.IgnorePatterns = k_defaults.IgnorePatterns
             If k_result.IncludeExtensions Is Nothing OrElse k_result.IncludeExtensions.Count = 0 Then k_result.IncludeExtensions = k_defaults.IncludeExtensions
+            If k_result.ScriptSwitches Is Nothing Then k_result.ScriptSwitches = k_defaults.ScriptSwitches
             If String.IsNullOrWhiteSpace(k_result.ApiBaseUrl) Then k_result.ApiBaseUrl = k_defaults.ApiBaseUrl
             Return k_result
         Catch ex As Exception

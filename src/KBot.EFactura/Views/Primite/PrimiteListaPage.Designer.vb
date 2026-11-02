@@ -78,7 +78,6 @@ Partial Class PrimiteListaPage
         KBotDataColumn4.FormatString = Nothing
         KBotDataColumn4.HeaderText = "Recepție asociată"
         KBotDataColumn4.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleCenter
-        KBotDataColumn4.HeaderTooltip = "Recepția legată de factură: data, descrierea și valoarea ei, într-o singură celulă. Gol = factura nu e legată de nicio recepție."
         KBotDataColumn4.Key = "receptie"
         KBotDataColumn4.MinWidth = 140
         KBotDataColumn4.OptionGroup = Nothing
@@ -114,7 +113,6 @@ Partial Class PrimiteListaPage
         KBotDataColumn7.FormatString = Nothing
         KBotDataColumn7.HeaderText = ""
         KBotDataColumn7.HeaderTextAlign = System.Drawing.ContentAlignment.MiddleCenter
-        KBotDataColumn7.HeaderTooltip = "Opțiunile rândului: listează factura sau o salvează ca XML."
         KBotDataColumn7.Key = "opt"
         KBotDataColumn7.MinWidth = 36
         KBotDataColumn7.OptionGroup = Nothing

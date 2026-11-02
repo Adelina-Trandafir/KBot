@@ -240,7 +240,6 @@ Partial Class LocalBackupView
         SnapColumn1.AggregateFormatString = Nothing
         SnapColumn1.FormatString = Nothing
         SnapColumn1.HeaderText = "Baza"
-        SnapColumn1.HeaderTooltip = "Baza de date copiată."
         SnapColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn1.Key = "db"
         SnapColumn1.MinWidth = 70
@@ -250,7 +249,6 @@ Partial Class LocalBackupView
         SnapColumn2.AggregateFormatString = Nothing
         SnapColumn2.FormatString = Nothing
         SnapColumn2.HeaderText = "Data"
-        SnapColumn2.HeaderTooltip = "Când s-a terminat copia."
         SnapColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn2.Key = "when"
         SnapColumn2.MinWidth = 90
@@ -260,7 +258,6 @@ Partial Class LocalBackupView
         SnapColumn3.AggregateFormatString = Nothing
         SnapColumn3.FormatString = Nothing
         SnapColumn3.HeaderText = "Fel"
-        SnapColumn3.HeaderTooltip = "manual = pornită de dumneavoastră; periodic = sarcina zilnică."
         SnapColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn3.Key = "kind"
         SnapColumn3.MinWidth = 50
@@ -270,7 +267,6 @@ Partial Class LocalBackupView
         SnapColumn4.AggregateFormatString = Nothing
         SnapColumn4.FormatString = Nothing
         SnapColumn4.HeaderText = "Mod"
-        SnapColumn4.HeaderTooltip = "fast = compară cu copia precedentă; full = verifică și conținutul PDF-urilor."
         SnapColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn4.Key = "mode"
         SnapColumn4.MinWidth = 40
@@ -280,7 +276,6 @@ Partial Class LocalBackupView
         SnapColumn5.AggregateFormatString = Nothing
         SnapColumn5.FormatString = Nothing
         SnapColumn5.HeaderText = "Motiv"
-        SnapColumn5.HeaderTooltip = "Motivul scris la copiile manuale."
         SnapColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn5.Key = "reason"
         SnapColumn5.MinWidth = 80
@@ -290,7 +285,6 @@ Partial Class LocalBackupView
         SnapColumn6.AggregateFormatString = Nothing
         SnapColumn6.FormatString = Nothing
         SnapColumn6.HeaderText = "Tabele"
-        SnapColumn6.HeaderTooltip = "Câte tabele are copia."
         SnapColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn6.Key = "tables"
         SnapColumn6.MinWidth = 40
@@ -301,7 +295,6 @@ Partial Class LocalBackupView
         SnapColumn7.AggregateFormatString = Nothing
         SnapColumn7.FormatString = Nothing
         SnapColumn7.HeaderText = "Pagini noi"
-        SnapColumn7.HeaderTooltip = "Câte pagini s-au scris acum (rândurile schimbate sau noi)."
         SnapColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn7.Key = "pagesNew"
         SnapColumn7.MinWidth = 40
@@ -312,7 +305,6 @@ Partial Class LocalBackupView
         SnapColumn8.AggregateFormatString = Nothing
         SnapColumn8.FormatString = Nothing
         SnapColumn8.HeaderText = "La fel"
-        SnapColumn8.HeaderTooltip = "Câte pagini erau neschimbate și nu au ocupat loc nou."
         SnapColumn8.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn8.Key = "pagesSame"
         SnapColumn8.MinWidth = 40
@@ -323,7 +315,6 @@ Partial Class LocalBackupView
         SnapColumn9.AggregateFormatString = Nothing
         SnapColumn9.FormatString = Nothing
         SnapColumn9.HeaderText = "Rânduri"
-        SnapColumn9.HeaderTooltip = "Rândurile din toate tabelele la acel moment."
         SnapColumn9.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn9.Key = "rows"
         SnapColumn9.MinWidth = 50
@@ -334,7 +325,6 @@ Partial Class LocalBackupView
         SnapColumn10.AggregateFormatString = Nothing
         SnapColumn10.FormatString = Nothing
         SnapColumn10.HeaderText = "Durata"
-        SnapColumn10.HeaderTooltip = "Cât a durat copia, în secunde."
         SnapColumn10.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn10.Key = "secs"
         SnapColumn10.MinWidth = 40
@@ -361,8 +351,6 @@ Partial Class LocalBackupView
         gridSnaps.ReadOnlyGrid = True
         gridSnaps.Size = New Size(560, 460)
         gridSnaps.TabIndex = 0
-        tips.SetToolTipHeader(gridSnaps, "Copiile locale")
-        tips.SetToolTipText(gridSnaps, "Fiecare rând e o copie a unei baze la un moment dat, cele mai noi sus. Alegeți un rând ca să vedeți în dreapta tabelele lui și ce s-a schimbat față de copia precedentă.")
         '
         ' gridTables
         '
@@ -371,7 +359,6 @@ Partial Class LocalBackupView
         TableColumn1.AggregateFormatString = Nothing
         TableColumn1.FormatString = Nothing
         TableColumn1.HeaderText = "Tabelă"
-        TableColumn1.HeaderTooltip = "Tabela din copia aleasă."
         TableColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         TableColumn1.Key = "table"
         TableColumn1.MinWidth = 80
@@ -381,7 +368,6 @@ Partial Class LocalBackupView
         TableColumn2.AggregateFormatString = Nothing
         TableColumn2.FormatString = Nothing
         TableColumn2.HeaderText = "Rânduri"
-        TableColumn2.HeaderTooltip = "Rândurile tabelei la acel moment."
         TableColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         TableColumn2.Key = "rows"
         TableColumn2.MinWidth = 40
@@ -392,7 +378,6 @@ Partial Class LocalBackupView
         TableColumn3.AggregateFormatString = Nothing
         TableColumn3.FormatString = Nothing
         TableColumn3.HeaderText = "Pagini"
-        TableColumn3.HeaderTooltip = "Din câte pagini e alcătuită tabela în copie."
         TableColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         TableColumn3.Key = "pages"
         TableColumn3.MinWidth = 36
@@ -403,7 +388,6 @@ Partial Class LocalBackupView
         TableColumn4.AggregateFormatString = Nothing
         TableColumn4.FormatString = Nothing
         TableColumn4.HeaderText = "Schimbate"
-        TableColumn4.HeaderTooltip = "Pagini diferite de copia precedentă a aceleiași baze (tabelele fără schimbare au 0)."
         TableColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         TableColumn4.Key = "changed"
         TableColumn4.MinWidth = 40
@@ -424,8 +408,6 @@ Partial Class LocalBackupView
         gridTables.ReadOnlyGrid = True
         gridTables.Size = New Size(320, 460)
         gridTables.TabIndex = 1
-        tips.SetToolTipHeader(gridTables, "Tabelele copiei")
-        tips.SetToolTipText(gridTables, "Tabelele copiei alese. Coloana Schimbate arată câte pagini diferă de copia precedentă a aceleiași baze. Alegeți o tabelă pentru «Istoric rând».")
         '
         ' lblState
         '

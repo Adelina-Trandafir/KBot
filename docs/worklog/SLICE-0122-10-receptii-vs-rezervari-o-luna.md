@@ -24,3 +24,13 @@ Build of KBot.App clean; py_compile of the touched Python files clean. No test w
 - Not run on MariaDB, neither the Python queries nor the SQL file (CTEs); they must give the same rows.
 - No test covers the limit; the existing `pas4c_automat` tests use rows without `DataR` (no verdict, so unchanged). The Python suite and the other test projects were not run.
 - Snapshot 245 stays on reception 58 (operator's decision); the detector shows it once the new server and client are out. Decided and not built: see Part 7.
+
+### Corectie 31.10.2026 — alarma falsa «Recepții nepotrivite» cand receptia vine mai tarziu
+**Simptom (fisa AAB2MAACHXB, 000_DEMO):** arborele ramanea rosu la 07.02.2026, indicatorul AAB (rezervat 308.780,59, receptionat 172.622,01), desi operatorul a verificat si nu era nimic gresit.
+**Cauza:** rezervarea din 07.02 a urcat cu 136.514,44 = receptia 179 (136.158,58) + penalitati (355,86). Penalitatile s-au inregistrat pe 07.02, dar receptia 179 a primit prima versiune pe 15.02, cu exact 136.158,58; de pe 15.02 toate cele 20 de zile verificate se potrivesc. Detectorul presupune ca receptia se inregistreaza in ziua rezervarii si nu deosebeste «receptia vine mai tarziu» de «versiune pusa pe antetul gresit».
+**Schimbat:** `PYTHON/routes/forexe/receptii_cumulat.py` — noua `_vine_mai_tarziu`: o zi cu diferenta nu se arata daca suma lipsa (rezervat - receptionat, pozitiva) o aduce EXACT, intr-o singura zi cu receptii, urmatoarea zi cu receptii a indicatorului, iar aceea cade strict INAINTE de urmatoarea zi cu rezervare. Ajutorul `contabil/fereastra.md` (randul «Același roșu...») are propozitia noua; eticheta `0122-10` era deja pe sectiune.
+**Verificat (pe fisele existente, cu o oglinda manuala in node, NU codul Python):** AAB2MAACHXB — ziua 07.02 devine «excusata»; AAB2FH3R3FF — cele 5 zile din 12.10 raman aratate (urmatoarea zi cu receptii aduce 65.476 fata de 99.764 lipsa, si cade pe 18.10, zi cu rezervare). `py_compile` curat. Nimic rulat pe MariaDB, codul Python nerulat, teste nerulate.
+**Neverificat / amanat:**
+- O versiune pusa gresit a carei suma lipsa ajunge totusi exact, singura, inainte de urmatoarea rezervare, nu va mai fi aratata (alarma lipsa). Nu se poate deosebi din cifre.
+- `sql/0122_10_receptii_vs_rezervari_PREVIEW.sql` (previzualizare, doar citire) NU are regula noua; ramane cum era.
+- Fara numar nou de felie: corectia sta sub 0122-10. Serverul trebuie actualizat de operator, de mana.

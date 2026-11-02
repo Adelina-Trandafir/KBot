@@ -161,8 +161,9 @@ End Class
 ''' of accounts, a repeated form ...) is LEFT OUT whole and named in the verification: a template is never half written.
 ''' </para>
 ''' <para>
-''' The write adds the templates that are not there yet (same journal, type, kind, explanation and key) and changes nothing else: a template the operator edited in the
-''' window is not overwritten. The same template in two unit files is written once.
+''' Subunit (slice AV01-18, operator 02.11.2026): as in Access, NOTHING is common between units, so every template is written into the subunit of the unit it comes from
+''' (<c>IdSubunitate</c>); the same template in the files of two units is written once for each. The write adds the templates that are not there yet (same journal, subunit,
+''' type, kind, explanation and key) and changes nothing else: a template the operator edited in the window is not overwritten.
 ''' </para>
 ''' </remarks>
 Friend NotInheritable Class AvcSablonOperatiiStep
@@ -170,7 +171,7 @@ Friend NotInheritable Class AvcSablonOperatiiStep
 
     Private Shared ReadOnly KeyRegex As New Regex("^[0-9X.]{1,30}$", RegexOptions.CultureInvariant)
     Private Shared ReadOnly FormRegex As New Regex("^[0-9]{2}\.[0-9]{2}$", RegexOptions.CultureInvariant)
-    Private Shared ReadOnly HeaderColumns As String() = {"IdJurnal", "Tip", "Fel", "Explicatie", "Compartiment", "FelOP", "Cheie"}
+    Private Shared ReadOnly HeaderColumns As String() = {"IdJurnal", "IdSubunitate", "Tip", "Fel", "Explicatie", "Compartiment", "FelOP", "Cheie"}
     Private Shared ReadOnly AnalyticRegex As New Regex("^[0-9A-Z_]{1,10}$", RegexOptions.CultureInvariant)
     Private Shared ReadOnly LineColumns As String() = {"IdSablon", "Forma", "IdClsf", "ContDebit", "AnaliticDebit", "ContCredit", "AnaliticCredit", "PartDebitMod", "IdPartDebit",
                                                        "PartCreditMod", "IdPartCredit", "PA", "Ordonantare", "Chelt"}
@@ -210,6 +211,8 @@ Friend NotInheritable Class AvcSablonOperatiiStep
         Public ReadOnly Property Row As AvcSablonRow
         Public Property SursaSector As String = String.Empty
         Public Property IdJurnal As Long?
+        ''' <summary>The subunit of the unit the template comes from (Nothing at Verify when the Subunits step of this run has not written it yet).</summary>
+        Public Property IdSubunitate As Long?
         ''' <summary>True when an analytic of a line is not in TZ_PlanCont YET (Verify only: the PlanCont step of this run writes it before this step).</summary>
         Public Property PlanPending As Boolean
         Public Property Tip As String = "M"
@@ -220,7 +223,7 @@ Friend NotInheritable Class AvcSablonOperatiiStep
 
         Public ReadOnly Property DedupKey As String
             Get
-                Return $"{SursaSector}|{Row.Jurnal.ToUpperInvariant()}|{Tip}|{Fel}|{Row.Explicatie.ToUpperInvariant()}|{Cheie}"
+                Return $"{Row.IdUnitate.ToString(CultureInfo.InvariantCulture)}|{SursaSector}|{Row.Jurnal.ToUpperInvariant()}|{Tip}|{Fel}|{Row.Explicatie.ToUpperInvariant()}|{Cheie}"
             End Get
         End Property
     End Class
@@ -312,6 +315,13 @@ Friend NotInheritable Class AvcSablonOperatiiStep
                                            "pe AVACONT_SURSA și sincronizați schema."))
                 Return k_findings
             End If
+            Dim k_noSubunit As List(Of String) = AvcSql.MissingColumns(k_cn, k_db, "TZ_SablonOperatii", {"IdSubunitate"})
+            If k_noSubunit.Count > 0 Then
+                k_findings.Add(New Finding(Finding.TABEL_LIPSA, FindingClass.Blocant, "TZ_SablonOperatii", "IdSubunitate",
+                                           "Șabloanele nu au coloana «IdSubunitate». Rulați sql/AVACONT/Configurari/SablonOperatii/AV01_18_sablon_operatii_subunitate.sql " &
+                                           "pe AVACONT_SURSA și sincronizați schema."))
+                Return k_findings
+            End If
             If _set.Rows.Count = 0 Then
                 k_findings.Add(New Finding(AvcKinds.REZUMAT, FindingClass.Informativ, "TZ_SablonOperatii", String.Empty, "«DefaNoteA» nu are niciun rând; nu se scrie nimic."))
                 Return k_findings
@@ -336,7 +346,7 @@ Friend NotInheritable Class AvcSablonOperatiiStep
             Dim k_unique As List(Of Resolved) = k_clean.GroupBy(Function(k_r) k_r.DedupKey, StringComparer.Ordinal).Select(Function(k_g) k_g.First()).ToList()
             If k_unique.Count < k_clean.Count Then
                 k_findings.Add(New Finding(AvcKinds.SABLON_INVALID, FindingClass.Informativ, "TZ_SablonOperatii", "Explicatie",
-                                           "același șablon în fișierele mai multor unități; se scrie o singură dată", k_clean.Count - k_unique.Count))
+                                           "același șablon de două ori în fișierul aceleiași unități; se scrie o singură dată", k_clean.Count - k_unique.Count))
             End If
             RowsToWrite = k_unique.Count
             Dim k_notYet As Integer = k_unique.Where(Function(k_r) Not k_r.IdJurnal.HasValue).Count()
@@ -461,6 +471,7 @@ Friend NotInheritable Class AvcSablonOperatiiStep
         Dim k_planned As AvcSubunit = Nothing
         If k_map.TryGetValue(k_row.IdUnitate, k_sub) Then
             k_item.SursaSector = k_sub.SursaSector
+            k_item.IdSubunitate = k_sub.IdSubunitate
         ElseIf k_context.PlannedSubunits.TryGetValue(k_row.IdUnitate, k_planned) Then
             k_item.SursaSector = k_planned.SursaSector
         End If
@@ -648,6 +659,9 @@ Friend NotInheritable Class AvcSablonOperatiiStep
             End If
             ' The journals step wrote its journals inside this transaction: they are found now.
             Dim k_resolved As List(Of Resolved) = Resolve(k_context, k_cn, k_transaction)
+            For Each k_noSub In k_resolved.Where(Function(k_r) k_r.Problems.Count = 0 AndAlso Not k_r.IdSubunitate.HasValue)
+                k_noSub.Problems.Add("unitatea nu are subunitate în țintă (bifați pasul «Subunități»)")
+            Next
             Dim k_noJournal As List(Of Resolved) = k_resolved.Where(Function(k_r) k_r.Problems.Count = 0 AndAlso Not k_r.IdJurnal.HasValue).ToList()
             If k_noJournal.Count > 0 Then
                 k_progress.Report($"«TZ_SablonOperatii»: {k_noJournal.Count} șabloane au un jurnal care nu există în «TZ_Jurnale» (bifați pasul «Jurnale»); nu se scriu.")
@@ -656,7 +670,7 @@ Friend NotInheritable Class AvcSablonOperatiiStep
                 GroupBy(Function(k_r) k_r.DedupKey, StringComparer.Ordinal).Select(Function(k_g) k_g.First()).
                 OrderBy(Function(k_r) k_r.SursaSector, StringComparer.Ordinal).ThenBy(Function(k_r) k_r.Tip, StringComparer.Ordinal).
                 ThenBy(Function(k_r) k_r.Cheie, StringComparer.Ordinal).ThenBy(Function(k_r) k_r.Row.Explicatie, StringComparer.OrdinalIgnoreCase).ToList()
-            k_dump.WriteComment("TZ_SablonOperatii", "Fostele «DefaNoteA» + «DefaNote»: tip A sau M (C și M din Access devin M), jurnal al subunității unității, cheia clasificației; conturile sunt cele de bază cu analitic, iar fiecare linie are clasificația ei (IdClsf).")
+            k_dump.WriteComment("TZ_SablonOperatii", "Fostele «DefaNoteA» + «DefaNote»: tip A sau M (C și M din Access devin M), subunitatea și jurnalul unității, cheia clasificației; conturile sunt cele de bază cu analitic, iar fiecare linie are clasificația ei (IdClsf).")
 
             Dim k_headerSql = $"INSERT INTO {AvcSql.Quote("TZ_SablonOperatii")} ({String.Join(", ", HeaderColumns.Select(AddressOf AvcSql.Quote))}) " &
                               $"VALUES ({String.Join(", ", HeaderColumns.Select(Function(c) "@" & c))})"
@@ -666,8 +680,9 @@ Friend NotInheritable Class AvcSablonOperatiiStep
             Dim k_skipped As Integer = 0
             Dim k_lines As Integer = 0
             Using k_exists As New MySqlCommand(
-                "SELECT COUNT(*) FROM `TZ_SablonOperatii` WHERE `IdJurnal` = @IdJurnal AND `Tip` = @Tip AND `Fel` = @Fel AND `Explicatie` = @Explicatie AND COALESCE(`Cheie`, '') = @Cheie", k_cn, k_transaction)
+                "SELECT COUNT(*) FROM `TZ_SablonOperatii` WHERE `IdJurnal` = @IdJurnal AND `IdSubunitate` = @IdSubunitate AND `Tip` = @Tip AND `Fel` = @Fel AND `Explicatie` = @Explicatie AND COALESCE(`Cheie`, '') = @Cheie", k_cn, k_transaction)
                 k_exists.Parameters.Add("@IdJurnal", MySqlDbType.Int64)
+                k_exists.Parameters.Add("@IdSubunitate", MySqlDbType.Int64)
                 k_exists.Parameters.Add("@Tip", MySqlDbType.VarChar)
                 k_exists.Parameters.Add("@Fel", MySqlDbType.VarChar)
                 k_exists.Parameters.Add("@Explicatie", MySqlDbType.VarChar)
@@ -683,6 +698,7 @@ Friend NotInheritable Class AvcSablonOperatiiStep
                         For Each k_item In k_toWrite
                             k_cancel.ThrowIfCancellationRequested()
                             k_exists.Parameters("@IdJurnal").Value = k_item.IdJurnal.Value
+                            k_exists.Parameters("@IdSubunitate").Value = k_item.IdSubunitate.Value
                             k_exists.Parameters("@Tip").Value = k_item.Tip
                             k_exists.Parameters("@Fel").Value = k_item.Fel
                             k_exists.Parameters("@Explicatie").Value = k_item.Row.Explicatie
@@ -692,7 +708,7 @@ Friend NotInheritable Class AvcSablonOperatiiStep
                                 Continue For
                             End If
                             Dim k_header As New Dictionary(Of String, Object)(StringComparer.OrdinalIgnoreCase) From {
-                                {"IdJurnal", k_item.IdJurnal.Value}, {"Tip", k_item.Tip}, {"Fel", k_item.Fel}, {"Explicatie", k_item.Row.Explicatie},
+                                {"IdJurnal", k_item.IdJurnal.Value}, {"IdSubunitate", k_item.IdSubunitate.Value}, {"Tip", k_item.Tip}, {"Fel", k_item.Fel}, {"Explicatie", k_item.Row.Explicatie},
                                 {"Compartiment", If(k_item.Row.Compartiment.Length = 0, DBNull.Value, CObj(k_item.Row.Compartiment))},
                                 {"FelOP", If(k_item.Fel <> "P" OrElse k_item.Row.FelOP.Length = 0, DBNull.Value, CObj(k_item.Row.FelOP))},
                                 {"Cheie", If(k_item.Cheie.Length = 0, DBNull.Value, CObj(k_item.Cheie))}}

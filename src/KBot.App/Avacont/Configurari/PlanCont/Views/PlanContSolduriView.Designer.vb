@@ -142,8 +142,6 @@ Partial Class PlanContSolduriView
         gridSolduri.RowHeight = 28
         gridSolduri.Size = New Size(1412, 716)
         gridSolduri.TabIndex = 1
-        tips.SetToolTipHeader(gridSolduri, "Solduri inițiale și rulaje")
-        tips.SetToolTipText(gridSolduri, "Tastați direct în tabel. Un rând modificat se salvează singur când treceți pe alt rând.")
         ' 
         ' PlanContSolduriView
         ' 

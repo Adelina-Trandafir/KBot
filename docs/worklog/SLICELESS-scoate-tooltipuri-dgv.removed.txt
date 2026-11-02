@@ -1,0 +1,170 @@
+KBotAdmin\RecordHistoryForm.Designer.vb	        VersionColumn1.HeaderTooltip = "Când s-a terminat copia."
+KBotAdmin\RecordHistoryForm.Designer.vb	        VersionColumn2.HeaderTooltip = "Nu există încă, apare, neschimbat, modificat, a dispărut."
+KBotAdmin\RecordHistoryForm.Designer.vb	        VersionColumn3.HeaderTooltip = "manual sau periodic."
+KBotAdmin\RecordHistoryForm.Designer.vb	        VersionColumn4.HeaderTooltip = "Coloanele care au altă valoare decât în copia precedentă în care rândul exista."
+KBotAdmin\RecordHistoryForm.Designer.vb	        tips.SetToolTipHeader(gridVersions, "Copiile")
+KBotAdmin\RecordHistoryForm.Designer.vb	        tips.SetToolTipText(gridVersions, "Câte un rând pe copie, de la cea mai veche la cea mai nouă. Alegeți una ca să vedeți mai jos valorile rândului atunci.")
+KBotAdmin\RecordHistoryForm.Designer.vb	        ValueColumn1.HeaderTooltip = "Coloanele tabelei."
+KBotAdmin\RecordHistoryForm.Designer.vb	        ValueColumn2.HeaderTooltip = "Valoarea coloanei la acel moment. [NULL] = fără valoare; [binar] = conținut binar (PDF, imagine)."
+KBotAdmin\RecordHistoryForm.Designer.vb	        ValueColumn3.HeaderTooltip = "Valoarea din copia precedentă în care rândul exista; se vede doar la coloanele care s-au schimbat."
+KBotAdmin\RecordHistoryForm.Designer.vb	        tips.SetToolTipHeader(gridValues, "Valorile")
+KBotAdmin\RecordHistoryForm.Designer.vb	        tips.SetToolTipText(gridValues, "Valorile rândului în copia aleasă sus; la coloanele schimbate se vede și valoarea de dinainte.")
+KBotAdmin\RightsForm.Designer.vb	        KBotDataColumn1.HeaderTooltip = "Ce îi permite dreptul."
+KBotAdmin\RightsForm.Designer.vb	        KBotDataColumn2.HeaderTooltip = "Bifa dă dreptul pe loc, fără bifă dreptul se retrage. Click pe titlu: bifează sau debifează tot."
+KBotAdmin\RightsForm.Designer.vb	        tips.SetToolTipHeader(grid, "Drepturile")
+KBotAdmin\RightsForm.Designer.vb	        tips.SetToolTipText(grid, "Un rând = un drept. Bifa dă dreptul pe loc, fără bifă dreptul se retrage." & vbLf & "Click pe titlul coloanei «Bifă» bifează sau debifează toate drepturile.")
+KBotAdmin\Views\AuditView.Designer.vb	        KBotDataColumn1.HeaderTooltip = "Data și ora acțiunii."
+KBotAdmin\Views\AuditView.Designer.vb	        KBotDataColumn2.HeaderTooltip = "Contul care a făcut acțiunea (sau a încercat-o)."
+KBotAdmin\Views\AuditView.Designer.vb	        KBotDataColumn3.HeaderTooltip = "Baza de date vizată."
+KBotAdmin\Views\AuditView.Designer.vb	        KBotDataColumn4.HeaderTooltip = "Ce s-a făcut: autentificare, drept dat sau retras, cont adăugat etc."
+KBotAdmin\Views\AuditView.Designer.vb	        KBotDataColumn5.HeaderTooltip = "Obiectul acțiunii (contul sau dreptul vizat)."
+KBotAdmin\Views\AuditView.Designer.vb	        KBotDataColumn6.HeaderTooltip = "OK sau motivul eșecului / refuzului."
+KBotAdmin\Views\AuditView.Designer.vb	        KBotDataColumn7.HeaderTooltip = "Adresa de la care a venit acțiunea."
+KBotAdmin\Views\AuditView.Designer.vb	        KBotDataColumn8.HeaderTooltip = "Detalii ale acțiunii, așa cum le-a scris serverul."
+KBotAdmin\Views\AuditView.Designer.vb	        tips.SetToolTipHeader(grid, "Jurnalul")
+KBotAdmin\Views\AuditView.Designer.vb	        tips.SetToolTipText(grid, "Cele mai noi sus. Roșu = eșec de autentificare sau acces refuzat.")
+KBotAdmin\Views\BackupsView.Designer.vb	        KBotDataColumn1.HeaderTooltip = "Numele fișierului de copie."
+KBotAdmin\Views\BackupsView.Designer.vb	        KBotDataColumn2.HeaderTooltip = "Felul copiei (bază de unitate sau altceva)."
+KBotAdmin\Views\BackupsView.Designer.vb	        KBotDataColumn3.HeaderTooltip = "Mărimea fișierului pe disc."
+KBotAdmin\Views\BackupsView.Designer.vb	        KBotDataColumn4.HeaderTooltip = "Când a fost făcută copia."
+KBotAdmin\Views\BackupsView.Designer.vb	        KBotDataColumn6.HeaderTooltip = "Motivul scris când s-a făcut copia (din jurnalul serverului). Gol la planurile de schemă și la copiile mai vechi."
+KBotAdmin\Views\BackupsView.Designer.vb	        KBotDataColumn5.HeaderTooltip = "Unde se află fișierul pe server."
+KBotAdmin\Views\BackupsView.Designer.vb	        tips.SetToolTipHeader(grid, "Fișierele")
+KBotAdmin\Views\BackupsView.Designer.vb	        tips.SetToolTipText(grid, "Copiile bazelor (cu motivul lor) și planurile de schemă scrise de sincronizare, cele mai noi sus." & vbLf & "Cu o bază aleasă în stânga se văd doar copiile ei și planurile care o numesc." & vbLf & "Dublu clic pe un rând arată textul SQL al fișierului." & vbLf & "Fișierele nu se șterg și nu se descarcă de aici.")
+KBotAdmin\Views\DiffView.Designer.vb	        KBotDataColumn1.HeaderTooltip = "Tabela la care se referă diferența."
+KBotAdmin\Views\DiffView.Designer.vb	        KBotDataColumn2.HeaderTooltip = "Coloana, cheia sau obiectul care diferă."
+KBotAdmin\Views\DiffView.Designer.vb	        KBotDataColumn3.HeaderTooltip = "Felul obiectului: coloană, index, cheie străină, vedere etc."
+KBotAdmin\Views\DiffView.Designer.vb	        KBotDataColumn4.HeaderTooltip = "Ce ar face sincronizarea: adaugă, modifică sau șterge."
+KBotAdmin\Views\DiffView.Designer.vb	        KBotDataColumn5.HeaderTooltip = "Da = operația poate pierde date; cere confirmare dublă la sincronizare."
+KBotAdmin\Views\DiffView.Designer.vb	        KBotDataColumn6.HeaderTooltip = "Motivul pentru care diferența nu se poate aplica automat, dacă e cazul."
+KBotAdmin\Views\DiffView.Designer.vb	        tips.SetToolTipHeader(grid, "Diferențele")
+KBotAdmin\Views\DiffView.Designer.vb	        tips.SetToolTipText(grid, "În ordinea de execuție. Galben = distructiv, roșu = instrucțiune care nu se poate construi." & vbLf & "SQL-ul rândului ales se vede dedesubt.")
+KBotAdmin\Views\LocalBackupView.Designer.vb	        SnapColumn1.HeaderTooltip = "Baza de date copiată."
+KBotAdmin\Views\LocalBackupView.Designer.vb	        SnapColumn2.HeaderTooltip = "Când s-a terminat copia."
+KBotAdmin\Views\LocalBackupView.Designer.vb	        SnapColumn3.HeaderTooltip = "manual = pornită de dumneavoastră; periodic = sarcina zilnică."
+KBotAdmin\Views\LocalBackupView.Designer.vb	        SnapColumn4.HeaderTooltip = "fast = compară cu copia precedentă; full = verifică și conținutul PDF-urilor."
+KBotAdmin\Views\LocalBackupView.Designer.vb	        SnapColumn5.HeaderTooltip = "Motivul scris la copiile manuale."
+KBotAdmin\Views\LocalBackupView.Designer.vb	        SnapColumn6.HeaderTooltip = "Câte tabele are copia."
+KBotAdmin\Views\LocalBackupView.Designer.vb	        SnapColumn7.HeaderTooltip = "Câte pagini s-au scris acum (rândurile schimbate sau noi)."
+KBotAdmin\Views\LocalBackupView.Designer.vb	        SnapColumn8.HeaderTooltip = "Câte pagini erau neschimbate și nu au ocupat loc nou."
+KBotAdmin\Views\LocalBackupView.Designer.vb	        SnapColumn9.HeaderTooltip = "Rândurile din toate tabelele la acel moment."
+KBotAdmin\Views\LocalBackupView.Designer.vb	        SnapColumn10.HeaderTooltip = "Cât a durat copia, în secunde."
+KBotAdmin\Views\LocalBackupView.Designer.vb	        tips.SetToolTipHeader(gridSnaps, "Copiile locale")
+KBotAdmin\Views\LocalBackupView.Designer.vb	        tips.SetToolTipText(gridSnaps, "Fiecare rând e o copie a unei baze la un moment dat, cele mai noi sus. Alegeți un rând ca să vedeți în dreapta tabelele lui și ce s-a schimbat față de copia precedentă.")
+KBotAdmin\Views\LocalBackupView.Designer.vb	        TableColumn1.HeaderTooltip = "Tabela din copia aleasă."
+KBotAdmin\Views\LocalBackupView.Designer.vb	        TableColumn2.HeaderTooltip = "Rândurile tabelei la acel moment."
+KBotAdmin\Views\LocalBackupView.Designer.vb	        TableColumn3.HeaderTooltip = "Din câte pagini e alcătuită tabela în copie."
+KBotAdmin\Views\LocalBackupView.Designer.vb	        TableColumn4.HeaderTooltip = "Pagini diferite de copia precedentă a aceleiași baze (tabelele fără schimbare au 0)."
+KBotAdmin\Views\LocalBackupView.Designer.vb	        tips.SetToolTipHeader(gridTables, "Tabelele copiei")
+KBotAdmin\Views\LocalBackupView.Designer.vb	        tips.SetToolTipText(gridTables, "Tabelele copiei alese. Coloana Schimbate arată câte pagini diferă de copia precedentă a aceleiași baze. Alegeți o tabelă pentru «Istoric rând».")
+KBotAdmin\Views\LoginResetView.Designer.vb	        gridCol1.HeaderTooltip = "Bifați utilizatorii ale căror încercări se resetează."
+KBotAdmin\Views\LoginResetView.Designer.vb	        gridCol2.HeaderTooltip = "Adresa de e-mail a utilizatorului."
+KBotAdmin\Views\LoginResetView.Designer.vb	        gridCol3.HeaderTooltip = "Baza de unitate la care e legat contul."
+KBotAdmin\Views\LoginResetView.Designer.vb	        gridCol4.HeaderTooltip = "Denumirea unității."
+KBotAdmin\Views\LoginResetView.Designer.vb	        gridCol5.HeaderTooltip = "Rolul contului în K-BOT."
+KBotAdmin\Views\LoginResetView.Designer.vb	        gridCol6.HeaderTooltip = "Ultima perioadă (SS) deschisă de utilizator."
+KBotAdmin\Views\LoginResetView.Designer.vb	        gridCol7.HeaderTooltip = "Încercări de login eșuate în contorul serverului."
+KBotAdmin\Views\LoginResetView.Designer.vb	        gridCol8.HeaderTooltip = "Da (minute rămase) dacă serverul îl blochează acum."
+KBotAdmin\Views\LoginResetView.Designer.vb	        gridCol9.HeaderTooltip = "«de schimbat» = trebuie schimbată la următoarea conectare; altfel data ultimei schimbări, dacă există."
+KBotAdmin\Views\LoginResetView.Designer.vb	        tips.SetToolTipHeader(grid, "Utilizatorii")
+KBotAdmin\Views\LoginResetView.Designer.vb	        tips.SetToolTipText(grid, "Un rând = un cont pe o unitate, cu starea încercărilor de login de pe serverul care rulează." & vbLf & "Rândurile blocate apar în roșu.")
+KBotAdmin\Views\MfImportView.Designer.vb	        gridCol1.HeaderTooltip = "Bifați mijloacele fixe care se importă."
+KBotAdmin\Views\MfImportView.Designer.vb	        gridCol2.HeaderTooltip = "CodProdus din Access; devine numărul de inventar."
+KBotAdmin\Views\MfImportView.Designer.vb	        gridCol3.HeaderTooltip = "Denumirea mijlocului fix."
+KBotAdmin\Views\MfImportView.Designer.vb	        gridCol4.HeaderTooltip = "DataIntrare din Access; documentul de stoc inițial se datează la ea."
+KBotAdmin\Views\MfImportView.Designer.vb	        gridCol5.HeaderTooltip = "ValoareIntrare din Access, păstrată ca atare (fără TVA în plus)."
+KBotAdmin\Views\MfImportView.Designer.vb	        gridCol6.HeaderTooltip = "Durata normală de funcționare, în luni."
+KBotAdmin\Views\MfImportView.Designer.vb	        gridCol7.HeaderTooltip = "Durata deja folosită înainte de prima predare, în luni."
+KBotAdmin\Views\MfImportView.Designer.vb	        gridCol8.HeaderTooltip = "Categorie din Access; trebuie să existe în catalogul comun al clasificărilor MF."
+KBotAdmin\Views\MfImportView.Designer.vb	        gridCol9.HeaderTooltip = "Rezultatul verificării de pe server."
+KBotAdmin\Views\MfImportView.Designer.vb	        tips.SetToolTipHeader(grid, "Mijloace fixe")
+KBotAdmin\Views\MfImportView.Designer.vb	        tips.SetToolTipText(grid, "Un rând = un mijloc fix activ din fișierul Access." & vbLf & "Rândurile refuzate la verificare apar în roșu, cu motivul în ultima coloană.")
+KBotAdmin\Views\OnceQueryView.Designer.vb	        gridHistCol1.HeaderTooltip = "Numele dat interogării."
+KBotAdmin\Views\OnceQueryView.Designer.vb	        gridHistCol2.HeaderTooltip = "Când a rulat pe AVACONT_SURSA (șablonul, prima bază la fiecare rulare)."
+KBotAdmin\Views\OnceQueryView.Designer.vb	        gridHistCol3.HeaderTooltip = "Cine a rulat-o (AvacontPush sau KBotAdmin), sau «provizionare» dacă unitatea s-a născut cu ea marcată ca rulată."
+KBotAdmin\Views\OnceQueryView.Designer.vb	        gridHistCol4.HeaderTooltip = "Rândurile raportate ca modificate de instrucțiuni pe șablon."
+KBotAdmin\Views\OnceQueryView.Designer.vb	        gridHistCol5.HeaderTooltip = "Câte baze de unitate au interogarea marcată ca rulată, din câte există."
+KBotAdmin\Views\OnceQueryView.Designer.vb	        gridHistCol6.HeaderTooltip = "Bazele de unitate unde interogarea nu a rulat încă."
+KBotAdmin\Views\OnceQueryView.Designer.vb	        tips.SetToolTipHeader(gridHist, "Istoricul interogărilor")
+KBotAdmin\Views\OnceQueryView.Designer.vb	        tips.SetToolTipText(gridHist, "Ce interogări unice au rulat, cu rezultatul pe baze. Dublu clic pe un rând arată textul interogării.")
+KBotAdmin\Views\PushFilesView.Designer.vb	        gridFilesCol1.HeaderTooltip = "Bifat = fișierul se trimite la «Trimite bifatele». Fișierele noi și cele modificate vin bifate."
+KBotAdmin\Views\PushFilesView.Designer.vb	        gridFilesCol2.HeaderTooltip = "Calea față de rădăcina locală; pe server ajunge sub rădăcina de pe server."
+KBotAdmin\Views\PushFilesView.Designer.vb	        gridFilesCol3.HeaderTooltip = "NOU = nu există pe server; MODIFICAT = local e mai nou cu peste 2 secunde; IDENTIC = nimic de trimis."
+KBotAdmin\Views\PushFilesView.Designer.vb	        gridFilesCol4.HeaderTooltip = "Extensia fișierului."
+KBotAdmin\Views\PushFilesView.Designer.vb	        gridFilesCol5.HeaderTooltip = "Mărimea fișierului de pe acest calculator."
+KBotAdmin\Views\PushFilesView.Designer.vb	        gridFilesCol6.HeaderTooltip = "Mărimea fișierului de pe server (gol dacă nu există)."
+KBotAdmin\Views\PushFilesView.Designer.vb	        gridFilesCol7.HeaderTooltip = "Ora ultimei modificări a fișierului local."
+KBotAdmin\Views\PushFilesView.Designer.vb	        gridFilesCol8.HeaderTooltip = "Ora ultimei modificări a fișierului de pe server."
+KBotAdmin\Views\PushFilesView.Designer.vb	        tips.SetToolTipHeader(gridFiles, "Fișierele")
+KBotAdmin\Views\PushFilesView.Designer.vb	        tips.SetToolTipText(gridFiles, "Un rând = un fișier permis de reguli. Bifa din prima coloană spune dacă se trimite." & vbLf & "Coloanele arată mărimea și ora locală față de server, ca să vedeți ce s-a schimbat.")
+KBotAdmin\Views\PushFilesView.Designer.vb	        gridExtCol1.HeaderTooltip = "Extensia fără punct. Se poate edita direct; o extensie nouă se adaugă cu butonul de sub tabel."
+KBotAdmin\Views\PushFilesView.Designer.vb	        gridExtCol2.HeaderTooltip = "Bifat = fișierele cu această extensie se compară și se trimit. Debifat = sunt ignorate. Modificarea se salvează pe loc; se vede la următoarea scanare."
+KBotAdmin\Views\PushFilesView.Designer.vb	        gridExtCol3.HeaderTooltip = "Câte fișiere cu această extensie are folderul local (fără cele oprite de reguli de ignorare)."
+KBotAdmin\Views\PushFilesView.Designer.vb	        gridExtCol4.HeaderTooltip = "Câte dintre ele sunt noi sau modificate (se numără doar pentru extensiile acceptate)."
+KBotAdmin\Views\PushFilesView.Designer.vb	        tips.SetToolTipHeader(gridExt, "Extensii")
+KBotAdmin\Views\PushFilesView.Designer.vb	        tips.SetToolTipText(gridExt, "Ce extensii se trimit (bifate) și care sunt ignorate (debifate), cu câte fișiere s-au găsit." & vbLf & "Se poate edita direct; setările se salvează în admin_settings.json.")
+KBotAdmin\Views\PushFilesView.Designer.vb	        gridPatCol1.HeaderTooltip = "Un nume de dosar sau fișier (oriunde în arbore) ori *.extensie. Se poate edita direct; salvarea e automată."
+KBotAdmin\Views\PushFilesView.Designer.vb	        gridPatCol2.HeaderTooltip = "Câte fișiere a oprit regula la ultima scanare."
+KBotAdmin\Views\PushFilesView.Designer.vb	        tips.SetToolTipHeader(gridPat, "Reguli de ignorare")
+KBotAdmin\Views\PushFilesView.Designer.vb	        tips.SetToolTipText(gridPat, "Dosare, nume de fișiere și *.extensii care nu se scanează niciodată." & vbLf & "Pentru reguli în stil gitignore (cu excepții) folosiți fișierul .pushignore din folderul local.")
+KBotAdmin\Views\RequestsView.Designer.vb	        KBotDataColumn1.HeaderTooltip = "Numărul cererii."
+KBotAdmin\Views\RequestsView.Designer.vb	        KBotDataColumn2.HeaderTooltip = "Când a fost trimisă cererea."
+KBotAdmin\Views\RequestsView.Designer.vb	        KBotDataColumn3.HeaderTooltip = "În așteptare, aprobată sau respinsă."
+KBotAdmin\Views\RequestsView.Designer.vb	        KBotDataColumn4.HeaderTooltip = "Numele unității care cere cont."
+KBotAdmin\Views\RequestsView.Designer.vb	        KBotDataColumn5.HeaderTooltip = "Adresa solicitantului; aici ajunge linkul de parolă sau motivul respingerii."
+KBotAdmin\Views\RequestsView.Designer.vb	        KBotDataColumn6.HeaderTooltip = "Codul fiscal al unității."
+KBotAdmin\Views\RequestsView.Designer.vb	        KBotDataColumn7.HeaderTooltip = "Anul de lucru cerut."
+KBotAdmin\Views\RequestsView.Designer.vb	        KBotDataColumn8.HeaderTooltip = "Numărul de rânduri de date trimise cu cererea."
+KBotAdmin\Views\RequestsView.Designer.vb	        KBotDataColumn9.HeaderTooltip = "Baza creată la aprobare sau cine a decis."
+KBotAdmin\Views\RequestsView.Designer.vb	        tips.SetToolTipHeader(grid, "Cererile")
+KBotAdmin\Views\RequestsView.Designer.vb	        tips.SetToolTipText(grid, "Cele mai noi sus. Alegeți un rând: dedesubt se vede cererea cu planul aprobării.")
+KBotAdmin\Views\RightsView.Designer.vb	        KBotDataColumn1.HeaderTooltip = "Contul (e-mail) al utilizatorului."
+KBotAdmin\Views\RightsView.Designer.vb	        KBotDataColumn2.HeaderTooltip = "Baza de date a unității."
+KBotAdmin\Views\RightsView.Designer.vb	        KBotDataColumn3.HeaderTooltip = "Rolul contului în K-BOT."
+KBotAdmin\Views\RightsView.Designer.vb	        tips.SetToolTipHeader(grid, "Drepturile pe conturi")
+KBotAdmin\Views\RightsView.Designer.vb	        tips.SetToolTipText(grid, "Un rând = un cont într-o bază." & vbLf & "Drepturile ADECHIT și VERCON se dau din butoanele de sus, pe contul din rândul ales.")
+KBotAdmin\Views\ScriptsView.Designer.vb	        gridScriptsCol1.HeaderTooltip = "Push (trimit pe server) sau Publish (construiesc local)."
+KBotAdmin\Views\ScriptsView.Designer.vb	        gridScriptsCol2.HeaderTooltip = "Fișierul PowerShell din rădăcina depozitului (sau din tools)."
+KBotAdmin\Views\ScriptsView.Designer.vb	        gridScriptsCol3.HeaderTooltip = "Pe scurt ce face scriptul. Textul întreg și apelul se văd sub tabele, la scriptul ales."
+KBotAdmin\Views\ScriptsView.Designer.vb	        gridScriptsCol4.HeaderTooltip = "Pornește scriptul într-o fereastră PowerShell nouă, după o confirmare."
+KBotAdmin\Views\ScriptsView.Designer.vb	        gridSwitchesCol1.HeaderTooltip = "Bifat = switch-ul se dă scriptului. Nebifat = nu se dă; dacă scriptul îl întreabă, întreabă el."
+KBotAdmin\Views\ScriptsView.Designer.vb	        gridSwitchesCol2.HeaderTooltip = "Switch-ul așa cum se scrie în PowerShell."
+KBotAdmin\Views\ScriptsView.Designer.vb	        gridSwitchesCol3.HeaderTooltip = "Ce face switch-ul."
+KBotAdmin\Views\SourceQueryView.Designer.vb	        gridObjCol1.HeaderTooltip = "Numărul instrucțiunii din fișier."
+KBotAdmin\Views\SourceQueryView.Designer.vb	        gridObjCol2.HeaderTooltip = "Ce face instrucțiunea cu obiectul; la verificare: ce trebuie să fie adevărat la sfârșit."
+KBotAdmin\Views\SourceQueryView.Designer.vb	        gridObjCol3.HeaderTooltip = "Tabel, coloană, index, cheie primară, cheie străină sau date (INSERT, UPDATE...)."
+KBotAdmin\Views\SourceQueryView.Designer.vb	        gridObjCol4.HeaderTooltip = "Tabelul atins."
+KBotAdmin\Views\SourceQueryView.Designer.vb	        gridObjCol5.HeaderTooltip = "Coloana, indexul sau cheia atinsă."
+KBotAdmin\Views\SourceQueryView.Designer.vb	        gridObjCol6.HeaderTooltip = "După «Verifică»: există, lipsește, mai există (trebuia șters) sau nu se poate verifica (index sau cheie fără nume)."
+KBotAdmin\Views\SourceQueryView.Designer.vb	        tips.SetToolTipHeader(gridObj, "Ce atinge interogarea")
+KBotAdmin\Views\SourceQueryView.Designer.vb	        tips.SetToolTipText(gridObj, "După «Citește»: un rând pe fiecare obiect pe care îl creează, îl schimbă sau îl șterge o instrucțiune. După «Verifică»: starea finală a fiecărui obiect în AVACONT_SURSA.")
+KBotAdmin\Views\SourceQueryView.Designer.vb	        gridHistCol1.HeaderTooltip = "Numele dat interogării."
+KBotAdmin\Views\SourceQueryView.Designer.vb	        gridHistCol2.HeaderTooltip = "Când a rulat pe AVACONT_SURSA."
+KBotAdmin\Views\SourceQueryView.Designer.vb	        gridHistCol3.HeaderTooltip = "Câte obiecte de structură atinge (tabele, coloane, indexuri, chei) și câte instrucțiuni de date are, ca structură/date."
+KBotAdmin\Views\SourceQueryView.Designer.vb	        gridHistCol4.HeaderTooltip = "Câte baze de unitate au interogarea marcată ca rulată, din câte există."
+KBotAdmin\Views\SourceQueryView.Designer.vb	        gridHistCol5.HeaderTooltip = "Bazele de unitate care nu au interogarea marcată ca rulată."
+KBotAdmin\Views\SourceQueryView.Designer.vb	        tips.SetToolTipHeader(gridHist, "Interogările rulate pe SURSA")
+KBotAdmin\Views\SourceQueryView.Designer.vb	        tips.SetToolTipText(gridHist, "Din registrul Interogari_Unice al AVACONT_SURSA. Rândul ales este cel pe care lucrează «Verifică» și «Sincronizează». Dublu clic arată textul.")
+KBotAdmin\Views\VisitsView.Designer.vb	        tips.SetToolTipHeader(grid, "Vizite")
+KBotAdmin\Views\VisitsView.Designer.vb	        tips.SetToolTipText(grid, "Un rând = o vizită pe pagina de prezentare. Coloana «Secțiuni» arată ce a citit vizitatorul.")
+KBotAdmin\Views\VisitsView.Designer.vb	        KBotDataColumn1.HeaderTooltip = "Momentul primei deschideri a paginii."
+KBotAdmin\Views\VisitsView.Designer.vb	        KBotDataColumn2.HeaderTooltip = "Cât timp a stat vizitatorul pe pagină."
+KBotAdmin\Views\VisitsView.Designer.vb	        KBotDataColumn3.HeaderTooltip = "Adresa vizitatorului."
+KBotAdmin\Views\VisitsView.Designer.vb	        KBotDataColumn4.HeaderTooltip = "Țara, după adresa IP."
+KBotAdmin\Views\VisitsView.Designer.vb	        KBotDataColumn5.HeaderTooltip = "Om sau robot (indexare)."
+KBotAdmin\Views\VisitsView.Designer.vb	        KBotDataColumn6.HeaderTooltip = "Pagina deschisă."
+KBotAdmin\Views\VisitsView.Designer.vb	        KBotDataColumn7.HeaderTooltip = "De unde a venit vizitatorul."
+KBotAdmin\Views\VisitsView.Designer.vb	        KBotDataColumn8.HeaderTooltip = "Secțiunile citite și timpul pe fiecare."
+src\KBot.App\Avacont\Configurari\PlanCont\Views\PlanContSolduriView.Designer.vb	        tips.SetToolTipHeader(gridSolduri, "Solduri inițiale și rulaje")
+src\KBot.App\Avacont\Configurari\PlanCont\Views\PlanContSolduriView.Designer.vb	        tips.SetToolTipText(gridSolduri, "Tastați direct în tabel. Un rând modificat se salvează singur când treceți pe alt rând.")
+src\KBot.App\Avacont\Configurari\SablonOperatii\Views\SablonOperatiiView.Designer.vb	        KBotDataColumn4.HeaderTooltip = "Partenerul variabil" & vbLf & "Bifat: se folosește partenerul operației, înlocuit la întocmirea operației."
+src\KBot.App\Avacont\Configurari\SablonOperatii\Views\SablonOperatiiView.Designer.vb	        KBotDataColumn6.HeaderTooltip = "Partenerul variabil" & vbLf & "Bifat: se folosește partenerul operației, înlocuit la întocmirea operației."
+src\KBot.App\Avacont\Configurari\SablonOperatii\Views\SablonOperatiiView.Designer.vb	        KBotDataColumn9.HeaderTooltip = "Ordonanțare"
+src\KBot.App\Avacont\Configurari\SablonOperatii\Views\SablonOperatiiView.Designer.vb	        KBotDataColumn10.HeaderTooltip = "Propunere / Angajament"
+src\KBot.App\Avacont\Configurari\SablonOperatii\Views\SablonOperatiiView.Designer.vb	        KBotDataColumn11.HeaderTooltip = "Cheltuială"
+src\KBot.App\Director\DeSemnatRestransForm.Designer.vb	        tips.SetToolTipHeader(lstDocumente, "Documente de semnat")
+src\KBot.App\Director\DeSemnatRestransForm.Designer.vb	        tips.SetToolTipText(lstDocumente, "Documentele care vă sunt adresate, ale unității la care sunteți conectat." & vbLf & "Selectați unul ca să-l deschideți în dreapta și să-l semnați.")
+src\KBot.App\Director\DirectorForm.Designer.vb	        tips.SetToolTipHeader(lstDocumente, "Documente de semnat")
+src\KBot.App\Director\DirectorForm.Designer.vb	        tips.SetToolTipText(lstDocumente, "Reviziile semnate A și B care așteaptă semnătura directorului, ale unității la care sunteți conectat." & vbLf & "Selectați una ca să o deschideți în dreapta.")
+src\KBot.EFactura\Views\Primite\PrimiteListaPage.Designer.vb	        KBotDataColumn4.HeaderTooltip = "Recepția legată de factură: data, descrierea și valoarea ei, într-o singură celulă. Gol = factura nu e legată de nicio recepție."
+src\KBot.EFactura\Views\Primite\PrimiteListaPage.Designer.vb	        KBotDataColumn7.HeaderTooltip = "Opțiunile rândului: listează factura sau o salvează ca XML."

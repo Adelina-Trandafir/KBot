@@ -233,4 +233,23 @@ Public Interface IEFacturaApi
     ''' <summary>DELETE .../primite/{id}/vercon/{idTrimitere} -- takes the sending back while it waits.</summary>
     Function WithdrawVerconAsync(k_idPrimita As Integer, k_idTrimitere As Integer, ct As CancellationToken) As Task(Of EFacturaVerconStareFactura)
 
+    ' ── Slice 01EF-02: the «Contari» of the received invoices (PYTHON/routes/efactura/primite_contari_routes.py). It only calculates; nothing is written. ──
+
+    ''' <summary>POST /api/efactura/contari/calcul -- for the ticked invoices of ONE supplier: the evidence rows, the payment row, the templates and classifications that fit, the codes of the partner, the bookings the templates would produce and the warnings.</summary>
+    Function CalculateContariAsync(k_request As EFacturaContariCerere, ct As CancellationToken) As Task(Of EFacturaContariRaspuns)
+
+    ''' <summary>POST /api/efactura/contari/salveaza -- books the EVIDENCE of the ticked invoices (one accounting note, a document and an operation per invoice) through the posting service. Role «Contabil».</summary>
+    Function SaveContariAsync(k_request As EFacturaContariCerere, ct As CancellationToken) As Task(Of EFacturaContariSalvat)
+
+    ' ── Slice 01EF-03: the archive of the received invoices (PYTHON/routes/efactura/primite_arhiva_routes.py). Writes: role «Contabil» only. ──
+
+    ''' <summary>GET /api/efactura/arhiva -- every archived invoice of the unit.</summary>
+    Function GetArhivaAsync(ct As CancellationToken) As Task(Of List(Of EFacturaArhivaRand))
+
+    ''' <summary>POST .../primite/{id}/arhiva -- puts the invoice in the archive (<paramref name="k_motiv"/> optional).</summary>
+    Function ArchiveAsync(k_idPrimita As Integer, k_motiv As String, ct As CancellationToken) As Task(Of EFacturaArhivaRand)
+
+    ''' <summary>DELETE .../primite/{id}/arhiva -- takes the invoice out of the archive.</summary>
+    Function UnarchiveAsync(k_idPrimita As Integer, ct As CancellationToken) As Task
+
 End Interface

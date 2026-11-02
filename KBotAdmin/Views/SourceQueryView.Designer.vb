@@ -261,7 +261,6 @@ Partial Class SourceQueryView
         gridObjCol1.AggregateFormatString = Nothing
         gridObjCol1.FormatString = Nothing
         gridObjCol1.HeaderText = "Instr."
-        gridObjCol1.HeaderTooltip = "Numărul instrucțiunii din fișier."
         gridObjCol1.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridObjCol1.Key = "stmt"
         gridObjCol1.MinWidth = 40
@@ -272,7 +271,6 @@ Partial Class SourceQueryView
         gridObjCol2.AggregateFormatString = Nothing
         gridObjCol2.FormatString = Nothing
         gridObjCol2.HeaderText = "Acțiune"
-        gridObjCol2.HeaderTooltip = "Ce face instrucțiunea cu obiectul; la verificare: ce trebuie să fie adevărat la sfârșit."
         gridObjCol2.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridObjCol2.Key = "action"
         gridObjCol2.MinWidth = 60
@@ -282,7 +280,6 @@ Partial Class SourceQueryView
         gridObjCol3.AggregateFormatString = Nothing
         gridObjCol3.FormatString = Nothing
         gridObjCol3.HeaderText = "Tip"
-        gridObjCol3.HeaderTooltip = "Tabel, coloană, index, cheie primară, cheie străină sau date (INSERT, UPDATE...)."
         gridObjCol3.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridObjCol3.Key = "kind"
         gridObjCol3.MinWidth = 50
@@ -292,7 +289,6 @@ Partial Class SourceQueryView
         gridObjCol4.AggregateFormatString = Nothing
         gridObjCol4.FormatString = Nothing
         gridObjCol4.HeaderText = "Tabel"
-        gridObjCol4.HeaderTooltip = "Tabelul atins."
         gridObjCol4.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridObjCol4.Key = "table"
         gridObjCol4.MinWidth = 70
@@ -302,7 +298,6 @@ Partial Class SourceQueryView
         gridObjCol5.AggregateFormatString = Nothing
         gridObjCol5.FormatString = Nothing
         gridObjCol5.HeaderText = "Obiect"
-        gridObjCol5.HeaderTooltip = "Coloana, indexul sau cheia atinsă."
         gridObjCol5.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridObjCol5.Key = "name"
         gridObjCol5.MinWidth = 70
@@ -312,7 +307,6 @@ Partial Class SourceQueryView
         gridObjCol6.AggregateFormatString = Nothing
         gridObjCol6.FormatString = Nothing
         gridObjCol6.HeaderText = "Stare în SURSA"
-        gridObjCol6.HeaderTooltip = "După «Verifică»: există, lipsește, mai există (trebuia șters) sau nu se poate verifica (index sau cheie fără nume)."
         gridObjCol6.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridObjCol6.Key = "state"
         gridObjCol6.MinWidth = 90
@@ -334,8 +328,6 @@ Partial Class SourceQueryView
         gridObj.ReadOnlyGrid = True
         gridObj.Size = New Size(500, 190)
         gridObj.TabIndex = 13
-        tips.SetToolTipHeader(gridObj, "Ce atinge interogarea")
-        tips.SetToolTipText(gridObj, "După «Citește»: un rând pe fiecare obiect pe care îl creează, îl schimbă sau îl șterge o instrucțiune. După «Verifică»: starea finală a fiecărui obiect în AVACONT_SURSA.")
         '
         ' gridHist
         '
@@ -344,7 +336,6 @@ Partial Class SourceQueryView
         gridHistCol1.AggregateFormatString = Nothing
         gridHistCol1.FormatString = Nothing
         gridHistCol1.HeaderText = "Interogarea"
-        gridHistCol1.HeaderTooltip = "Numele dat interogării."
         gridHistCol1.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridHistCol1.Key = "name"
         gridHistCol1.MinWidth = 80
@@ -354,7 +345,6 @@ Partial Class SourceQueryView
         gridHistCol2.AggregateFormatString = Nothing
         gridHistCol2.FormatString = Nothing
         gridHistCol2.HeaderText = "Rulată la"
-        gridHistCol2.HeaderTooltip = "Când a rulat pe AVACONT_SURSA."
         gridHistCol2.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridHistCol2.Key = "ranat"
         gridHistCol2.MinWidth = 90
@@ -364,7 +354,6 @@ Partial Class SourceQueryView
         gridHistCol3.AggregateFormatString = Nothing
         gridHistCol3.FormatString = Nothing
         gridHistCol3.HeaderText = "Obiecte"
-        gridHistCol3.HeaderTooltip = "Câte obiecte de structură atinge (tabele, coloane, indexuri, chei) și câte instrucțiuni de date are, ca structură/date."
         gridHistCol3.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridHistCol3.Key = "objects"
         gridHistCol3.MinWidth = 60
@@ -375,7 +364,6 @@ Partial Class SourceQueryView
         gridHistCol4.AggregateFormatString = Nothing
         gridHistCol4.FormatString = Nothing
         gridHistCol4.HeaderText = "Unități"
-        gridHistCol4.HeaderTooltip = "Câte baze de unitate au interogarea marcată ca rulată, din câte există."
         gridHistCol4.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridHistCol4.Key = "done"
         gridHistCol4.MinWidth = 50
@@ -386,7 +374,6 @@ Partial Class SourceQueryView
         gridHistCol5.AggregateFormatString = Nothing
         gridHistCol5.FormatString = Nothing
         gridHistCol5.HeaderText = "Încă de sincronizat pe"
-        gridHistCol5.HeaderTooltip = "Bazele de unitate care nu au interogarea marcată ca rulată."
         gridHistCol5.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridHistCol5.Key = "missing"
         gridHistCol5.MinWidth = 80
@@ -407,8 +394,6 @@ Partial Class SourceQueryView
         gridHist.ReadOnlyGrid = True
         gridHist.Size = New Size(370, 190)
         gridHist.TabIndex = 14
-        tips.SetToolTipHeader(gridHist, "Interogările rulate pe SURSA")
-        tips.SetToolTipText(gridHist, "Din registrul Interogari_Unice al AVACONT_SURSA. Rândul ales este cel pe care lucrează «Verifică» și «Sincronizează». Dublu clic arată textul.")
         '
         ' logBox
         '

@@ -1,0 +1,3 @@
+# SLICE-0000-145 — help for the save of the evidence in «Contari»
+
+Topic `contabil.efactura`, section «Contări» (`src/KBot.App/HelpContent/contabil/efactura/index.md`): the buttons **Renunță** (left) and **Salvează evidențierea** (right), who can save, the confirmation of the warnings, what a save makes (a note, a document and an operation per invoice), the dates moved by a closed month or an earlier year, and that the payment is not saved yet. Tags `01EF-02, 0000-144, 01EF-04, 0000-145`. The sentence «nimic nu se salvează încă» of the page and of the help is gone. No capture. `Check-Help.ps1`: the family 01EF is now known to it. Not seen on screen.

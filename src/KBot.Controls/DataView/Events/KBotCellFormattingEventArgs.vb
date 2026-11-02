@@ -63,6 +63,14 @@ Public NotInheritable Class KBotCellFormattingEventArgs
     Public Property HideButton As Boolean
 
     ''' <summary>
+    ''' A <see cref="KBotColumnType.CheckBox"/> or <see cref="KBotColumnType.OptionButton"/> cell draws nothing at all (no box), and a cell
+    ''' of ANY type whose <see cref="Enabled"/> was lowered gets no grey wash, so the cell looks empty like a plain one. Default
+    ''' False; the handler may raise it for ONE cell (a parameter that does not exist on that row). It only changes what is painted --
+    ''' lower <see cref="Enabled"/> too, so that a click toggles nothing.
+    ''' </summary>
+    Public Property HideGlyph As Boolean
+
+    ''' <summary>
     ''' Culoarea bordurilor acestei celule (slice 0085-03). Implicit: cea a coloanei
     ''' (<see cref="KBotDataColumn.CellBorderColor"/>); <c>Color.Empty</c> = culoarea liniilor de
     ''' grila din tema.
@@ -94,6 +102,7 @@ Public NotInheritable Class KBotCellFormattingEventArgs
         Me.Enabled = enabled
         Me.ReadOnlyCell = False
         Me.HideButton = False
+        Me.HideGlyph = False
     End Sub
 
 End Class

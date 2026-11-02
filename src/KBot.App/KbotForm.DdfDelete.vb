@@ -236,10 +236,61 @@ Partial Public Class KbotForm
             TryCast(_activeView, RezervariView)?.Reincarca()
 
             ActualizeazaPoartaDdf(cod, iddfDocument, documentSters)
+
+            ' Slice 00EF-53: the partners of the document may have changed, so the received e-invoices it
+            ' matches may have too.
+            ReimprospateazaEFacturiDdf(cod)
         Catch ex As Exception
             ' UI boundary: the refresh failed, but the WRITE already succeeded. Logged, and we
             ' carry on -- a throw here would make it look as though the save had failed.
             GlobalErrorLog.Write("MainForm.DupaScriereaDdf", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Slice 00EF-53 (operator, 31.10.2026): the «efactura» entry in the vertical navigation, after a DDF write changed the
+    ''' partners of the document.
+    '''
+    ''' <para><c>ArePrimite</c> is computed by the SERVER (the document's partners matched on tax code against the received
+    ''' e-invoices, or an explicit association) and read once, when the tree is loaded -- so a partner saved on a document did
+    ''' not make the entry appear until the next reload. It cannot be worked out locally, so the tree is asked again and ONLY
+    ''' this flag is copied onto the selected node: <c>LoadTreeAsync</c> would also re-run <c>SetContext</c> on the DDF view,
+    ''' racing the reload that lands it on the revision just saved.</para>
+    ''' UI boundary (Async Sub, fire-and-forget): the write already succeeded, so a failure is logged and never thrown.
+    ''' </summary>
+    Private Async Sub ReimprospateazaEFacturiDdf(k_cod As String)
+        Try
+            If _currentInfo Is Nothing OrElse Not _currentInfo.AreDDF Then Return
+            If Not String.IsNullOrEmpty(k_cod) AndAlso
+               Not String.Equals(k_cod, _currentInfo.CodAngajament, StringComparison.OrdinalIgnoreCase) Then
+                Return
+            End If
+
+            ' The same period the tree was loaded for (see LoadTreeAsync).
+            Dim k_an As Integer? = AnulAles()
+            Dim k_ssAles As String = SsAles()
+            If Not k_an.HasValue OrElse String.IsNullOrEmpty(k_ssAles) Then Return
+            Dim k_anCerut As Integer = If(_grupaActiva Is Nothing, k_an.Value, 0)
+            Dim k_ssCerut As String = If(_grupaActiva IsNot Nothing, ApiClient.TreeAllSources, k_ssAles)
+            Dim k_codCerut As String = _currentInfo.CodAngajament
+
+            Dim k_randuri As IReadOnlyList(Of AngajamentTreeInfo) =
+                Await WithReauth(Of IReadOnlyList(Of AngajamentTreeInfo))(
+                    Function() _apiClient.GetTreeAsync(k_anCerut, k_ssCerut, _includeHidden, CancellationToken.None)).ConfigureAwait(True)
+
+            ' The operator may have moved on while the tree was coming: then there is nothing to say about the new node.
+            If k_randuri Is Nothing OrElse _currentInfo Is Nothing OrElse
+               Not String.Equals(_currentInfo.CodAngajament, k_codCerut, StringComparison.OrdinalIgnoreCase) Then
+                Return
+            End If
+            Dim k_rand As AngajamentTreeInfo = k_randuri.FirstOrDefault(
+                Function(k_r) String.Equals(k_r.CodAngajament, k_codCerut, StringComparison.OrdinalIgnoreCase))
+            If k_rand Is Nothing OrElse _currentInfo.ArePrimite = k_rand.ArePrimite Then Return
+
+            _currentInfo.ArePrimite = k_rand.ArePrimite
+            ApplyViewGating(_currentInfo)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ReimprospateazaEFacturiDdf", ex)
         End Try
     End Sub
 

@@ -155,7 +155,6 @@ Partial Class AuditView
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing
         KBotDataColumn1.HeaderText = "Moment"
-        KBotDataColumn1.HeaderTooltip = "Data și ora acțiunii."
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "moment"
         KBotDataColumn1.MinWidth = 90
@@ -165,7 +164,6 @@ Partial Class AuditView
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.FormatString = Nothing
         KBotDataColumn2.HeaderText = "Cont"
-        KBotDataColumn2.HeaderTooltip = "Contul care a făcut acțiunea (sau a încercat-o)."
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "un"
         KBotDataColumn2.MinWidth = 80
@@ -175,7 +173,6 @@ Partial Class AuditView
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.FormatString = Nothing
         KBotDataColumn3.HeaderText = "Baza"
-        KBotDataColumn3.HeaderTooltip = "Baza de date vizată."
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "dc"
         KBotDataColumn3.MinWidth = 60
@@ -185,7 +182,6 @@ Partial Class AuditView
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.FormatString = Nothing
         KBotDataColumn4.HeaderText = "Acțiune"
-        KBotDataColumn4.HeaderTooltip = "Ce s-a făcut: autentificare, drept dat sau retras, cont adăugat etc."
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "action"
         KBotDataColumn4.MinWidth = 80
@@ -195,7 +191,6 @@ Partial Class AuditView
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.FormatString = Nothing
         KBotDataColumn5.HeaderText = "Țintă"
-        KBotDataColumn5.HeaderTooltip = "Obiectul acțiunii (contul sau dreptul vizat)."
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "target"
         KBotDataColumn5.MinWidth = 60
@@ -205,7 +200,6 @@ Partial Class AuditView
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.FormatString = Nothing
         KBotDataColumn6.HeaderText = "Rezultat"
-        KBotDataColumn6.HeaderTooltip = "OK sau motivul eșecului / refuzului."
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn6.Key = "result"
         KBotDataColumn6.MinWidth = 50
@@ -215,7 +209,6 @@ Partial Class AuditView
         KBotDataColumn7.AggregateFormatString = Nothing
         KBotDataColumn7.FormatString = Nothing
         KBotDataColumn7.HeaderText = "IP"
-        KBotDataColumn7.HeaderTooltip = "Adresa de la care a venit acțiunea."
         KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn7.Key = "ip"
         KBotDataColumn7.MinWidth = 60
@@ -225,7 +218,6 @@ Partial Class AuditView
         KBotDataColumn8.AggregateFormatString = Nothing
         KBotDataColumn8.FormatString = Nothing
         KBotDataColumn8.HeaderText = "Detalii"
-        KBotDataColumn8.HeaderTooltip = "Detalii ale acțiunii, așa cum le-a scris serverul."
         KBotDataColumn8.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn8.Key = "details"
         KBotDataColumn8.MinWidth = 80
@@ -249,8 +241,6 @@ Partial Class AuditView
         grid.ReadOnlyGrid = True
         grid.Size = New Size(884, 472)
         grid.TabIndex = 1
-        tips.SetToolTipHeader(grid, "Jurnalul")
-        tips.SetToolTipText(grid, "Cele mai noi sus. Roșu = eșec de autentificare sau acces refuzat.")
         '
         ' lblState
         '

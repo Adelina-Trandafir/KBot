@@ -47,6 +47,8 @@ Public Class PrimiteView
     Private Const MenuScoate As String = "scoate"
     Private Const MenuLegaAlege As String = "legaalege"
     Private Const MenuScoatePrefix As String = "scoate:"
+    Private Const MenuArhiveaza As String = "arhiveaza"
+    Private Const MenuScoateArhiva As String = "scoatearhiva"
 
     Private Shared ReadOnly _ro As New CultureInfo("ro-RO")
     Private Shared ReadOnly _monthNames As String() = {"Ianuarie", "Februarie", "Martie", "Aprilie", "Mai", "Iunie", "Iulie",
@@ -75,6 +77,9 @@ Public Class PrimiteView
     Private _onlyNew As Boolean
     Private _groupBySupplier As Boolean
     Private _ascending As Boolean
+    ' Slice 01EF-03 -- the archive: the archived invoices leave the list; the header menu can show ONLY them. Not used in the view of an angajament.
+    Private _showArchived As Boolean
+    Private _archived As New Dictionary(Of Integer, EFacturaArhivaRand)()
     ' Slice 0114-22 -- the view of an angajament (see AngajamentView) and the filter icon the designer gave the header.
     Private _angajamentView As Boolean
     Private _filterIcon As Image
@@ -132,6 +137,8 @@ Public Class PrimiteView
         Set(k_value As Boolean)
             If _angajamentView = k_value Then Return
             _angajamentView = k_value
+            ' Slice 01EF-02: «Contari» is only in the window with all the invoices.
+            navDetaliu.SetItemVisible(ViewContare, Not k_value)
             ' The designer sets the icon of the header before it sets this property: keep it, to give it back.
             If k_value AndAlso tree.HeaderRightIcon IsNot Nothing Then _filterIcon = tree.HeaderRightIcon
             tree.HeaderRightIcon = If(k_value, Nothing, _filterIcon)
@@ -161,6 +168,7 @@ Public Class PrimiteView
         ClearDetail()
         ShowDetailSurface()
         pgLista.SetItems(Nothing)
+        ResetContare()
     End Sub
 
     ''' <summary>Lets go of the PDF on screen (the view is put away).</summary>
@@ -227,8 +235,10 @@ Public Class PrimiteView
                     k_linkedIds(k_p.IdPrimita) = k_p.Legatura
                 Next
             End If
+            Dim k_archive As Dictionary(Of Integer, EFacturaArhivaRand) = Await ReadArchiveAsync().ConfigureAwait(True)
             If IsDisposed OrElse k_mySeq <> _seq Then Return
             _items = k_list
+            _archived = k_archive
             _ListLoaded = True
             _linked = k_linkedIds
             BuildTree(If(_shownId > 0, CType(_shownId, Integer?), Nothing))
@@ -245,6 +255,25 @@ Public Class PrimiteView
         End Try
     End Function
 
+    ' Slice 01EF-03: the archive of the unit (the all-invoices window only). A failure does not stop the list: the archive is then taken as empty
+    ' and the operator is told. Cancellation (the host closed) goes up.
+    Private Async Function ReadArchiveAsync() As Task(Of Dictionary(Of Integer, EFacturaArhivaRand))
+        Dim k_result As New Dictionary(Of Integer, EFacturaArhivaRand)()
+        If _angajamentView Then Return k_result
+        Try
+            Dim k_rows As List(Of EFacturaArhivaRand) = Await _gate.RunAsync(Function() _api.GetArhivaAsync(_cts.Token)).ConfigureAwait(True)
+            For Each k_r As EFacturaArhivaRand In k_rows
+                k_result(k_r.IdPrimita) = k_r
+            Next
+        Catch ex As OperationCanceledException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrimiteView.ReadArchiveAsync", ex)
+            ShowProblem("Arhiva facturilor nu a putut fi citită; facturile sunt afișate fără ea.")
+        End Try
+        Return k_result
+    End Function
+
     Private Function YearFilter() As Integer?
         Return If(_year > 0, CType(_year, Integer?), Nothing)
     End Function
@@ -259,6 +288,8 @@ Public Class PrimiteView
     ' The invoices the tree shows: all, minus what the header menu filtered out.
     Private Function ShownItems() As List(Of EFacturaPrimita)
         Dim k_list As IEnumerable(Of EFacturaPrimita) = _items
+        ' Slice 01EF-03: the archive is a separate list: the working list has no archived invoice, the archive shows only them.
+        If Not _angajamentView Then k_list = k_list.Where(Function(k_x) _archived.ContainsKey(k_x.IdPrimita) = _showArchived)
         If _onlyWithoutOperations Then k_list = k_list.Where(Function(k_x) k_x.NrOperatii = 0)
         If _onlyNew Then k_list = k_list.Where(Function(k_x) _newIds.Contains(k_x.IdPrimita))
         Return k_list.ToList()
@@ -299,6 +330,7 @@ Public Class PrimiteView
             ElseIf k_selectId.HasValue AndAlso _nodes.TryGetValue(k_selectId.Value, k_node) Then
                 tree.SelectAndReveal(k_node)
             End If
+            RestoreTicks()
             tree.Invalidate()
         Finally
             _treeLoading = False
@@ -358,6 +390,7 @@ Public Class PrimiteView
             k_key, $"{SupplierName(k_supGroup)}~~~{k_supSum.ToString("N2", _ro)}", k_parent,
             pLeftIconClosed:=k_icon, pLeftIconOpen:=k_icon, pExpanded:=k_expanded)
         k_supplier.Tooltip = SupplierTooltip(k_supGroup)
+        k_supplier.HasCheckBox = _contare
         If Not k_underMonth Then k_supplier.Bold = True
         Dim k_invoices As IEnumerable(Of EFacturaPrimita)
         If Not k_underMonth AndAlso _ascending Then
@@ -379,6 +412,7 @@ Public Class PrimiteView
                 pLeftIconClosed:=k_dot, pLeftIconOpen:=k_dot)
             k_leaf.Tag = k_p
             k_leaf.Tooltip = TooltipOf(k_p)
+            k_leaf.HasCheckBox = _contare
             _nodes(k_p.IdPrimita) = k_leaf
         Next
     End Sub
@@ -427,6 +461,12 @@ Public Class PrimiteView
             $"Furnizor: {k_p.Furnizor} ({k_p.Cui})",
             $"Total: {k_p.Total.ToString("N2", _ro)} · TVA: {k_p.Tva.ToString("N2", _ro)}"}
         If k_p.DataScad.HasValue Then k_lines.Add($"Scadentă: {k_p.DataScad:dd.MM.yyyy}")
+        Dim k_arch As EFacturaArhivaRand = Nothing
+        If _archived.TryGetValue(k_p.IdPrimita, k_arch) Then
+            k_lines.Add("În arhivă" & If(k_arch.DataArhivare.HasValue, $" din {k_arch.DataArhivare:dd.MM.yyyy}", String.Empty) &
+                        If(String.IsNullOrWhiteSpace(k_arch.Un), String.Empty, $", de {k_arch.Un}") &
+                        If(String.IsNullOrWhiteSpace(k_arch.Motiv), String.Empty, $": {k_arch.Motiv}") & ".")
+        End If
         If _idDdf.HasValue Then
             Dim k_how As String = Nothing
             If _linked.TryGetValue(k_p.IdPrimita, k_how) Then
@@ -602,6 +642,8 @@ Public Class PrimiteView
         pgPdf.Visible = String.Equals(k_key, ViewPdf, StringComparison.Ordinal)
         pgMesaje.Visible = String.Equals(k_key, ViewMesaje, StringComparison.Ordinal)
         pgReceptii.Visible = String.Equals(k_key, ViewReceptii, StringComparison.Ordinal)
+        pgContare.Visible = String.Equals(k_key, ViewContare, StringComparison.Ordinal)
+        SetContareMode(pgContare.Visible)
         pgXml.Visible = String.Equals(k_key, ViewXml, StringComparison.Ordinal)
         If pgXml.Visible Then RefreshXml()
         If pgPdf.Visible Then RefreshPdf()
@@ -743,6 +785,7 @@ Public Class PrimiteView
 
     Private Const OptFaraOperatii As String = "fara_operatii"
     Private Const OptNoi As String = "noi"
+    Private Const OptArhiva As String = "arhiva"
     Private Const OptPeFurnizor As String = "grup_furnizor"
     Private Const OptPeLuna As String = "grup_luna"
     Private Const OptCrescator As String = "ord_cresc"
@@ -767,6 +810,7 @@ Public Class PrimiteView
             If _newIds.Count > 0 AndAlso Not _idDdf.HasValue Then
                 k_items.Add(New CustomPopupItem(OptNoi, "Afișare facturi noi") With {.Checked = _onlyNew})
             End If
+            k_items.Add(New CustomPopupItem(OptArhiva, "Afișare facturi din arhivă") With {.Checked = _showArchived})
             k_items.Add(CustomPopupItem.Separator())
             If _groupBySupplier Then
                 k_items.Add(New CustomPopupItem(OptPeLuna, "Grupare după lună"))
@@ -792,6 +836,8 @@ Public Class PrimiteView
                     _onlyWithoutOperations = Not _onlyWithoutOperations
                 Case OptNoi
                     _onlyNew = Not _onlyNew
+                Case OptArhiva
+                    _showArchived = Not _showArchived
                 Case OptPeFurnizor
                     _groupBySupplier = True
                 Case OptPeLuna
@@ -1070,6 +1116,16 @@ Public Class PrimiteView
                 Next
             End If
         End If
+        ' Slice 01EF-03: the archive (the all-invoices window only; an invoice with accounting operations cannot be archived).
+        If Not _angajamentView Then
+            If _archived.ContainsKey(k_p.IdPrimita) Then
+                k_items.Add(CustomPopupItem.Separator())
+                k_items.Add(New CustomPopupItem(MenuScoateArhiva, "Scoate din &arhivă"))
+            ElseIf k_p.NrOperatii = 0 Then
+                k_items.Add(CustomPopupItem.Separator())
+                k_items.Add(New CustomPopupItem(MenuArhiveaza, "&Arhivează factura"))
+            End If
+        End If
         Dim k_menu As New CustomPopup(k_items)
         AddHandler k_menu.ItemClicked, Sub(k_sender As Object, k_args As CustomPopupItemEventArgs) RunMenuAction(k_args.Item.Key, k_p)
         k_menu.ShowAt(tree, k_screen)
@@ -1092,6 +1148,12 @@ Public Class PrimiteView
                         Await _gate.RunAsync(Function() _api.LinkPrimitaAsync(k_p.IdPrimita, k_target, _cts.Token)).ConfigureAwait(True)
                     End Using
                     Await ReloadKeepingSelectionAsync(k_p.IdPrimita).ConfigureAwait(True)
+                Case MenuArhiveaza
+                    Await _gate.RunAsync(Function() _api.ArchiveAsync(k_p.IdPrimita, Nothing, _cts.Token)).ConfigureAwait(True)
+                    Await LoadAsync(_idDdf).ConfigureAwait(True)
+                Case MenuScoateArhiva
+                    Await _gate.RunAsync(Function() _api.UnarchiveAsync(k_p.IdPrimita, _cts.Token)).ConfigureAwait(True)
+                    Await LoadAsync(_idDdf).ConfigureAwait(True)
                 Case MenuZip
                     Await SaveFileAsync(k_p, "zip", "Arhivă ZIP (*.zip)|*.zip",
                                         Function() _api.GetPrimitaZipAsync(k_p.IdPrimita, _cts.Token)).ConfigureAwait(True)

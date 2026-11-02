@@ -217,7 +217,6 @@ Partial Class OnceQueryView
         gridHistCol1.AggregateFormatString = Nothing
         gridHistCol1.FormatString = Nothing
         gridHistCol1.HeaderText = "Interogarea"
-        gridHistCol1.HeaderTooltip = "Numele dat interogării."
         gridHistCol1.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridHistCol1.Key = "name"
         gridHistCol1.MinWidth = 80
@@ -227,7 +226,6 @@ Partial Class OnceQueryView
         gridHistCol2.AggregateFormatString = Nothing
         gridHistCol2.FormatString = Nothing
         gridHistCol2.HeaderText = "Rulată la"
-        gridHistCol2.HeaderTooltip = "Când a rulat pe AVACONT_SURSA (șablonul, prima bază la fiecare rulare)."
         gridHistCol2.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridHistCol2.Key = "ranat"
         gridHistCol2.MinWidth = 90
@@ -237,7 +235,6 @@ Partial Class OnceQueryView
         gridHistCol3.AggregateFormatString = Nothing
         gridHistCol3.FormatString = Nothing
         gridHistCol3.HeaderText = "De cine"
-        gridHistCol3.HeaderTooltip = "Cine a rulat-o (AvacontPush sau KBotAdmin), sau «provizionare» dacă unitatea s-a născut cu ea marcată ca rulată."
         gridHistCol3.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridHistCol3.Key = "by"
         gridHistCol3.MinWidth = 60
@@ -247,7 +244,6 @@ Partial Class OnceQueryView
         gridHistCol4.AggregateFormatString = Nothing
         gridHistCol4.FormatString = Nothing
         gridHistCol4.HeaderText = "Rânduri"
-        gridHistCol4.HeaderTooltip = "Rândurile raportate ca modificate de instrucțiuni pe șablon."
         gridHistCol4.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridHistCol4.Key = "rows"
         gridHistCol4.MinWidth = 50
@@ -258,7 +254,6 @@ Partial Class OnceQueryView
         gridHistCol5.AggregateFormatString = Nothing
         gridHistCol5.FormatString = Nothing
         gridHistCol5.HeaderText = "Baze"
-        gridHistCol5.HeaderTooltip = "Câte baze de unitate au interogarea marcată ca rulată, din câte există."
         gridHistCol5.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridHistCol5.Key = "done"
         gridHistCol5.MinWidth = 50
@@ -269,7 +264,6 @@ Partial Class OnceQueryView
         gridHistCol6.AggregateFormatString = Nothing
         gridHistCol6.FormatString = Nothing
         gridHistCol6.HeaderText = "Încă de rulat pe"
-        gridHistCol6.HeaderTooltip = "Bazele de unitate unde interogarea nu a rulat încă."
         gridHistCol6.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridHistCol6.Key = "missing"
         gridHistCol6.MinWidth = 80
@@ -291,8 +285,6 @@ Partial Class OnceQueryView
         gridHist.ReadOnlyGrid = True
         gridHist.Size = New Size(600, 300)
         gridHist.TabIndex = 14
-        tips.SetToolTipHeader(gridHist, "Istoricul interogărilor")
-        tips.SetToolTipText(gridHist, "Ce interogări unice au rulat, cu rezultatul pe baze. Dublu clic pe un rând arată textul interogării.")
         '
         ' lblState
         '

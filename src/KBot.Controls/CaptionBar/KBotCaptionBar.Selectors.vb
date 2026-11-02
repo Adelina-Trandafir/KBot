@@ -81,8 +81,8 @@ Partial Public NotInheritable Class KBotCaptionBar
     Private ReadOnly _selectors As TitleSelector() = {
         New TitleSelector(SelectorUnit, String.Empty, 2),
         New TitleSelector(SelectorYear, "An Date", 1),
-        New TitleSelector(SelectorSector, "Sursă/Sector", 1),
         New TitleSelector(SelectorSubunit, "Subunitate", 2),
+        New TitleSelector(SelectorSector, "Sursă/Sector", 1),
         New TitleSelector(SelectorKind, "Tip factură", 1)}
     ' Raised for the duration of the opening, so the common IPopupAnchor sink knows which
     ' painted element unfolded (see SetPopupOpen).

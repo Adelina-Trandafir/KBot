@@ -354,9 +354,8 @@ Partial Class SablonSalariiView
         KBotDataColumn13.TextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn13.Width = 80
         KBotDataColumn14.AggregateFormatString = Nothing
-        KBotDataColumn14.ButtonBorders = KBotBorderSides.None
-        KBotDataColumn14.ButtonMargin = New Padding(0)
         KBotDataColumn14.ColumnType = KBotColumnType.Button
+        KBotDataColumn14.ButtonKind = KBotButtonKind.Delete
         KBotDataColumn14.FormatString = Nothing
         KBotDataColumn14.HeaderText = ""
         KBotDataColumn14.HeaderTextAlign = ContentAlignment.MiddleCenter
@@ -463,9 +462,8 @@ Partial Class SablonSalariiView
         KBotDataColumn22.TextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn22.Width = 80
         KBotDataColumn23.AggregateFormatString = Nothing
-        KBotDataColumn23.ButtonBorders = KBotBorderSides.None
-        KBotDataColumn23.ButtonMargin = New Padding(0)
         KBotDataColumn23.ColumnType = KBotColumnType.Button
+        KBotDataColumn23.ButtonKind = KBotButtonKind.Delete
         KBotDataColumn23.FormatString = Nothing
         KBotDataColumn23.HeaderText = ""
         KBotDataColumn23.HeaderTextAlign = ContentAlignment.MiddleCenter
@@ -562,9 +560,8 @@ Partial Class SablonSalariiView
         KBotDataColumn30.TextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn30.Width = 80
         KBotDataColumn31.AggregateFormatString = Nothing
-        KBotDataColumn31.ButtonBorders = KBotBorderSides.None
-        KBotDataColumn31.ButtonMargin = New Padding(0)
         KBotDataColumn31.ColumnType = KBotColumnType.Button
+        KBotDataColumn31.ButtonKind = KBotButtonKind.Delete
         KBotDataColumn31.FormatString = Nothing
         KBotDataColumn31.HeaderText = ""
         KBotDataColumn31.HeaderTextAlign = ContentAlignment.MiddleCenter

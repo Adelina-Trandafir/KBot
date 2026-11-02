@@ -22,6 +22,9 @@ Public Class SabloaneForm
     Private _salariiApi As ISablonSalariiApi
     Private _gate As ReauthGate
     Private _session As SessionContext
+    ' Slice AV01-18: the subunit in force when the window opened (the window is modal: the title bar cannot change meanwhile).
+    Private _idSubunitate As Integer?
+    Private _subunitSs As String = String.Empty
     Private _activeKey As String = KeyOperatiiM
     Private _boundA As Boolean
     Private _boundSalarii As Boolean
@@ -36,7 +39,10 @@ Public Class SabloaneForm
 
     ''' <param name="k_salariiApi">The salary templates («Salarii» page). Nothing = the page is not offered (the API client lacks it).</param>
     ''' <param name="k_session">The session: the sector+source of the title bar decides which templates show.</param>
-    Public Sub New(k_api As ISablonOperatiiApi, k_salariiApi As ISablonSalariiApi, k_gate As ReauthGate, k_session As SessionContext)
+    ''' <param name="k_idSubunitate">The subunit in force: the operation templates of that subunit show, and a new one belongs to it. Nothing = none.</param>
+    ''' <param name="k_subunitSs">The sector+source of that subunit (the source that shows on «Toate»).</param>
+    Public Sub New(k_api As ISablonOperatiiApi, k_salariiApi As ISablonSalariiApi, k_gate As ReauthGate, k_session As SessionContext,
+                   Optional k_idSubunitate As Integer? = Nothing, Optional k_subunitSs As String = Nothing)
         ArgumentNullException.ThrowIfNull(k_api)
         ArgumentNullException.ThrowIfNull(k_gate)
         ArgumentNullException.ThrowIfNull(k_session)
@@ -45,6 +51,8 @@ Public Class SabloaneForm
         _salariiApi = k_salariiApi
         _gate = k_gate
         _session = k_session
+        _idSubunitate = k_idSubunitate
+        _subunitSs = If(k_subunitSs, String.Empty)
         SetCaption()
     End Sub
 
@@ -52,7 +60,7 @@ Public Class SabloaneForm
     Private Sub SabloaneForm_Load(sender As Object, e As EventArgs) Handles Me.Load
         Try
             If _api Is Nothing Then Return
-            viewOperatiiM.Bind(_api, _gate, _session, "M")
+            viewOperatiiM.Bind(_api, _gate, _session, "M", _idSubunitate, _subunitSs)
         Catch ex As Exception
             GlobalErrorLog.Write("SabloaneForm.SabloaneForm_Load", ex)
         End Try
@@ -119,7 +127,7 @@ Public Class SabloaneForm
         Dim k_isSalarii As Boolean = String.Equals(k_key, KeySalarii, StringComparison.Ordinal)
         If k_isA AndAlso Not _boundA Then
             _boundA = True
-            viewOperatiiA.Bind(_api, _gate, _session, "A")
+            viewOperatiiA.Bind(_api, _gate, _session, "A", _idSubunitate, _subunitSs)
         End If
         If k_isSalarii AndAlso Not _boundSalarii Then
             _boundSalarii = True

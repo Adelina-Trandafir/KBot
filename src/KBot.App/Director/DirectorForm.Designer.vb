@@ -191,8 +191,6 @@ Partial Class DirectorForm
         lstDocumente.ShrinkColumnsToFit = False
         lstDocumente.Size = New Size(512, 676)
         lstDocumente.TabIndex = 0
-        tips.SetToolTipHeader(lstDocumente, "Documente de semnat")
-        tips.SetToolTipText(lstDocumente, "Reviziile semnate A și B care așteaptă semnătura directorului, ale unității la care sunteți conectat." & vbLf & "Selectați una ca să o deschideți în dreapta.")
         '
         ' pnlDocument
         '
