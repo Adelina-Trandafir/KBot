@@ -262,6 +262,8 @@ Generated_Code/
 # because we have git ;-)
 _UpgradeReport_Files/
 Backup*/
+!KBotAdmin/Backup/
+backup_key_*.dat
 UpgradeLog*.XML
 UpgradeLog*.htm
 ServiceFabricBackup/
