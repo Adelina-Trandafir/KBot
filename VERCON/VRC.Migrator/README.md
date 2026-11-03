@@ -1,5 +1,31 @@
 # VRC.Migrator — utilizare
 
+## Separare pe conturi, OI din Materiale și asocierea deținătorilor — 03.11.2026 (SLICE-VC10-01)
+
+Versiune în surse **0.3.18.0**, reguli `VC10-OI-SEPARATION-2026-11-03`. Cod local; agentul nu a rulat build, teste sau import. Nu se modifică schema MariaDB și nu se scrie în bazele Access.
+
+Fila custom **Baze și separare OI** permite deschiderea, pentru citire, a bazelor deja adăugate în migrator și vizualizarea tabelelor lor. `tz.accdb` / `tz.mdb` rămân excluse. Pentru separare, citiți bazele și completați mai întâi planul din fila **Migrare**, apoi apăsați **Încarcă conturile din plan**.
+
+În grila conturilor, bifați conturile de separat în toate bazele încărcate ale aceleiași gestiuni. Fiecare rând are **Tip destinație**, **Gestiune nouă** și, numai pentru OI, **Cont de folosință**. Numele și tipul destinației trebuie să fie aceleași în toți anii unui cont. Conturile pot merge în gestiuni distincte, în aceeași subunitate; tipul nu se deduce din cuvintele denumirii. În cazul discutat: `303 OBIECTE INVENTAR` se separă la OI; `302.8.07 PROIECT SCOLAR - OBIECTE INVENTAR` se separă la **MATERIALE**, cu documentele sale actuale.
+
+Grila deținătorilor arată baza, anul și **numele din sursă**, plus un selector cu **deținătorul în destinație**. Alegeți același nume pentru variantele pe care doriți să le asociați. Numele diferite rămân distincte. O diferență de nume pe aceeași cheie Access se raportează cu ambele nume și baze, împreună cu rezultatul asocierii; ea nu mai oprește singură generarea. Cheile tehnice rămân pentru maparea internă, fără a înlocui numele în diagnostic.
+
+Sunt afișate și referințele la deținători inexistenți sau fără nume, inclusiv cele goale/zero. Data și numărul primului bon și numărul bonurilor implicate permit identificarea rândului înainte de asociere. Aceste rânduri nu primesc automat o persoană: alegeți explicit un deținător existent în bazele aceleiași subunități. Nici OI, nici Materiale nu reutilizează numărul tehnic vechi ca număr al persoanei din destinație. Alegerea și documentele implicate intră în notele transformării.
+
+**Analizează selecția** și **Generează separarea** colectează problemele pe surse, ani, documente și produse. Un document sau an problematic nu împiedică analiza celorlalte. Raportul listează la sfârșit toate constatările distincte. Soldurile nu sunt prezentate drept concluzive dacă documentele necesare calculului sunt invalide.
+
+**Încarcă conturile din plan** colectează erorile de citire ale tuturor bazelor. O încărcare incompletă invalidează separarea pregătită anterior; nu se poate genera pe baza unei liste parțiale. Alegerile anterioare rămân disponibile pentru reluarea încărcării.
+
+Pentru OI, rezultatul este un exercițiu multianual: NIR-urile de report ulterioare primei baze se elimină numai după compararea cantităților cu soldul anterior, pe variantă și preț. BC-urile selectate produc BP, păstrează BC-ul care scade magazia și primesc poziții de primire în registrul deținătorului. Obiectele rămân în folosință când dispar din deschiderea anului următor; nu se inventează casări. Variantele cu identități distincte nu se reunesc doar pentru că au aceeași denumire/preț. NIR-urile sunt renumerotate pentru noul exercițiu; proveniența și numerele originale se păstrează în notele transformării.
+
+Pentru **MATERIALE**, bazele anuale și documentele se păstrează; nu se generează BP și nu se aplică eliminarea reporturilor multianuale. Documentele care amestecă un cont ales cu alte conturi sunt semnalate, fără împărțire automată. Retururile/stornările reale și operațiile OI deja existente în selecția convertită la OI cer o regulă suplimentară explicită; nu se ghicește transformarea lor.
+
+Posibilele predări repetate se arată cu produs, UM, preț, deținător, cantitate și bazele implicate. Confirmați individual **Predare distinctă confirmată** numai când este o predare nouă. O dublură reală sau un NIR posibil copiat rămâne de lămurit, fără eliminare automată.
+
+Generarea pregătește datele în memorie și le atașează planului obișnuit. Transferul se face ulterior, prin **Verifică planul → Testează → Migrează**, în tranzacția existentă. Selecțiile, tipurile/numele destinațiilor și asocierile deținătorilor se memorează; după redeschidere se recitesc sursele și se regenerează datele. Schimbarea planului sau a fișierelor invalidează separarea. **Renunță la separare** readuce sursele integrale în plan.
+
+Transformările sunt incluse în hash/exportul planului și în jurnalul de import, cod `N22`. Înregistrarea pentru publicare se face numai după confirmarea explicită a Adelinei.
+
 ## Prețuri storno și bonuri de retur — 30.10.2026 (SLICE-VC09-09)
 
 Versiune curentă în surse: **0.3.15.0**, reguli `VC09-STORNO-RETURN-PRICE-2026-10-30`. Recuperarea descrisă în VC09-06 se aplică acum și `IesiriRetur.PUTVA`, care este tot Long în Access. Prețul se ia din `ProduseP` numai din aceeași sursă/gestiune, pentru un întreg compatibil cu rotunjirea ToEven a prețului variantei. N20/N21 și reconcilierea acoperă distinct ambele tabele. Fără modificarea fișierelor Access.

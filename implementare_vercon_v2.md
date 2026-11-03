@@ -923,3 +923,15 @@ La salvare, daca valoarea din antet difera de totalul liniilor cu cel mult 1 leu
 ### [2026-11-02 — SLICE-VC06-28: Verificarea erorii de stoc APA 19L](docs/worklog/SLICE-VC06-28-luna-activa-ultima-luna-cu-date.md#verificare-solicitată-ulterior--02112026)
 
 ### [2026-11-02 — SLICE-VC06-29: Stocul folosește data NIR-ului](docs/worklog/SLICE-VC06-29-stoc-dupa-data-nir.md)
+
+### [2026-11-03 — SLICE-VC06-30: Editarea BC pornește de la stocul ultimei luni închise](docs/worklog/SLICE-VC06-30-bc-stoc-ultima-luna-inchisa.md)
+
+### [2026-11-03 — SLICE-VC06-31: Inserare NIR între documente existente, cu număr propus după dată](docs/worklog/SLICE-VC06-31-inserare-nir-numar-dupa-data.md)
+
+### [2026-11-03 — SLICE-VC06-32: Data NIR/factură — zecimal automat și câmpuri dezactivate când există NIR ulterior](docs/worklog/SLICE-VC06-32-nir-zecimal-automat-blocat-dupa-data.md)
+
+### [2026-11-03 — SLICE-VC06-33: Parteneri — o singură apariție pentru fiecare cod fiscal](docs/worklog/SLICE-VC06-33-parteneri-o-singura-aparitie-pe-cod-fiscal.md)
+
+### [2026-11-03 — SLICE-VC06-39: «Rezolvă Acum» deschide «NIR din e-Factura…» din informare](docs/worklog/SLICE-VC06-39-rezolva-acum-din-informarea-efactura.md)
+
+### [2026-11-03 — SLICE-VC06-39: Completare ajutor VERCON pentru «Rezolvă Acum»](docs/worklog/SLICE-VC06-39-rezolva-acum-din-informarea-efactura.md#completare-ulterioară--ajutor-vercon-03112026)

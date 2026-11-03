@@ -48,6 +48,12 @@ Public Interface IAccessBridge
     Function SendBudget(unitFile As String, idClsfAcc As Integer, budget As BudgetVersion,
                         corrections As IEnumerable(Of RectificareBugetara)) As AccessSendResult
 
+    ''' <summary>
+    ''' Slice 0093-01: every row of the table <c>Parteneri</c> of <paramref name="unitFile"/> (the file <see cref="ResolveUnitFile"/> gave). Throws
+    ''' <see cref="InvalidOperationException"/> (Romanian message) when the file cannot be opened or has no such table.
+    ''' </summary>
+    Function ReadPartners(unitFile As String) As List(Of AccessPartner)
+
     ' ---- Slice 00EF-43: the received e-invoices in the Access store ef_<year>.accdb (tables EF, EFT, EFS, EFT_C, EFT_M, EFT_O) ----
 
     ''' <summary>

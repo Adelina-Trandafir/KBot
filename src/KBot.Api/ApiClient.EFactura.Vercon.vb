@@ -43,6 +43,7 @@ Partial Public Class ApiClient
         Public Property Valoare As Decimal
         Public Property ValoareCuTVA As Decimal
         Public Property IdMasina As Integer?
+        Public Property NuSeTrimite As Boolean
         Public Property Cont As String
         Public Property Gestiune As String
     End Class
@@ -88,6 +89,9 @@ Partial Public Class ApiClient
     Private NotInheritable Class VerconPartenerWire
         Public Property IdPartener As Integer
         Public Property Denumire As String
+        Public Property Adresa As String
+        Public Property ContIBAN As String
+        Public Property Ascuns As Boolean
     End Class
 
     Private NotInheritable Class VerconDuplicatWire
@@ -104,6 +108,7 @@ Partial Public Class ApiClient
         Public Property motiv As String
         Public Property factura As VerconFacturaWire
         Public Property partener As VerconPartenerWire
+        Public Property parteneri As List(Of VerconPartenerWire)
         Public Property duplicate As List(Of VerconDuplicatWire)
         Public Property trimitere As VerconTrimitereWire
         Public Property istoric As List(Of VerconTrimitereWire)
@@ -201,12 +206,13 @@ Partial Public Class ApiClient
         End Try
     End Function
 
-    Public Async Function SendVerconAsync(k_idPrimita As Integer, k_conturi As IEnumerable(Of EFacturaVerconContLinie), k_observatie As String, ct As CancellationToken) _
+    Public Async Function SendVerconAsync(k_idPrimita As Integer, k_conturi As IEnumerable(Of EFacturaVerconContLinie), k_observatie As String, k_idPartener As Integer?, ct As CancellationToken) _
         As Task(Of EFacturaVerconStareFactura) Implements IEFacturaApi.SendVerconAsync
         Try
             ArgumentNullException.ThrowIfNull(k_conturi)
             Dim k_body As String = JsonSerializer.Serialize(New Dictionary(Of String, Object) From {
-                {"conturi", ContLinii(k_conturi)}, {"observatie", If(String.IsNullOrWhiteSpace(k_observatie), Nothing, k_observatie.Trim())}}, _json)
+                {"conturi", ContLinii(k_conturi)}, {"observatie", If(String.IsNullOrWhiteSpace(k_observatie), Nothing, k_observatie.Trim())},
+                {"id_partener", k_idPartener}}, _json)
             Dim k_text As String = Await SendEFacturaAsync(HttpMethod.Post, PrimitaPath(k_idPrimita, "vercon"), k_body,
                                                            "trimiterea facturii la Vercon", ct).ConfigureAwait(False)
             Return ToVerconStare(k_text)
@@ -255,7 +261,7 @@ Partial Public Class ApiClient
     Private Shared Function ContLinii(k_conturi As IEnumerable(Of EFacturaVerconContLinie)) As List(Of Dictionary(Of String, Object))
         Dim k_list As New List(Of Dictionary(Of String, Object))()
         For Each k_c As EFacturaVerconContLinie In k_conturi
-            k_list.Add(New Dictionary(Of String, Object) From {{"IdLinie", k_c.IdLinie}, {"IdMasina", k_c.IdMasina}})
+            k_list.Add(New Dictionary(Of String, Object) From {{"IdLinie", k_c.IdLinie}, {"IdMasina", k_c.IdMasina}, {"NuSeTrimite", k_c.NuSeTrimite}})
         Next
         Return k_list
     End Function
@@ -299,6 +305,13 @@ Partial Public Class ApiClient
             k_result.PartenerId = wire.partener.IdPartener
             k_result.PartenerDenumire = If(wire.partener.Denumire, String.Empty)
         End If
+        If wire.parteneri IsNot Nothing Then
+            For Each p As VerconPartenerWire In wire.parteneri
+                k_result.Parteneri.Add(New EFacturaPartenerCui() With {
+                    .IdPartener = p.IdPartener, .Denumire = If(p.Denumire, String.Empty), .Adresa = If(p.Adresa, String.Empty),
+                    .ContIban = If(p.ContIBAN, String.Empty), .Ascuns = p.Ascuns})
+            Next
+        End If
         If wire.duplicate IsNot Nothing Then
             For Each d As VerconDuplicatWire In wire.duplicate
                 k_result.Duplicate.Add(New EFacturaVerconDuplicat() With {
@@ -316,7 +329,7 @@ Partial Public Class ApiClient
                 k_result.Linii.Add(New EFacturaVerconLinie() With {
                     .IdLinie = l.IdLinie, .NrLinie = If(l.NrLinie, String.Empty), .Denumire = If(l.Denumire, String.Empty), .Cpv = If(l.Cpv, String.Empty),
                     .Unit = If(l.Unit, String.Empty), .Cant = l.Cant, .Pret = l.Pret, .Valoare = l.Valoare, .ValoareCuTva = l.ValoareCuTVA,
-                    .IdMasina = l.IdMasina, .Cont = If(l.Cont, String.Empty), .Gestiune = If(l.Gestiune, String.Empty)})
+                    .IdMasina = l.IdMasina, .NuSeTrimite = l.NuSeTrimite, .Cont = If(l.Cont, String.Empty), .Gestiune = If(l.Gestiune, String.Empty)})
             Next
         End If
         Return k_result

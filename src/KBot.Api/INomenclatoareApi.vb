@@ -69,6 +69,13 @@ Public Interface INomenclatoareApi
     ''' <summary>Adds or updates one partner and its codes; returns its id.</summary>
     Function SavePartenerAsync(request As PartenerSaveRequest, ct As CancellationToken) As Task(Of Integer)
 
+    ''' <summary>
+    ''' Slice 0093-01: adds to the unit's <c>Parteneri</c> the rows of <paramref name="k_partners"/> (read from the unit's Access file) that it does not have
+    ''' yet; the ones it has are left as they are. At most 1000 rows per call.
+    ''' </summary>
+    Function PreiaParteneriAccessAsync(k_idUnitate As Integer, k_partners As IReadOnlyList(Of AccessPartner),
+                                       ct As CancellationToken) As Task(Of PartenerPreluare)
+
     ''' <summary>Deletes a partner no document uses (the server refuses the others with a 409).</summary>
     Function DeletePartenerAsync(idPartener As Integer, ct As CancellationToken) As Task
 
@@ -77,5 +84,11 @@ Public Interface INomenclatoareApi
     ''' <see cref="ApiException"/> when the code is invalid, unknown to ANAF, or ANAF is down.
     ''' </summary>
     Function GetPartenerAnafAsync(codFiscal As String, ct As CancellationToken) As Task(Of PartenerAnaf)
+
+    ''' <summary>
+    ''' Slice 0093-02: reads the name and the address of ONE partner again from ANAF and stores them (one ANAF request). An ordinary refusal (code unknown to
+    ''' ANAF, code not a number) is an answer, not an error; <see cref="ApiException"/> only when ANAF is down or the call itself fails.
+    ''' </summary>
+    Function SyncPartenerWithAnafAsync(k_idPartener As Integer, ct As CancellationToken) As Task(Of PartenerAnafSync)
 
 End Interface

@@ -187,6 +187,7 @@ Partial Public Class ApiClient
         Public Property tip As String
         Public Property ascuns As Boolean
         Public Property activ As Boolean
+        Public Property anaf_sincronizat As String
         Public Property coduri As List(Of PartnerCodeWire)
     End Class
 
@@ -198,17 +199,58 @@ Partial Public Class ApiClient
         Public Property id_unitate As Integer?
     End Class
 
+    Private NotInheritable Class PartnerUnitWire
+        Public Property id_unitate As Integer
+        Public Property ss As String
+    End Class
+
     Private NotInheritable Class PartnersResponse
         Public Property partners As List(Of PartnerWire)
         Public Property clasificatii As List(Of ClsfOptionWire)
+        Public Property units As List(Of PartnerUnitWire)
         Public Property bic As Dictionary(Of String, String)
         Public Property cf_unitate As String
+    End Class
+
+    ' Slice 0093-01: «Preia date din Access».
+    Private NotInheritable Class AccessPartnerWire
+        Public Property cod_partener As String
+        Public Property denumire As String
+        Public Property cod_fiscal As String
+        Public Property cont_iban As String
+        Public Property banca As String
+        Public Property adresa As String
+        Public Property tip As String
+        Public Property ascuns As Boolean
+    End Class
+
+    Private NotInheritable Class AccessPartnersBatchWire
+        Public Property id_unitate As Integer
+        Public Property partners As List(Of AccessPartnerWire)
+    End Class
+
+    Private NotInheritable Class AccessPartnersAnswerWire
+        Public Property primite As Integer
+        Public Property adaugate As Integer
+        Public Property existente As Integer
+        Public Property sarite As Integer
+        Public Property ids As List(Of Integer)
+        Public Property probleme As List(Of String)
     End Class
 
     Private NotInheritable Class PartnerAnafWire
         Public Property cui As String
         Public Property denumire As String
         Public Property adresa As String
+    End Class
+
+    ' Slice 0093-02: the answer of POST .../parteneri/{id}/anaf-sync.
+    Private NotInheritable Class PartnerAnafSyncWire
+        Public Property rezultat As String
+        Public Property denumire As String
+        Public Property adresa As String
+        Public Property modificat As Boolean
+        Public Property sincronizat As String
     End Class
 
     Private NotInheritable Class PartnerSaveWire
@@ -504,7 +546,7 @@ Partial Public Class ApiClient
                     .CodPartener = If(w.cod_partener, String.Empty), .Denumire = If(w.denumire, String.Empty),
                     .CodFiscal = If(w.cod_fiscal, String.Empty), .ContIban = If(w.cont_iban, String.Empty),
                     .Banca = If(w.banca, String.Empty), .Adresa = If(w.adresa, String.Empty),
-                    .Tip = If(w.tip, String.Empty), .Ascuns = w.ascuns, .Activ = w.activ}
+                    .Tip = If(w.tip, String.Empty), .Ascuns = w.ascuns, .Activ = w.activ, .AnafSyncedAt = ParseStamp(w.anaf_sincronizat)}
                 For Each c As PartnerCodeWire In If(w.coduri, New List(Of PartnerCodeWire)())
                     p.Coduri.Add(New PartenerCod() With {
                         .Id = c.id, .IdLeg = c.id_leg, .IdClsf = c.id_clsf, .Clsf = If(c.clsf, String.Empty),
@@ -518,6 +560,9 @@ Partial Public Class ApiClient
                 result.Bic(kv.Key) = If(kv.Value, String.Empty)
             Next
             result.CfUnitate = If(payload.cf_unitate, String.Empty)
+            For Each k_u As PartnerUnitWire In If(payload.units, New List(Of PartnerUnitWire)())
+                result.Units.Add(New ParteneriUnit() With {.IdUnitate = k_u.id_unitate, .Ss = If(k_u.ss, String.Empty)})
+            Next
             For Each o As ClsfOptionWire In If(payload.clasificatii, New List(Of ClsfOptionWire)())
                 result.Clasificatii.Add(New ClasificatieOption() With {
                     .IdClsf = o.id_clsf, .Clsf = If(o.clsf, String.Empty), .Denumire = If(o.denumire, String.Empty),
@@ -563,6 +608,34 @@ Partial Public Class ApiClient
         End Try
     End Function
 
+    Public Async Function PreiaParteneriAccessAsync(k_idUnitate As Integer, k_partners As IReadOnlyList(Of AccessPartner),
+                                                    ct As CancellationToken) As Task(Of PartenerPreluare) _
+        Implements INomenclatoareApi.PreiaParteneriAccessAsync
+        Try
+            ArgumentNullException.ThrowIfNull(k_partners)
+            Dim k_wire As New AccessPartnersBatchWire() With {
+                .id_unitate = k_idUnitate,
+                .partners = k_partners.Select(Function(k_p) New AccessPartnerWire() With {
+                    .cod_partener = k_p.CodPartener, .denumire = k_p.Denumire, .cod_fiscal = k_p.CodFiscal,
+                    .cont_iban = k_p.ContIban, .banca = k_p.Banca, .adresa = k_p.Adresa, .tip = k_p.Tip,
+                    .ascuns = k_p.Ascuns}).ToList()}
+            Dim k_text As String = Await SendNomenclatoareAsync(HttpMethod.Post, $"{NomenclatoareRoot}/parteneri/preia-access",
+                                                                k_wire, "preluarea partenerilor din Access", ct).ConfigureAwait(False)
+            Dim k_answer As AccessPartnersAnswerWire = JsonSerializer.Deserialize(Of AccessPartnersAnswerWire)(k_text, _json)
+            If k_answer Is Nothing Then Throw New ApiException("Serverul nu a întors rezultatul preluării.")
+            Dim k_result As New PartenerPreluare() With {
+                .Primite = k_answer.primite, .Adaugate = k_answer.adaugate, .Existente = k_answer.existente, .Sarite = k_answer.sarite}
+            If k_answer.ids IsNot Nothing Then k_result.Ids.AddRange(k_answer.ids)
+            If k_answer.probleme IsNot Nothing Then k_result.Probleme.AddRange(k_answer.probleme)
+            Return k_result
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.PreiaParteneriAccessAsync", ex)
+            Throw
+        End Try
+    End Function
+
     Public Async Function DeletePartenerAsync(idPartener As Integer, ct As CancellationToken) As Task _
         Implements INomenclatoareApi.DeletePartenerAsync
         Try
@@ -595,7 +668,45 @@ Partial Public Class ApiClient
         End Try
     End Function
 
+    Public Async Function SyncPartenerWithAnafAsync(k_idPartener As Integer, ct As CancellationToken) As Task(Of PartenerAnafSync) _
+        Implements INomenclatoareApi.SyncPartenerWithAnafAsync
+        Try
+            Dim k_url As String = $"{NomenclatoareRoot}/parteneri/{k_idPartener.ToString(CultureInfo.InvariantCulture)}/anaf-sync"
+            Dim k_text As String = Await SendNomenclatoareAsync(HttpMethod.Post, k_url, New Object(), "sincronizarea partenerului cu ANAF", ct).ConfigureAwait(False)
+            Dim k_wire As PartnerAnafSyncWire = JsonSerializer.Deserialize(Of PartnerAnafSyncWire)(k_text, _json)
+            If k_wire Is Nothing Then Throw New ApiException("Serverul nu a întors rezultatul sincronizării cu ANAF.")
+            Dim k_result As PartenerAnafSyncResult
+            Select Case If(k_wire.rezultat, String.Empty)
+                Case "ok"
+                    k_result = PartenerAnafSyncResult.Synced
+                Case "negasit"
+                    k_result = PartenerAnafSyncResult.NotFound
+                Case "incomplet"
+                    k_result = PartenerAnafSyncResult.Incomplete
+                Case "cod_invalid"
+                    k_result = PartenerAnafSyncResult.InvalidCode
+                Case Else
+                    Throw New ApiException($"Serverul a întors un rezultat necunoscut al sincronizării cu ANAF: «{k_wire.rezultat}».")
+            End Select
+            Return New PartenerAnafSync() With {
+                .Result = k_result, .Denumire = If(k_wire.denumire, String.Empty), .Adresa = If(k_wire.adresa, String.Empty),
+                .Changed = k_wire.modificat, .SyncedAt = ParseStamp(k_wire.sincronizat)}
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.SyncPartenerWithAnafAsync", ex)
+            Throw
+        End Try
+    End Function
+
     ' ── Helpers (reached only through the wrapped methods above) ────────────────
+
+    ' «yyyy-MM-dd HH:mm:ss» written by the server; Nothing for empty or unreadable text.
+    Private Shared Function ParseStamp(k_text As String) As Date?
+        Dim k_value As Date
+        If Date.TryParseExact(If(k_text, String.Empty), "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, k_value) Then Return k_value
+        Return Nothing
+    End Function
 
     ''' <summary>One bearer request; returns the body text of a 2xx, throws ApiException otherwise.</summary>
     Private Async Function SendNomenclatoareAsync(method As HttpMethod, url As String, body As Object,

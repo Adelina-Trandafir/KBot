@@ -467,7 +467,7 @@ Partial Class ParteneriForm
         tree.Name = "tree"
         tree.RightTextColumn = 110
         tree.SearchBackColor = SystemColors.Control
-        tree.SearchDefaultText = "… tastați o parte din cod sau din denumire …"
+        tree.SearchDefaultText = "… tastați o parte din cod, din denumire sau din codul fiscal …"
         tree.SearchSeparatorColor = SystemColors.ActiveBorder
         tree.SearchSeparatorWidth = 2
         tree.SearchShow = True

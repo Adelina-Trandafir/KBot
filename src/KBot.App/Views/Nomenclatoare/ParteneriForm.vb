@@ -115,8 +115,17 @@ Public Class ParteneriForm
 
     ' ── List ────────────────────────────────────────────────────────────────────
 
-    ' UI boundary: logs and shows the error; started without await.
+    ' UI boundary: started without await.
     Private Async Sub LoadCatalog(selectId As Integer?)
+        Try
+            Await LoadCatalogAsync(selectId).ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ParteneriForm.LoadCatalog", ex)
+        End Try
+    End Sub
+
+    ' UI boundary: logs and shows the error; awaited by «Preia date din Access» (slice 0093-01), which needs the list read before it counts.
+    Private Async Function LoadCatalogAsync(selectId As Integer?) As Task
         Try
             SetBusy(True, "Se încarcă partenerii…")
             Dim catalog As ParteneriCatalog = Await _gate.RunAsync(
@@ -139,7 +148,7 @@ Public Class ParteneriForm
         Finally
             If Not IsDisposed Then SetBusy(False, Nothing)
         End Try
-    End Sub
+    End Function
 
     ' The partners with an opening balance this year, for the «cu sold inițial» choice. A failed read leaves the choice empty and says so (the list itself still loads).
     Private Async Function ReadWithSoldAsync() As Task
@@ -160,6 +169,8 @@ Public Class ParteneriForm
     Private Sub BuildTree(selectId As Integer?)
         tree.Clear()
         _currentNode = Nothing
+        ' Slice 0093-02: while the partners are chosen for the ANAF synchronisation every row has a tick box.
+        tree.CheckBoxes = _anafSelecting
         If _catalog Is Nothing Then Return
         Dim dimColor As Color = ThemeManager.Current.Palette.TextDimColor
         Dim severalUnits As Boolean = _catalog.Partners.Select(Function(p) p.Ss).Distinct(StringComparer.Ordinal).Count() > 1
@@ -171,18 +182,22 @@ Public Class ParteneriForm
             Dim node As AdvancedTreeControl.TreeItem = tree.AddItem(
                 $"P|{p.IdPartener}", $"<b>{Escape(p.CodPartener)}</b>~~~{name}")
             node.Tag = p
+            ' Slice 0093-03: the search also finds a partner by its fiscal code, as written and as bare digits («RO 21015411» and «21015411»).
+            node.SearchExtra = $"{p.CodFiscal} {NormalizeCf(p.CodFiscal)}"
             node.Tooltip = If(String.IsNullOrEmpty(p.CodFiscal), p.Denumire, $"{p.Denumire}{vbLf}CF {p.CodFiscal}")
             If p.Ascuns Then
                 node.Italic = True
                 node.NodeForeColor = dimColor
             End If
+            If _anafSelecting Then PrepareAnafNode(node, p)
             If selectId.HasValue AndAlso p.IdPartener = selectId.Value Then
                 tree.SelectAndReveal(node)
                 _currentNode = node
             End If
             shown += 1
         Next
-        tree.HeaderCaption = $" PARTENERI ({shown})"
+        _treeShown = shown
+        UpdateTreeCaption()
         tree.Invalidate()
     End Sub
 
@@ -193,7 +208,11 @@ Public Class ParteneriForm
     ' Is the partner in the list? The ones on a document always are; the popup of the header adds the other kinds. The partner being shown (just
     ' saved, or picked) never disappears under the operator.
     Private Function IsListed(k_p As Partener, k_selectId As Integer?) As Boolean
+        ' Slice 0093-02: choosing the partners for the ANAF synchronisation shows everybody, the hidden ones and the ones without activity too.
+        If _anafSelecting Then Return True
         If k_p.Activ OrElse _showNoActivity Then Return True
+        ' Slice 0093-01: the ones just taken from Access show whatever their activity.
+        If k_p.IdPartener.HasValue AndAlso _addedIds.Contains(k_p.IdPartener.Value) Then Return True
         If k_selectId.HasValue AndAlso Nullable.Equals(k_p.IdPartener, k_selectId) Then Return True
         If _showWithCodes AndAlso k_p.Coduri.Count > 0 Then Return True
         Return _showWithSold AndAlso k_p.IdPartener.HasValue AndAlso _withSold.Contains(k_p.IdPartener.Value)
@@ -206,10 +225,11 @@ Public Class ParteneriForm
             If CustomPopup.ClosedJustNow Then Return
             Dim k_anchor As Rectangle = tree.HeaderRightIconRect
             If k_anchor.IsEmpty Then Return
-            Dim k_rows As New List(Of CustomPopupItem) From {
+            ' Slice 0093-02: while the partners are chosen for the ANAF synchronisation the menu has its three quick choices; the usual ones come back after.
+            Dim k_rows As List(Of CustomPopupItem) = If(_anafSelecting, AnafMenuRows(), New List(Of CustomPopupItem) From {
                 New CustomPopupItem(MenuNoActivity, "Arată partenerii fără &activitate") With {.Checked = _showNoActivity},
                 New CustomPopupItem(MenuWithSold, "Arată partenerii cu &sold inițial") With {.Checked = _showWithSold},
-                New CustomPopupItem(MenuWithCodes, "Arată partenerii cu a&ngajamente") With {.Checked = _showWithCodes}}
+                New CustomPopupItem(MenuWithCodes, "Arată partenerii cu a&ngajamente") With {.Checked = _showWithCodes}})
             ' NOT in a «Using»: shown modeless, the popup disposes itself when it closes.
             Dim k_menu As New CustomPopup(k_rows)
             AddHandler k_menu.ItemClicked, AddressOf TreeMenu_ItemClicked
@@ -221,6 +241,11 @@ Public Class ParteneriForm
 
     Private Sub TreeMenu_ItemClicked(sender As Object, e As CustomPopupItemEventArgs)
         Try
+            ' Slice 0093-02: the quick choices of the ANAF synchronisation tick rows; they do not rebuild the list.
+            If _anafSelecting Then
+                ApplyAnafMenu(e.Item.Key)
+                Return
+            End If
             Select Case e.Item.Key
                 Case MenuNoActivity
                     _showNoActivity = Not _showNoActivity
@@ -239,6 +264,11 @@ Public Class ParteneriForm
 
     Private Sub Tree_NodeMouseUp(pNode As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseUp
         Try
+            ' Slice 0093-02: the press of a tick box already ran (NodeChecked); it must not also load the partner for every tick.
+            If _anafTickJustNow Then
+                _anafTickJustNow = False
+                Return
+            End If
             If pNode Is Nothing OrElse pNode Is _currentNode Then Return
             Dim previous As AdvancedTreeControl.TreeItem = _currentNode
             ChangeSelection(pNode, previous)

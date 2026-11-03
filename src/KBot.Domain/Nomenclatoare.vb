@@ -239,6 +239,8 @@ Public NotInheritable Class Partener
     Public Property Ascuns As Boolean
     ''' <summary>True when a DDF / ORD document uses the partner (it cannot be deleted then).</summary>
     Public Property Activ As Boolean
+    ''' <summary>When the partner was last synchronised with ANAF (slice 0093-02); Nothing = never («nesincronizat»).</summary>
+    Public Property AnafSyncedAt As Date?
     Public Property Coduri As New List(Of PartenerCod)()
 End Class
 
@@ -262,6 +264,15 @@ Public NotInheritable Class ParteneriCatalog
     Public Property Bic As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
     ''' <summary>The unit's own fiscal code, digits only (it cannot be a partner).</summary>
     Public Property CfUnitate As String = String.Empty
+    ''' <summary>Every unit (<c>Unitati</c>) of the session's database (slice 0093-01: «Preia date din Access» reads one Access file per unit).</summary>
+    Public Property Units As New List(Of ParteneriUnit)()
+End Class
+
+''' <summary>A unit of the session's database, as the «Parteneri» window knows it.</summary>
+Public NotInheritable Class ParteneriUnit
+    Public Property IdUnitate As Integer
+    ''' <summary>The unit's sector-source (<c>Unitati.SursaSector</c>).</summary>
+    Public Property Ss As String = String.Empty
 End Class
 
 ''' <summary>What ANAF says about a fiscal code, used to pre-fill a partner.</summary>
@@ -269,6 +280,28 @@ Public NotInheritable Class PartenerAnaf
     Public Property Cui As String = String.Empty
     Public Property Denumire As String = String.Empty
     Public Property Adresa As String = String.Empty
+End Class
+
+''' <summary>How the synchronisation of one partner with ANAF ended (slice 0093-02).</summary>
+Public Enum PartenerAnafSyncResult
+    ''' <summary>ANAF knew the code: name and address were written, the partner is marked synchronised.</summary>
+    Synced
+    ''' <summary>ANAF does not know the fiscal code.</summary>
+    NotFound
+    ''' <summary>ANAF knows the code but gives no name.</summary>
+    Incomplete
+    ''' <summary>The fiscal code is not a plain number of 6 to 12 digits: nothing was asked.</summary>
+    InvalidCode
+End Enum
+
+''' <summary>The answer of the server to the synchronisation of one partner with ANAF (slice 0093-02).</summary>
+Public NotInheritable Class PartenerAnafSync
+    Public Property Result As PartenerAnafSyncResult
+    Public Property Denumire As String = String.Empty
+    Public Property Adresa As String = String.Empty
+    ''' <summary>True when the name or the address stored before differed from ANAF's.</summary>
+    Public Property Changed As Boolean
+    Public Property SyncedAt As Date?
 End Class
 
 ''' <summary>One partner to save, with the codes changed in the window.</summary>

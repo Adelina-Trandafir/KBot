@@ -27,6 +27,8 @@ Partial Public Class PrimiteView
     Private _contareClsf As Integer?
     Private _contareE As Integer?
     Private _contareP As Integer?
+    Private _contarePartner As Integer?
+    Private _contarePartnerAsked As Boolean
     Private ReadOnly _contarePlatit As New Dictionary(Of Integer, Decimal)()
     Private ReadOnly _tickedIds As New HashSet(Of Integer)()
     Private _contareUltim As EFacturaContariRaspuns
@@ -107,6 +109,8 @@ Partial Public Class PrimiteView
         _contareClsf = Nothing
         _contareE = Nothing
         _contareP = Nothing
+        _contarePartner = Nothing
+        _contarePartnerAsked = False
         _contarePlatit.Clear()
     End Sub
 
@@ -150,6 +154,7 @@ Partial Public Class PrimiteView
             For Each k_id As Integer In k_ticked
                 _tickedIds.Add(k_id)
             Next
+            _contarePartnerAsked = False   ' a new set of ticks: an unresolved partner is asked again
             Await RefreshContareAsync(If(k_removed, ContareUnFurnizor, String.Empty)).ConfigureAwait(True)
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteView.Tree_NodeChecked", ex)
@@ -175,6 +180,17 @@ Partial Public Class PrimiteView
             Dim k_mySeq As Integer = Interlocked.Increment(_contareSeq)
             Dim k_answer As EFacturaContariRaspuns = Await AskContareAsync(k_ids).ConfigureAwait(True)
             If IsDisposed OrElse k_mySeq <> _contareSeq Then Return
+            ' The partner is found by tax code only; when several have it the operator picks (once per set of ticks). Closing the box leaves the page with the blocking warning.
+            If Not k_answer.PartenerGasit AndAlso k_answer.Parteneri.Count > 1 AndAlso Not _contarePartnerAsked Then
+                _contarePartnerAsked = True
+                Using k_dialog As New AlegePartenerForm("Contări", $"facturile furnizorului {k_answer.FurnizorDenumire}", k_answer.FurnizorCui, k_answer.Parteneri)
+                    If k_dialog.ShowDialog(FindForm()) = DialogResult.OK AndAlso k_dialog.Selected IsNot Nothing Then
+                        _contarePartner = k_dialog.Selected.IdPartener
+                        k_answer = Await AskContareAsync(k_ids).ConfigureAwait(True)
+                    End If
+                End Using
+                If IsDisposed OrElse k_mySeq <> _contareSeq Then Return
+            End If
             ' The first answer for a supplier may suggest a classification (the only one fitting): it is taken and the page is calculated once more.
             If Not _contareClsf.HasValue AndAlso k_answer.ClasificatieSugerata.HasValue Then
                 _contareClsf = k_answer.ClasificatieSugerata
@@ -206,7 +222,7 @@ Partial Public Class PrimiteView
     End Function
 
     Private Async Function AskContareAsync(k_ids As List(Of Integer)) As Task(Of EFacturaContariRaspuns)
-        Dim k_request As New EFacturaContariCerere() With {.IdClsf = _contareClsf, .IdSablonE = _contareE, .IdSablonP = _contareP, .An = YearFilter(), .IdSubunitate = SubunitInForce()}
+        Dim k_request As New EFacturaContariCerere() With {.IdClsf = _contareClsf, .IdSablonE = _contareE, .IdSablonP = _contareP, .An = YearFilter(), .IdSubunitate = SubunitInForce(), .IdPartener = _contarePartner}
         k_request.Ids.AddRange(k_ids)
         For Each k_pair As KeyValuePair(Of Integer, Decimal) In _contarePlatit
             If k_ids.Contains(k_pair.Key) Then k_request.Platit(k_pair.Key) = k_pair.Value
@@ -290,7 +306,7 @@ Partial Public Class PrimiteView
             Dim k_request As New EFacturaContariCerere() With {
                 .IdClsf = If(k_answer.Clasificatie Is Nothing, CType(Nothing, Integer?), k_answer.Clasificatie.IdClsf),
                 .IdSablonE = k_answer.IdSablonE, .An = YearFilter(), .IdSubunitate = SubunitInForce(),
-                .NumarNC = k_note}
+                .NumarNC = k_note, .IdPartener = _contarePartner}
             k_request.Ids.AddRange(_tickedIds.Where(Function(k_id) _nodes.ContainsKey(k_id)).OrderBy(Function(k_id) k_id))
             k_request.Confirmari.AddRange(k_confirm.Select(Function(k_a) k_a.Cod))
             Dim k_saved As EFacturaContariSalvat = Await _gate.RunAsync(Function() _api.SaveContariAsync(k_request, _cts.Token)).ConfigureAwait(True)

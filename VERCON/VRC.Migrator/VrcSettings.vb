@@ -27,6 +27,14 @@ Public NotInheritable Class VrcSavedPlanRow
 
 End Class
 
+Public NotInheritable Class VrcOiSavedSelection
+    Public Property Path As String = String.Empty
+    Public Property AccountKey As String = String.Empty
+    Public Property UseAccountName As String = String.Empty
+    Public Property TargetName As String = String.Empty
+    Public Property TargetType As String = String.Empty
+End Class
+
 ''' <summary>
 ''' What the tool remembers from one run to the next, next to the executable: the server (host, port, user), the files and which are
 ''' ticked, DC and the plan rows (year, subunit, gestiune, type). Never a password. Same server defaults as ADE.Migrator.
@@ -45,6 +53,8 @@ Public NotInheritable Class VrcSettings
     Public Property LastFolder As String = String.Empty
     Public Property Files As New List(Of VrcSavedFile)()
     Public Property PlanRows As New List(Of VrcSavedPlanRow)()
+    Public Property OiSelections As New List(Of VrcOiSavedSelection)()
+    Public Property OiHolders As New List(Of VrcOiHolderAssociation)()
     ''' <summary>Partners prepared from ANAF (with the sector-sources ticked for each), by DC (see <see cref="DcKey"/>): they survive a new list of files and a new run.</summary>
     Public Property PreparedPartners As New Dictionary(Of String, List(Of VrcNewPartner))()
 

@@ -45,10 +45,10 @@ target: VerconForm.gridLinii
 În dreapta vezi <b>liniile facturilor bifate</b>, grupate pe factură. Se trimit <b>toate</b> liniile fiecărei facturi; nu bifezi linii. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Contul din Vercon
-<!-- slice: 00EF-48, 0000-118, 00EF-49, 0000-122 -->
+<!-- slice: 00EF-48, 0000-118, 00EF-49, 0000-122, 00EF-56, 0000-149 -->
 target: VerconForm.gridLinii
 Pe fiecare linie poți alege, dacă vrei, <b>contul din Vercon</b>: lista arată conturile grupate pe gestiune, din toate gestiunile; un clic pe numele unei gestiuni o strânge sau o desface, iar dacă tastezi o parte din nume rămân doar rândurile potrivite. Contul ales pe <b>rândul unei facturi</b> (bara ei) se scrie pe toate liniile ei; lista <b>«Cont pentru toate liniile»</b>, de lângă notă, îl scrie pe <b>toate liniile din tabel</b>.<BR>
-<mark>Contul este doar o propunere: Administratorul îl găsește ales când preia factura și îl poate schimba. «(fără cont)» lasă alegerea lui.</mark> Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
+<mark>Contul este doar o propunere: Administratorul îl găsește ales când preia factura și îl poate schimba. «(fără cont)» lasă alegerea lui. «NU SE TRIMITE» scoate linia din ce ajunge la Vercon: Administratorul nu o vede nicăieri.</mark> Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Nota pentru Administrator
 <!-- slice: 00EF-48, 0000-118, 00EF-49, 0000-122 -->

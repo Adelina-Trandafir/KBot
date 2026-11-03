@@ -25,6 +25,9 @@ Public NotInheritable Class EFacturaContariCerere
 
     ''' <summary>The accounting note chosen or typed (the save only): an existing number takes the new documents, a new number makes a new note, Nothing = the next number.</summary>
     Public Property NumarNC As Integer?
+
+    ''' <summary>The partner chosen when several have the supplier's tax code (Nothing = the server uses the only one, or answers that a choice is needed).</summary>
+    Public Property IdPartener As Integer?
 End Class
 
 ''' <summary>A subunit of the booking.</summary>
@@ -133,7 +136,11 @@ End Class
 Public NotInheritable Class EFacturaContariRaspuns
     Public Property PoateScrie As Boolean
     Public Property FurnizorDenumire As String = String.Empty
+    Public Property FurnizorCui As String = String.Empty
     Public Property PartenerGasit As Boolean
+
+    ''' <summary>EVERY partner with the supplier's tax code (found by tax code only). More than one and none chosen: <see cref="PartenerGasit"/> is False and the operator picks.</summary>
+    Public ReadOnly Property Parteneri As New List(Of EFacturaPartenerCui)()
     Public ReadOnly Property Clasificatii As New List(Of EFacturaContariClsf)()
     Public Property Clasificatie As EFacturaContariClsf
     Public Property ClasificatieSugerata As Integer?

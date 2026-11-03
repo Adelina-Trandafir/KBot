@@ -73,11 +73,17 @@ Partial Public Class ApiClient
 
     Private NotInheritable Class ContariPartenerWire
         Public Property IdPartener As Integer
+        Public Property Denumire As String
+        Public Property Adresa As String
+        Public Property ContIBAN As String
+        Public Property Ascuns As Boolean
     End Class
 
     Private NotInheritable Class ContariFurnizorWire
+        Public Property Cui As String
         Public Property Denumire As String
         Public Property Partener As ContariPartenerWire
+        Public Property Parteneri As List(Of ContariPartenerWire)
     End Class
 
     Private NotInheritable Class ContariCoduriWire
@@ -155,7 +161,7 @@ Partial Public Class ApiClient
         Next
         Dim k_fields As New Dictionary(Of String, Object) From {
             {"ids", k_request.Ids}, {"idClsf", k_request.IdClsf}, {"idSablonE", k_request.IdSablonE}, {"idSablonP", k_request.IdSablonP},
-            {"platit", k_platit}, {"an", k_request.An}, {"idSubunitate", k_request.IdSubunitate}}
+            {"platit", k_platit}, {"an", k_request.An}, {"idSubunitate", k_request.IdSubunitate}, {"idPartener", k_request.IdPartener}}
         If k_save Then
             k_fields("confirmari") = k_request.Confirmari
             k_fields("numarNC") = k_request.NumarNC
@@ -195,7 +201,15 @@ Partial Public Class ApiClient
                 .ContIban = If(wire.contIban, String.Empty)}
             If wire.furnizor IsNot Nothing Then
                 k_result.FurnizorDenumire = If(wire.furnizor.Denumire, String.Empty)
+                k_result.FurnizorCui = If(wire.furnizor.Cui, String.Empty)
                 k_result.PartenerGasit = wire.furnizor.Partener IsNot Nothing
+                If wire.furnizor.Parteneri IsNot Nothing Then
+                    For Each w As ContariPartenerWire In wire.furnizor.Parteneri
+                        k_result.Parteneri.Add(New EFacturaPartenerCui() With {
+                            .IdPartener = w.IdPartener, .Denumire = If(w.Denumire, String.Empty), .Adresa = If(w.Adresa, String.Empty),
+                            .ContIban = If(w.ContIBAN, String.Empty), .Ascuns = w.Ascuns})
+                    Next
+                End If
             End If
             If wire.clasificatii IsNot Nothing Then
                 For Each w As ContariClsfWire In wire.clasificatii

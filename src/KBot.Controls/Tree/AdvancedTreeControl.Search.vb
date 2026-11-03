@@ -523,6 +523,8 @@ Partial Public Class AdvancedTreeControl
         ).ToLowerInvariant()
 
         Dim tagText As String = If(it.Tag IsNot Nothing, it.Tag.ToString(), "").ToLowerInvariant()
+        ' The row's own extra search text follows the caption (slice 0093-03: the fiscal code of a partner).
+        If Not String.IsNullOrEmpty(it.SearchExtra) Then plainCaption &= " " & it.SearchExtra.ToLowerInvariant()
 
         Dim toSearch As String
         Select Case _searchIn

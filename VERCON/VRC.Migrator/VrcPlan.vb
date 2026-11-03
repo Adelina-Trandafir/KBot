@@ -18,6 +18,13 @@ Public NotInheritable Class VrcPlanSource
     ''' <summary>Exercise year of the target. For a tz_&lt;year&gt; file it is the year of the file; for tz_2100 (not a year) the operator chooses.</summary>
     Public Property Year As Integer
 
+    ' SLICE-VC10-01: prepared rows replace only the explicitly selected Materiale part or supply a new OI source.
+    Public Property PreparedRows As Dictionary(Of String, List(Of Dictionary(Of String, Object))) = Nothing
+    Public Property PreparedHash As String = String.Empty
+    Public Property GeneratedOi As Boolean
+    Public Property IsSeparatedSource As Boolean
+    Public Property PreparedNotes As New List(Of String)()
+
     ''' <summary>Which rows of the file this source takes: "A" (Alimente accounts), "M" (Materiale accounts) or "*" (the whole special base).</summary>
     Public ReadOnly Property Part As String
         Get
@@ -39,7 +46,7 @@ End Class
 Public NotInheritable Class VrcPlan
 
     Public Const PlanVersion As String = "1"
-    Public Const RuleVersion As String = "VC09-STORNO-RETURN-PRICE-2026-10-30"
+    Public Const RuleVersion As String = "VC10-OI-SEPARATION-2026-11-03"
 
     Public Shared ReadOnly GestiuneTypes As String() = {"MATERIALE", "ALIMENTE", "OI", "MF"}
     Private Const DecimalLimit As Double = 10000000000000000.0
@@ -206,7 +213,7 @@ Public NotInheritable Class VrcPlan
             If k_first.Source.Kind <> VrcFileKind.Year Then Continue For
             Dim k_name = k_first.Profile.Label
             For Each k_type In {"ALIMENTE", "MATERIALE"}
-                If k_file.Where(Function(k_s) k_s.GestiuneType = k_type).Count() > 1 Then Blockers.Add($"{k_name}: tipul {k_type} apare de două ori; fiecare parte a fișierului se duce într-o singură gestiune.")
+                If k_file.Where(Function(k_s) k_s.GestiuneType = k_type AndAlso Not k_s.IsSeparatedSource).Count() > 1 Then Blockers.Add($"{k_name}: tipul {k_type} apare de două ori; fiecare parte a fișierului se duce într-o singură gestiune.")
             Next
             Dim k_split = k_first.Profile.Split
             If k_split Is Nothing Then Continue For
@@ -352,6 +359,10 @@ Public NotInheritable Class VrcPlan
         k_sb.Append(";scale=").Append(Scale).AppendLine()
         For Each k_s In Sources.OrderBy(Function(k_x) k_x.SubunitName, StringComparer.OrdinalIgnoreCase).ThenBy(Function(k_x) k_x.GestiuneName, StringComparer.OrdinalIgnoreCase).ThenBy(Function(k_x) k_x.Year).ThenBy(Function(k_x) k_x.Profile.FileName, StringComparer.OrdinalIgnoreCase)
             k_sb.Append(k_s.SubunitName.Trim()).Append("|"c).Append(k_s.Profile.FileName).Append("|"c).Append(k_s.Profile.HashBefore).Append("|"c).Append(k_s.GestiuneName.Trim()).Append("|"c).Append(k_s.GestiuneType).Append("|"c).Append(k_s.Year).AppendLine()
+            k_sb.Append("prepared=").Append(k_s.PreparedHash).Append(";oi=").Append(k_s.GeneratedOi).AppendLine()
+            For Each k_note In k_s.PreparedNotes
+                k_sb.Append(k_note.Length).Append(":"c).AppendLine(k_note)
+            Next
         Next
         Return k_sb.ToString()
     End Function
@@ -362,13 +373,14 @@ Public NotInheritable Class VrcPlan
         End Using
     End Function
 
-    ''' <summary>Exportable plan (no passwords, no personal data, file names only).</summary>
+    ''' <summary>Exportable plan without passwords; separation notes include the chosen holder names and source provenance.</summary>
     Public Function ToJson() As String
         Try
             Dim k_sources As New List(Of Object)()
             For Each k_s In Sources
                 k_sources.Add(New With {.file = k_s.Profile.FileName, .sha256 = k_s.Profile.HashBefore, .sizeBytes = k_s.Profile.SizeBytes,
-                                        .subunit = k_s.SubunitName.Trim(), .gestiune = k_s.GestiuneName.Trim(), .type = k_s.GestiuneType, .year = k_s.Year})
+                                        .subunit = k_s.SubunitName.Trim(), .gestiune = k_s.GestiuneName.Trim(), .type = k_s.GestiuneType, .year = k_s.Year,
+                                        .generatedOi = k_s.GeneratedOi, .separated = k_s.IsSeparatedSource, .preparedHash = k_s.PreparedHash, .transformations = k_s.PreparedNotes})
             Next
             Dim k_doc = New With {
                 .planVersion = PlanVersion, .ruleVersion = RuleVersion, .dc = Dc, .subunits = SubunitNames().Select(Function(k_n) New With {.name = k_n, .zec = ZecOf(k_n)}).ToList(), .scale = Scale,

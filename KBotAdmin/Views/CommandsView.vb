@@ -36,8 +36,32 @@ Public Class CommandsView
     Private Const LanturiBlockTitle As String = "Lanturi de receptii (instantanee) - sumar"
     Private Const LanturiRepairableColumn As String = "reparabile"
 
+    ' Duplicate Clasificatii: the check lists them, «Repara» deletes the ones no other table holds (the repair command only exists behind the button).
+    Private Const ClsfDupCheckName As String = "clasificatii_dubluri"
+    Private Const ClsfDupRepairName As String = "clasificatii_dubluri_repara"
+    Private Const ClsfDupBlockTitle As String = "Clasificatii dublate - sumar"
+
+    ' The wipe of a wrongly migrated VERCON database (slice ME01-16): the typed value must be the database name.
+    Private Const WipeCommandName As String = "vercon_golire"
+
     ' Commands that only exist behind a button, never in the list.
-    Private Shared ReadOnly HiddenCommands As New HashSet(Of String)(StringComparer.Ordinal) From {DdfExplainName, DdfRepairName, LanturiRepairName}
+    Private Shared ReadOnly HiddenCommands As New HashSet(Of String)(StringComparer.Ordinal) From {DdfExplainName, DdfRepairName, LanturiRepairName, ClsfDupRepairName}
+
+    ' The roots of the command list, in the order they are shown. A command is listed under the application it works for; the server
+    ' does not say which, so the table below does (a command it does not name goes under NoAppRoot).
+    Private Const NoAppRoot As String = "_FARA APLICATIE"
+    Private Shared ReadOnly AppRoots As String() = {"VERCON", "FOREXE", "AVACONT", "ADECHIT", NoAppRoot}
+    Private Shared ReadOnly CommandApps As New Dictionary(Of String, String)(StringComparer.Ordinal) From {
+        {"profil_produs", "VERCON"},
+        {WipeCommandName, "VERCON"},
+        {SignCheckName, "VERCON"},
+        {SignRepairName, "VERCON"},
+        {StornoCheckName, "VERCON"},
+        {StornoRepairName, "VERCON"},
+        {"fisa_angajament", "FOREXE"},
+        {DdfCheckName, "FOREXE"},
+        {LanturiCheckName, "FOREXE"}
+    }
 
     Private _context As AdminContext
     Private _commands As New List(Of CommandInfo)()
@@ -64,14 +88,26 @@ Public Class CommandsView
         Await UiRun.Guard("CommandsView.ActivatedAsync", _context,
             Async Function()
                 Dim k_result As CommandsResult = Await _context.Client.CallAsync(Of CommandsResult)("commands")
-                _commands = k_result.Commands.Where(Function(k_c) Not HiddenCommands.Contains(k_c.Name)).OrderBy(Function(k_c) k_c.Title, StringComparer.Create(CultureInfo.GetCultureInfo("ro-RO"), True)).ToList()
+                ' _commands keeps the order of the combo's Items (SelectedIndex indexes both): by application, then by title.
+                _commands = k_result.Commands.Where(Function(k_c) Not HiddenCommands.Contains(k_c.Name)).
+                    OrderBy(Function(k_c) AppIndex(AppOf(k_c.Name))).
+                    ThenBy(Function(k_c) k_c.Title, StringComparer.Create(CultureInfo.GetCultureInfo("ro-RO"), True)).ToList()
                 cmbCommand.Items.Clear()
                 For Each k_command As CommandInfo In _commands
-                    cmbCommand.Items.Add(k_command.Title & If(k_command.Writes, "  (scrie)", String.Empty))
+                    cmbCommand.Items.Add(New KBotComboGroupedItem(k_command.Title & If(k_command.Writes, "  (scrie)", String.Empty), AppOf(k_command.Name), String.Empty, k_command))
                 Next
                 If cmbCommand.Items.Count > 0 Then cmbCommand.SelectedIndex = 0
                 ShowTarget()
             End Function)
+    End Function
+
+    Private Shared Function AppOf(k_name As String) As String
+        Dim k_app As String = Nothing
+        Return If(CommandApps.TryGetValue(k_name, k_app), k_app, NoAppRoot)
+    End Function
+
+    Private Shared Function AppIndex(k_app As String) As Integer
+        Return Array.IndexOf(AppRoots, k_app)
     End Function
 
     Public Sub SelectionChanged() Implements IAdminView.SelectionChanged
@@ -85,6 +121,7 @@ Public Class CommandsView
         {DdfCheckName, "Caută în baza aleasă documentele de fundamentare care par greșite: coduri cu mai multe antete FX_DDF (editorul refuză atunci să salveze reviziile), angajamente care arată spre un document care nu e al lor, numere de revizie folosite de două ori în același document și revizii care poartă alt cod decât documentul lor. Rezultatul: un sumar cu câte cazuri sunt din fiecare fel și o listă cu fiecare caz. Sumar cu zero peste tot înseamnă că nu e nimic de semnalat. Dacă apar cazuri, apar caseta pentru codul angajamentului și butonul «Explică»: scrieți un cod din listă și vedeți ce are baza pentru el și ce ar strica ștergerea fiecărui antet (reviziile, rezervările și celelalte rânduri care ar dispărea odată cu el). Verificarea doar citește și cere o singură bază."},
         {StornoCheckName, "Verifică prețurile cu TVA ale tuturor liniilor storno și bonurilor de retur din baza selectată, în toate gestiunile și exercițiile. Arată sumarul pe gestiune și tip, apoi fiecare diferență cu produsul, documentul, prețul actual și cel propus. Sunt reparabile liniile migrate, nemodificate și active, la care prețul întreg corespunde rotunjirii Access a prețului variantei din aceeași gestiune. Celelalte diferențe rămân pentru analiză. Dacă există cazuri reparabile, apare butonul «Repară», care le corectează pe toate în baza selectată. Verificarea doar citește și cere o singură bază."},
         {StornoRepairName, "Repară toate cazurile eligibile de preț rotunjit la storno și bonuri de retur în baza selectată. Reface verificarea înainte să scrie, recuperează prețul cu TVA din varianta aceleiași gestiuni și actualizează reviziile liniilor și documentelor. Nu adaugă încă o dată TVA și păstrează cantitățile și valorile din antete. Corecțiile au audit cu prețul vechi/nou și o înregistrare în Jurnal; operația este într-o singură tranzacție pentru ambele tipuri. La sfârșit arată liniile corectate și diferențele rămase pentru analiză. Nu se rulează pe <TOATE BAZELE>."},
+        {ClsfDupCheckName, "Caută în tabela Clasificatii a bazei alese rândurile repetate (aceeași unitate și același cod Capitol.Subcapitol.Articol.Alineat), de exemplu după ce clasificațiile au fost transferate de mai multe ori. Pentru fiecare rând arată de ce alte tabele este legat (orice coloană IdClsf și orice cheie străină spre Clasificatii) și ce s-ar face cu el: «RAMANE - legat», «RAMANE - nelegat, pastrat din grup», sau «SE STERGE». O legătură doar din Clasificatii_Rectificari sau Clasificatii_Buget nu oprește ștergerea (rândul se șterge odată cu rândurile lui de acolo); o legătură din FX_, EF_ sau orice altă tabelă o oprește. Rezultatul: un sumar (câte grupuri, câte rânduri sunt reparabile, adică nelegate de nimic) și lista rândurilor. Dacă există rânduri reparabile apare butonul «Repară», care șterge DOAR dublurile nelegate, într-o singură tranzacție, cu Jurnal; un grup fără niciun rând legat păstrează unul. Grupurile cu mai multe rânduri legate nu se ating, se analizează de mână. Verificarea doar citește și se poate rula și pe <TOATE BAZELE>; repararea merge pe o bază anume."},
         {"ping", "Un singur rând pe bază: versiunea MariaDB, contul cu care s-a conectat serverul, charset-ul și collation-ul bazei și timpul de răspuns. Normal: charset utf8mb3, collation utf8mb3_general_ci, un timp de răspuns de câteva zeci de milisecunde. Altceva, sau sute de milisecunde, merită verificat."},
         {"tables", "Lista tuturor tabelelor bazei, cele mai mari primele, cu mărimea în MB, motorul și collation-ul. Numărul de rânduri e doar estimat de server, nu exact. Se citește, nu se schimbă nimic."},
         {"counts", "Numărul exact de rânduri al fiecărei tabele. Tabelele de peste 3 milioane de rânduri rămân pe estimare (nota de sub rezultat spune câte). Pe baze mari poate dura câteva secunde."},
@@ -96,6 +133,7 @@ Public Class CommandsView
         {"fisa_angajament", "Un tabel cu tot ce știe baza despre angajamentul scris: întâi rândurile DIAG (verificările calculate), apoi rândurile brute din toate tabelele. Cere o bază anume și codul angajamentului; nu merge pe <TOATE BAZELE>. Rândurile nu se trunchiază, ca rezultatul să poată fi copiat."},
         {"oi_semne_repara", "Corectează în registrul OI al bazei alese rândurile cu cantitate negativă și valoare pozitivă: valoarea devine negativă, ca cantitatea. Rândurile cu cantitate pozitivă și valoare negativă nu se ating, rămân în rezultat. SCRIE în baza aleasă, cere confirmare, notează în Jurnal și arată apoi ce a mai rămas. Merge doar pe o bază anume. În mod obișnuit nu se alege de aici: butonul «Repară» apare singur după «Semne greșite»."},
         {"oi_semne", "Caută în registrul OI (VC_OI_Produse) rândurile la care cantitatea și valoarea au semne diferite, de exemplu cantitate -1 și valoare +184,99. Rezultatul: pe fiecare gestiune, câte rânduri sunt, la câte produse, pe ce fel de bon (predare, transfer, casare) și primele numere IDOI. Lista goală înseamnă că nu e nimic de corectat. Se poate rula pe <TOATE BAZELE>; o bază fără tabelele VERCON o spune și trece mai departe. Se citește, nu se schimbă nimic."},
+        {WipeCommandName, "Șterge TOATE rândurile din tabelele VC_ ale bazei alese (documente, produse, gestiuni, exerciții, subunități, setări, numerotare, markerii de import) și din tabelele de trimitere spre Vercon ale facturilor primite (EF_PrimiteVercon*, EF_VERCON_*), ca baza să poată fi migrată din nou. Structura tabelelor rămâne. Partenerii, FX_, AD_ și TZ_ nu se ating. Cere o bază anume (nu <TOATE BAZELE>) și numele ei scris în casetă, ca să nu se golească baza greșită. Rezultatul: câte rânduri au fost în fiecare tabelă și câte au rămas (trebuie să fie 0 peste tot). NU SE POATE ANULA: faceți mai întâi o copie a bazei dacă mai e nevoie de date."},
         {"profil_produs","Cere o bază anume și IdProdus (numărul variantei produsului din gestiune, nu codul din nomenclator). Rezultatul, de sus în jos: produsul (denumire, cod, preț, câte gestiuni îl au); în ce tabele VC_ apare și câte rânduri; apoi, pe fiecare gestiune, observațiile despre registrul OI (liniile de bon care nu-și găsesc contul în registru, adică exact cazul OI_ACCOUNT_ORIGIN), stocul OI pe deținător și, la urmă, fiecare rând din fiecare tabelă, cu antetul bonului sau NIR-ului lângă el. Se citește, nu se schimbă nimic. Rezultatul se copiază cu butonul de copiere și se poate lipi în conversație."}
     }
 
@@ -157,7 +195,18 @@ Public Class CommandsView
                 End If
             End If
             Dim k_target As String = If(_context.IsAll, "TOATE bazele", "baza " & _context.SelectedDb)
-            If k_command.Writes AndAlso Not UiRun.Confirm("Comanda «" & k_command.Title & "» scrie în " & k_target & "." & vbLf & "Continuați?", "Comenzi") Then Return
+            If k_command.Name = WipeCommandName Then
+                ' the typed name must be the selected database, and the confirmation says plainly that nothing can be undone
+                If Not String.Equals(k_param, _context.SelectedDb, StringComparison.OrdinalIgnoreCase) Then
+                    KBotMessage.Show("Pentru golire scrieți în casetă exact numele bazei alese: " & _context.SelectedDb & ".", "Golire VERCON", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    txtParam.Focus()
+                    Return
+                End If
+                If Not UiRun.Confirm("Se șterg TOATE datele VERCON din baza " & _context.SelectedDb & ": toate tabelele VC_ (documente, produse, gestiuni, exerciții, subunități, setări, numerotare) și trimiterile facturilor primite spre Vercon." & vbLf &
+                                     "Partenerii, FX_, AD_ și TZ_ nu se ating. Operația NU se poate anula și rămâne în Jurnal. Continuați?", "Golire VERCON") Then Return
+            ElseIf k_command.Writes Then
+                If Not UiRun.Confirm("Comanda «" & k_command.Title & "» scrie în " & k_target & "." & vbLf & "Continuați?", "Comenzi") Then Return
+            End If
             Dim k_db As String = _context.DbArgument
             btnRepair.Visible = False
             _repairCommand = String.Empty
@@ -343,6 +392,10 @@ Public Class CommandsView
                 k_title = StornoBlockTitle
                 k_column = "reparabile"
                 k_repair = StornoRepairName
+            Case ClsfDupCheckName
+                k_title = ClsfDupBlockTitle
+                k_column = "reparabile"
+                k_repair = ClsfDupRepairName
             Case Else
                 Return
         End Select
@@ -374,11 +427,20 @@ Public Class CommandsView
             Dim k_current As CommandInfo = CurrentCommand()
             Dim k_repair As String = _repairCommand
             If k_repair = String.Empty OrElse _repairDb <> k_db OrElse k_current Is Nothing Then Return
-            Dim k_check As String = If(k_repair = StornoRepairName, StornoCheckName, SignCheckName)
+            Dim k_check As String
+            Dim k_explanation As String
+            Select Case k_repair
+                Case StornoRepairName
+                    k_check = StornoCheckName
+                    k_explanation = "Se repară toate prețurile storno și retur eligibile din baza " & k_db & ", în toate gestiunile și exercițiile: se recuperează zecimalele din prețul variantei aceleiași gestiuni. Cazurile de analizat rămân neschimbate."
+                Case ClsfDupRepairName
+                    k_check = ClsfDupCheckName
+                    k_explanation = "În baza " & k_db & " se șterg clasificațiile dublate pe care nu le ține nicio altă tabelă în afară de Clasificatii_Rectificari și Clasificatii_Buget (un grup fără niciun rând legat păstrează unul). Rectificările și bugetele lor se șterg odată cu ele. Cele legate de FX_, EF_ sau altceva nu se ating; ce s-a șters sau mutat rămâne în Jurnal."
+                Case Else
+                    k_check = SignCheckName
+                    k_explanation = "Se repară registrul OI al bazei " & k_db & ": rândurile cu cantitate negativă și valoare pozitivă primesc valoarea negativă."
+            End Select
             If k_current.Name <> k_check Then Return
-            Dim k_explanation As String = If(k_repair = StornoRepairName,
-                "Se repară toate prețurile storno și retur eligibile din baza " & k_db & ", în toate gestiunile și exercițiile: se recuperează zecimalele din prețul variantei aceleiași gestiuni. Cazurile de analizat rămân neschimbate.",
-                "Se repară registrul OI al bazei " & k_db & ": rândurile cu cantitate negativă și valoare pozitivă primesc valoarea negativă.")
             If Not UiRun.Confirm(k_explanation & vbLf &
                                  "Se scrie în baza de date și rămâne în Jurnal. Continuați?", "Repară") Then Return
             btnRepair.Visible = False

@@ -39,6 +39,7 @@ End Class
 Public NotInheritable Class DebugDeployment
     Public Property path As String = String.Empty
     Public Property sha256 As String = String.Empty
+    Public Property current_sha256 As String = String.Empty
     Public Property deployed_utc As String = String.Empty
 End Class
 

@@ -1,4 +1,6 @@
-# SLICE-0078 — Semnarea DDF / ORD în vizualizatorul Adobe din K-BOT (absoarbe felia 0021)
+# SLICE-0078-01 — Semnarea DDF / ORD în vizualizatorul Adobe din K-BOT (absoarbe felia 0021) <a id="slice-0078-01"></a>
+
+Redenumit la 03.11.2026: fișierul era `SLICE-0078-semnare-pdf.md`, acum este prima etapă (0078-01) a feliei 0078; etapele următoare sunt 0078-03 … 0078-17. Numărul «0078» fără sufix rămâne numele întregii familii (etichetele de ajutor `<!-- slice: 0078 -->` nu s-au schimbat).
 
 Data: 23.09.2026 · Plan: `C:\Users\Adelina Trandafir\.claude\plans\slice-0078-combined-with-hidden-pillow.md` (aprobat de operator). Număr: **0078**, dat de operator («slice 0078 combined with 0021»). Felia 0021 (semnarea DDF, rezervată din 0020-05) e **absorbită** aici și nu mai are rând separat.
 

@@ -29,6 +29,9 @@
         Friend ResolvedCols As List(Of ColumnDef) = Nothing   ' banda proprie a randului (cache), rezolvata din ColHeaderText
         Public HasCheckBox As Boolean = False
 
+        ''' <summary>Text the search also looks at although the row does not show it (e.g. a code only the tooltip carries). Empty = nothing extra. Not used by a search in the Tag only.</summary>
+        Public SearchExtra As String = ""
+
         ''' <summary>Slice KE13: the box is drawn grey and a press on it changes nothing (the host sets the state with SetItemCheckState); the row itself still selects.</summary>
         Public CheckLocked As Boolean = False
 

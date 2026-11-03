@@ -410,6 +410,13 @@ Public NotInheritable Class VrcRunResult
                 Next
                 Continue For
             End If
+            If k_first.RuleCode = "N22" Then
+                k_sb.AppendLine("- Separarea conturilor și asocierile deținătorilor:")
+                For Each k_issue In k_group
+                    k_sb.AppendLine("    - " & k_issue.Justification)
+                Next
+                Continue For
+            End If
             If k_first.RuleCode = "N19" Then
                 k_sb.AppendLine($"- {k_first.TableName}: {Cases(k_group.Count())} de poziții din registru aveau valoarea cu alt semn decât cantitatea (de exemplu cantitate -1 și valoare +184,99, la partea care dă dintr-un transfer). Valoarea a primit semnul cantității, ca să nu rămână valoare la un deținător fără obiecte. Se schimbă numai în transfer; fișierele Access rămân neatinse.")
                 Continue For

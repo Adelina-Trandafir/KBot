@@ -216,6 +216,10 @@ Public Class AvacontMain
                     RunPrimiteSync()
                 Case KeyAccessTrimite, KeyAccessPreia
                     _kbot.RunPrimiteAccess(e.Key)
+                Case KeyParteneriAccessPreia
+                    _kbot.RunParteneriAccess()
+                Case KeyParteneriAnafSelecteaza, KeyParteneriAnafSincronizeaza
+                    _kbot.RunParteneriAnaf(e.Key = KeyParteneriAnafSincronizeaza)
                 Case KeyExtraseDescarca
                     _kbot.DescarcaExtraseDinRibbon()
                 Case KeyGrupeEditeaza
@@ -243,6 +247,12 @@ Public Class AvacontMain
     ' Slice 00EF-43: the two buttons of the received invoices window that talk to the Access e-invoice store (Access clients only).
     Private Const KeyAccessTrimite As String = "ef_access_trimite"
     Private Const KeyAccessPreia As String = "ef_access_preia"
+    ' Slice 0093-01: the button of the «Parteneri» window that brings the new partners of the Access unit files.
+    Private Const KeyParteneriAccessPreia As String = "parteneri_access_preia"
+    ' Slice 0093-02: the two buttons of the «Parteneri» window for the synchronisation with ANAF: the first starts the choosing of the partners (ticks in
+    ' the list), and while the choosing lasts it gives its place to the second, which synchronises the ticked ones.
+    Private Const KeyParteneriAnafSelecteaza As String = "parteneri_anaf_selecteaza"
+    Private Const KeyParteneriAnafSincronizeaza As String = "parteneri_anaf_sincronizeaza"
 
     ' The rows of the combo, in order (the combo shows them as «Ultimele N zile»); the first is the default.
     Private Shared ReadOnly SyncDayChoices As Integer() = {7, 15, 30, 45, 60}
@@ -253,7 +263,9 @@ Public Class AvacontMain
     '   - the shell (KbotMain, with all its views): «Editeaza grupe», «Descarca extrase»;
     '   - the «Extrase de cont» window: «Descarca extrase»;
     '   - the received invoices window: «Sincronizeaza facturi primite» and its two inputs, and -- only for a client that also runs the Access
-'     application (slice 00EF-43) -- «Trimite in Access» and «Preia din Access».
+'     application (slice 00EF-43) -- «Trimite in Access» and «Preia din Access»;
+    '   - the «Parteneri» window: -- only for a client that also runs the Access application (slice 0093-01) -- «Preia date din Access»;
+    '     and (slice 0093-02) «Selecteaza Parteneri Sincronizare Anaf», which is replaced by «Sincronizeaza ANAF» while the partners are being chosen.
     ' The group goes when none of them applies (the ribbon skips a group with nothing visible).
 
     Private Const KeyExtraseDescarca As String = "extrase_descarca"
@@ -264,6 +276,7 @@ Public Class AvacontMain
         Dim k_shell As Boolean = k_page Is Nothing AndAlso _baseIsShell
         Dim k_extrase As Boolean = TypeOf k_page Is ExtraseForm
         Dim k_primite As Boolean = TypeOf k_page Is PrimiteForm
+        Dim k_parteneri As Boolean = TypeOf k_page Is ParteneriForm
         Dim k_groups As KBotRibbonButton = ribbon.FindButton(KeyGrupeEditeaza)
         Dim k_download As KBotRibbonButton = ribbon.FindButton(KeyExtraseDescarca)
         Dim k_sync As KBotRibbonButton = ribbon.FindButton(KeyPrimiteSync)
@@ -271,14 +284,26 @@ Public Class AvacontMain
         Dim k_text As KBotRibbonField = ribbon.FindField(KeyPrimiteZileText)
         Dim k_toAccess As KBotRibbonButton = ribbon.FindButton(KeyAccessTrimite)
         Dim k_fromAccess As KBotRibbonButton = ribbon.FindButton(KeyAccessPreia)
+        Dim k_partnersFromAccess As KBotRibbonButton = ribbon.FindButton(KeyParteneriAccessPreia)
+        Dim k_anafSelect As KBotRibbonButton = ribbon.FindButton(KeyParteneriAnafSelecteaza)
+        Dim k_anafSync As KBotRibbonButton = ribbon.FindButton(KeyParteneriAnafSincronizeaza)
         If k_groups Is Nothing OrElse k_download Is Nothing OrElse k_sync Is Nothing OrElse k_combo Is Nothing OrElse k_text Is Nothing OrElse
-           k_toAccess Is Nothing OrElse k_fromAccess Is Nothing Then Return
+           k_toAccess Is Nothing OrElse k_fromAccess Is Nothing OrElse k_partnersFromAccess Is Nothing OrElse
+           k_anafSelect Is Nothing OrElse k_anafSync Is Nothing Then Return
+        ' Slice 0093-02: while the partners are being chosen the second button stands where the first one was.
+        Dim k_choosing As Boolean = k_parteneri AndAlso DirectCast(k_page, ParteneriForm).AnafSelecting
+        Dim k_showAnafSelect As Boolean = k_parteneri AndAlso Not k_choosing
+        Dim k_showAnafSync As Boolean = k_choosing
         Dim k_access As Boolean = k_primite AndAlso AccessFeature.Enabled
-        Dim k_caption As String = If(k_shell, "Lista angajamentelor", If(k_extrase, "Extrase de cont", If(k_primite, "Facturi primite", String.Empty)))
+        ' Slice 0093-01: «Preia date din Access» of the partners window, again only for a client that also runs the Access application.
+        Dim k_partnersAccess As Boolean = k_parteneri AndAlso AccessFeature.Enabled
+        Dim k_caption As String = If(k_shell, "Lista angajamentelor", If(k_extrase, "Extrase de cont", If(k_primite, "Facturi primite", If(k_parteneri, "Parteneri", String.Empty))))
         Dim k_showGroups As Boolean = k_shell
         Dim k_showDownload As Boolean = k_shell OrElse k_extrase
         If k_groups.Visible = k_showGroups AndAlso k_download.Visible = k_showDownload AndAlso k_sync.Visible = k_primite AndAlso
            k_combo.Visible = k_primite AndAlso k_text.Visible = k_primite AndAlso k_toAccess.Visible = k_access AndAlso k_fromAccess.Visible = k_access AndAlso
+           k_partnersFromAccess.Visible = k_partnersAccess AndAlso
+           k_anafSelect.Visible = k_showAnafSelect AndAlso k_anafSync.Visible = k_showAnafSync AndAlso
            String.Equals(ribbon.FormGroup.Text, k_caption, StringComparison.Ordinal) Then Return
         k_groups.Visible = k_showGroups
         k_download.Visible = k_showDownload
@@ -287,6 +312,9 @@ Public Class AvacontMain
         k_text.Visible = k_primite
         k_toAccess.Visible = k_access
         k_fromAccess.Visible = k_access
+        k_partnersFromAccess.Visible = k_partnersAccess
+        k_anafSelect.Visible = k_showAnafSelect
+        k_anafSync.Visible = k_showAnafSync
         ribbon.FormGroup.Text = k_caption
         ApplyDirectorRibbon()
         ribbon.InvalidateLayout()
@@ -548,6 +576,17 @@ Public Class AvacontMain
         If k_changed Then ribbon.InvalidateLayout()
     End Sub
 
+    ' Slice 0093-02: the «Parteneri» window started or ended the choosing of the partners to synchronise with ANAF: the form group follows.
+    ' UI boundary (event): log and swallow.
+    Private Sub Page_AnafModeChanged(sender As Object, e As EventArgs)
+        Try
+            If IsDisposed OrElse Not ReferenceEquals(sender, CurrentPage) Then Return
+            UpdateFormGroup()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AvacontMain.Page_AnafModeChanged", ex)
+        End Try
+    End Sub
+
     ' UI boundary (event of a page that has ribbon buttons): log and swallow. Only the page on screen owns the group.
     Private Sub Page_RibbonStateChanged(sender As Object, e As EventArgs)
         Try
@@ -651,6 +690,8 @@ Public Class AvacontMain
         AddHandler k_page.TextChanged, AddressOf PageTitleChanged
         Dim k_ribbonPage As IViewRibbon = TryCast(k_page, IViewRibbon)
         If k_ribbonPage IsNot Nothing Then AddHandler k_ribbonPage.RibbonStateChanged, AddressOf Page_RibbonStateChanged
+        Dim k_partnersPage As ParteneriForm = TryCast(k_page, ParteneriForm)
+        If k_partnersPage IsNot Nothing Then AddHandler k_partnersPage.AnafModeChanged, AddressOf Page_AnafModeChanged
         If k_bar IsNot Nothing Then AddHandler k_bar.TextChanged, AddressOf PageTitleChanged
         _pages.Add(k_page)
         _page = k_page
@@ -941,6 +982,8 @@ Public Class AvacontMain
             RemoveHandler k_closed.TextChanged, AddressOf PageTitleChanged
             Dim k_ribbonPage As IViewRibbon = TryCast(k_closed, IViewRibbon)
             If k_ribbonPage IsNot Nothing Then RemoveHandler k_ribbonPage.RibbonStateChanged, AddressOf Page_RibbonStateChanged
+            Dim k_partnersPage As ParteneriForm = TryCast(k_closed, ParteneriForm)
+            If k_partnersPage IsNot Nothing Then RemoveHandler k_partnersPage.AnafModeChanged, AddressOf Page_AnafModeChanged
             Dim k_bar As KBotCaptionBar = Nothing
             If _pageBars.TryGetValue(k_closed, k_bar) Then
                 If k_bar IsNot Nothing Then RemoveHandler k_bar.TextChanged, AddressOf PageTitleChanged

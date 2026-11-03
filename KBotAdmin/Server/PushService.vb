@@ -1,5 +1,6 @@
 Option Strict On
 Imports System.IO
+Imports System.Security.Cryptography
 Imports System.Text.RegularExpressions
 
 Public Enum PushState
@@ -79,7 +80,8 @@ Public NotInheritable Class PushService
             Dim k_records As List(Of DeploymentRecord) = DeploymentRegistry.Read(k_localRoot)
             Dim k_debug As New Dictionary(Of String, DebugDeployment)(StringComparer.Ordinal)
             For Each k_entry As DebugDeployment In DeploymentPublisher.ListDebug(k_settings, k_onLine)
-                If Not DeploymentRegistry.SafePath(k_entry.path) OrElse Not Regex.IsMatch(k_entry.sha256, "^[a-f0-9]{64}$") Then
+                If Not DeploymentRegistry.SafePath(k_entry.path) OrElse Not Regex.IsMatch(k_entry.sha256, "^[a-f0-9]{64}$") OrElse
+                    (k_entry.current_sha256 <> String.Empty AndAlso Not Regex.IsMatch(k_entry.current_sha256, "^[a-f0-9]{64}$")) Then
                     Throw New ApplicationException("Evidență debugging invalidă pe server.")
                 End If
                 k_debug.Add(k_entry.path, k_entry)
@@ -159,7 +161,15 @@ Public NotInheritable Class PushService
                     Dim k_debugEntry As DebugDeployment = Nothing
                     If k_debug.TryGetValue(k_relRemote, k_debugEntry) Then
                         k_file.DebugHash = k_debugEntry.sha256
-                        If k_file.State = PushState.Identical Then k_file.State = PushState.AwaitingGit
+                        ' Pending Git is not a content change. Compare actual bytes, regardless of mtimes.
+                        If k_debugEntry.current_sha256 = String.Empty Then
+                            k_file.State = PushState.NewOnServer
+                        Else
+                            Using k_stream As FileStream = File.OpenRead(k_localFile)
+                                Dim k_hash As String = Convert.ToHexString(SHA256.HashData(k_stream)).ToLowerInvariant()
+                                k_file.State = If(k_hash = k_debugEntry.current_sha256, PushState.AwaitingGit, PushState.Modified)
+                            End Using
+                        End If
                     End If
                     Dim k_entries As List(Of DeploymentRecord) = DeploymentRegistry.ForFile(k_records, k_repo, k_file)
                     If k_entries.Count > 0 Then
@@ -170,7 +180,9 @@ Public NotInheritable Class PushService
                         ' A failed or interrupted publish can leave matching mtimes but pending records.
                         If k_file.State = PushState.Identical Then k_file.State = PushState.Modified
                     End If
-                    If k_file.State <> PushState.Identical Then k_extSend(k_ext) = k_extSend.GetValueOrDefault(k_ext) + 1
+                    If k_file.State = PushState.NewOnServer OrElse k_file.State = PushState.Modified Then
+                        k_extSend(k_ext) = k_extSend.GetValueOrDefault(k_ext) + 1
+                    End If
                     k_result.Files.Add(k_file)
                 Next
                 k_result.ObservedFingerprint = String.Empty

@@ -28,6 +28,11 @@ Public NotInheritable Class AccessBridgeImpl
         Return AccessBudgetSender.Send(unitFile, idClsfAcc, budget, corrections)
     End Function
 
+    Public Function ReadPartners(unitFile As String) As List(Of AccessPartner) _
+        Implements IAccessBridge.ReadPartners
+        Return AccessPartnersReader.Read(unitFile)
+    End Function
+
     ' ---- Slice 00EF-43: the received e-invoices in the Access store -------------------------------------
 
     Public Function ResolveEFacturaStore(registryPath As String, an As Integer) As String _

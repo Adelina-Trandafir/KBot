@@ -60,6 +60,10 @@ Public NotInheritable Class EFacturaVerconLinie
     Public Property ValoareCuTva As Decimal
 
     Public Property IdMasina As Integer?
+
+    ''' <summary>Marked «NU SE TRIMITE» (slice 00EF-56): the line stays in e-Factura, VERCON never sees it.</summary>
+    Public Property NuSeTrimite As Boolean
+
     Public Property Cont As String = String.Empty
 
     ''' <summary>«Subunit / Gestiune» of the proposed account; empty without one.</summary>
@@ -127,6 +131,17 @@ Public NotInheritable Class EFacturaVerconDuplicat
     Public Property Data As Date?
 End Class
 
+''' <summary>A partner row that has the supplier's tax code (hidden ones too); shared by the sending to Vercon and the «Contari».</summary>
+Public NotInheritable Class EFacturaPartenerCui
+    Public Property IdPartener As Integer
+    Public Property Denumire As String = String.Empty
+    Public Property Adresa As String = String.Empty
+    Public Property ContIban As String = String.Empty
+
+    ''' <summary>The partner is hidden now; the operation done for the invoice (sending, booking) makes it visible again.</summary>
+    Public Property Ascuns As Boolean
+End Class
+
 ''' <summary>Everything the window «Trimite la Vercon» needs for one invoice.</summary>
 Public NotInheritable Class EFacturaVerconStareFactura
     ''' <summary>The session's role is «Contabil»: only then can it send, change or take back.</summary>
@@ -142,6 +157,10 @@ Public NotInheritable Class EFacturaVerconStareFactura
     Public Property PartenerId As Integer?
 
     Public Property PartenerDenumire As String = String.Empty
+
+    ''' <summary>EVERY partner with the supplier's tax code (found by tax code only). More than one: the operator picks which one the invoice is for.</summary>
+    Public ReadOnly Property Parteneri As New List(Of EFacturaPartenerCui)()
+
     Public ReadOnly Property Duplicate As New List(Of EFacturaVerconDuplicat)()
 
     ''' <summary>The active sending (waiting or taken over); Nothing when none.</summary>
@@ -167,4 +186,7 @@ End Class
 Public NotInheritable Class EFacturaVerconContLinie
     Public Property IdLinie As Integer
     Public Property IdMasina As Integer?
+
+    ''' <summary>The line is marked «NU SE TRIMITE» (then it has no account).</summary>
+    Public Property NuSeTrimite As Boolean
 End Class

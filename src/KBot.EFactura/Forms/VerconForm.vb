@@ -32,8 +32,12 @@ Public Class VerconForm
     Private Const ColCont As String = "cont"
     Private Const FaraCont As String = "(fără cont)"
     Private Const FaraContGrup As String = "Fără cont"
+    ' Slice 00EF-56: a line marked so stays in e-Factura but VERCON never sees it (not in the NIR, not anywhere).
+    Private Const NuSeTrimite As String = "NU SE TRIMITE"
+    Private Const NuSeTrimiteGrup As String = "Nu se trimit"
     Private Const NotaInitiala As String = "Bifează facturile de trimis (ale unui singur furnizor odată): merg la Vercon cu TOATE liniile lor. Poți alege un cont pentru toate liniile (lângă notă), " &
                                            "pe antetul unei facturi sau pe fiecare linie. O linie fără cont rămâne pentru Administrator. Contul este doar o propunere. " &
+                                           "O linie marcată «NU SE TRIMITE» nu ajunge deloc în Vercon (rămâne doar în e-Factura). " &
                                            "Nu se trimite nimic până nu apeși butonul."
     Private Const NotaUnFurnizor As String = "Se poate trimite un singur furnizor odată: facturile bifate la alți furnizori au fost debifate."
     Private Shared ReadOnly _ro As New CultureInfo("ro-RO")
@@ -423,7 +427,8 @@ Public Class VerconForm
         _idByLabel.Clear()
         _labelById.Clear()
         _groupById.Clear()
-        _items = New List(Of Object) From {New KBotComboGroupedItem(FaraCont, String.Empty, String.Empty, Nothing)}
+        _items = New List(Of Object) From {New KBotComboGroupedItem(FaraCont, String.Empty, String.Empty, Nothing),
+                                           New KBotComboGroupedItem(NuSeTrimite, String.Empty, String.Empty, Nothing)}
         For Each k_g As EFacturaVerconGestiune In k_tree
             Dim k_group As String = If(String.IsNullOrWhiteSpace(k_g.Subunitate) OrElse String.Equals(k_g.Subunitate, k_g.Gestiune, StringComparison.CurrentCultureIgnoreCase),
                                        k_g.Gestiune, $"{k_g.Subunitate} / {k_g.Gestiune}")
@@ -460,6 +465,11 @@ Public Class VerconForm
         Dim k_id As Integer
         If Not String.IsNullOrWhiteSpace(k_text) AndAlso _idByLabel.TryGetValue(k_text, k_id) Then Return k_id
         Return Nothing
+    End Function
+
+    ' The cell holds «NU SE TRIMITE»: the line is not sent to VERCON at all.
+    Private Shared Function IsExcluded(k_cell As Object) As Boolean
+        Return String.Equals(Convert.ToString(k_cell, CultureInfo.InvariantCulture), NuSeTrimite, StringComparison.CurrentCultureIgnoreCase)
     End Function
 
     ' ── The lines (right) ───────────────────────────────────────────────────────
@@ -534,6 +544,8 @@ Public Class VerconForm
                     Dim k_label As String = Nothing
                     If _choices.TryGetValue(k_l.IdLinie, k_label) Then
                         k_row(ColCont) = k_label
+                    ElseIf _modify AndAlso k_l.NuSeTrimite Then
+                        k_row(ColCont) = NuSeTrimite
                     ElseIf _modify AndAlso k_l.IdMasina.HasValue AndAlso _labelById.TryGetValue(k_l.IdMasina.Value, k_label) Then
                         k_row(ColCont) = k_label
                     Else
@@ -582,7 +594,7 @@ Public Class VerconForm
         Dim k_sum As New Dictionary(Of String, Decimal)(StringComparer.CurrentCultureIgnoreCase)
         For Each k_row As KBotDataRow In gridLinii.Rows
             Dim k_id As Integer? = AccountOf(k_row(ColCont))
-            Dim k_group As String = FaraContGrup
+            Dim k_group As String = If(IsExcluded(k_row(ColCont)), NuSeTrimiteGrup, FaraContGrup)
             If k_id.HasValue Then
                 Dim k_g As String = Nothing
                 If _groupById.TryGetValue(k_id.Value, k_g) Then k_group = k_g
@@ -600,9 +612,11 @@ Public Class VerconForm
             lblRezumat.Text = String.Empty
             Return
         End If
+        ' The accounts by name, then «Fără cont», then «Nu se trimit» last.
+        Dim k_rank As Func(Of String, Integer) = Function(k_g) If(String.Equals(k_g, NuSeTrimiteGrup, StringComparison.Ordinal), 2,
+                                                                  If(String.Equals(k_g, FaraContGrup, StringComparison.Ordinal), 1, 0))
         k_order.Sort(Function(k_a, k_b)
-                         If String.Equals(k_a, FaraContGrup, StringComparison.Ordinal) Then Return 1
-                         If String.Equals(k_b, FaraContGrup, StringComparison.Ordinal) Then Return -1
+                         If k_rank(k_a) <> k_rank(k_b) Then Return k_rank(k_a).CompareTo(k_rank(k_b))
                          Return String.Compare(k_a, k_b, StringComparison.CurrentCultureIgnoreCase)
                      End Function)
         lblRezumat.Text = "Unde merg liniile: " & String.Join("  ·  ", k_order.Select(
@@ -633,13 +647,15 @@ Public Class VerconForm
 
     ' ── Editing ─────────────────────────────────────────────────────────────────
 
-    ' «Cont Vercon» takes «fără cont» or one of the accounts of the tree; typed text that is neither is refused.
+    ' «Cont Vercon» takes «fără cont», «NU SE TRIMITE» or one of the accounts of the tree; typed text that is none of them is refused.
     Private Sub GridLinii_CellValidating(sender As Object, e As KBotCellValidatingEventArgs)
         Try
             If Not String.Equals(e.ColumnKey, ColCont, StringComparison.Ordinal) Then Return
             Dim k_text As String = Convert.ToString(e.ProposedValue, CultureInfo.InvariantCulture)
             If String.IsNullOrWhiteSpace(k_text) OrElse String.Equals(k_text, FaraCont, StringComparison.CurrentCultureIgnoreCase) Then
                 e.ProposedValue = FaraCont
+            ElseIf IsExcluded(k_text) Then
+                e.ProposedValue = NuSeTrimite
             ElseIf Not _idByLabel.ContainsKey(k_text) Then
                 e.Cancel = True
             End If
@@ -683,7 +699,8 @@ Public Class VerconForm
         Try
             If Not String.Equals(e.ColumnKey, ColCont, StringComparison.Ordinal) Then Return
             Dim k_text As String = Convert.ToString(e.Value, CultureInfo.InvariantCulture)
-            If String.IsNullOrWhiteSpace(k_text) OrElse (Not String.Equals(k_text, FaraCont, StringComparison.CurrentCultureIgnoreCase) AndAlso Not _idByLabel.ContainsKey(k_text)) Then Return
+            If String.IsNullOrWhiteSpace(k_text) OrElse (Not String.Equals(k_text, FaraCont, StringComparison.CurrentCultureIgnoreCase) AndAlso Not IsExcluded(k_text) AndAlso
+                                                         Not _idByLabel.ContainsKey(k_text)) Then Return
             _filling = True
             Try
                 For Each k_index As Integer In e.RowIndexes
@@ -706,7 +723,8 @@ Public Class VerconForm
         For Each k_row As KBotDataRow In gridLinii.Rows
             Dim k_tag As LineTag = TryCast(k_row.Tag, LineTag)
             If k_tag Is Nothing OrElse k_tag.IdPrimita <> k_idPrimita Then Continue For
-            k_list.Add(New EFacturaVerconContLinie() With {.IdLinie = k_tag.IdLinie, .IdMasina = AccountOf(k_row(ColCont))})
+            k_list.Add(New EFacturaVerconContLinie() With {.IdLinie = k_tag.IdLinie, .IdMasina = AccountOf(k_row(ColCont)),
+                                                                   .NuSeTrimite = IsExcluded(k_row(ColCont))})
         Next
         Return k_list
     End Function
@@ -740,12 +758,31 @@ Public Class VerconForm
                 If k_tag IsNot Nothing AndAlso Not k_todo.Contains(k_tag.IdPrimita) Then k_todo.Add(k_tag.IdPrimita)
             Next
             If k_todo.Count = 0 Then Return
+            Dim k_changeAccounts As Boolean = _modify
+            ' The partner of each invoice is found by tax code only: the one the server keeps for the code, or the only one, is used without asking; when several have it and none is kept the operator picks (once per tax code) and the server keeps the choice. Closing the box sends nothing.
+            Dim k_partnerOf As New Dictionary(Of Integer, Integer)()
+            If Not k_changeAccounts Then
+                Dim k_byCui As New Dictionary(Of String, Integer)(StringComparer.OrdinalIgnoreCase)
+                For Each k_id As Integer In k_todo
+                    Dim k_state As EFacturaVerconStareFactura = _states(k_id)
+                    If k_state.PartenerId.HasValue OrElse k_state.Parteneri.Count <= 1 Then Continue For
+                    Dim k_cui As String = k_state.Factura.CuiNormalizat
+                    Dim k_picked As Integer
+                    If Not k_byCui.TryGetValue(k_cui, k_picked) Then
+                        Using k_dialog As New AlegePartenerForm("Trimite la Vercon", $"factura {k_state.Factura.NrFact}", k_cui, k_state.Parteneri)
+                            If k_dialog.ShowDialog(Me) <> DialogResult.OK OrElse k_dialog.Selected Is Nothing Then Return
+                            k_picked = k_dialog.Selected.IdPartener
+                        End Using
+                        k_byCui(k_cui) = k_picked
+                    End If
+                    k_partnerOf(k_id) = k_picked
+                Next
+            End If
             ntfMesaj.Visible = False
             SetBusy(True)
             Dim k_failures As New List(Of String)()
             Dim k_done As New List(Of Integer)()
             Dim k_note As String = txtNota.Text
-            Dim k_changeAccounts As Boolean = _modify
             Try
                 For Each k_id As Integer In k_todo
                     Dim k_one As Integer = k_id
@@ -755,7 +792,10 @@ Public Class VerconForm
                         If k_changeAccounts Then
                             Await _gate.RunAsync(Function() _api.SetVerconConturiAsync(k_one, k_accounts, _cts.Token)).ConfigureAwait(True)
                         Else
-                            Await _gate.RunAsync(Function() _api.SendVerconAsync(k_one, k_accounts, k_note, _cts.Token)).ConfigureAwait(True)
+                            Dim k_partnerId As Integer? = Nothing
+                            Dim k_value As Integer
+                            If k_partnerOf.TryGetValue(k_one, k_value) Then k_partnerId = k_value
+                            Await _gate.RunAsync(Function() _api.SendVerconAsync(k_one, k_accounts, k_note, k_partnerId, _cts.Token)).ConfigureAwait(True)
                         End If
                         If IsDisposed Then Return
                         k_done.Add(k_id)

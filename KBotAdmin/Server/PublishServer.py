@@ -74,7 +74,12 @@ def publish(root, stage, manifest):
             if not re.fullmatch(r"[a-f0-9]{64}", entry["sha256"]):
                 raise RuntimeError("Amprentă invalidă în evidența debugging.")
         if action == "list_debug":
-            return {"ok": True, "debug_files": [{"path": path, **entry} for path, entry in state.items()]}
+            debug_files = []
+            for relative, entry in state.items():
+                target = target_path(root, relative)
+                debug_files.append({"path": relative, **entry,
+                                    "current_sha256": digest(target) if target.is_file() else ""})
+            return {"ok": True, "debug_files": debug_files}
         return publish_locked(root, stage, manifest, state_path, state)
 
 

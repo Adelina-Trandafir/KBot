@@ -86,6 +86,9 @@ Partial Class AvacontMain
         Dim KBotRibbonButton40 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton41 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton42 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton43 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton44 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton45 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotSidePanelSection1 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection2 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection3 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
@@ -138,11 +141,32 @@ Partial Class AvacontMain
         KBotRibbonButton5.ToolTipHeader = "Sincronizează facturi primite"
         KBotRibbonButton5.ToolTipText = "Aduce de la ANAF facturile primite în perioada aleasă alături (7-60 de zile)."
         KBotRibbonButton5.Visible = False
+        KBotRibbonButton43.Image = CType(resources.GetObject("KBotRibbonButton4.Image"), Image)
+        KBotRibbonButton43.Key = "parteneri_access_preia"
+        KBotRibbonButton43.Text = "Preia date din Access"
+        KBotRibbonButton43.ToolTipHeader = "Preia date din Access"
+        KBotRibbonButton43.ToolTipText = "Citește din Access partenerii tuturor unităților bazei deschise și adaugă în K-BOT pe cei care lipsesc." & vbLf & "Partenerii pe care K-BOT îi are deja rămân neschimbați. Lista se reîncarcă singură dacă s-a adăugat ceva."
+        KBotRibbonButton43.Visible = False
+        KBotRibbonButton44.Image = CType(resources.GetObject("KBotRibbonButton5.Image"), Image)
+        KBotRibbonButton44.Key = "parteneri_anaf_selecteaza"
+        KBotRibbonButton44.Text = "Selectează Parteneri Sincronizare Anaf"
+        KBotRibbonButton44.ToolTipHeader = "Selectează Parteneri Sincronizare Anaf"
+        KBotRibbonButton44.ToolTipText = "Arată în listă toți partenerii (și pe cei ascunși) cu câte o căsuță de bifat." & vbLf & "Bifează-i pe cei pe care vrei să-i sincronizezi cu ANAF, apoi apasă «Sincronizează ANAF». Se pot sincroniza doar partenerii cu cod fiscal de 6-12 cifre."
+        KBotRibbonButton44.Visible = False
+        KBotRibbonButton45.Image = CType(resources.GetObject("KBotRibbonButton5.Image"), Image)
+        KBotRibbonButton45.Key = "parteneri_anaf_sincronizeaza"
+        KBotRibbonButton45.Text = "Sincronizează ANAF"
+        KBotRibbonButton45.ToolTipHeader = "Sincronizează ANAF"
+        KBotRibbonButton45.ToolTipText = "Citește de la ANAF denumirea și adresa partenerilor bifați și le scrie în K-BOT." & vbLf & "Dacă nu e bifat niciun partener, nu se întâmplă nimic."
+        KBotRibbonButton45.Visible = False
         ribbon.FormGroup.Buttons.Add(KBotRibbonButton1)
         ribbon.FormGroup.Buttons.Add(KBotRibbonButton2)
         ribbon.FormGroup.Buttons.Add(KBotRibbonButton3)
         ribbon.FormGroup.Buttons.Add(KBotRibbonButton4)
         ribbon.FormGroup.Buttons.Add(KBotRibbonButton5)
+        ribbon.FormGroup.Buttons.Add(KBotRibbonButton43)
+        ribbon.FormGroup.Buttons.Add(KBotRibbonButton44)
+        ribbon.FormGroup.Buttons.Add(KBotRibbonButton45)
         KBotRibbonField1.Items.Add("Ultimele 7 zile")
         KBotRibbonField1.Items.Add("Ultimele 15 zile")
         KBotRibbonField1.Items.Add("Ultimele 30 zile")

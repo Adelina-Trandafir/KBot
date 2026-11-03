@@ -16,6 +16,7 @@ Imports KBot.Migrator
 Public Class VrcMigratorForm
 
     Private _busy As Boolean
+    Private _oiBusy As Boolean
     Private _files As New List(Of VrcSourceFile)()
     Private _profiles As New List(Of VrcFileProfile)()
     Private _lastReport As String = String.Empty
@@ -42,6 +43,7 @@ Public Class VrcMigratorForm
             Dim k_tip = dgvPlan.Columns.First(Function(k_c) k_c.Key = "tip")
             k_tip.ComboItems = VrcPlan.GestiuneTypes.Cast(Of Object).ToList()
             _settings = VrcSettings.Load()
+            workspaceOi.RestoreSelections(_settings.OiSelections, _settings.OiHolders)
             txtGazda.Text = _settings.Host
             txtPort.Text = _settings.Port.ToString(CultureInfo.InvariantCulture)
             txtUtilizator.Text = _settings.User
@@ -119,7 +121,7 @@ Public Class VrcMigratorForm
     End Function
 
     Private Sub UpdateButtons()
-        Dim k_idle As Boolean = Not _busy
+        Dim k_idle As Boolean = Not _busy AndAlso Not _oiBusy
         Dim k_hasPlan As Boolean = _profiles.Count > 0
         btnFolder.Enabled = k_idle AndAlso Not _committed
         btnAdauga.Enabled = k_idle AndAlso Not _committed
@@ -134,6 +136,25 @@ Public Class VrcMigratorForm
         btnMigreaza.Enabled = k_idle AndAlso _state = VrcRunState.Tested AndAlso Not _committed
         btnOpreste.Enabled = _busy AndAlso _cts IsNot Nothing AndAlso _state = VrcRunState.InImport
         btnDiagnostic.Enabled = k_idle AndAlso k_hasPlan
+        navWorkspace.Enabled = k_idle
+        workspaceOi.Enabled = k_idle
+        workspaceOi.SetEditingEnabled(Not _committed)
+    End Sub
+
+    Private Sub WorkspaceSelectionChanged(k_key As String) Handles navWorkspace.SelectionChanged
+        tlpRoot.Visible = k_key <> "oi"
+        workspaceOi.Visible = k_key = "oi"
+        If k_key = "oi" Then workspaceOi.Configure(_files, CurrentPlan(False))
+    End Sub
+
+    Private Sub OiPlanChanged() Handles workspaceOi.PlanChanged
+        _testedHash = String.Empty
+        If Not _busy AndAlso Not _committed Then SetState(VrcRunState.PlanRead, "Separarea OI s-a schimbat; verificați planul și testați serverul înainte de transfer.")
+    End Sub
+
+    Private Sub OiBusyChanged(k_busy As Boolean) Handles workspaceOi.BusyChanged
+        _oiBusy = k_busy
+        UpdateButtons()
     End Sub
 
     Private Sub ReportTextChanged(sender As Object, e As EventArgs) Handles rtbRaport.TextChanged
@@ -183,6 +204,7 @@ Public Class VrcMigratorForm
     Private Sub ResetAfterFileListChange()
         ' The prepared partners and the plan choices stay: they are saved by the caller (before the list changes) and by SaveWorkState.
         _profiles.Clear()
+        workspaceOi.ClearPlan()
         _chosen.Clear()
         dgvPlan.ClearRows()
         _lastReport = String.Empty
@@ -270,6 +292,8 @@ Public Class VrcMigratorForm
             StorePrepared()
             _settings.Files = _files.Select(Function(k_f) New VrcSavedFile() With {.Path = k_f.Path, .Selected = k_f.Selected}).ToList()
             _settings.Dc = txtDc.Text.Trim()
+            _settings.OiSelections = workspaceOi.SavedSelections()
+            _settings.OiHolders = workspaceOi.SaveHolderAssociations()
             ' Plan rows are merged by (file, proposed type): rows of files not in the grid now stay, so a file taken out and put back keeps its choices.
             For k_i As Integer = 0 To Math.Min(dgvPlan.RowCount, _planKey.Count) - 1
                 Dim k_row = dgvPlan.Rows(k_i)
@@ -465,6 +489,7 @@ Public Class VrcMigratorForm
                 Return
             End If
             SaveWorkState()   ' the plan grid is rebuilt below: what was typed in it is saved first
+            workspaceOi.ClearPlan()
             _busy = True
             UpdateButtons()
             rtbRaport.Clear()
@@ -559,7 +584,7 @@ Public Class VrcMigratorForm
     End Function
 
     ''' <summary>The plan as the grid and the fields say it now.</summary>
-    Private Function CurrentPlan() As VrcPlan
+    Private Function CurrentPlan(Optional k_includeOi As Boolean = True) As VrcPlan
         Dim k_plan As New VrcPlan() With {.TargetDc = txtDc.Text, .NewPartners = _prepared}
         For k_i As Integer = 0 To dgvPlan.RowCount - 1
             Dim k_row = dgvPlan.Rows(k_i)
@@ -572,6 +597,7 @@ Public Class VrcMigratorForm
                 .GestiuneType = Convert.ToString(k_row("tip"), CultureInfo.InvariantCulture)})
         Next
         k_plan.Evaluate()
+        If k_includeOi Then workspaceOi.ApplyTo(k_plan)
         Return k_plan
     End Function
 
@@ -579,6 +605,12 @@ Public Class VrcMigratorForm
         Dim k_sb As New StringBuilder()
         k_sb.AppendLine($"PLAN — DC {If(k_plan.Dc.Length = 0, "(necunoscut)", k_plan.Dc)}, {k_plan.SubunitNames().Count} subunități ({String.Join(", ", k_plan.SubunitNames().Select(Function(k_n) $"«{k_n}» ZEC {k_plan.ZecOf(k_n)}"))}), scară {k_plan.Scale}, hash {k_plan.Hash().Substring(0, 12)}…")
         k_sb.AppendLine()
+        Dim k_ro = StringComparer.Create(CultureInfo.GetCultureInfo("ro-RO"), True)
+        For Each k_group In k_plan.Sources.Where(Function(k_s) k_s.IsSeparatedSource).GroupBy(Function(k_s) k_s.SubunitName & "|" & k_s.GestiuneName).OrderBy(Function(k_g) k_g.First().SubunitName, k_ro).ThenBy(Function(k_g) k_g.First().GestiuneName, k_ro)
+            Dim k_first = k_group.First()
+            Dim k_period = If(k_first.GestiuneType = "OI", "multianual din " & k_first.Year.ToString(CultureInfo.InvariantCulture), "ani " & String.Join(", ", k_group.Select(Function(k_s) k_s.Year).OrderBy(Function(k_y) k_y)))
+            k_sb.AppendLine($"DESTINAȚIE SEPARATĂ: «{k_first.GestiuneName}» — {k_first.GestiuneType}, subunitate «{k_first.SubunitName}», {k_period}.")
+        Next
         If k_plan.Blockers.Count = 0 Then
             k_sb.AppendLine("Planul este complet: nu există motive de blocare.")
         Else
@@ -732,7 +764,7 @@ Public Class VrcMigratorForm
                 Return
             End If
             Dim k_ask = KBotMessage.Show(Me,
-                $"Se face transferul UNIC al {k_plan.SubunitNames().Count} subunități ({String.Join(", ", k_plan.SubunitNames().Select(Function(k_n) $"«{k_n}»"))}) în baza {k_plan.Dc}: {k_plan.Sources.Count} fișiere, într-o singură tranzacție." & Environment.NewLine & Environment.NewLine &
+                $"Se face transferul UNIC al {k_plan.SubunitNames().Count} subunități ({String.Join(", ", k_plan.SubunitNames().Select(Function(k_n) $"«{k_n}»"))}) în baza {k_plan.Dc}: {k_plan.Sources.Count} surse de migrare din {k_plan.Sources.Where(Function(k_s) Not k_s.IsSeparatedSource).Select(Function(k_s) k_s.Source.Path).Distinct(StringComparer.OrdinalIgnoreCase).Count()} baze Access, într-o singură tranzacție." & Environment.NewLine & Environment.NewLine &
                 "După COMMIT subunitățile nu mai pot fi importate (nu există reimport). Continuați?",
                 "Migrează", MessageBoxButtons.YesNo, MessageBoxIcon.Warning)
             If k_ask <> DialogResult.Yes Then Return
@@ -845,7 +877,7 @@ Public Class VrcMigratorForm
 
     ''' <summary>Closing waits for a running read or transfer: the files, the Access driver and the transaction must be released first.</summary>
     Private Sub VrcMigratorForm_FormClosing(sender As Object, e As FormClosingEventArgs) Handles MyBase.FormClosing
-        If _busy Then
+        If _busy OrElse _oiBusy Then
             e.Cancel = True
             KBotMessage.Show("O operație este în curs. Așteptați să se termine (sau apăsați «Oprește» în timpul transferului) înainte de a închide.", "VRC.Migrator", MessageBoxButtons.OK, MessageBoxIcon.Information)
         Else

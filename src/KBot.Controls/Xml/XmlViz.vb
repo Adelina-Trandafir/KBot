@@ -275,6 +275,8 @@ Public Class XmlViz
             BackColor = k_scheme.Palette.SurfaceAltColor
             rtb.BackColor = k_scheme.Palette.SurfaceColor
             rtb.ForeColor = k_scheme.Palette.TextColor
+            ' The bars are KBotScrollBars (the box has no native ones): hand them the scheme.
+            rtb.ApplyBarTheme(k_scheme)
             ' The colours of the text are in the RTF: it is written again with the new palette.
             If _xml.Length > 0 Then Build()
         Catch ex As Exception

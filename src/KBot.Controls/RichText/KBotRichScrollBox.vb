@@ -172,8 +172,8 @@ Public Class KBotRichScrollBox
         Return Not _autoHide AndAlso (_mode = RichTextBoxScrollBars.ForcedHorizontal OrElse _mode = RichTextBoxScrollBars.ForcedBoth)
     End Function
 
-    ''' <summary>Hands the scheme to both bars. The host calls it from its own <c>ApplyTheme</c>.</summary>
-    Protected Sub ApplyBarTheme(k_scheme As ThemeScheme)
+    ''' <summary>Hands the scheme to both bars. The host calls it from its own <c>ApplyTheme</c> (a derived box or the control that holds the box).</summary>
+    Public Sub ApplyBarTheme(k_scheme As ThemeScheme)
         _vBar.ApplyTheme(k_scheme)
         _hBar.ApplyTheme(k_scheme)
     End Sub

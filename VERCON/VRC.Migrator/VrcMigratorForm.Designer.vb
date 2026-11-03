@@ -7,6 +7,10 @@ Partial Class VrcMigratorForm
     Private components As System.ComponentModel.IContainer
 
     Friend WithEvents tlpRoot As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents tlpWorkspace As Global.KBot.Controls.KBotTableLayoutPanel
+    Friend WithEvents navWorkspace As KBot.Controls.KBotNavList
+    Friend WithEvents workspaceOi As VrcOiWorkspace
+    Friend WithEvents pnlWorkspacePages As Panel
     Friend WithEvents grpSurse As System.Windows.Forms.GroupBox
     Friend WithEvents tlpSurse As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblFolder As System.Windows.Forms.Label
@@ -69,6 +73,10 @@ Partial Class VrcMigratorForm
         Dim colPTip As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
         Dim colPNota As KBot.Controls.KBotDataColumn = New KBot.Controls.KBotDataColumn()
         tlpRoot = New Global.KBot.Controls.KBotTableLayoutPanel()
+        tlpWorkspace = New Global.KBot.Controls.KBotTableLayoutPanel()
+        navWorkspace = New KBot.Controls.KBotNavList()
+        workspaceOi = New VrcOiWorkspace()
+        pnlWorkspacePages = New Panel()
         grpSurse = New System.Windows.Forms.GroupBox()
         tlpSurse = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblFolder = New System.Windows.Forms.Label()
@@ -647,7 +655,26 @@ Partial Class VrcMigratorForm
         AutoScaleDimensions = New SizeF(96.0F, 96.0F)
         AutoScaleMode = AutoScaleMode.Dpi
         ClientSize = New Size(1100, 900)
-        Controls.Add(tlpRoot)
+        tlpWorkspace.Dock = DockStyle.Fill
+        tlpWorkspace.ColumnCount = 1
+        tlpWorkspace.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100))
+        tlpWorkspace.RowCount = 2
+        tlpWorkspace.RowStyles.Add(New RowStyle(SizeType.Absolute, 44))
+        tlpWorkspace.RowStyles.Add(New RowStyle(SizeType.Percent, 100))
+        navWorkspace.Dock = DockStyle.Fill
+        navWorkspace.Orientation = KBot.Controls.KBotNavOrientation.Horizontal
+        navWorkspace.ItemWidth = 265
+        navWorkspace.Items.Add(New KBot.Controls.KBotNavItem("migration", "Migrare"))
+        navWorkspace.Items.Add(New KBot.Controls.KBotNavItem("oi", "Baze și separare OI"))
+        workspaceOi.Dock = DockStyle.Fill
+        workspaceOi.Visible = False
+        tlpWorkspace.Controls.Add(navWorkspace, 0, 0)
+        pnlWorkspacePages.Dock = DockStyle.Fill
+        pnlWorkspacePages.Controls.Add(tlpRoot)
+        pnlWorkspacePages.Controls.Add(workspaceOi)
+        tlpWorkspace.Controls.Add(pnlWorkspacePages, 0, 1)
+        navWorkspace.SelectedKey = "migration"
+        Controls.Add(tlpWorkspace)
         MinimumSize = New Size(1000, 700)
         Name = "VrcMigratorForm"
         StartPosition = FormStartPosition.CenterScreen

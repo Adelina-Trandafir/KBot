@@ -121,13 +121,20 @@ Friend NotInheritable Class KBotComboList
     ''' <paramref name="highlight"/> is the ROW to highlight and scroll into view (-1 = none).
     ''' </summary>
     Public Sub ShowRows(rows As List(Of KBotComboListRow), owner As Form, anchor As Rectangle,
-                        minWidth As Integer, highlight As Integer)
+                        minWidth As Integer, highlight As Integer, Optional k_foldAll As Boolean = False)
         _allRows.Clear()
         _allRows.AddRange(rows)
         _anchor = anchor
         _minWidth = minWidth
-        ' The highlighted row must be seen: a group that is folded and holds it is unfolded.
-        If highlight >= 0 AndAlso highlight < _allRows.Count AndAlso _allRows(highlight).GroupKey IsNot Nothing Then
+        If k_foldAll Then
+            ' The whole list opens with every group folded (KBotComboBox.GroupsStartCollapsed); nothing is highlighted inside a folded group.
+            _collapsed.Clear()
+            For Each k_row As KBotComboListRow In _allRows
+                If k_row.IsHeader Then _collapsed.Add(k_row.GroupKey)
+            Next
+            highlight = -1
+        ElseIf highlight >= 0 AndAlso highlight < _allRows.Count AndAlso _allRows(highlight).GroupKey IsNot Nothing Then
+            ' The highlighted row must be seen: a group that is folded and holds it is unfolded.
             _collapsed.Remove(_allRows(highlight).GroupKey)
         End If
         Dim k_target As KBotComboListRow = If(highlight >= 0 AndAlso highlight < _allRows.Count, _allRows(highlight), Nothing)

@@ -20,7 +20,7 @@ Partial Class XmlViz
         pnlHarta = New System.Windows.Forms.Panel()
         tree = New AdvancedTreeControl()
         pnlText = New System.Windows.Forms.Panel()
-        rtb = New System.Windows.Forms.RichTextBox()
+        rtb = New KBotRichScrollBox()
         tlyMain.SuspendLayout()
         pnlHarta.SuspendLayout()
         pnlText.SuspendLayout()
@@ -133,5 +133,5 @@ Partial Class XmlViz
     Friend WithEvents pnlHarta As System.Windows.Forms.Panel
     Friend WithEvents tree As AdvancedTreeControl
     Friend WithEvents pnlText As System.Windows.Forms.Panel
-    Friend WithEvents rtb As System.Windows.Forms.RichTextBox
+    Friend WithEvents rtb As KBotRichScrollBox
 End Class

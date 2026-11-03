@@ -6,6 +6,18 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
+## 1.1.5.0 (03.11.2026)
+<!-- release: utc=2026-11-03T15:14:36Z -->
+<!-- felii: 0093-01, 0093-02, 0000-147, 0093-03, 0000-148 -->
+
+- «Parteneri»: butonul nou «Preia date din Access» (ribbon) adauga partenerii noi din Access, de la toate unitatile bazei.
+- «Parteneri»: butonul nou «Selecteaza Parteneri Sincronizare Anaf» (ribbon) arata toti partenerii, si ascunsii, cu bife.
+- Meniul listei are alegeri rapide: «DOAR partenerii folositi», «TOTI partenerii», «TOTI partenerii NESINCRONIZATI».
+- «Sincronizeaza ANAF» aduce de la ANAF denumirea si adresa partenerilor bifati; se pot sincroniza doar coduri fiscale numerice.
+- «Parteneri»: lista se poate cauta si dupa codul fiscal (cu sau fara RO).
+- «Parteneri»: la salvare, denumirea si adresa se scriu si la acelasi furnizor din alte unitati; nu mai revin datele vechi.
+- Ajutor: sectiune noua despre sincronizarea partenerilor cu ANAF si completari la «Parteneri».
+
 ## 1.1.3.1 (29.10.2026)
 <!-- felii: AV01-17, 0010-08, 0000-138, 0000-139, 0000-140 -->
 

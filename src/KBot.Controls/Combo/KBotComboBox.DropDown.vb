@@ -24,6 +24,7 @@ Partial Public Class KBotComboBox
     Private _maxDropDownItems As Integer = 8
     Private _dropDownWidth As Integer = 0
     Private _dropDownAnchorProvider As Func(Of Rectangle)
+    Private _groupsStartCollapsed As Boolean = False
 
     ''' <summary>The list opened.</summary>
     <Category("K-BOT Combo")>
@@ -51,6 +52,20 @@ Partial Public Class KBotComboBox
                 Throw New ArgumentOutOfRangeException(NameOf(value), value, "MaxDropDownItems must be at least 1.")
             End If
             _maxDropDownItems = value
+        End Set
+    End Property
+
+    ''' <summary>With grouped items (<see cref="IKBotComboGroupedItem"/>): the whole list opens with every group header folded, the operator unfolds the group
+    ''' he needs. A typed search still shows its hits unfolded.</summary>
+    <Category("K-BOT Combo")>
+    <Description("With grouped items: the whole list opens with every group folded. A typed search still shows its hits.")>
+    <DefaultValue(False)>
+    Public Property GroupsStartCollapsed As Boolean
+        Get
+            Return _groupsStartCollapsed
+        End Get
+        Set(k_value As Boolean)
+            _groupsStartCollapsed = k_value
         End Set
     End Property
 
@@ -139,7 +154,7 @@ Partial Public Class KBotComboBox
         Dim k_highlightRow As Integer
         Dim rows As List(Of KBotComboListRow) = BuildRows(k_all, highlight, False, k_highlightRow)
         _openedByArrow = True
-        ShowRows(rows, k_highlightRow)
+        ShowRows(rows, k_highlightRow, _groupsStartCollapsed)
     End Sub
 
     ''' <summary>
@@ -197,7 +212,7 @@ Partial Public Class KBotComboBox
     End Sub
 
     ' Opens (or re-fills) the list window. highlight = the ROW to highlight, -1 = none.
-    Private Sub ShowRows(rows As List(Of KBotComboListRow), highlight As Integer)
+    Private Sub ShowRows(rows As List(Of KBotComboListRow), highlight As Integer, Optional k_foldAll As Boolean = False)
         If Not IsHandleCreated OrElse Not Visible Then Return
         Dim wasOpen As Boolean = DroppedDown
         If _list Is Nothing OrElse _list.IsDisposed Then
@@ -206,7 +221,9 @@ Partial Public Class KBotComboBox
             AddHandler _list.NewItemChosen, AddressOf List_NewItemChosen
         End If
         HookListHost()
-        _list.ShowRows(rows, _listHost, AnchorRect(), ListMinWidth(), highlight)
+        ' A search result must show its hits: folds left from an earlier opening are forgotten.
+        If _groupsStartCollapsed AndAlso Not k_foldAll Then _list.ResetGroups()
+        _list.ShowRows(rows, _listHost, AnchorRect(), ListMinWidth(), highlight, k_foldAll)
         If _outsideClickFilter Is Nothing Then
             _outsideClickFilter = New OutsideClickFilter(Me)
             Application.AddMessageFilter(_outsideClickFilter)

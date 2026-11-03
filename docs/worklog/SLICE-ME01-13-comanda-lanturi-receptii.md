@@ -11,8 +11,8 @@ Neither shows as an error anywhere else: a placement of an unplaced snapshot and
 
 ## What it does
 **Step 1 - «Verificare lanturi de receptii»** (`receptii_lanturi`, one database, read only). A reception is open when its newest snapshot has another total, or another line the reception really carries (F15; a zero line is not a line). Open receptions are sorted:
-1. **instantaneu pe alta receptie** - the snapshot's name (`FX_Receptii_H.Descriere`, the reception name FOREXE copies into the snapshot) is not the reception's name but is the name of exactly ONE other non-deleted reception of the angajament. Repairable when, after the move, both chains close and the reception keeps at least one snapshot.
-2. **receptie rescrisa de gemena** - the reception's name equals its last snapshot's name, and another reception of the same `DataR`, a different name, the same total and the same non-zero lines has a chain that closes. Repairable when every indicator of the snapshot has exactly one `FX_Receptii_RHR` row on the reception.
+1. **instantaneu pe alta receptie** - the snapshot's name (`FX_Receptii_H.Descriere`, the reception name FOREXE copies into the snapshot) is not the reception's name but is the name of exactly ONE other non-deleted reception of the angajament. When several receptions carry that name, the choice is narrowed to those whose chain closes with the snapshots added, then to those within `PRAG_ZILE_SUGESTIE` days of the snapshots (the association form's window); exactly one left = the target, otherwise the case is left alone. Repairable when, after the move, both chains close and the reception keeps at least one snapshot.
+2. **receptie rescrisa de gemena** - the reception's name equals its last snapshot's name, and another reception of the same `DataR` (its name may be the same or different), the same total and the same non-zero lines has a chain that closes. Repairable when every indicator of the snapshot has exactly one `FX_Receptii_RHR` row on the reception.
 3. **alt caz** - listed only, never repaired.
 The summary gives cases and repairable cases per kind; the detail lists every case with what would be done. With repairable cases the code box and the button «Repara receptiile» appear (tied to this command and database).
 
@@ -32,8 +32,11 @@ The result shows what was done, the ordonantare lines changed or left, and the c
 ## Verification
 `dotnet build KBotAdmin\KBotAdmin.vbproj`: 0 errors, 0 warnings; both Python files pass `py_compile`. No tests written or run (operator rule). Adelina ran the commands on the server on 02.11.2026 and confirmed them correct and complete.
 
+03.11.2026 correction (three cases from her logs: AAB3P85NKAX, AAB2DF4BC3P, AAB2K43X2C4 - receptions whose same-day twin or whose snapshot name is NOT unique): `_findings` was run offline on those data (no database) and, before the change, gave «alt caz» for all three; after it, a rewrite of reception 15 (196,36), a rewrite of reception 65 (25.074) and a move of snapshot 31 from reception 28 to 31. She ran it on the server and confirmed it worked.
+
 ## Limits
-- The name match (`FX_Receptii_H.Descriere` = reception name) is the only identity used; receptions whose names repeat (monthly «salarii») give no case of kind 1, by design.
+- The name match (`FX_Receptii_H.Descriere` = reception name) is the identity used; when several receptions bear the name, only a unique reception whose chain closes with the snapshots added AND lies within `PRAG_ZILE_SUGESTIE` days is taken. Monthly «salarii» with identical names and dates close together can still stay unresolved (listed, not repaired), by design.
+- Kind 2 no longer needs the twin to have another name: the open reception disagrees with its own newest snapshot, the twin's chain closes. Two genuinely equal receptions of the same day with a bad chain for another reason would be rewritten from their chain: read the check list before pressing «Repara».
 - `CreditBugetar` / `ValoareN` of a rewritten reception keep the twin's figures (the originals are not in the database).
 - Ordonantare lines already printed or signed keep what is on paper; the stored figures change, the documents must be listed again.
 - Server files go on the server by hand; KBotAdmin must be republished for `btnLanturi`.

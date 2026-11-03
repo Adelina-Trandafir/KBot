@@ -148,6 +148,42 @@ Partial Public Class KbotForm
         End Try
     End Sub
 
+    ''' <summary>
+    ''' Slice 0093-01: «Preia date din Access» (<c>parteneri_access_preia</c>) of the ribbon's form group, shown only for a client that also runs the Access
+    ''' application while the «Parteneri» window is on screen. The work and what the end tells are the window's. UI boundary (async Sub): logs and tells
+    ''' the operator.
+    ''' </summary>
+    Friend Async Sub RunParteneriAccess()
+        Try
+            If _parteneriForm Is Nothing OrElse _parteneriForm.IsDisposed Then Return
+            Await _parteneriForm.PreiaDinAccessAsync().ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.RunParteneriAccess", ex)
+            KBotMessage.Show(Me, "Preluarea din Access nu a putut fi dusă la capăt. Detalii în jurnalul de erori.",
+                             "Preia date din Access", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0093-02: the two ANAF buttons of the ribbon's form group while the «Parteneri» window is on screen. <paramref name="k_synchronise"/> False =
+    ''' «Selecteaza Parteneri Sincronizare Anaf» (the list shows everybody with a tick box), True = «Sincronizeaza ANAF» (the ticked ones are read from
+    ''' ANAF). The work is the window's. UI boundary (async Sub): logs and tells the operator.
+    ''' </summary>
+    Friend Async Sub RunParteneriAnaf(k_synchronise As Boolean)
+        Try
+            If _parteneriForm Is Nothing OrElse _parteneriForm.IsDisposed Then Return
+            If k_synchronise Then
+                Await _parteneriForm.RunAnafSyncAsync().ConfigureAwait(True)
+            Else
+                Await _parteneriForm.StartAnafSelectionAsync().ConfigureAwait(True)
+            End If
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.RunParteneriAnaf", ex)
+            KBotMessage.Show(Me, "Sincronizarea partenerilor cu ANAF nu a putut fi dusă la capăt. Detalii în jurnalul de erori.",
+                             "Sincronizare ANAF", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
     Private Sub DeschidePartenerii()
         Try
             If _parteneriForm IsNot Nothing AndAlso Not _parteneriForm.IsDisposed Then

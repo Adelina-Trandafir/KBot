@@ -224,8 +224,9 @@ Public Interface IEFacturaApi
     ''' <summary>GET .../primite/{id}/vercon -- the lines with their value WITH VAT and the proposed account, the active sending, the history, whether it can be sent.</summary>
     Function GetVerconAsync(k_idPrimita As Integer, ct As CancellationToken) As Task(Of EFacturaVerconStareFactura)
 
-    ''' <summary>POST .../primite/{id}/vercon -- sends the invoice: ALL its lines, each with the proposed account (<c>IdMasina</c> Nothing = none), and an optional note for the Administrator.</summary>
-    Function SendVerconAsync(k_idPrimita As Integer, k_conturi As IEnumerable(Of EFacturaVerconContLinie), k_observatie As String, ct As CancellationToken) As Task(Of EFacturaVerconStareFactura)
+    ''' <summary>POST .../primite/{id}/vercon -- sends the invoice: ALL its lines, each with the proposed account (<c>IdMasina</c> Nothing = none), and an optional note for the Administrator.
+    ''' <paramref name="k_idPartener"/> is the partner picked when several have the supplier's tax code (Nothing otherwise); the server makes it visible.</summary>
+    Function SendVerconAsync(k_idPrimita As Integer, k_conturi As IEnumerable(Of EFacturaVerconContLinie), k_observatie As String, k_idPartener As Integer?, ct As CancellationToken) As Task(Of EFacturaVerconStareFactura)
 
     ''' <summary>PUT .../primite/{id}/vercon/conturi -- changes the proposed accounts while the sending waits.</summary>
     Function SetVerconConturiAsync(k_idPrimita As Integer, k_conturi As IEnumerable(Of EFacturaVerconContLinie), ct As CancellationToken) As Task(Of EFacturaVerconStareFactura)

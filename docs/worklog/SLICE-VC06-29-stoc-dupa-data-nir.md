@@ -30,3 +30,5 @@ Completarea automată a datei NIR când operatorul schimbă data facturii, cerut
 **IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Numai analiză de design din cod. Fără teste, compilare, verificări automate de execuție, browser, HTTP, generări PDF/Excel, interogări sau modificări de date pe server, DDL, publicare ori restart în acest slice. Probele din VC06-28 au precedat această schimbare și nu validează codul nou.
 
 Continuitate: `VERCON/VERCON_STATUS.md`, `implementare_vercon_v2.md`.
+
+Înregistrare 03.11.2026: la cererea explicită a utilizatorului pentru fișierele care ajung pe server, scriptul `tools/Register-DeploymentTask.ps1` a înregistrat cu succes cele 23 de fișiere proprii publicabile din PYTHON descrise mai sus, inclusiv resursele SQL de raport, ajutorul și README-ul rapoartelor. Documentația din afara arborelui PYTHON a fost exclusă conform cererii. S-au păstrat slice-ul VC06-29 și motivul său real. Înregistrarea nu reprezintă publicare sau confirmare de test; fără Git, teste sau SQL executat în această etapă.

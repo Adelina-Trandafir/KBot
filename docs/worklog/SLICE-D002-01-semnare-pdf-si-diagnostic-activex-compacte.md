@@ -17,7 +17,7 @@ Rândurile comune ale inventarelor sunt centralizate mai jos (SLICE-D003-12); va
 
 Cele două istorice sunt citite integral și compactate prin reunirea continuărilor de paragraf/listă. Contractele de semnare, tranzacția PDF/roluri, stocarea pe bucăți, corecțiile broker/renderer și arbitrajul capcanelor rămân în jurnalul semnării. Diagnosticul păstrează cele șase treceri, probele din jurnale, comutatorul inițial salvat și retragerea lui, încărcările goale, regex-urile și limitele vizualizării pe culoare. Cuvintele, ancorele, codul SQL citat, tabelele și stările istorice nu se schimbă.
 
-Inventar: SLICE-0078-semnare-pdf.md (112); SLICE-0078-03-jurnal-activex.md (134); SLICE-D002-01-semnare-pdf-si-diagnostic-activex-compacte.md (-19).
+Inventar: SLICE-0078-01-semnare-pdf.md (112); SLICE-0078-03-jurnal-activex.md (134); SLICE-D002-01-semnare-pdf-si-diagnostic-activex-compacte.md (-19).
 
 Bilanț: **0 fișiere retrase, un jurnal adăugat; 216 rânduri mai puțin**. Cumul D001-01…99 + D002-01…01: **366 fișiere și 15328 rânduri mai puțin**.
 

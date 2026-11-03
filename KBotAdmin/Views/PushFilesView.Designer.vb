@@ -148,11 +148,11 @@ Partial Class PushFilesView
         lblDebug.Dock = DockStyle.Fill
         lblDebug.AutoEllipsis = True
         lblDebug.TextAlign = ContentAlignment.MiddleLeft
-        lblDebug.Text = "După test: bifați fișierele debugging și finalizați numai Git."
+        lblDebug.Text = "După test: folosiți bifele Debugging pentru finalizare Git; Trimite pentru încărcare."
         tips.SetToolTipHeader(chkDebugging, "Publicare debugging")
         tips.SetToolTipText(chkDebugging, "Trimite toate fișierele bifate fără Git, chiar dacă au slice și motiv. Datele Git existente sunt păstrate. Fără această bifă, fișierele fără informații Git sunt tot publicate fără Git.")
         tips.SetToolTipHeader(btnFinalizeDebug, "Finalizare debugging — numai Git")
-        tips.SetToolTipText(btnFinalizeDebug, "Dintre fișierele bifate, finalizează numai cele din evidența debugging a serverului. Folosește direct slice-urile și motivele deja înregistrate pentru fiecare fișier și face numai Git, fără dialog suplimentar, reîncărcare sau repornire.")
+        tips.SetToolTipText(btnFinalizeDebug, "Finalizează fișierele bifate în coloana Debugging, independent de coloana Trimite. La scanare, fișierele din evidența debugging sunt bifate în această coloană; debifați-le pe cele pe care nu doriți să le finalizați. Folosește direct slice-urile și motivele deja înregistrate și face numai Git, fără dialog suplimentar, reîncărcare sau repornire.")
         '
         ' btnScan
         '
@@ -165,7 +165,7 @@ Partial Class PushFilesView
         btnScan.TabIndex = 2
         btnScan.Text = "Scanează"
         tips.SetToolTipHeader(btnScan, "Scanează")
-        tips.SetToolTipText(btnScan, "Se conectează prin SFTP, compară fiecare fișier permis cu cel de pe server și arată ce e nou sau modificat." & vbLf & "Citește și regulile din .pushignore.")
+        tips.SetToolTipText(btnScan, "Compară fișierele permise cu serverul și bifează automat în coloana Trimite numai fișierele noi sau modificate. Pentru cele deja publicate debugging compară conținutul; cele neschimbate rămân vizibile, nebifate la Trimite. Coloana Debugging este bifată pentru fișierele din evidența serverului și permite selectarea separată pentru finalizarea Git." & vbLf & "Citește și regulile din .pushignore.")
         '
         ' btnSend
         '
@@ -177,7 +177,7 @@ Partial Class PushFilesView
         btnSend.TabIndex = 3
         btnSend.Text = "Trimite bifatele"
         tips.SetToolTipHeader(btnSend, "Trimite bifatele")
-        tips.SetToolTipText(btnSend, "Încarcă pe server fișierele bifate. În modul debugging sau fără informații Git nu face Git și reține versiunile pentru finalizare. Altfel salvează în Git versiunile existente înainte de suprascriere.")
+        tips.SetToolTipText(btnSend, "Încarcă pe server fișierele bifate în coloana Trimite. În modul debugging sau fără informații Git nu face Git și reține versiunile pentru finalizare. Altfel salvează în Git versiunile existente înainte de suprascriere.")
         '
         ' chkRestart
         '
@@ -202,7 +202,7 @@ Partial Class PushFilesView
         chkIdentical.TabIndex = 5
         chkIdentical.Text = "Arată și identicele"
         tips.SetToolTipHeader(chkIdentical, "Fișiere identice")
-        tips.SetToolTipText(chkIdentical, "Bifat: lista arată și fișierele identice cu cele de pe server (debifate). Implicit se văd doar cele de trimis.")
+        tips.SetToolTipText(chkIdentical, "Bifat: lista arată și fișierele identice cu cele de pe server (nebifate la Trimite). Fișierele debugging de finalizat rămân vizibile și cu această opțiune debifată; dacă sunt neschimbate, nu sunt bifate la Trimite. Selecția pentru finalizare folosește coloana Debugging.")
         chkIdentical.UseVisualStyleBackColor = True
         '
         ' btnAll
@@ -215,7 +215,7 @@ Partial Class PushFilesView
         btnAll.TabIndex = 6
         btnAll.Text = "Bifează tot"
         tips.SetToolTipHeader(btnAll, "Bifează tot")
-        tips.SetToolTipText(btnAll, "Bifează toate fișierele din listă.")
+        tips.SetToolTipText(btnAll, "Bifează coloana Trimite pentru toate fișierele din listă. Bifele Debugging rămân neschimbate.")
         '
         ' btnNone
         '
@@ -227,7 +227,7 @@ Partial Class PushFilesView
         btnNone.TabIndex = 7
         btnNone.Text = "Debifează tot"
         tips.SetToolTipHeader(btnNone, "Debifează tot")
-        tips.SetToolTipText(btnNone, "Debifează toate fișierele din listă.")
+        tips.SetToolTipText(btnNone, "Debifează coloana Trimite pentru toate fișierele din listă. Bifele Debugging rămân neschimbate.")
         '
         ' lblRoot
         '
@@ -351,7 +351,7 @@ Partial Class PushFilesView
         gridFilesDebug.Key = "debug"
         gridFilesDebug.HeaderText = "Debugging"
         gridFilesDebug.ColumnType = KBotColumnType.CheckBox
-        gridFilesDebug.ReadOnly = True
+        gridFilesDebug.ReadOnly = False
         gridFilesDebug.Width = 90
         gridFiles.Columns.Add(gridFilesDebug)
         gridFilesSlices.Key = "slices"

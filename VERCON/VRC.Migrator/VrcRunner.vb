@@ -119,6 +119,14 @@ Partial Friend NotInheritable Class VrcRunner
             Log("Tranzacție unică deschisă; nimic nu devine vizibil înainte de COMMIT.")
             Log("Valorile documentelor se copiază din Access: fără recalcularea totalurilor, TVA, prețurilor, cantităților sau semnelor. Numerotarea rămâne după ultimul număr real.")
             CreateContext()
+            For Each k_source In _plan.Sources.Where(Function(k_s) k_s.PreparedRows IsNot Nothing AndAlso Not k_s.GeneratedOi)
+                VrcOiData.EnsureFresh(k_source)
+            Next
+            For Each k_source In _plan.Sources.Where(Function(k_s) k_s.IsSeparatedSource)
+                For k_i As Integer = 0 To k_source.PreparedNotes.Count - 1
+                    AddIssue(k_source, "Masini", (k_i + 1).ToString(CultureInfo.InvariantCulture), "", "N22", "CONVERSIE", "Materiale", k_source.GestiuneType, k_source.PreparedNotes(k_i))
+                Next
+            Next
             OpenSources()
             AddPreparedPartners()
             For Each k_gest In _gestiuni
@@ -332,6 +340,11 @@ Partial Friend NotInheritable Class VrcRunner
 
     ''' <summary>All rows of a table of a source (every column, or only the listed ones). A table the file does not have gives no rows.</summary>
     Private Function ReadRows(k_source As VrcPlanSource, k_table As String, Optional k_columns As IEnumerable(Of String) = Nothing) As List(Of Dictionary(Of String, Object))
+        If k_source.PreparedRows IsNot Nothing Then
+            Dim k_prepared As List(Of Dictionary(Of String, Object)) = Nothing
+            If Not k_source.PreparedRows.TryGetValue(k_table, k_prepared) Then Return New List(Of Dictionary(Of String, Object))()
+            Return k_prepared.Select(Function(k_row) VrcOiData.CloneRow(k_row)).ToList()
+        End If
         Dim k_all = ReadRawRows(k_source.Source.Path, k_source.Profile, k_table)
         Dim k_partition = PartitionOf(k_source)
         Dim k_part As String = k_source.Part
@@ -984,6 +997,7 @@ Partial Friend NotInheritable Class VrcRunner
         _lastNumber.TryGetValue(k_id, k_current)
         If k_number.Value > k_current Then _lastNumber(k_id) = k_number.Value
     End Sub
+
 
     ' ====================================================================================================================
     ' Counters, settings, the id map, the findings

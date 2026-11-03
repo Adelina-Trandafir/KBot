@@ -39,13 +39,14 @@ Partial Class CommandsView
         ' cmbCommand
         ' 
         cmbCommand.Dock = DockStyle.Fill
+        cmbCommand.GroupsStartCollapsed = True
         cmbCommand.Location = New Point(0, 6)
         cmbCommand.Margin = New Padding(0, 6, 12, 12)
         cmbCommand.Name = "cmbCommand"
         cmbCommand.Size = New Size(468, 37)
         cmbCommand.TabIndex = 0
         tips.SetToolTipHeader(cmbCommand, "Comanda")
-        tips.SetToolTipText(cmbCommand, "Lista este fixă, hotărâtă pe server: nu se poate rula alt SQL de aici.")
+        tips.SetToolTipText(cmbCommand, "Comenzile sunt grupate pe aplicații (clic pe o aplicație o deschide sau o închide)." & vbLf & "Lista este fixă, hotărâtă pe server: nu se poate rula alt SQL de aici.")
         ' 
         ' btnRun
         ' 

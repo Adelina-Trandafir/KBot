@@ -1,5 +1,49 @@
 # VERCON — status (registru separat, ca ADECHIT_STATUS)
 
+## SLICE-VC06-39 — «Rezolvă Acum» în informarea facturilor eFactura — 03.11.2026
+
+**TESTAT DE ADELINA (OK), ÎNREGISTRAT PENTRU SERVER.** Informarea «Facturi eFactura de preluat» are butonul «Rezolvă Acum» în stânga, care închide mesajul și deschide comanda existentă «NIR din e-Factura…». «Am înțeles» rămâne în dreapta. [Worklog VC06-39](../docs/worklog/SLICE-VC06-39-rezolva-acum-din-informarea-efactura.md). Adelina a confirmat «merge. inregistreaza» la 03.11.2026; toate cele opt fișiere proprii sunt înregistrate. Fără teste automate, publicare sau Git executat de agent.
+
+Completare ulterioară, 03.11.2026: ajutorul VERCON descrie «Rezolvă Acum», poziția butoanelor și deschiderea directă a ferestrei. La cererea explicită a Adelinei privind închiderea și pentru `vercon.json`, ajutorul și cele trei fișiere de documentație aferente sunt înregistrate pentru SLICE-VC06-39. Fără teste sau publicare executate de agent.
+
+## SLICE-VC06-38 — Fereastra «Produs din eFactura» la «FOLOSEȘTE DENUMIREA DIN EFACTURA» — 03.11.2026
+
+**TESTAT DE ADELINA (OK), ÎNREGISTRAT PENTRU SERVER.** La alegerea acestei opțiuni pe o linie de NIR din eFactura se deschide o fereastră mică: denumire (pe mai multe rânduri) și UM editabile, CPV din factură doar-citire (fără CPV: tastat sau ales din nomenclator), nota contabilului. «Renunță» lasă rândul neschimbat, «Salvează» trece datele pe rând. Elementul e mereu primul în listă (nod `pinned` în arbori). [Worklog VC06-38](../docs/worklog/SLICE-VC06-38-fereastra-produs-din-efactura.md)
+
+## SLICE-VC06-37 — Comisie implicită; nota contabilului în fereastra CPV; clic pe altă celulă cu lista deschisă — 03.11.2026
+
+**TESTAT DE ADELINA (OK), ÎNREGISTRAT PENTRU SERVER.** Singura comisie a gestiunii e aleasă implicit la NIR nou. Fereastra CPV a produselor din NIR-urile din eFactura are căutările la 25% fiecare, una lângă alta, și nota contabilului (doar-citire, selectabilă) în dreapta. Grila nu mai judecă rândul («Rând incomplet») când clicul pe altă celulă nimerește stratul listei deschise; cu lista deschisă primul clic pe Cantitate doar o închide. [Worklog VC06-37](../docs/worklog/SLICE-VC06-37-comisie-implicita-nota-contabil-in-cpv.md)
+
+## SLICE-VC06-36 — Denumirea din factura primită se poate selecta și copia — 03.11.2026
+
+**TESTAT DE ADELINA (OK), ÎNREGISTRAT PENTRU SERVER.** Coloana «Din factura primită» se deschide la clic într-o casetă doar-citire (selectare și copiere); nu se modifică și nu e oprire pentru Tab/Enter/săgeți. Opțiune nouă în grila comună: `readOnlyEditor`. [Worklog VC06-36](../docs/worklog/SLICE-VC06-36-denumire-din-factura-selectabila.md)
+
+## SLICE-VC06-35 — NIR din eFactura: doar nota contabilului; «FOLOSEȘTE DENUMIREA DIN EFACTURA» — 03.11.2026
+
+**TESTAT DE ADELINA (OK), ÎNREGISTRAT PENTRU SERVER.** La preluarea din eFactura rămâne în bara de stare doar nota contabilului. Primul element din arborele de produse al rândului e «FOLOSEȘTE DENUMIREA DIN EFACTURA»: produs nou cu denumirea și UM din factură, cu CPV din factură dacă există (cod complet din nomenclator, trimis de server), altfel se cere. UM se ia exact cum e salvată în factură (fără mapare). [Worklog VC06-35](../docs/worklog/SLICE-VC06-35-nir-din-efactura-fara-mesaj-ciorna-si-denumire-din-efactura.md)
+
+## SLICE-VC06-34 — NIR din eFactura: cantitate primită cu preț recalculat; Disponibil imediat la bonurile PTC — 03.11.2026
+
+**TESTAT DE ADELINA (OK), ÎNREGISTRAT PENTRU SERVER (4 fișiere).** La NIR preluat din eFactura, schimbarea cantității primite recalculează prețul din valoarea netă a liniei facturii (preț scris manual = nu se mai atinge). La Bonul de predare, «Disponibil» se completează la alegerea produsului, nu după părăsirea celulei Cantitate; BT/BS aveau deja comportamentul. [Worklog VC06-34](../docs/worklog/SLICE-VC06-34-nir-din-efactura-cantitate-primita-si-disponibil-ptc.md). Fără teste automate sau publicare de mine.
+
+## SLICE-VC06-33 — Parteneri unici după cod fiscal — 03.11.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT; MESAJ ȘI FIȘIERE ÎNREGISTRATE LA CERERE EXPLICITĂ.** Pagina Furnizori (Parteneri) afișează un singur rând pentru fiecare cod fiscal normalizat, independent de înregistrările aferente IdUnitate. Nu expune copiile, unitățile sau numărul lor. Rândurile fără cod fiscal rămân separate; sortarea este după texte în română și selecția se păstrează după cod fiscal la reîmprospătare. Numai proiecția listei este grupată; înregistrările din tabelă și operațiile de actualizare nu sunt extinse la alte rânduri. La cererea din 03.11.2026 s-au înregistrat numai cele trei fișiere pentru server modificate în VC06-33, fără reînregistrarea slice-urilor anterioare. [Worklog VC06-33](../docs/worklog/SLICE-VC06-33-parteneri-o-singura-aparitie-pe-cod-fiscal.md), inclusiv mesajul publicării. Fără teste, verificări automate de execuție, browser, SQL, ANAF, SSH, publicare sau Git executat.
+
+## SLICE-VC06-32 — Data NIR/factură: zecimal automat și câmpuri dezactivate — 03.11.2026
+
+Actualizare metadate 03.11.2026: pentru cele 10 fișiere de aplicație rămase necomise din captura utilizatorului, versiunile locale/server coincid; evidența debugging este goală. La cererea explicită s-au refăcut înregistrările cu motivele VC06-31/32 (18 înregistrări, 10 fișiere distincte), fără jurnalul de rulare. Sunt pregătite pentru **Scanează → Trimite**, cu **Publicare debugging debifată**, din KBOTADMIN. Citire SSH și stare Git limitate la fișierele proprii; fără commit, transfer, restart sau Git local. Detalii în worklog.
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT; MESAJE ȘI FIȘIERE ÎNREGISTRATE LA CERERE EXPLICITĂ.** Înlocuiește comportamentul intermediar VC06-31 conform corecției explicite: la schimbarea Datei NIR/facturii, dacă există alt NIR ulterior se calculează automat următorul subnumăr zecimal disponibil, se afișează caseta zecimală și se dezactivează ambele câmpuri. Regula se aplică și numerelor manuale și editării datelor unui NIR existent. Fără NIR ulterior, valorile curente rămân neschimbate și câmpurile sunt editabile; numai numărul gol primește propunere inițială. Serverul reverifică perechea la salvare. La 03.11.2026, mesajele și versiunile pentru server au fost înregistrate: 11 fișiere distincte, 20 de înregistrări pentru VC06-31/32. [Worklog VC06-32](../docs/worklog/SLICE-VC06-32-nir-zecimal-automat-blocat-dupa-data.md). Fără teste, compilare, verificări automate de execuție, browser, SQL, SSH, publicare sau Git executat.
+
+## SLICE-VC06-31 — Inserare NIR: număr și subnumăr după dată — 03.11.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT, NEÎNREGISTRAT PENTRU GIT.** NIR-ul nou cu numerotare automată recalculează numărul/subnumărul când se schimbă Data NIR, folosind aceeași regulă de inserare ca FCS. Validarea și salvarea, inclusiv pentru mai multe destinații, folosesc aceeași poziție în serie. Numerele manuale și cele salvate se păstrează; cronologia și protecția stocului rămân active. [Worklog VC06-31](../docs/worklog/SLICE-VC06-31-inserare-nir-numar-dupa-data.md), cu fișierele și motivul pregătite. Fără teste, compilare, verificări automate, browser, SQL, SSH, publicare sau înregistrare. Modificările ulterioare înregistrării VC06-28/29/30 necesită o nouă confirmare explicită.
+
+## SLICE-VC06-30 — Editare BC: stocul ultimei luni închise — 03.11.2026
+
+**IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT ÎN ACEST TASK; ÎNREGISTRAT LA CERERE EXPLICITĂ.** Conform clarificării utilizatorului, ultima lună închisă este luna calendaristică anterioară lunii active. Editarea BC pornește de la soldul de la sfârșitul ei și verifică luna activă și mișcările ulterioare, fără revalidarea deficitelor temporare din lunile vechi. Soldul inițial negativ este semnalat explicit. Numai `edit_bc` folosește noul control; celelalte operații rămân neschimbate. [Worklog VC06-30](../docs/worklog/SLICE-VC06-30-bc-stoc-ultima-luna-inchisa.md). La 03.11.2026 au fost înregistrate numai fișierele proprii care ajung pe server, conform cererii: 4 pentru VC06-30, 23 pentru VC06-29 și 1 pentru VC06-28 (25 distincte, cu motive separate pentru fișierele comune). Fără teste, compilare, verificări automate, SQL, SSH, publicare, restart sau Git în etapa de înregistrare.
+
 ## SLICE-VC06-29 — Stoc după data NIR — 02.11.2026
 
 **IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT.** Data NIR (`VC_NIR.Data`) determină cronologia intrărilor/stornărilor în registrul comun, disponibil, validări, fișe, balanțe, selecții de perioadă, ajustări, surse FCS și evenimentele de recepție/storno MF. Data facturii rămâne informația facturii. Sursele de rapoarte salvate sunt adaptate în memorie; exporturile vechi dependente cer regenerare. Utilizatorul confirmă manual că deficitul APA 19L provine din mutarea datei NIR după un consum. [Worklog VC06-29](../docs/worklog/SLICE-VC06-29-stoc-dupa-data-nir.md). Fără teste, compilare, verificări automate de execuție, browser, SQL, modificări ale datelor istorice, DDL sau publicare.

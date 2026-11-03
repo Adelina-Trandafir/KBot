@@ -107,7 +107,7 @@ Public Class PushFilesView
                 If k_file.State = PushState.Identical AndAlso Not chkIdentical.Checked Then Continue For
                 Dim k_row As KBotDataRow = gridFiles.AddRow()
                 k_row.Tag = k_file
-                k_row("send") = (k_file.State <> PushState.Identical)
+                k_row("send") = (k_file.State = PushState.NewOnServer OrElse k_file.State = PushState.Modified)
                 k_row("path") = k_file.RelativePath
                 k_row("state") = StateText(k_file.State)
                 k_row("debug") = k_file.DebugHash <> String.Empty
@@ -156,6 +156,16 @@ Public Class PushFilesView
             FillFiles()
         Catch ex As Exception
             GlobalErrorLog.Write("PushFilesView.ChkIdentical_CheckedChanged", ex)
+        End Try
+    End Sub
+
+    Private Sub GridFiles_CellFormatting(k_sender As Object, e As KBotCellFormattingEventArgs) Handles gridFiles.CellFormatting
+        Try
+            If e.ColumnKey <> "debug" Then Return
+            Dim k_file As PushFile = TryCast(e.Row.Tag, PushFile)
+            If k_file Is Nothing OrElse k_file.DebugHash = String.Empty Then e.Enabled = False
+        Catch ex As Exception
+            GlobalErrorLog.Write("PushFilesView.GridFiles_CellFormatting", ex)
         End Try
     End Sub
 
@@ -279,10 +289,10 @@ Public Class PushFilesView
             For k_i As Integer = 0 To gridFiles.Rows.Count - 1
                 Dim k_file As PushFile = TryCast(gridFiles.Rows(k_i).Tag, PushFile)
                 If k_file IsNot Nothing AndAlso k_file.DebugHash <> String.Empty AndAlso
-                    Convert.ToBoolean(gridFiles("send", k_i), CultureInfo.InvariantCulture) Then k_files.Add(k_file)
+                    Convert.ToBoolean(gridFiles("debug", k_i), CultureInfo.InvariantCulture) Then k_files.Add(k_file)
             Next
             If k_files.Count = 0 Then
-                KBotMessage.Show("Scanați și bifați fișierele publicate debugging pe care le-ați testat și doriți să le salvați în Git.",
+                KBotMessage.Show("Scanați și bifați în coloana Debugging fișierele publicate pe care le-ați testat și doriți să le salvați în Git.",
                     "Finalizare debugging", MessageBoxButtons.OK, MessageBoxIcon.Information)
                 Return
             End If
