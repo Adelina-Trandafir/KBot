@@ -22,7 +22,7 @@
     <Nullable>disable</Nullable>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.2.0.8</FileVersion>
-    <ApplicationIcon>KBotAdmin.ico</ApplicationIcon>
+    <ApplicationIcon>Images\KBotAdmin.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -51,38 +51,80 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="KBotAdmin.ico" LogicalName="KBotAdmin.ico" />
+    <EmbeddedResource Include="Images\KBotAdmin.ico" LogicalName="KBotAdmin.ico" />
     <EmbeddedResource Include="Server\PublishServer.py" LogicalName="publish.server.py" />
   </ItemGroup>
 
   <!-- ME01-05: the ribbon icons come from K-BOT's own icon stock, linked (not copied) so there is one source.
        LogicalName "icon.<name>" is what AdminIcons.Get("<name>") asks for. -->
   <ItemGroup>
-    <EmbeddedResource Include="..\src\KBot.App\Resources\database.png" LogicalName="icon.database" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\Umut-Pulat-Tulliana-2-File-temporary.32.png" LogicalName="icon.once" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\Jonas-Rask-Danish-Royalty-Free-Refresh.32.png" LogicalName="icon.sync" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\export.png" LogicalName="icon.clone" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\Fatcow-Farm-Fresh-Pdf-exports.24.png" LogicalName="icon.reports" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\Wefunction-Woofunction-Window-app-list-info.32.png" LogicalName="icon.logs" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\istoric_32.png" LogicalName="icon.journal" />
-    <EmbeddedResource Include="..\src\KBot.App\Forexe\Receptii_Icons\Fatcow-Farm-Fresh-Chart-curve.32.png" LogicalName="icon.visits" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\Semlabs-Web-Blog-Earth-search.48_resized.png" LogicalName="icon.server" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\Fatcow-Farm-Fresh-Check-boxes.32.png" LogicalName="icon.requests" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\Umut-Pulat-Tulliana-2-File-locked.32.png" LogicalName="icon.login" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\credit-card.png" LogicalName="icon.rights" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\binvoice.png" LogicalName="icon.rights_ad" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\cells.png" LogicalName="icon.rights_vr" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\plus_green.png" LogicalName="icon.account_add" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\right_32.png" LogicalName="icon.account_grant" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\kbot_64.png" LogicalName="icon.account_role" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\save_32.png" LogicalName="icon.backup_server" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\folder_open.png" LogicalName="icon.backup_local" />
-    <EmbeddedResource Include="..\src\KBot.App\Resources\ef_iesiri.png" LogicalName="icon.publish" />
-    <EmbeddedResource Include="..\src\KBot.App\Forexe\Receptii_Icons\Fatcow-Farm-Fresh-Brick-link.32.png" LogicalName="icon.md_history" />
+    <EmbeddedResource Include="..\src\KBot.App\Resources\database.png" LogicalName="icon.database">
+      <Link>Images\database.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\Umut-Pulat-Tulliana-2-File-temporary.32.png" LogicalName="icon.once">
+      <Link>Images\Umut-Pulat-Tulliana-2-File-temporary.32.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\Jonas-Rask-Danish-Royalty-Free-Refresh.32.png" LogicalName="icon.sync">
+      <Link>Images\Jonas-Rask-Danish-Royalty-Free-Refresh.32.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\export.png" LogicalName="icon.clone">
+      <Link>Images\export.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\Fatcow-Farm-Fresh-Pdf-exports.24.png" LogicalName="icon.reports">
+      <Link>Images\Fatcow-Farm-Fresh-Pdf-exports.24.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\Wefunction-Woofunction-Window-app-list-info.32.png" LogicalName="icon.logs">
+      <Link>Images\Wefunction-Woofunction-Window-app-list-info.32.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\istoric_32.png" LogicalName="icon.journal">
+      <Link>Images\istoric_32.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Forexe\Receptii_Icons\Fatcow-Farm-Fresh-Chart-curve.32.png" LogicalName="icon.visits">
+      <Link>Images\Fatcow-Farm-Fresh-Chart-curve.32.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\Semlabs-Web-Blog-Earth-search.48_resized.png" LogicalName="icon.server">
+      <Link>Images\Semlabs-Web-Blog-Earth-search.48_resized.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\Fatcow-Farm-Fresh-Check-boxes.32.png" LogicalName="icon.requests">
+      <Link>Images\Fatcow-Farm-Fresh-Check-boxes.32.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\Umut-Pulat-Tulliana-2-File-locked.32.png" LogicalName="icon.login">
+      <Link>Images\Umut-Pulat-Tulliana-2-File-locked.32.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\credit-card.png" LogicalName="icon.rights">
+      <Link>Images\credit-card.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\binvoice.png" LogicalName="icon.rights_ad">
+      <Link>Images\binvoice.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\cells.png" LogicalName="icon.rights_vr">
+      <Link>Images\cells.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\plus_green.png" LogicalName="icon.account_add">
+      <Link>Images\plus_green.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\right_32.png" LogicalName="icon.account_grant">
+      <Link>Images\right_32.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\kbot_64.png" LogicalName="icon.account_role">
+      <Link>Images\kbot_64.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\save_32.png" LogicalName="icon.backup_server">
+      <Link>Images\save_32.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\folder_open.png" LogicalName="icon.backup_local">
+      <Link>Images\folder_open.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Resources\ef_iesiri.png" LogicalName="icon.publish">
+      <Link>Images\ef_iesiri.png</Link>
+    </EmbeddedResource>
+    <EmbeddedResource Include="..\src\KBot.App\Forexe\Receptii_Icons\Fatcow-Farm-Fresh-Brick-link.32.png" LogicalName="icon.md_history">
+      <Link>Images\Fatcow-Farm-Fresh-Brick-link.32.png</Link>
+    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
-    <None Update="admin_settings.example.json">
+    <None Update="Json\admin_settings.example.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
