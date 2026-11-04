@@ -166,3 +166,49 @@ Macheta chitanțelor.
 
 - Operatorul probează adrese scurte, lungi până la 255 de caractere și cu diacritice; ambele exemplare și vecinătatea câmpurilor Suma/Am primit de la. Nu s-au generat PDF-uri, randări sau capturi din chat.
 - Publicare prin AvacontPush: `PYTHON/routes/adechit/receipt_output.py` și `PYTHON/static/help/adechit.json`. Fără SQL sau modificări de schemă.
+
+## Slice AD18
+
+Comparația soldurilor între două luni calendaristice consecutive.
+
+### Registry
+
+| Subfelie | Livrabil | Stare | Worklog |
+|---|---|---|---|
+| SLICE-AD18-01 | Raport nou «Diferențe între luni» în web și K-BOT: numai SID/SIC curent diferit de SFD/SFC anterior sau rând lipsă, perechi complete, PDF/Excel, filtre grupă/toate/separat și ajutor | SCRIS LOCAL; fără teste, compilare, randări, SQL sau publicare; înregistrarea celor 13 fișiere autorizată la 04.11.2026, rezultat în chat/registru | [Diferențe între luni](../SLICE-AD18-01-diferente-intre-luni.md) |
+
+### Current focus
+
+- 04.11.2026: comparație exclusivă a celor două perechi de solduri, cu păstrarea rândurilor lipsă inclusiv cu solduri zero. Următoarea subfelie liberă: **AD18-02**.
+
+### Open threads
+
+- De probat de Adelina: solduri egale cu alte coloane diferite (excluse), diferență numai debit/numai credit, rând lipsă în fiecare lună, rând lipsă cu valori zero, copil mutat între grupe, toate grupele/separat, luni deschise/închise, decembrie–ianuarie, lipsa lunii anterioare, lipsa diferențelor, PDF/Excel și butonul K-BOT după compilare.
+- Captura `19-panou-rapoarte.jpg` rămâne de refăcut cu blur puternic; nu s-au realizat capturi. Ajutorul textual web și K-BOT este actualizat.
+- Publicare server/web și distribuire K-BOT după compilare de către operator; fără SQL. Fișierele și motivele sunt în worklog; înregistrarea este autorizată la 04.11.2026 și se completează pentru lotul omis din prima înregistrare AD19-02. Rezultatul este raportat în chat/registru.
+
+## Slice AD19
+
+Completarea exclusivă a soldurilor inițiale după migrarea numai din 2021.
+
+### Registry
+
+| Subfelie | Livrabil | Stare | Worklog |
+|---|---|---|---|
+| SLICE-AD19-01 | Prima variantă a comenzii separate, prin rescrierea SI | PROIECTARE ÎNLOCUITĂ de AD19-02 la cererea Adelinei; nu a fost executată din chat | [Istoric](../SLICE-AD19-01-migrator-numai-solduri-initiale.md) |
+| SLICE-AD19-02 | AD_SOLDURI_REPORTATE separat, fără modificarea SI; DDL manual, migrator cu previzualizare, calcul lunar și rând distinct în fișele cont operator/părinte | SCRIS LOCAL; DDL pregătit, nerulat; fără compilare, teste sau publicare; înregistrarea celor 21 de fișiere autorizată explicit la 04.11.2026, rezultat în chat/registru | [Solduri reportate separat](../SLICE-AD19-02-solduri-reportate-separat.md) |
+| SLICE-AD19-03 | Filtru implicit «Doar copiii nerezolvați» în migrator, păstrând cazurile omise/blocate; diagnostic punctual prin citirea MDB-ului cerut | SCRIS LOCAL; fără compilare, teste, publicare sau scrieri în baze; înregistrare în așteptarea confirmării explicite | [Doar nerezolvați](../SLICE-AD19-03-migrator-doar-nerezolvati.md) |
+| SLICE-AD19-04 | Eliminarea controlului de concordanță cu prima situație salvată din 2021 numai pentru reportul calculat din Platitori și mișcările MDB | SCRIS LOCAL; fără compilare, teste, publicare sau scrieri în baze; înregistrare în așteptarea confirmării explicite | [Păstrarea istoricului](../SLICE-AD19-04-report-fara-validare-situatie-istorica.md) |
+
+### Current focus
+
+- 04.11.2026: la cererea explicită a Adelinei, AD19-04 elimină numai controlul dintre reportul calculat din SI/mișcări și prima situație salvată din 2021. Situațiile istorice rămân cu valorile originale, inclusiv greșelile; restul validărilor și fluxurilor sunt neschimbate. Filtrul AD19-03 rămâne disponibil. Următoarea subfelie liberă: **AD19-05**.
+
+### Open threads
+
+- AD19-03: de compilat/distribuit și probat de operator filtrul implicit, debifarea, cazurile blocate/omise și lista după COMMIT. Nu s-au executat teste sau compilări. Diagnosticul MDB este o citire cerută explicit; nu validează datele destinației. Celălalt caz rămas nu a fost identificat nominal în această intervenție.
+- AD19-04: de compilat/distribuit migratorul și probat de operator un report cu situație istorică neconcordantă, precum și recitirea după aplicare. Numai această validare a fost eliminată; situațiile nu se corectează și nu se ajustează reportul pentru a le reproduce greșelile în lunile calculate. Nu s-au rulat probe sau scrieri în baze. Înregistrarea celor cinci fișiere AD19-04 și a lotului AD19-03 necesită confirmare explicită pentru versiunile finale; fișierele comune se înregistrează cu versiunea curentă.
+- Ordine pentru operator: aplică manual SQL-ul AD_19_02 pe AVACONT_SURSA, propagă schema către unități, publică Python, compilează/distribuie migratorul, apoi previzualizează și aplică reportul. Nu se execută DDL automat și nu se reia migrarea.
+- De probat: SI de bază nenul plus report de debit/credit/zero, SI existent păstrat inclusiv versiune, repetare fără dublare, sursă/destinație schimbată, copil reconstituit, hartă lipsă/identitate diferită, SI diferit de baza MDB, rânduri omise/blocate, rollback și rezultat neconfirmat. De urmărit calculul unei grupe/toate grupele, fișa cont operator/părinte, intervalele și concordanța PDF/Excel. Fără probe executate.
+- Ajutorul și ghidurile sunt actualizate. Nu s-au realizat capturi; situațiile salvate, documentele și fluxul migrării complete nu sunt rescrise. Schema exportată nu a fost modificată ca și cum DDL-ul ar fi fost executat.
+- Toate fișierele și motivul concret sunt în worklog. Confirmarea «inregisreaza daca trebuie» din 04.11.2026 autorizează înregistrarea celor 21 de fișiere AD19-02; nu confirmă testarea sau publicarea. Rezultatul efectiv al scriptului este raportat în chat și în registrul imuabil.

@@ -15,6 +15,7 @@ rezervari (inclusiv) trebuie sa fie egala cu `R_Definitiva` de la sfarsitul zile
 
 CAND SE APLICA (ca sa nu strige degeaba la un contract rezervat integral dinainte):
   * ziua rezervarii are si receptii in acea zi pentru acelasi indicator (rezervarea s-a nascut dintr-o receptie);
+  * (04.11.2026) rezervarea INITIALA (`EInitiala`) nu se verifica: se face dinainte pentru tot angajamentul;
   * ziua are un singur capat de lant de rezervari (`R_Anterioara` -> `R_Definitiva`); altfel e sarita;
   * indicatorul are cel putin DOUA zile de felul asta in care cifrele se potrivesc exact -- adica se vede
     ca la el rezervarea chiar urmeaza receptiile. Fara asta, nimic nu e raportat.
@@ -25,6 +26,12 @@ CAND SE APLICA (ca sa nu strige degeaba la un contract rezervat integral dinaint
     inregistrat pe 15.02) si ordonantarile din zilele dintre ele n-aveau ce receptie sa vada. Versiunea pusa
     pe antetul gresit (AAB2FH3R3FF) ramane aratata: acolo ziua urmatoare cu receptii nu aduce suma lipsa
     (65.476 fata de 99.764) si cade chiar intr-o zi cu rezervare.
+  * (04.11.2026, operator) SE ARATA DOAR cazul in care receptionat > rezervat. Rezervat > receptionat e normal
+    (rezervarea se poate face peste ce s-a receptionat pana atunci) si NU mai e raportat; scutirea din 31.10
+    («receptia a venit mai tarziu») acopera doar acel caz, deci nu mai e apelata.
+  * (04.11.2026, operator) «receptionat» din comparatie = receptiile pana in ziua respectiva MINUS incasarile
+    (`FX_Plati.Suma < 0`, Tip INCASARE) pana in aceeasi zi: o incasare scade rezervarea, nu receptiile
+    (AAB2KRFBS6H: incasare -683,26 la 13.08, rezervarea a scazut cu 683,26 la 23.09).
 `DIF` se aduna ca in ordonantare (`ord_edit._SQL_REC_ANT`): fara versiunile sterse.
 
 NEVERIFICAT: nu a rulat pe MariaDB si nu a trecut prin niciun test. Pe jurnalul AAB2FH3R3FF (un singur
@@ -43,7 +50,7 @@ MIN_ZILE_POTRIVITE = 2
 _MAX_DETALII = 60
 
 _SQL_REZERVARI = (
-    "SELECT CodAngajament, CodIndicator, DATE(DataRezervare) AS Zi, R_Anterioara, R_Definitiva "
+    "SELECT CodAngajament, CodIndicator, DATE(DataRezervare) AS Zi, R_Anterioara, R_Definitiva, EInitiala "
     "  FROM FX_Rezervari "
     " WHERE CodIndicator IS NOT NULL AND DataRezervare IS NOT NULL AND R_Definitiva IS NOT NULL{filtru}"
 )
@@ -53,6 +60,15 @@ _SQL_RECEPTII = (
     "  FROM FX_Receptii R JOIN FX_Receptii_H H ON R.IDRH = H.IDRH "
     " WHERE COALESCE(H.Sters, 0) = 0 AND R.CodIndicator IS NOT NULL AND R.Data IS NOT NULL{filtru} "
     " GROUP BY R.CodAngajament, R.CodIndicator, DATE(R.Data)"
+)
+
+# (operator, 04.11.2026) A negative payment (`Tip = 'INCASARE'`: a refund / a credit invoice paid back) lowers the
+# reservation but not the receptions, so receptions may legitimately exceed the reservation by what was collected.
+_SQL_INCASARI = (
+    "SELECT P.CodAngajament, P.CodIndicator, DATE(P.Data_plata) AS Zi, SUM(P.Suma) AS Suma "
+    "  FROM FX_Plati P "
+    " WHERE P.Suma < 0 AND P.CodIndicator IS NOT NULL AND P.Data_plata IS NOT NULL{filtru} "
+    " GROUP BY P.CodAngajament, P.CodIndicator, DATE(P.Data_plata)"
 )
 
 
@@ -114,7 +130,7 @@ def gaseste_receptii_nepotrivite(cursor, cod: Optional[str] = None) -> Dict[str,
         if zi is None:
             continue
         pe_zi[(str(r["CodAngajament"]), str(r["CodIndicator"]), zi)].append(
-            {"ant": _num(r["R_Anterioara"]), "def": _num(r["R_Definitiva"])})
+            {"ant": _num(r["R_Anterioara"]), "def": _num(r["R_Definitiva"]), "init": bool(r.get("EInitiala"))})
     if not pe_zi:
         return {}
 
@@ -125,6 +141,13 @@ def gaseste_receptii_nepotrivite(cursor, cod: Optional[str] = None) -> Dict[str,
         if zi is not None:
             receptii[(str(r["CodAngajament"]), str(r["CodIndicator"]))][zi] = _num(r["Dif"])
 
+    cursor.execute(_SQL_INCASARI.format(filtru=filtru_c.replace("R.", "P.")), parametri)
+    incasari: Dict[tuple, Dict[date, float]] = defaultdict(dict)
+    for r in cursor.fetchall():
+        zi = _zi(r["Zi"])
+        if zi is not None:
+            incasari[(str(r["CodAngajament"]), str(r["CodIndicator"]))][zi] = _num(r["Suma"])
+
     puncte: Dict[tuple, List[tuple]] = defaultdict(list)
     for (cod_ang, indicator, zi), randuri in pe_zi.items():
         puncte[(cod_ang, indicator)].append((zi, randuri))
@@ -132,20 +155,29 @@ def gaseste_receptii_nepotrivite(cursor, cod: Optional[str] = None) -> Dict[str,
     rezultat: Dict[str, List[dict]] = defaultdict(list)
     for (cod_ang, indicator), lista in puncte.items():
         zile_rec = receptii.get((cod_ang, indicator), {})
+        zile_incasari = incasari.get((cod_ang, indicator), {})
         verificari = []
         for zi, randuri in sorted(lista, key=lambda x: x[0]):
             if zi not in zile_rec:
                 continue
             capat = _capat_de_zi(randuri)
-            if capat is None:
+            # The initial reservation (EInitiala) is made up front for the whole commitment; it does not follow
+            # the receptions, so it says nothing about them (AAB2FTFNE46: 50.000 reserved, 2.000 received on day one).
+            if capat is None or capat["init"]:
                 continue
-            cumulat = round(sum(v for z, v in zile_rec.items() if z <= zi), 2)
+            # Receptions up to the day, minus what was collected back (negative payments) up to the same day.
+            cumulat = round(sum(v for z, v in zile_rec.items() if z <= zi)
+                            + sum(v for z, v in zile_incasari.items() if z <= zi), 2)
             verificari.append((zi, capat["def"], cumulat, abs(cumulat - capat["def"]) < TOLERANTA))
         if sum(1 for v in verificari if v[3]) < MIN_ZILE_POTRIVITE:
             continue
         zile_rezervare = [zi for zi, _ in lista]
         for zi, rezervat, cumulat, potrivit in verificari:
-            if not potrivit and not _vine_mai_tarziu(zi, round(rezervat - cumulat, 2), zile_rec, zile_rezervare):
+            # (operator, 04.11.2026) Reserved MORE than received is normal (the reservation is made ahead of, or
+            # above, what is received so far). Only the opposite is wrong: received MORE than reserved.
+            # `_vine_mai_tarziu` (the «received later» excuse) only ever excused reserved > received, so it is no
+            # longer called; it stays until the operator says it goes.
+            if not potrivit and cumulat - rezervat >= TOLERANTA:
                 rezultat[cod_ang].append(
                     {"zi": zi, "indicator": indicator, "rezervat": rezervat, "receptionat": cumulat})
     for lista in rezultat.values():

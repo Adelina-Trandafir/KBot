@@ -53,6 +53,10 @@ Partial Class AdechitRapoarteForm
         rowRap1 = New System.Windows.Forms.Panel()
         btnPlata = New KBotButton()
         btnSituatie = New KBotButton()
+        rowComparatie = New KBotTableLayoutPanel()
+        btnComparatie = New KBotButton()
+        rowFaraZero = New System.Windows.Forms.Panel()
+        chkFaraZero = New KBotCheckBox()
         rowToate = New System.Windows.Forms.Panel()
         chkSepara = New KBotCheckBox()
         chkToate = New KBotCheckBox()
@@ -82,6 +86,8 @@ Partial Class AdechitRapoarteForm
         rowRap2.SuspendLayout()
         rowInterval.SuspendLayout()
         rowRap1.SuspendLayout()
+        rowComparatie.SuspendLayout()
+        rowFaraZero.SuspendLayout()
         rowToate.SuspendLayout()
         rowGrupa.SuspendLayout()
         rowLuna.SuspendLayout()
@@ -147,7 +153,7 @@ Partial Class AdechitRapoarteForm
         rowSub.Margin = New System.Windows.Forms.Padding(0)
         rowSub.Name = "rowSub"
         rowSub.Size = New System.Drawing.Size(400, 34)
-        rowSub.TabIndex = 12
+        rowSub.TabIndex = 13
         '
         ' lblAn / cboAn
         '
@@ -178,7 +184,7 @@ Partial Class AdechitRapoarteForm
         rowAn.Margin = New System.Windows.Forms.Padding(0)
         rowAn.Name = "rowAn"
         rowAn.Size = New System.Drawing.Size(400, 34)
-        rowAn.TabIndex = 11
+        rowAn.TabIndex = 12
         '
         ' lblLuna / cboLuna
         '
@@ -209,7 +215,7 @@ Partial Class AdechitRapoarteForm
         rowLuna.Margin = New System.Windows.Forms.Padding(0)
         rowLuna.Name = "rowLuna"
         rowLuna.Size = New System.Drawing.Size(400, 34)
-        rowLuna.TabIndex = 10
+        rowLuna.TabIndex = 11
         '
         ' lblGrupa / cboGrupa
         '
@@ -242,7 +248,7 @@ Partial Class AdechitRapoarteForm
         rowGrupa.Margin = New System.Windows.Forms.Padding(0)
         rowGrupa.Name = "rowGrupa"
         rowGrupa.Size = New System.Drawing.Size(400, 34)
-        rowGrupa.TabIndex = 9
+        rowGrupa.TabIndex = 10
         '
         ' chkToate / chkSepara
         '
@@ -279,7 +285,29 @@ Partial Class AdechitRapoarteForm
         rowToate.Margin = New System.Windows.Forms.Padding(0)
         rowToate.Name = "rowToate"
         rowToate.Size = New System.Drawing.Size(400, 30)
-        rowToate.TabIndex = 8
+        rowToate.TabIndex = 9
+        '
+        ' chkFaraZero / rowFaraZero: filter only the monthly debtor situation
+        '
+        chkFaraZero.AutoSize = False
+        chkFaraZero.Checked = True
+        chkFaraZero.Dock = System.Windows.Forms.DockStyle.Fill
+        chkFaraZero.Font = New System.Drawing.Font("Calibri", 11.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CByte(0))
+        chkFaraZero.Location = New System.Drawing.Point(0, 0)
+        chkFaraZero.Margin = New System.Windows.Forms.Padding(0)
+        chkFaraZero.Name = "chkFaraZero"
+        chkFaraZero.Size = New System.Drawing.Size(400, 30)
+        chkFaraZero.TabIndex = 0
+        chkFaraZero.Text = "Ascunde rândurile cu zero"
+        tips.SetToolTipHeader(chkFaraZero, "Situație lunară fără rânduri zero")
+        tips.SetToolTipText(chkFaraZero, "Doar pentru Situație lunară: ascunde rândurile cu zero în toate coloanele numerice, inclusiv zilele de prezență. Se aplică și la PDF și Excel.")
+        rowFaraZero.Controls.Add(chkFaraZero)
+        rowFaraZero.Dock = System.Windows.Forms.DockStyle.Top
+        rowFaraZero.Location = New System.Drawing.Point(0, 166)
+        rowFaraZero.Margin = New System.Windows.Forms.Padding(0)
+        rowFaraZero.Name = "rowFaraZero"
+        rowFaraZero.Size = New System.Drawing.Size(400, 30)
+        rowFaraZero.TabIndex = 8
         '
         ' btnSituatie / btnPlata
         '
@@ -309,12 +337,37 @@ Partial Class AdechitRapoarteForm
         rowRap1.Controls.Add(btnPlata)
         rowRap1.Controls.Add(btnSituatie)
         rowRap1.Dock = System.Windows.Forms.DockStyle.Top
-        rowRap1.Location = New System.Drawing.Point(0, 166)
+        rowRap1.Location = New System.Drawing.Point(0, 196)
         rowRap1.Margin = New System.Windows.Forms.Padding(0)
         rowRap1.Name = "rowRap1"
         rowRap1.Padding = New System.Windows.Forms.Padding(0, 4, 0, 4)
         rowRap1.Size = New System.Drawing.Size(400, 50)
         rowRap1.TabIndex = 7
+        '
+        ' rowComparatie
+        '
+        rowComparatie.ColumnCount = 1
+        rowComparatie.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        rowComparatie.RowCount = 1
+        rowComparatie.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100.0!))
+        rowComparatie.Controls.Add(btnComparatie, 0, 0)
+        rowComparatie.Dock = System.Windows.Forms.DockStyle.Top
+        rowComparatie.Margin = New System.Windows.Forms.Padding(0)
+        rowComparatie.Name = "rowComparatie"
+        rowComparatie.Padding = New System.Windows.Forms.Padding(0, 4, 0, 4)
+        rowComparatie.Size = New System.Drawing.Size(400, 50)
+        rowComparatie.TabIndex = 8
+        '
+        ' btnComparatie
+        '
+        btnComparatie.Dock = System.Windows.Forms.DockStyle.Fill
+        btnComparatie.Enabled = False
+        btnComparatie.Margin = New System.Windows.Forms.Padding(0)
+        btnComparatie.Name = "btnComparatie"
+        btnComparatie.TabIndex = 0
+        btnComparatie.Text = "Diferențe între luni"
+        tips.SetToolTipHeader(btnComparatie, "Diferențe între luni consecutive")
+        tips.SetToolTipText(btnComparatie, "Compară SID/SIC din luna aleasă cu SFD/SFC din luna calendaristică anterioară. Arată doar diferențele și rândurile lipsă, cu luna curentă deasupra celei anterioare.")
         '
         ' lblDeLa / dtpDeLa / lblPana / dtpPana: the interval of the cash and bank reports
         '
@@ -361,7 +414,7 @@ Partial Class AdechitRapoarteForm
         rowInterval.Controls.Add(dtpDeLa)
         rowInterval.Controls.Add(lblDeLa)
         rowInterval.Dock = System.Windows.Forms.DockStyle.Top
-        rowInterval.Location = New System.Drawing.Point(0, 216)
+        rowInterval.Location = New System.Drawing.Point(0, 246)
         rowInterval.Margin = New System.Windows.Forms.Padding(0)
         rowInterval.Name = "rowInterval"
         rowInterval.Size = New System.Drawing.Size(400, 34)
@@ -395,7 +448,7 @@ Partial Class AdechitRapoarteForm
         rowRap2.Controls.Add(btnBanca)
         rowRap2.Controls.Add(btnCasa)
         rowRap2.Dock = System.Windows.Forms.DockStyle.Top
-        rowRap2.Location = New System.Drawing.Point(0, 250)
+        rowRap2.Location = New System.Drawing.Point(0, 280)
         rowRap2.Margin = New System.Windows.Forms.Padding(0)
         rowRap2.Name = "rowRap2"
         rowRap2.Padding = New System.Windows.Forms.Padding(0, 4, 0, 4)
@@ -435,7 +488,7 @@ Partial Class AdechitRapoarteForm
         rowCauta.Controls.Add(txtCauta)
         rowCauta.Controls.Add(lblCauta)
         rowCauta.Dock = System.Windows.Forms.DockStyle.Top
-        rowCauta.Location = New System.Drawing.Point(0, 300)
+        rowCauta.Location = New System.Drawing.Point(0, 330)
         rowCauta.Margin = New System.Windows.Forms.Padding(0)
         rowCauta.Name = "rowCauta"
         rowCauta.Size = New System.Drawing.Size(400, 34)
@@ -466,7 +519,7 @@ Partial Class AdechitRapoarteForm
         rowCopil.Controls.Add(cboCopil)
         rowCopil.Controls.Add(lblCopil)
         rowCopil.Dock = System.Windows.Forms.DockStyle.Top
-        rowCopil.Location = New System.Drawing.Point(0, 334)
+        rowCopil.Location = New System.Drawing.Point(0, 364)
         rowCopil.Margin = New System.Windows.Forms.Padding(0)
         rowCopil.Name = "rowCopil"
         rowCopil.Size = New System.Drawing.Size(400, 34)
@@ -491,7 +544,7 @@ Partial Class AdechitRapoarteForm
         '
         rowToti.Controls.Add(chkToti)
         rowToti.Dock = System.Windows.Forms.DockStyle.Top
-        rowToti.Location = New System.Drawing.Point(0, 368)
+        rowToti.Location = New System.Drawing.Point(0, 398)
         rowToti.Margin = New System.Windows.Forms.Padding(0)
         rowToti.Name = "rowToti"
         rowToti.Size = New System.Drawing.Size(400, 30)
@@ -514,7 +567,7 @@ Partial Class AdechitRapoarteForm
         '
         rowFisa.Controls.Add(btnFisa)
         rowFisa.Dock = System.Windows.Forms.DockStyle.Top
-        rowFisa.Location = New System.Drawing.Point(0, 398)
+        rowFisa.Location = New System.Drawing.Point(0, 428)
         rowFisa.Margin = New System.Windows.Forms.Padding(0)
         rowFisa.Name = "rowFisa"
         rowFisa.Padding = New System.Windows.Forms.Padding(0, 4, 0, 4)
@@ -538,7 +591,7 @@ Partial Class AdechitRapoarteForm
         '
         rowAnulate.Controls.Add(btnAnulate)
         rowAnulate.Dock = System.Windows.Forms.DockStyle.Top
-        rowAnulate.Location = New System.Drawing.Point(0, 448)
+        rowAnulate.Location = New System.Drawing.Point(0, 478)
         rowAnulate.Margin = New System.Windows.Forms.Padding(0)
         rowAnulate.Name = "rowAnulate"
         rowAnulate.Padding = New System.Windows.Forms.Padding(0, 4, 0, 4)
@@ -567,7 +620,7 @@ Partial Class AdechitRapoarteForm
         rowExcel.Name = "rowExcel"
         rowExcel.Padding = New System.Windows.Forms.Padding(0, 4, 0, 4)
         rowExcel.Size = New System.Drawing.Size(400, 50)
-        rowExcel.TabIndex = 13
+        rowExcel.TabIndex = 14
         '
         ' pnlParam: the Dock.Top rows are added bottom row first, so the last one added (rowSub) is on top
         '
@@ -578,13 +631,16 @@ Partial Class AdechitRapoarteForm
         pnlParam.Controls.Add(rowCauta)
         pnlParam.Controls.Add(rowRap2)
         pnlParam.Controls.Add(rowInterval)
+        pnlParam.Controls.Add(rowComparatie)
         pnlParam.Controls.Add(rowRap1)
+        pnlParam.Controls.Add(rowFaraZero)
         pnlParam.Controls.Add(rowToate)
         pnlParam.Controls.Add(rowGrupa)
         pnlParam.Controls.Add(rowLuna)
         pnlParam.Controls.Add(rowAn)
         pnlParam.Controls.Add(rowSub)
         pnlParam.Controls.Add(rowExcel)
+        pnlParam.AutoScroll = True
         pnlParam.Dock = System.Windows.Forms.DockStyle.Left
         pnlParam.Location = New System.Drawing.Point(12, 9)
         pnlParam.Margin = New System.Windows.Forms.Padding(0)
@@ -666,6 +722,8 @@ Partial Class AdechitRapoarteForm
         rowRap2.ResumeLayout(False)
         rowInterval.ResumeLayout(False)
         rowRap1.ResumeLayout(False)
+        rowComparatie.ResumeLayout(False)
+        rowFaraZero.ResumeLayout(False)
         rowToate.ResumeLayout(False)
         rowGrupa.ResumeLayout(False)
         rowLuna.ResumeLayout(False)
@@ -706,6 +764,10 @@ Partial Class AdechitRapoarteForm
     Friend WithEvents rowRap1 As System.Windows.Forms.Panel
     Friend WithEvents btnPlata As KBotButton
     Friend WithEvents btnSituatie As KBotButton
+    Friend WithEvents rowComparatie As KBotTableLayoutPanel
+    Friend WithEvents btnComparatie As KBotButton
+    Friend WithEvents rowFaraZero As System.Windows.Forms.Panel
+    Friend WithEvents chkFaraZero As KBotCheckBox
     Friend WithEvents rowToate As System.Windows.Forms.Panel
     Friend WithEvents chkSepara As KBotCheckBox
     Friend WithEvents chkToate As KBotCheckBox

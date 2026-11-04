@@ -63,6 +63,9 @@ Update_Solduri atribuie `SoldInitial=Nz(Solduri_Lunare.Sold,0)`, SID și SIC din
 
 ## 5. Update_Situatie și corecția finală
 
+<!-- slice: AD19-02 -->
+**Extensie explicită pentru istoricul omis la migrare:** în web, `AD_SOLDURI_REPORTATE` este o componentă suplimentară față de formula Access de mai sus. Pentru luna din anul Y se adună o singură dată la B suma `SOLD` pentru același copil/subunitate cu `AN_START ≤ Y`. `Platitori.SI` rămâne neschimbat. Transferul 2020 → 2021 stochează soldul complet înainte de 2021 **minus SI de bază**, astfel încât acesta să nu fie numărat de două ori. Cheia subunitate/copil/an și înlocuirea valorii la repetare evită cumularea aceluiași report. Lunile închise continuă să citească situațiile salvate; nu sunt rescrise prin această intervenție. Fișele cont prezintă componenta pe rând separat la 01.01.AN_START, păstrând rândul SI existent.
+
 Notație pe rândul Situatie_buget: `V=ValoareContract`, `A=Plata+Plati`. Expresiile de mai jos descriu ramurile pentru valori numerice nenule; nu autorizează înlocuirea propagării NULL din IIf/Add cu zero unde sursa nu are Nz.
 
 ```text

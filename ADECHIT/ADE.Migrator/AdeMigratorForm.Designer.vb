@@ -39,6 +39,7 @@ Partial Class AdeMigratorForm
     Friend WithEvents tlpActiune As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents lblRezumat As System.Windows.Forms.Label
     Friend WithEvents btnMigreaza As System.Windows.Forms.Button
+    Friend WithEvents btnOpeningBalances As KBot.Controls.KBotButton
     Friend WithEvents btnGoleste As System.Windows.Forms.Button
     Friend WithEvents btnStop As System.Windows.Forms.Button
     Friend WithEvents lblMigrationState As System.Windows.Forms.Label
@@ -111,6 +112,7 @@ Partial Class AdeMigratorForm
         tlpActiune = New Global.KBot.Controls.KBotTableLayoutPanel()
         lblRezumat = New System.Windows.Forms.Label()
         btnMigreaza = New System.Windows.Forms.Button()
+        btnOpeningBalances = New KBot.Controls.KBotButton()
         btnGoleste = New System.Windows.Forms.Button()
         tlpJos = New Global.KBot.Controls.KBotTableLayoutPanel()
         grpTabele = New System.Windows.Forms.GroupBox()
@@ -158,7 +160,7 @@ Partial Class AdeMigratorForm
         tlpRoot.RowCount = 6
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 96.0F))
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 70.0F))
-        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 82.0F))
+        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 116.0F))
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 190.0F))
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 26.0F))
@@ -401,12 +403,22 @@ Partial Class AdeMigratorForm
         tlpActiune.Controls.Add(btnStop, 3, 0)
         tlpActiune.Controls.Add(lblMigrationState, 0, 1)
         tlpActiune.SetColumnSpan(lblMigrationState, 4)
+        tlpActiune.Controls.Add(btnOpeningBalances, 0, 2)
+        tlpActiune.SetColumnSpan(btnOpeningBalances, 4)
         tlpActiune.Dock = DockStyle.Fill
         tlpActiune.Name = "tlpActiune"
-        tlpActiune.RowCount = 2
+        tlpActiune.RowCount = 3
         tlpActiune.RowStyles.Add(New RowStyle(SizeType.Absolute, 40.0F))
         tlpActiune.RowStyles.Add(New RowStyle(SizeType.Percent, 100.0F))
+        tlpActiune.RowStyles.Add(New RowStyle(SizeType.Absolute, 34.0F))
         tlpActiune.TabIndex = 2
+        '
+        ' btnOpeningBalances
+        '
+        btnOpeningBalances.Dock = DockStyle.Fill
+        btnOpeningBalances.Name = "btnOpeningBalances"
+        btnOpeningBalances.Text = "Solduri reportate 2020 → 2021 (migrare existentă)..."
+        btnOpeningBalances.TabIndex = 5
         '
         ' lblRezumat
         '

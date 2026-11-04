@@ -68,8 +68,10 @@ specifice stabilite de utilizator pentru ADECHIT, consemnate mai jos.
 | SLICE-AD14 | Taxa lunii și închiderea lunii cu schimbarea taxei active | AD14-03 SCRIS LOCAL: ultima bifă Activ are prioritate, orice taxă existentă poate fi reactivată; AD14-02 combobox în antet; fără teste sau publicare | [AD14](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad14) |
 | SLICE-AD15 | O încasare repartizată la mai mulți copii; sume propuse din soldul final | AD15-01 SCRIS LOCAL; fără teste, SQL sau publicare | [AD15](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad15) |
 | SLICE-AD16 | Macheta chitanțelor | AD16-01 SCRIS LOCAL: Adresa pe două rânduri, cu încadrarea textului lung; fără teste sau publicare | [AD16](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad16) |
+| SLICE-AD18 | Diferențe între luni consecutive: SID/SIC curent față de SFD/SFC anterior și rânduri lipsă | AD18-01 SCRIS LOCAL: raport nou în web și K-BOT, perechi complete, PDF/Excel și ajutor; fără teste sau publicare | [AD18](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad18) |
+| SLICE-AD19 | Solduri reportate separat în ADE.Migrator după omiterea istoricului din 2020 | AD19-04 SCRIS LOCAL: reportul calculat din SI/mișcări nu mai este blocat de neconcordanța primei situații salvate; istoricul se păstrează. Filtrul AD19-03 rămâne disponibil. Fără compilare, teste sau scrieri în baze | [AD19](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad19) |
 
-**Următorul număr liber de felie: SLICE-AD17**.
+**Următorul număr liber de felie: SLICE-AD20**. AD17-01 este deja alocat în [worklogul existent](docs/worklog/SLICE-AD17-01-situatie-debitori-fara-randuri-zero.md).
 Planul tuturor feliilor este [documentat](ADECHIT/PLAN_IMPLEMENTARE.md); toate
 confirmările de testare/publicare din 23.10.2026 privesc starea de la acea dată;
 intervențiile ulterioare au starea indicată separat în registru și în workloguri.
@@ -157,6 +159,10 @@ sunt în secțiunea fiecărei felii. Registrul numeric K-BOT rămâne separat.
     utilizatorului; excepția autorizată a fost numai pornirea nonvizuală ADE1-06.
 
 ## Open threads — transversale
+
+- AD19-04: SCRIS LOCAL, NECOMPILAT, NETESTAT. La cererea Adelinei, a fost eliminat numai controlul de concordanță cu prima situație salvată din 2021 pentru reportul calculat din Platitori și mișcări. Situațiile salvate, formulele, celelalte validări și migrarea completă rămân neschimbate. Filtrul implicit AD19-03 pentru nerezolvați rămâne disponibil. Fără scrieri în baze; înregistrarea AD19-03/04 așteaptă confirmare explicită. [Worklog AD19-04](docs/worklog/SLICE-AD19-04-report-fara-validare-situatie-istorica.md); [filtru AD19-03](docs/worklog/SLICE-AD19-03-migrator-doar-nerezolvati.md).
+
+- AD18-01: SCRIS LOCAL, fără teste, compilare, randări PDF/Excel sau publicare. De probat de Adelina: diferențe individuale SID/SFD și SIC/SFC, lipsă în fiecare lună inclusiv cu zero, mutare între grupe, decembrie–ianuarie, lună anterioară absentă, fără diferențe și concordanța PDF/Excel. Captura web `19-panou-rapoarte.jpg` rămâne de refăcut pentru butonul nou, cu blur puternic pe datele sensibile. Înregistrarea celor 13 fișiere este autorizată la 04.11.2026; rezultatul completării lotului omis este raportat în chat și în registru.
 
 - AD16-01: câmpul Adresa din chitanța PDF are două rânduri și text adaptabil; SCRIS LOCAL, fără probe PDF/vizuale sau publicare. Fără SQL. De probat adrese scurte/lungi în ambele exemplare și la listare/descărcare.
 

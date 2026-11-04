@@ -69,6 +69,10 @@ Partial Class KBotDataView
     ''' <summary>Raised when a combo cell opens its editor: the handler may replace <see cref="KBotComboItemsEventArgs.Items"/> with the list of THAT cell.</summary>
     Public Event ComboItemsRequested As EventHandler(Of KBotComboItemsEventArgs)
 
+    ''' <summary>Raised on every change of the text typed in a Text cell editor (before the commit): the handler may replace <see cref="KBotEditorTextEventArgs.Text"/>
+    ''' (strip characters, cut the length) or follow the length live (a counter under the cell).</summary>
+    Public Event EditorTextChanged As EventHandler(Of KBotEditorTextEventArgs)
+
     ''' <summary>Raised by a second Esc in a row, right after the first one closed the editor of a cell (see <see cref="EscapeCancelsRow"/>), when the operator changed
     ''' something in the row. A host that cancels the row itself sets <see cref="KBotRowCancelEventArgs.Handled"/> (a row that is only the empty row of the table is removed);
     ''' otherwise the grid puts the cells back as they were (<see cref="RevertRow"/>).</summary>
@@ -186,7 +190,28 @@ Partial Class KBotDataView
         AddHandler editText.Leave, AddressOf OnEditorLeave
         AddHandler editCombo.Leave, AddressOf OnEditorLeave
         AddHandler editCombo.ItemPicked, AddressOf OnEditorComboPicked
+        AddHandler editText.TextChanged, AddressOf OnEditorTextChanged
         WireGroupEditor()
+    End Sub
+
+    ' The operator typed in the Text editor: the host sees the text (and may replace it) before anything is committed. UI boundary: logs and swallows.
+    Private Sub OnEditorTextChanged(sender As Object, e As EventArgs)
+        Try
+            If _suppressEditorEvents OrElse Not _editing OrElse _editColumnKey Is Nothing Then Return
+            Dim k_args As New KBotEditorTextEventArgs(_editColumnKey, _editRowIndex, editText.Text)
+            RaiseEvent EditorTextChanged(Me, k_args)
+            If String.Equals(k_args.Text, editText.Text, StringComparison.Ordinal) Then Return
+            Dim k_fromEnd As Integer = editText.TextLength - editText.SelectionStart
+            _suppressEditorEvents = True
+            Try
+                editText.Text = If(k_args.Text, String.Empty)
+                editText.SelectionStart = Math.Max(0, editText.TextLength - k_fromEnd)
+            Finally
+                _suppressEditorEvents = False
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotDataView.OnEditorTextChanged", ex)
+        End Try
     End Sub
 
     ' A column with CommitOnSelect writes the value as soon as the operator picks an item of the list (not when he leaves the cell).

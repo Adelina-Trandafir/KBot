@@ -168,9 +168,12 @@ Public NotInheritable Class VrcOiBuilder
         Dim k_productIds = k_products.Select(Function(k_r) Key(k_r, "ID")).ToHashSet(StringComparer.Ordinal)
         For Each k_choice In k_choices
             Dim k_account = k_data.Rows("Masini").Single(Function(k_r) Key(k_r, "IdMasina") = k_choice.AccountKey)
-            AddNamed(k_data, "Masini", k_account, Lineage(k_data.Source) & "|" & k_choice.AccountKey)
+            Dim k_warehouse = CloneRow(k_account)
+            k_warehouse("Masina") = VrcOiChoice.WarehouseAccount
+            k_warehouse("TIP") = "OIM"
+            AddNamed(k_data, "Masini", k_warehouse, "WAREHOUSE")
             Dim k_useId = Allocate("Masini", "USE|" & Normal(k_choice.UseAccountName))
-            If Not _tables("Masini").Any(Function(k_r) CLng(k_r("IdMasina")) = k_useId) Then _tables("Masini").Add(New Dictionary(Of String, Object)(StringComparer.OrdinalIgnoreCase) From {{"IdMasina", k_useId}, {"Masina", k_choice.UseAccountName.Trim()}, {"TIP", "M"}})
+            If Not _tables("Masini").Any(Function(k_r) CLng(k_r("IdMasina")) = k_useId) Then _tables("Masini").Add(New Dictionary(Of String, Object)(StringComparer.OrdinalIgnoreCase) From {{"IdMasina", k_useId}, {"Masina", k_choice.UseAccountName.Trim()}, {"TIP", "OIF"}})
         Next
         For Each k_row In k_products
             Collect(Sub()
@@ -187,9 +190,11 @@ Public NotInheritable Class VrcOiBuilder
             Collect(Sub()
                         Dim k_identity = Lineage(k_data.Source) & "|" & Key(k_row, "IdProdus")
                         Dim k_id = Allocate("ProduseP", k_identity)
-                        Dim k_attributes = Key(k_row, "ID") & "|" & Number(k_row, "PUTVA").ToString("G29", CultureInfo.InvariantCulture)
+                        Dim k_price = VrcConvert.ToDecimal(Value(k_row, "PUTVA"))
+                        If Not k_price.HasValue AndAlso Not String.IsNullOrWhiteSpace(Text(k_row, "PUTVA")) Then Throw New InvalidOperationException("Prețul din nomenclator nu este numeric.")
+                        Dim k_attributes = Key(k_row, "ID") & "|" & If(k_price.HasValue, k_price.GetValueOrDefault().ToString("G29", CultureInfo.InvariantCulture), String.Empty)
                         Dim k_before As String = Nothing
-                        If _variantAttributes.TryGetValue(k_id, k_before) AndAlso k_before <> k_attributes Then _result.Blockers.Add(Context(k_data, k_row) & ": varianta avea alt produs sau alt preț în baza anterioară; nu se reunesc automat variante cu identitate schimbată.")
+                        If _variantAttributes.TryGetValue(k_id, k_before) AndAlso (k_before.Split("|"c)(0) <> Key(k_row, "ID") OrElse (k_before.Split("|"c)(1).Length > 0 AndAlso k_price.HasValue AndAlso k_before <> k_attributes)) Then _result.Blockers.Add(Context(k_data, k_row) & ": varianta avea alt produs sau alt preț în baza anterioară; nu se reunesc automat variante cu identitate schimbată.")
                         _variantAttributes(k_id) = k_attributes
                         AddNamed(k_data, "ProduseP", k_row, k_identity)
                     End Sub, Context(k_data, k_row))
@@ -229,7 +234,7 @@ Public NotInheritable Class VrcOiBuilder
             If Not _holderAliases.TryGetValue(k_data.Source.Source.Path & "|" & k_key, k_targetName) Then k_targetName = VrcOiHolders.DefaultTarget(k_data, k_key)
             If String.IsNullOrWhiteSpace(k_targetName) Then
                 For Each k_bon In k_group
-                    _result.Blockers.Add($"{Context(k_data, k_bon)}: «{k_sourceName}». Alegeți deținătorul în grila de asocieri.")
+                    _result.Blockers.Add($"{Context(k_data, k_bon)}: «{k_sourceName}». Nu există un nume identificabil pentru acest primitor în seria bazelor încărcate; completați primitorul în sursă și recitiți bazele.")
                 Next
                 Continue For
             End If
@@ -237,13 +242,13 @@ Public NotInheritable Class VrcOiBuilder
                         Dim k_copy = VrcOiHolders.Resolve(k_data, k_key, k_targetName, _catalog)
                         If Not VrcOiHolders.IsMissing(k_data, k_key) Then
                             Dim k_identity = Lineage(k_data.Source) & "|" & k_key
-                            Dim k_before As (Name As String, File As String)
+                            Dim k_before As (Name As String, File As String) = (String.Empty, String.Empty)
                             Dim k_changedName = _holderOriginals.TryGetValue(k_identity, k_before) AndAlso Normal(k_before.Name) <> Normal(k_sourceName)
                             _holderOriginals(k_identity) = (k_sourceName, k_data.Source.Profile.Label)
                             If k_changedName Then
                                 Dim k_previousTarget As String = Nothing
                                 If Not _holderAliases.TryGetValue(k_before.File & "|" & k_key, k_previousTarget) Then k_previousTarget = k_before.Name
-                                _report.AppendLine($"NUME DIFERITE ÎN SURSE: «{k_before.Name}» în {k_before.File} / «{k_sourceName}» în {k_data.Source.Profile.Label}. Destinație: «{k_previousTarget}» / «{k_targetName}» — {If(Normal(k_previousTarget) = Normal(k_targetName), "asociate în același deținător", "păstrate ca deținători distincți; se pot asocia în grilă")}.")
+                                _report.AppendLine($"Deținător redenumit în surse: «{k_before.Name}» / «{k_sourceName}». Asociere automată la «{k_targetName}»; istoricul este în raportul HTML.")
                             End If
                         End If
                         AddNamed(k_data, "Clienti", k_copy, "HOLDER|" & Normal(k_targetName))
@@ -325,15 +330,23 @@ Public NotInheritable Class VrcOiBuilder
                         End Sub, Context(k_data, k_event.Row))
             Next
             Dim k_keptNirs = k_nirs.Where(Function(k_id) k_previous Is Nothing OrElse Not k_opening.Contains(k_id)).ToHashSet(StringComparer.Ordinal)
-            CopyReceipts(k_data, k_keptNirs)
+            CopyReceipts(k_data, k_keptNirs, k_choice.TargetName)
             CopyHandovers(k_choice, k_bons)
             RemoveFromMaterials(k_data, k_choice.AccountKey, k_products, k_variants, k_nirs, k_bons)
             Dim k_line = $"{k_data.Source.Profile.Label} | {k_choice.AccountName}: {k_keptNirs.Count} NIR păstrate; {k_nirs.Count - k_keptNirs.Count} reporturi eliminate după reconciliere; {k_bons.Count} BC → BP + BC legat."
             _report.AppendLine(k_line)
             _notes.Add(k_line)
+            Dim k_summary As New VrcOiYearSummary With {.Source = k_data.Source.Source.Path, .Subunit = k_data.Source.SubunitName, .Account = k_choice.AccountName, .Destination = k_choice.TargetName, .Year = k_data.Source.Year, .Receipts = k_keptNirs.Count, .RemovedOpenings = k_nirs.Count - k_keptNirs.Count, .Handovers = k_bons.Count}
+            k_summary.Problems.AddRange(_result.Blockers.Skip(k_problemsBeforeYear))
+            k_balanceComplete = k_balanceComplete AndAlso _result.Blockers.Count = k_problemsBeforeYear
+            k_summary.BalanceComplete = k_balanceComplete
+            _result.Years.Add(k_summary)
             If k_balanceComplete Then
                 For Each k_stock In k_balance.Where(Function(k_p) k_p.Value <> 0D)
                     _report.AppendLine($"  Magazie la sfârșitul bazei: {StockLabel(k_stock.Key)} = {k_stock.Value}.")
+                    Dim k_parts = k_stock.Key.Split("|"c)
+                    Dim k_product = ProductForVariant(Long.Parse(k_parts(0), CultureInfo.InvariantCulture))
+                    k_summary.Stock.Add(New VrcOiStockSummary With {.Product = Text(k_product, "DenumireP"), .Unit = Text(k_product, "UM"), .Price = Decimal.Parse(k_parts(1), CultureInfo.InvariantCulture), .Quantity = k_stock.Value})
                 Next
             Else
                 _report.AppendLine("  Soldul și reconcilierea acestui an nu sunt concluzive cât timp există documente/linii invalide; analiza celorlalte baze continuă.")
@@ -399,19 +412,22 @@ Public NotInheritable Class VrcOiBuilder
         k_balance(k_key) = k_before + k_delta
     End Sub
 
-    Private Sub CopyReceipts(k_data As VrcOiData, k_nirs As HashSet(Of String))
+    Private Sub CopyReceipts(k_data As VrcOiData, k_nirs As HashSet(Of String), k_destination As String)
         For Each k_header In k_data.Rows("NIR").Where(Function(k_r) k_nirs.Contains(Key(k_r, "IdIntrare"))).OrderBy(Function(k_r) DocumentDay(k_r, "Data")).ThenBy(Function(k_r) VrcConvert.ToDecimal(Value(k_r, "Numar")).GetValueOrDefault())
             Collect(Sub()
             Dim k_id = Allocate("NIR", MapKey(k_data, "NIR", Key(k_header, "IdIntrare")))
             _maps(MapKey(k_data, "NIR", Key(k_header, "IdIntrare"))) = k_id
             Dim k_copy = CloneRow(k_header)
             k_copy("IdIntrare") = k_id
-            k_copy("Numar") = If(VrcConvert.IsOpeningStock(Text(k_header, "NrFact")), -k_id, k_id)
+            k_copy("Numar") = If(k_header.ContainsKey(VrcOiReceiptSplit.OriginalKey), Value(k_header, "Numar"), CType(If(VrcConvert.IsOpeningStock(Text(k_header, "NrFact")), -k_id, k_id), Object))
             For Each k_field In {"IdMasina", "IdComisie", "IDF"}
                 k_copy(k_field) = Mapped(k_data, If(k_field = "IdMasina", "Masini", If(k_field = "IDF", "Furnizori", "ComisieNIR")), Value(k_header, k_field))
             Next
             k_copy("IdStorno") = Nothing
             _tables("NIR").Add(k_copy)
+            Dim k_details = DocumentSummary(k_data, "NIR", k_header, k_destination)
+            k_details.Target = $"NIR {k_copy("Numar")} → {VrcOiChoice.WarehouseAccount} (OIM)"
+            Dim k_beforeDetails = _result.Blockers.Count
             _notes.Add($"{k_data.Source.Profile.Label}: NIR/{Key(k_header, "IdIntrare")}, număr {Text(k_header, "Numar")} → NIR/{k_id}, număr {k_copy("Numar")}.")
             For Each k_row In k_data.Rows("Intrari").Where(Function(k_r) Key(k_r, "IdIntrare") = Key(k_header, "IdIntrare"))
                 Collect(Sub()
@@ -430,6 +446,7 @@ Public NotInheritable Class VrcOiBuilder
                 _tables("Intrari").Add(k_line)
                         End Sub, Context(k_data, k_row))
             Next
+            k_details.Complete = _result.Blockers.Count = k_beforeDetails
                     End Sub, Context(k_data, k_header))
         Next
     End Sub
@@ -453,6 +470,9 @@ Public NotInheritable Class VrcOiBuilder
             k_copy("IdRetur") = Nothing
             k_copy("Expl") = Value(k_header, "Expl")
             _tables("Iesiri_H").Add(k_copy)
+            Dim k_details = DocumentSummary(k_data, "BC", k_header, k_choice.TargetName)
+            k_details.Target = $"BP {k_id} + BC aferent; {VrcOiChoice.WarehouseAccount} (OIM) → {k_choice.UseAccountName} (OIF)"
+            Dim k_beforeDetails = _result.Blockers.Count
             _notes.Add($"{k_data.Source.Profile.Label}: BC/{k_oldId} ({Text(k_header, "NumarBC")}) → BP {k_id} + BC legat, aceeași cantitate și valoare.")
             For Each k_row In k_lines
                 Collect(Sub()
@@ -496,9 +516,19 @@ Public NotInheritable Class VrcOiBuilder
                 _tables("OI_Produse").Add(k_registry)
                         End Sub, Context(k_data, k_row))
             Next
+            k_details.Complete = _result.Blockers.Count = k_beforeDetails
                     End Sub, Context(k_data, k_header))
         Next
     End Sub
+
+    Private Function DocumentSummary(k_data As VrcOiData, k_kind As String, k_header As Dictionary(Of String, Object), k_destination As String) As VrcOiDocumentSummary
+        Dim k_isNir = k_kind = "NIR"
+        Dim k_details As New VrcOiDocumentSummary With {.Source = k_data.Source.Source.Path, .Destination = k_destination, .Kind = k_kind,
+            .Number = Text(k_header, If(k_isNir, "Numar", "NumarBC")), .Day = DocumentDay(k_header, If(k_isNir, "Data", "DataBC"))}
+        k_details.Lines = k_data.Rows(If(k_isNir, "Intrari", "Iesiri")).Where(Function(k_r) Key(k_r, If(k_isNir, "IdIntrare", "IdBonConsum")) = Key(k_header, If(k_isNir, "IdIntrare", "IdBonConsum"))).ToList()
+        _result.Documents.Add(k_details)
+        Return k_details
+    End Function
 
     Private Shared Function DocumentNumber(k_text As String) As Decimal
         Dim k_match = System.Text.RegularExpressions.Regex.Match(k_text, "[0-9]+(?:[.,][0-9]+)?")
@@ -515,11 +545,12 @@ Public NotInheritable Class VrcOiBuilder
         If k_bon.Length = 0 AndAlso k_nir.Length > 0 AndAlso Value(k_row, "Numar") Is Nothing Then k_header = If(k_data.Rows("NIR").FirstOrDefault(Function(k_r) Key(k_r, "IdIntrare") = k_nir), k_row)
         Dim k_text = k_data.Source.Profile.Label
         If Value(k_header, "NumarBC") IsNot Nothing Then
-            k_text &= $", bonul «{Text(k_header, "NumarBC") }», data {Text(k_header, "DataBC") }"
+            k_text &= ", " & VrcOiHolders.DocumentLabel(k_header)
             Dim k_holder = k_data.Rows("Clienti").FirstOrDefault(Function(k_r) Key(k_r, "IDC") = Key(k_header, "IDC"))
             If k_holder IsNot Nothing Then k_text &= $", deținător «{Text(k_holder, "Denumire")}»"
         ElseIf Value(k_header, "Numar") IsNot Nothing Then
-            k_text &= $", NIR «{Text(k_header, "Numar") }», data {Text(k_header, "Data") }, factura «{Text(k_header, "NrFact")}»"
+            Dim k_day = Value(k_header, "Data")
+            k_text &= $", NIR «{Text(k_header, "Numar") }», data {If(TypeOf k_day Is Date, CDate(k_day).ToString("dd.MM.yyyy"), Text(k_header, "Data"))}, factura «{Text(k_header, "NrFact")}»"
         End If
         Dim k_variant = k_data.Rows("ProduseP").FirstOrDefault(Function(k_r) Key(k_r, "IdProdus") = Key(k_row, "IdProdus"))
         Dim k_product As Dictionary(Of String, Object) = Nothing

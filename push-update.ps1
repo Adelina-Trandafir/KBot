@@ -64,6 +64,13 @@
     -Sign             forwarded to publish-release.ps1: Ask (default, one console
                       question before the version one), Yes, No (nothing signed,
                       no SimplySign confirmation).
+    -ReleaseNotes     Ask (default) / Skip: Skip = push WITHOUT asking for notes (no request on
+                      the clipboard, no waiting for the section). Notes already in NOUTATI.md
+                      are still sent. Forwarded to publish-release.ps1.
+    -KBotMigrator     Auto (default) / Yes / No, forwarded to publish-release.ps1: KBot.Migrator
+                      (Migrare\) inside the package. Auto = with the Access package only.
+    -AvcMigrator      Auto (default) / Yes / No, forwarded: AVC.Migrator (AvcMigrator\) inside
+                      the package. Auto = No. Yes needs the Access package.
     -SettingsPath     alternative push_settings.json.
     -ApiBaseUrl       where /api/update/latest is read from (default: production).
 ================================================================================
@@ -82,6 +89,12 @@ param(
     [string] $Bump = 'Ask',
     [ValidateSet('Ask', 'Yes', 'No')]
     [string] $Sign = 'Ask',
+    [ValidateSet('Ask', 'Skip')]
+    [string] $ReleaseNotes = 'Ask',
+    [ValidateSet('Auto', 'Yes', 'No')]
+    [string] $KBotMigrator = 'Auto',
+    [ValidateSet('Auto', 'Yes', 'No')]
+    [string] $AvcMigrator = 'Auto',
     [string] $SettingsPath = '',
     [string] $ApiBaseUrl = 'https://kbot.avatarsoft.ro'
 )
@@ -189,14 +202,17 @@ function Get-PackageInfo {
         # Slice 0104: the package must be the kind it is pushed as. A non-access package under the
         # "access" block would strip the Migrator from nobody, but an access package under
         # "non_access" would hand the Access code to clients who must not have it.
+        # KBotAdmin can leave KBot.Migrator out of an Access package (-KBotMigrator No): what makes a package
+        # an access one is the Access code (KBot.Access.dll), so only that is required.
         $migrator   = @($entries | Where-Object { $_.FullName -match '(^|/)Migrare/KBot\.Migrator\.exe$' })
+        $avcInside  = @($entries | Where-Object { $_.FullName -match '(^|/)AvcMigrator/AVC\.Migrator\.exe$' })
         $accessDll  = @($entries | Where-Object { $_.FullName -match '(^|/)KBot\.Access\.dll$' })
         if ($IncludeAccess) {
-            if ($migrator.Count -eq 0 -or $accessDll.Count -eq 0) {
-                throw "$ZipPath is not an ACCESS package (Migrare\KBot.Migrator.exe and KBot.Access.dll expected). Build with -Audience Access."
+            if ($accessDll.Count -eq 0) {
+                throw "$ZipPath is not an ACCESS package (KBot.Access.dll expected). Build with -Audience Access."
             }
         } else {
-            if ($migrator.Count -gt 0 -or $accessDll.Count -gt 0) {
+            if ($migrator.Count -gt 0 -or $avcInside.Count -gt 0 -or $accessDll.Count -gt 0) {
                 throw "$ZipPath carries Access components -- it cannot go out as the NON-ACCESS package. Build with -Audience NonAccess."
             }
         }
@@ -275,10 +291,11 @@ if (-not $SkipBuild) {
     $publish = Join-Path $SolutionRoot 'publish-release.ps1'
     if (-not (Test-Path -LiteralPath $publish)) { throw "publish-release.ps1 not found at $publish." }
     Write-Step "Building RELEASE via publish-release.ps1 ..."
-    $publishArgs = @{ Bump = $Bump; Sign = $Sign; Audience = $AudienceChoice }
+    $publishArgs = @{ Bump = $Bump; Sign = $Sign; Audience = $AudienceChoice; KBotMigrator = $KBotMigrator; AvcMigrator = $AvcMigrator }
     if (-not [string]::IsNullOrWhiteSpace($SignThumbprint)) { $publishArgs['SignThumbprint'] = $SignThumbprint }
     # Notes typed by hand (-Notes): the AI assistant is not asked for them (step 4b records them).
-    if (-not [string]::IsNullOrWhiteSpace($Notes)) { $publishArgs['ReleaseNotes'] = 'Skip' }
+    # -ReleaseNotes Skip: the build neither requests nor waits for the notes either (nothing is asked).
+    if (-not [string]::IsNullOrWhiteSpace($Notes) -or $ReleaseNotes -eq 'Skip') { $publishArgs['ReleaseNotes'] = 'Skip' }
     & $publish @publishArgs
     if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "publish-release.ps1 failed (ExitCode=$LASTEXITCODE)." }
 }
@@ -365,7 +382,7 @@ if (-not (Test-Path -LiteralPath $notesTool)) { throw "ReleaseNotes.ps1 not foun
 if (-not [string]::IsNullOrWhiteSpace($Notes)) {
     & $notesTool -Action Record -Version $localVersion.ToString() -NotesText $Notes
 } else {
-    if ($SkipBuild) {
+    if ($SkipBuild -and $ReleaseNotes -ne 'Skip') {
         & $notesTool -Action Request -Version $localVersion.ToString()
         $null = & $notesTool -Action Wait -Version $localVersion.ToString()
     }

@@ -49,6 +49,7 @@ Public Class PrimiteView
     Private Const MenuScoatePrefix As String = "scoate:"
     Private Const MenuArhiveaza As String = "arhiveaza"
     Private Const MenuScoateArhiva As String = "scoatearhiva"
+    Private Const MenuContare As String = "adaugacontare"
 
     Private Shared ReadOnly _ro As New CultureInfo("ro-RO")
     Private Shared ReadOnly _monthNames As String() = {"Ianuarie", "Februarie", "Martie", "Aprilie", "Mai", "Iunie", "Iulie",
@@ -390,7 +391,6 @@ Public Class PrimiteView
             k_key, $"{SupplierName(k_supGroup)}~~~{k_supSum.ToString("N2", _ro)}", k_parent,
             pLeftIconClosed:=k_icon, pLeftIconOpen:=k_icon, pExpanded:=k_expanded)
         k_supplier.Tooltip = SupplierTooltip(k_supGroup)
-        k_supplier.HasCheckBox = _contare
         If Not k_underMonth Then k_supplier.Bold = True
         Dim k_invoices As IEnumerable(Of EFacturaPrimita)
         If Not k_underMonth AndAlso _ascending Then
@@ -412,7 +412,7 @@ Public Class PrimiteView
                 pLeftIconClosed:=k_dot, pLeftIconOpen:=k_dot)
             k_leaf.Tag = k_p
             k_leaf.Tooltip = TooltipOf(k_p)
-            k_leaf.HasCheckBox = _contare
+            k_leaf.HasCheckBox = ContareBox(k_p)
             _nodes(k_p.IdPrimita) = k_leaf
         Next
     End Sub
@@ -1091,9 +1091,15 @@ Public Class PrimiteView
     ' ── Menu and files ──────────────────────────────────────────────────────────
 
     Private Sub ShowMenu(k_p As EFacturaPrimita, k_screen As Point)
-        Dim k_items As New List(Of CustomPopupItem) From {
-            New CustomPopupItem(MenuZip, "Salvează ca &ZIP"),
-            New CustomPopupItem(MenuXml, "Salvează ca &XML")}
+        Dim k_items As New List(Of CustomPopupItem)()
+        ' Slice 01EF-07: the accounting operations of an invoice start here (the all-invoices window only): the invoice is ticked, the page «Contări» is filled with it
+        ' and the other invoices of the same supplier get a tick box.
+        If Not _angajamentView Then
+            k_items.Add(New CustomPopupItem(MenuContare, "&Adaugă operații contabile"))
+            k_items.Add(CustomPopupItem.Separator())
+        End If
+        k_items.Add(New CustomPopupItem(MenuZip, "Salvează ca &ZIP"))
+        k_items.Add(New CustomPopupItem(MenuXml, "Salvează ca &XML"))
         If _idDdf.HasValue Then
             Dim k_how As String = Nothing
             If Not _linked.TryGetValue(k_p.IdPrimita, k_how) Then
@@ -1141,6 +1147,8 @@ Public Class PrimiteView
                 Return
             End If
             Select Case k_key
+                Case MenuContare
+                    Await StartContareAsync(k_p).ConfigureAwait(True)
                 Case MenuLegaAlege
                     Using k_dialog As New AlegeDdfForm(_api, _gate, $"{k_p.NrFact} ({k_p.Furnizor})")
                         If k_dialog.ShowDialog(FindForm()) <> DialogResult.OK OrElse k_dialog.Ales Is Nothing Then Return

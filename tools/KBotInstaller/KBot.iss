@@ -46,6 +46,11 @@
 #ifndef WithAccess
   #define WithAccess 1
 #endif
+; /DWithKBotMigrator=1|0: Migrare (KBot.Migrator) is in the package. Default = WithAccess (the old rule); KBotAdmin can leave it
+; out of an Access package. AvcMigrator (when present) needs no switch: it travels with the app component.
+#ifndef WithKBotMigrator
+  #define WithKBotMigrator WithAccess
+#endif
 
 #define MyAppName        "K-BOT"
 ; Stable AppId: upgrades replace the same entry in "Programs and Features" and
@@ -131,7 +136,7 @@ Name: "english"; MessagesFile: "compiler:Default.isl"
 #endif
 
 [Messages]
-#if Int(WithAccess) != 0
+#if Int(WithKBotMigrator) != 0
 WelcomeLabel2=Acest program va instala {#MyAppName} {#AppVersion} pe calculatorul dumneavoastră.%n%n{#MyAppName} conține:%n  •  aplicația {#MyAppName} (angajamente, rezervări, recepții, plăți) împreună cu robotul FOREXE;%n  •  utilitarul de migrare a datelor din Access în MariaDB.%n%nSe recomandă închiderea celorlalte aplicații înainte de a continua.
 #else
 WelcomeLabel2=Acest program va instala {#MyAppName} {#AppVersion} pe calculatorul dumneavoastră.%n%n{#MyAppName} conține:%n  •  aplicația {#MyAppName} (angajamente, rezervări, recepții, plăți) împreună cu robotul FOREXE.%n%nSe recomandă închiderea celorlalte aplicații înainte de a continua.
@@ -144,7 +149,7 @@ Name: "custom"; Description: "Instalare personalizată"; Flags: iscustom
 
 [Components]
 Name: "app";     Description: "Aplicația {#MyAppName} și robotul FOREXE (obligatoriu)"; Types: full custom; Flags: fixed
-#if Int(WithAccess) != 0
+#if Int(WithKBotMigrator) != 0
 Name: "migrare"; Description: "Utilitarul de migrare Access → MariaDB";               Types: full
 #endif
 
@@ -165,7 +170,7 @@ Name: "{app}\Logs"
 ; (Asociere\, WorkflowResults\, Extrase\, ...) and kbot_paths.json survive an
 ; upgrade, as they do an automatic update.
 Source: "{#SourceDir}\*";         DestDir: "{app}";         Excludes: "\Migrare\*,\Logs\*"; Flags: ignoreversion recursesubdirs; Components: app
-#if Int(WithAccess) != 0
+#if Int(WithKBotMigrator) != 0
 Source: "{#SourceDir}\Migrare\*"; DestDir: "{app}\Migrare";                                 Flags: ignoreversion recursesubdirs; Components: migrare
 #endif
 #ifdef HAVE_RUNTIME
@@ -174,7 +179,7 @@ Source: "{#RuntimeSetup}"; DestDir: "{tmp}"; Flags: deleteafterinstall; Check: n
 
 [Icons]
 Name: "{group}\{#MyAppName}";                          Filename: "{app}\{#MyAppExe}";                 WorkingDir: "{app}";         Components: app
-#if Int(WithAccess) != 0
+#if Int(WithKBotMigrator) != 0
 Name: "{group}\{#MyAppName} Migrare (Access → MariaDB)"; Filename: "{app}\Migrare\{#MyMigratorExe}"; WorkingDir: "{app}\Migrare"; Components: migrare
 #endif
 Name: "{group}\Dezinstalare {#MyAppName}";             Filename: "{uninstallexe}"

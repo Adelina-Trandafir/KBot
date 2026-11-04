@@ -2,7 +2,7 @@
 
 Istoric 30.09–25.10.2026. 0097-04 înlocuiește condiția inițială de vizibilitate a bifei pentru parolă; 0097-05 înlocuiește forțarea reautentificării și limitarea intervalului fără avansate. 0097-06 înlocuiește ascunderea selectorului Sursă/Sector după sortarea pe dată din 0097-03. Corpurile de mai jos sunt checkpointuri datate, nu reguli concurente. Nota istorică de captură din 0097-03 nu înlocuiește regula actuală AGENTS pentru mascarea datelor.
 
-[0097 — prima trecere](#slice-0097) · [0097-02](#slice-0097-02) · [0097-03](#slice-0097-03) · [0097-04](#slice-0097-04) · [0097-05](#slice-0097-05) · [0097-06](#slice-0097-06)
+[0097 — prima trecere](#slice-0097) · [0097-02](#slice-0097-02) · [0097-03](#slice-0097-03) · [0097-04](#slice-0097-04) · [0097-05](#slice-0097-05) · [0097-06](#slice-0097-06) · [0097-07](#slice-0097-07)
 
 ## SLICE-0097 — Corective updates (operator request, 30.09.2026) <a id="slice-0097"></a>
 
@@ -297,6 +297,67 @@ Interpretare (de confirmat): „la fel și la ordonare nume" = și la trecerea p
 - Rândul grupei active: cât e aleasă o grupă selectorul rămâne ascuns, ca înainte.
 - `Check-Help.ps1` nerulat; nu s-au scris teste (regula proiectului).
 - Nu s-a făcut nicio operațiune git (regula proiectului).
+
+---
+
+## SLICE-0097-07 — Angajament nou salvat în «Browser FOREXE»: flux propriu, fără lista de angajamente <a id="slice-0097-07"></a>
+
+Cererea operatorului, 04.11.2026, pornită de jurnalul `Log_20261104_080046.txt` (angajamentul AAB67BXMCSE, starea «Initial»). Numărul 0097-07 e următorul sub-slice liber al lui 0097 (presupunere: schimbarea continuă 0097-02 «Creează în FOREXE»).
+
+### What changed and why
+
+Jurnalul arată că după salvarea unui angajament nou (09:15:45 → 09:17:02, 77 s):
+- ~37 s: `ListaAngajamente` (4 pagini a ~5 s, apoi timeout la pagina 5 «Tabelul 'table.table-striped' nu a apărut în 10s», cu cutia «Lista de angajamente a eșuat»). Lista servea doar ca serverul să primească cod/descriere/stare. Pagina FOREXE le are deja, iar ingestul de pe server (`prelucrare.py`, `_step1_angajament`) **inserează singur** rândul din `FX_Angajamente` când lipsește, din scalarii pachetului.
+- ~25 s: `PrelucrareCompleta` căuta «Dată început» (5 s), «Ultima modificare» (5 s) și tabul Recepții `li.tab1` (15 s), care nu există într-un angajament în starea «Initial».
+
+Acum, pentru `ForexeOperationKind.Angajament`:
+- `KbotForm.ForexeWatch.vb`: codul angajamentului vine din pagină (`ev.CodEfectiv`); `CoduriNoiDupaSincronizareAsync` nu mai e apelată pe acest drum (metoda rămâne, pentru drumul subsolului arborelui).
+- `DescarcaPentruOperatiuneAsync` cheamă noul `ForexeController.DownloadAngajamentNouAsync` → `JobBuilder.BuildPrelucrareAngajamentNou` → `Workflows/adlop - Prelucrare Angajament Nou.wfl`.
+- Fluxul nou pornește pe pagina curentă (`startUrl="current"`, `expectedUrl=""`), citește antetul (cod, dată, descriere, stare), indicatorii cu bugetul fiecăruia și istoricul (de la prima pagină, fără oprire: un angajament nou nu are istoric local). Nu caută datele de derulare, tabul Recepții și nu citește creditul inițial.
+- Ieșirea din formular: pagina rămâne pe angajamentul nou doar la salvarea finală; «Salvează și continuă» (regula `ForexeWatch.js` ia primul `btn-success`) nu încheie operațiunea, iar «Anulează» nu adaugă nimic în FOREXE (clarificat de operator). Deci nu s-a prevăzut cădere pe fluxul vechi.
+- **Arborele arată angajamentul adăugat** (cererea operatorului, 04.11.2026): după preluare, reîncărcarea arborelui selectează și derulează la codul nou (`DuLaIngestieAsync(..., k_selecteazaNodul:=True)` → `LoadTreeAsync(codDeSelectat:=cod)` → `PopulateTree` → `SelectAndReveal`). Doar pentru `ForexeOperationKind.Angajament`; celelalte preluări păstrează selecția ca înainte. Selectarea doar reține codul în vederea «Browser FOREXE» (`BrowserView.SetContext`), nu pornește robotul. Dacă arborele e filtrat (grupă aleasă, sursă care nu conține angajamentul), nodul nu apare și nu se selectează nimic.
+- Ajutor: `contabil/forexe/browser.md` (tabelul «Ce face K-BOT după o salvare», tag `0097-07`).
+
+### Files touched
+
+`src/KBot.Forexe/Workflows/adlop - Prelucrare Angajament Nou.wfl` (nou); `src/KBot.Forexe/KBot.Forexe.vbproj`; `src/KBot.Forexe/WorkflowCatalog.vb`; `src/KBot.Forexe/JobBuilder.vb`; `src/KBot.App/Forexe/ForexeController.vb`; `src/KBot.App/KbotForm.ForexeWatch.vb`; `src/KBot.App/KbotForm.Ingest.vb`; `src/KBot.App/HelpContent/contabil/forexe/browser.md`
+
+### Test results
+
+`dotnet build src/KBot.App/KBot.App.vbproj -c Debug`: 0 warnings, 0 errors. Nimic rulat, niciun test (regula proiectului).
+
+### Unverified / deferred
+
+- Fluxul nou **nerulat** pe FOREXE: nu se știe dacă pagina de după salvare are exact selectorii presupuși (`li.tab0.active`, tabelul de indicatori); se bazează pe aceiași selectori din «Prelucrare Completa», citiți în jurnalul din 04.11.2026 (aceeași pagină după «Modificare»).
+- Inserarea antetului de către ingest, pentru un angajament absent din `FX_Angajamente`, e citită în `prelucrare.py` (liniile 183-239), nu probată; descărcarea veche găsea rândul deja scris de lista sincronizată.
+- Arborele se reîncarcă după ingest (`KbotForm.Ingest.vb:132`); nevăzut.
+- Cauza timeout-ului la pagina 5 a listei (server FOREXE lent, ipoteză) nu e tratată aici; drumul subsolului arborelui rămâne neschimbat.
+- `Check-Help.ps1` nerulat.
+- Nu s-a făcut nicio operațiune git.
+
+## SLICE-0097-08 — Citirea istoricului de la sfârșit: reluare când nu întâlnește rândul cunoscut <a id="slice-0097-08"></a>
+
+### What changed and why
+
+Cazul AAB2MPRG2ND (04.11.2026, calculatorul Simache): după o descărcare de rezervări, recepția din 21.10 avea rând în `FX_Receptii_R` dar niciun instantaneu în `FX_Receptii_H`. Jurnalul serverului (`asociere.log`) arată că descărcarea completă de la 10:49 a adus 10 rânduri de istoric, toate deja în bază (`FX_Istoric: 0` scrise, amprenta bazei neschimbată: 98 de rânduri, ultima dată 22.09.2026 18:26:30), așa că instantaneul nu s-a făcut; lista recepțiilor a fost scrisă singură. Consola robotului arată de ce: la 10:49:36 `ScrapeTable` a scris «Suntem deja pe ultima pagina» (butonul «ultima pagină» nu era vizibil în acel moment), a citit prima pagină și s-a oprit la «prima pagină», fără să fi întâlnit rândul cunoscut (`exitIfCellEquals`). A doua descărcare a adus cele 5 rânduri noi, iar instantaneul s-a așezat singur pe recepția 403. Verificarea «sunt deja pe ultima pagină» e din 26.06.2026, citirea de la sfârșit din 15.08.2026; nimic recent nu le-a schimbat, deci e o ratare de moment (pagina încă se încărca), nu o regresie.
+
+**Schimbat** (`ExecuteScrapeTableAsync`, `WorkflowExecutor.Actions.ScrapeTable.vb`): o citire de la ultima pagină (`startFromLast`) cu rând de ieșire (`exitIfCellEquals`, dar nu valoarea «nu am istoric încă» `(?!)`) care se termină fără să-l întâlnească și fără pagină de eroare FOREXE nu mai e luată ca rezultat. Robotul așteaptă butonul «ultima pagină» (`WaitForPagerAsync`, cel mult 5 s × multiplicatorul din Setări, doar pe această cale), merge la ultima pagină și citește încă o dată (`MissedKnownRow`). Citirea obișnuită nu costă nimic în plus. Se aplică tuturor fluxurilor cu citire de la sfârșit: Prelucrare completă Reverse, Rezervări editate, Receptie editata, Istoric Angajament REVERSE. Operatorul: rândul cunoscut nu poate dispărea din istoricul FOREXE, deci reluarea degeaba e exclusă.
+
+### Files touched
+
+`src/KBot.Forexe/Executor/Actions/WorkflowExecutor.Actions.ScrapeTable.vb`; `src/KBot.Forexe/KBot.Forexe.vbproj` (FileVersion 1.0.20.0 → 1.0.21.0).
+
+### Test results
+
+`dotnet build src/KBot.Forexe/KBot.Forexe.vbproj` și `src/KBot.App/KBot.App.vbproj`: 0 warnings, 0 errors. Nimic rulat pe FOREXE, niciun test (regula proiectului).
+
+### Unverified / deferred
+
+- Cauza (paginatorul încă nedesenat) e o deducție din jurnal, nedovedită; nu s-a văzut pagina.
+- Mesajul din consolă «Citirea de la sfârșit nu a întâlnit rândul cunoscut … se reia o singură dată» e semnul că reluarea a rulat; nevăzut încă.
+- Un istoric dintr-o singură pagină cu rândul cunoscut lipsă ar costa o așteptare de până la 5 s × multiplicator, o singură dată.
+- Serverul tot salvează o listă de recepții sosită fără istoricul ei, fără avertisment; netratat aici (necerut).
+- Nu s-a făcut nicio operațiune git.
 
 ## Repere suplimentare din registru
 

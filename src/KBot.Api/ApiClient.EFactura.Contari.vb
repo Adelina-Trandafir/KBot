@@ -42,7 +42,8 @@ Partial Public Class ApiClient
     Private NotInheritable Class ContariPlataWire
         Public Property Valoare As Decimal
         Public Property ExplicatieOP As String
-        Public Property ExplicatiePrea As Boolean
+        Public Property FelOP As String
+        Public Property NumarOP As Integer?
         Public Property DataMinima As String
         Public Property Activa As Boolean
     End Class
@@ -248,7 +249,7 @@ Partial Public Class ApiClient
             End If
             If wire.plata IsNot Nothing Then
                 k_result.Plata = New EFacturaContariPlata() With {
-                    .Valoare = wire.plata.Valoare, .ExplicatieOP = If(wire.plata.ExplicatieOP, String.Empty), .ExplicatiePrea = wire.plata.ExplicatiePrea,
+                    .Valoare = wire.plata.Valoare, .ExplicatieOP = If(wire.plata.ExplicatieOP, String.Empty), .FelOP = If(wire.plata.FelOP, String.Empty), .NumarOP = wire.plata.NumarOP,
                     .DataMinima = ParseDay(wire.plata.DataMinima), .Activa = wire.plata.Activa}
             End If
             If wire.operatii IsNot Nothing Then

@@ -46,7 +46,7 @@ End Class
 Public NotInheritable Class VrcPlan
 
     Public Const PlanVersion As String = "1"
-    Public Const RuleVersion As String = "VC10-OI-SEPARATION-2026-11-03"
+    Public Const RuleVersion As String = "VC10-OI-NIR-SPLIT-HEADERS-2026-11-03"
 
     Public Shared ReadOnly GestiuneTypes As String() = {"MATERIALE", "ALIMENTE", "OI", "MF"}
     Private Const DecimalLimit As Double = 10000000000000000.0

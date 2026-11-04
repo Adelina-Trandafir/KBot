@@ -27,6 +27,7 @@ Partial Class RezervariView
         Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn4 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn5 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn6 As KBotDataColumn = New KBotDataColumn()
         split = New SplitContainer()
         tree = New AdvancedTreeControl()
         image_list = New ImageList(components)
@@ -170,6 +171,22 @@ Partial Class RezervariView
         KBotDataColumn1.ShowColumnFilter = True
         KBotDataColumn1.TextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Width = 120
+        KBotDataColumn6.AggregateFormatString = Nothing
+        KBotDataColumn6.AutoSizeMode = KBotAutoSizeMode.None
+        KBotDataColumn6.CellPadding = New Padding(2, 0, 2, 0)
+        KBotDataColumn6.ColumnFilterIcon = My.Resources.Resources.filter
+        KBotDataColumn6.ColumnFont = New Font("Calibri", 9F, FontStyle.Bold)
+        KBotDataColumn6.FormatString = Nothing
+        KBotDataColumn6.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
+        KBotDataColumn6.HeaderText = "Indicator"
+        KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn6.Key = "cod_indicator"
+        KBotDataColumn6.MinWidth = 50
+        KBotDataColumn6.OptionGroup = Nothing
+        KBotDataColumn6.ReadOnly = True
+        KBotDataColumn6.ShowColumnFilter = True
+        KBotDataColumn6.TextAlign = ContentAlignment.MiddleCenter
+        KBotDataColumn6.Width = 80
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn2.CellPadding = New Padding(2, 0, 2, 0)
@@ -236,6 +253,7 @@ Partial Class RezervariView
         KBotDataColumn5.ValueType = KBotValueType.Number
         KBotDataColumn5.Width = 80
         grid.Columns.Add(KBotDataColumn1)
+        grid.Columns.Add(KBotDataColumn6)
         grid.Columns.Add(KBotDataColumn2)
         grid.Columns.Add(KBotDataColumn3)
         grid.Columns.Add(KBotDataColumn4)

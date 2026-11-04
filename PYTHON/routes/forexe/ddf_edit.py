@@ -118,6 +118,7 @@ from .ddf_flux_core import rol_pentru_revizie_noua
 from .ddf_parteneri import ParteneriInvalizi, citeste_parteneri, sincronizeaza_parteneri
 from .ddf_program import program_pentru_angajament
 from .marcaj import LOCK_IDREV, consuma_lacatul, id_marcaj_utilizabil, idrev_tinut
+from .marcaj_motiv import LUNGIME_DESC_SCURTA, propune_motiv
 from .rezervari_legaturi import cheie_rezervare
 
 logger = logging.getLogger(__name__)
@@ -703,9 +704,27 @@ def post_ddf_genereaza():
         if rev0:
             data_rev = _iso_zi(angajament.get("DataCreare"))
             descriere = _txt(angajament.get("Descriere"))
+            descriere_lunga = descriere
         else:
             data_rev = _iso_zi(randuri[0].get("DataRezervare"))
             descriere = _txt(randuri[0].get("TipOperatie"))
+            descriere_lunga = descriere
+            # Slice 0127: the reason the operator typed in FOREXE (work mode of the in-app browser) for the
+            # indicators of this revision, when K-BOT kept one. Join rule and source: routes/forexe/marcaj_motiv.py.
+            propunere = propune_motiv(cursor, dc, cod, [_txt(r.get("CodIndicator")) for r in randuri])
+            if propunere["text"]:
+                descriere_lunga = propunere["text"]
+                descriere = descriere_lunga[:LUNGIME_DESC_SCURTA]
+                if len(descriere_lunga) > LUNGIME_DESC_SCURTA:
+                    avertismente.append(
+                        f"Motivul din FOREXE are {len(descriere_lunga)} de caractere; în descrierea scurtă "
+                        f"am păstrat primele {LUNGIME_DESC_SCURTA}. Textul întreg e în descrierea lungă."
+                    )
+            elif propunere["fara_potrivire"]:
+                avertismente.append(
+                    "K-BOT are un motiv păstrat din FOREXE pentru această revizie, dar pentru niciunul dintre "
+                    "indicatorii ei; descrierea scurtă rămâne tipul operației."
+                )
 
         # `ValRec` at generation time is the sum of receptions STRICTLY BEFORE the revision
         # date -- not all of them. The dictionary is keyed by CodIndicator, as in Access.
@@ -743,8 +762,8 @@ def post_ddf_genereaza():
             "data_rev": data_rev,
             "tip": stare,
             "desc_scurta": descriere,
-            "desc_lunga": descriere,
-            "desc_lunga_ansi": descriere,
+            "desc_lunga": descriere_lunga,
+            "desc_lunga_ansi": descriere_lunga,
             "incarcat": False,
             "preluat": bool(randuri) and ("derulare" in stare.lower()),
             "noua": True,

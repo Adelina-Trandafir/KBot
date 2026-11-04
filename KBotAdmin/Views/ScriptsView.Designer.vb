@@ -1,4 +1,5 @@
-' The «Scripturi» page of «Publicare»: on the left the push-*.ps1 / publish-*.ps1 scripts (grouped), on the right the switches of the chosen script.
+' The «Scripturi» page of «Publicare»: on the left the push-*.ps1 / publish-*.ps1 scripts (grouped), on the right the switches of the chosen script
+' and, under them (a bar to drag between the two), the NOUTATI text of the version that comes out, or the -Notes box.
 ' All controls are declared HERE; coordinates are in the 96 dpi it was authored at.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class ScriptsView
@@ -33,29 +34,58 @@ Partial Class ScriptsView
         tlyMain = New KBotTableLayoutPanel()
         tlyMid = New KBotTableLayoutPanel()
         gridScripts = New KBotDataView()
-        tlySide = New KBotTableLayoutPanel()
+        splSide = New SplitContainer()
+        lblNotesHead = New Label()
+        rtbNotes = New KBotNotesBox()
         gridSwitches = New KBotDataView()
         logBox = New KBotLogBox()
         tlyMain.SuspendLayout()
         tlyMid.SuspendLayout()
         CType(gridScripts, ComponentModel.ISupportInitialize).BeginInit()
-        tlySide.SuspendLayout()
+        CType(splSide, ComponentModel.ISupportInitialize).BeginInit()
+        splSide.Panel1.SuspendLayout()
+        splSide.Panel2.SuspendLayout()
+        splSide.SuspendLayout()
         CType(gridSwitches, ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
-        ' 
+        '
         ' txtNotes
-        ' 
+        '
         txtNotes.Dock = DockStyle.Fill
-        txtNotes.Location = New Point(0, 443)
-        txtNotes.Margin = New Padding(0, 9, 0, 0)
+        txtNotes.Location = New Point(0, 36)
+        txtNotes.Margin = New Padding(0)
         txtNotes.Name = "txtNotes"
         txtNotes.PlaceholderText = "Note pentru fereastra de actualizare (-Notes), fără diacritice"
-        txtNotes.Size = New Size(661, 51)
+        txtNotes.Size = New Size(661, 120)
         txtNotes.TabIndex = 1
         txtNotes.TextPadding = New Padding(0)
         tips.SetToolTipHeader(txtNotes, "Note (-Notes)")
         tips.SetToolTipText(txtNotes, "Textul din fereastra de actualizare, în loc de cel din NOUTATI.md. Scrieți-l fără diacritice (fereastra le arată ca «?»). Doar scripturile care au -Notes îl folosesc.")
-        ' 
+        '
+        ' lblNotesHead: which version the notes are for (and whether the file has them)
+        '
+        lblNotesHead.AutoEllipsis = True
+        lblNotesHead.Dock = DockStyle.Top
+        lblNotesHead.Location = New Point(0, 0)
+        lblNotesHead.Margin = New Padding(0)
+        lblNotesHead.Name = "lblNotesHead"
+        lblNotesHead.Size = New Size(661, 36)
+        lblNotesHead.TabIndex = 2
+        lblNotesHead.TextAlign = ContentAlignment.MiddleLeft
+        tips.SetToolTipHeader(lblNotesHead, "Versiunea și NOUTATI")
+        tips.SetToolTipText(lblNotesHead, "Versiunea care iese din construire (cea de acum, sau cea crescută cu partea bifată) și dacă NOUTATI.md are text scris pentru ea.")
+        '
+        ' rtbNotes: the NOUTATI.md section of that version
+        '
+        rtbNotes.Dock = DockStyle.Fill
+        rtbNotes.Location = New Point(0, 36)
+        rtbNotes.Margin = New Padding(0)
+        rtbNotes.Name = "rtbNotes"
+        rtbNotes.Size = New Size(661, 120)
+        rtbNotes.TabIndex = 3
+        tips.SetToolTipHeader(rtbNotes, "NOUTATI")
+        tips.SetToolTipText(rtbNotes, "Ce scrie în docs\release-notes\NOUTATI.md pentru versiunea care iese. Doar se citește; textul se scrie în fișier, de asistent.")
+        '
         ' lblCommand
         ' 
         lblCommand.AutoEllipsis = True
@@ -68,9 +98,9 @@ Partial Class ScriptsView
         lblCommand.TextAlign = ContentAlignment.MiddleLeft
         tips.SetToolTipHeader(lblCommand, "Apelul")
         tips.SetToolTipText(lblCommand, "Ce face scriptul ales și apelul exact, cu switch-urile bifate, așa cum ar fi scris în PowerShell.")
-        ' 
+        '
         ' lblState
-        ' 
+        '
         lblState.AutoEllipsis = True
         lblState.Dock = DockStyle.Fill
         lblState.Location = New Point(8, 790)
@@ -81,9 +111,9 @@ Partial Class ScriptsView
         lblState.TextAlign = ContentAlignment.MiddleLeft
         tips.SetToolTipHeader(lblState, "Starea")
         tips.SetToolTipText(lblState, "Folderul în care sunt scripturile. Jurnalul de deasupra arată ce s-a pornit și cum s-a terminat (codul scriptului).")
-        ' 
+        '
         ' tlyMain
-        ' 
+        '
         tlyMain.AutoFitToTheme = False
         tlyMain.ColumnCount = 1
         tlyMain.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
@@ -103,16 +133,16 @@ Partial Class ScriptsView
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
         tlyMain.Size = New Size(1350, 840)
         tlyMain.TabIndex = 0
-        ' 
+        '
         ' tlyMid
-        ' 
+        '
         tlyMid.AutoFitToTheme = False
         tlyMid.ColumnCount = 3
         tlyMid.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
         tlyMid.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 12F))
         tlyMid.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
         tlyMid.Controls.Add(gridScripts, 0, 0)
-        tlyMid.Controls.Add(tlySide, 2, 0)
+        tlyMid.Controls.Add(splSide, 2, 0)
         tlyMid.Dock = DockStyle.Fill
         tlyMid.Location = New Point(8, 8)
         tlyMid.Margin = New Padding(0, 0, 0, 9)
@@ -121,9 +151,9 @@ Partial Class ScriptsView
         tlyMid.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyMid.Size = New Size(1334, 494)
         tlyMid.TabIndex = 1
-        ' 
+        '
         ' gridScripts
-        ' 
+        '
         gridScripts.AutoSizeColumnsMode = KBotAutoSizeMode.None
         gridScripts.BackColor = SystemColors.Window
         gridScripts.ColumnFillMode = KBotFillMode.SpecificColumn
@@ -190,26 +220,29 @@ Partial Class ScriptsView
         gridScripts.ReadOnlyGrid = True
         gridScripts.Size = New Size(661, 494)
         gridScripts.TabIndex = 0
-        ' 
-        ' tlySide
-        ' 
-        tlySide.AutoFitToTheme = False
-        tlySide.ColumnCount = 1
-        tlySide.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlySide.Controls.Add(gridSwitches, 0, 0)
-        tlySide.Controls.Add(txtNotes, 0, 1)
-        tlySide.Dock = DockStyle.Fill
-        tlySide.Location = New Point(673, 0)
-        tlySide.Margin = New Padding(0)
-        tlySide.Name = "tlySide"
-        tlySide.RowCount = 2
-        tlySide.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlySide.RowStyles.Add(New RowStyle(SizeType.Absolute, 60F))
-        tlySide.Size = New Size(661, 494)
-        tlySide.TabIndex = 1
-        ' 
+        '
+        ' splSide: the operator drags the bar between the switch list and the notes
+        '
+        splSide.Dock = DockStyle.Fill
+        splSide.Location = New Point(673, 0)
+        splSide.Margin = New Padding(0)
+        splSide.Name = "splSide"
+        splSide.Orientation = Orientation.Horizontal
+        splSide.Panel1.Controls.Add(gridSwitches)
+        splSide.Panel1MinSize = 120
+        splSide.Panel2.Controls.Add(rtbNotes)
+        splSide.Panel2.Controls.Add(txtNotes)
+        splSide.Panel2.Controls.Add(lblNotesHead)
+        splSide.Panel2MinSize = 90
+        splSide.Size = New Size(661, 494)
+        splSide.SplitterDistance = 330
+        splSide.SplitterWidth = 8
+        splSide.TabIndex = 1
+        tips.SetToolTipHeader(splSide, "Înălțimea listelor")
+        tips.SetToolTipText(splSide, "Trage de bara dintre lista de switch-uri și text ca să mărești sau să micșorezi fiecare parte.")
+        '
         ' gridSwitches
-        ' 
+        '
         gridSwitches.AutoSizeColumnsMode = KBotAutoSizeMode.None
         gridSwitches.BackColor = SystemColors.Window
         gridSwitches.ColumnFillMode = KBotFillMode.SpecificColumn
@@ -249,11 +282,11 @@ Partial Class ScriptsView
         gridSwitches.Location = New Point(0, 0)
         gridSwitches.Margin = New Padding(0)
         gridSwitches.Name = "gridSwitches"
-        gridSwitches.Size = New Size(661, 434)
+        gridSwitches.Size = New Size(661, 330)
         gridSwitches.TabIndex = 0
-        ' 
+        '
         ' logBox
-        ' 
+        '
         logBox.BorderStyle = BorderStyle.None
         logBox.DetectUrls = False
         logBox.Dock = DockStyle.Fill
@@ -267,9 +300,9 @@ Partial Class ScriptsView
         logBox.TabIndex = 3
         logBox.Text = ""
         logBox.WordWrap = False
-        ' 
+        '
         ' ScriptsView
-        ' 
+        '
         AutoScaleDimensions = New SizeF(144F, 144F)
         AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(tlyMain)
@@ -279,7 +312,10 @@ Partial Class ScriptsView
         tlyMain.ResumeLayout(False)
         tlyMid.ResumeLayout(False)
         CType(gridScripts, ComponentModel.ISupportInitialize).EndInit()
-        tlySide.ResumeLayout(False)
+        splSide.Panel1.ResumeLayout(False)
+        splSide.Panel2.ResumeLayout(False)
+        CType(splSide, ComponentModel.ISupportInitialize).EndInit()
+        splSide.ResumeLayout(False)
         CType(gridSwitches, ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
     End Sub
@@ -288,7 +324,9 @@ Partial Class ScriptsView
     Friend WithEvents tlyMain As KBotTableLayoutPanel
     Friend WithEvents tlyMid As KBotTableLayoutPanel
     Friend WithEvents gridScripts As KBotDataView
-    Friend WithEvents tlySide As KBotTableLayoutPanel
+    Friend WithEvents splSide As SplitContainer
+    Friend WithEvents lblNotesHead As Label
+    Friend WithEvents rtbNotes As KBotNotesBox
     Friend WithEvents gridSwitches As KBotDataView
     Friend WithEvents txtNotes As KBotTextBox
     Friend WithEvents lblCommand As Label

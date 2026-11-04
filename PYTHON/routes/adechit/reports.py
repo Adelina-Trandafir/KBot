@@ -145,6 +145,10 @@ def situation_report(repo, unit, args):
     require(everything or group_id is not None, 'FILTER', 'Alegeți grupa sau bifați «Toate grupele».', 400)
     month, rows = situation_rows(repo, month_id, None if everything else group_id)
     require(bool(rows), 'NO_DATA', 'Raportul selectat nu conține date.', 404)
+    if args.get('hide_zero') == '1':
+        numeric_keys = [key for key, _, _, _, _, summed in SITUATION_COLUMNS if summed]
+        rows = [row for row in rows if any(Decimal(str(row.get(key) or 0)) != 0 for key in numeric_keys)]
+        require(bool(rows), 'NO_DATA', 'Nu există rânduri cu valori diferite de zero pentru selecția aleasă.', 404)
     issuer = issuer_data(repo, unit)
     head = [letterhead(issuer, month_label(month)), {'t': 'title', 'text': 'Situație Lunară Debitori'}]
 
@@ -327,6 +331,11 @@ def _account_entries(repo, child, end, months, groups):
     scope, child_id, entries = repo.scope(), child['IDP'], []
     si = child.get('SI') or 0
     entries.append({'Data': MIN_DATE, 'rank': 0, 'expl': 'Sold Inițial', 'zile': 0, 'debit': si if si > 0 else 0, 'credit': -si if si < 0 else 0, 'tip': 'S'})
+    from .carried_balances import carried_entries
+    for carried in carried_entries(repo.carried_balances(child_id)):
+        value = carried['value']
+        entries.append({'Data': carried['date'], 'rank': 0, 'expl': carried['text'], 'zile': 0,
+                        'debit': max(value, 0), 'credit': max(-value, 0), 'tip': 'C'})
     for z in repo.rows('Prezenta', IDP=child_id):
         month = months.get(z['IDL'])
         if month is None or month_end(month) > end:
@@ -515,14 +524,17 @@ def financial_report(repo, unit, args):
 
 
 from .payment_notice import payment_notice_report
+from .month_comparison import month_comparison_report
 
 BUILDERS = {'payment-notice': payment_notice_report, 'situation': situation_report, 'cash': cash_register_report, 'bank': bank_report, 'cancelled': cancelled_report,
-            'account': account_report, 'debtor': debtor_report, 'payment-order': payment_order, 'financial': financial_report}
+            'account': account_report, 'debtor': debtor_report, 'payment-order': payment_order, 'financial': financial_report,
+            'month-comparison': month_comparison_report}
 
 
 HIDDEN = {'debtor', 'financial'}   # buttons hidden from the panel; the code stays in case they come back
 
 REPORT_NAMES = {'payment-notice': 'ADECHIT_SITUATIE_PLATA', 'situation': 'ADECHIT_SITUATIE_DEBITORI', 'cash': 'ADECHIT_REGISTRU_CASA',
+                'month-comparison': 'ADECHIT_DIFERENTE_LUNI',
                 'bank': 'ADECHIT_RAPORT_BANCA', 'cancelled': 'ADECHIT_DOCUMENTE_ANULATE',
                 'account': 'ADECHIT_FISA_CONT', 'debtor': 'ADECHIT_FISA_DEBITOR',
                 'payment-order': 'ADECHIT_DISPOZITIE_PLATA', 'financial': 'ADECHIT_SITUATIE_FINANCIARA'}

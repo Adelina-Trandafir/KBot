@@ -176,6 +176,23 @@ Namespace KBot.Forexe
         End Function
 
         ''' <summary>
+        ''' «adlop - Prelucrare Angajament Nou.wfl» (slice 0097-07): the angajament the operator just
+        ''' SAVED as new in the «Browser FOREXE» view. Starts on the page the operator is on.
+        ''' </summary>
+        Public Shared Function BuildPrelucrareAngajamentNou(k_cod As String) As JobRequest
+            If String.IsNullOrWhiteSpace(k_cod) Then
+                Throw New ArgumentException("Codul angajamentului este obligatoriu.", NameOf(k_cod))
+            End If
+
+            Dim job As New JobRequest With {
+                .WorkflowName = "PrelucrareAngajamentNou",
+                .WflPath = WorkflowCatalog.ResolvePath(WorkflowCatalog.PrelucrareAngajamentNouFile)
+            }
+            job.Parameters(WorkflowCatalog.VarCodAngajament) = k_cod
+            Return job
+        End Function
+
+        ''' <summary>
         ''' «adlop - Receptie Editata.wfl» (slice 0076): the reception the operator just saved
         ''' in the «Browser FOREXE» view, and the history from its end back to
         ''' <paramref name="ultimaData"/>. Starts on the page the operator is on.

@@ -6,6 +6,23 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
+## 1.1.5.2 (04.11.2026)
+<!-- release: utc=2026-11-04T10:44:05Z -->
+<!-- felii: 01EF-07, 0000-149, 00EF-59, 00EF-57, 0051-04, VC06-34, VC06-35, VC06-36, VC06-37, VC06-38, VC06-39, AD17-01, AD18-01, 0122-10, 0122-12, 0097-07, 0097-08 -->
+
+- Facturi primite: clic dreapta pe o factura si «Adauga operatii contabile»; se bifeaza doar facturile aceluiasi furnizor.
+- «Contari» are alt aspect: sabloane de evidentiere si de plata, coloana NC, facturi si ordin de plata.
+- Ordinul de plata e activ doar cu un sablon de plata; explicatia are 1-75 de caractere, fara diacritice si virgule.
+- «Trimite la Vercon»: arborele spune «Trimisa in VERCON» / «Inregistrata in VERCON»; cele trimise sunt bifate.
+- NIR din e-Factura: cantitatea primita se poate modifica (pretul se recalculeaza); «Disponibil» apare imediat la bonuri.
+- NIR din e-Factura: fereastra noua «Produs din eFactura»; denumirea din factura se poate copia; comisia unica se alege singura.
+- «Facturi eFactura de preluat»: butonul nou «Rezolva Acum» deschide direct «NIR din e-Factura».
+- ADECHIT, situatia lunara: bifa «Ascunde randurile cu zero» (implicit bifata); raport nou cu diferentele dintre luni.
+- Asocieri: rosu = eroare (lantul nu se inchide), portocaliu = avertisment; detaliul apare la mouse pe receptie.
+- Lista angajamentelor arata «Receptii nepotrivite cu rezervarile» pentru zilele in care receptia difera de rezervare.
+- Barele de derulare din «XML Factura» si din editorul de text imbogatit urmeaza tema aleasa.
+- FOREXE: angajamentul nou se preia mai repede; descarcarea nu mai rateaza istoricul cand pagina se incarca greu.
+
 ## 1.1.5.0 (03.11.2026)
 <!-- release: utc=2026-11-03T15:14:36Z -->
 <!-- felii: 0093-01, 0093-02, 0000-147, 0093-03, 0000-148 -->

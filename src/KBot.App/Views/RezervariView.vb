@@ -22,6 +22,7 @@ Public Class RezervariView
     ' Cheile coloanelor grilei — o singură definiție, folosită la creare și la umplere,
     ' ca un typo să nu ajungă o coloană goală în producție.
     Private Const COL_CLSF As String = "clsf"
+    Private Const COL_INDICATOR As String = "cod_indicator"
     Private Const COL_CREDIT_BUG As String = "credit_bug"
     Private Const COL_INITIALA As String = "r_initiala"
     Private Const COL_VALOARE As String = "r_valoare"
@@ -583,6 +584,7 @@ Public Class RezervariView
                 For Each r As RezervareRow In rows
                     Dim row As KBotDataRow = grid.AddRow()
                     row(COL_CLSF) = r.Clsf
+                    row(COL_INDICATOR) = r.CodIndicator
                     row(COL_CREDIT_BUG) = r.RCreditBug
                     row(COL_INITIALA) = r.RInitiala
                     row(COL_VALOARE) = r.RValoare
@@ -612,11 +614,15 @@ Public Class RezervariView
             grid.ClearRows()
             If rows Is Nothing Then Return
 
-            Dim grupuri = rows.GroupBy(Function(r) r.Clsf).
-                               OrderBy(Function(gp) gp.Key, StringComparer.Ordinal)
+            ' Cheia e (clasificatie, indicator): creditul bugetar apartine indicatorului, deci doi
+            ' indicatori pe aceeasi clasificatie nu trebuie sa-si amestece creditul intr-un rand.
+            Dim grupuri = rows.GroupBy(Function(r) New With {Key .Clsf = r.Clsf, Key .Ind = r.CodIndicator}).
+                               OrderBy(Function(gp) gp.Key.Clsf, StringComparer.Ordinal).
+                               ThenBy(Function(gp) gp.Key.Ind, StringComparer.Ordinal)
             For Each gp In grupuri
                 Dim row As KBotDataRow = grid.AddRow()
-                row(COL_CLSF) = gp.Key
+                row(COL_CLSF) = gp.Key.Clsf
+                row(COL_INDICATOR) = gp.Key.Ind
                 row(COL_CREDIT_BUG) = gp.OrderByDescending(Function(r) r.DataRezervare).
                                          First().RCreditBug
                 row(COL_INITIALA) = gp.Sum(Function(r) r.RInitiala)

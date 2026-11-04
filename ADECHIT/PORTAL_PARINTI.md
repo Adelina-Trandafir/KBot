@@ -29,6 +29,9 @@ Un copil eligibil se deschide direct. Cu mai mulți apare Comboboxul comun custo
 
 Fișa imprimabilă și PDF-ul au același model de date: antet unitate, identificare copil, Data/Explicație/DEBIT/CREDIT/Sold/Tip sold, sold inițial și totaluri lunare. CNP-ul copilului este mascat în raport. Prezența este înregistrată la ultima zi a lunii, plățile/restituirile la data lor. Debit=obligații+restituiri, credit=plăți. Soldul pornește din SI, care poate reprezenta un sold importat fără documentele vechi.
 
+<!-- slice: AD19-02 -->
+Pentru un istoric completat separat din anii anteriori migrării, fișa păstrează soldul inițial existent și arată un rând distinct **Sold reportat din anii anteriori**, la începutul anului de aplicare. Componenta participă la soldurile lunilor calculate și la soldul fișei. Cu interval activ, dacă data ei precedă începutul selecției, intră în soldul de deschidere al intervalului; dacă este în interval apare pe propriul rând. Lunile închise continuă să folosească situațiile salvate. Repetarea transferului nu dublează reportul.
+
 „Interval” este implicit debifat: întreaga evidență disponibilă pe IDP, indiferent de an sau mutarea grupei. Bifat: două DatePicker custom active; limitele sunt incluse și soldul inițial include toate mișcările anterioare datei de început. PDF-ul și imprimarea folosesc aceleași filtre. O situație salvată lipsă într-o lună închisă sau o mișcare fără dată blochează raportul cu mesaj, fără succes aparent.
 
 ## Testarea manuală localhost

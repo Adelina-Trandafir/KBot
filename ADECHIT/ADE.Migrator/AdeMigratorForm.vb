@@ -127,6 +127,7 @@ Public Class AdeMigratorForm
         btnRasfoire.Enabled = Not k_busy
         btnCiteste.Enabled = Not k_busy
         btnTesteaza.Enabled = Not k_busy
+        btnOpeningBalances.Enabled = Not k_busy
         dgvEducatori.Enabled = Not k_busy
         dgvGrupe.Enabled = Not k_busy
         If k_busy Then
@@ -624,6 +625,25 @@ Public Class AdeMigratorForm
             AppendLog("STARE MIGRARE", If(reasons.Count = 0, state, String.Join(Environment.NewLine, reasons.Take(MaxLoggedFindings)) &
                       If(reasons.Count > MaxLoggedFindings, Environment.NewLine & $"… și încă {reasons.Count - MaxLoggedFindings} motive.", String.Empty)))
         End If
+    End Sub
+
+    Private Sub BtnOpeningBalances_Click(sender As Object, e As EventArgs) Handles btnOpeningBalances.Click
+        If _busy Then Return
+        Try
+            Dim file = txtFisier.Text.Trim()
+            If Not System.IO.File.Exists(file) Then Throw New InvalidOperationException("Alegeți MDB-ul complet, care conține și anul 2020.")
+            Dim server = BuildServer()
+            Dim dc = ReadTargetDc()
+            Dim subunit = ReadSubunit()
+            Using dialog As New AdeOpeningBalanceForm(server, dc, subunit, file)
+                dialog.ShowDialog(Me)
+            End Using
+            _targetProblems = Nothing
+            _targetCounts = Nothing
+            RefreshMigrateButton()
+        Catch ex As Exception
+            ShowOperationError("AdeMigratorForm.OpeningBalances", "Comanda pentru solduri reportate nu a putut fi deschisă.", ex)
+        End Try
     End Sub
 
     Private Async Sub BtnMigreaza_Click(sender As Object, e As EventArgs) Handles btnMigreaza.Click

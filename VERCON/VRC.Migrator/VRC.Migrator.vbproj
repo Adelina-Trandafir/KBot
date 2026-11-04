@@ -17,7 +17,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <FileVersion>0.3.18.0</FileVersion>
+    <FileVersion>0.3.22.0</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -41,6 +41,7 @@
     <EmbeddedResource Include="expected_schema.json" LogicalName="VRC.Migrator.expected_schema.json" />
     <EmbeddedResource Include="import_map.json" LogicalName="VRC.Migrator.import_map.json" />
     <EmbeddedResource Include="VrcReportHtml.css" LogicalName="VRC.Migrator.VrcReportHtml.css" />
+    <EmbeddedResource Include="VrcOiHtmlReport.css" LogicalName="VRC.Migrator.VrcOiHtmlReport.css" />
   </ItemGroup>
 
   <ItemGroup>

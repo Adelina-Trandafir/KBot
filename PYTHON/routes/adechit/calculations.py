@@ -2,6 +2,7 @@
 from copy import deepcopy
 from calendar import monthrange
 from .domain import access_long, nz, require, update_situation, finalize_compensation, group_educators
+from .carried_balances import carried_total
 
 
 def active(row, flag):
@@ -50,7 +51,8 @@ def calculate(data, month_id, group_id=None):
     balances = {}
     for person_id, person in people.items():
         earlier = lambda table: [r for r in table if r.get('IDP') == person_id and r.get('IDL') is not None and r['IDL'] < month_id]
-        balances[person_id] = (nz(person.get('SI')) + nz(total(earlier(data['Prezenta']), 'ValoareContract'))
+        balances[person_id] = (nz(person.get('SI')) + carried_total(data, person_id, month['Anul'])
+                               + nz(total(earlier(data['Prezenta']), 'ValoareContract'))
                                - nz(total(earlier(payments), 'Plata')) + nz(total(earlier(refunds), 'Suma')))
     trace['qSolduri'] = balances.copy()
     for row in rows:

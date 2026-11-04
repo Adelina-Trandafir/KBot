@@ -19,4 +19,13 @@ Public Interface IMarcajApi
     ''' </summary>
     Function RezervaMarcajAsync(tip As String, cod As String, ct As CancellationToken) As Task(Of String)
 
+    ''' <summary>
+    ''' Slice 0127: keeps the reason the operator typed in the FOREXE motive window for one reservation save
+    ''' (<c>POST /api/forexe/marcaj/motiv</c>). The server files it under the revision number it holds for the
+    ''' angajament and joins it with «; » to an earlier reason of the SAME indicator. Throws
+    ''' <see cref="ApiException"/> on any non-2xx (409 = no revision number is held for the angajament).
+    ''' </summary>
+    Function SalveazaMotivRezervareAsync(cod As String, indicator As String, motiv As String,
+                                         ct As CancellationToken) As Task
+
 End Interface

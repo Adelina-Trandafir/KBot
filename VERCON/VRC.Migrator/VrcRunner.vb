@@ -122,7 +122,7 @@ Partial Friend NotInheritable Class VrcRunner
             For Each k_source In _plan.Sources.Where(Function(k_s) k_s.PreparedRows IsNot Nothing AndAlso Not k_s.GeneratedOi)
                 VrcOiData.EnsureFresh(k_source)
             Next
-            For Each k_source In _plan.Sources.Where(Function(k_s) k_s.IsSeparatedSource)
+            For Each k_source In _plan.Sources.Where(Function(k_s) k_s.PreparedNotes.Count > 0)
                 For k_i As Integer = 0 To k_source.PreparedNotes.Count - 1
                     AddIssue(k_source, "Masini", (k_i + 1).ToString(CultureInfo.InvariantCulture), "", "N22", "CONVERSIE", "Materiale", k_source.GestiuneType, k_source.PreparedNotes(k_i))
                 Next

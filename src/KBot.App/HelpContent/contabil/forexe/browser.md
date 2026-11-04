@@ -22,14 +22,14 @@ robotului, direct în fereastra K-BOT.
 > Pagina este FOREXE-ul real: ce salvezi aici se salvează în FOREXE.
 
 ## Ce face K-BOT după o salvare făcută în pagină
-<!-- slice: 0073, 0076 -->
+<!-- slice: 0073, 0076, 0097-07 -->
 
 K-BOT urmărește pagina. Când salvezi în ea **un angajament nou**, **o recepție** sau **o
 rezervare**, K-BOT preia singur modificarea, fără să mai apeși iconița de descărcare:
 
 | Ce ai salvat | Ce face K-BOT |
 |--------------|---------------|
-| un angajament nou | reîmprospătează lista, apoi descarcă angajamentul nou |
+| un angajament nou | descarcă direct angajamentul nou, din pagina în care ești: antetul, indicatorii cu bugetul lor și istoricul (nu mai reîmprospătează lista de angajamente); la sfârșit, lista din stânga derulează la angajamentul nou și îl selectează, ca să vezi că s-a adăugat |
 | o recepție (nouă sau modificată) | descarcă acea recepție |
 | o rezervare | păstrează rândurile modificate și te întreabă «Ați terminat modificarea rezervărilor?» — **DA** le preia acum, **NU** te lasă să continui și te întreabă din nou după următoarea salvare |
 
@@ -37,6 +37,21 @@ rezervare**, K-BOT preia singur modificarea, fără să mai apeși iconița de d
 <!-- slice: 0114-26, 0000-120 -->
 
 Dacă angajamentul are **rezervări fără revizie** de fundamentare (în vederea «Rezervări» au încă «+»), în pagină **nu poți începe o rezervare nouă** — nici cu **«Adaugă»**, nici deschizând (ochiul) o rezervare existentă. K-BOT arată un mesaj cu zilele rezervărilor care așteaptă, iar rezervarea nu începe. Mergi în vederea «Rezervări», apasă «+» pe fiecare rezervare până nu mai rămâne niciuna și abia apoi lucrezi în pagină. Vezi [Rezervări](topic:contabil.vederi.rezervari).
+
+### Motivul unei rezervări se păstrează pentru revizie
+<!-- slice: 0127-01, 0000-151 -->
+
+La salvarea unei rezervări, FOREXE cere un **motiv**. Dacă lucrezi în această vedere, K-BOT păstrează motivul
+pe care l-ai scris, pe angajament și pe indicatorul salvat. Când generezi apoi revizia din vederea «Rezervări»
+(«+»), câmpul **Descriere scurtă** al editorului DDF vine completat cu el; îl poți schimba.
+
+- Dacă ai salvat **același indicator** de mai multe ori înainte de revizie, motivele lui se unesc cu «; ».
+- Dacă revizia cuprinde **indicatori diferiți** cu motive diferite, motivele nu se amestecă: fiecare apare cu
+  codul indicatorului, despărțite prin « | ».
+- «Descriere scurtă» ține cel mult 255 de caractere. Un motiv mai lung se taie, iar K-BOT te avertizează; textul
+  întreg rămâne în descrierea lungă.
+- Rezervările făcute în alt fel (de exemplu de robot, sau în FOREXE deschis în alt browser) nu au motiv păstrat:
+  revizia primește descrierea obișnuită (tipul operației).
 
 Robotul lucrează la o singură preluare odată. Dacă salvezi altceva cât încă preia, K-BOT îți spune
 și nu preia a doua operațiune: descarcă angajamentul din iconița lui după ce se termină.

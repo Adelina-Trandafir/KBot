@@ -233,8 +233,8 @@ Public Class VerconForm
         Dim k_s As EFacturaVerconSumar = Nothing
         If Not _vercon.TryGetValue(k_idPrimita, k_s) Then Return String.Empty
         Select Case k_s.Stare
-            Case EFacturaVerconStare.Trimisa : Return If(k_s.Revenita, "trimisă din nou", "trimisă")
-            Case EFacturaVerconStare.Preluata : Return "preluată"
+            Case EFacturaVerconStare.Trimisa : Return If(k_s.Revenita, "Trimisă din nou în VERCON", "Trimisă în VERCON")
+            Case EFacturaVerconStare.Preluata : Return "Înregistrată în VERCON"
             Case EFacturaVerconStare.Partiala : Return "asociată parțial"
             Case EFacturaVerconStare.Returnata : Return "returnată"
             Case Else : Return String.Empty
@@ -299,10 +299,16 @@ Public Class VerconForm
             _order.Add(k_p.IdPrimita)
             ' Taken over in a NIR: ticked and locked (grey), never sent again; the Administrator's NIR is the end of the road.
             Dim k_sent As EFacturaVerconSumar = Nothing
-            If _vercon.TryGetValue(k_p.IdPrimita, k_sent) AndAlso (String.Equals(k_sent.Stare, EFacturaVerconStare.Preluata, StringComparison.Ordinal) OrElse String.Equals(k_sent.Stare, EFacturaVerconStare.Partiala, StringComparison.Ordinal)) Then
-                k_leaf.CheckLocked = True
-                k_leaf.NodeForeColor = ThemeManager.Current.Palette.TextDimColor
-                tree.SetItemCheckState(k_leaf, AdvancedTreeControl.TreeCheckState.Checked)
+            If _vercon.TryGetValue(k_p.IdPrimita, k_sent) Then
+                If String.Equals(k_sent.Stare, EFacturaVerconStare.Preluata, StringComparison.Ordinal) OrElse String.Equals(k_sent.Stare, EFacturaVerconStare.Partiala, StringComparison.Ordinal) Then
+                    k_leaf.CheckLocked = True
+                    k_leaf.NodeForeColor = ThemeManager.Current.Palette.TextDimColor
+                    tree.SetItemCheckState(k_leaf, AdvancedTreeControl.TreeCheckState.Checked)
+                ElseIf String.Equals(k_sent.Stare, EFacturaVerconStare.Trimisa, StringComparison.Ordinal) Then
+                    ' Sent and waiting for the Administrator: ticked and locked too (normal colour), so the tick says «sent» and cannot lead to a second sending.
+                    k_leaf.CheckLocked = True
+                    tree.SetItemCheckState(k_leaf, AdvancedTreeControl.TreeCheckState.Checked)
+                End If
             End If
         Next
     End Sub

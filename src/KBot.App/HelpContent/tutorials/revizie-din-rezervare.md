@@ -70,12 +70,12 @@ Scrie începutul numelui sau al codului fiscal și alege partenerul din listă.<
 <mark>Poți selecta cu mausul sau apăsa ENTER!</mark>
 
 ## Descriere scurtă
-<!-- slice: 000T -->
+<!-- slice: 000T, 0127-01, 0000-151 -->
 target: DdfEditForm.txtDescScurta
 wait: changed
 optional: yes
 why: Descrierea scurtă ajută la recunoașterea documentului în listă, dar documentul se poate salva și fără ea.
-Completează «Descriere scurtă» cu câteva cuvinte despre document, apoi apasă Enter sau treci în alt câmp.<BR> <mark>Pentru Revizia 0, descrierea reprezintă numele angajamentului din CAB. Pentru restul reviziilor, acesta este completat implicit cu ”mărire” sau ”creștere” in funcție de valoarea rezervării.</mark>
+Completează «Descriere scurtă» cu câteva cuvinte despre document, apoi apasă Enter sau treci în alt câmp.<BR> <mark>Pentru Revizia 0, descrierea reprezintă numele angajamentului din CAB. Pentru restul reviziilor, acesta este completat implicit cu motivul scris în FOREXE la salvarea rezervării, dacă ai lucrat în «Browser FOREXE»; altfel, cu ”mărire” sau ”micșorare” în funcție de valoarea rezervării.</mark>
 
 ## Element fundamentare
 <!-- slice: 000T, 000T-13 -->

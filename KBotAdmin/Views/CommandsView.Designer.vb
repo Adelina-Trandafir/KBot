@@ -25,6 +25,7 @@ Partial Class CommandsView
         btnRepair = New KBotButton()
         btnExplain = New KBotButton()
         btnLanturi = New KBotButton()
+        btnDeleteAng = New KBotButton()
         btnFix = New KBotButton()
         txtParam = New KBotTextBox()
         txtOutput = New KBotTextBox()
@@ -116,6 +117,20 @@ Partial Class CommandsView
         tips.SetToolTipHeader(btnLanturi, "Repară recepțiile")
         tips.SetToolTipText(btnLanturi, "Apare doar după verificarea lanțurilor de recepții, când a găsit cazuri reparabile." & vbLf & "Scrieți în casetă codul angajamentului din listă. Mută instantaneele de pe recepția greșită pe a lor, pune recepția rescrisă la valorile din lanțul ei, recalculează diferențele și mută cifrele salvate ale ordonanțărilor (ele se listează din nou, nu se generează din nou). Scrie în baza aleasă (cere confirmare), într-o singură tranzacție, și notează în Jurnal.")
         btnLanturi.Visible = False
+        '
+        ' btnDeleteAng (same cell as btnRepair, btnExplain and btnLanturi: never visible together)
+        '
+        btnDeleteAng.AccessibleRole = AccessibleRole.PushButton
+        btnDeleteAng.Dock = DockStyle.Fill
+        btnDeleteAng.Location = New Point(1125, 3)
+        btnDeleteAng.Margin = New Padding(0, 3, 0, 9)
+        btnDeleteAng.Name = "btnDeleteAng"
+        btnDeleteAng.Size = New Size(210, 54)
+        btnDeleteAng.TabIndex = 8
+        btnDeleteAng.Text = "Șterge angajamentul"
+        tips.SetToolTipHeader(btnDeleteAng, "Șterge angajamentul")
+        tips.SetToolTipText(btnDeleteAng, "Apare doar după «Analiză ștergere angajament», pentru codul analizat." & vbLf & "Șterge din baza aleasă exact ce a arătat analiza (tabelele FX_ ale codului; tabelele EF_ rămân), într-o singură tranzacție, cu Jurnal. Cere confirmare și NU se poate anula.")
+        btnDeleteAng.Visible = False
         '
         ' btnFix
         '
@@ -233,6 +248,7 @@ Partial Class CommandsView
         tlyBar.Controls.Add(btnRepair, 4, 0)
         tlyBar.Controls.Add(btnExplain, 4, 0)
         tlyBar.Controls.Add(btnLanturi, 4, 0)
+        tlyBar.Controls.Add(btnDeleteAng, 4, 0)
         tlyBar.Controls.Add(btnFix, 5, 0)
         tlyBar.Dock = DockStyle.Fill
         tlyBar.Location = New Point(8, 8)
@@ -265,6 +281,7 @@ Partial Class CommandsView
     Friend WithEvents btnRepair As KBotButton
     Friend WithEvents btnExplain As KBotButton
     Friend WithEvents btnLanturi As KBotButton
+    Friend WithEvents btnDeleteAng As KBotButton
     Friend WithEvents btnFix As KBotButton
     Friend WithEvents txtParam As KBotTextBox
     Friend WithEvents txtOutput As KBotTextBox

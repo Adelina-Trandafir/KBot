@@ -1,14 +1,18 @@
 Option Strict On
 Imports System.Diagnostics
 Imports System.Globalization
+Imports System.IO
 
 ''' <summary>
 ''' The «Scripturi» page of «Publicare»: the push-*.ps1 and publish-*.ps1 scripts of the repository. On the left, the scripts (grouped under
 ''' Push and Publish) with what each does and a «Rulează» button that fills its cell; on the right, the switches of the chosen script, one per
-''' row with a tick, and under them the text of <c>-Notes</c> for the scripts that have it. «Rulează» starts the script in its own PowerShell
-''' window, so its questions and the sftp password prompt work as when typed by hand. Nothing starts without the operator pressing «Rulează»
-''' and answering the confirmation. publish-admin.ps1 replaces this very program: it is started detached, waits for the program to end, and
-''' the program closes (<see cref="CloseProgramRequested"/>).
+''' row with a tick (the version parts are four ticks of which only one can be on), and under them, behind a bar the operator drags to give
+''' more room to the one or the other: for the scripts that make a version, the NOUTATI.md text of the version that comes out (the current
+''' one, or the one raised by the ticked part); for the other scripts that have it, the text of <c>-Notes</c>. «Rulează» starts the script
+''' in its own PowerShell window, so its questions and the sftp password prompt work as when typed by hand; when the script stops with an
+''' error, that error is also written to the log of the page. Nothing starts without the operator pressing «Rulează» and answering the
+''' confirmation. publish-admin.ps1 replaces this very program: it is started detached, waits for the program to end, and the program
+''' closes (<see cref="CloseProgramRequested"/>).
 ''' </summary>
 Public Class ScriptsView
     Implements IAdminView
@@ -41,6 +45,7 @@ Public Class ScriptsView
     Public Function ActivatedAsync() As Task Implements IAdminView.ActivatedAsync
         If gridScripts.RowCount = 0 Then FillScripts()
         ShowRoot()
+        ShowNotesPane()   ' NOUTATI.md may have been written since the page was last on screen
         ShowCommand()
         Return Task.CompletedTask
     End Function
@@ -134,14 +139,81 @@ Public Class ScriptsView
                 k_row("switch") = ScriptCatalog.SwitchText(k_def, k_key)
                 k_row("desc") = ScriptCatalog.FlagDescription(k_key)
             Next
-            txtNotes.Enabled = k_def.TakesNotes
             txtNotes.Text = _notes(k_def)
         Finally
             gridSwitches.EndUpdate()
             _filling = False
         End Try
+        ShowNotesPane()
         ShowCommand()
     End Sub
+
+    ''' <summary>
+    ''' What is under the switch list: the NOUTATI text of the version that comes out (scripts with a version bump), the <c>-Notes</c> box
+    ''' (the other scripts that take it), or nothing at all (the lower part of the bar is folded away).
+    ''' </summary>
+    Private Sub ShowNotesPane()
+        Try
+            If _current Is Nothing Then Return
+            Dim k_release As Boolean = ScriptCatalog.HasBump(_current)
+            splSide.Panel2Collapsed = Not (k_release OrElse _current.TakesNotes)
+            lblNotesHead.Visible = k_release
+            rtbNotes.Visible = k_release
+            txtNotes.Visible = Not k_release AndAlso _current.TakesNotes
+            If k_release Then ShowReleaseNotes()
+        Catch ex As Exception
+            GlobalErrorLog.Write("ScriptsView.ShowNotesPane", ex)
+        End Try
+    End Sub
+
+    ''' <summary>The index (0 Major .. 3 Revision) of the version part that is ticked for this script, -1 when none.</summary>
+    Private Function TickedBumpPart(k_def As ScriptDef) As Integer
+        Return Array.FindIndex(ScriptCatalog.BumpFlags, Function(k_flag) _ticked(k_def).Contains(k_flag))
+    End Function
+
+    ''' <summary>Which version the script is about to make, and what NOUTATI.md says about it (read again each time: an assistant may have written it meanwhile).</summary>
+    Private Sub ShowReleaseNotes()
+        Dim k_root As String = ScriptCatalog.FindRepoRoot()
+        If k_root = String.Empty Then
+            lblNotesHead.Text = "Nu găsesc KBot.sln deasupra programului."
+            rtbNotes.ShowText(String.Empty)
+            Return
+        End If
+        Try
+            Dim k_part As Integer = TickedBumpPart(_current)
+            Dim k_now As Version = ReleasePreview.CurrentVersion(k_root)
+            Dim k_target As Version = If(k_part < 0, k_now, ReleasePreview.Bumped(k_now, k_part))
+            Dim k_section As ReleaseNotesSection = ReleasePreview.NotesFor(k_root, k_target)
+            Dim k_head As String = If(k_part < 0,
+                                      "Versiunea rămâne " & k_now.ToString(4),
+                                      "Versiunea " & k_now.ToString(4) & " devine " & k_target.ToString(4) & " (" & PartName(k_part) & ")")
+            If k_section.IsWritten Then
+                k_head &= If(k_section.IsBaseline, " - începutul jurnalului NOUTATI.", " - NOUTATI: " & k_section.Lines.Count.ToString(CultureInfo.InvariantCulture) & " rânduri.")
+                rtbNotes.ShowText(ReleasePreview.SectionText(k_section))
+            Else
+                k_head &= " - NOUTATI: nimic scris încă."
+                rtbNotes.ShowText("În docs\release-notes\NOUTATI.md nu e text pentru " & k_target.ToString(4) & "." & vbCrLf & vbCrLf &
+                                  If(_ticked(_current).Contains(ScriptCatalog.FlagNoNotes),
+                                     "Bifa «Fără NOUTATI» e pusă: scriptul merge mai departe fără text și nu întreabă.",
+                                     "Dacă porniți așa, scriptul pune cererea pe clipboard și așteaptă textul (Enter = caută din nou, S = fără text). Bifați «Fără NOUTATI» ca să nu mai întrebe."))
+            End If
+            lblNotesHead.Text = k_head
+        Catch ex As Exception
+            ' UI boundary: the preview is only a help, the script itself does not depend on it.
+            GlobalErrorLog.Write("ScriptsView.ShowReleaseNotes", ex)
+            lblNotesHead.Text = "NOUTATI nu s-au putut citi."
+            rtbNotes.ShowText(ex.Message)
+        End Try
+    End Sub
+
+    Private Shared Function PartName(k_part As Integer) As String
+        Select Case k_part
+            Case 0 : Return "Major"
+            Case 1 : Return "Minor"
+            Case 2 : Return "Build"
+            Case Else : Return "Revision"
+        End Select
+    End Function
 
     Private Sub GridSwitches_CellValueChanged(k_sender As Object, e As KBotCellValueEventArgs) Handles gridSwitches.CellValueChanged
         Try
@@ -149,25 +221,28 @@ Public Class ScriptsView
             Dim k_key As String = Convert.ToString(gridSwitches.Rows(e.RowIndex).Tag, CultureInfo.InvariantCulture)
             If Convert.ToBoolean(e.NewValue, CultureInfo.InvariantCulture) Then
                 _ticked(_current).Add(k_key)
-                ' The two values of one parameter (or opposites): ticking one clears the other.
-                For Each k_pair As String() In ScriptCatalog.Exclusive
-                    Dim k_other As String = If(k_pair(0) = k_key, k_pair(1), If(k_pair(1) = k_key, k_pair(0), String.Empty))
-                    If k_other = String.Empty OrElse Not _ticked(_current).Remove(k_other) Then Continue For
-                    _filling = True
-                    Try
-                        For k_i As Integer = 0 To gridSwitches.RowCount - 1
-                            If String.Equals(Convert.ToString(gridSwitches.Rows(k_i).Tag, CultureInfo.InvariantCulture), k_other, StringComparison.Ordinal) Then
-                                gridSwitches(ColOn, k_i) = False
-                            End If
-                        Next
-                    Finally
-                        _filling = False
-                    End Try
+                ' The values of one parameter (or opposites; the four version parts): ticking one clears the others of its group.
+                For Each k_group As String() In ScriptCatalog.Exclusive
+                    If Not k_group.Contains(k_key) Then Continue For
+                    For Each k_other As String In k_group
+                        If k_other = k_key OrElse Not _ticked(_current).Remove(k_other) Then Continue For
+                        _filling = True
+                        Try
+                            For k_i As Integer = 0 To gridSwitches.RowCount - 1
+                                If String.Equals(Convert.ToString(gridSwitches.Rows(k_i).Tag, CultureInfo.InvariantCulture), k_other, StringComparison.Ordinal) Then
+                                    gridSwitches(ColOn, k_i) = False
+                                End If
+                            Next
+                        Finally
+                            _filling = False
+                        End Try
+                    Next
                 Next
             Else
                 _ticked(_current).Remove(k_key)
             End If
             SaveTicks()
+            ShowNotesPane()
             ShowCommand()
         Catch ex As Exception
             GlobalErrorLog.Write("ScriptsView.GridSwitches_CellValueChanged", ex)
@@ -213,6 +288,7 @@ Public Class ScriptsView
             RunScript(k_def, ArgumentsOf(k_def))
         Catch ex As Exception
             GlobalErrorLog.Write("ScriptsView.GridScripts_ButtonClick", ex)
+            _log.Add(KBotLogLevel.Error, "Scriptul nu a putut porni: " & ex.Message)
             KBotMessage.Show("Scriptul nu a putut porni: " & ex.Message, "Scripturi", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
@@ -235,7 +311,9 @@ Public Class ScriptsView
             If Not k_allowed Then Return
         End If
         RunLog.Write("Scripturi: pornesc " & k_command)
-        Dim k_process As Process = ScriptCatalog.Start(k_def, k_root, k_args)
+        ' The script's window writes the text of an error here when the script stops with one; OnScriptExited shows it in the log.
+        Dim k_errorFile As String = Path.Combine(Path.GetTempPath(), "kbotadmin_script_" & Guid.NewGuid().ToString("N") & ".err")
+        Dim k_process As Process = ScriptCatalog.Start(k_def, k_root, k_args, k_errorFile)
         _log.Add(KBotLogLevel.Info, "Pornit: " & k_command)
         _context.Say("A pornit " & k_def.Title & ".")
         If k_def.Detached Then
@@ -244,12 +322,16 @@ Public Class ScriptsView
             Return
         End If
         k_process.EnableRaisingEvents = True
-        AddHandler k_process.Exited, Sub(k_s, k_e) OnScriptExited(k_def.Title, k_process)
+        AddHandler k_process.Exited, Sub(k_s, k_e) OnScriptExited(k_def.Title, k_process, k_errorFile)
     End Sub
 
-    ''' <summary>The PowerShell window was closed: its exit code (that of the script) goes to the page's log. Runs on a pool thread.</summary>
-    Private Sub OnScriptExited(k_title As String, k_process As Process)
+    ''' <summary>
+    ''' The PowerShell window was closed: the error the script stopped with (when it did) and its exit code (that of the script) go to the
+    ''' page's log. Runs on a pool thread.
+    ''' </summary>
+    Private Sub OnScriptExited(k_title As String, k_process As Process, k_errorFile As String)
         Try
+            ShowScriptError(k_title, k_errorFile)
             Dim k_code As Integer = k_process.ExitCode
             Dim k_text As String = k_title & If(k_code = 0, " s-a terminat cu succes.", " s-a terminat cu eroare (cod " & k_code.ToString(CultureInfo.InvariantCulture) & ").")
             _log.Add(If(k_code = 0, KBotLogLevel.Info, KBotLogLevel.Error), k_text)
@@ -257,6 +339,23 @@ Public Class ScriptsView
             k_process.Dispose()
         Catch ex As Exception
             GlobalErrorLog.Write("ScriptsView.OnScriptExited", ex)
+        End Try
+    End Sub
+
+    ''' <summary>The text the script's window kept in <paramref name="k_errorFile"/> (an error it stopped with), line by line in the log as errors; the file is removed.</summary>
+    Private Sub ShowScriptError(k_title As String, k_errorFile As String)
+        Try
+            If Not File.Exists(k_errorFile) Then Return
+            Dim k_text As String = File.ReadAllText(k_errorFile).Trim()
+            File.Delete(k_errorFile)
+            If k_text = String.Empty Then Return
+            RunLog.Write("Scripturi: " & k_title & " a oprit cu eroare: " & k_text)
+            _log.Add(KBotLogLevel.Error, k_title & " a oprit cu eroare:")
+            For Each k_line As String In k_text.Replace(vbCrLf, vbLf).Split(ControlChars.Lf)
+                If Not String.IsNullOrWhiteSpace(k_line) Then _log.Add(KBotLogLevel.Error, "    " & k_line.TrimEnd())
+            Next
+        Catch ex As Exception
+            GlobalErrorLog.Write("ScriptsView.ShowScriptError", ex)
         End Try
     End Sub
 

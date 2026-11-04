@@ -4,6 +4,7 @@ from datetime import date
 from utils.clock import bucharest_today
 from decimal import Decimal
 from .calculations import calculate, active
+from .carried_balances import carried_entries
 from .domain import require, SCHEMA, DomainError
 from .service import MONTHS
 
@@ -23,6 +24,7 @@ def issuer_data(repo, unit):
 def child_data(repo, child_id):
     data = {table: [] for table in SCHEMA}
     data['Platitori'] = [repo.get('Platitori', child_id)]
+    data['CarriedBalances'] = repo.carried_balances(child_id)
     for table in ('Prezenta', 'Plati', 'Retur', 'SS_Buget'):
         data[table] = repo.rows(table, IDP=child_id)
     data['LunaD'] = repo.rows('LunaD')
@@ -66,6 +68,10 @@ def make_statement(data, parent, issuer, start=None, end=None):
     months = {r['IDL']: r for r in data['LunaD']}
     snapshots = {r['IDL']: r for r in data['SS_Buget']}
     entries = []
+    for carried in carried_entries(data.get('CarriedBalances', [])):
+        entries.append({'date': carried['date'], 'explanation': carried['text'],
+                        'debit': money(max(carried['value'], 0)), 'credit': money(max(-carried['value'], 0)),
+                        'order': (-1, carried['date'])})
     for row in data['Prezenta']:
         month = months[row['IDL']]
         source = snapshots.get(row['IDL'], row) if month['Inchisa'] else row

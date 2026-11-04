@@ -112,6 +112,9 @@ from . import extrase_lista  # noqa: E402,F401
 from . import angajament_dump  # noqa: E402,F401
 # marcaj.py = the ids the FOREXE page appends to what the operator types (slice 0076).
 from . import marcaj  # noqa: E402,F401
+# marcaj_motiv.py -> POST /api/forexe/marcaj/motiv: the reason typed in the FOREXE motive window, kept for the
+# revision that follows (slice 0127; imported by ddf_edit.py, which offers it as the short description).
+from . import marcaj_motiv  # noqa: E402,F401
 # ddf_trimitere.py = sending a DDF revision KBOT -> forexecab (slice 0081). The import is
 # not touched; ddf_edit.py (the editor's save) is not touched either.
 from . import ddf_trimitere  # noqa: E402,F401

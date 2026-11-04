@@ -1,49 +1,45 @@
 # SLICE-VC10-01 — separarea conturilor din Materiale
 
-Data: 03.11.2026. Stare: implementare în surse, fără build/teste/import rulate de agent. Înregistrarea pentru publicare nu a fost executată; este necesară confirmarea explicită a Adelinei.
+Data: 03.11.2026. Stare: implementare în surse **0.3.19.0**, reguli `VC10-OI-OPTIONS-HTML-NULL-2026-11-03`. Fără compilare, teste, lansare aplicație, importuri, acces MariaDB sau DDL executate de agent. Înregistrarea pentru publicare nu a fost executată; este necesară confirmarea explicită a Adelinei.
 
-## Cerințe și decizii
+## Cerințe actuale
 
-- Fila custom VRC.Migrator pentru citirea bazelor încărcate și separarea conturilor în gestiuni noi, sub aceeași subunitate.
-- `303 OBIECTE INVENTAR` merge la OI; `302.8.07 PROIECT SCOLAR - OBIECTE INVENTAR` **nu este OI** și merge într-o gestiune separată de Materiale. Nu se clasifică automat după denumire.
-- Pentru OI: BC → BP + BC legat + registru deținător; continuitate multianuală fără repetarea reporturilor în magazie.
-- Erorile de generare se colectează, cu nume/baze/documente/produse. Diferențele de nume ale deținătorilor se pot asocia din selector; nu se oprește analiza la prima astfel de diferență.
-- Nu se scrie în Access și nu se modifică schema MariaDB. Nu se rulează verificări/build/teste fără cerere explicită.
+- Fila custom VRC.Migrator citește bazele încărcate și separă conturi în gestiuni noi sub aceeași subunitate.
+- `303 OBIECTE INVENTAR` merge la OI. `302.8.07 PROIECT SCOLAR - OBIECTE INVENTAR` **nu este OI**: destinație separată Materiale. Nu se deduce tipul din nume.
+- Rândurile noi pornesc cu MATERIALE. Separă → OI + `Obiecte Inventar Folosinta`. Contul de folosință are TIP=OIF; contul `Obiecte inventar Magazie` are TIP=OIM. Produsele/intrările și BC-urile care scad magazia folosesc OIM, BP/registrul folosesc OIF.
+- Combo Tip destinație include `Nu migra`: exclude contul, produsele și documentele sale eligibile fără destinație nouă. Nu depinde de bifa Separă. Se cere aceeași alegere pe toți anii contului; documentele amestecate cu un cont păstrat rămân semnalate, nu se șterg sau împart tacit.
+- Grila deținătorilor este eliminată. Asocierile sunt automate: aceeași identitate locală în aceeași serie (folder/subunitate/gestiune) folosește cel mai recent nume disponibil. Numele normalizate identice se reunesc în destinație. Istoricul sursă/an/bon/nume → destinație apare în HTML. Regula include și persoanele scrise succesiv peste aceeași înregistrare; este explicată în raport. Vechile asocieri manuale salvate nu se mai aplică. O identitate lipsă fără nume recuperabil în serie cere corectarea sursei, fără persoană inventată.
+- Produsele cu preț NULL sunt **omise fără blocaj**, conform ultimei instrucțiuni. Se elimină variantele și mișcările dependente, precum și liniile cu preț propriu NULL. Un produs fără nicio variantă păstrată se elimină. Documentele devenite goale se omit; la documentele parțiale antetele își păstrează valorile sursă, fără recalculare. Zero nu este NULL. Omiterea se aplică snapshoturilor Materiale încărcate în acest flux, inclusiv reziduului rămas în gestiunea originală.
+- Caseta de log a separării este eliminată. Analiza/generarea deschide raportul HTML; butonul Raport HTML îl redeschide și fereastra existentă permite exportul complet.
+- Toate erorile se colectează cu nume/documente/baze/produse. Documentele respinse nu produc afirmații concluzive despre stoc.
 
-## Context citit
+## Context citit și probe ale utilizatorului
 
-Au fost citite doar copii temporare ale `tz_2022.accdb`–`tz_2026.accdb` din `C:\vercon\Scoala GEP\14`. **`tz.accdb` a fost exclus și nu a fost citit.** Furnizorul ACE încerca un fișier de blocare în folderul sursă, de aceea analiza contextului a folosit copii temporare.
+În etapa inițială au fost citite numai copii temporare ale `tz_2022.accdb`–`tz_2026.accdb` din `C:\vercon\Scoala GEP\14`. **tz.accdb a fost exclus și nu a fost citit.** Copia JSON temporară de context a fost eliminată din proiect. Tabelele OI_Predare/OI_Produse din conturile discutate erau goale. Comparația inițială a surselor a găsit reporturi egale cu soldurile precedente, fără repetări exacte produs–preț–deținător între ani. Aceasta nu este un test al generatorului și nu dovedește identitatea fizică a obiectelor.
 
-În cele două conturi citite, tabelele OI_Predare/OI_Produse sunt goale. Comparația de context a găsit reporturi anuale egale cu soldurile anului anterior; la sfârșitul bazelor 2022, 2024, 2025, 2026 rămâne o tabletă în magazie, iar 2023 mai are încă două poziții. Nu s-au găsit între ani repetări ale combinației produs–preț–deținător în datele citite inițial. Aceasta este o analiză a surselor, nu un test al codului nou și nici o identificare fizică a obiectelor. Nu se reconstruiește folosința din anii anteriori primei baze selectate.
+Adelina a probat prototipul și a furnizat logul cu schimbările de nume, prețurile NULL și NIR-urile care amestecă conturi. Continuarea 0.3.19 a citit acel text atașat și sursele locale; nu a recitit bazele Access. Problemele cu NIR mixt/cont antet diferit sunt explicate în raport, cu toate produsele și conturile lor. Împărțirea automată a acestor documente nu a fost autorizată sau implementată. Sold neconcluziv înseamnă documente insuficiente pentru calcul, nu lipsă de stoc demonstrată.
 
 ## Implementare
 
-- `VrcOiData.vb`: snapshot, amprente, proveniență și modele pentru alegeri/asocieri. `VrcOiConversion` aplică reziduurile și sursele generate la planul de bază numai când hash-ul încă se potrivește.
-- `VrcOiBuilder.vb`: conversia OI multianuală, reconcilierea deschiderilor, registrul și BC/BP, colectarea diagnosticelor, asocierile deținătorilor și semnalarea suprapunerilor. O eroare de date se colectează la nivelul rândului/documentului/anului; analiza continuă unde datele permit.
-- `VrcAccountSeparation.vb`: mai multe destinații, inclusiv Materiale pe ani; reziduurile pentru aceeași sursă se intersectează, ca să nu reintroducă un cont eliminat de altă destinație.
-- `VrcOiWorkspace*.vb`: selector de baze/tabele doar pentru citire, conturi cu tip/nume destinație, deținători cu nume sursă și selector destinație, confirmări individuale de predări distincte, raport.
-- `VrcPlan.vb`: surse pregătite, surse separate, hash/export cu transformări; permite partițiile suplimentare declarate explicit.
-- `VrcRunner.vb` / `VrcRun.vb`: citirea snapshoturilor, verificarea amprentei surselor afectate la transfer și jurnalul `N22`. `N20` rămâne rezervat recuperării prețurilor storno/retur.
-- `VrcSettings.vb`: alegeri și asocieri persistente, fără persistarea datelor generate; la reluare este obligatorie regenerarea.
-- Versiune în surse: `0.3.18.0`; reguli `VC10-OI-SEPARATION-2026-11-03`.
+- `VrcOiData.vb`: snapshoturi, modele, amprente, aplicarea reziduului/destinațiilor și notelor de excludere la plan. Modele pentru raportul anual, stoc, documente și omiteri.
+- `VrcOiNullPrices.vb`: copii de liste ale snapshotului, omiterea prețurilor NULL și dependentelor, inventarul omiterilor. Nu modifică datele sursă și nu inventează prețuri.
+- `VrcOiHolders.vb`: asocieri automate pe seria anuală și rezolvarea numelor/referințelor. Remaparea țintă nu reutilizează chei Access neidentificate.
+- `VrcOiBuilder.vb`: conversie BC → BP + BC aferent + registru; conturi OIM/OIF; reconciliere multianuală; diagnostic continuu; asocieri și suprapuneri; detalii structurate de document și stoc pentru raport.
+- `VrcAccountSeparation.vb`: destinații multiple OI/Materiale, excluderea conturilor, pregătire fără NULL-uri și reziduuri intersectate pentru aceeași bază. Analiza permite numai omiterea NULL-urilor și dacă nu sunt conturi selectate, prin generarea explicită a opțiunilor.
+- `VrcOiWorkspace*.vb`: browse read-only, conturi cu valori implicite, Nu migra, confirmări de predări distincte, raport HTML în loc de log/grilă deținători. Selecțiile/excluderile sunt memorate; generarea invalidată trebuie refăcută.
+- `VrcOiHtmlReport.vb` / `.css`: HTML structurat și codificat ca text; fără scripturi/resurse externe. Destinații și excluderi; blocaje grupate + explicații; NIR/BC amestecate + linii; NULL-uri omise; istoric asocieri; ani/stoc; suprapuneri; documente candidate cu traseu, cantități, prețuri și valori sursă. Datele/numerotarea/prețurile/stocul au chei de sortare de tipul real.
+- `VrcReportForm.vb`: constructor suplimentar pentru HTML deja formatat; refolosește fereastra și exportul existente, fără schimbarea raportului general.
+- `VrcPlan.vb`: surse pregătite/separate, hash/export cu transformări și versiunea regulilor. `VrcRunner.vb` / `VrcRun.vb`: snapshoturi și note N22, inclusiv excluderi pe sursele reziduale; tranzacția existentă. `VrcSettings.vb`: alegeri persistente, fără persistarea rândurilor generate.
 
-### Continuarea din 03.11.2026
+## Limite și continuare
 
-- `VrcOiHolders.vb` centralizează identificarea și rezolvarea deținătorilor pentru OI și Materiale. O referință lipsă nu se mai poate păstra ca număr vechi care ar putea coincide cu o altă persoană din destinație.
-- Grila include deținători lipsă/fără nume și referințe goale/zero, cu data și numărul primului bon și numărul de bonuri implicate. Asocierea lor necesită o alegere explicită către un deținător existent al aceleiași subunități. SourceKey rămâne numai în modelul intern.
-- Asocierile sunt aplicate și jurnalizate și pentru destinația Materiale. Fără o asociere rezolvabilă, fiecare bon afectat este diagnosticat, iar datele candidate nu pot fi aplicate planului.
-- Încărcarea snapshoturilor colectează erorile tuturor bazelor; nu mai termină citirea la prima eroare de fișier. Încărcarea incompletă invalidează separarea anterioară și impune reîncărcarea înainte de generare.
-- Continuarea a folosit numai citirea/revizuirea surselor și editări de cod/documentație. Nici în această continuare nu s-au rulat build, teste sau importuri și nu s-a executat înregistrarea pentru publicare.
+Nu s-au executat verificări automate, build, teste, importuri sau comenzi Git. S-a făcut numai revizuire de proiectare în surse și editare. Nici raportul HTML nou nu a fost lansat/randat de agent; proba aplicației rămâne necesară, dacă Adelina o solicită. Nu sunt binare generate de agent și nu există fișiere Python proprii în acest task.
 
-## Continuare / limite de verificare
+Pentru utilizare: recompilare de către utilizator, recitirea bazelor, încărcarea conturilor, OI pentru 303, Materiale separat pentru proiect, Nu migra unde este necesar în toți anii, apoi Analizează/Generează și consultarea HTML. Documentele mixte, corecțiile/stornările reale sau operațiile OI preexistente în Materiale necesită decizie explicită înaintea transformării; nu se extinde automat aria. Lipsa obiectelor din anul următor nu generează casări, iar folosința dinaintea primei baze nu se inventează.
 
-Agentul nu a compilat și nu a rulat aplicația, teste sau importuri. Adelina a raportat dintr-o probă a prototipului blocajul deținătorului cu nume diferite; codul ulterior înlocuiește acest blocaj cu asocieri după numele ales în grilă și diagnostic complet. Modificările ulterioare acestei probe necesită proba ei; nu sunt considerate confirmate pentru publicare.
+Se păstrează interdicția de a atinge tz.accdb, de a executa DDL, de a rula teste/build fără cerere și de a înregistra publicarea fără confirmarea explicită a Adelinei.
 
-Revizuirea de proiectare a urmărit mapările, păstrarea explicațiilor documentelor, tipurile coloanelor custom și raportarea destinațiilor separate în planul principal. Copia JSON temporară folosită numai la citirea contextului a fost eliminată din proiect. Nu s-au creat binare de către agent. Următorul pas de utilizare este recitirea bazelor și reîncărcarea conturilor, alegerea tipului OI pentru 303 și MATERIALE pentru 302.8.07, asocierea numelor dorite și regenerarea separării; orice build/probă de către agent necesită cerere explicită.
-
-La continuare se păstrează interdicția de a atinge `tz.accdb`, de a executa DDL, de a rula teste fără cerere și de a înregistra fișierele fără confirmarea explicită. Dacă se cere un model diferit, se pornește de la aceste surse și de la ultimele corecții din chat, fără a relua sau publica automat.
-
-Adelina a cerut oprirea lucrului când limita comună de 5 ore ajunge la **7% rămas**. Se citește `mcp__codex_app__get_usage_limits`, bucket `rateLimitsByLimitId.codex.primary`, `windowDurationMins=300`; procentul rămas este `100-usedPercent`. La `usedPercent >= 93`, se actualizează acest punct de continuare și se oprește lucrul. Nu se consumă credite de resetare și nu se programează automatizări.
+Adelina a cerut oprirea când limita comună de 5 ore ajunge la **7% rămas**: `mcp__codex_app__get_usage_limits`, `rateLimitsByLimitId.codex.primary`, 300 minute, rămas=100-usedPercent. La usedPercent>=93 se consemnează punctul de continuare și se oprește. Nu se consumă credite de resetare. Ultima citire din această continuare: 8% folosit / 92% rămas în fereastra de 5 ore.
 
 ## Fișiere proprii pentru înregistrare după confirmarea explicită
 
@@ -62,5 +58,9 @@ Adelina a cerut oprirea lucrului când limita comună de 5 ore ajunge la **7% r�
 13. `VERCON/VRC.Migrator/README.md`
 14. `docs/worklog/SLICE-VC10-01-separare-materiale-oi.md`
 15. `VERCON/VRC.Migrator/VrcOiHolders.vb`
+16. `VERCON/VRC.Migrator/VrcOiNullPrices.vb`
+17. `VERCON/VRC.Migrator/VrcOiHtmlReport.vb`
+18. `VERCON/VRC.Migrator/VrcOiHtmlReport.css`
+19. `VERCON/VRC.Migrator/VrcReportForm.vb`
 
-Motiv concret: separarea conturilor din Materiale în gestiuni distincte, conversie OI multianuală fără dublarea reporturilor, diagnostic complet și asocierea deținătorilor după numele ales. Nu se includ binare sau fișiere modificate de alte taskuri.
+Motiv concret: separarea/excluderea conturilor Materiale, conversie OI multianuală cu OIM/OIF, asocieri automate ale deținătorilor, omiterea prețurilor NULL și raport HTML explicativ cu detalii. Se înregistrează numai după confirmarea explicită, fără binare sau modificări străine.

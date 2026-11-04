@@ -58,49 +58,21 @@ Partial Public Class WorkflowExecutor
 
         Dim stoppedOnError As Boolean = False
 
+        ' A reverse read that ends on the first page WITHOUT meeting the row K-BOT already knows is not a
+        ' result, it is a misread (04.11.2026, AAB2MPRG2ND: the pager was not drawn yet, «Suntem deja pe
+        ' ultima pagina» was taken for true, the OLD first page came back and the new history never did).
+        ' It is read once more, after the pager shows. Only then is whatever came back kept.
+        Dim k_retried As Boolean = False
+
         Do
-            ' FOREXE answered the last page turn with its «Eroare» page: what was read so far is kept.
-            If action.PartialOnError AndAlso allData.Count > 0 Then
-                Dim eroare As String = Await WicketErrorTextAsync()
-                If eroare.Length > 0 Then
-                    stoppedOnError = True
-                    LogPartialStop(currentPage, allData.Count, eroare)
-                    Exit Do
-                End If
-            End If
+            allData.Clear()
+            currentPage = 1
+            exitScrape = False
+            stoppedOnError = False
 
-            Dim readEx As Exception = Nothing
-            Try
-                Dim waitOk = Await TryWaitForElementAsync(parsedSelector, WaitForSelectorState.Attached, action.Timeout)
-                If Not waitOk Then
-                    Throw New TimeoutException($"[ScrapeTable] Tabelul '{parsedSelector}' nu a apărut în {action.Timeout}s.")
-                End If
-
-                Dim physPage = Await GetPhysicalPageAsync()
-                Dim pageLabel = If(String.IsNullOrEmpty(physPage), $"{currentPage}", $"{currentPage} [fizic: {physPage}]")
-                LogStep(action, $"Procesez pagina {pageLabel}")
-
-                Dim rawRows = Await ExtractRowsCheckedAsync(parsedSelector, action)
-                exitScrape = ProcessRawRows(rawRows, action, allData)
-
-                If exitScrape Then Exit Do
-
-                Dim shouldContinue As Boolean
-                If action.StartFromLast Then
-                    shouldContinue = Await NavigateBackwardAsync(action, currentPage)
-                Else
-                    shouldContinue = Await NavigateForwardAsync(action, currentPage)
-                End If
-
-                If Not shouldContinue Then Exit Do
-
-            Catch ex As Exception
-                readEx = ex   ' handled below: Await is not allowed inside a Catch
-            End Try
-
-            If readEx IsNot Nothing Then
-                If action.PartialOnError AndAlso allData.Count > 0 AndAlso
-                   Not TypeOf readEx Is OperationCanceledException Then
+            Do
+                ' FOREXE answered the last page turn with its «Eroare» page: what was read so far is kept.
+                If action.PartialOnError AndAlso allData.Count > 0 Then
                     Dim eroare As String = Await WicketErrorTextAsync()
                     If eroare.Length > 0 Then
                         stoppedOnError = True
@@ -108,11 +80,60 @@ Partial Public Class WorkflowExecutor
                         Exit Do
                     End If
                 End If
-                _logger.LogError($"[ScrapeTable] Eroare critică la pagina {currentPage}: {readEx.Message}")
-                System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(readEx).Throw()
-            End If
 
-            currentPage += 1
+                Dim readEx As Exception = Nothing
+                Try
+                    Dim waitOk = Await TryWaitForElementAsync(parsedSelector, WaitForSelectorState.Attached, action.Timeout)
+                    If Not waitOk Then
+                        Throw New TimeoutException($"[ScrapeTable] Tabelul '{parsedSelector}' nu a apărut în {action.Timeout}s.")
+                    End If
+
+                    Dim physPage = Await GetPhysicalPageAsync()
+                    Dim pageLabel = If(String.IsNullOrEmpty(physPage), $"{currentPage}", $"{currentPage} [fizic: {physPage}]")
+                    LogStep(action, $"Procesez pagina {pageLabel}")
+
+                    Dim rawRows = Await ExtractRowsCheckedAsync(parsedSelector, action)
+                    exitScrape = ProcessRawRows(rawRows, action, allData)
+
+                    If exitScrape Then Exit Do
+
+                    Dim shouldContinue As Boolean
+                    If action.StartFromLast Then
+                        shouldContinue = Await NavigateBackwardAsync(action, currentPage)
+                    Else
+                        shouldContinue = Await NavigateForwardAsync(action, currentPage)
+                    End If
+
+                    If Not shouldContinue Then Exit Do
+
+                Catch ex As Exception
+                    readEx = ex   ' handled below: Await is not allowed inside a Catch
+                End Try
+
+                If readEx IsNot Nothing Then
+                    If action.PartialOnError AndAlso allData.Count > 0 AndAlso
+                       Not TypeOf readEx Is OperationCanceledException Then
+                        Dim eroare As String = Await WicketErrorTextAsync()
+                        If eroare.Length > 0 Then
+                            stoppedOnError = True
+                            LogPartialStop(currentPage, allData.Count, eroare)
+                            Exit Do
+                        End If
+                    End If
+                    _logger.LogError($"[ScrapeTable] Eroare critică la pagina {currentPage}: {readEx.Message}")
+                    System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(readEx).Throw()
+                End If
+
+                currentPage += 1
+            Loop
+
+            If k_retried OrElse Not MissedKnownRow(action, exitScrape, stoppedOnError) Then Exit Do
+
+            k_retried = True
+            _logger.LogWarning("[ScrapeTable] Citirea de la sfârșit nu a întâlnit rândul cunoscut (" & parsedSelector &
+                               "): se reia o singură dată, după ce apare paginatorul.")
+            Await WaitForPagerAsync(action)
+            Await NavigateToLastPageAsync(action)
         Loop
 
         SaveScrapeResults(allData, action, exitScrape, stoppedOnError)
@@ -374,6 +395,43 @@ Partial Public Class WorkflowExecutor
                     _logger.LogWarning($"[ScrapeTable] page='{action.Page}' — valoare invalida. Raman pe pagina curenta.")
                 End If
         End Select
+    End Function
+
+    ' ============================================================
+    '  MissedKnownRow / WaitForPagerAsync (reverse reads)
+    ' ============================================================
+    ''' <summary>
+    ''' True when a read from the LAST page, which carries an exit row (<c>exitIfCellEquals</c>: the newest history row K-BOT
+    ''' already has), ended WITHOUT meeting it and without a FOREXE error page. The row cannot leave FOREXE's history, so
+    ''' this means the read started on the wrong page. NOT the case when K-BOT has no history yet (the exit pattern is the
+    ''' «matches nothing» sentinel, the whole history is read on purpose).
+    ''' </summary>
+    Private Shared Function MissedKnownRow(k_action As ScrapeTableAction, k_exited As Boolean, k_stopped As Boolean) As Boolean
+        If Not k_action.StartFromLast OrElse k_exited OrElse k_stopped Then Return False
+        If String.IsNullOrEmpty(k_action.ExitIfCellEquals) Then Return False
+        If String.IsNullOrEmpty(k_action.LastPageSelector) Then Return False   ' cannot go back to the last page
+        Return Not k_action.ExitIfCellEquals.Contains(KBot.Forexe.WorkflowCatalog.DataIesireNiciuna)
+    End Function
+
+    ''' <summary>
+    ''' Waits (up to 5 s, stretched by the operator's multiplier) until the «last page» button is on the page. When it never
+    ''' shows, the history has a single page: said, and the read goes on.
+    ''' </summary>
+    Private Async Function WaitForPagerAsync(k_action As ScrapeTableAction) As Task
+        Try
+            If String.IsNullOrEmpty(k_action.LastPageSelector) Then Return
+            Dim k_deadline As DateTime = DateTime.UtcNow.AddMilliseconds(Stretched(5000))
+            Do
+                Dim k_btn = _page.Locator(k_action.LastPageSelector)
+                If Await k_btn.CountAsync() > 0 AndAlso Await k_btn.IsVisibleAsync() Then Return
+                If DateTime.UtcNow >= k_deadline Then Exit Do
+                Await Task.Delay(250)
+            Loop
+            _logger.LogInfo("[ScrapeTable] Butonul «ultima pagină» nu a apărut: istoricul are o singură pagină.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowExecutor.WaitForPagerAsync", ex)
+            Throw
+        End Try
     End Function
 
     ' ============================================================

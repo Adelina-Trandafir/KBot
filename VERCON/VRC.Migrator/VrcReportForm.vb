@@ -19,6 +19,13 @@ Public Class VrcReportForm
         sfdHtml.FileName = $"vrc_raport_{DateTime.Now:yyyyMMdd_HHmmss}.html"
     End Sub
 
+    Public Sub New(k_html As String)
+        InitializeComponent()
+        _html = k_html
+        Text = "VRC.Migrator — separarea conturilor"
+        sfdHtml.FileName = $"vrc_separare_{DateTime.Now:yyyyMMdd_HHmmss}.html"
+    End Sub
+
     Private Sub ReportForm_Shown(sender As Object, e As EventArgs) Handles MyBase.Shown
         _shown = True
         ShowPendingHtml()

@@ -52,6 +52,7 @@ Operator, 20.10.2026: end the dependence of `FX_DDF_REV_SA`, `FX_DDF_REV_SB`, `F
 | 0122-11 | Partenerii fără activitate (ascunși de `0122_08`) lipseau din lista «Parteneri» și din combo-ul de parteneri al DDF: ambele interogări de server trimit acum și rândurile cu `Ascuns = 1` | SCRIS, testat de operator (merge, 03.11.2026); `ast.parse` doar; cauza din cod, neconfirmată pe bază; un partener ascuns de mână nu se mai deosebește de unul ascuns de `0122_08`; VERCON neschimbat (își are interogarea lui) | [0122-11](../SLICE-0122-11-parteneri-ascunse-fara-activitate.md) |
 | 0122-09 | DDF edit: «Recepții» din revizia din rezervare însumează `DIF`, nu `Valoare` | SCRIS, NERULAT, netestat; server nedeployat; nu are legătură cu partenerii (slice-ul e doar cel mai recent care a atins `ddf_edit.py`) | [0122-09](../SLICE-0122-09-ddf-receptii-dif.md) |
 | 0122-10 | Recepții vs rezervări: prag de o lună la așezarea automată (server + Asocieri) și detector în tooltipul arborelui | SCRIS + build curat (App 0/0; py_compile); NERULAT, netestat; server nedeployat; fără excepția «suma se potrivește» (cazul real avea suma identică). 31.10.2026: nu mai arată ziua în care recepția vine doar mai târziu (suma lipsă o aduce întreagă următoarea zi cu recepții, înainte de următoarea rezervare); verificat doar pe două jurnale, codul Python nerulat | [0122-10](../SLICE-0122-10-receptii-vs-rezervari-o-luna.md) |
+| 0122-12 | Fereastra de asociere: roșu = EROARE (lanțul nu se închide), portocaliu = AVERTISMENT (recepția are valori pe indicatori pe care instantaneul nu îi are; zerourile nu se socotesc), tooltip-tabel pe recepție, culorile din grafic pe rânduri doar cât e deschisă fereastra «Grafice și benzi» | SCRIS + build curat (KBot.App 0/0); NERULAT pe ecran, netestat; culoarea `WarningColor` a temei nevăzută | [0122-12](../SLICE-0122-12-asociere-culori-rosu-portocaliu.md) |
 
 ---
 
@@ -135,3 +136,21 @@ Operator, 30.10.2026, fereastra «Clasificații cheltuieli».
 - Interpretare: 3 și 6 sunt rânduri cu date, rândul gol vine în plus; două constante de schimbat dacă nu.
 - De văzut pe ecran la 100 / 125 / 150%: fără bară de derulare, coloanele aliniate, culoarea rândului de total, fereastra mai înaltă.
 - Ajutor: captura `clasificatii` de refăcut (ajutor de actualizat: `contabil.nomenclatoare.clasificatii`).
+
+---
+
+## Slice 0127 — Motivul rezervării din FOREXE, oferit la revizia > 0
+
+Operator, 04.11.2026, numărul ales de el («ultimul disponibil»). Doar modul Lucru din browserul din aplicație.
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0127-01 | Motivul din fereastra FOREXE de la salvarea unei rezervări e citit de pagină, trimis cu salvarea, păstrat pe server în `FX_RezervariMotiv` (cheie `IDREV` + `CodIndicator`, `IDREV` dat de server) și oferit ca «Descriere scurtă» la generarea unei revizii > 0; salvările aceluiași indicator se unesc cu «; », indicatori diferiți rămân separați (« | »), tăiere la 255 cu avertisment; `FX_Istoric` nu e folosit | GATA pe cod (build Debug 0 erori / 0 avertismente, `ast.parse` verde); **DDL `sql/0127_fx_rezervari_motiv.sql` nerulat, server nedeployat, nimic văzut sau rulat**; ajutor 0000-151 | [0127-01](../SLICE-0127-01-motivul-rezervarii-pentru-revizie.md) |
+
+### Open threads — 0127
+
+- Operatorul rulează DDL-ul `0127` pe SURSA și sincronizează unitățile; până atunci ruta dă 500 cu mesaj și revizia rămâne ca înainte.
+- De verificat pe pagină reală: că `Indicator_ang` citit din tabel se potrivește cu `FX_Rezervari.CodIndicator`, și că fereastra de motiv apare în operația `rezervare` armată (consola K-BOT spune «Motivul rezervării ... e păstrat»).
+- De confirmat: motive diferite la indicatori diferiți ai aceleiași revizii apar împreună cu codul indicatorului, separate prin « | ».
+- Rezervările făcute altfel decât în modul Lucru (robot, FOREXE în alt browser) nu au motiv păstrat; revizia primește tipul operației, ca până acum.
+- Nu s-a rulat `tools\Register-DeploymentTask.ps1`: se face doar după ce Adelina confirmă testul (fișierele py + sql sunt cele care ajung pe server).

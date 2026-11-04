@@ -8,6 +8,7 @@ No automatic retry around business writes; operation keys handle lost responses.
 """
 from contextlib import contextmanager
 from datetime import date, datetime
+from mysql.connector import Error as DatabaseError
 from .domain import SCHEMA, require
 
 
@@ -109,6 +110,8 @@ class Repository:
                               ('Chitante', f'IDPL IN ({payments})'),
                               ('AlteDoc', f'IDPL IN ({payments})')]:
             data[table] = self.query(f'SELECT * FROM `AD_{table}` WHERE SubunitId={sub} AND {clause}', (month_id, group_id))
+        selected = {row['IDP'] for row in data['Platitori']}
+        data['CarriedBalances'] = [row for row in self.carried_balances() if row['IDP'] in selected]
         return data
 
     def ledger_rows(self, attendance_id, month_id, kind):
@@ -168,7 +171,24 @@ class Repository:
         return rows[0] if rows else None
 
     def data(self):
-        return {table: self.rows(table) for table in SCHEMA}
+        data = {table: self.rows(table) for table in SCHEMA}
+        data['CarriedBalances'] = self.carried_balances()
+        return data
+
+    def carried_balances(self, child_id=None):
+        # Optional until the operator applies the DDL; never create the table here.
+        if self.sqlite:
+            exists = self.query("SELECT name FROM sqlite_master WHERE type='table' AND name='AD_SOLDURI_REPORTATE'")
+            if not exists:
+                return []
+        where = ' AND IDP=%s' if child_id is not None else ''
+        try:
+            return self.query('SELECT IDP, AN_START, SOLD FROM AD_SOLDURI_REPORTATE WHERE SUBUNIT_ID=%s' + where +
+                              ' ORDER BY AN_START', (self.scope(), *([child_id] if child_id is not None else [])))
+        except DatabaseError as error:
+            if error.errno == 1146:  # The optional table has not been installed in this unit.
+                return []
+            raise
 
     def acquire_lock(self, lock_id):
         """Create or exclusively lock the row without upgrading a duplicate-insert shared lock."""

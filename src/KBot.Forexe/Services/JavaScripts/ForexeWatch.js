@@ -302,7 +302,7 @@
         return {
             op: null, label: '', startedAt: null, codAtStart: '', pendingSince: null,
             formSeen: false, rowDate: '', formDate: '',
-            rezBefore: null, rezIndicator: '', rezBuget: null,
+            rezBefore: null, rezIndicator: '', rezBuget: null, rezMotiv: '',
             recDates: null, recAck: ''
         };
     }
@@ -614,7 +614,7 @@
                 }
             }
             return { indicator: found, indicatorCod: found ? indicatorOf(found) : cod,
-                     buget: state.rezBuget || [] };
+                     buget: state.rezBuget || [], motiv: state.rezMotiv || '' };
         }
         return null;
     }
@@ -1636,6 +1636,16 @@
         if (marcajBusy) { return; }   // a second click while the first is held
         marcajBusy = true;
         emit('info', { message: 'cer marcajul K-BOT pentru ' + target.tip });
+
+        // Slice 0127: the reason the operator typed, read BEFORE the marker goes in. It travels with the
+        // save the operation reports ("finished" data), keyed there by the indicator, so the revision that
+        // follows can offer it. A save that fails and is pressed again in the same operation overwrites it.
+        if (target.tip === 'rezervare' && state.op === 'rezervare') {
+            try {
+                state.rezMotiv = (target.field.value || '').replace(RE_MARCAJ, '').replace(/\s+/g, ' ').trim();
+                saveState();
+            } catch (ignored) { }
+        }
 
         requestMarcaj(target.tip).then(function (marcaj) {
             try {

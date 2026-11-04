@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Workflow name="Prelucrare angajament nou {{COD_ANGAJAMENT}}" startUrl="current" expectedUrl="">
+  <!-- expectedUrl stays EMPTY, as in «Rezervari Editate» / «Receptie Editata»: the angajament
+    page that FOREXE shows right after the save lives at /CABWeb/contract?N, not at
+    /CABWeb/home. A non-empty expectedUrl would make the executor navigate home and throw away
+    the very page this flow reads. -->
+  <!-- V.1 - 04/11/2026 (slice 0097-07)
+    Run by K-BOT ONLY right after the operator SAVED a brand new angajament by hand in the
+    «Browser FOREXE» view («Angajament nou» / «Creeaza angajament in FOREXE»). The page is
+    the new angajament, in the state «Initial»: it has the budget tab (tab0) and the
+    «Istoric» button and NOTHING else - no receptions tab, no «Dată început», no «Ultima
+    modificare». So this flow reads exactly what such an angajament has and never looks for
+    what it cannot have (operator, 04.11.2026: in the old road those searches cost ~25 s of
+    timeouts per new angajament).
+
+    It also starts on the page the operator is on: no reset, no «Listă angajamente», no
+    search, no «Modificare» (the road the complete flow takes costs ~8 s and is not needed).
+
+    SEC. 0 - the header (.well): code, date, description, state. The server INSERTS the
+             FX_Angajamente row from these when it is missing (prelucrare.py, step 1), so K-BOT
+             does not download the angajamente list first.
+    SEC. 1 - the indicators of tab0, with the budget of each (same selectors as
+             «Prelucrare Completa»).
+    SEC. 4 - the history, read from the first page forward: a new angajament has no local
+             history, so there is no stop point.
+
+    Variables expected from K-BOT:
+      {{COD_ANGAJAMENT}}  - for the log lines only; the page is already on the angajament
+  -->
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 0 - the angajament header (.well)
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ Angajament nou salvat în FOREXE — citesc antetul ══" level="action" />
+
+  <WaitFor selector=".well.well-small h4 span:nth-child(2)" timeout="15" />
+  <Read selector=".well.well-small h4 span:nth-child(2)" saveTo="CodAngajament" />
+  <Read
+    selector=".well.well-small div.clearfix:has(strong:has-text('Dată angajament')) span:last-child"
+    saveTo="DataAngajament" />
+  <Read selector=".well.well-small div.pull-left p" saveTo="DescriereAngajament" />
+  <Read selector=".well.well-small span.label" saveTo="StareAngajament" />
+
+  <Log message="✓ Date angajament citite: [[CodAngajament]] / [[StareAngajament]]" level="success" />
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 1 - the indicators (tab0)
+       Outer table: table.table-striped.table-bordered.table-condensed
+       Inner table: table.table-bordered.table-hover.table-condensed
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ SECȚIUNEA 1: Indicatori ══" level="action" />
+
+  <WaitFor selector="li.tab0.active" timeout="15" />
+
+  <IfExists selector="table.table-striped.table-bordered.table-condensed tbody tr" timeout="15">
+
+    <ScrapeTable selector="table.table-striped.table-bordered.table-condensed"
+      saveTo="TabelIndicatori"
+      nextPageSelector="a[rel='next']"
+      waitSelector="table.table-striped.table-bordered.table-condensed"
+      fingerprintSelector="table.table-striped.table-bordered.table-condensed tbody tr:last-child td:last-child"
+      isCheckpoint="true"
+      timeout="15" />
+
+    <Log message="Lista indicatori citită. Încep iterarea..." level="info" />
+
+    <ForEachVar source="TabelIndicatori" itemPrefix="R" indexVariable="idx"
+      collectFields="Indicator_ang,Program,Obiectiv,Proiect,Sector_Sursa_Indicator,Limita_credit_angajament,Total_credit_angajament,Credit_bugetar,Angajament_legal,Credit_bugetar_rezervat_definitiv_an_curent,Credit_bugetar_rezervat_definitiv_ani_urmatori,Col_12,BugetIndicator">
+
+      <Log
+        message="Procesez indicatorul [[idx]]: [[R.Indicator_ang]] / [[R.Sector_Sursa_Indicator]]..."
+        level="info" />
+
+      <Click
+        selector="table.table-striped.table-bordered.table-condensed tbody tr:nth-child([[idx]]) .glyphicon-eye-open"
+        waitNavigation="false" timeout="15" />
+
+      <WaitFor selector="table.table-bordered.table-hover.table-condensed" timeout="15" />
+
+      <ScrapeTable selector="table.table-bordered.table-hover.table-condensed"
+        saveTo="BugetIndicator"
+        nextPageSelector="a[rel='next']"
+        waitSelector="table.table-bordered.table-hover.table-condensed"
+        fingerprintSelector="table.table-bordered.table-hover.table-condensed tbody tr:last-child td:last-child"
+        timeout="15" />
+
+      <Log message="✓ Indicatorul [[idx]] procesat. Revin la listă..." level="success" />
+
+      <GoBack />
+      <WaitFor selector="li.tab0.active" state="visible" timeout="15" />
+
+    </ForEachVar>
+
+    <Log message="✓ Secțiunea Indicatori finalizată." level="success" />
+
+    <Else>
+      <Log message="Tab0 nu conține indicatori pentru {{COD_ANGAJAMENT}}." level="warning" />
+    </Else>
+  </IfExists>
+
+  <!-- ═══════════════════════════════════════════════════════
+       SECTION 4 - the history («Istoric» lives on tab0 only)
+       ═══════════════════════════════════════════════════════ -->
+
+  <Log message="══ SECȚIUNEA 4: Istoric angajament ══" level="action" />
+
+  <Click selector="button.btn-success:has-text('Istoric')" waitNavigation="true" timeout="15" />
+  <WaitFor selector="h3.heading:has-text('Istoric angajament')" timeout="15" />
+
+  <IfExists selector="table.table-striped tbody tr" timeout="15">
+
+    <ScrapeTable selector="table.table-striped"
+      saveTo="TabelIstoric"
+      partialOnError="true"
+      nextPageSelector="a[rel='next']"
+      waitSelector="table.table-striped"
+      fingerprintSelector="table.table-striped tbody tr:last-child td:last-child"
+      timeout="15" />
+    <Log message="✓ Istoric salvat cu succes." level="success" />
+
+    <Else>
+      <Log message="Pagina Istoric nu conține înregistrări pentru {{COD_ANGAJAMENT}}."
+        level="warning" />
+    </Else>
+  </IfExists>
+
+  <!-- Back to the angajament page, where the operator was. -->
+  <IfExists selector="button.btn-default:has-text('Înapoi')" timeout="5">
+    <Click selector="button.btn-default:has-text('Înapoi')" waitNavigation="true" timeout="15" />
+    <WaitFor selector="li.tab0" timeout="15" />
+  </IfExists>
+
+  <Log message="══ Angajamentul nou {{COD_ANGAJAMENT}} a fost citit. ══" level="success" />
+
+</Workflow>

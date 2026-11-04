@@ -70,6 +70,7 @@ Public NotInheritable Class AdechitReportKind
     End Sub
 
     Public Const Situation As String = "situation"
+    Public Const MonthComparison As String = "month-comparison"
     Public Const PaymentNotice As String = "payment-notice"
     Public Const Cash As String = "cash"
     Public Const Bank As String = "bank"

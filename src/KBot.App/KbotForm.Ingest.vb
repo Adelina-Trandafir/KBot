@@ -37,7 +37,8 @@ Partial Public Class KbotForm
     ''' <para>Slice 0081-04: returns True only when the package was saved on the server -- the
     ''' DDF send moves the revision forward only then.</para>
     ''' </summary>
-    Private Async Function DuLaIngestieAsync(cod As String, pachet As PrelucrareRezultat) As Task(Of Boolean)
+    Private Async Function DuLaIngestieAsync(cod As String, pachet As PrelucrareRezultat,
+                                             Optional k_selecteazaNodul As Boolean = False) As Task(Of Boolean)
         Try
             ' EMPTY PACKAGE > THE SERVER IS NOT TOUCHED (operator, 08.09.2026).
             '
@@ -129,7 +130,14 @@ Partial Public Class KbotForm
             ' (operator, 10.09.2026): a reload that clears the selection throws the operator
             ' back to the top of the list right after finishing work on an angajament, and the
             ' open view closes with it.
-            Await LoadTreeAsync(pastreazaSelectia:=True)
+            ' Slice 0097-07 (operator, 04.11.2026): a NEW angajament was not in the tree until this
+            ' save, so there is no selection to keep: its code is selected and scrolled into view,
+            ' so the operator sees it was added (PopulateTree -> SelectAndReveal).
+            If k_selecteazaNodul Then
+                Await LoadTreeAsync(codDeSelectat:=cod)
+            Else
+                Await LoadTreeAsync(pastreazaSelectia:=True)
+            End If
 
             ' Slice 0091: receptions whose detail arrived cut kept their old lines; the operator
             ' decides whether to read them again now.

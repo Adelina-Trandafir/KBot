@@ -136,6 +136,8 @@ Everything recorded about each slice: its registry row, its «Current focus» no
 | 0097-04 | Parola memorată: aplicare independentă de avansate | GATA pe cod (build curat, netestat, nevăzut) | [0097-04](../SLICE-0097-corective.md#slice-0097-04) | Contracte, ajutor, probe și limite în etapa legată. |
 | 0097-05 | Avansatele permit schimbarea setărilor salvate | GATA pe cod (build curat, netestat, nevăzut) | [0097-05](../SLICE-0097-corective.md#slice-0097-05) | Contracte, ajutor, probe și limite în etapa legată. |
 | 0097-06 | Sursa «Toate» și evenimentul global de perioadă | GATA pe cod (build curat, netestat, nevăzut) | [0097-06](../SLICE-0097-corective.md#slice-0097-06) | Contracte, ajutor, probe și limite în etapa legată. |
+| 0097-07 | Angajament nou salvat în «Browser FOREXE»: flux propriu, fără lista de angajamente | GATA pe cod (build curat, nimic rulat) / **flux nou nerulat pe FOREXE, nevăzut** | [0097-07](../SLICE-0097-corective.md#slice-0097-07) | Ajutor în `browser.md`; limitele în etapa legată. |
+| 0097-08 | Citirea istoricului de la sfârșit: dacă nu întâlnește rândul cunoscut, se reia o singură dată după ce apare paginatorul (cazul AAB2MPRG2ND: recepție scrisă fără instantaneu) | GATA pe cod (KBot.Forexe + KBot.App build curat); NERULAT pe FOREXE, netestat | [0097-08](../SLICE-0097-corective.md#slice-0097-08) | KBot.Forexe 1.0.21.0; limitele în etapa legată. |
 
 ### Open threads
 

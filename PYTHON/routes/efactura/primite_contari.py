@@ -30,11 +30,31 @@ logger = logging.getLogger(__name__)
 
 CONTARI_SQL = "sql/00EF_27_primite_operatii.sql, sql/AV01_14_sablon_operatii.sql, sql/00EF_55_furnizor_partener.sql"
 MAX_FACTURI = 200
-MAX_EXPLICATIE_OP = 254
-EXPLICATIE_OP_GALBEN = 69
+MIN_EXPLICATIE_OP = 1
+MAX_EXPLICATIE_OP = 75   # the official limit of the explanation of an order of payment
 
 _dec = primite_ke._dec
 _num = primite_ke._num
+
+_GEMENI = {"–": "-", "—": "-", "‘": "'", "’": "'", "‚": "'", "“": '"', "”": '"', "„": '"',
+           "«": '"', "»": '"', " ": " "}
+
+
+def text_op(text, limita=None):
+    """Text for an order of payment: ASCII ONLY (ANAF refuses diacritics) and NO comma (the bar code of the order reads it as «next field»).
+    Diacritics become the plain letter, a comma a space, other non-ASCII characters are dropped; single spaces; at most `limita` characters."""
+    import unicodedata
+    out = []
+    for ch in unicodedata.normalize("NFD", text or ""):
+        if unicodedata.category(ch) == "Mn":
+            continue
+        ch = _GEMENI.get(ch, ch)
+        if ch in ",\t\r\n":
+            ch = " "
+        if " " <= ch < "\x7f":
+            out.append(ch)
+    curat = " ".join("".join(out).split())
+    return curat[:limita].rstrip() if limita else curat
 
 
 def numar_document(nr_fact):
@@ -284,8 +304,7 @@ def calcul(dc, body, role, conn=None, interne=None, blocheaza=False, fara_plata=
                 raise EfEroare("Șablonul de plată ales nu se potrivește clasificației.", "SABLON_INVALID", 409)
             if id_e is None and len(sabloane_e) == 1:
                 id_e = sabloane_e[0]["IdSablon"]
-            if id_p is None and len(sabloane_p) == 1 and not fara_plata:
-                id_p = sabloane_p[0]["IdSablon"]
+            # The payment template is NEVER taken for the operator (01EF-07): the order of payment exists only when a payment operation is chosen.
             coduri = _coduri(cursor, (partener or {}).get("IdPartener"), clsf["IdClsf"])
             if coduri and coduri["ContBancar"]:
                 cont_iban = coduri["ContBancar"]
@@ -345,11 +364,9 @@ def calcul(dc, body, role, conn=None, interne=None, blocheaza=False, fara_plata=
                             "Existente": [{"NumarNC": n["NumarNC"], "DataNc": _iso(n["DataNc"]), "Documente": n["Documente"]} for n in randuri_note]}
 
         # the payment row (EF_P)
-        fel_op = next((s["FelOP"] for s in sabloane_p if s["IdSablon"] == id_p), "") if id_p else ""
+        fel_op = text_op(next((s["FelOP"] for s in sabloane_p if s["IdSablon"] == id_p), "")) if id_p else ""
         explicatie = " ".join(x for x in ["F " + " ".join(numere) if numere else "", fel_op] if x)
-        if len(explicatie) > MAX_EXPLICATIE_OP:
-            avertismente.append({"Cod": "EXPLICATIE_PREA_LUNGA", "Grav": "eroare",
-                                 "Text": "Explicația ordinului de plată depășește %d de caractere." % MAX_EXPLICATIE_OP})
+        explicatie = text_op(explicatie, MAX_EXPLICATIE_OP)
         data_minima = max((f["DataFact"] for f in facturi if f["DataFact"] is not None), default=None)
         rezultat = {
             "poate_scrie": (role or "").strip().lower() == primite_ke.ROL_CONTABIL.lower(),
@@ -364,7 +381,7 @@ def calcul(dc, body, role, conn=None, interne=None, blocheaza=False, fara_plata=
             "sabloaneEvidentiere": sabloane_e, "sabloanePlata": sabloane_p, "idSablonE": id_e, "idSablonP": id_p,
             "coduri": coduri, "contIban": cont_iban,
             "evidenta": evidenta,
-            "plata": {"Valoare": _num(total_platit), "ExplicatieOP": explicatie, "ExplicatiePrea": EXPLICATIE_OP_GALBEN < len(explicatie),
+            "plata": {"Valoare": _num(total_platit), "ExplicatieOP": explicatie, "FelOP": fel_op, "NumarOP": None,
                       "DataMinima": _iso(data_minima), "Activa": bool(id_p) and total_platit != 0},
             "operatii": operatii, "avertismente": avertismente}
         if interne is not None:

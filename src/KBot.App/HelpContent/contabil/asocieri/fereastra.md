@@ -12,7 +12,7 @@ keywords: fereastra asocieri, receptii si lanturile lor, instantanee neasezate, 
 
 
 ## Stânga — «RECEPȚII ȘI LANȚURILE LOR»
-<!-- slice: 0048-04, 0056, 0056-02, 0059, 0062, 0065, 0101, 0111 -->
+<!-- slice: 0048-04, 0056, 0056-02, 0059, 0062, 0065, 0101, 0111, 0122-12 -->
 
 Câte un rând pe **recepție**: data recepției, valoarea de azi și, în paranteză, câte instantanee are
 lanțul ei. Sub fiecare recepție, **lanțul**: instantaneele ei, în ordinea orei.
@@ -32,6 +32,17 @@ instantaneu sunt scrise cu roșu**, peste orice altă culoare (a liniei din graf
 dispare când lanțul se închide, după o mutare. Un lanț care se termină cu rândul de ștergere nu se
 socotește. Același semn roșu apare și pe angajament, în lista din fereastra principală.
 
+**Roșu și portocaliu.** Orice rând care nu e negru are o pricină, scrisă într-un tabel când ții mouse-ul
+pe recepție:
+
+- **EROARE** (roșu): lanțul nu se închide, adică recepția și ultimul ei instantaneu nu au aceeași
+  valoare.
+- **AVERTISMENT** (portocaliu): instantaneul stă pe o recepție care are valori pe indicatori pe care
+  instantaneul nu îi are. Tabelul spune ce indicatori lipsesc. Un indicator cu valoarea 0 nu se
+  socotește, nici pe recepție, nici pe instantaneu.
+
+Dacă un rând are și eroare, și avertisment, rămâne roșu.
+
 Semnele de pe rândul unui instantaneu: data și ora salvării, totalul, plus **[ștergere]** (rândul în
 care recepția a fost ștearsă, scris înclinat), **[fără schimbare]** sau **[corectat]** (ai corectat
 tu valoarea pe care o scrisese FOREXE — vezi [Valoarea greșită din FOREXE](topic:contabil.asocieri.cazuri)).
@@ -50,7 +61,7 @@ Instantaneele care încă nu au recepție. Grila de sub ele arată indicatorii i
 Aici tragi înapoi un instantaneu ca să-l desprinzi de recepția lui.
 
 ## Jos — graficele
-<!-- slice: 0048-05, 0048-06, 0048-08, 0048-09, 0061 -->
+<!-- slice: 0048-05, 0048-06, 0048-08, 0048-09, 0061, 0122-12 -->
 
 Două vederi, alese din dreapta:
 
@@ -69,7 +80,9 @@ totalul nu le cuprinde. E cea mai rapidă verificare: **dacă diferența iese ne
 instantaneu stă, probabil, pe recepția greșită.**
 
 **«Grafice și benzi»** deschide graficul și benzile într-o fereastră separată, pe care o poți mări cât
-ecranul — bună la angajamentele cu multe recepții.
+ecranul — bună la angajamentele cu multe recepții. Doar cât timp e deschisă, rândurile din arbore
+își iau culoarea liniei sau a punctului din grafic; altfel rămân negre (sau roșu / portocaliu, dacă au
+o eroare sau un avertisment).
 
 <!-- capture: asocieri-grafice | caption: Fereastra «Grafice și benzi» | goto: view:receptii | prepare: Deschideți Asocieri, apoi apăsați «Grafice și benzi». | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 

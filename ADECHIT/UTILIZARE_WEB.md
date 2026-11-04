@@ -220,6 +220,19 @@ Din **meniu → Text situație de plată**, cu dreptul Catalog, se editează tex
 
 Panoul «Rapoarte» din dreapta ecranului Prezență deschide previzualizarea PDF pentru: Situație lunară (grupa aleasă, «Toate grupele?», «Separă grupe?»), Registru casă și Raport bancă (între «Dată început» și «Dată sfârșit», completate cu luna aleasă), Fișă cont și Fișă debitor (copilul selectat sau «Toți copiii din grupă»), Documente anulate și Situație financiară (luna aleasă). Pentru o restituire, butonul 📥 de pe rând oferă Dispoziția de plată. Rapoartele doar citesc: nu emit numere și nu schimbă situația. Pentru o lună închisă se folosește situația salvată la închidere. Detalii și abateri față de Access: `docs/worklog/SLICE-ADE9-01-rapoarte.md`.
 
+<!-- slice: AD17-01 -->
+Pentru **Situație lunară** (debitori), bifa **Ascunde rândurile cu zero**, bifată implicit, elimină doar copiii cu zero în toate coloanele numerice ale raportului, inclusiv zilele de prezență. Funcționează pentru o grupă, toate grupele și grupe separate, atât în ADECHIT web cât și în K-BOT → ADECHIT → Rapoarte. Filtrarea se aplică identic în previzualizare, PDF și Excel, pentru luni deschise și închise. Un rând cu sold final zero rămâne dacă are alte valori numerice diferite de zero. Grupele fără rânduri rămase nu se listează; dacă nu rămâne niciun rând, apare un mesaj. Totalurile valorice se păstrează. Schimbarea bifei se aplică la următoarea generare a raportului.
+
+<!-- slice: AD18-01 -->
+**Diferențe între luni**, disponibil în panoul Rapoarte și în K-BOT → ADECHIT → Rapoarte, compară luna aleasă (luna curentă a comparației) cu luna calendaristică imediat anterioară, inclusiv decembrie–ianuarie. Alegeți grupa sau **Toate grupele?**; opțional, **Separă grupe?** începe fiecare grupă pe pagină nouă. Sunt afișați numai copiii pentru care **SID curent ≠ SFD anterior** sau **SIC curent ≠ SFC anterior**, precum și copiii cu rând într-o singură lună, chiar dacă toate sumele sunt zero. Celelalte coloane nu decid includerea în raport. Bifa **Ascunde rândurile cu zero** nu se aplică aici.
+
+Fiecare copil are o pereche numerotată: rândul complet din luna curentă, apoi rândul complet din luna anterioară. Coloanele **Luna**, **Grupa** și **Diferență / lipsă** arată perioada, grupa fiecărui rând și motivul afișării. Pentru luna fără rând apare **LIPSĂ**, cu numele și CNP-ul pentru identificare și fără valori numerice inventate. Copiii sunt ordonați alfabetic în limba română. O mutare între grupe păstrează perechea aceluiași copil; filtrul de grupă include perechea dacă aparține grupei în oricare dintre luni. La separarea grupelor se folosește grupa din luna curentă, iar pentru copilul lipsă în luna curentă, grupa anterioară. Pentru o grupă care nu mai apare în lista lunii curente, folosiți **Toate grupele?**.
+
+Lunile închise folosesc situațiile salvate, iar cele deschise folosesc calculul situației lunare. Raportul nu schimbă datele. Valorile de sold lipsă sunt comparate ca zero, fără rotunjire de afișare. Dacă nu există diferențe sau rânduri lipsă, apare un mesaj; dacă luna calendaristică anterioară nu există în evidență, este indicată explicit, fără înlocuirea ei cu o lună mai veche. PDF-ul și Excelul folosesc aceeași selecție. Antetul numără perechile cu solduri diferite și rândurile lipsă în fiecare lună; nu se însumează sumele celor două luni.
+
+<!-- slice: AD19-02 -->
+După completarea unui istoric omis la migrare, **Fișă cont** păstrează rândul **Sold Inițial** și afișează separat **Sold reportat din anii anteriori (început 2021)**. Soldul reportat este suplimentar și se aplică de la începutul anului indicat. În lunile calculate intră o singură dată în soldul inițial, împreună cu SI existent și mișcările anterioare. Situațiile salvate ale lunilor închise rămân cele existente. Repetarea transferului nu dublează reportul. Regenerați rapoartele deja deschise după transfer.
+
 ## Prezenta in ultima luna inchisa
 
 <!-- slice: ME01 -->

@@ -79,6 +79,13 @@ Public NotInheritable Class ScriptCatalog
     Public Const FlagRelease As String = "release"
     Public Const FlagDebug As String = "debug"
     Public Const FlagClean As String = "clean"
+    Public Const FlagBumpMajor As String = "bumpmajor"
+    Public Const FlagBumpMinor As String = "bumpminor"
+    Public Const FlagBumpBuild As String = "bumpbuild"
+    Public Const FlagBumpRevision As String = "bumprevision"
+    Public Const FlagNoNotes As String = "nonotes"
+    Public Const FlagKBotMigrator As String = "kbotmigrator"
+    Public Const FlagAvcMigrator As String = "avcmigrator"
 
     Private Shared ReadOnly FlagHelp As New Dictionary(Of String, String)(StringComparer.Ordinal) From {
         {FlagMandatory, "Toți clienții de acest fel sub versiunea trimisă sunt obligați să se actualizeze (fără «Mai târziu»)."},
@@ -96,11 +103,35 @@ Public NotInheritable Class ScriptCatalog
         {FlagForget, "Șterge starea ținută minte; următoarea rulare consideră toate fișierele."},
         {FlagRelease, "Configurația Release (altfel scriptul folosește Debug)."},
         {FlagDebug, "Configurația Debug (altfel scriptul folosește Release)."},
-        {FlagClean, "Golește folderul de ieșire înainte de publicare."}}
+        {FlagClean, "Golește folderul de ieșire înainte de publicare."},
+        {FlagBumpMajor, "Crește prima parte a versiunii (Major) înainte de construire. Doar una dintre cele patru se poate bifa; dacă nu bifați nimic, versiunea rămâne cum e și scriptul nu mai întreabă."},
+        {FlagBumpMinor, "Crește a doua parte a versiunii (Minor; după 9 trece în Major). Doar una dintre cele patru se poate bifa."},
+        {FlagBumpBuild, "Crește a treia parte a versiunii (Build; după 99 trece în Minor). Doar una dintre cele patru se poate bifa."},
+        {FlagBumpRevision, "Crește ultima parte a versiunii (Revision; după 9 trece în Build). Doar una dintre cele patru se poate bifa."},
+        {FlagNoNotes, "Acceptă o versiune fără NOUTATI: nu cere și nu așteaptă textul, deci nu mai întreabă. Ce e deja scris în NOUTATI.md se trimite oricum."},
+        {FlagKBotMigrator, "Pune KBot.Migrator în pachet (în Migrare\). Nebifat, nu intră, nici în pachetul cu Access. Cere pachetul cu Access."},
+        {FlagAvcMigrator, "Pune AVC.Migrator în pachet (în AvcMigrator\). Nebifat, nu intră. Cere pachetul cu Access."}}
 
-    ''' <summary>Pairs where ticking one clears the other (they are the two values of one parameter, or opposites).</summary>
+    ''' <summary>Groups where ticking one clears the others (the values of one parameter, or opposites): at most one of a group is ticked.</summary>
     Public Shared ReadOnly Exclusive As String()() = {
-        New String() {FlagAccess, FlagNoAccess}, New String() {FlagSign, FlagNoSign}, New String() {FlagRestart, FlagNoRestart}, New String() {FlagRelease, FlagDebug}}
+        New String() {FlagAccess, FlagNoAccess}, New String() {FlagSign, FlagNoSign}, New String() {FlagRestart, FlagNoRestart}, New String() {FlagRelease, FlagDebug},
+        New String() {FlagBumpMajor, FlagBumpMinor, FlagBumpBuild, FlagBumpRevision}}
+
+    ''' <summary>The four version parts, in the order of the script's <c>-Bump</c> value and of the version number.</summary>
+    Public Shared ReadOnly BumpFlags As String() = {FlagBumpMajor, FlagBumpMinor, FlagBumpBuild, FlagBumpRevision}
+
+    ''' <summary>
+    ''' What an UNTICKED switch passes. A script left to itself asks on the console: an unticked migrator must say <c>No</c> (the
+    ''' default <c>Auto</c> would still put KBot.Migrator into the Access package).
+    ''' </summary>
+    Private Shared ReadOnly OffArguments As New Dictionary(Of String, String())(StringComparer.Ordinal) From {
+        {FlagKBotMigrator, New String() {"-KBotMigrator", "No"}},
+        {FlagAvcMigrator, New String() {"-AvcMigrator", "No"}}}
+
+    ''' <summary>The script has a version bump (its four <c>Bump*</c> switches).</summary>
+    Public Shared Function HasBump(k_def As ScriptDef) As Boolean
+        Return k_def.Flags.ContainsKey(FlagBumpMajor)
+    End Function
 
     Private Shared ReadOnly ParameterName As New Regex("^-[A-Za-z]+$", RegexOptions.CultureInvariant)
 
@@ -132,9 +163,11 @@ Public NotInheritable Class ScriptCatalog
         Dim k_trayFlags As IDictionary(Of String, String()) = Flags(FlagRelease, {"-Configuration", "Release"})
         Return New List(Of ScriptDef) From {
             Script(GroupPush, "push-update.ps1", "push-update.ps1",
-                   "Construiește pachetul Release (publicare, semnare, zip) și îl pune pe server ca actualizare K-BOT. Ce rămâne nebifat (pentru cine, ce parte din versiune crește, parola sftp), scriptul întreabă.",
+                   "Construiește pachetul Release (publicare, semnare, zip) și îl pune pe server ca actualizare K-BOT. Versiunea nu se mărește decât dacă bifați o parte; pentru cine e pachetul și semnarea, dacă nu le bifați, scriptul întreabă (la fel parola sftp).",
                    Flags(FlagMandatory, {"-Mandatory"}, FlagForce, {"-Force"}, FlagSkipBuild, {"-SkipBuild"},
-                         FlagAccess, k_audience, FlagNoAccess, k_noAudience, FlagSign, {"-Sign", "Yes"}, FlagNoSign, {"-Sign", "No"}), True),
+                         FlagBumpMajor, {"-Bump", "Major"}, FlagBumpMinor, {"-Bump", "Minor"}, FlagBumpBuild, {"-Bump", "Build"}, FlagBumpRevision, {"-Bump", "Revision"},
+                         FlagAccess, k_audience, FlagNoAccess, k_noAudience, FlagKBotMigrator, {"-KBotMigrator", "Yes"}, FlagAvcMigrator, {"-AvcMigrator", "Yes"},
+                         FlagSign, {"-Sign", "Yes"}, FlagNoSign, {"-Sign", "No"}, FlagNoNotes, {"-ReleaseNotes", "Skip"}), True),
             Script(GroupPush, "push-last-zip.ps1", "push-last-zip.ps1",
                    "Pune pe server cel mai nou zip din artifacts\, fără să construiască nimic. Versiunea e FileVersion-ul de acum al lui KBot.App.",
                    Flags(FlagMandatory, {"-Mandatory"}, FlagForce, {"-Force"}), True),
@@ -145,8 +178,10 @@ Public NotInheritable Class ScriptCatalog
                    "Blocat în KBOTADMIN: folosiți pagina Publicare, care gestionează modul debugging fără Git, evidența fișierelor și finalizarea Git pe server.",
                    Flags(FlagDryRun, {"-DryRun"}, FlagBaseline, {"-Baseline"}, FlagRestart, {"-Restart"}, FlagNoRestart, {"-NoRestart"}, FlagForget, {"-Forget"}), False),
             Script(GroupPublish, "publish-release.ps1", "publish-release.ps1",
-                   "Construiește pachetul Release (zip, setup, driver) în artifacts\, fără să-l trimită pe server. Ce rămâne nebifat, scriptul întreabă.",
-                   Flags(FlagAccess, k_audience, FlagNoAccess, k_noAudience, FlagSign, {"-Sign", "Yes"}, FlagNoSign, {"-Sign", "No"}), False),
+                   "Construiește pachetul Release (zip, setup, driver) în artifacts\, fără să-l trimită pe server. Versiunea nu se mărește decât dacă bifați o parte; pentru cine e pachetul și semnarea, dacă nu le bifați, scriptul întreabă.",
+                   Flags(FlagBumpMajor, {"-Bump", "Major"}, FlagBumpMinor, {"-Bump", "Minor"}, FlagBumpBuild, {"-Bump", "Build"}, FlagBumpRevision, {"-Bump", "Revision"},
+                         FlagAccess, k_audience, FlagNoAccess, k_noAudience, FlagKBotMigrator, {"-KBotMigrator", "Yes"}, FlagAvcMigrator, {"-AvcMigrator", "Yes"},
+                         FlagSign, {"-Sign", "Yes"}, FlagNoSign, {"-Sign", "No"}, FlagNoNotes, {"-ReleaseNotes", "Skip"}), False),
             Script(GroupPublish, "publish-debug.ps1", "publish-debug.ps1",
                    "Publică KBot.App în Debug și face un zip de copiat pe alt calculator.",
                    Flags(), False),
@@ -184,8 +219,18 @@ Public NotInheritable Class ScriptCatalog
     Public Shared Function ScriptArguments(k_def As ScriptDef, k_ticked As ISet(Of String), k_notes As String) As List(Of String)
         Dim k_args As New List(Of String)(k_def.FixedArgs)
         For Each k_pair As KeyValuePair(Of String, String()) In k_def.Flags
-            If k_ticked.Contains(k_pair.Key) Then k_args.AddRange(k_pair.Value)
+            Dim k_off As String() = Nothing
+            If k_ticked.Contains(k_pair.Key) Then
+                k_args.AddRange(k_pair.Value)
+            ElseIf OffArguments.TryGetValue(k_pair.Key, k_off) Then
+                k_args.AddRange(k_off)
+            End If
         Next
+        ' No part of the version ticked = the version stays: say so, or the script asks on the console.
+        If HasBump(k_def) AndAlso Not BumpFlags.Any(Function(k_f) k_ticked.Contains(k_f)) Then
+            k_args.Add("-Bump")
+            k_args.Add("None")
+        End If
         If k_def.TakesNotes AndAlso Not String.IsNullOrWhiteSpace(k_notes) Then
             k_args.Add("-Notes")
             k_args.Add(k_notes.Trim())
@@ -210,9 +255,10 @@ Public NotInheritable Class ScriptCatalog
     ''' Starts the script in its own visible PowerShell window, so its questions and the sftp password prompt work as when typed by hand.
     ''' The window closes by itself when the script ends well; when it fails it stays open until Enter is pressed, so the error can be read.
     ''' The exit code is that of the script. A detached script first waits for THIS program to end and, when it ends well, starts the
-    ''' published <c>_Admin\KBotAdmin.exe</c> again before the window closes.
+    ''' published <c>_Admin\KBotAdmin.exe</c> again before the window closes. When the script stops with an error (a <c>throw</c>, a
+    ''' refused parameter), the window also writes its text to <paramref name="k_errorFile"/> so the page can show it in its log.
     ''' </summary>
-    Public Shared Function Start(k_def As ScriptDef, k_root As String, k_args As IEnumerable(Of String)) As Process
+    Public Shared Function Start(k_def As ScriptDef, k_root As String, k_args As IEnumerable(Of String), k_errorFile As String) As Process
         Try
             If String.Equals(k_def.RelPath.Replace("\"c, "/"c), "tools/Push-Changed.ps1", StringComparison.OrdinalIgnoreCase) Then
                 Throw New ApplicationException("Folosiți pagina Publicare: permite debugging fără Git și finalizarea numai Git a versiunilor testate. Push-Changed nu păstrează această evidență și nu poate fi lansat din KBOTADMIN.")
@@ -224,8 +270,10 @@ Public NotInheritable Class ScriptCatalog
                 Dim k_exe As String = Path.Combine(k_root, "_Admin", "KBotAdmin.exe")
                 k_onSuccess = "if (Test-Path " & Literal(k_exe) & ") { Start-Process " & Literal(k_exe) & " -WorkingDirectory " & Literal(Path.GetDirectoryName(k_exe)) & " }; exit 0"
             End If
-            Dim k_call As String = "& " & Literal(k_script) & " " & String.Join(" ", k_args.Select(Function(k_a) Literal(k_a))) &
-                                   "; $ok = $?; $code = $LASTEXITCODE; if ($ok) { " & k_onSuccess & " }; " &
+            Dim k_call As String = "$ok = $false; $code = 1; try { & " & Literal(k_script) & " " & String.Join(" ", k_args.Select(Function(k_a) Literal(k_a))) &
+                                   "; $ok = $?; $code = $LASTEXITCODE } catch { $txt = ($_ | Out-String); Write-Host $txt -ForegroundColor Red; " &
+                                   "try { Set-Content -LiteralPath " & Literal(k_errorFile) & " -Value $txt -Encoding UTF8 } catch { } }; " &
+                                   "if ($ok) { " & k_onSuccess & " }; " &
                                    "Read-Host 'Enter = inchide fereastra' | Out-Null; if ($code) { exit $code } else { exit 1 }"
             If k_def.Detached Then
                 k_call = "Write-Host 'Astept sa se inchida KBotAdmin...'; Wait-Process -Id " &

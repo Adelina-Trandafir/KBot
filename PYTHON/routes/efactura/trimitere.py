@@ -222,7 +222,7 @@ def pdf_anaf(dc, id_factura):
     """(pdf bytes, file name) of an ACCEPTED invoice as ANAF draws it (slice 00EF-09): the signed file ANAF keeps is
     downloaded, its XML is taken out of the zip and sent to ANAF's public XML -> PDF service."""
     zip_bytes, name = descarca(dc, id_factura)
-    return anaf_api.pdf_din_xml(anaf_api.factura_din_zip(zip_bytes)), name[:-4] + ".pdf"
+    return anaf_api.pdf_din_xml(anaf_api.factura_din_zip(zip_bytes), f"trimisa {id_factura} {name}"), name[:-4] + ".pdf"
 
 
 # ---------------------------------------------------------------------------------------------

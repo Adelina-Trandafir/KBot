@@ -210,27 +210,34 @@ def factura_din_zip(zip_bytes):
     raise EfEroare("Arhiva ANAF nu conține fișierul facturii.", "ANAF_RASPUNS", 502)
 
 
-def pdf_din_xml(xml_bytes):
+def pdf_din_xml(xml_bytes, k_label=""):
     """The PDF ANAF draws from an invoice XML (the public transformation service, no token). Slice 00EF-09.
-    The standard is read from the root element: a `CreditNote` goes to FCN, everything else to FACT1."""
+    The standard is read from the root element: a `CreditNote` goes to FCN, everything else to FACT1.
+    `k_label` names the invoice in the log (slice 00EF-58): a refused call can be tied to the invoice that caused it."""
     standard = "FCN" if b"<CreditNote" in xml_bytes[:2048] else "FACT1"
+    # `application/xml`, not `text/plain` (slice 00EF-58): ANAF's firewall answers a `text/plain` body with a 200 «Request Rejected» page
+    # (03.11.2026, same XML, same headers otherwise: `application/xml` gets the PDF).
     request = urllib.request.Request(
         f"{PDF_URL}/{standard}/DA", data=xml_bytes, method="POST",
-        headers={"Content-Type": "text/plain; charset=UTF-8", "Accept": "*/*", "User-Agent": "K-BOT"})
+        headers={"Content-Type": "application/xml; charset=UTF-8", "Accept": "*/*", "User-Agent": "K-BOT"})
+    sent = f"[{k_label or '-'} | {standard} | xml {len(xml_bytes)} bytes]"
     try:
         with urllib.request.urlopen(request, timeout=TIMEOUT_UPLOAD) as response:
-            status, body = response.status, response.read(MAX_ANSWER + 1)
+            status, body, kind = response.status, response.read(MAX_ANSWER + 1), response.headers.get("Content-Type", "")
     except urllib.error.HTTPError as err:
-        status, body = err.code, err.read(MAX_ENTRY)
+        status, body, kind = err.code, err.read(MAX_ENTRY), err.headers.get("Content-Type", "") if err.headers else ""
     except (urllib.error.URLError, TimeoutError, OSError) as err:
-        logger.error("[efactura] ANAF pdf: unreachable: %s", type(err).__name__)
+        logger.error("[efactura] ANAF pdf %s: unreachable: %s", sent, type(err).__name__)
         raise AnafIndisponibil("Serviciul ANAF care desenează factura nu a putut fi contactat. Încercați mai târziu.") from None
     if status >= 500 or status in (408, 429):
-        logger.error("[efactura] ANAF pdf: HTTP %s", status)
+        logger.error("[efactura] ANAF pdf %s: HTTP %s, content-type «%s», answer %s bytes: %s",
+                     sent, status, clean(kind, 80), len(body), clean(body.decode("utf-8", errors="replace"), MAX_TEXT))
         raise AnafIndisponibil(f"Serviciul ANAF care desenează factura nu răspunde (HTTP {status}).")
     if body[:4] != b"%PDF":
-        logger.error("[efactura] ANAF pdf: HTTP %s, the answer is not a PDF", status)
         text = clean(body.decode("utf-8", errors="replace"), 200)
+        # The answer's own words (a firewall page carries a support id ANAF can look up) go to the log, not only to the operator.
+        logger.error("[efactura] ANAF pdf %s: HTTP %s, the answer is not a PDF, content-type «%s», answer %s bytes: %s",
+                     sent, status, clean(kind, 80), len(body), clean(body.decode("utf-8", errors="replace"), MAX_TEXT))
         raise EfEroare("ANAF nu a dat PDF-ul facturii" + (f": {text}" if text else "."), "ANAF_PDF", 502)
     return _bounded(body, "pdf")
 

@@ -16,7 +16,7 @@ fereastra principală.
 <!-- capture: ddf-editor | caption: Editorul DDF, pagina «Secțiunea A», cu rândul gol de la sfârșitul tabelului și butonul ✕ pe fiecare rând | prepare: Deschideți editorul DDF pe o revizie cu mai multe rânduri în Secțiunea A. | redo: 2026-10-23 12:00 | why: 0081-13: Secțiunea A nu mai are «Adaugă rând» / «Șterge rândul»; rândurile se adaugă în rândul gol al tabelului și se șterg cu ✕ -->
 
 ## Antetul
-<!-- slice: 0081-09, 0081-10, 0094-02, 0094-03 -->
+<!-- slice: 0081-09, 0081-10, 0094-02, 0094-03, 0127-01, 0000-151 -->
 
 | Câmp | Ce e de știut |
 |------|---------------|
@@ -28,7 +28,7 @@ fereastra principală.
 | **Partener asociat** | bifat, leagă documentul de un partener principal, ales în câmpul de lângă; el se scrie pe toate rândurile din A și B. Pentru mai mulți parteneri vezi pagina «Parteneri», care apare doar cât timp bifa e pusă |
 | **Număr revizie** | rezervat pe server; revizia inițială e 0 |
 | **Data reviziei** | nu poate fi mai veche decât ultima revizie a angajamentului |
-| **Descriere scurtă** | motivul revizuirii; descrierea lungă primește același text, rescris apoi pe pagina «Descriere» |
+| **Descriere scurtă** | motivul revizuirii; descrierea lungă primește același text, rescris apoi pe pagina «Descriere». La o revizie generată după rezervări făcute în vederea «Browser FOREXE», vine completată cu motivul scris acolo în FOREXE (vezi [Browser FOREXE](topic:contabil.forexe.browser)) |
 | **Total** | suma valorilor curente din Secțiunea A, recalculată la fiecare schimbare |
 
 ## Secțiunea A

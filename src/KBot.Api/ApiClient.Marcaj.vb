@@ -60,4 +60,41 @@ Partial Public Class ApiClient
         End Try
     End Function
 
+    Private NotInheritable Class MotivRezervareRequest
+        Public Property cod As String
+        Public Property indicator As String
+        Public Property motiv As String
+    End Class
+
+    Public Async Function SalveazaMotivRezervareAsync(cod As String, indicator As String, motiv As String,
+                                                      ct As CancellationToken) As Task _
+        Implements IMarcajApi.SalveazaMotivRezervareAsync
+        Try
+            EnsureConfigured()
+            If String.IsNullOrWhiteSpace(cod) Then Throw New ArgumentException("cod gol.", NameOf(cod))
+            If String.IsNullOrWhiteSpace(indicator) Then Throw New ArgumentException("indicator gol.", NameOf(indicator))
+            If String.IsNullOrWhiteSpace(motiv) Then Throw New ArgumentException("motiv gol.", NameOf(motiv))
+
+            Using msg As New HttpRequestMessage(HttpMethod.Post, "/api/forexe/marcaj/motiv")
+                ' Same as the marker: reported from the FOREXE page, also inside a robot run.
+                msg.Options.Set(ServerGate.Bypass, True)
+                msg.Headers.Authorization = New Net.Http.Headers.AuthenticationHeaderValue("Bearer", _session.Token)
+                Dim body As String = JsonSerializer.Serialize(
+                    New MotivRezervareRequest() With {.cod = cod, .indicator = indicator, .motiv = motiv}, _json)
+                msg.Content = New StringContent(body, Encoding.UTF8, "application/json")
+                Using resp As HttpResponseMessage = Await _http.SendAsync(msg, ct).ConfigureAwait(False)
+                    Dim respText As String = Await resp.Content.ReadAsStringAsync(ct).ConfigureAwait(False)
+                    If Not resp.IsSuccessStatusCode Then
+                        Throw BuildApiException(respText, "păstrarea motivului rezervării", CInt(resp.StatusCode))
+                    End If
+                End Using
+            End Using
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.SalveazaMotivRezervareAsync", ex)
+            Throw
+        End Try
+    End Function
+
 End Class

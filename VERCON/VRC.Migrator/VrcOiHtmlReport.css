@@ -1,0 +1,17 @@
+body { margin: 0; padding: 24px; background: #f2f5fa; color: #182638; font: 16px/1.55 'Segoe UI', Arial, sans-serif; }
+h1 { margin: 0 0 8px; font-size: 30px; }
+h2 { margin: 0 0 14px; font-size: 23px; color: #163d68; }
+h3 { margin: 24px 0 10px; font-size: 18px; }
+p { margin: 8px 0 14px; }
+.meta { color: #52657c; }
+.card { background: #fff; border: 1px solid #cfdae8; border-radius: 8px; padding: 22px; margin: 22px 0; }
+.status { border-left: 6px solid #217347; }
+.blocked { border-left-color: #b73530; }
+.blocked h2 { color: #a32a26; }
+.ready h2 { color: #217347; }
+table { border-collapse: collapse; width: 100%; margin: 14px 0 22px; font-size: 14px; }
+th, td { border: 1px solid #d1dce9; padding: 9px; vertical-align: top; text-align: left; word-wrap: break-word; overflow-wrap: anywhere; }
+th { background: #e8eff8; color: #163d68; }
+tbody tr:nth-child(even) { background: #f7f9fc; }
+thead { display: table-header-group; }
+@media print { body { padding: 0; background: #fff; font-size: 11pt; } .card { border: 0; padding: 0; } h2, h3 { page-break-after: avoid; } tr { page-break-inside: avoid; } th, td { font-size: 9pt; } }

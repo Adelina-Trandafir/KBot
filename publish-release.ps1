@@ -43,7 +43,14 @@
              - At the end the script waits until that section exists (Enter = look
                again, P = copy the request again, S = release without notes).
              - A version that already has its section (no bump) asks nothing.
-             - -ReleaseNotes Skip leaves the whole step out.
+             - -ReleaseNotes Skip leaves the whole step out (nothing is requested, nothing
+               is waited for, nothing is asked).
+
+  Migrators in the package (KBotAdmin, page «Scripturi»):
+    -KBotMigrator  Auto (default) / Yes / No: KBot.Migrator under Migrare\. Auto = as it
+                   always was: with the Access package, not with the NonAccess one.
+    -AvcMigrator   Auto (default) / Yes / No: AVC.Migrator under AvcMigrator\. Auto = No.
+    Both are Access tools: Yes together with -Audience NonAccess is refused.
 
   Digital signing (optional, never fatal):
              - Uses Certum SimplySign token via certificate thumbprint.
@@ -90,7 +97,15 @@ param(
     # the AI assistant on the clipboard after the version question and waits for the
     # section at the end; 'Skip' leaves the step out.
     [ValidateSet('Ask', 'Skip')]
-    [string] $ReleaseNotes = 'Ask'
+    [string] $ReleaseNotes = 'Ask',
+
+    # Migrators INSIDE the package. 'Auto' = KBot.Migrator with the Access package only (the
+    # old behaviour), AVC.Migrator never. 'Yes' / 'No' decide it. Both read Access files, so
+    # 'Yes' for a NonAccess package is refused.
+    [ValidateSet('Auto', 'Yes', 'No')]
+    [string] $KBotMigrator = 'Auto',
+    [ValidateSet('Auto', 'Yes', 'No')]
+    [string] $AvcMigrator = 'Auto'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -486,6 +501,15 @@ if ($IncludeAccess) {
     Write-Host "Audience: NON-ACCESS (no Migrator, no Access code in the package)." -ForegroundColor Cyan
 }
 
+# Which migrators go into the package (-KBotMigrator / -AvcMigrator). Both read Access files.
+$IncludeKBotMigrator = switch ($KBotMigrator) { 'Yes' { $true } 'No' { $false } default { $IncludeAccess } }
+$IncludeAvcMigrator  = ($AvcMigrator -eq 'Yes')
+if (-not $IncludeAccess -and ($KBotMigrator -eq 'Yes' -or $AvcMigrator -eq 'Yes')) {
+    throw "-KBotMigrator Yes / -AvcMigrator Yes need the ACCESS package (both read Access files): use -Audience Access."
+}
+Write-Host ("Migrators: KBot.Migrator {0}, AVC.Migrator {1}." -f
+    $(if ($IncludeKBotMigrator) { 'IN' } else { 'out' }), $(if ($IncludeAvcMigrator) { 'IN' } else { 'out' })) -ForegroundColor Cyan
+
 # --- 1a. Sign or not (asked on the console unless -Sign says) -------------------
 #  Decided first, before anything is built, so a "No" never reaches the SimplySign
 #  token: Invoke-KBotSign and the Inno sign command both read $script:SigningEnabled.
@@ -569,7 +593,7 @@ Write-Host "Guard OK: no KBot.DevHarness.* in output." -ForegroundColor Cyan
 #  it gets its own publish. It lives in a subfolder so its own .deps.json / .runtimeconfig.json do not
 #  mix with the app's. Same parameters: framework-dependent, no single-file.
 $MigrareDir = Join-Path $PublishDir 'Migrare'
-if ($IncludeAccess) {
+if ($IncludeKBotMigrator) {
     $MigratorProj = Join-Path $SolutionRoot 'src\KBot.Migrator\KBot.Migrator.vbproj'
     if (-not (Test-Path $MigratorProj)) { throw "Project not found: $MigratorProj" }
     Write-Host "Publish KBot.Migrator -> Migrare\ ..." -ForegroundColor Cyan
@@ -587,7 +611,37 @@ if ($IncludeAccess) {
     }
     Write-Host "Migrare OK: KBot.Migrator.exe in $MigrareDir" -ForegroundColor Cyan
 } else {
-    Write-Host "Migrare: skipped (non-access package)." -ForegroundColor Yellow
+    Write-Host "Migrare: skipped ($(if ($IncludeAccess) { '-KBotMigrator No' } else { 'non-access package' }))." -ForegroundColor Yellow
+}
+
+# --- 4c0. AvcMigrator -- AVC.Migrator (AVACONT Access file -> TZ_ tables) under 'AvcMigrator\' ----
+#  Only when asked (-AvcMigrator Yes, Access package only). Separate EXE like KBot.Migrator, in its own
+#  subfolder so its .deps.json / .runtimeconfig.json stay apart from the app's. KBot.Migrator is a LIBRARY
+#  of AVC.Migrator: its DLL stays, its own exe and config files are removed (as publish-avc-migrator.ps1 does).
+$AvcDir = Join-Path $PublishDir 'AvcMigrator'
+if ($IncludeAvcMigrator) {
+    $AvcProj = Join-Path $SolutionRoot 'src\AVC.Migrator\AVC.Migrator.vbproj'
+    if (-not (Test-Path $AvcProj)) { throw "Project not found: $AvcProj" }
+    Write-Host "Publish AVC.Migrator -> AvcMigrator\ ..." -ForegroundColor Cyan
+    & dotnet publish $AvcProj `
+        -c $Configuration `
+        -r $Rid `
+        --self-contained false `
+        -p:PublishSingleFile=false `
+        -o $AvcDir
+    if ($LASTEXITCODE -ne 0) {
+        throw "dotnet publish AVC.Migrator failed (ExitCode=$LASTEXITCODE)."
+    }
+    if (-not (Test-Path -LiteralPath (Join-Path $AvcDir 'AVC.Migrator.exe'))) {
+        throw "AVC.Migrator.exe missing from $AvcDir after publish."
+    }
+    foreach ($f in 'KBot.Migrator.exe', 'KBot.Migrator.deps.json', 'KBot.Migrator.runtimeconfig.json') {
+        $p = Join-Path $AvcDir $f
+        if (Test-Path -LiteralPath $p) { Remove-Item -LiteralPath $p -Force }
+    }
+    Write-Host "AvcMigrator OK: AVC.Migrator.exe in $AvcDir" -ForegroundColor Cyan
+} else {
+    Write-Host "AvcMigrator: skipped." -ForegroundColor Yellow
 }
 
 # --- 4c1. KBot.Access -- the code that talks to the Access files (slice 0104) ----
@@ -706,7 +760,8 @@ Write-Host "Tray OK: KBot.Tray.exe in $PublishDir" -ForegroundColor Cyan
 #  The updater relaunches itself through UAC on machines where C:\KBOT is not
 #  writable; unsigned, that prompt would be the yellow one.
 Invoke-KBotSign -SignFile (Join-Path $PublishDir 'KBot.App.exe')
-if ($IncludeAccess) { Invoke-KBotSign -SignFile (Join-Path $MigrareDir 'KBot.Migrator.exe') }
+if ($IncludeKBotMigrator) { Invoke-KBotSign -SignFile (Join-Path $MigrareDir 'KBot.Migrator.exe') }
+if ($IncludeAvcMigrator) { Invoke-KBotSign -SignFile (Join-Path $AvcDir 'AVC.Migrator.exe') }
 Invoke-KBotSign -SignFile (Join-Path $PublishDir 'KBot.Updater.exe')
 # Slice TRAY-01: the tray application starts with Windows, so it is signed too (one more confirmation).
 Invoke-KBotSign -SignFile (Join-Path $PublishDir 'KBot.Tray.exe')
@@ -865,6 +920,7 @@ try {
 
 $isccArgs = @(
     "/DWithAccess=$(if ($IncludeAccess) { 1 } else { 0 })",
+    "/DWithKBotMigrator=$(if ($IncludeKBotMigrator) { 1 } else { 0 })",
     "/DSourceDir=$PublishDir",
     "/DAppVersion=$AppVersion",
     "/DOutputDir=$ArtifactsDir",
@@ -906,10 +962,15 @@ Write-Host "             -> silent: KBot_Setup_$Stamp.exe /VERYSILENT /NORESTART
 Write-Host "  Zip (manual): $ZipPath  ($ZipSizeMB MB)  [fallback manual extraction]"
 Write-Host "  Requires : .NET Desktop Runtime 8 (win-x64) on the client PC."
 Write-Host "  Workflows: $($wfls.Count) .wfl file(s) included under 'Workflows\'."
-if ($IncludeAccess) {
+if ($IncludeKBotMigrator) {
     Write-Host "  Migrare  : KBot.Migrator.exe (Access -> MariaDB) included under 'Migrare\'; KBot.Access.dll next to the app."
+} elseif ($IncludeAccess) {
+    Write-Host "  Migrare  : KBot.Migrator NOT included (-KBotMigrator No); KBot.Access.dll next to the app."
 } else {
     Write-Host "  Migrare  : NOT included (non-access package) -- push it with: .\push-update.ps1 -Audience NonAccess"
+}
+if ($IncludeAvcMigrator) {
+    Write-Host "  AvcMigr  : AVC.Migrator.exe included under 'AvcMigrator\'."
 }
 Write-Host "  Updater  : KBot.Updater.exe next to the app (slice 0067). Publish it: .\push-update.ps1 [-Audience Access|NonAccess] [-Mandatory] [-Notes '...']"
 Write-Host "  Browser  : installer offers the Chromium download as a task (else '.\playwright.ps1 install chromium')."

@@ -20,8 +20,8 @@ Partial Class VrcOiWorkspace
     Friend WithEvents btnDiscard As Button
     Friend WithEvents lblOiState As Label
     Friend WithEvents dgvRepeats As KBot.Controls.KBotDataView
-    Friend WithEvents dgvHolders As KBot.Controls.KBotDataView
-    Friend WithEvents rtbOi As RichTextBox
+    Friend WithEvents btnReport As Button
+    Friend WithEvents lblReportSummary As Label
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
@@ -43,8 +43,8 @@ Partial Class VrcOiWorkspace
         btnDiscard = New Button()
         lblOiState = New Label()
         dgvRepeats = New KBot.Controls.KBotDataView()
-        dgvHolders = New KBot.Controls.KBotDataView()
-        rtbOi = New RichTextBox()
+        btnReport = New Button()
+        lblReportSummary = New Label()
         Dim colSelect As New KBot.Controls.KBotDataColumn()
         Dim colSource As New KBot.Controls.KBotDataColumn()
         Dim colSubunit As New KBot.Controls.KBotDataColumn()
@@ -54,13 +54,6 @@ Partial Class VrcOiWorkspace
         Dim colUse As New KBot.Controls.KBotDataColumn()
         Dim colTargetType As New KBot.Controls.KBotDataColumn()
         Dim colTargetName As New KBot.Controls.KBotDataColumn()
-        Dim colHolderSource As New KBot.Controls.KBotDataColumn()
-        Dim colHolderYear As New KBot.Controls.KBotDataColumn()
-        Dim colHolderOriginal As New KBot.Controls.KBotDataColumn()
-        Dim colHolderTarget As New KBot.Controls.KBotDataColumn()
-        Dim colHolderFirstDate As New KBot.Controls.KBotDataColumn()
-        Dim colHolderFirstNumber As New KBot.Controls.KBotDataColumn()
-        Dim colHolderDocuments As New KBot.Controls.KBotDataColumn()
         Dim colAccept As New KBot.Controls.KBotDataColumn()
         Dim colRepeatFile As New KBot.Controls.KBotDataColumn()
         Dim colPrevious As New KBot.Controls.KBotDataColumn()
@@ -73,32 +66,29 @@ Partial Class VrcOiWorkspace
         CType(dgvBrowse, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(dgvAccounts, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(dgvRepeats, System.ComponentModel.ISupportInitialize).BeginInit()
-        CType(dgvHolders, System.ComponentModel.ISupportInitialize).BeginInit()
         tlpOi.Dock = DockStyle.Fill
         tlpOi.Padding = New Padding(8)
         tlpOi.ColumnCount = 1
         tlpOi.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100))
-        tlpOi.RowCount = 9
+        tlpOi.RowCount = 8
         tlpOi.RowStyles.Add(New RowStyle(SizeType.Absolute, 58))
         tlpOi.RowStyles.Add(New RowStyle(SizeType.Absolute, 36))
-        tlpOi.RowStyles.Add(New RowStyle(SizeType.Percent, 30))
+        tlpOi.RowStyles.Add(New RowStyle(SizeType.Percent, 35))
         tlpOi.RowStyles.Add(New RowStyle(SizeType.Absolute, 38))
-        tlpOi.RowStyles.Add(New RowStyle(SizeType.Percent, 32))
-        tlpOi.RowStyles.Add(New RowStyle(SizeType.Absolute, 40))
-        tlpOi.RowStyles.Add(New RowStyle(SizeType.Absolute, 150))
+        tlpOi.RowStyles.Add(New RowStyle(SizeType.Percent, 65))
+        tlpOi.RowStyles.Add(New RowStyle(SizeType.Absolute, 58))
         tlpOi.RowStyles.Add(New RowStyle(SizeType.Absolute, 100))
-        tlpOi.RowStyles.Add(New RowStyle(SizeType.Percent, 38))
+        tlpOi.RowStyles.Add(New RowStyle(SizeType.Absolute, 72))
         tlpOi.Controls.Add(lblOiInfo, 0, 0)
         tlpOi.Controls.Add(tlpBrowse, 0, 1)
         tlpOi.Controls.Add(dgvBrowse, 0, 2)
         tlpOi.Controls.Add(tlpChoices, 0, 3)
         tlpOi.Controls.Add(dgvAccounts, 0, 4)
         tlpOi.Controls.Add(tlpActions, 0, 5)
-        tlpOi.Controls.Add(dgvHolders, 0, 6)
-        tlpOi.Controls.Add(dgvRepeats, 0, 7)
-        tlpOi.Controls.Add(rtbOi, 0, 8)
+        tlpOi.Controls.Add(dgvRepeats, 0, 6)
+        tlpOi.Controls.Add(lblReportSummary, 0, 7)
         lblOiInfo.Dock = DockStyle.Fill
-        lblOiInfo.Text = "Bifați conturile și alegeți pentru fiecare tipul și numele noii gestiuni. Numai OI transformă BC → BP + BC; Materiale păstrează documentele anuale. La deținători, alegeți același nume destinație pentru a asocia înregistrările; numele diferite rămân distincte."
+        lblOiInfo.Text = "Materiale este implicit. Separă completează OI și contul de folosință OIF; intrările OI folosesc contul de magazie OIM. Nu migra exclude contul. Deținătorii se asociază automat; istoricul și constatările apar în raportul HTML."
         tlpBrowse.Dock = DockStyle.Fill
         tlpBrowse.ColumnCount = 3
         tlpBrowse.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 70))
@@ -134,7 +124,7 @@ Partial Class VrcOiWorkspace
         btnAccounts.FlatStyle = FlatStyle.Flat
         btnAccounts.Text = "Încarcă conturile din plan"
         lblName.Dock = DockStyle.Fill
-        lblName.Text = "Alegeți tipul și numele destinației pe fiecare cont. OI cere și contul de folosință."
+        lblName.Text = "Același tip și nume de destinație în toți anii. Materiale nebifat rămâne în gestiunea inițială."
         lblName.TextAlign = ContentAlignment.MiddleLeft
         dgvAccounts.Dock = DockStyle.Fill
         colSelect.Key = "select"
@@ -164,12 +154,12 @@ Partial Class VrcOiWorkspace
         colAccount.ReadOnly = True
         colAccount.Width = 250
         colUse.Key = "use"
-        colUse.HeaderText = "Cont de folosință OI (completați)"
+        colUse.HeaderText = "Cont de folosință OI (OIF)"
         colUse.Width = 280
         colTargetType.Key = "targettype"
-        colTargetType.HeaderText = "Tip destinație (alegeți)"
+        colTargetType.HeaderText = "Tip destinație"
         colTargetType.ColumnType = KBot.Controls.KBotColumnType.Combo
-        colTargetType.ComboItems = New List(Of Object) From {"OI", "MATERIALE"}
+        colTargetType.ComboItems = New List(Of Object) From {"MATERIALE", "Nu migra", "OI"}
         colTargetType.Width = 165
         colTargetName.Key = "targetname"
         colTargetName.HeaderText = "Gestiune nouă (același nume în toți anii)"
@@ -183,58 +173,20 @@ Partial Class VrcOiWorkspace
         dgvAccounts.Columns.Add(colTargetType)
         dgvAccounts.Columns.Add(colTargetName)
         dgvAccounts.Columns.Add(colUse)
-        dgvHolders.Dock = DockStyle.Fill
-        colHolderSource.Key = "source"
-        colHolderSource.HeaderText = "Deținători • baza sursă"
-        colHolderSource.ReadOnly = True
-        colHolderSource.Width = 380
-        colHolderYear.Key = "year"
-        colHolderYear.HeaderText = "An"
-        colHolderYear.ReadOnly = True
-        colHolderYear.ValueType = KBot.Controls.KBotValueType.Number
-        colHolderYear.Width = 70
-        colHolderOriginal.Key = "original"
-        colHolderOriginal.HeaderText = "Numele în baza veche"
-        colHolderOriginal.ReadOnly = True
-        colHolderOriginal.Width = 260
-        colHolderTarget.Key = "target"
-        colHolderTarget.HeaderText = "Deținător în destinație • alegeți pentru asociere"
-        colHolderTarget.ColumnType = KBot.Controls.KBotColumnType.Combo
-        colHolderTarget.Width = 330
-        colHolderFirstDate.Key = "firstdate"
-        colHolderFirstDate.HeaderText = "Data primului bon"
-        colHolderFirstDate.ReadOnly = True
-        colHolderFirstDate.ValueType = KBot.Controls.KBotValueType.DateTime
-        colHolderFirstDate.Width = 125
-        colHolderFirstNumber.Key = "firstnumber"
-        colHolderFirstNumber.HeaderText = "Număr primul bon"
-        colHolderFirstNumber.ReadOnly = True
-        colHolderFirstNumber.ValueType = KBot.Controls.KBotValueType.Number
-        colHolderFirstNumber.Width = 125
-        colHolderDocuments.Key = "documents"
-        colHolderDocuments.HeaderText = "Bonuri implicate"
-        colHolderDocuments.ReadOnly = True
-        colHolderDocuments.ValueType = KBot.Controls.KBotValueType.Number
-        colHolderDocuments.Width = 110
-        dgvHolders.Columns.Add(colHolderSource)
-        dgvHolders.Columns.Add(colHolderYear)
-        dgvHolders.Columns.Add(colHolderOriginal)
-        dgvHolders.Columns.Add(colHolderTarget)
-        dgvHolders.Columns.Add(colHolderFirstDate)
-        dgvHolders.Columns.Add(colHolderFirstNumber)
-        dgvHolders.Columns.Add(colHolderDocuments)
         tlpActions.Dock = DockStyle.Fill
-        tlpActions.ColumnCount = 4
+        tlpActions.ColumnCount = 5
         tlpActions.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 150))
         tlpActions.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 185))
         tlpActions.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 165))
+        tlpActions.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 135))
         tlpActions.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100))
         tlpActions.RowCount = 1
         tlpActions.RowStyles.Add(New RowStyle(SizeType.Percent, 100))
         tlpActions.Controls.Add(btnAnalyze, 0, 0)
         tlpActions.Controls.Add(btnGenerate, 1, 0)
         tlpActions.Controls.Add(btnDiscard, 2, 0)
-        tlpActions.Controls.Add(lblOiState, 3, 0)
+        tlpActions.Controls.Add(btnReport, 3, 0)
+        tlpActions.Controls.Add(lblOiState, 4, 0)
         btnAnalyze.Dock = DockStyle.Fill
         btnAnalyze.FlatStyle = FlatStyle.Flat
         btnAnalyze.Text = "Analizează selecția"
@@ -244,6 +196,10 @@ Partial Class VrcOiWorkspace
         btnDiscard.Dock = DockStyle.Fill
         btnDiscard.FlatStyle = FlatStyle.Flat
         btnDiscard.Text = "Renunță la separare"
+        btnReport.Dock = DockStyle.Fill
+        btnReport.FlatStyle = FlatStyle.Flat
+        btnReport.Text = "Raport HTML…"
+        btnReport.Enabled = False
         lblOiState.Dock = DockStyle.Fill
         lblOiState.TextAlign = ContentAlignment.MiddleLeft
         lblOiState.Text = "Separarea nu este generată."
@@ -291,10 +247,8 @@ Partial Class VrcOiWorkspace
         dgvRepeats.Columns.Add(colPrice)
         dgvRepeats.Columns.Add(colHolder)
         dgvRepeats.Columns.Add(colQuantity)
-        rtbOi.Dock = DockStyle.Fill
-        rtbOi.ReadOnly = True
-        rtbOi.BorderStyle = BorderStyle.FixedSingle
-        rtbOi.Text = "Citiți bazele și completați planul din fila Migrare, apoi încărcați conturile aici. Analiza nu scrie în Access sau pe server."
+        lblReportSummary.Dock = DockStyle.Fill
+        lblReportSummary.Text = "Citiți bazele și completați planul din Migrare, apoi încărcați conturile aici. Analiza produce un raport HTML și nu scrie în Access sau pe server."
         AutoScaleDimensions = New SizeF(96, 96)
         AutoScaleMode = AutoScaleMode.Dpi
         Controls.Add(tlpOi)
@@ -303,7 +257,6 @@ Partial Class VrcOiWorkspace
         CType(dgvBrowse, System.ComponentModel.ISupportInitialize).EndInit()
         CType(dgvAccounts, System.ComponentModel.ISupportInitialize).EndInit()
         CType(dgvRepeats, System.ComponentModel.ISupportInitialize).EndInit()
-        CType(dgvHolders, System.ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
     End Sub
 
@@ -315,3 +268,4 @@ Partial Class VrcOiWorkspace
         End Try
     End Sub
 End Class
+

@@ -127,7 +127,12 @@ Partial Public Class KbotForm
         Try
             Dim coduri As List(Of String)
             If ev.Operation = ForexeOperationKind.Angajament Then
-                coduri = Await CoduriNoiDupaSincronizareAsync(ev.CodEfectiv)
+                ' Slice 0097-07: a NEW angajament is known from the page that follows the save (its
+                ' header). The angajamente list is no longer downloaded for it: the ingest creates
+                ' the header row from the package (CoduriNoiDupaSincronizareAsync stays for the
+                ' tree footer's road, off this one).
+                coduri = New List(Of String)()
+                If Not String.IsNullOrWhiteSpace(ev.CodEfectiv) Then coduri.Add(ev.CodEfectiv.Trim())
             Else
                 Dim cod As String = ev.CodEfectiv
                 If String.IsNullOrEmpty(cod) AndAlso _currentInfo IsNot Nothing Then
@@ -182,7 +187,9 @@ Partial Public Class KbotForm
                     SpuneCapturiNetrimise(cod, "descărcarea din FOREXE nu a reușit")
                     Continue For
                 End If
-                Dim preluat As Boolean = Await DuLaIngestieAsync(cod, pachet)
+                ' A new angajament: the tree selects it and scrolls to it after the save (slice 0097-07).
+                Dim preluat As Boolean = Await DuLaIngestieAsync(
+                    cod, pachet, ev.Operation = ForexeOperationKind.Angajament)
                 ' The pictures can only be filed once the ingest has written the reception
                 ' they hang off; until then they wait on disk.
                 If Not preluat Then
@@ -207,6 +214,9 @@ Partial Public Class KbotForm
         busyBar.Running = True
         Try
             Select Case ev.Operation
+                Case ForexeOperationKind.Angajament
+                    ' Slice 0097-07: a NEW angajament (state «Initial»): its own short flow.
+                    Return Await _controller.DownloadAngajamentNouAsync(cod)
                 Case ForexeOperationKind.Receptie
                     ' Slice 0076: a NEW reception - the flow starts on the page the operator is
                     ' on and reads the LAST row of the list (operator, 23.09.2026).
@@ -303,6 +313,8 @@ Partial Public Class KbotForm
                                    "dacă e un indicator nou, descărcați angajamentul din iconița nodului.")
         End If
 
+        Await PastreazaMotivulAsync(ev, cod, codIndicator)
+
         Dim nl As String = Environment.NewLine
         Dim raspuns As DialogResult = KBotMessage.Show(Me,
             $"Rezervarea s-a salvat în FOREXE." & nl &
@@ -353,6 +365,60 @@ Partial Public Class KbotForm
         Else
             SpuneCapturiNetrimise(cod, "descărcarea rezervărilor nu s-a salvat în K-BOT")
         End If
+    End Function
+
+    ''' <summary>
+    ''' Slice 0127 (operator, 04.11.2026): the reason typed in the FOREXE motive window is kept on the server, under
+    ''' the revision number held for the angajament and the indicator that was saved, so the revision generated
+    ''' later offers it as its short description. Only the work mode of the in-app browser gets here (the page
+    ''' reports the save). A reason that cannot be kept is said on the console and never stops the save, which is
+    ''' already in FOREXE.
+    ''' </summary>
+    Private Async Function PastreazaMotivulAsync(ev As ForexeWatchEvent, cod As String,
+                                                 codIndicatorDinRand As String) As Task
+        Try
+            Dim k_indicator As String = String.Empty
+            Dim k_motiv As String = MotivDin(ev.DetaliiJson, k_indicator)
+            If String.IsNullOrWhiteSpace(k_motiv) Then Return
+            If String.IsNullOrWhiteSpace(k_indicator) Then k_indicator = codIndicatorDinRand
+            If String.IsNullOrWhiteSpace(k_indicator) Then
+                _controller.SpuneStare($"Motivul rezervării lui «{cod}» nu s-a păstrat: pagina nu a dat indicatorul salvat.")
+                Return
+            End If
+            Dim k_api As IMarcajApi = TryCast(_apiClient, IMarcajApi)
+            If k_api Is Nothing Then
+                Throw New InvalidOperationException("The API client does not implement IMarcajApi.")
+            End If
+            Await WithReauth(Of Boolean)(
+                Async Function()
+                    Await k_api.SalveazaMotivRezervareAsync(cod, k_indicator, k_motiv, CancellationToken.None)
+                    Return True
+                End Function)
+            _controller.SpuneStare($"Motivul rezervării indicatorului «{k_indicator}» ({cod}) e păstrat pentru revizie.")
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.PastreazaMotivulAsync", ex)
+            _controller.SpuneStare($"Motivul rezervării lui «{cod}» nu s-a putut păstra pentru revizie: {ex.Message}")
+        End Try
+    End Function
+
+    ''' <summary>The reason the page read from the motive window ("motiv" of a finished reservation) and the
+    ''' indicator code it names; both empty when the page did not send them.</summary>
+    Private Shared Function MotivDin(detaliiJson As String, ByRef codIndicator As String) As String
+        codIndicator = String.Empty
+        Try
+            If String.IsNullOrWhiteSpace(detaliiJson) Then Return String.Empty
+            Dim k_obj As JsonObject = TryCast(JsonNode.Parse(detaliiJson), JsonObject)
+            If k_obj Is Nothing Then Return String.Empty
+            Dim k_cod As JsonNode = k_obj("indicatorCod")
+            codIndicator = If(k_cod Is Nothing, String.Empty, k_cod.ToString()).Trim()
+            Dim k_motiv As JsonNode = k_obj("motiv")
+            Return If(k_motiv Is Nothing, String.Empty, k_motiv.ToString()).Trim()
+        Catch ex As Exception
+            ' Data boundary (JSON from the page): logged, the reason is treated as absent.
+            GlobalErrorLog.Write("MainForm.MotivDin", ex)
+            codIndicator = String.Empty
+            Return String.Empty
+        End Try
     End Function
 
     ' ── The pictures of the FOREXE page (operator, 28.09.2026) ──────────────────────────

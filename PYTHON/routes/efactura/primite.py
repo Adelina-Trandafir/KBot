@@ -328,7 +328,7 @@ def zip_anaf(dc, id_primita):
 def pdf_anaf(dc, id_primita):
     """(pdf bytes, file name): the invoice as ANAF's public service draws it from the saved XML."""
     data, name = xml(dc, id_primita)
-    return anaf_api.pdf_din_xml(data), name[:-4] + ".pdf"
+    return anaf_api.pdf_din_xml(data, f"primita {id_primita} {name}"), name[:-4] + ".pdf"
 
 
 def atasament(dc, id_primita, index):

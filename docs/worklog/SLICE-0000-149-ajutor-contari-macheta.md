@@ -1,0 +1,3 @@
+# SLICE-0000-149 — help for the new «Contari» page (slice 01EF-07)
+
+Topic `contabil.efactura`, section «Contări» (`src/KBot.App/HelpContent/contabil/efactura/index.md`): how to start (right-click an invoice → «Adaugă operații contabile»), tick boxes only on the supplier's other invoices, at least one invoice stays ticked, the new layout (headed fields, «Documente evidențiere» / «Documente plată», NC column, order of payment active only with a payment template, «Renunță» / «Salvează»), the explanation of the order (1–75 characters, bar, no diacritics, no commas) and the warning line with its tooltip. Tags `01EF-02, 0000-144, 01EF-04, 0000-145, 00EF-55, 01EF-07, 0000-149`. No new capture (the existing `efactura-receptii` one is not about this page). Not seen on screen.

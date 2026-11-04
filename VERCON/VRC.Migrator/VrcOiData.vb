@@ -108,12 +108,15 @@ Public NotInheritable Class VrcOiData
 End Class
 
 Public NotInheritable Class VrcOiChoice
+    Public Const ExcludeType As String = "Nu migra"
+    Public Const DefaultUseAccount As String = "Obiecte Inventar Folosinta"
+    Public Const WarehouseAccount As String = "Obiecte inventar Magazie"
     Public Property Data As VrcOiData
     Public Property AccountKey As String = String.Empty
     Public Property AccountName As String = String.Empty
     Public Property UseAccountName As String = String.Empty
     Public Property TargetName As String = String.Empty
-    Public Property TargetType As String = String.Empty
+    Public Property TargetType As String = "MATERIALE"
 End Class
 
 Public NotInheritable Class VrcOiHolderAssociation
@@ -135,6 +138,11 @@ Public NotInheritable Class VrcOiConversion
     Public Property Generated As New List(Of VrcPlanSource)()
     Public Property Blockers As New List(Of String)()
     Public Property Report As String = String.Empty
+    Public ReadOnly Property Years As New List(Of VrcOiYearSummary)()
+    Public ReadOnly Property Documents As New List(Of VrcOiDocumentSummary)()
+    Public ReadOnly Property ReceiptFragments As New List(Of VrcOiReceiptFragment)()
+    Public ReadOnly Property IgnoredPrices As New List(Of VrcOiIgnoredPrice)()
+    Public ReadOnly Property ResidualNotes As New Dictionary(Of String, List(Of String))(StringComparer.OrdinalIgnoreCase)
 
     Public Sub Apply(k_plan As VrcPlan)
         If k_plan.Hash() <> BaseHash Then
@@ -150,10 +158,43 @@ Public NotInheritable Class VrcOiConversion
             If k_source.GestiuneType = "MATERIALE" AndAlso Residual.TryGetValue(k_source.Source.Path, k_data) Then
                 k_source.PreparedRows = k_data.Tables
                 k_source.PreparedHash = VrcOiData.Fingerprint(k_data.Tables)
+                If ResidualNotes.ContainsKey(k_source.Source.Path) Then k_source.PreparedNotes = ResidualNotes(k_source.Source.Path).ToList()
             End If
         Next
         k_plan.Sources.AddRange(Generated)
         k_plan.Evaluate()
-        k_plan.Warnings.Add("Separare pe conturile alese: consultați raportul și tipul fiecărei gestiuni noi. Numai destinațiile OI transformă BC în BP + BC legat.")
+        k_plan.Warnings.Add("Opțiunile conturilor au fost aplicate: consultați raportul HTML pentru destinațiile noi și conturile excluse. Numai destinațiile OI transformă BC în BP + BC legat.")
     End Sub
+End Class
+
+Public NotInheritable Class VrcOiYearSummary
+    Public Property Source As String
+    Public Property Subunit As String
+    Public Property Account As String
+    Public Property Destination As String
+    Public Property Year As Integer
+    Public Property Receipts As Integer
+    Public Property RemovedOpenings As Integer
+    Public Property Handovers As Integer
+    Public Property BalanceComplete As Boolean
+    Public Property Problems As New List(Of String)()
+    Public Property Stock As New List(Of VrcOiStockSummary)()
+End Class
+
+Public NotInheritable Class VrcOiStockSummary
+    Public Property Product As String
+    Public Property Unit As String
+    Public Property Price As Decimal
+    Public Property Quantity As Decimal
+End Class
+
+Public NotInheritable Class VrcOiDocumentSummary
+    Public Property Source As String
+    Public Property Destination As String
+    Public Property Kind As String
+    Public Property Number As String
+    Public Property Day As Date
+    Public Property Target As String
+    Public Property Complete As Boolean
+    Public Property Lines As New List(Of Dictionary(Of String, Object))()
 End Class

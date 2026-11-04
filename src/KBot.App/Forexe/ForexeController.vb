@@ -599,6 +599,25 @@ Partial Public NotInheritable Class ForexeController
     End Function
 
     ''' <summary>
+    ''' Slice 0097-07 - the angajament the operator just SAVED as new in the «Browser FOREXE» view:
+    ''' «adlop - Prelucrare Angajament Nou.wfl», which starts on the page the operator is on and
+    ''' reads only what an angajament in the state «Initial» has (header, indicators with their
+    ''' budget, history). The header row on the server is inserted by the ingest from the
+    ''' package's scalars, so the angajamente list is NOT downloaded first.
+    ''' </summary>
+    Public Async Function DownloadAngajamentNouAsync(k_cod As String) As Task(Of PrelucrareRezultat)
+        Try
+            Dim job As JobRequest = JobBuilder.BuildPrelucrareAngajamentNou(k_cod)
+            Return Await DescarcaPartialAsync(
+                k_cod, "AngajamentNou", "angajamentul nou",
+                Function() Task.FromResult(job), Nothing)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ForexeController.DownloadAngajamentNouAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>
     ''' Slice 0076 - the reservations the operator edited by hand in the «Browser FOREXE» view,
     ''' once they said they are done: «adlop - Rezervari Editate.wfl» reads the header and the
     ''' history backwards from the page they are on, and the indicator rows the page kept after

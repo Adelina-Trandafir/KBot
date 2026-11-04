@@ -95,8 +95,11 @@ Public NotInheritable Class EFacturaContariPlata
     Public Property Valoare As Decimal
     Public Property ExplicatieOP As String = String.Empty
 
-    ''' <summary>The explanation is over 69 characters (yellow in Access).</summary>
-    Public Property ExplicatiePrea As Boolean
+    ''' <summary>The «kind of invoice» of the chosen payment template (<c>FelOP</c>; empty when the template has none): it ends the explanation of the order.</summary>
+    Public Property FelOP As String = String.Empty
+
+    ''' <summary>The next free number of an order of payment; Nothing while the table of orders does not exist yet (01EF-05), the operator then types it.</summary>
+    Public Property NumarOP As Integer?
 
     ''' <summary>The newest date of the invoices: the order of payment cannot be older.</summary>
     Public Property DataMinima As Date?

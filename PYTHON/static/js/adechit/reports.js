@@ -83,7 +83,15 @@ export function bindReports({ fetchOutput, snapshot, report }) {
     if (!k_all.checked && k_now.groupId == null) throw new Error('Alegeți grupa sau bifați «Toate grupele».');
     const k_params = { month: k_now.monthId };
     if (k_all.checked) { k_params.all = '1'; if (k_split.checked) k_params.split = '1'; } else k_params.group = k_now.groupId;
+    if ($('ade-rep-hide-zero').checked) k_params.hide_zero = '1';
     return run('situation', k_params, false, 'Situație lunară');
+  });
+  k_click('ade-rep-month-comparison', () => {
+    const k_now = k_month();
+    if (!k_all.checked && k_now.groupId == null) throw new Error('Alegeți grupa sau bifați «Toate grupele».');
+    const k_params = { month: k_now.monthId };
+    if (k_all.checked) { k_params.all = '1'; if (k_split.checked) k_params.split = '1'; } else k_params.group = k_now.groupId;
+    return run('month-comparison', k_params, false, 'Diferențe între luni consecutive');
   });
   k_click('ade-rep-payment-notice', () => {
     const k_now = k_month();

@@ -44,8 +44,15 @@ Public Class CommandsView
     ' The wipe of a wrongly migrated VERCON database (slice ME01-16): the typed value must be the database name.
     Private Const WipeCommandName As String = "vercon_golire"
 
+    ' Deleting ONE angajament with everything the FX_ tables hold (EF_ untouched); the typed value is the code.
+    ' The analysis (read only) finds what would go; «Șterge angajamentul» deletes it for that code (the delete command only exists behind the button).
+    Private Const AngAnalysisName As String = "angajament_analiza"
+    Private Const DeleteAngName As String = "angajament_stergere"
+    Private Const AngAnalysisBlockTitle As String = "Stergere angajament - analiza"
+    Private Const AngAnalysisCountColumn As String = "randuri de sters"
+
     ' Commands that only exist behind a button, never in the list.
-    Private Shared ReadOnly HiddenCommands As New HashSet(Of String)(StringComparer.Ordinal) From {DdfExplainName, DdfRepairName, LanturiRepairName, ClsfDupRepairName}
+    Private Shared ReadOnly HiddenCommands As New HashSet(Of String)(StringComparer.Ordinal) From {DdfExplainName, DdfRepairName, LanturiRepairName, ClsfDupRepairName, DeleteAngName}
 
     ' The roots of the command list, in the order they are shown. A command is listed under the application it works for; the server
     ' does not say which, so the table below does (a command it does not name goes under NoAppRoot).
@@ -59,6 +66,8 @@ Public Class CommandsView
         {StornoCheckName, "VERCON"},
         {StornoRepairName, "VERCON"},
         {"fisa_angajament", "FOREXE"},
+        {AngAnalysisName, "FOREXE"},
+        {DeleteAngName, "FOREXE"},
         {DdfCheckName, "FOREXE"},
         {LanturiCheckName, "FOREXE"}
     }
@@ -71,6 +80,9 @@ Public Class CommandsView
     Private _fixDb As String = String.Empty
     Private _fixCode As String = String.Empty
     Private _lanturiDb As String = String.Empty
+    Private _delDb As String = String.Empty
+    Private _delCode As String = String.Empty
+    Private _delName As String = String.Empty
 
     Public Sub New()
         InitializeComponent()
@@ -122,6 +134,7 @@ Public Class CommandsView
         {StornoCheckName, "Verifică prețurile cu TVA ale tuturor liniilor storno și bonurilor de retur din baza selectată, în toate gestiunile și exercițiile. Arată sumarul pe gestiune și tip, apoi fiecare diferență cu produsul, documentul, prețul actual și cel propus. Sunt reparabile liniile migrate, nemodificate și active, la care prețul întreg corespunde rotunjirii Access a prețului variantei din aceeași gestiune. Celelalte diferențe rămân pentru analiză. Dacă există cazuri reparabile, apare butonul «Repară», care le corectează pe toate în baza selectată. Verificarea doar citește și cere o singură bază."},
         {StornoRepairName, "Repară toate cazurile eligibile de preț rotunjit la storno și bonuri de retur în baza selectată. Reface verificarea înainte să scrie, recuperează prețul cu TVA din varianta aceleiași gestiuni și actualizează reviziile liniilor și documentelor. Nu adaugă încă o dată TVA și păstrează cantitățile și valorile din antete. Corecțiile au audit cu prețul vechi/nou și o înregistrare în Jurnal; operația este într-o singură tranzacție pentru ambele tipuri. La sfârșit arată liniile corectate și diferențele rămase pentru analiză. Nu se rulează pe <TOATE BAZELE>."},
         {ClsfDupCheckName, "Caută în tabela Clasificatii a bazei alese rândurile repetate (aceeași unitate și același cod Capitol.Subcapitol.Articol.Alineat), de exemplu după ce clasificațiile au fost transferate de mai multe ori. Pentru fiecare rând arată de ce alte tabele este legat (orice coloană IdClsf și orice cheie străină spre Clasificatii) și ce s-ar face cu el: «RAMANE - legat», «RAMANE - nelegat, pastrat din grup», sau «SE STERGE». O legătură doar din Clasificatii_Rectificari sau Clasificatii_Buget nu oprește ștergerea (rândul se șterge odată cu rândurile lui de acolo); o legătură din FX_, EF_ sau orice altă tabelă o oprește. Rezultatul: un sumar (câte grupuri, câte rânduri sunt reparabile, adică nelegate de nimic) și lista rândurilor. Dacă există rânduri reparabile apare butonul «Repară», care șterge DOAR dublurile nelegate, într-o singură tranzacție, cu Jurnal; un grup fără niciun rând legat păstrează unul. Grupurile cu mai multe rânduri legate nu se ating, se analizează de mână. Verificarea doar citește și se poate rula și pe <TOATE BAZELE>; repararea merge pe o bază anume."},
+        {AngAnalysisName, "Arată, pentru codul scris în casetă, ce angajament este (denumirea, descrierea, obiectul și partenerul documentului de fundamentare, starea) și ce s-ar șterge din baza aleasă, tabelă cu tabelă: indicatorii și istoricul, documentele de fundamentare cu reviziile, PDF-urile și rezervările lor, recepțiile, plățile și operațiunile, ordonanțările cu părțile și PDF-urile lor, numerele blocate și corecțiile lui din notele CAB (nota însăși rămâne dacă o mai folosește alt angajament). Spune și ce rămâne: tabelele EF_ (facturile primite) nu se ating; singura excepție inevitabilă sunt legăturile factură–document de fundamentare alese de mână, care pleacă odată cu documentul și rămân scrise în Jurnal; Clasificațiile, partenerii, legăturile Parteneri_Angajamente și extrasele rămân. Analiza doar citește. Dacă codul există, apare butonul «Șterge angajamentul», care cere confirmare cu denumirea și șterge exact ce ați văzut, într-o singură tranzacție (dacă ceva nu merge, nu se șterge nimic); nu se poate anula. Cere o singură bază."},
         {"ping", "Un singur rând pe bază: versiunea MariaDB, contul cu care s-a conectat serverul, charset-ul și collation-ul bazei și timpul de răspuns. Normal: charset utf8mb3, collation utf8mb3_general_ci, un timp de răspuns de câteva zeci de milisecunde. Altceva, sau sute de milisecunde, merită verificat."},
         {"tables", "Lista tuturor tabelelor bazei, cele mai mari primele, cu mărimea în MB, motorul și collation-ul. Numărul de rânduri e doar estimat de server, nu exact. Se citește, nu se schimbă nimic."},
         {"counts", "Numărul exact de rânduri al fiecărei tabele. Tabelele de peste 3 milioane de rânduri rămân pe estimare (nota de sub rezultat spune câte). Pe baze mari poate dura câteva secunde."},
@@ -145,6 +158,7 @@ Public Class CommandsView
         _explainDb = String.Empty
         HideLanturi()
         HideFix()
+        HideDelete()
         Dim k_target As String = If(_context.IsAll, AdminContext.AllDatabasesCaption, _context.SelectedDb)
         Dim k_command As CommandInfo = CurrentCommand()
         'lblDesc.Text = If(k_command Is Nothing, String.Empty, k_command.Description & "   Țintă: " & k_target)
@@ -215,6 +229,7 @@ Public Class CommandsView
             _explainDb = String.Empty
             HideLanturi()
             HideFix()
+            HideDelete()
             txtParam.Visible = k_command.Param <> String.Empty
             Await UiRun.Guard("CommandsView.BtnRun_Click", _context,
                 Async Function()
@@ -227,6 +242,7 @@ Public Class CommandsView
                     ConfigureRepair(k_result, k_command.Name, k_db)
                     ConfigureExplain(k_result, k_command.Name, k_db)
                     ConfigureLanturi(k_result, k_command.Name, k_db)
+                    ConfigureDelete(k_result, k_command.Name, k_db, k_param)
                     _context.Say("Gata.")
                 End Function)
         Catch ex As Exception
@@ -237,6 +253,61 @@ Public Class CommandsView
     Private Sub HideLanturi()
         btnLanturi.Visible = False
         _lanturiDb = String.Empty
+    End Sub
+
+    Private Sub HideDelete()
+        btnDeleteAng.Visible = False
+        _delDb = String.Empty
+        _delCode = String.Empty
+        _delName = String.Empty
+    End Sub
+
+    ''' <summary>After the analysis of ONE code found rows to delete: «Șterge angajamentul» appears, tied to this code and this database. Typing another code hides it.</summary>
+    Private Sub ConfigureDelete(k_result As CommandResult, k_check As String, k_db As String, k_code As String)
+        HideDelete()
+        Dim k_current As CommandInfo = CurrentCommand()
+        If k_check <> AngAnalysisName OrElse _context.IsAll OrElse k_current Is Nothing OrElse k_current.Name <> k_check OrElse _context.SelectedDb <> k_db Then Return
+        If k_result.Blocks.Any(Function(k_b) Not String.Equals(k_b.Db, k_db, StringComparison.OrdinalIgnoreCase)) Then Return
+        If Not HasRepairableRows(k_result, AngAnalysisBlockTitle, AngAnalysisCountColumn) Then Return
+        _delDb = k_db
+        _delCode = k_code
+        _delName = AnalysedName(k_result)
+        btnDeleteAng.Visible = True
+    End Sub
+
+    ''' <summary>The name of the analysed angajament, read from the analysis summary («denumire» column), so the confirmation shows WHAT is deleted, not only the code.</summary>
+    Private Shared Function AnalysedName(k_result As CommandResult) As String
+        For Each k_block As CommandBlock In k_result.Blocks
+            If Not k_block.Title.StartsWith(AngAnalysisBlockTitle, StringComparison.Ordinal) Then Continue For
+            Dim k_column As Integer = k_block.Columns.IndexOf("denumire")
+            If k_column >= 0 AndAlso k_block.Rows.Count > 0 AndAlso k_column < k_block.Rows(0).Count Then Return k_block.Rows(0)(k_column)
+        Next
+        Return String.Empty
+    End Function
+
+    ''' <summary>Deletes the analysed code (FX_ tables, EF_ untouched) after a confirmation that names it; ONE database, ONE code.</summary>
+    Private Async Sub BtnDeleteAng_Click(k_sender As Object, e As EventArgs) Handles btnDeleteAng.Click
+        Try
+            Dim k_db As String = _context.RequireSingleDb("Ștergerea unui angajament")
+            If k_db = String.Empty OrElse _delDb <> k_db OrElse _delCode = String.Empty Then Return
+            Dim k_code As String = _delCode
+            Dim k_label As String = k_code & If(_delName <> String.Empty, " – " & _delName, String.Empty)
+            If Not UiRun.Confirm("Se șterge angajamentul " & k_label & " din baza " & k_db & ", exact ce a arătat analiza: tabelele FX_ ale codului (indicatori, istoric, documente de fundamentare, rezervări, recepții, plăți, ordonanțări, corecții CAB)." & vbLf &
+                                 "Facturile primite (EF_) nu se ating, dar legăturile factură-document de fundamentare alese de mână pleacă odată cu documentul (rămân în Jurnal)." & vbLf &
+                                 "Totul într-o singură tranzacție; dacă ceva nu merge, nu se șterge nimic. Operația NU se poate anula. Continuați?", "Ștergere angajament") Then Return
+            HideDelete()
+            Await UiRun.Guard("CommandsView.BtnDeleteAng_Click", _context,
+                Async Function()
+                    _context.Say("Se șterge «" & k_label & "» din baza " & k_db & "...")
+                    Dim k_started As DateTime = DateTime.Now
+                    Dim k_result As CommandResult = Await _context.Client.CallAsync(Of CommandResult)("command", "--name", DeleteAngName, "--db", k_db, "--param", k_code)
+                    txtOutput.Text = RenderResult(k_result)
+                    lblState.Text = "Șters " & k_label & ". " & (DateTime.Now - k_started).TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture) & " s."
+                    _context.Say("Gata.")
+                End Function)
+        Catch ex As Exception
+            GlobalErrorLog.Write("CommandsView.BtnDeleteAng_Click", ex)
+        End Try
     End Sub
 
     ''' <summary>After the reception-chain check found repairable cases: the code box and «Repară recepțiile» appear, tied to this one command and this database.</summary>
@@ -346,6 +417,7 @@ Public Class CommandsView
     ''' <summary>A button that was earned for one code must not stay when another code is typed.</summary>
     Private Sub TxtParam_TextChanged(k_sender As Object, e As EventArgs) Handles txtParam.TextChanged
         If btnFix.Visible AndAlso Not String.Equals(txtParam.Text.Trim(), _fixCode, StringComparison.Ordinal) Then HideFix()
+        If btnDeleteAng.Visible AndAlso Not String.Equals(txtParam.Text.Trim(), _delCode, StringComparison.Ordinal) Then HideDelete()
     End Sub
 
     ''' <summary>Moves the revisions of the extra headers of the explained code under the main header and deletes the emptied ones; ONE database, ONE code.</summary>

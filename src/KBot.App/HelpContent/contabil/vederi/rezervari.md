@@ -8,15 +8,16 @@ screens: RezervariView, GraficRezervariForm
 keywords: rezervari, rezervare initiala, rezervare definitiva, grafic, plus
 open: view:rezervari
 ---
-<!-- slice: 0014, 0061-02, 0092, 0092-01, 0000-68, 0114-15, 0000-91 -->
+<!-- slice: 0014, 0061-02, 0092, 0092-01, 0000-68, 0114-15, 0000-91, 0114-28 -->
 Rezervările de credite ale angajamentului, pe luni și zile.
 
 <!-- capture: rezervari | caption: Vederea «Rezervări» | goto: view:rezervari | prepare: Selectați un angajament cu mai multe rezervări. | redo: 2026-10-17 21:00 | why: 0114-15: butoanele vederii (Grafice, document, Repara) sunt in ribbon, nu in arbore; 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 - **Arborele**: lunile, apoi zilele cu tipul rezervării (inițială, modificare...). Rezervarea
   inițială apare o singură dată, în ziua în care a devenit definitivă.
-- **Grila**: câte un rând pe clasificație, cu creditul bugetar și valorile rezervării (inițială,
-  valoare, definitivă).
+- **Grila**: câte un rând pe clasificație, cu **codul indicatorului** chiar după clasificație,
+  apoi creditul bugetar și valorile rezervării (inițială, valoare, definitivă). Dacă aceeași
+  clasificație are mai mulți indicatori, fiecare apare pe rândul lui.
 - Semnul **«+»** de pe o rezervare pentru care nu există încă document de fundamentare pornește
   documentul pentru ea — vezi [Documentul de fundamentare](topic:contabil.ddf).
 

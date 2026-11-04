@@ -1,5 +1,53 @@
 # ADE.Migrator — utilizare
 
+<!-- slice: AD19-02 -->
+
+## Solduri reportate separat după o migrare din 2021
+
+Pentru copiii care existau în 2020 și continuă în 2021, dar au fost migrați numai începând cu 2021, folosiți **Solduri reportate 2020 → 2021 (migrare existentă)...**. SI existent se păstrează. Componenta aferentă anilor omiși se salvează separat în `AD_SOLDURI_REPORTATE`; nu se reia migrarea. Această variantă înlocuiește proiectarea AD19-01 care ar fi rescris SI.
+
+### Pregătire și utilizare
+
+1. Aplicați manual `sql/AD_19_02_solduri_reportate.sql` pe AVACONT_SURSA, apoi propagați schema către baza unității prin sincronizarea existentă. Publicați și codul Python AD19-02 care citește componenta. Migratorul refuză transferul dacă tabelul nu există; aplicațiile nu îl creează automat.
+2. Alegeți MDB-ul complet cu 2020 și 2021, cu aceleași ID-uri Access ca sursa migrării existente. Completați DC destinație, numele exact al subunității existente și conexiunea. Schimbarea fișierului poate goli DC-ul/subunitatea; completați-le din nou.
+3. Apăsați **Solduri reportate 2020 → 2021 (migrare existentă)...**. Nu este necesar planul complet prin Citește sau acceptarea unei destinații goale prin Testează. Fereastra pregătește o previzualizare numai prin citire.
+4. Examinați, pentru fiecare copil, **SI existent (păstrat)**, **Reportat existent**, **Reportat propus**, **Diferență**, **SI + reportat**, **Originea soldului** și **Stare / motiv**. Pozitiv înseamnă debit; negativ înseamnă credit. Reportat existent gol înseamnă că înregistrarea separată încă nu există.
+5. Apăsați **Salvează reportările**. Confirmarea arată numărul copiilor și destinația. Numai rândurile **De aplicat** sunt salvate; cele corecte, omise sau blocate nu se scriu. Succesul este indicat prin **COMMIT confirmat**. Pentru recitire, folosiți **Previzualizează**.
+
+<!-- slice: AD19-03 -->
+
+**Doar copiii nerezolvați** este bifat implicit în fereastra soldurilor reportate. Păstrează rândurile **De aplicat**, **Omise** și **Blocate**, cu explicația din **Stare / motiv**. Ascunde reportările deja corecte și cazurile fără sold suplimentar de reportat. Debifați pentru lista completă. După COMMIT confirmat, rândurile aplicate sunt ascunse de acest filtru; pot fi văzute din nou prin debifare. Filtrul schimbă numai afișarea; toate rândurile De aplicat din previzualizare participă la salvare. Rezumatul arată totalul copiilor, numărul afișat, numărul nerezolvat și câte rânduri sunt de aplicat ori omise/blocate. Starea «rezolvat» se referă la transferul soldului reportat, nu la absența tuturor diferențelor dintre situațiile lunare.
+
+<!-- slice: AD19-04 -->
+
+Pentru copilul existent în Platitori din MDB, reportul calculat din SI și mișcările anterioare lui 2021 nu mai este validat prin comparație cu prima situație salvată din 2021. Neconcordanțele istorice, inclusiv cele produse de anulări ulterioare salvării, nu mai blochează acest transfer. Situațiile salvate își păstrează valorile originale. Restul validărilor, formulele și migrarea completă rămân neschimbate. AD19-03 și AD19-04 sunt scrise local, necompilate și netestate.
+
+<!-- slice: AD19-02 -->
+
+Se inserează sau se înlocuiește o singură înregistrare pe subunitate/copil/an de început, cu sold semnat și proveniența MDB. Repetarea nu adună valoarea încă o dată. Un report propus zero fără înregistrare existentă nu generează un rând inutil. SI existent, versiunea copilului, situațiile salvate, documentele, harta ID-urilor și seria chitanțelor nu se modifică. Jurnalul SQL este în `Jurnale/ADE-SI/<DC>/<data_ora>/`, lângă executabil.
+
+Calculul lunar folosește **SI existent + sold reportat + contracte − plăți + restituiri**. Componenta este aplicabilă din 2021 și intră o singură dată în soldul inițial calculat al fiecărei luni. Fișa cont ADECHIT/K-BOT și fișa părinților păstrează rândul inițial existent și afișează distinct **Sold reportat din anii anteriori**, la începutul anului 2021. Rapoartele deja generate trebuie regenerate. Situațiile salvate ale lunilor închise rămân cele existente.
+
+### Calcul și asociere
+
+Sunt eligibili numai copiii cu prezență sau situație salvată atât în 2020, cât și în 2021 în MDB. Asocierea folosește `AD_IdMap` pentru Platitori, în subunitatea aleasă, și verifică numele/CNP-ul. Nu se asociază automat după nume și nu se presupune egalitatea ID-urilor Access/MariaDB. Copilul trebuie să aibă prezență în destinație în 2021.
+
+Se determină soldul complet înainte de 2021: SI din Access + contracte anterioare − plăți neanulate anterioare + restituiri neanulate anterioare, după ordinea lunilor Access și conversia Access Long. Din rezultat se scade SI de bază al copilului: numai diferența este reportată separat, fără dublarea SI. Restituirile fără IDL folosesc luna prezenței legate. Dacă există istoric anterior lui 2020, acesta participă la soldul complet înainte de 2021; selecția copiilor rămâne strict 2020 și 2021.
+
+<!-- slice: AD19-04 -->
+
+Pentru un copil dispărut din Platitori în MDB, soldul poate fi recuperat din SID−SIC al primei situații salvate unice din 2021, scăzând mișcările anterioare din 2021. Se acceptă automat numai dacă SI existent este zero, cum a fost reconstruit de migrator. Această recuperare și validările ei rămân neschimbate. Pentru copilul existent în Platitori se folosește calculul din SI și mișcări; prima situație salvată nu mai este un control de concordanță.
+
+### Blocaje și tranzacție
+
+Destinația trebuie să fie o subunitate activă existentă, cu luni din 2021 și fără luni anterioare deja importate. Prima lună din 2021 trebuie să coincidă cu sursa. Operația nu completează perioade lipsă din interiorul lui 2021.
+
+Lipsa hărții, identitatea neconcordantă, mai multe ID-uri sursă pentru același copil, lipsa prezenței în 2021 în destinație, soldurile imposibil de stabilit și mișcările relevante fără lună sunt explicate pe rând. Dacă SI existent diferă de baza din MDB, rândul este blocat: trebuie clarificat dacă reportul a fost inclus deja în SI. Nicio corectare automată a SI nu este executată.
+
+MDB-ul este controlat prin SHA-256 înainte și după citire. Înainte de aplicare se reface previzualizarea sub blocările existente și se compară cu cea aprobată. Schimbările de sursă sau destinație cer recitire. Rândurile eligibile sunt salvate într-o singură tranzacție; erorile înainte de COMMIT anulează lotul. Dacă rezultatul COMMIT sau rollback nu este confirmat, sunt necesare recitirea soldurilor și clarificarea rezultatului înainte de reluare.
+
+Stare AD19-02: **SCRIS LOCAL, NECOMPILAT, NETESTAT, NEPUBLICAT**. DDL-ul este numai pregătit ca fișier; nu s-a executat pe nicio bază. Sunt necesare aplicarea/sincronizarea lui, publicarea codului Python și compilarea/distribuirea migratorului.
+
 <!-- slice: ADE10-08 -->
 
 **Chitanțe pe ani școlari și jurnal rapid.** Dublurile se caută numai în interiorul aceluiași an școlar; același număr în ani diferiți nu mai blochează migrarea (cheia nouă, AD_13). Caseta «Jurnal de operații și erori» taie o intrare la 4000 de caractere, scrie cel mult 20 de constatări una câte una (restul sunt în «Conversii și constatări») și își scoate liniile cele mai vechi peste 400000 de caractere, ca să nu încetinească când sunt mii de constatări. Butonul **Încarcă logul erorilor** rămâne necenzurat. Build curat; NETESTAT, NERULAT. În bazele unităților, sincronizarea de structură adaugă coloana `AnScolar` și creează cheia nouă (cere `schema_diff.py` corectat pe server).

@@ -11,15 +11,15 @@ Imports KBot.Controls
 Imports KBot.Domain
 Imports KBot.Theming
 
-' Slice 01EF-02 -- the first view of the bar, «Contari» (window with all the invoices only): while it is the shown view the tree has tick boxes (on the invoices and on the
-' suppliers); the invoices of ONE supplier can be ticked at a time (a tick on another supplier takes the others off); every change of the ticks, of the classification, of the
-' templates or of a value to pay asks the server to calculate again and the page shows the answer. Nothing is saved yet (01EF-04/05).
+' Slice 01EF-02 / 01EF-07 -- the first view of the bar, «Contari» (window with all the invoices only). It starts from the menu of an invoice, «Adaugă operații contabile»: that
+' invoice is ticked, the page is filled with it and ONLY the other invoices of the same supplier get a tick box (the suppliers have none). At least one invoice stays ticked
+' («Renunță» takes all off). Every change of the ticks, of the classification, of the templates or of a value to pay asks the server to calculate again and the page shows the answer.
 Partial Public Class PrimiteView
 
     Private Const ViewContare As String = "contare"
 
-    Private Const ContareGoala As String = "Bifați în arbore facturile aceluiași furnizor."
-    Private Const ContareUnFurnizor As String = "Se pot alege facturi ale unui singur furnizor odată: bifele celorlalți furnizori au fost scoase."
+    Private Const ContareGoala As String = "Clic dreapta pe o factură și alegeți «Adaugă operații contabile»."
+    Private Const ContareUnaMacar As String = "Trebuie să rămână bifată cel puțin o factură. Pentru a renunța la tot, folosiți «Renunță»."
 
     Private _contare As Boolean
     Private _contareSeq As Integer
@@ -92,6 +92,44 @@ Partial Public Class PrimiteView
         Next
     End Sub
 
+    ' The tick box of an invoice is drawn only while «Contari» is the shown view and only for the invoices of the supplier being booked.
+    Private Function ContareBox(k_p As EFacturaPrimita) As Boolean
+        Return _contare AndAlso _contareSupplier.Length > 0 AndAlso String.Equals(SupplierKey(k_p), _contareSupplier, StringComparison.Ordinal)
+    End Function
+
+    ' Puts the tick boxes (back) on the leaves without rebuilding the tree: the supplier changed or went away.
+    Private Sub ApplyContareBoxes()
+        For Each k_pair As KeyValuePair(Of Integer, AdvancedTreeControl.TreeItem) In _nodes
+            Dim k_p As EFacturaPrimita = TryCast(k_pair.Value.Tag, EFacturaPrimita)
+            k_pair.Value.HasCheckBox = k_p IsNot Nothing AndAlso ContareBox(k_p)
+        Next
+        tree.Invalidate()
+    End Sub
+
+    ''' <summary>
+    ''' The menu «Adaugă operații contabile» of an invoice (slice 01EF-07): anything ticked before is dropped, this invoice becomes the only tick, its supplier is the one being
+    ''' booked, the page «Contări» is shown and filled, and the other invoices of the supplier get their tick boxes. UI boundary: logs and swallows.
+    ''' </summary>
+    Private Async Function StartContareAsync(k_p As EFacturaPrimita) As Task
+        Try
+            ClearTicks()
+            _tickedIds.Add(k_p.IdPrimita)
+            _contareSupplier = SupplierKey(k_p)
+            If Not _contare Then
+                ' The page comes on screen: the tree is rebuilt with the boxes and the tick, and the page asks for the calculation (SetContareMode).
+                navDetaliu.SelectedKey = ViewContare
+                ShowPage(ViewContare)
+                Return
+            End If
+            ApplyContareBoxes()
+            RestoreTicks()
+            tree.Invalidate()
+            Await RefreshContareAsync().ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrimiteView.StartContareAsync", ex)
+        End Try
+    End Function
+
     Private Function SubunitInForce() As Integer?
         Return If(_subunitHost Is Nothing, CType(Nothing, Integer?), _subunitHost.CurrentSubunitId)
     End Function
@@ -103,6 +141,7 @@ Partial Public Class PrimiteView
         _contareSupplier = String.Empty
         ResetContareChoices()
         pgContare.ShowEmpty(ContareGoala)
+        ApplyContareBoxes()
     End Sub
 
     Private Sub ResetContareChoices()
@@ -123,46 +162,36 @@ Partial Public Class PrimiteView
         Return If(k_p Is Nothing, String.Empty, SupplierKey(k_p))
     End Function
 
-    ' Only one supplier can be ticked: when a tick brought a second one, the NEWLY ticked supplier stays and the ticks of the others are taken off.
-    ' Returns True when ticks were taken off.
-    Private Function KeepOneSupplier(k_ticked As List(Of Integer)) As Boolean
-        Dim k_keys As List(Of String) = k_ticked.Select(AddressOf SupplierOfInvoice).Distinct(StringComparer.Ordinal).ToList()
-        If k_keys.Count <= 1 Then Return False
-        Dim k_keep As String = k_keys.FirstOrDefault(Function(k_x) Not String.Equals(k_x, _contareSupplier, StringComparison.Ordinal))
-        If k_keep Is Nothing Then k_keep = k_keys(0)
-        _treeLoading = True
-        Try
-            For Each k_id As Integer In k_ticked
-                If Not String.Equals(SupplierOfInvoice(k_id), k_keep, StringComparison.Ordinal) Then
-                    tree.SetItemCheckState(_nodes(k_id), AdvancedTreeControl.TreeCheckState.Unchecked)
-                End If
-            Next
-        Finally
-            _treeLoading = False
-        End Try
-        Return True
-    End Function
-
-    ' UI boundary (async Sub): a tick changed (on an invoice, or on a supplier that ticks all its invoices).
+    ' UI boundary (async Sub): a tick changed (an invoice of the supplier being booked was ticked or unticked): the evidence grid gets (or loses) its row.
     Private Async Sub Tree_NodeChecked(k_node As AdvancedTreeControl.TreeItem) Handles tree.NodeChecked
         Try
             If _treeLoading OrElse Not _contare Then Return
             Dim k_ticked As List(Of Integer) = TickedNow()
-            Dim k_removed As Boolean = KeepOneSupplier(k_ticked)
-            If k_removed Then k_ticked = TickedNow()
+            If k_ticked.Count = 0 Then
+                ' At least one invoice stays ticked: the tick that was just taken off is put back.
+                _treeLoading = True
+                Try
+                    tree.SetItemCheckState(k_node, AdvancedTreeControl.TreeCheckState.Checked)
+                Finally
+                    _treeLoading = False
+                End Try
+                ntfMesaj.Show(ContareUnaMacar, NoticeKind.Warning)
+                ntfMesaj.Visible = True
+                Return
+            End If
             _tickedIds.Clear()
             For Each k_id As Integer In k_ticked
                 _tickedIds.Add(k_id)
             Next
             _contarePartnerAsked = False   ' a new set of ticks: an unresolved partner is asked again
-            Await RefreshContareAsync(If(k_removed, ContareUnFurnizor, String.Empty)).ConfigureAwait(True)
+            Await RefreshContareAsync().ConfigureAwait(True)
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteView.Tree_NodeChecked", ex)
         End Try
     End Sub
 
     ''' <summary>Asks the server for the calculation of the ticked invoices and puts it on the page; a failure becomes a line on the page and in the notice. Never throws.</summary>
-    Private Async Function RefreshContareAsync(Optional k_note As String = "") As Task
+    Private Async Function RefreshContareAsync() As Task
         Try
             Dim k_ids As List(Of Integer) = _tickedIds.Where(Function(k_id) _nodes.ContainsKey(k_id)).OrderBy(Function(k_id) k_id).ToList()
             If k_ids.Count = 0 Then
@@ -170,6 +199,7 @@ Partial Public Class PrimiteView
                 _contareSupplier = String.Empty
                 ResetContareChoices()
                 pgContare.ShowEmpty(ContareGoala)
+                ApplyContareBoxes()
                 Return
             End If
             Dim k_supplier As String = SupplierOfInvoice(k_ids(0))
@@ -204,10 +234,6 @@ Partial Public Class PrimiteView
             Next
             _contareUltim = k_answer
             pgContare.ShowResult(k_answer)
-            If k_note.Length > 0 Then
-                ntfMesaj.Show(k_note, NoticeKind.Warning)
-                ntfMesaj.Visible = True
-            End If
         Catch ex As OperationCanceledException
             ' The host was closed.
         Catch ex As ApiException
@@ -245,7 +271,11 @@ Partial Public Class PrimiteView
 
     Private Async Sub PgContare_SablonAles(k_fel As String, k_idSablon As Integer) Handles pgContare.SablonAles
         Try
-            If String.Equals(k_fel, "E", StringComparison.Ordinal) Then _contareE = k_idSablon Else _contareP = k_idSablon
+            If String.Equals(k_fel, "E", StringComparison.Ordinal) Then
+                _contareE = k_idSablon
+            Else
+                _contareP = If(k_idSablon > 0, CType(k_idSablon, Integer?), Nothing)   ' 0 = the payment template was taken off: no order of payment
+            End If
             Await RefreshContareAsync().ConfigureAwait(True)
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteView.PgContare_SablonAles", ex)
@@ -296,6 +326,10 @@ Partial Public Class PrimiteView
                 Dim k_text As String = String.Join(Environment.NewLine & Environment.NewLine, k_confirm.Select(Function(k_a) k_a.Text)) &
                                        Environment.NewLine & Environment.NewLine & "Continuați cu salvarea?"
                 If KBotMessage.Show(FindForm(), k_text, "Contări", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then Return
+            End If
+            If pgContare.PlataActiva Then
+                If KBotMessage.Show(FindForm(), "Plata nu se înregistrează încă: se salvează doar evidențierea facturilor. Continuați?", "Contări",
+                                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
             End If
             Dim k_noteValid As Boolean
             Dim k_note As Integer? = pgContare.NotaAleasa(k_noteValid)

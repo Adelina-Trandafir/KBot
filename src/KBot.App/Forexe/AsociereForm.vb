@@ -376,7 +376,7 @@ Public Class AsociereForm
                 ' nu există în bază, deci poartă același semn ca una născută de descărcare.
                 nod.Italic = rec.RandReceptie.HasValue OrElse EsteReceptieNoua(rec)
                 ColoreazaReceptia(nod, rec)
-                nod.Tooltip = TooltipReceptie(rec, lant)
+                nod.Tooltip = TooltipReceptieTabel(rec, lant)
                 _nodReceptie(rec.Idrr) = nod
 
                 For Each inst As InstantaneuLegat In lant
@@ -415,6 +415,7 @@ Public Class AsociereForm
             Next
 
             ColoreazaRosuLanturileNeinchise()
+            ColoreazaAvertismentele()
 
             ' O recepție pornită aici, dar încă nescriibilă, oprește salvarea ÎNTREAGĂ: serverul
             ' refuză tot pachetul, nu doar recepția cu pricina. Se spune înainte, și se spune ce
@@ -880,6 +881,107 @@ Public Class AsociereForm
         If paleta Is Nothing Then Return Color.Empty
         If inst.Blocat OrElse EsteIgnorat(inst.Idrh) Then Return paleta.DisabledTextColor
         Return Color.Empty
+    End Function
+
+    ''' <summary>
+    ''' The tooltip of a receipt row in the tree, as a table like the one of the main tree: what the receipt is, then one
+    ''' block per colour its rows have: EROARE (red) and AVERTISMENT (orange). A row that stays black says nothing here
+    ''' (operator, 04.11.2026). The plain <see cref="TooltipReceptie"/> stays for the bands, which do not read tables.
+    ''' </summary>
+    Private Function TooltipReceptieTabel(k_rec As ReceptiePropusa, k_lant As List(Of InstantaneuLegat)) As String
+        Try
+            Dim k_paleta As ThemePalette = ThemeManager.Current?.Palette
+            Dim k_rosu As String = If(k_paleta Is Nothing, Nothing, HexCuloare(k_paleta.ErrorColor))
+            Dim k_portocaliu As String = If(k_paleta Is Nothing, Nothing, HexCuloare(k_paleta.WarningColor))
+            Dim k_sb As New Text.StringBuilder()
+            Dim k_noua As Boolean = EsteReceptieNoua(k_rec)
+
+            k_sb.Append("<table><header>")
+            CelulaTooltip(k_sb, "Recepție", Nothing, True)
+            CelulaTooltip(k_sb, EtichetaReceptiei(k_rec), Nothing, True)
+            k_sb.Append("</header>")
+
+            If k_noua Then
+                RandTooltip(k_sb, "Stare", "pornită de dumneavoastră, încă nescrisă în bază", Nothing, False)
+                RandTooltip(k_sb, "Data ei", $"{k_rec.DataR:dd.MM.yyyy} — cel mai vechi instantaneu al lanțului", Nothing, False)
+                RandTooltip(k_sb, "Se va scrie", If(k_rec.Sters,
+                    "ca recepție reconstituită și ȘTEARSĂ — ultimul instantaneu e rândul ei de ștergere",
+                    "ca recepție reconstituită, NEȘTEARSĂ; dacă a fost ștearsă, marcați ultimul instantaneu «Este rândul de ștergere»"),
+                    Nothing, False)
+            ElseIf k_rec.RandReceptie.HasValue Then
+                RandTooltip(k_sb, "Stare", "NOUĂ, din descărcarea curentă", Nothing, False)
+            End If
+            RandTooltip(k_sb, If(k_noua AndAlso k_rec.Sters, "Valoarea la ștergere", "Valoare acum"), Bani(k_rec.SumaAntet), Nothing, False)
+            If k_lant.Count > 0 Then
+                Dim k_ultimul As InstantaneuLegat = k_lant.Last()
+                RandTooltip(k_sb, "Ultimul instantaneu", $"{k_ultimul.DataH:dd.MM.yyyy} · {Bani(k_ultimul.Total)}", Nothing, False)
+            Else
+                RandTooltip(k_sb, "Instantanee", "nu are niciunul", Nothing, False)
+            End If
+            If k_rec.ReconstituitNesigur Then
+                RandTooltip(k_sb, "Reconstituire nesigură", "gruparea a fost o judecată, nu o verificare", Nothing, False)
+            End If
+
+            ' EROARE (red): what paints the receipt row and its last snapshot red.
+            If k_noua Then
+                Dim k_problema As String = ProblemaUneiReceptiiNoi(k_rec, k_lant)
+                If k_problema <> String.Empty Then RandTooltip(k_sb, "EROARE", k_problema, k_rosu, True)
+            End If
+            If k_lant.Count > 0 Then
+                Dim k_ultim As InstantaneuLegat = k_lant.Last()
+                If Not EsteStergere(k_ultim.Idrh) AndAlso
+                   Math.Round(k_ultim.Total, 2) <> Math.Round(k_rec.SumaAntet, 2) Then
+                    RandTooltip(k_sb, "EROARE", "Lanțul nu se închide: ultimul instantaneu nu are valoarea recepției", k_rosu, True)
+                    RandTooltip(k_sb, "Ultimul instantaneu", $"{k_ultim.DataH:dd.MM.yyyy HH:mm} · {Bani(k_ultim.Total)}", k_rosu, False)
+                    RandTooltip(k_sb, "Valoarea recepției", Bani(k_rec.SumaAntet), k_rosu, False)
+                End If
+            End If
+
+            ' AVERTISMENT (orange): snapshots whose receipt has values on other indicators.
+            Const k_maxRanduri As Integer = 8
+            Dim k_cuLipsuri As New List(Of Tuple(Of InstantaneuLegat, List(Of String)))()
+            For Each k_inst As InstantaneuLegat In k_lant
+                Dim k_lipsa As List(Of String) = IndicatoriLipsa(k_rec, k_inst)
+                If k_lipsa.Count > 0 Then k_cuLipsuri.Add(Tuple.Create(k_inst, k_lipsa))
+            Next
+            If k_cuLipsuri.Count > 0 Then
+                RandTooltip(k_sb, "AVERTISMENT", "recepția are valori pe indicatori care lipsesc din instantaneu", k_portocaliu, True)
+                For Each k_pereche As Tuple(Of InstantaneuLegat, List(Of String)) In k_cuLipsuri.Take(k_maxRanduri)
+                    RandTooltip(k_sb, $"{k_pereche.Item1.DataH:dd.MM.yyyy HH:mm}", "lipsesc: " & String.Join(", ", k_pereche.Item2), k_portocaliu, False)
+                Next
+                If k_cuLipsuri.Count > k_maxRanduri Then
+                    RandTooltip(k_sb, $"… și încă {k_cuLipsuri.Count - k_maxRanduri}", String.Empty, k_portocaliu, False)
+                End If
+            End If
+
+            k_sb.Append("</table>")
+            Return k_sb.ToString()
+        Catch ex As Exception
+            GlobalErrorLog.Write("AsociereForm.TooltipReceptieTabel", ex)
+            Return TooltipReceptie(k_rec, k_lant)
+        End Try
+    End Function
+
+    ' One <row> of the table tooltip. A row without a value is left out unless it is a block title or has a colour.
+    Private Shared Sub RandTooltip(k_sb As Text.StringBuilder, k_eticheta As String, k_valoare As String,
+                                   k_culoare As String, k_titlu As Boolean)
+        If String.IsNullOrWhiteSpace(k_valoare) AndAlso Not k_titlu AndAlso k_culoare Is Nothing Then Return
+        k_sb.Append("<row>")
+        CelulaTooltip(k_sb, k_eticheta, k_culoare, k_titlu)
+        CelulaTooltip(k_sb, k_valoare, k_culoare, False)
+        k_sb.Append("</row>")
+    End Sub
+
+    Private Shared Sub CelulaTooltip(k_sb As Text.StringBuilder, k_text As String, k_culoare As String, k_gros As Boolean)
+        k_sb.Append("<cell Align=""left""")
+        If k_gros Then k_sb.Append(" Bold=""1""")
+        If Not String.IsNullOrEmpty(k_culoare) Then k_sb.Append(" ForeColor=""").Append(k_culoare).Append(""""c)
+        k_sb.Append(">"c).Append(System.Security.SecurityElement.Escape(If(k_text, String.Empty))).Append("</cell>")
+    End Sub
+
+    ' "#RRGGBB" for the table tooltip (the parser takes this form).
+    Private Shared Function HexCuloare(k_culoare As Color) As String
+        Return $"#{k_culoare.R:X2}{k_culoare.G:X2}{k_culoare.B:X2}"
     End Function
 
     Private Function TooltipReceptie(rec As ReceptiePropusa, lant As List(Of InstantaneuLegat)) As String
@@ -1603,7 +1705,12 @@ Public Class AsociereForm
                 Dim inst As InstantaneuLegat = TryCast(rand.Nod.Tag, InstantaneuLegat)
                 rand.Nod.NodeForeColor = If(inst Is Nothing, Color.Empty, CuloareDeBaza(inst))
             Next
+            ' Operator, 04.11.2026: the chart colours go on the tree rows ONLY while the chart or the bands are
+            ' looked at (the window «Grafice si benzi» is open). Without them a colour on a row binds it to nothing
+            ' and only passes for a state, so the rows stay on their base colour.
+            Dim k_dinGrafic As Boolean = ArataCuloriDinGrafic()
             For Each serie As KBotChartSeries In grafic.Series
+                If Not k_dinGrafic Then Exit For
                 If String.Equals(serie.Key, SERIA_TOTAL, StringComparison.Ordinal) Then Continue For
 
                 ' The whole-commitment view: the line names the receipt, so the ROOT row takes it.
@@ -1629,8 +1736,10 @@ Public Class AsociereForm
                 Next
             Next
 
-            ' LAST, so nothing above (chart colours, dimmed rows) can override it.
+            ' LAST, so nothing above (chart colours, dimmed rows) can override it. Red first, then orange
+            ' (the orange never takes a row the red already has).
             ColoreazaRosuLanturileNeinchise()
+            ColoreazaAvertismentele()
 
             AplicaCulorileBenzii(benzi, _bandaReceptie)
 
@@ -1660,6 +1769,72 @@ Public Class AsociereForm
             If _nodReceptie.TryGetValue(rec.Idrr, nodR) Then nodR.NodeForeColor = paleta.ErrorColor
             Dim randH As RandDeArbore = Nothing
             If _nodInstantaneu.TryGetValue(ultimul.Idrh, randH) Then randH.Nod.NodeForeColor = paleta.ErrorColor
+        Next
+    End Sub
+
+    ''' <summary>
+    ''' True while the chart or the bands are looked at: the window «Grafice si benzi» is open (they live in a hidden
+    ''' panel otherwise). Only then do the rows of the tree carry the colour of their line / point.
+    ''' </summary>
+    Private Function ArataCuloriDinGrafic() As Boolean
+        Return _fereastraGrafice IsNot Nothing
+    End Function
+
+    ''' <summary>
+    ''' The indicators of a list of lines that carry a value: summed per indicator, WITHOUT the ones left on zero. A zero
+    ''' is not money, on either side (same rule as the server's <c>_valori_pe_indicator</c>, F15).
+    ''' </summary>
+    Private Shared Function IndicatoriCuValoare(k_linii As IEnumerable(Of Tuple(Of String, Double))) As HashSet(Of String)
+        Dim k_sume As New Dictionary(Of String, Double)(StringComparer.OrdinalIgnoreCase)
+        For Each k_linie As Tuple(Of String, Double) In k_linii
+            If String.IsNullOrEmpty(k_linie.Item1) Then Continue For
+            Dim k_curent As Double = 0
+            k_sume.TryGetValue(k_linie.Item1, k_curent)
+            k_sume(k_linie.Item1) = k_curent + k_linie.Item2
+        Next
+        Dim k_rezultat As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+        For Each k_pereche As KeyValuePair(Of String, Double) In k_sume
+            If Math.Round(k_pereche.Value, 2) <> 0 Then k_rezultat.Add(k_pereche.Key)
+        Next
+        Return k_rezultat
+    End Function
+
+    ''' <summary>
+    ''' The indicators on which the receipt has a value and the snapshot has none (operator, 04.11.2026: the snapshot
+    ''' sits on a receipt that carries other indicators than it does). An indicator on zero counts for nothing, on either
+    ''' side. Empty for a deleted receipt, for a deletion row and for a receipt started here (no lines yet).
+    ''' </summary>
+    Private Function IndicatoriLipsa(k_rec As ReceptiePropusa, k_inst As InstantaneuLegat) As List(Of String)
+        Dim k_lipsa As New List(Of String)()
+        If k_rec Is Nothing OrElse k_inst Is Nothing Then Return k_lipsa
+        If k_rec.Sters OrElse EsteStergere(k_inst.Idrh) Then Return k_lipsa
+
+        Dim k_peReceptie As HashSet(Of String) = IndicatoriCuValoare(
+            k_rec.Rhr.Select(Function(k_l) Tuple.Create(k_l.CodIndicator, k_l.Valoare)))
+        Dim k_peInstantaneu As HashSet(Of String) = IndicatoriCuValoare(
+            k_inst.Linii.Select(Function(k_l) Tuple.Create(k_l.CodIndicator, k_l.Valoare)))
+        For Each k_cod As String In k_peReceptie
+            If Not k_peInstantaneu.Contains(k_cod) Then k_lipsa.Add(k_cod)
+        Next
+        k_lipsa.Sort(StringComparer.OrdinalIgnoreCase)
+        Return k_lipsa
+    End Function
+
+    ''' <summary>
+    ''' ORANGE = AVERTISMENT (operator, 04.11.2026): a snapshot whose receipt has values on indicators the snapshot does
+    ''' not have. Written in the warning colour of the theme, but never over a row the red already took (an ERROR wins).
+    ''' </summary>
+    Private Sub ColoreazaAvertismentele()
+        Dim k_paleta As ThemePalette = ThemeManager.Current?.Palette
+        If k_paleta Is Nothing OrElse _stare Is Nothing Then Return
+        For Each k_rec As ReceptiePropusa In Receptiile()
+            For Each k_inst As InstantaneuLegat In LantulReceptiei(k_rec)
+                If IndicatoriLipsa(k_rec, k_inst).Count = 0 Then Continue For
+                Dim k_rand As RandDeArbore = Nothing
+                If Not _nodInstantaneu.TryGetValue(k_inst.Idrh, k_rand) Then Continue For
+                If k_rand.Nod.NodeForeColor = k_paleta.ErrorColor Then Continue For
+                k_rand.Nod.NodeForeColor = k_paleta.WarningColor
+            Next
         Next
     End Sub
 
@@ -2310,6 +2485,8 @@ Public Class AsociereForm
             Using f As New GraficeAsociereForm(Me, pnlGrafice, pnlCard, treeLant, SplitStanga.Panel1)
                 _fereastraGrafice = f
                 Try
+                    ' The chart colours come back on the rows from now on (see SincronizeazaCulorile).
+                    SincronizeazaCulorile()
                     f.ShowDialog(Me)
                 Finally
                     ' În `Finally`, nu după: dacă fereastra cade, referința rămâne la un formular

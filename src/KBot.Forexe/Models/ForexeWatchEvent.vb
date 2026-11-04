@@ -62,7 +62,7 @@ Public Class ForexeWatchEvent
     ''' <summary>
     ''' Slice 0076: what the save was about, as the page sent it (its "data" object, JSON
     ''' text); empty when there is none. A reception: <c>{dataReceptie, rowDate, formDate}</c>
-    ''' (dates as zz/ll/aaaa). A reservation: <c>{indicator, indicatorCod, buget}</c> - the
+    ''' (dates as zz/ll/aaaa). A reservation: <c>{indicator, indicatorCod, buget, motiv}</c> (slice 0127: <c>motiv</c> = the reason typed in the motive window, without the marker) - the
     ''' indicator's row of the tab0 table and its budget table, read the way ScrapeTable reads
     ''' them. The shell parses it; this layer only carries it.
     ''' </summary>

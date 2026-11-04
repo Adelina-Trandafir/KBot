@@ -394,6 +394,7 @@ Public Class AdechitRapoarteForm
         Dim k_account As Boolean = If(chkToti.Checked, SelectedGroup() IsNot Nothing, SelectedChild() IsNot Nothing)
         Dim k_free As Boolean = Not _busy AndAlso SelectedSubunit() IsNot Nothing
         btnSituatie.Enabled = k_free AndAlso k_month AndAlso k_groupOrAll
+        btnComparatie.Enabled = k_free AndAlso k_month AndAlso k_groupOrAll
         btnPlata.Enabled = k_free AndAlso k_month AndAlso k_groupOrAll
         btnCasa.Enabled = k_free AndAlso k_dates
         btnBanca.Enabled = k_free AndAlso k_dates
@@ -421,9 +422,20 @@ Public Class AdechitRapoarteForm
         Try
             Dim k_params As New Dictionary(Of String, String) From {{"month", NumText(SelectedMonth().Id)}}
             AddGroupScope(k_params, chkSepara.Checked)
+            If chkFaraZero.Checked Then k_params("hide_zero") = "1"
             Await ShowReportAsync(AdechitReportKind.Situation, k_params).ConfigureAwait(True)
         Catch ex As Exception
             GlobalErrorLog.Write("AdechitRapoarteForm.BtnSituatie_Click", ex)
+        End Try
+    End Sub
+
+    Private Async Sub BtnComparatie_Click(sender As Object, e As EventArgs) Handles btnComparatie.Click
+        Try
+            Dim k_params As New Dictionary(Of String, String) From {{"month", NumText(SelectedMonth().Id)}}
+            AddGroupScope(k_params, chkSepara.Checked)
+            Await ShowReportAsync(AdechitReportKind.MonthComparison, k_params).ConfigureAwait(True)
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdechitRapoarteForm.BtnComparatie_Click", ex)
         End Try
     End Sub
 

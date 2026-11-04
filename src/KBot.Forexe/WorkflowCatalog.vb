@@ -59,6 +59,12 @@ Namespace KBot.Forexe
         ' the operator fills the form by hand in the «Browser FOREXE» view.
         Public Const AngajamentNouFile As String = "adlop - Angajament Nou.wfl"
 
+        ' Slice 0097-07: the flow run right after the operator SAVED that new angajament. It starts on
+        ' the page the operator is on and reads only what an angajament in the state «Initial»
+        ' has: header, indicators with their budget, history. No list download before it, no
+        ' search for the receptions tab or the dates a not-yet-running angajament cannot have.
+        Public Const PrelucrareAngajamentNouFile As String = "adlop - Prelucrare Angajament Nou.wfl"
+
         ' Slice 0076: the two flows run after the operator SAVED by hand in the «Browser
         ' FOREXE» view. Both start on the page the operator is on (no reset, no search, no
         ' «Modificare») and both read the history backwards like the REVERSE flow.
