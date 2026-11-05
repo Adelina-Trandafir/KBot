@@ -112,8 +112,12 @@ Operator, 30.10.2026. A FOREXE answered inside K-BOT (no browser, forexecab unto
 | Slice | Name | Status | Worklog |
 |------:|------|--------|---------|
 | 0125-01 | `SimulatedForexeRunner` (Debug, `HarnessTests`) answers `CreareAngajament`, `IncarcaRezervare`, `DefinitivareAngajament`, `DerulareAngajament` and the read-back `RezervariAngajament` in the shape of the real answer; the answer goes through the REAL import on the server (needed: section B appears only when `FX_Rezervari` has a row for the revision, 0124-07); launcher entry, `ForexeController.ForexeSimulat`, a line in the send question | GATA pe cod (build Debug 0 erori, 0 avertismente); **nimic rulat, importul nevazut pe server**; scrie in baza de date — doar 000_DEMO | [SLICE-0125-01](../SLICE-0125-01-forexe-simulat-debug.md) |
+| 0125-02 | The simulated FOREXE also answers the node download (`PrelucrareCompleta`/`Reverse`), the receptions refresh (`ReceptiiAngajament`, skipped days with empty detail), `RezervariEditate`, `DeschideAngajament`; one sample reception is made up when an angajament «În derulare» is first read; the «Browser FOREXE» view docks a made-up page (`SimulatedForexePage`) whose «Salvează rezervarea» runs the real page's road (gate, «before» picture, `(IDREV: n)` marker, history row, watcher report) so `CaptureFlow` is exercised; an angajament the simulator never saw is refused | GATA pe cod (build Debug 0 erori, 0 avertismente); **nimic rulat**; scrie in baza de date prin import — doar 000_DEMO | [SLICE-0125-02](../SLICE-0125-02-forexe-simulat-nod-receptii-pagina.md) |
 
 ### Open threads — 0125
+
+- 0125-02, first run to watch: save a reservation on a `SIM…` angajament (marker in the history description, both pictures uploaded under the `IDREV` number), a node download «În derulare», a receptions refresh with a day unticked.
+- Not simulated: saving a reception or a new angajament by hand in the page, `InfoCompleteContract`.
 
 - First run to watch: send a K-BOT-made revision, see it reach «PDF final / Semnat A», then `AreRezervari` true and section B written; the import of the simulated history was matched against the server code by reading only.
 - The simulated import writes `FX_Indicatori_Buget` with «largest value + 100.000» per classification: never on a real database.

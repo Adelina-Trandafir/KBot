@@ -9,6 +9,7 @@ Imports System.IO
 Imports System.Linq
 Imports System.Security.Cryptography.X509Certificates
 Imports System.Text.Json
+Imports System.Text.Json.Nodes
 Imports System.Threading
 Imports System.Threading.Tasks
 Imports System.Windows.Forms
@@ -49,8 +50,23 @@ End Class
 ''' through the REAL import on the server, so FX_Rezervari gets its rows and the revision gets
 ''' «AreRezervari» -- which is what lets section B be written. Use the 000_DEMO database only: the
 ''' import writes the simulated figures like any others.</para>
+''' <para><b>Slice 0125-02 -- the three roads of the shell.</b> (1) The download of a node
+''' (<c>PrelucrareCompleta</c> / <c>PrelucrareCompletaReverse</c>): header, indicators, receptions with their
+''' detail, history -- the shape of <c>prelucrare_AAB37CNBK95.json</c>. (2) The receptions refresh
+''' (<c>ReceptiiAngajament</c>): the same two reception tables; the days the operator left unticked
+''' (<c>RECEPTII_SARITE</c>) come back with an empty detail, as the real flow leaves them. (3) The reservation
+''' save with pictures: the «Browser FOREXE» view docks a small made-up page (<see cref="SimulatedForexePage"/>);
+''' its «Salveaza rezervarea» does what the real page does -- asks the server for the «(IDREV: n)» marker,
+''' takes the «before» picture through the provider the controller registered, writes the change and the
+''' marker into the history, and reports the save like the in-page watcher (<c>OperationCaptured</c>). The
+''' shell then runs its own road (<c>RezervariEditate</c>, ingest, <c>CaptureFlow.SendAsync</c>).</para>
+''' <para><b>Receptions are made up.</b> FOREXE has none for an angajament the simulator created, so the first
+''' time one in the «derulare» state is read, ONE sample reception (half of each row's definitive value) is added to its
+''' memory. It is written to the database by the real import: 000_DEMO only.</para>
 ''' <para><b>What it does NOT do.</b> It never opens a browser and never reaches forexecab. Any other
-''' workflow is refused with a clear message. The captures are generated pictures marked
+''' workflow is refused with a clear message. An angajament the simulator never created or sent in this run
+''' cannot be downloaded or opened (it has no rows to answer with; inventing them would write into the
+''' database). The captures are generated pictures marked
 ''' «SIMULARE». The memory lives only until K-BOT closes; every history row keeps the moment it was made,
 ''' so a second read-back gives the server the same rows again (the import skips what it already has).</para>
 ''' <para><b>An angajament the simulator has never seen</b> (a real one, downloaded earlier) is created
@@ -66,6 +82,11 @@ Public NotInheritable Class SimulatedForexeRunner
     Private Const WfDefinitivare As String = "DefinitivareAngajament"
     Private Const WfDerulare As String = "DerulareAngajament"
     Private Const WfRezervari As String = "RezervariAngajament"
+    Private Const WfNod As String = "PrelucrareCompleta"
+    Private Const WfNodReverse As String = "PrelucrareCompletaReverse"
+    Private Const WfReceptii As String = "ReceptiiAngajament"
+    Private Const WfRezervariEditate As String = "RezervariEditate"
+    Private Const WfDeschide As String = "DeschideAngajament"
 
     ' The states as forexecab writes them (shown in the tree of K-BOT).
     Private Const StareInitial As String = "Initial"
@@ -81,8 +102,30 @@ Public NotInheritable Class SimulatedForexeRunner
     Private ReadOnly _angajamente As New Dictionary(Of String, SimAngajament)(StringComparer.OrdinalIgnoreCase)
     Private ReadOnly _rng As New Random()
 
+    ' What the shell registered: the marker the real page asks the server for, and the «before» picture.
+    Private ReadOnly _marcajProvider As Func(Of String, String, CancellationToken, Task(Of String))
+    Private _capturaProvider As Func(Of String, CancellationToken, Task(Of Boolean))
+
+    ' The page: the angajament it shows ("" = none), whether the reservation session already took its
+    ' «before» picture, and the simulated page control docked in the Browser view (UI thread only).
+    Private _pageCod As String = String.Empty
+    Private _shotSessionOpen As Boolean
+    Private _page As SimulatedForexePage
+    Private _host As Control
+
+    ''' <param name="k_marcajProvider">
+    ''' The same bridge the real runner gets (<c>(tip, cod)</c> -> «(IDREV: n)»); Nothing = the simulated page
+    ''' saves without a marker and says so.
+    ''' </param>
+    Public Sub New(Optional k_marcajProvider As Func(Of String, String, CancellationToken, Task(Of String)) = Nothing)
+        _marcajProvider = k_marcajProvider
+    End Sub
+
     ''' <summary>How long one job takes, in seconds.</summary>
     Public Property RunSeconds As Double = 1.5
+
+    ''' <summary>The angajament shown by the simulated page changed (opened, or a row saved).</summary>
+    Friend Event PageChanged As EventHandler
 
     Public Event StatusUpdated As EventHandler(Of String) Implements IForexeRunner.StatusUpdated
     Public Event BrowserVisibilityChanged As EventHandler Implements IForexeRunner.BrowserVisibilityChanged
@@ -127,9 +170,15 @@ Public NotInheritable Class SimulatedForexeRunner
                 Case WfDefinitivare : Return DoStare(job, StareInDefinitivare, "Poza_Definitivare")
                 Case WfDerulare : Return DoStare(job, StareInDerulare, "Poza_Derulare")
                 Case WfRezervari : Return DoRezervari(job)
+                Case WfNod : Return DoNod(job, False)
+                Case WfNodReverse : Return DoNod(job, True)
+                Case WfReceptii : Return DoReceptii(job)
+                Case WfRezervariEditate : Return DoRezervariEditate(job)
+                Case WfDeschide : Return DoDeschide(job)
                 Case Else
                     Return Fail($"Workflow-ul «{k_name}» nu este simulat. În modul FOREXE simulat se pot trimite " &
-                                "rezervări (creare, încărcare, definitivare, derulare) și se pot citi înapoi.")
+                                "rezervări (creare, încărcare, definitivare, derulare), se pot citi înapoi, se poate descărca " &
+                                "un angajament întreg sau doar recepțiile lui și se pot salva rezervări în pagina simulată.")
             End Select
         Catch ex As Exception
             GlobalErrorLog.Write("SimulatedForexeRunner.RunJobAsync", ex)
@@ -319,17 +368,310 @@ Public NotInheritable Class SimulatedForexeRunner
             PutTable(k_res, WorkflowCatalog.TabelIndicatori, GridScraped(k_ang))
             PutTable(k_res, "TabelIndicatori_results", GridCollected(k_ang))
 
-            Dim k_istoric As New List(Of RandTabel)()
-            For Each k_h As SimIstoric In k_ang.History
-                k_istoric.Add(Row(
-                    ("Timp", k_h.Moment.ToString(MomentFormat, CultureInfo.InvariantCulture)),
-                    ("Utilizator", Utilizator),
-                    ("Descriere", k_h.Descriere),
-                    ("Observatii", k_h.Observatii)))
-            Next
-            PutTable(k_res, "TabelIstoric", New TabelRezultat(k_istoric))
+            PutTable(k_res, "TabelIstoric", Istoric(k_ang, Nothing))
         End SyncLock
         Return k_res
+    End Function
+
+    ' The history as the page lists it. k_from = the REVERSE stop (the newest moment K-BOT already has): the
+    ' rows from that moment on come back (the boundary row too; the import skips what it already has).
+    Private Shared Function Istoric(k_ang As SimAngajament, k_from As Date?) As TabelRezultat
+        Dim k_istoric As New List(Of RandTabel)()
+        For Each k_h As SimIstoric In k_ang.History
+            If k_from.HasValue AndAlso k_h.Moment < k_from.Value Then Continue For
+            k_istoric.Add(Row(
+                ("Timp", k_h.Moment.ToString(MomentFormat, CultureInfo.InvariantCulture)),
+                ("Utilizator", Utilizator),
+                ("Descriere", k_h.Descriere),
+                ("Observatii", k_h.Observatii)))
+        Next
+        Return New TabelRezultat(k_istoric)
+    End Function
+
+    ' ── Slice 0125-02: the node download, the receptions refresh, the page ──────
+
+    Private Shared Function UnknownAngajament(k_cod As String) As JobResult
+        Return Fail($"Simulare: angajamentul «{k_cod}» nu este cunoscut de FOREXE simulat (nu a fost creat sau trimis " &
+                    "din K-BOT în această rulare). Simulatorul nu inventează rânduri pentru un angajament real.")
+    End Function
+
+    ' The REVERSE stop: «dd/MM/yyyy HH:mm:ss». The «no history yet» constant does not parse -> Nothing = all.
+    Private Shared Function ParseStop(k_text As String) As Date?
+        Dim k_d As Date
+        If Date.TryParseExact(k_text, MomentFormat, CultureInfo.InvariantCulture, DateTimeStyles.None, k_d) Then Return k_d
+        Return Nothing
+    End Function
+
+    ' RECEPTII_SARITE: the dates (dd/MM/yyyy) the operator left unticked, comma separated.
+    Private Shared Function SkippedDays(k_text As String) As HashSet(Of Date)
+        Dim k_set As New HashSet(Of Date)()
+        For Each k_part As String In If(k_text, String.Empty).Split(","c)
+            Dim k_d As Date
+            If Date.TryParseExact(k_part.Trim(), WorkflowCatalog.DataReceptieFormat, CultureInfo.InvariantCulture,
+                                  DateTimeStyles.None, k_d) Then k_set.Add(k_d.Date)
+        Next
+        Return k_set
+    End Function
+
+    ' «Descarca nodul»: PrelucrareCompleta (everything) / PrelucrareCompletaReverse (history from the stop on).
+    Private Function DoNod(k_job As JobRequest, k_reverse As Boolean) As JobResult
+        Dim k_cod As String = Param(k_job, WorkflowCatalog.VarCodAngajament)
+        If k_cod.Length = 0 Then Return Fail("Simulare: lipsește codul angajamentului.")
+        Dim k_res As New JobResult With {.Success = True, .Message = k_job.WorkflowName}
+        SyncLock _gate
+            Dim k_ang As SimAngajament = Nothing
+            If Not _angajamente.TryGetValue(k_cod, k_ang) Then Return UnknownAngajament(k_cod)
+            SeedReceptii(k_ang)
+            PutHeader(k_res, k_ang)
+            PutTable(k_res, WorkflowCatalog.TabelIndicatori, GridScraped(k_ang))
+            PutTable(k_res, "TabelIndicatori_results", GridCollected(k_ang))
+            PutTable(k_res, "ListaReceptii", ReceptiiRaw(k_ang))
+            PutTable(k_res, "ListaReceptii_results",
+                     ReceptiiCollected(k_ang, SkippedDays(Param(k_job, WorkflowCatalog.VarReceptiiSarite))))
+            PutTable(k_res, "TabelIstoric",
+                     Istoric(k_ang, If(k_reverse, ParseStop(Param(k_job, WorkflowCatalog.VarDataIesire)), Nothing)))
+        End SyncLock
+        Return k_res
+    End Function
+
+    ' «Reimprospateaza receptiile»: the header and the two reception tables, nothing else.
+    Private Function DoReceptii(k_job As JobRequest) As JobResult
+        Dim k_cod As String = Param(k_job, WorkflowCatalog.VarCodAngajament)
+        If k_cod.Length = 0 Then Return Fail("Simulare: lipsește codul angajamentului.")
+        Dim k_res As New JobResult With {.Success = True, .Message = k_job.WorkflowName}
+        SyncLock _gate
+            Dim k_ang As SimAngajament = Nothing
+            If Not _angajamente.TryGetValue(k_cod, k_ang) Then Return UnknownAngajament(k_cod)
+            SeedReceptii(k_ang)
+            PutHeader(k_res, k_ang)
+            PutTable(k_res, "ListaReceptii", ReceptiiRaw(k_ang))
+            PutTable(k_res, "ListaReceptii_results",
+                     ReceptiiCollected(k_ang, SkippedDays(Param(k_job, WorkflowCatalog.VarReceptiiSarite))))
+        End SyncLock
+        Return k_res
+    End Function
+
+    ' The read the shell makes once the operator says the reservations are done: header + history from the
+    ' stop on. The indicator rows are not here: the shell puts the ones the page kept next to it.
+    Private Function DoRezervariEditate(k_job As JobRequest) As JobResult
+        Dim k_cod As String = Param(k_job, WorkflowCatalog.VarCodAngajament)
+        If k_cod.Length = 0 Then Return Fail("Simulare: lipsește codul angajamentului.")
+        Dim k_res As New JobResult With {.Success = True, .Message = k_job.WorkflowName}
+        SyncLock _gate
+            Dim k_ang As SimAngajament = Nothing
+            If Not _angajamente.TryGetValue(k_cod, k_ang) Then Return UnknownAngajament(k_cod)
+            PutHeader(k_res, k_ang)
+            PutTable(k_res, "TabelIstoric", Istoric(k_ang, ParseStop(Param(k_job, WorkflowCatalog.VarDataIesire))))
+        End SyncLock
+        Return k_res
+    End Function
+
+    ' «Deschide Angajament»: the simulated page shows this angajament; the watcher's «page» report follows.
+    Private Function DoDeschide(k_job As JobRequest) As JobResult
+        Dim k_cod As String = Param(k_job, WorkflowCatalog.VarCodAngajament)
+        If k_cod.Length = 0 Then Return Fail("Simulare: lipsește codul angajamentului.")
+        SyncLock _gate
+            If Not _angajamente.ContainsKey(k_cod) Then Return UnknownAngajament(k_cod)
+            _pageCod = k_cod
+        End SyncLock
+        _shotSessionOpen = False   ' another page: the next reservation starts a new picture session
+        RaiseEvent PageChanged(Me, EventArgs.Empty)
+        RaiseEvent OperationCaptured(Me, New ForexeWatchEvent With {
+            .Kind = ForexeWatchEventKind.PageOpened, .CodAngajament = k_cod})
+        Return New JobResult With {.Success = True, .Message = k_job.WorkflowName}
+    End Function
+
+    ' ── Receptions (made up once, when the angajament is «in derulare») ─────────
+
+    Private Shared Sub SeedReceptii(k_ang As SimAngajament)
+        If k_ang.ReceptiiSeeded OrElse k_ang.Stare <> StareInDerulare Then Return
+        k_ang.ReceptiiSeeded = True
+        Dim k_rec As New SimReceptie With {.Data = Date.Today, .Descriere = "SIMULARE - receptie de proba"}
+        For Each k_row As SimRand In k_ang.Rows
+            Dim k_val As Double = Math.Floor(k_row.Definitiv / 2.0R)
+            If k_val >= 1.0R Then k_rec.Linii.Add(New SimLinie With {.CodRand = k_row.Cod, .Valoare = k_val})
+        Next
+        If k_rec.Linii.Count > 0 Then k_ang.Receptii.Add(k_rec)
+    End Sub
+
+    ' «ListaReceptii» as scraped: the list itself, before any detail is read.
+    Private Shared Function ReceptiiRaw(k_ang As SimAngajament) As TabelRezultat
+        Dim k_list As New List(Of RandTabel)()
+        For Each k_rec As SimReceptie In k_ang.Receptii
+            k_list.Add(Row(
+                ("Tip", k_rec.Tip),
+                ("Data", k_rec.Data.ToString(WorkflowCatalog.DataReceptieFormat, CultureInfo.InvariantCulture)),
+                ("Suma", DdfSendInputs.FormatSuma(k_rec.Suma)),
+                ("DescriereReceptie", k_rec.Descriere)))
+        Next
+        Return New TabelRezultat(k_list)
+    End Function
+
+    ' «ListaReceptii_results»: what the loop collects, the detail nested. A day the operator skipped keeps its
+    ' row with an EMPTY detail; the controller takes those rows out before the package goes to the server.
+    Private Shared Function ReceptiiCollected(k_ang As SimAngajament, k_skipped As HashSet(Of Date)) As TabelRezultat
+        Dim k_list As New List(Of RandTabel)()
+        For Each k_rec As SimReceptie In k_ang.Receptii
+            Dim k_lines As New List(Of CelulaTabel)()
+            If Not k_skipped.Contains(k_rec.Data.Date) Then
+                For Each k_line As SimLinie In k_rec.Linii
+                    Dim k_lineCode As String = k_line.CodRand
+                    Dim k_row As SimRand = k_ang.Rows.FirstOrDefault(
+                        Function(r) String.Equals(r.Cod, k_lineCode, StringComparison.OrdinalIgnoreCase))
+                    If k_row Is Nothing Then Continue For
+                    Dim k_received As Double = k_ang.Receptii.Sum(
+                        Function(rc) rc.Linii.Where(Function(l) String.Equals(l.CodRand, k_row.Cod, StringComparison.OrdinalIgnoreCase)).
+                                       Sum(Function(l) l.Valoare))
+                    k_lines.Add(Obj(
+                        ("Cod", k_row.Cod),
+                        ("Program", "0000000000"),
+                        ("Proiect", "---"),
+                        ("Obiectiv", "---"),
+                        ("Sector_Sursa_Indicator", SectorSursaIndicator(k_row)),
+                        ("Credit_bugetar_rezervat_definitiv", DdfSendInputs.FormatSuma(k_row.Definitiv)),
+                        ("Valoare_nereceptionata", DdfSendInputs.FormatSuma(Math.Max(0.0R, k_row.Definitiv - k_received))),
+                        ("Valoare", Amount(k_line.Valoare))))
+                Next
+            End If
+            Dim k_out As New RandTabel()
+            k_out.Pune("Tip", CelulaTabel.DinText(k_rec.Tip))
+            k_out.Pune("Data", CelulaTabel.DinText(k_rec.Data.ToString(WorkflowCatalog.DataReceptieFormat, CultureInfo.InvariantCulture)))
+            k_out.Pune("Suma", CelulaTabel.DinText(DdfSendInputs.FormatSuma(k_rec.Suma)))
+            k_out.Pune("DescriereReceptie", CelulaTabel.DinText(k_rec.Descriere))
+            k_out.Pune("Detaliu", CelulaTabel.DinLista(k_lines))
+            k_list.Add(k_out)
+        Next
+        Return New TabelRezultat(k_list)
+    End Function
+
+    ' A named set of cells: one line of a nested table.
+    Private Shared Function Obj(ParamArray k_cells As (Key As String, Value As String)()) As CelulaTabel
+        Dim k_pairs As New List(Of KeyValuePair(Of String, CelulaTabel))()
+        For Each k_c In k_cells
+            k_pairs.Add(New KeyValuePair(Of String, CelulaTabel)(k_c.Key, CelulaTabel.DinText(k_c.Value)))
+        Next
+        Return CelulaTabel.DinObiect(k_pairs)
+    End Function
+
+    ' ── The simulated page: what the control shows, and the reservation save ────
+
+    ''' <summary>What the simulated page shows now; Nothing = no angajament is open.</summary>
+    Friend Function SnapshotPage() As SimulatedPageState
+        SyncLock _gate
+            Dim k_ang As SimAngajament = Nothing
+            If _pageCod.Length = 0 OrElse Not _angajamente.TryGetValue(_pageCod, k_ang) Then Return Nothing
+            Dim k_state As New SimulatedPageState With {.Cod = k_ang.Cod, .Stare = k_ang.Stare}
+            For Each k_r As SimRand In k_ang.Rows
+                k_state.Rows.Add(New SimulatedPageRow With {
+                    .Cod = k_r.Cod, .Ss = k_r.Ss, .Clsf = k_r.Clsf, .Initial = k_r.Initial, .Definitiv = k_r.Definitiv})
+            Next
+            Return k_state
+        End SyncLock
+    End Function
+
+    ''' <summary>
+    ''' The operator pressed «Salveaza rezervarea» on the simulated page: the road of the real page. Returns
+    ''' the text for the page's status line: empty = saved with the marker, otherwise a refusal or a warning.
+    ''' </summary>
+    ''' <remarks>
+    ''' Order of the real page: (1) at the START of a session, the gate «may a reservation begin?» and the
+    ''' «before» picture; (2) at EVERY save, the marker is asked and appended to the motive, the row is
+    ''' written, and the watcher reports the save. The session ends when the shell calls
+    ''' <see cref="ResetShotSessionAsync"/> (after the operator's «DA»).
+    ''' </remarks>
+    Friend Async Function SaveReservationAsync(k_indicator As String, k_value As Double, k_motiv As String) As Task(Of String)
+        Try
+            Dim k_cod As String = String.Empty
+            SyncLock _gate
+                k_cod = _pageCod
+                Dim k_ang As SimAngajament = Nothing
+                If k_cod.Length = 0 OrElse Not _angajamente.TryGetValue(k_cod, k_ang) Then
+                    Return "Nu este deschis niciun angajament în pagină."
+                End If
+                If Not k_ang.Rows.Any(Function(r) String.Equals(r.Cod, k_indicator, StringComparison.OrdinalIgnoreCase)) Then
+                    Return $"Indicatorul «{k_indicator}» nu există în angajament."
+                End If
+            End SyncLock
+
+            If Not _shotSessionOpen Then
+                ' The gate: a refusal of the server (the angajament still has reservations without a revision) stops it.
+                If _marcajProvider IsNot Nothing Then
+                    Try
+                        Dim k_gate As String = If(Await _marcajProvider(MarcajeRecente.TipVerificaRezervare, k_cod,
+                                                                        CancellationToken.None), String.Empty)
+                        If k_gate.StartsWith("blocat:", StringComparison.Ordinal) Then
+                            Return "Rezervare oprită de K-BOT: " & k_gate.Substring("blocat:".Length).Trim()
+                        End If
+                    Catch ex As Exception
+                        ' As on the real page: a check that cannot be made lets the reservation begin.
+                        GlobalErrorLog.Write("SimulatedForexeRunner.SaveReservationAsync.Gate", ex)
+                    End Try
+                End If
+                _shotSessionOpen = True
+                ' The «before» picture: the page holds the save until the shell took it.
+                If _capturaProvider IsNot Nothing Then
+                    Await _capturaProvider("rezervare", CancellationToken.None)
+                End If
+            End If
+
+            Dim k_marcaj As String = String.Empty
+            Dim k_why As String = String.Empty
+            If _marcajProvider Is Nothing Then
+                k_why = "K-BOT nu poate rezerva marcaje în sesiunea asta."
+            Else
+                Try
+                    k_marcaj = If(Await _marcajProvider(MarcajeRecente.TipRezervare, k_cod, CancellationToken.None), String.Empty)
+                Catch ex As Exception
+                    GlobalErrorLog.Write("SimulatedForexeRunner.SaveReservationAsync.Marker", ex)
+                    k_why = ex.Message
+                End Try
+            End If
+
+            Dim k_json As String = String.Empty
+            SyncLock _gate
+                Dim k_ang As SimAngajament = _angajamente(k_cod)
+                Dim k_row As SimRand = k_ang.Rows.First(
+                    Function(r) String.Equals(r.Cod, k_indicator, StringComparison.OrdinalIgnoreCase))
+                k_row.Definitiv = k_value
+                ' The motive the operator typed, the marker after it: the history row's description.
+                Dim k_desc As String = (If(k_motiv, String.Empty).Trim() & " " & k_marcaj).Trim()
+                k_ang.Note(If(k_desc.Length > 0, k_desc, "Modificare rezervare"),
+                           RandContract(k_row.Cod, k_value, k_row.Initial, k_value))
+                k_json = ReservationJson(k_ang, k_row, If(k_motiv, String.Empty).Trim())
+            End SyncLock
+
+            RaiseEvent PageChanged(Me, EventArgs.Empty)
+            Dim k_now As Date = Date.Now
+            RaiseEvent OperationCaptured(Me, New ForexeWatchEvent With {
+                .Kind = ForexeWatchEventKind.Finished, .Operation = ForexeOperationKind.Rezervare,
+                .OperationName = "rezervare", .Label = "Rezervare", .CodAngajament = k_cod, .CodLaStart = k_cod,
+                .StartedAt = k_now, .FinishedAt = k_now, .DetaliiJson = k_json,
+                .Message = "Rezervare salvată în pagina simulată."})
+            Return If(k_why.Length > 0, "Salvat FĂRĂ marcaj K-BOT: " & k_why, String.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("SimulatedForexeRunner.SaveReservationAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ' What the page sends after a save: the indicator's row (as the collected table writes it), its budget
+    ' table (left empty, as in GridCollected) and the motive.
+    Private Shared Function ReservationJson(k_ang As SimAngajament, k_row As SimRand, k_motiv As String) As String
+        Dim k_ind As New JsonObject()
+        For Each k_rand As RandTabel In GridCollected(k_ang)
+            Dim k_cell As CelulaTabel = Nothing
+            If Not k_rand.TryGetValue("Indicator_ang", k_cell) OrElse
+               Not String.Equals(k_cell.TextSau(String.Empty), k_row.Cod, StringComparison.OrdinalIgnoreCase) Then Continue For
+            For Each k_kvp As KeyValuePair(Of String, CelulaTabel) In k_rand
+                k_ind(k_kvp.Key) = JsonValue.Create(k_kvp.Value.TextSau(String.Empty))
+            Next
+        Next
+        Dim k_obj As New JsonObject()
+        k_obj("indicator") = k_ind
+        k_obj("indicatorCod") = JsonValue.Create(k_row.Cod)
+        k_obj("buget") = New JsonArray()
+        k_obj("motiv") = JsonValue.Create(k_motiv)
+        Return k_obj.ToJsonString()
     End Function
 
     ' The six header values the workflow reads off the angajament page.
@@ -534,7 +876,7 @@ Public NotInheritable Class SimulatedForexeRunner
         End Using
     End Function
 
-    ' ── Browser / page members: there is no browser, so these are quiet ─────────
+    ' ── Browser / page members: no browser; the Browser view docks the simulated page instead ──
 
     Public Function ShowBrowserAsync(owner As IWin32Window) As Task Implements IForexeRunner.ShowBrowserAsync
         Return Task.CompletedTask
@@ -544,18 +886,52 @@ Public NotInheritable Class SimulatedForexeRunner
         Return Task.CompletedTask
     End Function
 
+    ''' <summary>True while the simulated page sits in a Browser view.</summary>
     Public ReadOnly Property IsBrowserVisible As Boolean Implements IForexeRunner.IsBrowserVisible
         Get
-            Return False
+            Return _host IsNot Nothing
         End Get
     End Property
 
+    ' Runs on the thread of the control (the view calls from the UI thread; this is the safety net).
+    Private Shared Sub OnUiThread(k_control As Control, k_action As Action)
+        If k_control.InvokeRequired Then k_control.Invoke(k_action) Else k_action()
+    End Sub
+
+    ''' <summary>The simulated page goes into the Browser view's panel.</summary>
     Public Function DockBrowserAsync(host As Control) As Task Implements IForexeRunner.DockBrowserAsync
-        Return Task.CompletedTask
+        Try
+            ArgumentNullException.ThrowIfNull(host)
+            OnUiThread(host,
+                Sub()
+                    If _page Is Nothing OrElse _page.IsDisposed Then _page = New SimulatedForexePage(Me)
+                    _page.Dock = DockStyle.Fill
+                    If Not Object.ReferenceEquals(_page.Parent, host) Then host.Controls.Add(_page)
+                    _host = host
+                End Sub)
+            RaiseEvent BrowserVisibilityChanged(Me, EventArgs.Empty)
+            Return Task.CompletedTask
+        Catch ex As Exception
+            GlobalErrorLog.Write("SimulatedForexeRunner.DockBrowserAsync", ex)
+            Throw
+        End Try
     End Function
 
+    ''' <summary>The page leaves the panel (the view was hidden); its state stays for the next dock.</summary>
     Public Function ReleaseBrowserAsync(host As Control) As Task Implements IForexeRunner.ReleaseBrowserAsync
-        Return Task.CompletedTask
+        Try
+            ArgumentNullException.ThrowIfNull(host)
+            OnUiThread(host,
+                Sub()
+                    If _page IsNot Nothing AndAlso Object.ReferenceEquals(_page.Parent, host) Then host.Controls.Remove(_page)
+                    If Object.ReferenceEquals(_host, host) Then _host = Nothing
+                End Sub)
+            RaiseEvent BrowserVisibilityChanged(Me, EventArgs.Empty)
+            Return Task.CompletedTask
+        Catch ex As Exception
+            GlobalErrorLog.Write("SimulatedForexeRunner.ReleaseBrowserAsync", ex)
+            Throw
+        End Try
     End Function
 
     Public Function SyncBrowserBoundsAsync() As Task Implements IForexeRunner.SyncBrowserBoundsAsync
@@ -564,12 +940,15 @@ Public NotInheritable Class SimulatedForexeRunner
 
     Public ReadOnly Property BrowserHost As Control Implements IForexeRunner.BrowserHost
         Get
-            Return Nothing
+            Return _host
         End Get
     End Property
 
+    ''' <summary>The angajament the simulated page shows; empty when none is open.</summary>
     Public Function ReadPageAngajamentAsync() As Task(Of String) Implements IForexeRunner.ReadPageAngajamentAsync
-        Return Task.FromResult(String.Empty)
+        SyncLock _gate
+            Return Task.FromResult(_pageCod)
+        End SyncLock
     End Function
 
     Public Function ReadUncorrectedOperationsAsync() As Task(Of String) Implements IForexeRunner.ReadUncorrectedOperationsAsync
@@ -588,18 +967,35 @@ Public NotInheritable Class SimulatedForexeRunner
         Return Task.FromResult(String.Empty)
     End Function
 
+    ' A JPEG of the angajament the simulated page shows; Nothing (like a page that cannot be photographed)
+    ' when no angajament is open.
+    Private Function PageBytes(k_title As String) As Byte()
+        SyncLock _gate
+            Dim k_ang As SimAngajament = Nothing
+            If _pageCod.Length = 0 OrElse Not _angajamente.TryGetValue(_pageCod, k_ang) Then Return Nothing
+            Return Convert.FromBase64String(
+                Picture(k_title, k_ang, "Captură de la " & Date.Now.ToString("HH:mm:ss", CultureInfo.InvariantCulture)))
+        End SyncLock
+    End Function
+
+    ''' <summary>The picture the shell takes of the page (the «before» and «after» of a reservation session).</summary>
     Public Function CapturePaginaAsync(paginaOriginala As Boolean) As Task(Of Byte()) Implements IForexeRunner.CapturePaginaAsync
-        Return Task.FromResult(Of Byte())(Nothing)
+        Return Task.FromResult(PageBytes("Rezervările din pagină"))
     End Function
 
+    ''' <summary>The reception picture «Informații complete contract».</summary>
     Public Function CaptureInfoCompleteAsync(paginaOriginala As Boolean) As Task(Of Byte()) Implements IForexeRunner.CaptureInfoCompleteAsync
-        Return Task.FromResult(Of Byte())(Nothing)
+        Return Task.FromResult(PageBytes("Informații complete contract"))
     End Function
 
+    ''' <summary>The controller's «take the before picture» callback, called by the page at the start of a session.</summary>
     Public Sub SetCapturaProvider(provider As Func(Of String, CancellationToken, Task(Of Boolean))) Implements IForexeRunner.SetCapturaProvider
+        _capturaProvider = provider
     End Sub
 
+    ''' <summary>The reservation session is filed: the next save starts a new one (new gate, new «before» picture).</summary>
     Public Function ResetShotSessionAsync() As Task Implements IForexeRunner.ResetShotSessionAsync
+        _shotSessionOpen = False
         Return Task.CompletedTask
     End Function
 
@@ -626,6 +1022,26 @@ Public NotInheritable Class SimulatedForexeRunner
         Public Property Observatii As String = String.Empty
     End Class
 
+    ''' <summary>One line of a reception: the indicator row it takes from and the value.</summary>
+    Private NotInheritable Class SimLinie
+        Public Property CodRand As String = String.Empty
+        Public Property Valoare As Double
+    End Class
+
+    ''' <summary>A sample reception (see the class remarks): the list row and the lines of its detail.</summary>
+    Private NotInheritable Class SimReceptie
+        Public Property Tip As String = "Partial"
+        Public Property Data As Date
+        Public Property Descriere As String = String.Empty
+        Public ReadOnly Property Linii As New List(Of SimLinie)()
+
+        Public ReadOnly Property Suma As Double
+            Get
+                Return Linii.Sum(Function(l) l.Valoare)
+            End Get
+        End Property
+    End Class
+
     Private NotInheritable Class SimAngajament
         Public Property Cod As String = String.Empty
         Public Property Stare As String = String.Empty
@@ -634,6 +1050,9 @@ Public NotInheritable Class SimulatedForexeRunner
         Public Property DataDerulare As Date?
         Public ReadOnly Property Rows As New List(Of SimRand)()
         Public ReadOnly Property History As New List(Of SimIstoric)()
+        Public ReadOnly Property Receptii As New List(Of SimReceptie)()
+        ''' <summary>True once the sample reception was made (once per angajament).</summary>
+        Public Property ReceptiiSeeded As Boolean
 
         ''' <summary>The moment of the last history row, or now when there is none.</summary>
         Public ReadOnly Property LastMoment As Date
@@ -650,5 +1069,21 @@ Public NotInheritable Class SimulatedForexeRunner
                 .Descriere = k_descriere, .Observatii = k_observatii})
         End Sub
     End Class
+End Class
+
+''' <summary>What the simulated page shows (a copy: the page never touches the runner's memory).</summary>
+Friend NotInheritable Class SimulatedPageState
+    Public Property Cod As String = String.Empty
+    Public Property Stare As String = String.Empty
+    Public ReadOnly Property Rows As New List(Of SimulatedPageRow)()
+End Class
+
+''' <summary>One indicator row of the simulated page.</summary>
+Friend NotInheritable Class SimulatedPageRow
+    Public Property Cod As String = String.Empty
+    Public Property Ss As String = String.Empty
+    Public Property Clsf As String = String.Empty
+    Public Property Initial As Double
+    Public Property Definitiv As Double
 End Class
 #End If

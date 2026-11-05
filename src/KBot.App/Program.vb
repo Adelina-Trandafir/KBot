@@ -553,7 +553,8 @@ Friend Module Program
         services.AddSingleton(Of ForexeRunner)()
         services.AddSingleton(Of IForexeRunner)(
             Function(sp) If(SimulatedForexeSwitch.Active,
-                            DirectCast(New SimulatedForexeRunner(), IForexeRunner),
+                            DirectCast(New SimulatedForexeRunner(
+                                sp.GetRequiredService(Of Func(Of String, String, CancellationToken, Task(Of String)))()), IForexeRunner),
                             sp.GetRequiredService(Of ForexeRunner)()))
 #Else
         services.AddSingleton(Of IForexeRunner, ForexeRunner)()
