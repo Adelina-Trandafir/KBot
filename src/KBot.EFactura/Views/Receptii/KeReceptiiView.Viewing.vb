@@ -30,7 +30,7 @@ Partial Public Class KeReceptiiView
         navMod.Visible = False
         editorReceptii.ShowPage(pgAsociate)
         gridAloc.Column(ColARestRecep).Visible = KBotColumnVisibility.Hidden
-        pgAsociate.gridReceptii.Column(PrimiteReceptiiAsociateView.ColElimina).Visible = KBotColumnVisibility.Visible
+        pgAsociate.gridReceptii.Column(FacturiCumparareReceptiiAsociateView.ColElimina).Visible = KBotColumnVisibility.Visible
         FillViewedLines(k_invoice, k_state)
         FillAngajamente()
         FillReceptii()

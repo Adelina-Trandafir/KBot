@@ -333,7 +333,7 @@ Partial Public Class KeReceptiiView
                                    DirectCast(pgAsociate, Control),
                                    If(_mode = EFacturaKeTip.Noua, DirectCast(pgNoua, Control), DirectCast(pgExistente, Control)))
         editorReceptii.ShowPage(k_page)
-        pgAsociate.gridReceptii.Column(PrimiteReceptiiAsociateView.ColElimina).Visible =
+        pgAsociate.gridReceptii.Column(FacturiCumparareReceptiiAsociateView.ColElimina).Visible =
             If(_viewing IsNot Nothing, KBotColumnVisibility.Visible, KBotColumnVisibility.Hidden)
         Select Case _mode
             Case EFacturaKeTip.Existenta

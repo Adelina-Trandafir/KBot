@@ -42,7 +42,7 @@ Partial Class KeReceptiiView
         pnlLinii = New System.Windows.Forms.Panel()
         gridLinii = New Controls.KBotDataView()
         pnlEditor = New System.Windows.Forms.Panel()
-        editorReceptii = New PrimiteReceptiiEditorView()
+        editorReceptii = New FacturiCumparareReceptiiEditorView()
         ntfMesaj = New Controls.KBotNotice()
         pnlJoker = New System.Windows.Forms.Panel()
         gridAloc = New Controls.KBotDataView()
@@ -442,7 +442,7 @@ Partial Class KeReceptiiView
     Friend WithEvents pnlLinii As System.Windows.Forms.Panel
     Friend WithEvents gridLinii As Global.KBot.Controls.KBotDataView
     Friend WithEvents pnlEditor As System.Windows.Forms.Panel
-    Friend WithEvents editorReceptii As PrimiteReceptiiEditorView
+    Friend WithEvents editorReceptii As FacturiCumparareReceptiiEditorView
     Friend WithEvents ntfMesaj As Global.KBot.Controls.KBotNotice
     Friend WithEvents pnlJoker As System.Windows.Forms.Panel
     Friend WithEvents gridAloc As Global.KBot.Controls.KBotDataView

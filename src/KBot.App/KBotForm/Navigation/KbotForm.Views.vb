@@ -185,8 +185,8 @@ Partial Public Class KbotForm
                 ' coordinator: the view docks, opens angajamente and follows the page
                 ' through it, and the shell keeps the reference for page-to-tree selection.
                 Case "browser" : Return CreeazaVedereaBrowser()
-                ' SLICE-02EF-14: the shared PrimiteView with the context of the selected angajament.
-                Case "efactura" : Return New PrimiteAngajamentView(_apiClient, Function(op) WithReauth(Of DdfInfo)(op),
+                ' SLICE-02EF-14: the shared FacturiCumparareView with the context of the selected angajament.
+                Case "efactura" : Return New FacturiCumparareAngajamentView(_apiClient, Function(op) WithReauth(Of DdfInfo)(op),
                                                                   New ReauthGate(Function(action) WithReauth(Of Object)(action)),
                                                                   Sub(k_cod As String, k_idrh As Integer) GenereazaOrdonantareDinReceptie(k_cod, k_idrh))
                 Case EmptyViewKey : Return New PlaceholderView(key, "Documente",

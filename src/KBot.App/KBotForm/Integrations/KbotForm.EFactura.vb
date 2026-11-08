@@ -11,7 +11,7 @@ Imports KBot.Theming
 ' unit and the re-login net are handed over as plain arguments, nothing is copied. Since the opening page it is a tab
 ' of the ribbon with three machete / groups of commands:
 '   - «E-Factura Vanzare»  (key efactura_vanzare): the invoices the unit issues (FacturiForm);
-'   - «E-Factura Cumparare» (key efactura_cumparare): the invoices received from ANAF (PrimiteForm);
+'   - «E-Factura Cumparare» (key efactura_cumparare): the invoices received from ANAF (FacturiCumparareForm);
 '   - the unit's commands that were in the title bar of the issued-invoices window (accounts, unit data), the
 '     received-invoices synchronisation (slice 0114-01 / 00EF-30: a ribbon button and two inputs, shown while the «Cumparare» page is on
 '     screen; no dialog) and the ANAF token step.
@@ -23,12 +23,12 @@ Partial Public Class KbotForm
     Friend Const MachetaEFacturaVercon As String = "efactura_vercon"
 
     Private _efacturaForm As FacturiForm
-    Private _primiteForm As PrimiteForm
+    Private _facturiCumparareForm As FacturiCumparareForm
     Private _verconForm As VerconForm
 
     ' SLICE-02EF-14: adapt the shared view to the shell's selection contract.
-    Private NotInheritable Class PrimiteAngajamentView
-        Inherits PrimiteView
+    Private NotInheritable Class FacturiCumparareAngajamentView
+        Inherits FacturiCumparareView
         Implements IAngajamentView, IReleasesDocument, IViewRibbon
 
         Private ReadOnly _api As IApiClient
@@ -91,7 +91,7 @@ Partial Public Class KbotForm
                         RunRezervare()
                 End Select
             Catch ex As Exception
-                GlobalErrorLog.Write("PrimiteAngajamentView.RunRibbonButton", ex)
+                GlobalErrorLog.Write("FacturiCumparareAngajamentView.RunRibbonButton", ex)
             End Try
         End Sub
 
@@ -117,13 +117,13 @@ Partial Public Class KbotForm
                     Return
                 End If
                 If k_ddf.Antet.Count > 1 Then
-                    GlobalErrorLog.Write("PrimiteAngajamentView.SetContext",
+                    GlobalErrorLog.Write("FacturiCumparareAngajamentView.SetContext",
                                          New InvalidOperationException($"Angajamentul {k_cod} are {k_ddf.Antet.Count} DDF-uri; facturile primite se arata pentru primul."))
                 End If
                 AngajamentCode = k_cod
                 Await LoadAsync(k_antet.Iddf).ConfigureAwait(True)
             Catch ex As Exception
-                GlobalErrorLog.Write("PrimiteAngajamentView.SetContext", ex)
+                GlobalErrorLog.Write("FacturiCumparareAngajamentView.SetContext", ex)
             End Try
         End Sub
 
@@ -173,19 +173,19 @@ Partial Public Class KbotForm
     ''' <summary>«E-Factura Cumparare»: the invoices received from ANAF, all the year's.</summary>
     Private Sub DeschideEFacturaCumparare()
         Try
-            If _primiteForm IsNot Nothing AndAlso Not _primiteForm.IsDisposed Then
-                ShowMachetaPage(_primiteForm, MachetaRef.Create(MachetaEFacturaCumparare))
+            If _facturiCumparareForm IsNot Nothing AndAlso Not _facturiCumparareForm.IsDisposed Then
+                ShowMachetaPage(_facturiCumparareForm, MachetaRef.Create(MachetaEFacturaCumparare))
                 Return
             End If
             Dim k_api As IEFacturaApi = Nothing
             Dim k_gate As ReauthGate = Nothing
             If Not EFacturaContext("E-Factura Cumpărare", k_api, k_gate) Then Return
-            _primiteForm = New PrimiteForm(k_api, k_gate, _session.NumeUnitate, _session.An, Function() New FacturaPdfViewer(True))
-            _primiteForm.SubunitHost = Me   ' slice 01EF-02: the subunit selector of «Contari» is in the title bar
-            AddHandler _primiteForm.FormClosed, Sub() _primiteForm = Nothing
-            If Not ShowMachetaPage(_primiteForm, MachetaRef.Create(MachetaEFacturaCumparare)) Then
-                _primiteForm.Dispose()
-                _primiteForm = Nothing
+            _facturiCumparareForm = New FacturiCumparareForm(k_api, k_gate, _session.NumeUnitate, _session.An, Function() New FacturaPdfViewer(True))
+            _facturiCumparareForm.SubunitHost = Me   ' slice 01EF-02: the subunit selector of «Contari» is in the title bar
+            AddHandler _facturiCumparareForm.FormClosed, Sub() _facturiCumparareForm = Nothing
+            If Not ShowMachetaPage(_facturiCumparareForm, MachetaRef.Create(MachetaEFacturaCumparare)) Then
+                _facturiCumparareForm.Dispose()
+                _facturiCumparareForm = Nothing
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.DeschideEFacturaCumparare", ex)
@@ -287,8 +287,8 @@ Partial Public Class KbotForm
     ''' </summary>
     Friend Async Sub SyncPrimite(k_days As Integer)
         Try
-            If _primiteForm Is Nothing OrElse _primiteForm.IsDisposed Then Return
-            Await _primiteForm.SyncFromAnafAsync(k_days).ConfigureAwait(True)
+            If _facturiCumparareForm Is Nothing OrElse _facturiCumparareForm.IsDisposed Then Return
+            Await _facturiCumparareForm.SyncFromAnafAsync(k_days).ConfigureAwait(True)
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.SyncPrimite", ex)
             KBotMessage.Show(Me, "Sincronizarea facturilor primite nu a putut fi dusă la capăt. Detalii în jurnalul de erori.",
@@ -303,12 +303,12 @@ Partial Public Class KbotForm
     ''' </summary>
     Friend Async Sub RunPrimiteAccess(k_key As String)
         Try
-            If _primiteForm Is Nothing OrElse _primiteForm.IsDisposed Then Return
+            If _facturiCumparareForm Is Nothing OrElse _facturiCumparareForm.IsDisposed Then Return
             Select Case k_key
                 Case "ef_access_trimite"
-                    Await _primiteForm.TrimiteInAccessAsync().ConfigureAwait(True)
+                    Await _facturiCumparareForm.TrimiteInAccessAsync().ConfigureAwait(True)
                 Case "ef_access_preia"
-                    Await _primiteForm.PreiaDinAccessAsync().ConfigureAwait(True)
+                    Await _facturiCumparareForm.PreiaDinAccessAsync().ConfigureAwait(True)
                 Case Else
                     Throw New ArgumentException($"Unknown Access command '{k_key}'.", NameOf(k_key))
             End Select

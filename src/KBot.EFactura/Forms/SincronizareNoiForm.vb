@@ -10,7 +10,7 @@ Imports KBot.Domain
 ''' <summary>
 ''' Slice 00EF-32 -- the result of «Sincronizează facturi primite» when invoices were brought: a message window (the look of the K-BOT
 ''' dialogs: caption bar, theme) with a table of the NEW invoices (date, number, supplier, tax code, total) and one «OK». It only shows
-''' what it is given; the sync and the list of what is new are the work of <see cref="PrimiteView"/>. When nothing new came, no window:
+''' what it is given; the sync and the list of what is new are the work of <see cref="FacturiCumparareView"/>. When nothing new came, no window:
 ''' that case is an ordinary info message (<c>KBotMessage</c>).
 ''' </summary>
 Public Class SincronizareNoiForm

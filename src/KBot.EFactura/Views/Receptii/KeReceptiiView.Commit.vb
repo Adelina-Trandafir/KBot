@@ -118,7 +118,7 @@ Partial Public Class KeReceptiiView
 
     Private Sub RefreshOk()
         If _viewing IsNot Nothing Then
-            pgAsociate.gridReceptii.Column(PrimiteReceptiiAsociateView.ColElimina).Enabled =
+            pgAsociate.gridReceptii.Column(FacturiCumparareReceptiiAsociateView.ColElimina).Enabled =
                 _viewState IsNot Nothing AndAlso _viewState.PoateScrie AndAlso Not _busy
             Return
         End If

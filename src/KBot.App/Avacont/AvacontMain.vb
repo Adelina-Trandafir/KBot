@@ -191,10 +191,10 @@ Public Class AvacontMain
                     TryCast(CurrentPage, ParteneriForm)?.RunRibbonButton(e.Key)
                 Case KeyReceptieActiune
                     ' The work of the view «Recepții» of the received invoices window (link / create / modify a reception).
-                    If CurrentPage Is Nothing Then _kbot.RunViewRibbonButton(e.Key) Else TryCast(CurrentPage, PrimiteForm)?.RunReceptiiAction()
+                    If CurrentPage Is Nothing Then _kbot.RunViewRibbonButton(e.Key) Else TryCast(CurrentPage, FacturiCumparareForm)?.RunReceptiiAction()
                 Case KeyReceptieOrd
                     ' Slice 02EF-11: the ordonantare built on the reception just saved (not on payments).
-                    Dim k_ordPage As PrimiteForm = TryCast(CurrentPage, PrimiteForm)
+                    Dim k_ordPage As FacturiCumparareForm = TryCast(CurrentPage, FacturiCumparareForm)
                     If CurrentPage Is Nothing Then
                         _kbot.RunViewRibbonButton(e.Key)
                     ElseIf k_ordPage IsNot Nothing AndAlso k_ordPage.OrdDisponibil Then
@@ -202,7 +202,7 @@ Public Class AvacontMain
                     End If
                 Case KeyReceptieRezervare
                     ' Slice 02EF-12: the window «Adauga rezervare» with the value of the reception filled in.
-                    If CurrentPage Is Nothing Then _kbot.RunViewRibbonButton(e.Key) Else TryCast(CurrentPage, PrimiteForm)?.RunRezervare()
+                    If CurrentPage Is Nothing Then _kbot.RunViewRibbonButton(e.Key) Else TryCast(CurrentPage, FacturiCumparareForm)?.RunRezervare()
                 Case "pagina_angajamente"
                     _kbot.OpenRegistered(KbotForm.MachetaAngajamente, Sub() ShowShell())
                 Case DirectorMode.RibbonKeyToSign
@@ -295,7 +295,7 @@ Public Class AvacontMain
         Dim k_page As Form = CurrentPage
         Dim k_shell As Boolean = k_page Is Nothing AndAlso _baseIsShell
         Dim k_extrase As Boolean = TypeOf k_page Is ExtraseForm
-        Dim k_primite As Boolean = TypeOf k_page Is PrimiteForm
+        Dim k_primite As Boolean = TypeOf k_page Is FacturiCumparareForm
         Dim k_parteneri As Boolean = TypeOf k_page Is ParteneriForm
         Dim k_groups As KBotRibbonButton = ribbon.FindButton(KeyGrupeEditeaza)
         Dim k_download As KBotRibbonButton = ribbon.FindButton(KeyExtraseDescarca)
@@ -574,7 +574,7 @@ Public Class AvacontMain
         ' A page that offers buttons (slice AV01-06: «Plan de conturi») speaks for itself; on the shell it is the view in front.
         Dim k_view As IViewRibbon = If(k_onShell, _kbot.ActiveViewRibbon, TryCast(CurrentPage, IViewRibbon))
         ' The received invoices window, while its view «Recepții» is on screen, has the one button of the reception work.
-        Dim k_primite As PrimiteForm = TryCast(CurrentPage, PrimiteForm)
+        Dim k_primite As FacturiCumparareForm = TryCast(CurrentPage, FacturiCumparareForm)
         Dim k_receptii As Boolean = k_primite IsNot Nothing AndAlso k_primite.ReceptiiActionVisible
         Dim k_changed As Boolean
         For Each k_key As String In ViewGroupKeys
@@ -735,7 +735,7 @@ Public Class AvacontMain
         If k_ribbonPage IsNot Nothing Then AddHandler k_ribbonPage.RibbonStateChanged, AddressOf Page_RibbonStateChanged
         Dim k_partnersPage As ParteneriForm = TryCast(k_page, ParteneriForm)
         If k_partnersPage IsNot Nothing Then AddHandler k_partnersPage.AnafModeChanged, AddressOf Page_AnafModeChanged
-        Dim k_primitePage As PrimiteForm = TryCast(k_page, PrimiteForm)
+        Dim k_primitePage As FacturiCumparareForm = TryCast(k_page, FacturiCumparareForm)
         If k_primitePage IsNot Nothing Then AddHandler k_primitePage.ReceptiiActionChanged, AddressOf Page_RibbonStateChanged
         If k_bar IsNot Nothing Then AddHandler k_bar.TextChanged, AddressOf PageTitleChanged
         _pages.Add(k_page)
@@ -1029,7 +1029,7 @@ Public Class AvacontMain
             If k_ribbonPage IsNot Nothing Then RemoveHandler k_ribbonPage.RibbonStateChanged, AddressOf Page_RibbonStateChanged
             Dim k_partnersPage As ParteneriForm = TryCast(k_closed, ParteneriForm)
             If k_partnersPage IsNot Nothing Then RemoveHandler k_partnersPage.AnafModeChanged, AddressOf Page_AnafModeChanged
-            Dim k_primitePage As PrimiteForm = TryCast(k_closed, PrimiteForm)
+            Dim k_primitePage As FacturiCumparareForm = TryCast(k_closed, FacturiCumparareForm)
             If k_primitePage IsNot Nothing Then RemoveHandler k_primitePage.ReceptiiActionChanged, AddressOf Page_RibbonStateChanged
             Dim k_bar As KBotCaptionBar = Nothing
             If _pageBars.TryGetValue(k_closed, k_bar) Then

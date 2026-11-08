@@ -41,7 +41,7 @@
   </ItemGroup>
 
 	<ItemGroup>
-		<Compile Update="FacturiForm.Arbore.vb;FacturiForm.Client.vb;FacturiForm.Furnizor.vb;FacturiForm.Linii.vb;FacturiForm.Pagini.vb;FacturiForm.Pdf.vb;FacturiForm.Trimitere.vb">
+		<Compile Update="Forms\FacturiVanzareForm.Trimitere.vb">
 			<DependentUpon>FacturiForm.vb</DependentUpon>
 		</Compile>
 		<Compile Update="My Project\Resources.Designer.vb">
@@ -60,41 +60,41 @@
 	</ItemGroup>
 
   <ItemGroup>
-    <Compile Update="Views\Primite\PrimiteDetaliiView.vb;Views\Primite\PrimiteReceptiiEditorView.vb">
+    <Compile Update="Views\FacturiCumparare\FacturiCumparareDetaliiView.vb;Views\FacturiCumparare\FacturiCumparareReceptiiEditorView.vb">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Update="Views\Primite\PrimiteDetaliiView.Designer.vb">
-      <DependentUpon>PrimiteDetaliiView.vb</DependentUpon>
+    <Compile Update="Views\FacturiCumparare\FacturiCumparareDetaliiView.Designer.vb">
+      <DependentUpon>FacturiCumparareDetaliiView.vb</DependentUpon>
     </Compile>
-    <Compile Update="Views\Primite\PrimiteReceptiiEditorView.Designer.vb">
-      <DependentUpon>PrimiteReceptiiEditorView.vb</DependentUpon>
+    <Compile Update="Views\FacturiCumparare\FacturiCumparareReceptiiEditorView.Designer.vb">
+      <DependentUpon>FacturiCumparareReceptiiEditorView.vb</DependentUpon>
     </Compile>
-    <Compile Update="Views\Primite\PrimiteReceptieNouaView.vb">
+    <Compile Update="Views\FacturiCumparare\FacturiCumparareReceptieNouaView.vb">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Update="Views\Primite\PrimiteReceptieNouaView.Designer.vb">
-      <DependentUpon>PrimiteReceptieNouaView.vb</DependentUpon>
+    <Compile Update="Views\FacturiCumparare\FacturiCumparareReceptieNouaView.Designer.vb">
+      <DependentUpon>FacturiCumparareReceptieNouaView.vb</DependentUpon>
     </Compile>
-    <EmbeddedResource Update="Views\Primite\PrimiteReceptieNouaView.resx">
-      <DependentUpon>PrimiteReceptieNouaView.vb</DependentUpon>
+    <EmbeddedResource Update="Views\FacturiCumparare\FacturiCumparareReceptieNouaView.resx">
+      <DependentUpon>FacturiCumparareReceptieNouaView.vb</DependentUpon>
     </EmbeddedResource>
-    <Compile Update="Views\Primite\PrimiteReceptiiExistenteView.vb">
+    <Compile Update="Views\FacturiCumparare\FacturiCumparareReceptiiExistenteView.vb">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Update="Views\Primite\PrimiteReceptiiExistenteView.Designer.vb">
-      <DependentUpon>PrimiteReceptiiExistenteView.vb</DependentUpon>
+    <Compile Update="Views\FacturiCumparare\FacturiCumparareReceptiiExistenteView.Designer.vb">
+      <DependentUpon>FacturiCumparareReceptiiExistenteView.vb</DependentUpon>
     </Compile>
-    <EmbeddedResource Update="Views\Primite\PrimiteReceptiiExistenteView.resx">
-      <DependentUpon>PrimiteReceptiiExistenteView.vb</DependentUpon>
+    <EmbeddedResource Update="Views\FacturiCumparare\FacturiCumparareReceptiiExistenteView.resx">
+      <DependentUpon>FacturiCumparareReceptiiExistenteView.vb</DependentUpon>
     </EmbeddedResource>
-    <Compile Update="Views\Primite\PrimiteReceptiiAsociateView.vb">
+    <Compile Update="Views\FacturiCumparare\FacturiCumparareReceptiiAsociateView.vb">
       <SubType>UserControl</SubType>
     </Compile>
-    <Compile Update="Views\Primite\PrimiteReceptiiAsociateView.Designer.vb">
-      <DependentUpon>PrimiteReceptiiAsociateView.vb</DependentUpon>
+    <Compile Update="Views\FacturiCumparare\FacturiCumparareReceptiiAsociateView.Designer.vb">
+      <DependentUpon>FacturiCumparareReceptiiAsociateView.vb</DependentUpon>
     </Compile>
-    <EmbeddedResource Update="Views\Primite\PrimiteReceptiiAsociateView.resx">
-      <DependentUpon>PrimiteReceptiiAsociateView.vb</DependentUpon>
+    <EmbeddedResource Update="Views\FacturiCumparare\FacturiCumparareReceptiiAsociateView.resx">
+      <DependentUpon>FacturiCumparareReceptiiAsociateView.vb</DependentUpon>
     </EmbeddedResource>
   </ItemGroup>
 
@@ -119,11 +119,32 @@
   </ItemGroup>
   <!-- Partial files are plain code: SubType Code stops Visual Studio opening the designer on them (a double-click there creates a stray .resx, and two .resx for one class break the build with MSB3577). -->
   <ItemGroup>
+    <Compile Update="Forms\FacturiVanzareForm.Arbore.vb">
+      <DependentUpon>Forms\FacturiVanzareForm.vb</DependentUpon>
+    </Compile>
     <Compile Update="FacturiForm.Arbore.vb;FacturiForm.Client.vb;FacturiForm.Furnizor.vb;FacturiForm.Linii.vb;FacturiForm.Pagini.vb;FacturiForm.Pdf.vb;FacturiForm.Trimitere.vb;Forms\VerconForm.Tutorial.vb">
       <SubType>Code</SubType>
     </Compile>
-    <Compile Update="Views\Primite\PrimiteView.Access.vb;Views\Primite\PrimiteView.Contare.vb;Views\Primite\PrimiteView.Lista.vb;Views\Primite\PrimiteView.RecepArbore.vb;Views\Primite\PrimiteView.Receptii.vb">
-      <DependentUpon>PrimiteView.vb</DependentUpon>
+    <Compile Update="Forms\FacturiVanzareForm.Trimitere.vb">
+      <DependentUpon>Forms\FacturiVanzareForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Forms\FacturiVanzareForm.Pdf.vb">
+      <DependentUpon>Forms\FacturiVanzareForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Forms\FacturiVanzareForm.Pagini.vb">
+      <DependentUpon>Forms\FacturiVanzareForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Forms\FacturiVanzareForm.Linii.vb">
+      <DependentUpon>Forms\FacturiVanzareForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Forms\FacturiVanzareForm.Furnizor.vb">
+      <DependentUpon>Forms\FacturiVanzareForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Forms\FacturiVanzareForm.Client.vb">
+      <DependentUpon>Forms\FacturiVanzareForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Views\FacturiCumparare\FacturiCumparareView.Access.vb;Views\FacturiCumparare\FacturiCumparareView.Contare.vb;Views\FacturiCumparare\FacturiCumparareView.Lista.vb;Views\FacturiCumparare\FacturiCumparareView.RecepArbore.vb;Views\FacturiCumparare\FacturiCumparareView.Receptii.vb">
+      <DependentUpon>Views\FacturiCumparare\FacturiCumparareView.vb</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="Views\Receptii\KeReceptiiView.Amounts.vb;Views\Receptii\KeReceptiiView.Angajamente.vb;Views\Receptii\KeReceptiiView.Commit.vb;Views\Receptii\KeReceptiiView.Invoices.vb;Views\Receptii\KeReceptiiView.Lines.vb;Views\Receptii\KeReceptiiView.Receptii.vb;Views\Receptii\KeReceptiiView.Ribbon.vb;Views\Receptii\KeReceptiiView.Viewing.vb;Views\Receptii\KeAngajamenteView.Fill.vb;Views\Receptii\KeAngajamenteView.Grid.vb;Views\Receptii\KeAngajamenteView.Link.vb;Views\Receptii\KeAngajamenteView.Load.vb">

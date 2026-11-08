@@ -11,7 +11,7 @@ Imports KBot.Domain
 
 ''' <summary>
 ''' Slice 00EF-20 -- «Leagă de un DDF»: the list of the unit's fundamentări (at most the newest 300) with a search box; the operator picks one.
-''' The window only chooses (<see cref="Ales"/>); the link itself is written by <see cref="PrimiteView"/>. The search is the SERVER's: a pause
+''' The window only chooses (<see cref="Ales"/>); the link itself is written by <see cref="FacturiCumparareView"/>. The search is the SERVER's: a pause
 ''' after the last key (no timer: a short wait that a newer key cancels), then the server looks in ALL the fundamentari, not only in the newest 300.
 ''' </summary>
 Public Class AlegeDdfForm

@@ -77,9 +77,9 @@ Public Class KeReceptiiView
     Private ReadOnly _actionKeys As String() = {EFacturaKeTip.Existenta, EFacturaKeTip.Modificata}
     Private ReadOnly _actionLabels As String() = {"Leagă facturile de recepție", "Modifică recepția (valorile cresc)"}
     Private WithEvents navMod As KBotNavList
-    Private WithEvents pgNoua As PrimiteReceptieNouaView
-    Private WithEvents pgExistente As PrimiteReceptiiExistenteView
-    Private WithEvents pgAsociate As PrimiteReceptiiAsociateView
+    Private WithEvents pgNoua As FacturiCumparareReceptieNouaView
+    Private WithEvents pgExistente As FacturiCumparareReceptiiExistenteView
+    Private WithEvents pgAsociate As FacturiCumparareReceptiiAsociateView
     Private _loadingMode As Boolean
     Private _busy As Boolean
     Private ReadOnly _tipuri As String() = {"Avans", "Partial", "Final"}
