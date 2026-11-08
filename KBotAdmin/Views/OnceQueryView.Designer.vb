@@ -36,7 +36,7 @@ Partial Class OnceQueryView
         txtSql = New KBotSqlBox()
         tlyBottom = New KBotTableLayoutPanel()
         logBox = New KBotLogBox()
-        gridHist = New KBotDataView()
+        gridHist = New AdminDataView()
         lblState = New Label()
         CType(gridHist, ComponentModel.ISupportInitialize).BeginInit()
         tlyMain.SuspendLayout()
@@ -228,6 +228,8 @@ Partial Class OnceQueryView
         gridHistCol2.HeaderText = "Rulată la"
         gridHistCol2.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridHistCol2.Key = "ranat"
+        gridHistCol2.ValueType = KBotValueType.DateTime
+        gridHistCol2.FormatString = "yyyy-MM-dd HH:mm:ss"
         gridHistCol2.MinWidth = 90
         gridHistCol2.OptionGroup = Nothing
         gridHistCol2.ReadOnly = True
@@ -246,6 +248,7 @@ Partial Class OnceQueryView
         gridHistCol4.HeaderText = "Rânduri"
         gridHistCol4.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridHistCol4.Key = "rows"
+        gridHistCol4.ValueType = KBotValueType.Number
         gridHistCol4.MinWidth = 50
         gridHistCol4.OptionGroup = Nothing
         gridHistCol4.ReadOnly = True
@@ -278,7 +281,6 @@ Partial Class OnceQueryView
         gridHist.Columns.Add(gridHistCol6)
         gridHist.Dock = DockStyle.Fill
         gridHist.FillColumnKey = "name"
-        gridHist.HeaderHeight = 24
         gridHist.Location = New Point(0, 0)
         gridHist.Margin = New Padding(0)
         gridHist.Name = "gridHist"
@@ -326,6 +328,6 @@ Partial Class OnceQueryView
     Friend WithEvents txtSql As KBotSqlBox
     Friend WithEvents tlyBottom As KBotTableLayoutPanel
     Friend WithEvents logBox As KBotLogBox
-    Friend WithEvents gridHist As KBotDataView
+    Friend WithEvents gridHist As AdminDataView
     Friend WithEvents lblState As Label
 End Class

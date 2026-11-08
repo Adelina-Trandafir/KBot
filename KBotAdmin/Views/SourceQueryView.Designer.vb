@@ -43,8 +43,8 @@ Partial Class SourceQueryView
         btnSync = New KBotButton()
         btnReload = New KBotButton()
         tlyMid = New KBotTableLayoutPanel()
-        gridObj = New KBotDataView()
-        gridHist = New KBotDataView()
+        gridObj = New AdminDataView()
+        gridHist = New AdminDataView()
         logBox = New KBotLogBox()
         lblState = New Label()
         CType(gridObj, ComponentModel.ISupportInitialize).BeginInit()
@@ -263,6 +263,7 @@ Partial Class SourceQueryView
         gridObjCol1.HeaderText = "Instr."
         gridObjCol1.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridObjCol1.Key = "stmt"
+        gridObjCol1.ValueType = KBotValueType.Number
         gridObjCol1.MinWidth = 40
         gridObjCol1.OptionGroup = Nothing
         gridObjCol1.ReadOnly = True
@@ -321,7 +322,6 @@ Partial Class SourceQueryView
         gridObj.Columns.Add(gridObjCol6)
         gridObj.Dock = DockStyle.Fill
         gridObj.FillColumnKey = "name"
-        gridObj.HeaderHeight = 24
         gridObj.Location = New Point(0, 0)
         gridObj.Margin = New Padding(0, 0, 8, 6)
         gridObj.Name = "gridObj"
@@ -347,6 +347,8 @@ Partial Class SourceQueryView
         gridHistCol2.HeaderText = "Rulată la"
         gridHistCol2.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridHistCol2.Key = "ranat"
+        gridHistCol2.ValueType = KBotValueType.DateTime
+        gridHistCol2.FormatString = "yyyy-MM-dd HH:mm:ss"
         gridHistCol2.MinWidth = 90
         gridHistCol2.OptionGroup = Nothing
         gridHistCol2.ReadOnly = True
@@ -387,7 +389,6 @@ Partial Class SourceQueryView
         gridHist.Columns.Add(gridHistCol5)
         gridHist.Dock = DockStyle.Fill
         gridHist.FillColumnKey = "name"
-        gridHist.HeaderHeight = 24
         gridHist.Location = New Point(0, 0)
         gridHist.Margin = New Padding(0, 0, 0, 6)
         gridHist.Name = "gridHist"
@@ -448,8 +449,8 @@ Partial Class SourceQueryView
     Friend WithEvents btnSync As KBotButton
     Friend WithEvents btnReload As KBotButton
     Friend WithEvents tlyMid As KBotTableLayoutPanel
-    Friend WithEvents gridObj As KBotDataView
-    Friend WithEvents gridHist As KBotDataView
+    Friend WithEvents gridObj As AdminDataView
+    Friend WithEvents gridHist As AdminDataView
     Friend WithEvents logBox As KBotLogBox
     Friend WithEvents lblState As Label
 End Class

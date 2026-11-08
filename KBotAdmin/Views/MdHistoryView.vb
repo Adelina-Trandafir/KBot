@@ -6,7 +6,7 @@ Imports System.Text
 ''' <summary>
 ''' The «Istoric md» page: how the project evolved, read ONLY from its markdown files. Two views of the same scan (<see cref="MdScanner"/>):
 ''' a lane per slice with a dot per file on a time axis, and a graph of files and the links between them with a time cursor.
-''' Nothing is written; double click (or «Deschide fișierul») opens a file in the program that reads .md on this PC.
+''' A double-click opens the file in the built-in Markdown reader.
 ''' </summary>
 Public Class MdHistoryView
     Implements IAdminView
@@ -19,6 +19,8 @@ Public Class MdHistoryView
     Private _byPath As New Dictionary(Of String, MdFile)(StringComparer.OrdinalIgnoreCase)
     Private ReadOnly _familyNames As New List(Of String)()
     Private ReadOnly _groupIndex As New Dictionary(Of String, Integer)(StringComparer.Ordinal)
+    ' SLICE-ME01-25. Nothing means no search. An empty set means a search with no matches.
+    Private _fileMatches As HashSet(Of String)
     Private _selected As MdFile
     Private _timelineStale As Boolean = True
     Private _graphStale As Boolean = True
@@ -63,6 +65,7 @@ Public Class MdHistoryView
         Dim k_corpus As MdCorpus = Await Task.Run(Function() MdScanner.Scan(k_root))
         _corpus = k_corpus
         _byPath = k_corpus.Files.ToDictionary(Function(k_f) k_f.RelPath, StringComparer.OrdinalIgnoreCase)
+        UpdateFileMatches()
         _groupIndex.Clear()
         For k_i As Integer = 0 To k_corpus.Groups.Count - 1
             _groupIndex(k_corpus.Groups(k_i).Key) = k_i
@@ -110,6 +113,33 @@ Public Class MdHistoryView
         Dim k_family As String = SelectedFamily()
         Return _corpus.Files.Where(Function(k_f) k_family.Length = 0 OrElse String.Equals(k_f.Family, k_family, StringComparison.Ordinal)).ToList()
     End Function
+
+    Private Sub UpdateFileMatches()
+        Dim k_search As String = txtFileSearch.Text.Trim()
+        _fileMatches = Nothing
+        If k_search.Length > 0 Then
+            _fileMatches = New HashSet(Of String)(
+                _corpus.Files.Where(Function(k_file) k_file.Name.Contains(k_search, StringComparison.OrdinalIgnoreCase)).
+                              Select(Function(k_file) k_file.RelPath),
+                StringComparer.OrdinalIgnoreCase)
+        End If
+        graphView.SetEdgeFilter(_fileMatches)
+        graphView.EmptyText = If(_fileMatches Is Nothing, "Niciun fișier până la data aleasă.",
+                                  "Niciun fișier găsit pentru familia și data alese.")
+    End Sub
+
+    Private Sub TxtFileSearch_TextChanged(k_sender As Object, e As EventArgs) Handles txtFileSearch.TextChanged
+        Try
+            If _corpus Is Nothing Then Return
+            UpdateFileMatches()
+            _timelineStale = True
+            ShowDetail(Nothing)
+            If cmbMode.SelectedIndex = ModeTimeline Then BuildTimeline()
+            ApplyCursor()
+        Catch ex As Exception
+            GlobalErrorLog.Write("MdHistoryView.TxtFileSearch_TextChanged", ex)
+        End Try
+    End Sub
 
     ' ------------------------------------------------------------------
     ' Which view is open
@@ -184,6 +214,7 @@ Public Class MdHistoryView
             For Each k_group As MdGroup In _corpus.Groups
                 Dim k_members As List(Of MdFile) = Nothing
                 If Not k_byGroup.TryGetValue(k_group.Key, k_members) Then Continue For
+                If _fileMatches IsNot Nothing AndAlso Not k_members.Any(Function(k_file) _fileMatches.Contains(k_file.RelPath)) Then Continue For
                 Dim k_lane As KBotLane = laneView.AddLane(k_group.Key, k_group.Caption)
                 k_lane.LaneColor = laneView.AutoColor(_groupIndex(k_group.Key))
                 k_lane.Tooltip = GroupTip(k_group, k_members)
@@ -225,11 +256,25 @@ Public Class MdHistoryView
         End Try
     End Sub
 
+    Private Sub LaneView_MouseDoubleClick(k_sender As Object, e As MouseEventArgs) Handles laneView.MouseDoubleClick
+        Try
+            If e.Button <> MouseButtons.Left Then Return
+            Dim k_file As MdFile = TryCast(laneView.MarkerAt(e.Location)?.Tag, MdFile)
+            If k_file Is Nothing Then Return
+            laneView.MarkerTooltip.HideNow()
+            ReadMarkdown(k_file)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MdHistoryView.LaneView_MouseDoubleClick", ex)
+        End Try
+    End Sub
+
     ' ------------------------------------------------------------------
     ' View 2: the graph with a time cursor
     ' ------------------------------------------------------------------
 
     Private Async Function BuildGraphAsync() As Task
+        Dim k_corpus As MdCorpus = _corpus
+        Dim k_family As String = SelectedFamily()
         Dim k_files As List(Of MdFile) = FilteredFiles()
         Dim k_position As New Dictionary(Of String, Integer)(StringComparer.OrdinalIgnoreCase)
         For k_i As Integer = 0 To k_files.Count - 1
@@ -249,6 +294,7 @@ Public Class MdHistoryView
 
         _context.Say("Se așază fișierele pe graf (" & k_files.Count.ToString(CultureInfo.InvariantCulture) & " puncte, " & k_links.Count.ToString(CultureInfo.InvariantCulture) & " legături)...")
         Dim k_positions As PointF() = Await Task.Run(Function() KBotGraphLayout.Compute(k_groupOf, k_from, k_to, 140))
+        If k_corpus IsNot _corpus OrElse Not String.Equals(k_family, SelectedFamily(), StringComparison.Ordinal) Then Return
 
         graphView.BeginUpdate()
         Try
@@ -307,11 +353,13 @@ Public Class MdHistoryView
         End If
         Dim k_date As Date = _cursorStart.AddDays(scrollTime.Value)
         Dim k_weekStart As Date = k_date.AddDays(-6)
+        Dim k_searchNodes As HashSet(Of String) = SearchNodesAt(k_date)
         Dim k_shown As Integer = 0
         Dim k_touched As Integer = 0
         For Each k_node As KBotGraphNode In graphView.Nodes
             Dim k_file As MdFile = DirectCast(k_node.Tag, MdFile)
-            k_node.Visible = k_file.FirstDate <= k_date
+            k_node.Visible = k_file.FirstDate <= k_date AndAlso
+                             (k_searchNodes Is Nothing OrElse k_searchNodes.Contains(k_node.Key))
             k_node.Highlighted = False
             If Not k_node.Visible Then Continue For
             k_shown += 1
@@ -328,6 +376,20 @@ Public Class MdHistoryView
                          k_touched.ToString(CultureInfo.InvariantCulture) & " atinse în ultima săptămână"
         graphView.RefreshGraph()
     End Sub
+
+    ''' <summary>The matching files plus the endpoints needed to show their direct links at this date.</summary>
+    Private Function SearchNodesAt(k_date As Date) As HashSet(Of String)
+        If _fileMatches Is Nothing Then Return Nothing
+        Dim k_nodes As New HashSet(Of String)(_fileMatches, StringComparer.OrdinalIgnoreCase)
+        For Each k_edge As KBotGraphEdge In graphView.Edges
+            If Not (_fileMatches.Contains(k_edge.FromNode.Key) OrElse _fileMatches.Contains(k_edge.ToNode.Key)) Then Continue For
+            If DirectCast(k_edge.FromNode.Tag, MdFile).FirstDate > k_date OrElse
+               DirectCast(k_edge.ToNode.Tag, MdFile).FirstDate > k_date Then Continue For
+            k_nodes.Add(k_edge.FromNode.Key)
+            k_nodes.Add(k_edge.ToNode.Key)
+        Next
+        Return k_nodes
+    End Function
 
     Private Sub GraphView_NodeClicked(k_key As String) Handles graphView.NodeClicked
         Try
@@ -348,12 +410,8 @@ Public Class MdHistoryView
     End Sub
 
     Private Sub GraphView_NodeDoubleClicked(k_key As String) Handles graphView.NodeDoubleClicked
-        Try
-            ShowDetail(DirectCast(graphView.FindNode(k_key).Tag, MdFile))
-            OpenSelected()
-        Catch ex As Exception
-            GlobalErrorLog.Write("MdHistoryView.GraphView_NodeDoubleClicked", ex)
-        End Try
+        graphView.PointTooltip.HideNow()
+        ReadMarkdown(TryCast(graphView.FindNode(k_key)?.Tag, MdFile))
     End Sub
 
     ' ------------------------------------------------------------------
@@ -430,6 +488,20 @@ Public Class MdHistoryView
     ' ------------------------------------------------------------------
     ' Open the file
     ' ------------------------------------------------------------------
+
+    Private Sub ReadMarkdown(k_file As MdFile)
+        If k_file Is Nothing OrElse _corpus Is Nothing Then Return
+        Try
+            ShowDetail(k_file)
+            Using k_form As New MdReaderForm(_corpus.Root, k_file.RelPath)
+                k_form.ShowDialog(Me)
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("MdHistoryView.ReadMarkdown", ex)
+            KBotMessage.Show(Me, "Nu am putut deschide fișierul " & k_file.RelPath & ": " & ex.Message,
+                             "Cititor Markdown", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+        End Try
+    End Sub
 
     Private Sub BtnOpen_Click(k_sender As Object, e As EventArgs) Handles btnOpen.Click
         Try

@@ -110,6 +110,13 @@ Partial Public Class ApiClient
         Public Property cumparator As EFacturaPrimitaParteWire
         Public Property plati As List(Of EFacturaPrimitaPlataWire)
         Public Property legaturi As EFacturaPrimitaLegaturiWire
+        Public Property explicatii As EFacturaPrimitaExplicatiiWire
+    End Class
+
+    ' Slice 03EF-13: the texts of the CPV codes and of the units of measure of the lines.
+    Private NotInheritable Class EFacturaPrimitaExplicatiiWire
+        Public Property cpv As Dictionary(Of String, String)
+        Public Property um As Dictionary(Of String, String)
     End Class
 
     Private NotInheritable Class EFacturaDdfAlegereWire
@@ -242,6 +249,18 @@ Partial Public Class ApiClient
             If wire.legaturi IsNot Nothing Then
                 AddLinks(k_result.LegaturiAuto, wire.legaturi.auto)
                 AddLinks(k_result.LegaturiManuale, wire.legaturi.manual)
+            End If
+            If wire.explicatii IsNot Nothing Then
+                If wire.explicatii.cpv IsNot Nothing Then
+                    For Each k_pair As KeyValuePair(Of String, String) In wire.explicatii.cpv
+                        k_result.ExplicatiiCpv(k_pair.Key) = If(k_pair.Value, String.Empty)
+                    Next
+                End If
+                If wire.explicatii.um IsNot Nothing Then
+                    For Each k_pair As KeyValuePair(Of String, String) In wire.explicatii.um
+                        k_result.ExplicatiiUm(k_pair.Key) = If(k_pair.Value, String.Empty)
+                    Next
+                End If
             End If
             Return k_result
         Catch ex As ApiException

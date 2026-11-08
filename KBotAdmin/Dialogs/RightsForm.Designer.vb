@@ -24,7 +24,7 @@ Partial Class RightsForm
         tips = New KBotToolTip(components)
         tlyMain = New KBotTableLayoutPanel()
         lblInfo = New Label()
-        grid = New KBotDataView()
+        grid = New AdminDataView()
         tlyButtons = New KBotTableLayoutPanel()
         btnClose = New KBotButton()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
@@ -85,6 +85,7 @@ Partial Class RightsForm
         KBotDataColumn2.HeaderText = "Bifă"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "bifa"
+        KBotDataColumn2.ValueType = KBotValueType.Boolean
         KBotDataColumn2.MinWidth = 60
         KBotDataColumn2.OptionGroup = Nothing
         KBotDataColumn2.TextAlign = ContentAlignment.MiddleCenter
@@ -93,7 +94,6 @@ Partial Class RightsForm
         grid.Columns.Add(KBotDataColumn2)
         grid.Dock = DockStyle.Fill
         grid.FillColumnKey = "expl"
-        grid.HeaderHeight = 32
         grid.Location = New Point(14, 86)
         grid.Margin = New Padding(0)
         grid.MaxHeaderHeight = 48
@@ -152,7 +152,7 @@ Partial Class RightsForm
     Friend WithEvents tips As KBotToolTip
     Friend WithEvents tlyMain As KBotTableLayoutPanel
     Friend WithEvents lblInfo As Label
-    Friend WithEvents grid As KBotDataView
+    Friend WithEvents grid As AdminDataView
     Friend WithEvents tlyButtons As KBotTableLayoutPanel
     Friend WithEvents btnClose As KBotButton
 End Class

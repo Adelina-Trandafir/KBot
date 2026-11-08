@@ -11,7 +11,7 @@ Partial Class ReleaseNotesView
         Dim colOrder As New KBotDataColumn("order", String.Empty, KBotColumnType.Text, 40)
         Dim colNote As New KBotDataColumn("note", "Noutate", KBotColumnType.Text, 500)
         Dim groupVersion As New KBotGroupLevel("version", KBotSortDirection.Descending)
-        gridNotes = New KBotDataView()
+        gridNotes = New AdminDataView()
         cmbTarget = New KBotComboBox()
         btnMove = New KBotButton()
         lblStatus = New Label()
@@ -41,7 +41,6 @@ Partial Class ReleaseNotesView
         gridNotes.CheckBoxes = KBotCheckBoxMode.All
         gridNotes.FillColumnKey = "note"
         gridNotes.ColumnFillMode = KBotFillMode.SpecificColumn
-        gridNotes.ShowHeader = False
         gridNotes.Dock = DockStyle.Fill
         gridNotes.TabIndex = 0
 
@@ -103,7 +102,7 @@ Partial Class ReleaseNotesView
         ResumeLayout(False)
     End Sub
 
-    Friend WithEvents gridNotes As KBotDataView
+    Friend WithEvents gridNotes As AdminDataView
     Friend WithEvents cmbTarget As KBotComboBox
     Friend WithEvents btnMove As KBotButton
     Friend lblStatus As Label

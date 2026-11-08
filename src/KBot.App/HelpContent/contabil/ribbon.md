@@ -68,14 +68,15 @@ Ca să desfaci ribbonul la loc, dă **dublu clic** pe o filă sau clic pe **săg
 Pe un ecran mic ribbonul poate ocupa prea mult. În **Setări › Aplicație** bifezi **«Panglica din fereastra principală e compactă (iconițe și text mai mici)»**: butoanele au iconițe și text mai mici, rândurile sunt mai strânse și ribbonul ia mai puțin din înălțimea ferestrei. Se aplică imediat, fără repornire; debifat, ribbonul are mărimea obișnuită — [Setări](topic:contabil.setari).
 
 ## Butoanele din dreapta: «Închide» și cele ale paginii
-<!-- slice: 0113, 0114, 0114-02, 0114-03, 0084-04, 0000-85, 0114-15, 0114-16, 0000-91, AV01-13 -->
+<!-- slice: 0113, 0114, 0114-02, 0114-03, 0084-04, 0000-85, 0114-15, 0114-16, 0000-91, AV01-13, 03EF-01, 03EF-02, 03EF-03, 0000-171, 03EF-08, 0000-172 -->
 
 Butoanele din dreapta ribbonului stau pe **orice filă**, și cu ribbonul strâns. Ajutorul nu mai are buton aici: îl deschizi cu **F1** sau cu **?** din bara de titlu — [Ajutorul](topic:contabil.ajutor).
 
-- **Grupul machetei** — în dreapta panoului, chiar lângă «Închide», pe orice filă; numele lui spune macheta de pe ecran și are doar butoanele ei: la **lista angajamentelor** (cu toate vederile ei) — «Editează grupe» și «Descarcă extrase»; la **«Extrase de cont»** — «Descarcă extrase»; la **«Facturi primite»** (E-Factura › Cumpărare) — «Sincronizează facturi primite», cu lista de zile și caseta pentru zile. Dispare când macheta se schimbă.
+- **Grupul machetei** — în dreapta panoului, chiar lângă «Închide», pe orice filă; numele lui spune macheta de pe ecran și are doar butoanele ei: la **lista angajamentelor** (cu toate vederile ei) — «Editează grupe» și «Descarcă extrase»; la **«Extrase de cont»** — «Descarcă extrase»; la **«Facturi primite»** (E-Factura › Cumpărare) — «Sincronizează facturi primite», al cărui clic deschide sub el lista perioadelor (ca subsolul «Actualizează» al arborelui). Dispare când macheta se schimbă.
 - **Grupul vederii** — un grup cu nume (numele vederii), în stânga grupului machetei, despărțit de el printr-o linie subțire; pe orice filă. Are butoane doar pentru **vederea de pe ecran** a listei angajamentelor; grupul dispare când treci la altă vedere fără butoane sau la altă machetă:
   - **Sumar** — **«Asociază parteneri»** (stins, gri, când angajamentul n-are document de fundamentare) — [Vederea «Sumar»](topic:contabil.vederi.sumar);
   - **Rezervări** — **«Grafice»**, butonul documentului de fundamentare (își schimbă numele: «Adaugă rezervare», «Definitivează», «Derulează» sau «Generează PDF final»; apare doar când are ce face) și **«Repară...»** (apare doar când angajamentul are rezervări greșite) — [Vederea «Rezervări»](topic:contabil.vederi.rezervari);
+  - **Contări** (în fereastra «Facturi primite») — **«Adaugă operații contabile»** (în timpul înregistrării, în locul lui stau **«Salvează»** și **«Renunță»**), **«Exportă...»** (arhivă ZIP sau fișier XML) și **«Ascunde...»** (pune factura în arhivă) — [Contări](topic:contabil.efactura);
   - **Recepții** — **«Asociază recepții»** și **«Reface din istoric...»** (apare doar când angajamentul are recepții cu lanțul neînchis) — [Vederea «Recepții»](topic:contabil.vederi.receptii).
 - **«Închide»** — închide **macheta de pe ecran** (Extrase de cont, Clasificații cheltuieli, un editor, Setări…). Dacă ai
   modificări nesalvate, macheta te întreabă, ca înainte. Din **lista angajamentelor** te întoarce la
@@ -101,7 +102,7 @@ Tasta **Esc** închide macheta, la fel ca înainte.
 | Setări › pagina «Istoric versiuni» | Configurări › Configurare › **Istoric versiuni** |
 | butonul din bara de titlu a ferestrei de facturi › Date Unitate / Conturi Unitate | Configurări › Unitate |
 | fereastra de facturi › Token ANAF | E-Factura › ANAF |
-| fereastra de facturi › Sincronizează facturi primite | grupul din dreapta al machetei «Cumpărare» |
+| fereastra de facturi › Sincronizează facturi primite | grupul din dreapta al machetei «Cumpărare»; clicul deschide lista perioadelor |
 | rotița listei › Editează grupe... | grupul din dreapta al listei angajamentelor › **Editează grupe** |
 | pictogramele din capul și din subsolul arborelui de rezervări (grafic, document de fundamentare, repară) | grupul **Rezervări** din dreapta ribbonului › **Grafice**, butonul documentului, **Repară...** |
 | pictogramele din capul și din stânga subsolului arborelui de recepții (legături, refacere din istoric) | grupul **Recepții** din dreapta ribbonului › **Asociază recepții**, **Reface din istoric...** |

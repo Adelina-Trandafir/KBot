@@ -163,6 +163,12 @@ Public NotInheritable Class EFacturaPrimitaDetaliu
     Public ReadOnly Property Plati As New List(Of EFacturaPrimitaPlata)()
     Public ReadOnly Property LegaturiAuto As New List(Of EFacturaPrimitaDdf)()
     Public ReadOnly Property LegaturiManuale As New List(Of EFacturaPrimitaDdf)()
+
+    ''' <summary>Slice 03EF-13: the text of each CPV code of the lines (AVACONT_COMUN.CPV.Expl), for the tooltip of the CPV cell. A code the server does not know is missing.</summary>
+    Public ReadOnly Property ExplicatiiCpv As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
+
+    ''' <summary>Slice 03EF-13: the text of each unit of measure of the lines (AVACONT_COMUN.EF_UM.Explicatie), for the tooltip of the unit cell.</summary>
+    Public ReadOnly Property ExplicatiiUm As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
 End Class
 
 ''' <summary>What one call of the synchronisation did.</summary>

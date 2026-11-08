@@ -1,4 +1,5 @@
 Option Strict On
+Imports System.Drawing
 Imports System.Threading.Tasks
 Imports System.Windows.Forms
 Imports KBot.Api
@@ -72,6 +73,15 @@ Public Class FacturiCumparareForm
         If _api Is Nothing Then Return
         Await facturiCumparare.SyncFromAnafAsync(k_days).ConfigureAwait(True)
     End Function
+
+    ''' <summary>
+    ''' Slice 03EF-01: the ribbon button «Sincronizează facturi primite» opens the popup of the update (the one of the footer of the tree), just under the button:
+    ''' <paramref name="k_anchor"/> is the ribbon and <paramref name="k_rect"/> the button in its client coordinates. UI boundary: the view logs and swallows.
+    ''' </summary>
+    Public Sub OpenSyncPopup(k_anchor As Control, k_rect As Rectangle)
+        If _api Is Nothing Then Return
+        facturiCumparare.OpenSyncPopup(k_anchor, k_rect)
+    End Sub
 
     ''' <summary>Slice 00EF-43: «Preia din Access» (ribbon). The work and what the end tells are the control's (<see cref="FacturiCumparareView.PreiaDinAccessAsync"/>).</summary>
     Public Async Function PreiaDinAccessAsync() As Task
@@ -151,6 +161,40 @@ Public Class FacturiCumparareForm
     ''' <summary>The ribbon button «Creeaza rezervare» was pressed. UI boundary (the view logs and swallows).</summary>
     Public Sub RunRezervare()
         facturiCumparare.RunRezervare()
+    End Sub
+
+    ' ── Slice 03EF-02..05: the buttons of the view «Contari» in the ribbon (the shell asks these and hears ReceptiiActionChanged when an answer changes) ──
+
+    ''' <summary>The view «Contari» is on screen: the view group of the ribbon is named after it and shows its buttons.</summary>
+    Public ReadOnly Property ContareRibbonVisible As Boolean
+        Get
+            Return facturiCumparare.ContareRibbonVisible
+        End Get
+    End Property
+
+    ''' <summary>The button is on screen (see <see cref="FacturiCumparareView.ContareRibbonShown"/>).</summary>
+    Public Function ContareRibbonShown(k_key As String) As Boolean
+        Return facturiCumparare.ContareRibbonShown(k_key)
+    End Function
+
+    ''' <summary>The button can be pressed (dimmed otherwise).</summary>
+    Public Function ContareRibbonEnabled(k_key As String) As Boolean
+        Return facturiCumparare.ContareRibbonEnabled(k_key)
+    End Function
+
+    ''' <summary>The text of the button when it follows the state; empty = the designer's text stays.</summary>
+    Public Function ContareRibbonText(k_key As String) As String
+        Return facturiCumparare.ContareRibbonText(k_key)
+    End Function
+
+    ''' <summary>The tooltip of the button when it carries news; empty = the designer's text stays.</summary>
+    Public Function ContareRibbonTip(k_key As String) As String
+        Return facturiCumparare.ContareRibbonTip(k_key)
+    End Function
+
+    ''' <summary>A button of «Contari» was pressed (<paramref name="k_anchor"/> = the ribbon, <paramref name="k_rect"/> = the button, for the popup of «Exportă...»). UI boundary: the view logs and swallows.</summary>
+    Public Sub RunContareRibbon(k_key As String, k_anchor As Control, k_rect As Rectangle)
+        facturiCumparare.RunContareRibbon(k_key, k_anchor, k_rect)
     End Sub
 
     Private Sub FacturiCumparare_ReceptiiActionChanged(sender As Object, e As EventArgs) Handles facturiCumparare.ReceptiiActionChanged

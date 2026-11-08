@@ -31,8 +31,8 @@ Partial Class RecordHistoryForm
         lblKey = New Label()
         txtKey = New KBotTextField()
         btnSearch = New KBotButton()
-        gridVersions = New KBotDataView()
-        gridValues = New KBotDataView()
+        gridVersions = New AdminDataView()
+        gridValues = New AdminDataView()
         lblState = New Label()
         tlyButtons = New KBotTableLayoutPanel()
         btnCopySql = New KBotButton()
@@ -134,6 +134,8 @@ Partial Class RecordHistoryForm
         VersionColumn1.HeaderText = "Copia din"
         VersionColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         VersionColumn1.Key = "when"
+        VersionColumn1.ValueType = KBotValueType.DateTime
+        VersionColumn1.FormatString = "dd.MM.yyyy HH:mm"
         VersionColumn1.MinWidth = 100
         VersionColumn1.OptionGroup = Nothing
         VersionColumn1.ReadOnly = True
@@ -171,7 +173,6 @@ Partial Class RecordHistoryForm
         gridVersions.Columns.Add(VersionColumn4)
         gridVersions.Dock = DockStyle.Fill
         gridVersions.FillColumnKey = "changed"
-        gridVersions.HeaderHeight = 24
         gridVersions.Location = New Point(12, 60)
         gridVersions.Margin = New Padding(0, 0, 0, 6)
         gridVersions.Name = "gridVersions"
@@ -215,7 +216,6 @@ Partial Class RecordHistoryForm
         gridValues.Columns.Add(ValueColumn3)
         gridValues.Dock = DockStyle.Fill
         gridValues.FillColumnKey = "value"
-        gridValues.HeaderHeight = 24
         gridValues.Location = New Point(12, 286)
         gridValues.Margin = New Padding(0)
         gridValues.Name = "gridValues"
@@ -304,8 +304,8 @@ Partial Class RecordHistoryForm
     Friend WithEvents lblKey As Label
     Friend WithEvents txtKey As KBotTextField
     Friend WithEvents btnSearch As KBotButton
-    Friend WithEvents gridVersions As KBotDataView
-    Friend WithEvents gridValues As KBotDataView
+    Friend WithEvents gridVersions As AdminDataView
+    Friend WithEvents gridValues As AdminDataView
     Friend WithEvents lblState As Label
     Friend WithEvents tlyButtons As KBotTableLayoutPanel
     Friend WithEvents btnCopySql As KBotButton

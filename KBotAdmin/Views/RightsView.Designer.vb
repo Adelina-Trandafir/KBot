@@ -27,7 +27,7 @@ Partial Class RightsView
         tlyBar = New KBotTableLayoutPanel()
         btnRefresh = New KBotButton()
         btnRemove = New KBotButton()
-        grid = New KBotDataView()
+        grid = New AdminDataView()
         tlyFoot = New KBotTableLayoutPanel()
         lblState = New Label()
         btnSqlSync = New KBotButton()
@@ -138,7 +138,6 @@ Partial Class RightsView
         grid.Dock = DockStyle.Fill
         grid.FillColumnKey = "un"
         grid.FrozenColumnCount = 1
-        grid.HeaderHeight = 40
         grid.Location = New Point(8, 52)
         grid.Margin = New Padding(0)
         grid.MaxHeaderHeight = 60
@@ -221,7 +220,7 @@ Partial Class RightsView
     Friend WithEvents tlyBar As KBotTableLayoutPanel
     Friend WithEvents btnRefresh As KBotButton
     Friend WithEvents btnRemove As KBotButton
-    Friend WithEvents grid As KBotDataView
+    Friend WithEvents grid As AdminDataView
     Friend WithEvents tlyFoot As KBotTableLayoutPanel
     Friend WithEvents lblState As Label
     Friend WithEvents btnSqlSync As KBotButton

@@ -129,7 +129,7 @@ Partial Public Class FacturiCumparareView
 
     ' ── The button of the work, in the ribbon (the view has none of its own in this page) ──────────────────
 
-    ''' <summary>The ribbon button of the reception work changed (shown / hidden, enabled, its text): the window asks <see cref="ReceptiiActionVisible"/> and the others again.</summary>
+    ''' <summary>The ribbon button of the reception work changed (shown / hidden, enabled, its text): the window asks <see cref="ReceptiiActionVisible"/> and the others again. Slice 03EF-02: also raised when a button of «Contari» changes.</summary>
     Public Event ReceptiiActionChanged As EventHandler
 
     ''' <summary>The view «Recepții» is the one on screen and its view offers the work (not while an invoice already covered is only looked at).</summary>

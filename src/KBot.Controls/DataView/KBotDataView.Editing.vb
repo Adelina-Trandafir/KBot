@@ -371,6 +371,10 @@ Partial Class KBotDataView
 
             RaiseEvent CellValueChanged(Me, New KBotCellValueEventArgs(
                 changedKey, changedRow, oldValue, args.ProposedValue))
+            If ColumnEditChangesView(changedKey) Then
+                DropSelectionIfHidden()
+                LayoutChanged()
+            End If
             Return True
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.CommitEdit", ex)

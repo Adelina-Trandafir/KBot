@@ -103,7 +103,9 @@ Partial Class KBotDataView
         Dim k_any As Boolean = False
         Dim k_all As Boolean = True
         For k_pos As Integer = k_node.FirstViewPos To k_node.LastViewPos
-            If ToBool(_rows(ModelIndexAt(k_pos))(CheckColumnKey)) Then
+            Dim k_row As KBotDataRow = _rows(ModelIndexAt(k_pos))
+            If k_row.IsDraft Then Continue For
+            If ToBool(k_row(CheckColumnKey)) Then
                 k_any = True
             Else
                 k_all = False
@@ -177,6 +179,7 @@ Partial Class KBotDataView
             RaiseEvent CellValueChanged(Me, New KBotCellValueEventArgs(CheckColumnKey, k_changed(k_i), Not k_target, k_target))
             RaiseEvent RowChecked(Me, New KBotRowCheckedEventArgs(k_changed(k_i), k_target, k_changed.Count - 1 - k_i))
         Next
+        If k_changed.Count > 0 AndAlso ColumnEditChangesView(CheckColumnKey) Then AfterViewStateChanged()
         Return True
     End Function
 

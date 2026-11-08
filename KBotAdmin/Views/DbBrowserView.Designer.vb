@@ -36,16 +36,16 @@ Partial Class DbBrowserView
         lblInfo = New Label()
         btnReload = New Button()
         btnMore = New KBotButton()
-        gridData = New KBotDataView()
+        gridData = New AdminDataView()
         tlyFoot = New KBotTableLayoutPanel()
         btnBack = New Button()
         btnForward = New Button()
         splitBottom = New SplitContainer()
         edCell = New KBotRichTextEditor()
         splitInfo = New SplitContainer()
-        gridTable = New KBotDataView()
-        gridColumn = New KBotDataView()
-        gridQueryColumns = New KBotDataView()
+        gridTable = New AdminDataView()
+        gridColumn = New AdminDataView()
+        gridQueryColumns = New AdminDataView()
         CType(splitMain, ComponentModel.ISupportInitialize).BeginInit()
         splitMain.Panel1.SuspendLayout()
         splitMain.Panel2.SuspendLayout()
@@ -201,7 +201,6 @@ Partial Class DbBrowserView
         gridData.BackColor = SystemColors.Window
         gridData.Dock = DockStyle.Fill
         gridData.EnableGrouping = True
-        gridData.HeaderHeight = 26
         gridData.Location = New Point(0, 38)
         gridData.Margin = New Padding(0)
         gridData.Name = "gridData"
@@ -332,7 +331,6 @@ Partial Class DbBrowserView
         gridTable.Columns.Add(KBotDataColumn2)
         gridTable.Dock = DockStyle.Fill
         gridTable.FillColumnKey = "v"
-        gridTable.HeaderHeight = 24
         gridTable.Location = New Point(0, 0)
         gridTable.Margin = New Padding(0)
         gridTable.Name = "gridTable"
@@ -367,7 +365,6 @@ Partial Class DbBrowserView
         gridColumn.Columns.Add(KBotDataColumn4)
         gridColumn.Dock = DockStyle.Fill
         gridColumn.FillColumnKey = "v"
-        gridColumn.HeaderHeight = 24
         gridColumn.Location = New Point(0, 0)
         gridColumn.Margin = New Padding(0)
         gridColumn.Name = "gridColumn"
@@ -387,6 +384,7 @@ Partial Class DbBrowserView
         KBotDataColumn5.HeaderText = "Fix"
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "on"
+        KBotDataColumn5.ValueType = KBotValueType.Boolean
         KBotDataColumn5.OptionGroup = Nothing
         KBotDataColumn5.Resizable = False
         KBotDataColumn5.Width = 48
@@ -413,7 +411,6 @@ Partial Class DbBrowserView
         gridQueryColumns.Columns.Add(KBotDataColumn7)
         gridQueryColumns.Dock = DockStyle.Fill
         gridQueryColumns.FillColumnKey = "name"
-        gridQueryColumns.HeaderHeight = 24
         gridQueryColumns.Location = New Point(0, 0)
         gridQueryColumns.Margin = New Padding(0)
         gridQueryColumns.Name = "gridQueryColumns"
@@ -464,14 +461,14 @@ Partial Class DbBrowserView
     Friend WithEvents lblInfo As Label
     Friend WithEvents btnReload As Button
     Friend WithEvents btnMore As KBotButton
-    Friend WithEvents gridData As KBotDataView
+    Friend WithEvents gridData As AdminDataView
     Friend WithEvents tlyFoot As KBotTableLayoutPanel
     Friend WithEvents btnBack As Button
     Friend WithEvents btnForward As Button
     Friend WithEvents splitBottom As SplitContainer
     Friend WithEvents edCell As KBotRichTextEditor
     Friend WithEvents splitInfo As SplitContainer
-    Friend WithEvents gridTable As KBotDataView
-    Friend WithEvents gridColumn As KBotDataView
-    Friend WithEvents gridQueryColumns As KBotDataView
+    Friend WithEvents gridTable As AdminDataView
+    Friend WithEvents gridColumn As AdminDataView
+    Friend WithEvents gridQueryColumns As AdminDataView
 End Class

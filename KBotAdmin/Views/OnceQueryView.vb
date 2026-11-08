@@ -17,6 +17,10 @@ Public Class OnceQueryView
 
     Public Sub New()
         InitializeComponent()
+        gridHist.Column("done").SortKeySelector = Function(k_row)
+                                                       Dim k_item As OnceHistoryItem = DirectCast(k_row.Tag, OnceHistoryItem)
+                                                       Return Tuple.Create(k_item.Done, k_item.Total)
+                                                   End Function
         _log = New LogSink(logBox)
     End Sub
 
@@ -115,9 +119,9 @@ Public Class OnceQueryView
                         Dim k_row As KBotDataRow = gridHist.AddRow()
                         k_row.Tag = k_item
                         k_row("name") = k_item.Name
-                        k_row("ranat") = k_item.RanAt.Replace("T", " ")
+                        k_row("ranat") = AdminDataView.DateValue(k_item.RanAt)
                         k_row("by") = k_item.RanBy
-                        k_row("rows") = If(k_item.Rows.HasValue, k_item.Rows.Value.ToString(CultureInfo.InvariantCulture), String.Empty)
+                        k_row("rows") = k_item.Rows
                         k_row("done") = k_item.Done.ToString(CultureInfo.InvariantCulture) & "/" & k_item.Total.ToString(CultureInfo.InvariantCulture)
                         k_row("missing") = If(k_item.Missing.Count = 0, "-", String.Join(", ", k_item.Missing))
                     Next

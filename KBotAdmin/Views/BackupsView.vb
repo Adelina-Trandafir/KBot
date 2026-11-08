@@ -11,6 +11,7 @@ Public Class BackupsView
 
     Public Sub New()
         InitializeComponent()
+        grid.Column("size").ValueFormatter = Function(k_value) UiRun.FormatBytes(CLng(k_value))
     End Sub
 
     Public Sub Attach(k_context As AdminContext) Implements IAdminView.Attach
@@ -43,7 +44,7 @@ Public Class BackupsView
                         k_row.Tag = k_file
                         k_row("name") = k_file.Name
                         k_row("kind") = k_file.Kind
-                        k_row("size") = UiRun.FormatBytes(k_file.Size)
+                        k_row("size") = k_file.Size
                         k_row("modified") = LocalTime(k_file.Modified)
                         k_row("reason") = k_file.Reason
                         k_row("path") = k_file.Path
@@ -58,10 +59,10 @@ Public Class BackupsView
     End Function
 
     ''' <summary>The server writes file times as UTC without an offset (PYTHON/docs/TIMEZONES.md); the grid shows this PC's time.</summary>
-    Private Shared Function LocalTime(k_utcText As String) As String
+    Private Shared Function LocalTime(k_utcText As String) As Object
         Dim k_value As DateTime
         If DateTime.TryParse(k_utcText, CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal Or DateTimeStyles.AdjustToUniversal, k_value) Then
-            Return k_value.ToLocalTime().ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)
+            Return k_value.ToLocalTime()
         End If
         Return If(k_utcText, String.Empty).Replace("T", " ")
     End Function

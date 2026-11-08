@@ -69,7 +69,7 @@ Public Class AuditView
                     grid.ClearRows()
                     For Each k_item As AuditRow In k_result.Rows
                         Dim k_row As KBotDataRow = grid.AddRow()
-                        k_row("moment") = k_item.Moment.Replace("T", " ")
+                        k_row("moment") = AdminDataView.DateValue(k_item.Moment)
                         k_row("un") = k_item.Un
                         k_row("dc") = k_item.Dc
                         k_row("action") = k_item.Action

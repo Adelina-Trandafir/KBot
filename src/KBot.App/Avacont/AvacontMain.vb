@@ -59,10 +59,6 @@ Public Class AvacontMain
 
         ' The ribbon replaces the MENIU drop-down: a click goes to the same handler the menu used.
         ribbon.ValidateKeys()
-        ' The days list of «Sincronizeaza facturi primite» starts with no row picked (its hint «Perioada de adus» shows, as in the
-        ' popup of the invoices tree); nothing picked and nothing typed = 7 days (see ReadSyncDays).
-        Dim k_daysCombo As KBotRibbonField = ribbon.FindField(KeyPrimiteZileCombo)
-        If k_daysCombo IsNot Nothing Then k_daysCombo.SelectedIndex = -1
         ribbon.Compact = AppSettings.Current.RibbonCompact
         ribbon.Collapsed = AppSettings.Current.RibbonCollapsed
         ribbon.RightText = k_shell.lblOperator.Text
@@ -234,6 +230,11 @@ Public Class AvacontMain
                     _kbot.RunEFacturaCommand(e.Key)
                 Case "ef_primite_sync"
                     RunPrimiteSync()
+                Case KeyContareAdauga, KeyContareSalveaza, KeyContareRenunta, KeyContareSalveazaCa, KeyContareAscunde
+                    ' Slice 03EF-02: the buttons of the view «Contari» of the received invoices window.
+                    Dim k_contareBounds As Rectangle = ribbon.ButtonScreenBounds(e.Key)
+                    TryCast(CurrentPage, FacturiCumparareForm)?.RunContareRibbon(e.Key, ribbon,
+                        If(k_contareBounds.IsEmpty, Rectangle.Empty, ribbon.RectangleToClient(k_contareBounds)))
                 Case KeyAccessTrimite, KeyAccessPreia
                     _kbot.RunPrimiteAccess(e.Key)
                 Case KeyParteneriAccessPreia
@@ -262,8 +263,12 @@ Public Class AvacontMain
     ' ---- «Sincronizeaza facturi primite» (slice 0114-01 / 00EF-30) ----------------------------------
 
     Private Const KeyPrimiteSync As String = "ef_primite_sync"
-    Private Const KeyPrimiteZileCombo As String = "ef_primite_zile_combo"
-    Private Const KeyPrimiteZileText As String = "ef_primite_zile_text"
+    ' Slice 03EF-02: the buttons of the view «Contari» of the received invoices window (the view group of the ribbon).
+    Friend Const KeyContareAdauga As String = FacturiCumparareView.RibbonContareAdauga
+    Friend Const KeyContareSalveaza As String = FacturiCumparareView.RibbonContareSalveaza
+    Friend Const KeyContareRenunta As String = FacturiCumparareView.RibbonContareRenunta
+    Friend Const KeyContareSalveazaCa As String = FacturiCumparareView.RibbonContareSalveazaCa
+    Friend Const KeyContareAscunde As String = FacturiCumparareView.RibbonContareAscunde
     ' Slice 00EF-43: the two buttons of the received invoices window that talk to the Access e-invoice store (Access clients only).
     Private Const KeyAccessTrimite As String = "ef_access_trimite"
     Private Const KeyAccessPreia As String = "ef_access_preia"
@@ -274,16 +279,13 @@ Public Class AvacontMain
     Private Const KeyParteneriAnafSelecteaza As String = "parteneri_anaf_selecteaza"
     Private Const KeyParteneriAnafSincronizeaza As String = "parteneri_anaf_sincronizeaza"
 
-    ' The rows of the combo, in order (the combo shows them as «Ultimele N zile»); the first is the default.
-    Private Shared ReadOnly SyncDayChoices As Integer() = {7, 15, 30, 45, 60}
-
     ' ---- The group of the FORM on screen (slice 0114-06 / 0114-07) ------------------------------------------------------
     ' Right to left on the ribbon: «Inchide», the group of the FORM (this one), the group of the VIEW («Sumar» ...). What stands in
     ' the form group depends on the form on screen, never on a view of it:
     '   - the shell (KbotMain, with all its views): «Editeaza grupe», «Descarca extrase»;
     '   - the «Extrase de cont» window: «Descarca extrase»;
-    '   - the received invoices window: «Sincronizeaza facturi primite» and its two inputs, and -- only for a client that also runs the Access
-'     application (slice 00EF-43) -- «Trimite in Access» and «Preia din Access»;
+    '   - the received invoices window: «Sincronizeaza facturi primite» (slice 03EF-01: its click opens the popup of the period, the one of the footer of the tree), and -- only for a client that also runs the Access
+    '     application (slice 00EF-43) -- «Trimite in Access» and «Preia din Access»;
     '   - the «Parteneri» window: -- only for a client that also runs the Access application (slice 0093-01) -- «Preia date din Access»;
     '     and (slice 0093-02) «Selecteaza Parteneri Sincronizare Anaf», which is replaced by «Sincronizeaza ANAF» while the partners are being chosen.
     ' The group goes when none of them applies (the ribbon skips a group with nothing visible).
@@ -300,14 +302,12 @@ Public Class AvacontMain
         Dim k_groups As KBotRibbonButton = ribbon.FindButton(KeyGrupeEditeaza)
         Dim k_download As KBotRibbonButton = ribbon.FindButton(KeyExtraseDescarca)
         Dim k_sync As KBotRibbonButton = ribbon.FindButton(KeyPrimiteSync)
-        Dim k_combo As KBotRibbonField = ribbon.FindField(KeyPrimiteZileCombo)
-        Dim k_text As KBotRibbonField = ribbon.FindField(KeyPrimiteZileText)
         Dim k_toAccess As KBotRibbonButton = ribbon.FindButton(KeyAccessTrimite)
         Dim k_fromAccess As KBotRibbonButton = ribbon.FindButton(KeyAccessPreia)
         Dim k_partnersFromAccess As KBotRibbonButton = ribbon.FindButton(KeyParteneriAccessPreia)
         Dim k_anafSelect As KBotRibbonButton = ribbon.FindButton(KeyParteneriAnafSelecteaza)
         Dim k_anafSync As KBotRibbonButton = ribbon.FindButton(KeyParteneriAnafSincronizeaza)
-        If k_groups Is Nothing OrElse k_download Is Nothing OrElse k_sync Is Nothing OrElse k_combo Is Nothing OrElse k_text Is Nothing OrElse
+        If k_groups Is Nothing OrElse k_download Is Nothing OrElse k_sync Is Nothing OrElse
            k_toAccess Is Nothing OrElse k_fromAccess Is Nothing OrElse k_partnersFromAccess Is Nothing OrElse
            k_anafSelect Is Nothing OrElse k_anafSync Is Nothing Then Return
         ' Slice 0093-02: while the partners are being chosen the second button stands where the first one was.
@@ -321,15 +321,13 @@ Public Class AvacontMain
         Dim k_showGroups As Boolean = k_shell
         Dim k_showDownload As Boolean = k_shell OrElse k_extrase
         If k_groups.Visible = k_showGroups AndAlso k_download.Visible = k_showDownload AndAlso k_sync.Visible = k_primite AndAlso
-           k_combo.Visible = k_primite AndAlso k_text.Visible = k_primite AndAlso k_toAccess.Visible = k_access AndAlso k_fromAccess.Visible = k_access AndAlso
+           k_toAccess.Visible = k_access AndAlso k_fromAccess.Visible = k_access AndAlso
            k_partnersFromAccess.Visible = k_partnersAccess AndAlso
            k_anafSelect.Visible = k_showAnafSelect AndAlso k_anafSync.Visible = k_showAnafSync AndAlso
            String.Equals(ribbon.FormGroup.Text, k_caption, StringComparison.Ordinal) Then Return
         k_groups.Visible = k_showGroups
         k_download.Visible = k_showDownload
         k_sync.Visible = k_primite
-        k_combo.Visible = k_primite
-        k_text.Visible = k_primite
         k_toAccess.Visible = k_access
         k_fromAccess.Visible = k_access
         k_partnersFromAccess.Visible = k_partnersAccess
@@ -340,31 +338,12 @@ Public Class AvacontMain
         ribbon.InvalidateLayout()
     End Sub
 
-    ' The days to bring: the number written in the box when there is one (1 to 60), else the row picked in the list, else 7.
-    ' False = the number written is not valid (the operator was told).
-    Private Function ReadSyncDays(ByRef k_days As Integer) As Boolean
-        Dim k_text As KBotRibbonField = ribbon.FindField(KeyPrimiteZileText)
-        Dim k_combo As KBotRibbonField = ribbon.FindField(KeyPrimiteZileCombo)
-        Dim k_typed As String = If(k_text Is Nothing, String.Empty, k_text.Text.Trim())
-        If k_typed.Length > 0 Then
-            Dim k_number As Integer
-            If Not Integer.TryParse(k_typed, NumberStyles.None, CultureInfo.InvariantCulture, k_number) OrElse k_number < 1 OrElse k_number > 60 Then
-                KBotMessage.Show(Me, "Numărul de zile trebuie să fie între 1 și 60.",
-                                 "Sincronizează facturi primite", MessageBoxButtons.OK, MessageBoxIcon.Warning)
-                Return False
-            End If
-            k_days = k_number
-            Return True
-        End If
-        Dim k_index As Integer = If(k_combo Is Nothing, 0, k_combo.SelectedIndex)
-        k_days = SyncDayChoices(Math.Max(0, Math.Min(SyncDayChoices.Length - 1, k_index)))
-        Return True
-    End Function
-
+    ' Slice 03EF-01: the button opens the same popup as «Actualizeaza» of the tree footer (the period to bring, or a number of days, or a re-read
+    ' from the K-BOT server), just under the button; the work starts when the operator answers it. UI boundary (ribbon click): the view logs and swallows.
     Private Sub RunPrimiteSync()
-        Dim k_days As Integer
-        If Not ReadSyncDays(k_days) Then Return
-        _kbot.SyncPrimite(k_days)
+        Dim k_bounds As Rectangle = ribbon.ButtonScreenBounds(KeyPrimiteSync)
+        If k_bounds.IsEmpty Then Return
+        TryCast(CurrentPage, FacturiCumparareForm)?.OpenSyncPopup(ribbon, ribbon.RectangleToClient(k_bounds))
     End Sub
 
     Private Shared ReadOnly ShellEntries As New HashSet(Of String)(StringComparer.Ordinal) From {
@@ -565,8 +544,15 @@ Public Class AvacontMain
     Private Shared ReadOnly ViewGroupKeys As String() = {KeySumarParteneri,
         "rezervari_repara", "rezervari_grafic", "rezervari_adauga", "receptii_reface", "receptii_asociere", "ddf_repara_program",
         "notecab_trimite", "plan_cont_solduri", "plan_cont_excel", KeyReceptieActiune, KeyReceptieRezervare, KeyReceptieOrd,
+        KeyContareAdauga, KeyContareSalveaza, KeyContareRenunta, KeyContareSalveazaCa, KeyContareAscunde,
         "plati_leaga_ord", ClasificatiiBugetView.KeyAdd, "clasificatii_salveaza", "clasificatii_verifica", "clasificatii_access", "clasificatii_sterge",
         ParteneriForm.RibbonSterge, ParteneriForm.RibbonRenunta, ParteneriForm.RibbonAdauga, ParteneriForm.RibbonSalveaza}
+
+    Private Shared Function IsContareKey(k_key As String) As Boolean
+        Return String.Equals(k_key, KeyContareAdauga, StringComparison.Ordinal) OrElse String.Equals(k_key, KeyContareSalveaza, StringComparison.Ordinal) OrElse
+               String.Equals(k_key, KeyContareRenunta, StringComparison.Ordinal) OrElse String.Equals(k_key, KeyContareSalveazaCa, StringComparison.Ordinal) OrElse
+               String.Equals(k_key, KeyContareAscunde, StringComparison.Ordinal)
+    End Function
 
     Private Sub UpdateViewGroup()
         Dim k_onShell As Boolean = CurrentPage Is Nothing AndAlso _baseIsShell
@@ -593,6 +579,13 @@ Public Class AvacontMain
                 If k_primite IsNot Nothing AndAlso k_primite.OrdDisponibil Then k_state = ViewButtonState.Enabled
             ElseIf String.Equals(k_key, KeyReceptieRezervare, StringComparison.Ordinal) AndAlso k_primite IsNot Nothing Then
                 If k_primite.RezervareAvailable Then k_state = If(k_primite.RezervareEnabled, ViewButtonState.Enabled, ViewButtonState.Dimmed)
+            ElseIf k_primite IsNot Nothing AndAlso IsContareKey(k_key) Then
+                ' Slice 03EF-02: the buttons of the view «Contari».
+                k_state = If(Not k_primite.ContareRibbonShown(k_key), ViewButtonState.Hidden,
+                             If(k_primite.ContareRibbonEnabled(k_key), ViewButtonState.Enabled, ViewButtonState.Dimmed))
+                k_text = k_primite.ContareRibbonText(k_key)
+                Dim k_tip As String = k_primite.ContareRibbonTip(k_key)
+                If k_tip.Length > 0 AndAlso Not String.Equals(k_button.ToolTipText, k_tip, StringComparison.Ordinal) Then k_button.ToolTipText = k_tip
             ElseIf k_view IsNot Nothing AndAlso k_view.RibbonKeys.Contains(k_key) Then
                 k_state = k_view.RibbonButtonState(k_key)
                 k_text = If(k_view.RibbonButtonText(k_key), String.Empty)
@@ -609,7 +602,8 @@ Public Class AvacontMain
                 k_changed = True
             End If
         Next
-        Dim k_caption As String = If(k_sumar, "Sumar", If(k_receptii, "Recepții", If(k_view Is Nothing, String.Empty, k_view.RibbonCaption)))
+        Dim k_contare As Boolean = k_primite IsNot Nothing AndAlso k_primite.ContareRibbonVisible
+        Dim k_caption As String = If(k_sumar, "Sumar", If(k_receptii, "Recepții", If(k_contare, "Contări", If(k_view Is Nothing, String.Empty, k_view.RibbonCaption))))
         If k_caption.Length > 0 AndAlso Not String.Equals(ribbon.RightGroup.Text, k_caption, StringComparison.Ordinal) Then
             ribbon.RightGroup.Text = k_caption
             k_changed = True

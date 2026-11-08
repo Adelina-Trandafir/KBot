@@ -851,6 +851,8 @@ Public NotInheritable Class KBotRibbon
         For Each k_button As KBotRibbonButton In k_group.Buttons
             If k_button.Bounds.IsEmpty Then Continue For
             k_button.Bounds = New Rectangle(k_button.Bounds.X + k_dx, k_button.Bounds.Y, k_button.Bounds.Width, k_button.Bounds.Height)
+            ' Slice 03EF-11: the line after a large button is placed with the group at x = 0 and must travel with it (it was left behind, drawn over the buttons of the left).
+            If k_button.SeparatorX >= 0 Then k_button.SeparatorX += k_dx
         Next
         For Each k_field As KBotRibbonField In k_group.Fields
             If k_field.Bounds.IsEmpty Then Continue For

@@ -41,8 +41,8 @@ Public Class VisitsView
                     grid.ClearRows()
                     For Each k_visit As VisitRow In k_result.Rows
                         Dim k_row As KBotDataRow = grid.AddRow()
-                        k_row("first") = k_visit.First.Replace("T", " ")
-                        k_row("seconds") = k_visit.Seconds.ToString(CultureInfo.InvariantCulture)
+                        k_row("first") = AdminDataView.DateValue(k_visit.First)
+                        k_row("seconds") = k_visit.Seconds
                         k_row("ip") = k_visit.Ip
                         k_row("country") = k_visit.Country
                         k_row("kind") = If(k_visit.Bot, "robot", If(k_visit.Mobile, "mobil", "calculator"))

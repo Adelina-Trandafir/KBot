@@ -18,7 +18,6 @@ Partial Class FacturiCumparareContarePage
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
         components = New ComponentModel.Container()
-        Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(FacturiCumparareContarePage))
         Dim KBotDataColumn1 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
@@ -32,14 +31,12 @@ Partial Class FacturiCumparareContarePage
         Dim KBotDataColumn11 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn12 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn13 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn14 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         cmbClsf = New KBotComboBox()
         txtCodClient = New KBotTextBox()
         txtIban = New KBotTextBox()
         txtFelOp = New KBotTextBox()
-        barExplicatie = New KBotProgressBar()
-        btnRenunta = New KBotButton()
-        btnSalveaza = New KBotButton()
         tlyPagina = New KBotTableLayoutPanel()
         tlySus = New KBotTableLayoutPanel()
         lblClsf = New KBotLabel()
@@ -51,12 +48,7 @@ Partial Class FacturiCumparareContarePage
         gridEvidenta = New KBotDataView()
         tlyPlata = New KBotTableLayoutPanel()
         lstPlata = New KBotDataView()
-        tlyPlataDr = New KBotTableLayoutPanel()
         gridPlata = New KBotDataView()
-        tlyBara = New KBotTableLayoutPanel()
-        lblLungime = New KBotLabel()
-        pnlJos = New KBotTableLayoutPanel()
-        lblInfo = New KBotHtmlLabel()
         tlyPagina.SuspendLayout()
         tlySus.SuspendLayout()
         tlyEvid.SuspendLayout()
@@ -64,10 +56,7 @@ Partial Class FacturiCumparareContarePage
         CType(gridEvidenta, ComponentModel.ISupportInitialize).BeginInit()
         tlyPlata.SuspendLayout()
         CType(lstPlata, ComponentModel.ISupportInitialize).BeginInit()
-        tlyPlataDr.SuspendLayout()
         CType(gridPlata, ComponentModel.ISupportInitialize).BeginInit()
-        tlyBara.SuspendLayout()
-        pnlJos.SuspendLayout()
         SuspendLayout()
         ' 
         ' cmbClsf
@@ -83,7 +72,7 @@ Partial Class FacturiCumparareContarePage
         cmbClsf.MaxDropDownItems = 15
         cmbClsf.Name = "cmbClsf"
         cmbClsf.PlaceholderText = "Alegeți clasificația bugetară"
-        cmbClsf.Size = New System.Drawing.Size(344, 40)
+        cmbClsf.Size = New System.Drawing.Size(339, 40)
         cmbClsf.TabIndex = 4
         tips.SetToolTipHeader(cmbClsf, "Clasificația bugetară")
         tips.SetToolTipText(cmbClsf, "Deschideți un articol și alegeți o clasificație de sub el. Sunt disponibile clasificațiile cu șabloane de operații. Cele configurate pentru furnizor apar primele.")
@@ -144,45 +133,6 @@ Partial Class FacturiCumparareContarePage
         tips.SetToolTipText(txtFelOp, "Se ia din șablonul de plată ales și încheie explicația ordinului de plată. Pe ordinul de plată nu intră diacritice și nici virgule.")
         txtFelOp.VerticalScrollBarPadding = New System.Windows.Forms.Padding(0)
         ' 
-        ' barExplicatie
-        ' 
-        barExplicatie.Dock = System.Windows.Forms.DockStyle.Fill
-        barExplicatie.Location = New System.Drawing.Point(0, 9)
-        barExplicatie.Margin = New System.Windows.Forms.Padding(0, 9, 6, 6)
-        barExplicatie.Maximum = 75
-        barExplicatie.Name = "barExplicatie"
-        barExplicatie.Size = New System.Drawing.Size(963, 18)
-        barExplicatie.TabIndex = 0
-        tips.SetToolTipHeader(barExplicatie, "Lungimea explicației")
-        tips.SetToolTipText(barExplicatie, resources.GetString("barExplicatie.ToolTipText"))
-        ' 
-        ' btnRenunta
-        ' 
-        btnRenunta.AccessibleRole = System.Windows.Forms.AccessibleRole.PushButton
-        btnRenunta.Dock = System.Windows.Forms.DockStyle.Fill
-        btnRenunta.Location = New System.Drawing.Point(0, 6)
-        btnRenunta.Margin = New System.Windows.Forms.Padding(0, 6, 0, 0)
-        btnRenunta.Name = "btnRenunta"
-        btnRenunta.Size = New System.Drawing.Size(225, 61)
-        btnRenunta.TabIndex = 0
-        btnRenunta.Text = "Renunță"
-        tips.SetToolTipHeader(btnRenunta, "Renunță")
-        tips.SetToolTipText(btnRenunta, "Scoate toate bifele din arbore și golește pagina.")
-        ' 
-        ' btnSalveaza
-        ' 
-        btnSalveaza.AccessibleRole = System.Windows.Forms.AccessibleRole.PushButton
-        btnSalveaza.Dock = System.Windows.Forms.DockStyle.Fill
-        btnSalveaza.Enabled = False
-        btnSalveaza.Location = New System.Drawing.Point(1209, 6)
-        btnSalveaza.Margin = New System.Windows.Forms.Padding(0, 6, 0, 0)
-        btnSalveaza.Name = "btnSalveaza"
-        btnSalveaza.Size = New System.Drawing.Size(225, 61)
-        btnSalveaza.TabIndex = 2
-        btnSalveaza.Text = "Salvează"
-        tips.SetToolTipHeader(btnSalveaza, "Salvează")
-        tips.SetToolTipText(btnSalveaza, "Înregistrează facturile bifate cu șablonul de evidențiere ales: o notă contabilă, un document și o operație pentru fiecare factură. Plata se înregistrează separat (încă nu este disponibilă).")
-        ' 
         ' tlyPagina
         ' 
         tlyPagina.ColumnCount = 1
@@ -190,23 +140,21 @@ Partial Class FacturiCumparareContarePage
         tlyPagina.Controls.Add(tlySus, 0, 0)
         tlyPagina.Controls.Add(tlyEvid, 0, 1)
         tlyPagina.Controls.Add(tlyPlata, 0, 2)
-        tlyPagina.Controls.Add(pnlJos, 0, 3)
         tlyPagina.Dock = System.Windows.Forms.DockStyle.Fill
         tlyPagina.Location = New System.Drawing.Point(4, 4)
         tlyPagina.Margin = New System.Windows.Forms.Padding(0)
         tlyPagina.Name = "tlyPagina"
-        tlyPagina.RowCount = 4
+        tlyPagina.RowCount = 3
         tlyPagina.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 105F))
         tlyPagina.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 58F))
         tlyPagina.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 42F))
-        tlyPagina.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 66F))
         tlyPagina.Size = New System.Drawing.Size(1434, 785)
         tlyPagina.TabIndex = 0
         ' 
         ' tlySus
         ' 
         tlySus.ColumnCount = 5
-        tlySus.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 350F))
+        tlySus.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 345F))
         tlySus.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 250F))
         tlySus.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 350F))
         tlySus.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 300F))
@@ -413,10 +361,10 @@ Partial Class FacturiCumparareContarePage
         tlyPlata.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 345F))
         tlyPlata.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
         tlyPlata.Controls.Add(lstPlata, 0, 0)
-        tlyPlata.Controls.Add(tlyPlataDr, 1, 0)
+        tlyPlata.Controls.Add(gridPlata, 1, 0)
         tlyPlata.Dock = System.Windows.Forms.DockStyle.Fill
         tlyPlata.Location = New System.Drawing.Point(0, 461)
-        tlyPlata.Margin = New System.Windows.Forms.Padding(0, 0, 0, 6)
+        tlyPlata.Margin = New System.Windows.Forms.Padding(0)
         tlyPlata.Name = "tlyPlata"
         tlyPlata.RowCount = 1
         tlyPlata.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
@@ -446,22 +394,6 @@ Partial Class FacturiCumparareContarePage
         lstPlata.ReadOnlyGrid = True
         lstPlata.Size = New System.Drawing.Size(339, 251)
         lstPlata.TabIndex = 0
-        ' 
-        ' tlyPlataDr
-        ' 
-        tlyPlataDr.ColumnCount = 1
-        tlyPlataDr.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlyPlataDr.Controls.Add(gridPlata, 0, 0)
-        tlyPlataDr.Controls.Add(tlyBara, 0, 1)
-        tlyPlataDr.Dock = System.Windows.Forms.DockStyle.Fill
-        tlyPlataDr.Location = New System.Drawing.Point(345, 0)
-        tlyPlataDr.Margin = New System.Windows.Forms.Padding(0)
-        tlyPlataDr.Name = "tlyPlataDr"
-        tlyPlataDr.RowCount = 2
-        tlyPlataDr.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlyPlataDr.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 33F))
-        tlyPlataDr.Size = New System.Drawing.Size(1089, 251)
-        tlyPlataDr.TabIndex = 1
         ' 
         ' gridPlata
         ' 
@@ -501,6 +433,17 @@ Partial Class FacturiCumparareContarePage
         KBotDataColumn12.MultiLine = True
         KBotDataColumn12.OptionGroup = Nothing
         KBotDataColumn12.Width = 300
+        KBotDataColumn14.AggregateFormatString = Nothing
+        KBotDataColumn14.ColumnType = KBotColumnType.ProgressBar
+        KBotDataColumn14.FormatString = Nothing
+        KBotDataColumn14.HeaderText = "Lungime"
+        KBotDataColumn14.HeaderTextAlign = Drawing.ContentAlignment.MiddleCenter
+        KBotDataColumn14.HeaderTooltip = "Explicația ordinului de plată are între 1 și 75 de caractere (limita oficială). Diacriticele se înlocuiesc cu litere simple, iar virgulele se scot: ANAF refuză ordinul cu diacritice, iar codul de bare citește virgula ca «câmpul următor»."
+        KBotDataColumn14.Key = "lungime"
+        KBotDataColumn14.OptionGroup = Nothing
+        KBotDataColumn14.ProgressMax = 75R
+        KBotDataColumn14.ReadOnly = True
+        KBotDataColumn14.Width = 90
         KBotDataColumn13.AggregateFormatString = Nothing
         KBotDataColumn13.DecimalPlaces = 2
         KBotDataColumn13.Format = KBotFormat.Standard
@@ -517,75 +460,17 @@ Partial Class FacturiCumparareContarePage
         gridPlata.Columns.Add(KBotDataColumn10)
         gridPlata.Columns.Add(KBotDataColumn11)
         gridPlata.Columns.Add(KBotDataColumn12)
+        gridPlata.Columns.Add(KBotDataColumn14)
         gridPlata.Columns.Add(KBotDataColumn13)
         gridPlata.Dock = System.Windows.Forms.DockStyle.Fill
         gridPlata.Enabled = False
         gridPlata.FillColumnKey = "explicatie"
         gridPlata.Font = New System.Drawing.Font("Calibri", 10F, Drawing.FontStyle.Regular, Drawing.GraphicsUnit.Point, CByte(0))
-        gridPlata.Location = New System.Drawing.Point(0, 0)
+        gridPlata.Location = New System.Drawing.Point(345, 0)
         gridPlata.Margin = New System.Windows.Forms.Padding(0)
         gridPlata.Name = "gridPlata"
-        gridPlata.Size = New System.Drawing.Size(1089, 218)
+        gridPlata.Size = New System.Drawing.Size(1089, 251)
         gridPlata.TabIndex = 0
-        ' 
-        ' tlyBara
-        ' 
-        tlyBara.ColumnCount = 2
-        tlyBara.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlyBara.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 120F))
-        tlyBara.Controls.Add(barExplicatie, 0, 0)
-        tlyBara.Controls.Add(lblLungime, 1, 0)
-        tlyBara.Dock = System.Windows.Forms.DockStyle.Fill
-        tlyBara.Location = New System.Drawing.Point(0, 218)
-        tlyBara.Margin = New System.Windows.Forms.Padding(0)
-        tlyBara.Name = "tlyBara"
-        tlyBara.RowCount = 1
-        tlyBara.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlyBara.Size = New System.Drawing.Size(1089, 33)
-        tlyBara.TabIndex = 1
-        ' 
-        ' lblLungime
-        ' 
-        lblLungime.BorderWidth = 0
-        lblLungime.Dock = System.Windows.Forms.DockStyle.Fill
-        lblLungime.Font = New System.Drawing.Font("Calibri", 9F, Drawing.FontStyle.Regular, Drawing.GraphicsUnit.Point, CByte(0))
-        lblLungime.Location = New System.Drawing.Point(969, 0)
-        lblLungime.Margin = New System.Windows.Forms.Padding(0)
-        lblLungime.Name = "lblLungime"
-        lblLungime.Size = New System.Drawing.Size(120, 33)
-        lblLungime.TabIndex = 1
-        lblLungime.TextAlign = Drawing.ContentAlignment.MiddleRight
-        ' 
-        ' pnlJos
-        ' 
-        pnlJos.BackColor = Drawing.SystemColors.Window
-        pnlJos.ColumnCount = 3
-        pnlJos.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 225F))
-        pnlJos.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        pnlJos.ColumnStyles.Add(New System.Windows.Forms.ColumnStyle(System.Windows.Forms.SizeType.Absolute, 225F))
-        pnlJos.Controls.Add(btnRenunta, 0, 0)
-        pnlJos.Controls.Add(lblInfo, 1, 0)
-        pnlJos.Controls.Add(btnSalveaza, 2, 0)
-        pnlJos.Dock = System.Windows.Forms.DockStyle.Fill
-        pnlJos.Location = New System.Drawing.Point(0, 718)
-        pnlJos.Margin = New System.Windows.Forms.Padding(0)
-        pnlJos.Name = "pnlJos"
-        pnlJos.RowCount = 1
-        pnlJos.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        pnlJos.Size = New System.Drawing.Size(1434, 67)
-        pnlJos.TabIndex = 3
-        ' 
-        ' lblInfo
-        ' 
-        lblInfo.BackColor = Drawing.SystemColors.Window
-        lblInfo.BorderColor = Drawing.Color.Transparent
-        lblInfo.Dock = System.Windows.Forms.DockStyle.Fill
-        lblInfo.Font = New System.Drawing.Font("Calibri", 10F, Drawing.FontStyle.Regular, Drawing.GraphicsUnit.Point, CByte(0))
-        lblInfo.Location = New System.Drawing.Point(237, 3)
-        lblInfo.Margin = New System.Windows.Forms.Padding(12, 3, 12, 0)
-        lblInfo.Name = "lblInfo"
-        lblInfo.Size = New System.Drawing.Size(960, 64)
-        lblInfo.TabIndex = 1
         ' 
         ' FacturiCumparareContarePage
         ' 
@@ -603,10 +488,7 @@ Partial Class FacturiCumparareContarePage
         CType(gridEvidenta, ComponentModel.ISupportInitialize).EndInit()
         tlyPlata.ResumeLayout(False)
         CType(lstPlata, ComponentModel.ISupportInitialize).EndInit()
-        tlyPlataDr.ResumeLayout(False)
         CType(gridPlata, ComponentModel.ISupportInitialize).EndInit()
-        tlyBara.ResumeLayout(False)
-        pnlJos.ResumeLayout(False)
         ResumeLayout(False)
     End Sub
 
@@ -626,13 +508,5 @@ Partial Class FacturiCumparareContarePage
     Friend WithEvents gridEvidenta As KBotDataView
     Friend WithEvents tlyPlata As KBotTableLayoutPanel
     Friend WithEvents lstPlata As KBotDataView
-    Friend WithEvents tlyPlataDr As KBotTableLayoutPanel
     Friend WithEvents gridPlata As KBotDataView
-    Friend WithEvents tlyBara As KBotTableLayoutPanel
-    Friend WithEvents barExplicatie As KBotProgressBar
-    Friend WithEvents lblLungime As Global.KBot.Controls.KBotLabel
-    Friend WithEvents pnlJos As KBotTableLayoutPanel
-    Friend WithEvents btnRenunta As KBotButton
-    Friend WithEvents lblInfo As KBotHtmlLabel
-    Friend WithEvents btnSalveaza As KBotButton
 End Class

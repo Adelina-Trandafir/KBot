@@ -246,6 +246,9 @@ Public Interface IEFacturaApi
     ''' <summary>POST /api/efactura/contari/salveaza -- books the EVIDENCE of the ticked invoices (one accounting note, a document and an operation per invoice) through the posting service. Role «Contabil».</summary>
     Function SaveContariAsync(k_request As EFacturaContariCerere, ct As CancellationToken) As Task(Of EFacturaContariSalvat)
 
+    ''' <summary>GET /api/efactura/contari/existente/{id} -- slice 03EF-13: the accounting operations the invoice already has (classification, the templates that fit it, a row per evidence or payment operation).</summary>
+    Function GetContariExistenteAsync(k_idPrimita As Integer, ct As CancellationToken) As Task(Of EFacturaContariExistente)
+
     ' ── Slice 01EF-03: the archive of the received invoices (PYTHON/routes/efactura/primite_arhiva_routes.py). Writes: role «Contabil» only. ──
 
     ''' <summary>GET /api/efactura/arhiva -- every archived invoice of the unit.</summary>

@@ -66,7 +66,7 @@ End Class
 
 ' Culture is scoped to this grid's messages, including its filter/sort popup. Other pages keep their culture.
 Friend Class InventoryCompareGrid
-    Inherits KBotDataView
+    Inherits AdminDataView
 
     Protected Overrides Sub WndProc(ByRef m As Message)
         Dim k_previous = CultureInfo.CurrentCulture

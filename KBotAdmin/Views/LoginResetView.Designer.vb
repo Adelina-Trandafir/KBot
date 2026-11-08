@@ -35,7 +35,7 @@ Partial Class LoginResetView
         btnMustChange = New KBotButton()
         btnMustChangeAll = New KBotButton()
         btnClearMustChange = New KBotButton()
-        grid = New KBotDataView()
+        grid = New AdminDataView()
         lblState = New Label()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         tlyMain.SuspendLayout()
@@ -157,6 +157,7 @@ Partial Class LoginResetView
         gridCol1.HeaderText = "Alege"
         gridCol1.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol1.Key = "sel"
+        gridCol1.ValueType = KBotValueType.Boolean
         gridCol1.MinWidth = 50
         gridCol1.OptionGroup = Nothing
         gridCol1.Width = 64
@@ -201,6 +202,8 @@ Partial Class LoginResetView
         gridCol6.HeaderText = "Ultima perioadă"
         gridCol6.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol6.Key = "last"
+        gridCol6.ValueType = KBotValueType.DateTime
+        gridCol6.FormatString = "yyyy-MM-dd HH:mm:ss"
         gridCol6.MinWidth = 60
         gridCol6.OptionGroup = Nothing
         gridCol6.ReadOnly = True
@@ -210,6 +213,7 @@ Partial Class LoginResetView
         gridCol7.HeaderText = "Eșecuri"
         gridCol7.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol7.Key = "fails"
+        gridCol7.ValueType = KBotValueType.Number
         gridCol7.MinWidth = 50
         gridCol7.OptionGroup = Nothing
         gridCol7.ReadOnly = True
@@ -220,6 +224,7 @@ Partial Class LoginResetView
         gridCol8.HeaderText = "Blocat"
         gridCol8.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridCol8.Key = "blocked"
+        gridCol8.ValueType = KBotValueType.Number
         gridCol8.MinWidth = 60
         gridCol8.OptionGroup = Nothing
         gridCol8.ReadOnly = True
@@ -244,7 +249,6 @@ Partial Class LoginResetView
         grid.Columns.Add(gridCol9)
         grid.Dock = DockStyle.Fill
         grid.FillColumnKey = "unit"
-        grid.HeaderHeight = 24
         grid.Location = New Point(0, 0)
         grid.Margin = New Padding(0)
         grid.Name = "grid"
@@ -285,6 +289,6 @@ Partial Class LoginResetView
     Friend WithEvents btnMustChange As KBotButton
     Friend WithEvents btnMustChangeAll As KBotButton
     Friend WithEvents btnClearMustChange As KBotButton
-    Friend WithEvents grid As KBotDataView
+    Friend WithEvents grid As AdminDataView
     Friend WithEvents lblState As Label
 End Class

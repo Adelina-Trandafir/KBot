@@ -130,20 +130,20 @@ Public Class LocalBackupView
                 Dim k_row As KBotDataRow = gridSnaps.AddRow()
                 k_row.Tag = k_item
                 k_row("db") = k_item.Db
-                k_row("when") = k_item.FinishedAt.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture)
+                k_row("when") = k_item.FinishedAt
                 k_row("kind") = k_item.Kind
                 k_row("mode") = k_item.Mode
                 k_row("reason") = k_item.Reason
-                k_row("tables") = k_item.Tables.Count.ToString(CultureInfo.InvariantCulture)
-                k_row("pagesNew") = k_item.Stats.PagesNew.ToString(CultureInfo.InvariantCulture)
-                k_row("pagesSame") = k_item.Stats.PagesSame.ToString(CultureInfo.InvariantCulture)
-                k_row("rows") = k_item.Stats.Rows.ToString("N0", CultureInfo.CurrentCulture)
-                k_row("secs") = k_item.Stats.Seconds.ToString("0.#", CultureInfo.CurrentCulture)
+                k_row("tables") = k_item.Tables.Count
+                k_row("pagesNew") = k_item.Stats.PagesNew
+                k_row("pagesSame") = k_item.Stats.PagesSame
+                k_row("rows") = k_item.Stats.Rows
+                k_row("secs") = k_item.Stats.Seconds
             Next
         Finally
             gridSnaps.EndUpdate()
         End Try
-        If _shown.Count > 0 Then gridSnaps.CurrentRowIndex = 0
+        gridSnaps.CurrentRowIndex = gridSnaps.FirstDisplayedRowIndex()
         ShowTables()
     End Sub
 
@@ -180,9 +180,9 @@ Public Class LocalBackupView
                 Dim k_row As KBotDataRow = gridTables.AddRow()
                 k_row.Tag = k_table
                 k_row("table") = k_table.Name
-                k_row("rows") = k_table.Rows.ToString("N0", CultureInfo.CurrentCulture)
-                k_row("pages") = k_table.Pages.Count.ToString(CultureInfo.InvariantCulture)
-                k_row("changed") = k_changed.ToString(CultureInfo.InvariantCulture)
+                k_row("rows") = k_table.Rows
+                k_row("pages") = k_table.Pages.Count
+                k_row("changed") = k_changed
             Next
         Finally
             gridTables.EndUpdate()
@@ -326,7 +326,7 @@ Public Class LocalBackupView
                 If k_dialog.ShowDialog(Me) <> DialogResult.OK Then Return
                 k_path = k_dialog.FileName
             End Using
-            If Not UiRun.Confirm("Scriu copia din " & k_item.FinishedAt.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture) & " a bazei " & k_item.Db &
+            If Not UiRun.Confirm("Scriu copia din " & k_item.FinishedAt & " a bazei " & k_item.Db &
                                  " ca fișier SQL." & vbLf & "Fișierul creează baza de probă " & k_target & " și nu atinge baza vie. Poate dura câteva minute.", "Export SQL") Then Return
             Dim k_rows As Long = 0
             Await UiRun.Guard("LocalBackupView.BtnExport_Click", _context,
@@ -422,7 +422,7 @@ Public Class LocalBackupView
             End If
             Dim k_store As BackupStore = BackupAccess.EnsureStore(_context, Me)
             If k_store Is Nothing Then Return
-            If Not UiRun.Confirm("Șterg definitiv copia bazei " & k_item.Db & " din " & k_item.FinishedAt.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture) &
+            If Not UiRun.Confirm("Șterg definitiv copia bazei " & k_item.Db & " din " & k_item.FinishedAt &
                                  If(k_item.Reason = String.Empty, String.Empty, " (motiv: " & k_item.Reason & ")") & "?" & vbLf &
                                  "Nu se mai poate readuce. Celelalte copii rămân întregi.", "Șterge copia") Then Return
             Dim k_freed As Long = 0

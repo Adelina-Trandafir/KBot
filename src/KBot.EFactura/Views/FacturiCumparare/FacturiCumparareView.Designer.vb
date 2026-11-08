@@ -54,7 +54,7 @@ Partial Class FacturiCumparareView
         pnlArbore.Controls.Add(tree)
         pnlArbore.Dock = System.Windows.Forms.DockStyle.Fill
         pnlArbore.Location = New System.Drawing.Point(0, 0)
-        pnlArbore.Margin = New System.Windows.Forms.Padding(0, 0, 9, 6)
+        pnlArbore.Margin = New System.Windows.Forms.Padding(0, 0, 9, 0)
         pnlArbore.Name = "pnlArbore"
         pnlArbore.Size = New System.Drawing.Size(360, 900)
         pnlArbore.TabIndex = 0

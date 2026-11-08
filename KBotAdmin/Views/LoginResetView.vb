@@ -14,6 +14,10 @@ Public Class LoginResetView
 
     Public Sub New()
         InitializeComponent()
+        grid.Column("blocked").ValueFormatter = Function(k_seconds)
+                                                     Dim k_minutes As Integer = CInt(Math.Ceiling(CInt(k_seconds) / 60.0))
+                                                     Return "da (" & k_minutes.ToString(CultureInfo.InvariantCulture) & " min)"
+                                                 End Function
     End Sub
 
     Public Sub Attach(k_context As AdminContext) Implements IAdminView.Attach
@@ -59,9 +63,9 @@ Public Class LoginResetView
                         k_row("dc") = k_user.Dc
                         k_row("unit") = k_user.UnitName
                         k_row("rol") = k_user.Rol
-                        k_row("last") = k_user.LastSs
-                        k_row("fails") = If(k_user.Fails > 0, k_user.Fails.ToString(CultureInfo.InvariantCulture), String.Empty)
-                        k_row("blocked") = If(k_user.Blocked > 0, "da (" & CInt(Math.Ceiling(k_user.Blocked / 60.0)).ToString(CultureInfo.InvariantCulture) & " min)", String.Empty)
+                        k_row("last") = AdminDataView.DateValue(k_user.LastSs)
+                        k_row("fails") = If(k_user.Fails > 0, CObj(k_user.Fails), Nothing)
+                        k_row("blocked") = If(k_user.Blocked > 0, CObj(k_user.Blocked), Nothing)
                     Next
                 Finally
                     grid.EndUpdate()

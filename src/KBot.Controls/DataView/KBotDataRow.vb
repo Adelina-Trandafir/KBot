@@ -17,6 +17,9 @@ Public NotInheritable Class KBotDataRow
     ''' <summary>Payload al caller-ului (ex. DTO-ul din spatele rândului). Nefolosit de control.</summary>
     Public Property Tag As Object
 
+    ''' <summary>An input row kept visible after the data rows of its group, even when a filter is active.</summary>
+    Public Property IsDraft As Boolean
+
     ''' <summary>
     ''' True dacă rândul a fost EDITAT DE OPERATOR (commit de editare, comutare de bifă/opțiune)
     ''' de la ultima curățare. ATENȚIE: scrierea programatică — <c>row(cheie) = valoare</c> sau

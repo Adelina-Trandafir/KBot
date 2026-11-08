@@ -78,8 +78,8 @@ Public Class ScriptsView
         Finally
             gridScripts.EndUpdate()
         End Try
-        If gridScripts.RowCount > 0 Then gridScripts.CurrentRowIndex = 0
-        ShowSwitches(TryCast(If(gridScripts.CurrentRow, gridScripts.Rows(0)).Tag, ScriptDef))
+        gridScripts.CurrentRowIndex = gridScripts.FirstDisplayedRowIndex()
+        ShowSwitches(TryCast(gridScripts.CurrentRow?.Tag, ScriptDef))
     End Sub
 
     ''' <summary>The switches ticked for this script the last time (admin_settings.json); a switch the script no longer has is dropped.</summary>

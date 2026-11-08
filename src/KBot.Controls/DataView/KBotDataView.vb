@@ -437,6 +437,7 @@ Public Class KBotDataView
             _rows.RemoveAt(index)
             If _currentRowIndex >= _rows.Count Then _currentRowIndex = _rows.Count - 1
             RecomputeDerived()
+            If ShowDataColumnMenus AndAlso IsFiltered AndAlso ViewPositionOf(_currentRowIndex) < 0 Then _currentRowIndex = -1
             LayoutChanged()
             RaiseEvent SelectionChanged(Me, EventArgs.Empty)
         Catch ex As Exception
@@ -802,6 +803,7 @@ Public Class KBotDataView
         If _updateDepth > 0 Then _updateDepth -= 1
         If _updateDepth = 0 Then
             RecomputeDerived()
+            If ShowDataColumnMenus AndAlso IsFiltered Then DropSelectionIfHidden()
             UpdateLayout()
             Invalidate()
         End If

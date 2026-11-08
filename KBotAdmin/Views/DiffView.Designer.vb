@@ -32,7 +32,7 @@ Partial Class DiffView
         btnCompute = New KBotButton()
         btnCopy = New KBotButton()
         lblSummary = New Label()
-        grid = New KBotDataView()
+        grid = New AdminDataView()
         txtSql = New KBotTextBox()
         lblState = New Label()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
@@ -200,7 +200,6 @@ Partial Class DiffView
         grid.Columns.Add(KBotDataColumn6)
         grid.Dock = DockStyle.Fill
         grid.FillColumnKey = "error"
-        grid.HeaderHeight = 24
         grid.Location = New Point(8, 80)
         grid.Margin = New Padding(0, 0, 0, 6)
         grid.Name = "grid"
@@ -257,7 +256,7 @@ Partial Class DiffView
     Friend WithEvents btnCompute As KBotButton
     Friend WithEvents btnCopy As KBotButton
     Friend WithEvents lblSummary As Label
-    Friend WithEvents grid As KBotDataView
+    Friend WithEvents grid As AdminDataView
     Friend WithEvents txtSql As KBotTextBox
     Friend WithEvents lblState As Label
 End Class

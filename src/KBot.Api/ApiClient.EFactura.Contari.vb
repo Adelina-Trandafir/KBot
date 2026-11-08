@@ -279,4 +279,64 @@ Partial Public Class ApiClient
         End Try
     End Function
 
+    ' Slice 03EF-13 -- /api/efactura/contari/existente/{id}: what an invoice already has booked.
+    Private NotInheritable Class ContariExistentaWire
+        Public Property Faza As String
+        Public Property Suma As Decimal
+        Public Property IdSablon As Integer?
+        Public Property Explicatie As String
+        Public Property NumarDocument As String
+        Public Property DataDocument As String
+        Public Property FelDocument As String
+        Public Property NumarNC As Integer?
+        Public Property Subunitate As String
+    End Class
+
+    Private NotInheritable Class ContariExistenteFacturaWire
+        Public Property IdPrimita As Integer
+        Public Property NrFact As String
+        Public Property NumarDocument As String
+        Public Property DataFact As String
+        Public Property FelDocument As String
+        Public Property Total As Decimal
+    End Class
+
+    Private NotInheritable Class ContariExistenteWire
+        Public Property factura As ContariExistenteFacturaWire
+        Public Property clasificatie As ContariClsfWire
+        Public Property sabloaneEvidentiere As List(Of ContariSablonWire)
+        Public Property sabloanePlata As List(Of ContariSablonWire)
+        Public Property operatii As List(Of ContariExistentaWire)
+    End Class
+
+    Public Async Function GetContariExistenteAsync(k_idPrimita As Integer, ct As CancellationToken) _
+        As Task(Of EFacturaContariExistente) Implements IEFacturaApi.GetContariExistenteAsync
+        Try
+            Dim k_text As String = Await SendEFacturaAsync(HttpMethod.Get, $"/api/efactura/contari/existente/{k_idPrimita.ToString(CultureInfo.InvariantCulture)}", Nothing,
+                                                           "citirea operațiilor contabile ale facturii", ct).ConfigureAwait(False)
+            Dim wire As ContariExistenteWire = JsonSerializer.Deserialize(Of ContariExistenteWire)(k_text, _json)
+            If wire Is Nothing OrElse wire.factura Is Nothing Then Throw New ApiException("Serverul nu a trimis operațiile facturii.")
+            Dim k_result As New EFacturaContariExistente() With {
+                .IdPrimita = wire.factura.IdPrimita, .NrFact = If(wire.factura.NrFact, String.Empty), .NumarDocument = If(wire.factura.NumarDocument, String.Empty),
+                .DataFact = ParseDay(wire.factura.DataFact), .FelDocument = If(wire.factura.FelDocument, String.Empty), .Total = wire.factura.Total}
+            If wire.clasificatie IsNot Nothing Then k_result.Clasificatie = ToContariClsf(wire.clasificatie)
+            k_result.SabloaneEvidentiere.AddRange(ToContariSabloane(wire.sabloaneEvidentiere))
+            k_result.SabloanePlata.AddRange(ToContariSabloane(wire.sabloanePlata))
+            If wire.operatii IsNot Nothing Then
+                For Each w As ContariExistentaWire In wire.operatii
+                    k_result.Operatii.Add(New EFacturaContariExistenta() With {
+                        .Faza = If(w.Faza, String.Empty), .Suma = w.Suma, .IdSablon = w.IdSablon, .Explicatie = If(w.Explicatie, String.Empty),
+                        .NumarDocument = If(w.NumarDocument, String.Empty), .DataDocument = ParseDay(w.DataDocument), .FelDocument = If(w.FelDocument, String.Empty),
+                        .NumarNC = w.NumarNC, .Subunitate = If(w.Subunitate, String.Empty)})
+                Next
+            End If
+            Return k_result
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetContariExistenteAsync", ex)
+            Throw
+        End Try
+    End Function
+
 End Class

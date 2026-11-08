@@ -29,7 +29,7 @@ Partial Class BackupsView
         tlyBar = New KBotTableLayoutPanel()
         btnRefresh = New KBotButton()
         btnMake = New KBotButton()
-        grid = New KBotDataView()
+        grid = New AdminDataView()
         lblState = New Label()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         tlyMain.SuspendLayout()
@@ -126,6 +126,7 @@ Partial Class BackupsView
         KBotDataColumn3.HeaderText = "Mărime"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "size"
+        KBotDataColumn3.ValueType = KBotValueType.Number
         KBotDataColumn3.MinWidth = 60
         KBotDataColumn3.OptionGroup = Nothing
         KBotDataColumn3.ReadOnly = True
@@ -136,6 +137,8 @@ Partial Class BackupsView
         KBotDataColumn4.HeaderText = "Data"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "modified"
+        KBotDataColumn4.ValueType = KBotValueType.DateTime
+        KBotDataColumn4.FormatString = "yyyy-MM-dd HH:mm:ss"
         KBotDataColumn4.MinWidth = 90
         KBotDataColumn4.OptionGroup = Nothing
         KBotDataColumn4.ReadOnly = True
@@ -166,7 +169,6 @@ Partial Class BackupsView
         grid.Columns.Add(KBotDataColumn5)
         grid.Dock = DockStyle.Fill
         grid.FillColumnKey = "path"
-        grid.HeaderHeight = 24
         grid.Location = New Point(8, 52)
         grid.Margin = New Padding(0)
         grid.Name = "grid"
@@ -205,6 +207,6 @@ Partial Class BackupsView
     Friend WithEvents tlyBar As KBotTableLayoutPanel
     Friend WithEvents btnRefresh As KBotButton
     Friend WithEvents btnMake As KBotButton
-    Friend WithEvents grid As KBotDataView
+    Friend WithEvents grid As AdminDataView
     Friend WithEvents lblState As Label
 End Class

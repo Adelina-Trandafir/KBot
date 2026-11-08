@@ -27,6 +27,20 @@ Public Class SourceQueryView
 
     Public Sub New()
         InitializeComponent()
+        gridHist.Column("done").SortKeySelector = Function(k_row)
+                                                       Dim k_item As SourceQueryItem = DirectCast(k_row.Tag, SourceQueryItem)
+                                                       Return Tuple.Create(k_item.Done, k_item.Total)
+                                                   End Function
+        gridHist.Column("objects").SortKeySelector = Function(k_row)
+                                                          Dim k_item As SourceQueryItem = DirectCast(k_row.Tag, SourceQueryItem)
+                                                          Dim k_data As Integer = k_item.Objects.Where(AddressOf IsData).Count()
+                                                          Return Tuple.Create(k_item.Objects.Count - k_data, k_data)
+                                                      End Function
+        gridObj.Column("name").SortKeySelector = Function(k_row)
+                                                     Dim k_object As SourceObject = TryCast(k_row.Tag, SourceObject)
+                                                     If k_object IsNot Nothing Then Return k_object.Name
+                                                     Return DirectCast(k_row.Tag, SourceCheck).Name
+                                                 End Function
         _log = New LogSink(logBox)
     End Sub
 
@@ -401,7 +415,7 @@ Public Class SourceQueryView
                             k_row.Tag = k_item
                             Dim k_data As Integer = k_item.Objects.Where(Function(k_o) IsData(k_o)).Count()
                             k_row("name") = k_item.Name
-                            k_row("ranat") = k_item.RanAt.Replace("T", " ")
+                            k_row("ranat") = AdminDataView.DateValue(k_item.RanAt)
                             k_row("objects") = (k_item.Objects.Count - k_data).ToString(CultureInfo.InvariantCulture) & " / " & k_data.ToString(CultureInfo.InvariantCulture)
                             k_row("done") = k_item.Done.ToString(CultureInfo.InvariantCulture) & "/" & k_item.Total.ToString(CultureInfo.InvariantCulture)
                             k_row("missing") = If(k_item.Missing.Count = 0, "-", String.Join(", ", k_item.Missing))
@@ -460,7 +474,8 @@ Public Class SourceQueryView
             gridObj.ClearRows()
             For Each k_object As SourceObject In k_objects
                 Dim k_row As KBotDataRow = gridObj.AddRow()
-                k_row("stmt") = k_object.Stmt.ToString(CultureInfo.InvariantCulture)
+                k_row.Tag = k_object
+                k_row("stmt") = k_object.Stmt
                 k_row("action") = ActionText(k_object)
                 k_row("kind") = KindText(k_object.Kind)
                 k_row("table") = k_object.Table
@@ -478,7 +493,8 @@ Public Class SourceQueryView
             gridObj.ClearRows()
             For Each k_check As SourceCheck In k_checks
                 Dim k_row As KBotDataRow = gridObj.AddRow()
-                k_row("stmt") = k_check.Stmt.ToString(CultureInfo.InvariantCulture)
+                k_row.Tag = k_check
+                k_row("stmt") = k_check.Stmt
                 k_row("action") = If(String.Equals(k_check.Expect, "present", StringComparison.Ordinal), "Trebuie să existe", "Trebuie să lipsească")
                 k_row("kind") = KindText(k_check.Kind)
                 k_row("table") = k_check.Table

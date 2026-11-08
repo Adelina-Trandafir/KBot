@@ -13,8 +13,8 @@ Imports KBot.Theming
 '   - «E-Factura Vanzare»  (key efactura_vanzare): the invoices the unit issues (FacturiForm);
 '   - «E-Factura Cumparare» (key efactura_cumparare): the invoices received from ANAF (FacturiCumparareForm);
 '   - the unit's commands that were in the title bar of the issued-invoices window (accounts, unit data), the
-'     received-invoices synchronisation (slice 0114-01 / 00EF-30: a ribbon button and two inputs, shown while the «Cumparare» page is on
-'     screen; no dialog) and the ANAF token step.
+'     received-invoices synchronisation (slice 0114-01 / 00EF-30 / 03EF-01: a ribbon button, shown while the «Cumparare» page is on
+'     screen, whose click opens the popup of the period under it; no dialog) and the ANAF token step.
 ' Each machete is a page of the main window, one at a time; asking again brings the open one to the front.
 Partial Public Class KbotForm
 
@@ -277,22 +277,6 @@ Partial Public Class KbotForm
             GlobalErrorLog.Write("MainForm.RunUnitCommand", ex)
             KBotMessage.Show(Me, "Fereastra unității nu a putut fi deschisă. Detalii în jurnalul de erori.",
                              "Unitate", MessageBoxButtons.OK, MessageBoxIcon.Error)
-        End Try
-    End Sub
-
-    ''' <summary>
-    ''' Slice 00EF-30: brings the received invoices from ANAF for the last <paramref name="k_days"/> days, from the ribbon (no dialog
-    ''' any more): the «Cumparare» page shows the progress on its bottom line and reads its list again. Nothing happens when that
-    ''' page is not open (the ribbon shows the button only then). UI boundary (async Sub): logs and tells the operator.
-    ''' </summary>
-    Friend Async Sub SyncPrimite(k_days As Integer)
-        Try
-            If _facturiCumparareForm Is Nothing OrElse _facturiCumparareForm.IsDisposed Then Return
-            Await _facturiCumparareForm.SyncFromAnafAsync(k_days).ConfigureAwait(True)
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.SyncPrimite", ex)
-            KBotMessage.Show(Me, "Sincronizarea facturilor primite nu a putut fi dusă la capăt. Detalii în jurnalul de erori.",
-                             "Sincronizează facturi primite", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
     End Sub
 

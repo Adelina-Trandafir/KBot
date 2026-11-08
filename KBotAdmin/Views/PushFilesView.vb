@@ -178,6 +178,7 @@ Public Class PushFilesView
     End Sub
 
     Private Sub SetAllTicks(k_value As Boolean)
+        gridFiles.BeginUpdate()
         Try
             _filling = True
             For k_i As Integer = 0 To gridFiles.Rows.Count - 1
@@ -186,7 +187,11 @@ Public Class PushFilesView
         Catch ex As Exception
             GlobalErrorLog.Write("PushFilesView.SetAllTicks", ex)
         Finally
-            _filling = False
+            Try
+                gridFiles.EndUpdate()
+            Finally
+                _filling = False
+            End Try
         End Try
     End Sub
 
@@ -348,13 +353,13 @@ Public Class PushFilesView
             If _scan IsNot Nothing Then
                 For Each k_stat As PushExtensionStat In _scan.Extensions
                     k_seen.Add(k_stat.Extension)
-                    AddExtRow(k_stat.Extension, k_stat.Accepted, k_stat.Found.ToString(CultureInfo.InvariantCulture),
-                              If(k_stat.Accepted OrElse k_stat.ToSend > 0, k_stat.ToSend.ToString(CultureInfo.InvariantCulture), String.Empty))
+                    AddExtRow(k_stat.Extension, k_stat.Accepted, k_stat.Found,
+                              If(k_stat.Accepted OrElse k_stat.ToSend > 0, CType(k_stat.ToSend, Integer?), Nothing))
                 Next
             End If
             For Each k_ext As String In Settings.IncludeExtensions.OrderBy(Function(k_e) k_e, StringComparer.OrdinalIgnoreCase)
                 Dim k_clean As String = NormalizeExt(k_ext)
-                If k_clean <> String.Empty AndAlso k_seen.Add(k_clean) Then AddExtRow(k_clean, True, String.Empty, String.Empty)
+                If k_clean <> String.Empty AndAlso k_seen.Add(k_clean) Then AddExtRow(k_clean, True)
             Next
             Dim k_hits As New Dictionary(Of String, Integer)(StringComparer.OrdinalIgnoreCase)
             If _scan IsNot Nothing Then
@@ -366,7 +371,7 @@ Public Class PushFilesView
                 If String.IsNullOrWhiteSpace(k_pattern) Then Continue For
                 Dim k_row As KBotDataRow = gridPat.AddRow()
                 k_row("pattern") = k_pattern.Trim()
-                k_row("skipped") = If(_scan Is Nothing, String.Empty, k_hits.GetValueOrDefault(k_pattern.Trim()).ToString(CultureInfo.InvariantCulture))
+                k_row("skipped") = If(_scan Is Nothing, Nothing, CObj(k_hits.GetValueOrDefault(k_pattern.Trim())))
             Next
         Finally
             gridExt.EndUpdate()
@@ -375,7 +380,7 @@ Public Class PushFilesView
         End Try
     End Sub
 
-    Private Sub AddExtRow(k_ext As String, k_accepted As Boolean, k_found As String, k_toSend As String)
+    Private Sub AddExtRow(k_ext As String, k_accepted As Boolean, Optional k_found As Integer? = Nothing, Optional k_toSend As Integer? = Nothing)
         Dim k_row As KBotDataRow = gridExt.AddRow()
         k_row("ext") = k_ext
         k_row("accepted") = k_accepted
@@ -423,7 +428,13 @@ Public Class PushFilesView
 
     Private Sub BtnExtAdd_Click(k_sender As Object, e As EventArgs) Handles btnExtAdd.Click
         Try
-            AddExtRow(String.Empty, True, String.Empty, String.Empty)
+            gridExt.ClearAllFilters()
+            gridExt.BeginUpdate()
+            Try
+                AddExtRow(String.Empty, True)
+            Finally
+                gridExt.EndUpdate()
+            End Try
             gridExt.CurrentRowIndex = gridExt.Rows.Count - 1
             lblState.Text = "Rând nou: scrieți extensia (fără punct) în coloana «Extensie»."
         Catch ex As Exception
@@ -444,9 +455,9 @@ Public Class PushFilesView
 
     Private Sub BtnPatAdd_Click(k_sender As Object, e As EventArgs) Handles btnPatAdd.Click
         Try
+            gridPat.ClearAllFilters()
             Dim k_row As KBotDataRow = gridPat.AddRow()
             k_row("pattern") = String.Empty
-            k_row("skipped") = String.Empty
             gridPat.CurrentRowIndex = gridPat.Rows.Count - 1
             lblState.Text = "Rând nou: scrieți numele dosarului sau al fișierului, ori *.extensie, în coloana «Regulă de ignorare»."
         Catch ex As Exception

@@ -24,6 +24,10 @@ Public Class RequestsView
 
     Public Sub New()
         InitializeComponent()
+        grid.Column("decision").SortKeySelector = Function(k_row)
+                                                     Dim k_item As RequestItem = DirectCast(k_row.Tag, RequestItem)
+                                                     Return If(String.IsNullOrEmpty(k_item.DbName), k_item.DecidedBy, k_item.DbName)
+                                                 End Function
         For Each k_caption As String In _stateCaptions
             cmbState.Items.Add(k_caption)
         Next
@@ -60,14 +64,14 @@ Public Class RequestsView
                     grid.ClearRows()
                     For Each k_item As RequestItem In _items
                         Dim k_row As KBotDataRow = grid.AddRow()
-                        k_row("id") = k_item.Id.ToString(CultureInfo.InvariantCulture)
-                        k_row("date") = k_item.DateText
+                        k_row("id") = k_item.Id
+                        k_row("date") = AdminDataView.DateValue(k_item.DateText)
                         k_row("state") = k_item.State
                         k_row("name") = k_item.Name
                         k_row("email") = k_item.Email
                         k_row("cf") = k_item.Cf
-                        k_row("year") = k_item.Year.ToString(CultureInfo.InvariantCulture)
-                        k_row("rows") = k_item.Rows.ToString(CultureInfo.InvariantCulture)
+                        k_row("year") = k_item.Year
+                        k_row("rows") = k_item.Rows
                         k_row("decision") = If(k_item.DbName <> String.Empty, k_item.DbName & "  ", String.Empty) & k_item.DecidedBy
                         k_row.Tag = k_item
                     Next
@@ -75,15 +79,18 @@ Public Class RequestsView
                     grid.EndUpdate()
                     _filling = False
                 End Try
-                _loadedId = -1
-                _detail = Nothing
-                SetButtons(False)
-                txtDetail.Text = String.Empty
+                ClearDetail()
                 lblState.Text = SummaryOf(k_result)
                 _context.Say("Gata.")
-                If _items.Count > 0 Then
-                    grid.CurrentRowIndex = 0
-                    Await ShowDetailAsync(_items(0).Id)
+                Dim k_first As Integer = grid.FirstDisplayedRowIndex()
+                If k_first >= 0 Then
+                    _filling = True
+                    Try
+                        grid.CurrentRowIndex = k_first
+                    Finally
+                        _filling = False
+                    End Try
+                    Await ShowDetailAsync(DirectCast(grid.Rows(k_first).Tag, RequestItem).Id)
                 End If
             End Function)
     End Function
@@ -119,7 +126,9 @@ Public Class RequestsView
             If _filling OrElse _busy Then Return
             Dim k_row As KBotDataRow = grid.CurrentRow
             Dim k_item As RequestItem = If(k_row Is Nothing, Nothing, TryCast(k_row.Tag, RequestItem))
-            If k_item Is Nothing OrElse k_item.Id = _loadedId Then Return
+            If k_item IsNot Nothing AndAlso k_item.Id = _loadedId Then Return
+            ClearDetail()
+            If k_item Is Nothing Then Return
             Await UiRun.Guard("RequestsView.Grid_SelectionChanged", _context, Function() ShowDetailAsync(k_item.Id))
         Catch ex As Exception
             GlobalErrorLog.Write("RequestsView.Grid_SelectionChanged", ex)
@@ -130,9 +139,20 @@ Public Class RequestsView
     ' One request
     ' ------------------------------------------------------------------
 
+    Private Sub ClearDetail()
+        _loadedId = -1
+        _detail = Nothing
+        txtDb.Text = String.Empty
+        txtCodes.Text = String.Empty
+        txtDetail.Text = String.Empty
+        SetButtons(False)
+    End Sub
+
     Private Async Function ShowDetailAsync(k_id As Integer) As Task
+        Dim k_row As KBotDataRow = grid.CurrentRow
         _context.Say("Se citește cererea " & k_id.ToString(CultureInfo.InvariantCulture) & "...")
         Dim k_detail As RequestDetail = Await _context.Client.CallAsync(Of RequestDetail)("request", "--id", k_id.ToString(CultureInfo.InvariantCulture))
+        If Not ReferenceEquals(k_row, grid.CurrentRow) Then Return
         _detail = k_detail
         _loadedId = k_id
         If k_detail.Plan IsNot Nothing AndAlso k_detail.Plan.Ok AndAlso k_detail.Plan.Result IsNot Nothing Then
@@ -270,12 +290,14 @@ Public Class RequestsView
 
     Private Async Sub BtnPlan_Click(k_sender As Object, e As EventArgs) Handles btnPlan.Click
         Try
-            If _detail Is Nothing Then Return
+            Dim k_selected As RequestDetail = _detail
+            If k_selected Is Nothing Then Return
             Await UiRun.Guard("RequestsView.BtnPlan_Click", _context,
                 Async Function()
                     _context.Say("Se verifică planul...")
-                    Dim k_plan As PlanBlock = Await _context.Client.CallAsync(Of PlanBlock)("request-plan", "--id", _detail.Id.ToString(CultureInfo.InvariantCulture),
+                    Dim k_plan As PlanBlock = Await _context.Client.CallAsync(Of PlanBlock)("request-plan", "--id", k_selected.Id.ToString(CultureInfo.InvariantCulture),
                                                                                           "--db", txtDb.Text.Trim(), "--codes", CodesJson())
+                    If Not ReferenceEquals(k_selected, _detail) Then Return
                     _detail.Plan = k_plan
                     txtDetail.Text = Describe(_detail)
                     SetButtons(True)

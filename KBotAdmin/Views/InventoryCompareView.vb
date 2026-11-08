@@ -286,7 +286,7 @@ Public Class InventoryCompareView
         Finally
             grid.FinishUpdate()
         End Try
-        If grid.RowCount > 0 Then grid.CurrentRowIndex = 0
+        grid.CurrentRowIndex = grid.FirstDisplayedRowIndex()
         FillCandidates()
     End Sub
 

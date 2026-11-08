@@ -9,7 +9,8 @@ Routes of the received e-invoices (slice 00EF-17). All `@require_session`; the u
         -> 200 { facturi: [{ IdPrimita, IdSol, NrFact, DataFact, DataScad, CotaTVA, TVA, Valoare, Total, CUI, CuiNormalizat,
                              DenumireP, Atasament, Tip, Semn, Ref, IdPrimitaRef, Nou, legatura? }] }   (amounts as numbers)
   GET  /api/efactura/primite/<id>            -> { factura, linii, cote: [{ Categorie, CotaTVA, Baza, TVA }], note, mesaje, atasamente: [{ nume, mime, octeti }],
-                                                  legaturi: { auto: [{ IDDF, CodAngajament }], manual: [...] } }
+                                                  legaturi: { auto: [{ IDDF, CodAngajament }], manual: [...] },
+                                                  explicatii: { cpv: { code: text }, um: { code: text } } }   (03EF-13: tooltips of the lines)
   POST /api/efactura/primite/<id>/citita     -> 204, the message is no longer «nou»
   GET  /api/efactura/primite/<id>/xml        -> the XML kept from ANAF
   GET  /api/efactura/primite/<id>/zip        -> the signed zip, downloaded again from ANAF

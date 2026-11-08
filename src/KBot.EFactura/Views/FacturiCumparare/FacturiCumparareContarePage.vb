@@ -14,8 +14,9 @@ Imports KBot.Theming
 ''' <summary>
 ''' Slice 01EF-02 / 01EF-07 -- the «Contari» page, laid out like the Access form: the classification, the client code, the account and the kind of invoice on top;
 ''' the evidence templates and the evidence grid (Access EF_F: one row per ticked invoice, only the value to pay is edited); the payment templates and the order of
-''' payment (Access EF_P: one row, awake ONLY while a payment template is chosen), with the length of its explanation under it; «Renunță» and «Salvează» at the foot.
-''' The page only OWNS its controls and shows what <see cref="FacturiCumparareView"/> hands it (the server's calculation); it asks the view, through events, to calculate again.
+''' payment (Access EF_P: one row, awake ONLY while a payment template is chosen), with the length of its explanation in a small progress column right after it (slice 03EF-06; it was a bar under the grid).
+''' Slice 03EF-03 / 03EF-04: «Renunță» and «Salvează», and the line with the supplier and the warnings, left the page: the buttons are in the ribbon (the view group) and the
+''' warnings are the tooltip of «Salvează». The page only OWNS its controls and shows what <see cref="FacturiCumparareView"/> hands it (the server's calculation); it asks the view, through events, to calculate again.
 ''' The text of the order of payment is ASCII without commas (<see cref="OpExplicatie"/>).
 ''' </summary>
 Public Class FacturiCumparareContarePage
@@ -30,11 +31,8 @@ Public Class FacturiCumparareContarePage
     ''' <summary>The operator changed the value to pay of an invoice.</summary>
     Public Event PlatitSchimbat(k_idPrimita As Integer, k_valoare As Decimal)
 
-    ''' <summary>«Renunță»: the host takes the ticks off.</summary>
-    Public Event RenuntaCerut()
-
-    ''' <summary>«Salvează»: the host confirms the warnings and asks the server to book.</summary>
-    Public Event SalveazaCerut()
+    ''' <summary>Slice 03EF-04: what decides whether «Salvează» (a button of the ribbon) can be pressed changed; the host reads <see cref="PoateSalva"/> again.</summary>
+    Public Event SalvareStareSchimbata()
 
     Private Shared ReadOnly _ro As New CultureInfo("ro-RO")
     Private Shared ReadOnly _clsfNameComparer As StringComparer = StringComparer.Create(_ro, True)
@@ -49,19 +47,34 @@ Public Class FacturiCumparareContarePage
     Private _nrOp As String = String.Empty
     Private _felOpFor As Integer?
     Private _canSave As Boolean
+    Private _saveEnabled As Boolean
+    Private _complete As Boolean
+    Private _detalii As String = String.Empty
     Private _explicatieLen As Integer
+
+    ' Slice 03EF-13: the page shows what an invoice ALREADY has booked (read only): the template rows chosen at that time are kept to be put back when a click moves them.
+    Private _booked As Boolean
+    Private _bookedRowE As Integer = -1
+    Private _bookedRowP As Integer = -1
+
+    ' What the combo of the classification says while nothing is ticked (slice 03EF-04: the line of the foot that said it is gone).
+    Private Const ClsfIdle As String = "Apăsați «Adaugă operații contabile»"
+    Private Const ClsfPlaceholder As String = "Alegeți clasificația bugetară"
 
     Public Sub New()
         InitializeComponent()
         gridEvidenta.ReadOnlyGrid = False
         gridPlata.ReadOnlyGrid = False
-        ShowEmpty("Clic dreapta pe o factură și alegeți «Adaugă operații contabile».")
+        ShowEmpty()
     End Sub
 
-    ''' <summary>Nothing is ticked: the page is emptied and says <paramref name="k_text"/>.</summary>
-    Public Sub ShowEmpty(k_text As String)
+    ''' <summary>Nothing is ticked: the page is emptied; the combo of the classification says how to start.</summary>
+    Public Sub ShowEmpty()
         _filling = True
         Try
+            _booked = False
+            gridEvidenta.ReadOnlyGrid = False
+            gridPlata.ReadOnlyGrid = False
             _ultim = Nothing
             _supplierCui = String.Empty
             _nota = String.Empty
@@ -76,17 +89,16 @@ Public Class FacturiCumparareContarePage
             lstPlata.Enabled = False
             cmbClsf.Items.Clear()
             cmbClsf.Text = String.Empty
+            cmbClsf.PlaceholderText = ClsfIdle
             cmbClsf.Enabled = False
             txtIban.Text = String.Empty
             txtCodClient.Text = String.Empty
             txtFelOp.Text = String.Empty
             txtCodClient.Enabled = False
             txtFelOp.Enabled = False
-            lblInfo.Html = WebUtility.HtmlEncode(k_text)
-            tips.SetToolTipText(lblInfo, String.Empty)
+            _detalii = String.Empty
             _canSave = False
             UpdateSave()
-            UpdateBar(0, False)
         Finally
             _filling = False
         End Try
@@ -97,6 +109,9 @@ Public Class FacturiCumparareContarePage
         ArgumentNullException.ThrowIfNull(k_r)
         _filling = True
         Try
+            _booked = False
+            gridEvidenta.ReadOnlyGrid = False
+            gridPlata.ReadOnlyGrid = False
             ' Another supplier: what was typed for the previous one (client code, note, order number, kind of invoice) goes.
             If Not String.Equals(k_r.FurnizorCui, _supplierCui, StringComparison.Ordinal) Then
                 _supplierCui = k_r.FurnizorCui
@@ -106,6 +121,7 @@ Public Class FacturiCumparareContarePage
                 txtCodClient.Text = String.Empty
             End If
             _ultim = k_r
+            cmbClsf.PlaceholderText = ClsfPlaceholder
             FillClassifications(k_r)
             FillList(lstEvidentiere, k_r.SabloaneEvidentiere, k_r.IdSablonE, k_r.Clasificatie IsNot Nothing)
             FillList(lstPlata, k_r.SabloanePlata, k_r.IdSablonP, k_r.Clasificatie IsNot Nothing)
@@ -119,15 +135,104 @@ Public Class FacturiCumparareContarePage
                 _felOpFor = k_r.IdSablonP
             End If
             FillPayment(k_r)
-            lblInfo.Html = FooterHtml(k_r)
-            tips.SetToolTipHeader(lblInfo, "Detalii")
-            tips.SetToolTipText(lblInfo, DetailsText(k_r))
+            _detalii = If(String.IsNullOrWhiteSpace(k_r.FurnizorDenumire), "Furnizor necunoscut", k_r.FurnizorDenumire) & vbLf & DetailsText(k_r)
             _canSave = CanSave(k_r)
             UpdateSave()
         Finally
             _filling = False
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Slice 03EF-13: the invoice that was clicked already has accounting operations: the page shows them, read only. The classification and the templates they
+    ''' were made from are chosen in the lists «Documente evidențiere» / «Documente plată», the evidence operations are written in the evidence grid and the payment ones in the payment grid.
+    ''' </summary>
+    Public Sub ShowBooked(k_b As EFacturaContariExistente)
+        ArgumentNullException.ThrowIfNull(k_b)
+        ShowEmpty()
+        _filling = True
+        Try
+            _booked = True
+            Dim k_evidence As List(Of EFacturaContariExistenta) = k_b.Operatii.Where(Function(k_o) String.Equals(k_o.Faza, "E", StringComparison.Ordinal)).ToList()
+            Dim k_payments As List(Of EFacturaContariExistenta) = k_b.Operatii.Where(Function(k_o) String.Equals(k_o.Faza, "P", StringComparison.Ordinal)).ToList()
+            If k_b.Clasificatie IsNot Nothing Then
+                Dim k_text As String = $"{k_b.Clasificatie.Clsf}  {k_b.Clasificatie.Denumire}"
+                cmbClsf.Items.Add(New KBotComboGroupedItem(k_text, "Clasificația operațiilor înregistrate", k_text, k_b.Clasificatie.IdClsf))
+                cmbClsf.SelectedIndex = 0
+            Else
+                cmbClsf.PlaceholderText = "Fără clasificație"
+            End If
+            _bookedRowE = FillBookedList(lstEvidentiere, k_b.SabloaneEvidentiere, k_evidence)
+            _bookedRowP = FillBookedList(lstPlata, k_b.SabloanePlata, k_payments)
+
+            gridEvidenta.BeginUpdate()
+            Try
+                Dim k_paid As Decimal = k_payments.Sum(Function(k_o) k_o.Suma)
+                For Each k_o As EFacturaContariExistenta In k_evidence
+                    Dim k_row As KBotDataRow = gridEvidenta.AddRow()
+                    k_row("nc") = If(k_o.NumarNC.HasValue, k_o.NumarNC.Value.ToString(CultureInfo.InvariantCulture), String.Empty)
+                    k_row("doc") = If(String.IsNullOrEmpty(k_o.NumarDocument) OrElse String.Equals(k_o.NumarDocument, k_b.NrFact, StringComparison.Ordinal), k_b.NrFact, $"{k_o.NumarDocument} ({k_b.NrFact})")
+                    k_row("data") = If(k_o.DataDocument.HasValue, k_o.DataDocument.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), String.Empty)
+                    k_row("fel") = If(String.IsNullOrEmpty(k_o.FelDocument), k_b.FelDocument, k_o.FelDocument)
+                    k_row("suma") = k_o.Suma
+                    k_row("platit") = If(gridEvidenta.Rows.Count = 1, k_paid, 0D)   ' what was paid is on the first row of the invoice
+                Next
+            Finally
+                gridEvidenta.EndUpdate()
+            End Try
+            gridEvidenta.ReadOnlyGrid = True
+
+            gridPlata.BeginUpdate()
+            Try
+                For Each k_o As EFacturaContariExistenta In k_payments
+                    Dim k_row As KBotDataRow = gridPlata.AddRow()
+                    k_row("nc") = If(k_o.NumarNC.HasValue, k_o.NumarNC.Value.ToString(CultureInfo.InvariantCulture), String.Empty)
+                    k_row("data") = If(k_o.DataDocument.HasValue, k_o.DataDocument.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), String.Empty)
+                    k_row("nrop") = k_o.NumarDocument
+                    k_row("explicatie") = k_o.Explicatie
+                    k_row("lungime") = Math.Min(k_o.Explicatie.Length, OpExplicatie.MaxLength)
+                    k_row("valoare") = k_o.Suma
+                Next
+            Finally
+                gridPlata.EndUpdate()
+            End Try
+            gridPlata.ReadOnlyGrid = True
+            gridPlata.Enabled = gridPlata.Rows.Count > 0
+            Dim k_sub As String = k_b.Operatii.Select(Function(k_o) k_o.Subunitate).FirstOrDefault(Function(k_s) k_s.Length > 0)
+            _detalii = $"Factura {k_b.NrFact} are deja operații contabile înregistrate" & If(String.IsNullOrEmpty(k_sub), String.Empty, $" ({k_sub})") & "."
+            _canSave = False
+            UpdateSave()
+        Finally
+            _filling = False
+        End Try
+    End Sub
+
+    ' The templates that fit the classification, the one the booked operations were made from chosen (by its id; a migrated operation has none, so by its explanation).
+    ' Without templates the explanations of the operations stand in their place. Returns the chosen row (-1 = none).
+    Private Shared Function FillBookedList(k_list As KBotDataView, k_templates As List(Of EFacturaContariSablon), k_operations As List(Of EFacturaContariExistenta)) As Integer
+        k_list.BeginUpdate()
+        Dim k_chosen As Integer = -1
+        Try
+            k_list.ClearRows()
+            For Each k_s As EFacturaContariSablon In k_templates
+                Dim k_row As KBotDataRow = k_list.AddRow()
+                k_row("nume") = k_s.Explicatie
+                If k_chosen < 0 AndAlso k_operations.Any(Function(k_o) (k_o.IdSablon.HasValue AndAlso k_o.IdSablon.Value = k_s.IdSablon) OrElse
+                    (Not k_o.IdSablon.HasValue AndAlso String.Equals(k_o.Explicatie, k_s.Explicatie, StringComparison.CurrentCultureIgnoreCase))) Then k_chosen = k_list.Rows.Count - 1
+            Next
+            If k_templates.Count = 0 Then
+                For Each k_text As String In k_operations.Select(Function(k_o) k_o.Explicatie).Where(Function(k_t) k_t.Length > 0).Distinct()
+                    k_list.AddRow()("nume") = k_text
+                    If k_chosen < 0 Then k_chosen = 0
+                Next
+            End If
+            k_list.CurrentRowIndex = k_chosen
+        Finally
+            k_list.EndUpdate()
+        End Try
+        k_list.Enabled = k_list.Rows.Count > 0
+        Return k_chosen
+    End Function
 
     ' The evidence can be booked: the role allows it, the classification and the evidence template are chosen, nothing blocks and something is left to book.
     Private Shared Function CanSave(k_r As EFacturaContariRaspuns) As Boolean
@@ -136,10 +241,43 @@ Public Class FacturiCumparareContarePage
                k_r.Evidenta.Any(Function(k_e) k_e.Suma <> 0D)
     End Function
 
-    ' «Salvează» also needs a valid explanation while an order of payment is being made.
+    ' «Salvează» (the ribbon button) also needs a valid explanation while an order of payment is being made. The host is told when the answer changes.
     Private Sub UpdateSave()
-        btnSalveaza.Enabled = _canSave AndAlso (gridPlata.Rows.Count = 0 OrElse _explicatieLen >= OpExplicatie.MinLength)
+        _complete = GridFilled(gridEvidenta) AndAlso GridFilled(gridPlata)
+        Dim k_enabled As Boolean = _canSave AndAlso _complete AndAlso (gridPlata.Rows.Count = 0 OrElse _explicatieLen >= OpExplicatie.MinLength)
+        If k_enabled = _saveEnabled Then Return
+        _saveEnabled = k_enabled
+        RaiseEvent SalvareStareSchimbata()
     End Sub
+
+    ' Slice 03EF-10: every cell of the rows of a grid holds something (the progress column always does). A number, even 0, is something.
+    Private Shared Function GridFilled(k_grid As KBotDataView) As Boolean
+        For Each k_row As KBotDataRow In k_grid.Rows
+            For Each k_col As KBotDataColumn In k_grid.Columns
+                If k_col.ColumnType = KBotColumnType.ProgressBar Then Continue For
+                Dim k_value As Object = k_row(k_col.Key)
+                If k_value Is Nothing OrElse TypeOf k_value Is DBNull Then Return False
+                Dim k_text As String = TryCast(k_value, String)
+                If k_text IsNot Nothing AndAlso String.IsNullOrWhiteSpace(k_text) Then Return False
+            Next
+        Next
+        Return True
+    End Function
+
+    ''' <summary>Slice 03EF-04: «Salvează» can be pressed (the role allows it, nothing blocks, something is left to book, the explanation is valid).</summary>
+    Public ReadOnly Property PoateSalva As Boolean
+        Get
+            Return _saveEnabled
+        End Get
+    End Property
+
+    ''' <summary>The supplier, the warnings and the bookings the server calculated (what the line at the foot of the page used to say); empty when nothing is ticked.</summary>
+    Public ReadOnly Property Detalii As String
+        Get
+            ' Slice 03EF-10: why «Salvează» is dimmed when only the cells are missing.
+            Return If(_canSave AndAlso Not _complete, "Pentru «Salvează» completează toate celulele din tabele (nota contabilă, numărul O.P., explicația ...)." & vbLf, String.Empty) & _detalii
+        End Get
+    End Property
 
     ''' <summary>True while an order of payment is being made (a payment template is chosen and there is something to pay).</summary>
     Public ReadOnly Property PlataActiva As Boolean
@@ -256,19 +394,14 @@ Public Class FacturiCumparareContarePage
                 k_row("data") = If(k_p.DataMinima.HasValue, k_p.DataMinima.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), String.Empty)
                 k_row("nrop") = _nrOp
                 k_row("explicatie") = Explanation(k_r)
+                k_row("lungime") = Math.Min(Convert.ToString(k_row("explicatie"), CultureInfo.InvariantCulture).Length, OpExplicatie.MaxLength)
                 k_row("valoare") = k_p.Valoare
             End If
         Finally
             gridPlata.EndUpdate()
         End Try
         gridPlata.Enabled = k_p.Activa
-        If k_p.Activa Then
-            _explicatieLen = Convert.ToString(gridPlata.Rows(0)("explicatie"), CultureInfo.InvariantCulture).Length
-            UpdateBar(_explicatieLen, True)
-        Else
-            _explicatieLen = 0
-            UpdateBar(0, False)
-        End If
+        _explicatieLen = If(k_p.Activa, Convert.ToString(gridPlata.Rows(0)("explicatie"), CultureInfo.InvariantCulture).Length, 0)
     End Sub
 
     ' «F <numbers of the invoices paid> C <client code> <kind of invoice>», ASCII, no comma, at most 75 characters.
@@ -278,33 +411,19 @@ Public Class FacturiCumparareContarePage
         Return OpExplicatie.Compose(k_numbers, txtCodClient.Text, txtFelOp.Text, k_cut)
     End Function
 
-    ' The length of the explanation: the bar runs from 1 to 75 characters; red when empty, amber near the limit.
-    Private Sub UpdateBar(k_length As Integer, k_active As Boolean)
-        Dim k_palette As ThemePalette = ThemeManager.Current.Palette
-        barExplicatie.Maximum = OpExplicatie.MaxLength
-        barExplicatie.Value = If(k_active, Math.Min(k_length, OpExplicatie.MaxLength), 0)
-        If Not k_active Then
-            lblLungime.Text = String.Empty
-            barExplicatie.BarColor = Color.Empty
-            Return
-        End If
-        lblLungime.Text = $"{k_length.ToString(CultureInfo.InvariantCulture)} / {OpExplicatie.MaxLength.ToString(CultureInfo.InvariantCulture)}"
-        barExplicatie.BarColor = If(k_length < OpExplicatie.MinLength, k_palette.ErrorColor,
-                                    If(k_length >= OpExplicatie.MaxLength - 5, k_palette.WarningColor, k_palette.SuccessColor))
+    ' The length of the explanation: the progress column runs from 0 to 75 characters. It follows the text live (while typing, and when the client code or the kind of invoice
+    ' recompose it). Cells are set under _filling, so no change event comes out of it.
+    Private Sub UpdateBar(k_length As Integer)
+        If gridPlata.Rows.Count = 0 Then Return
+        Dim k_was As Boolean = _filling
+        _filling = True
+        Try
+            gridPlata.Rows(0)("lungime") = Math.Min(k_length, OpExplicatie.MaxLength)
+        Finally
+            _filling = k_was
+        End Try
+        gridPlata.Invalidate()
     End Sub
-
-    ' The supplier and the most serious warning (errors first); the rest, and the bookings, are in the tooltip.
-    Private Shared Function FooterHtml(k_r As EFacturaContariRaspuns) As String
-        Dim k_html As New StringBuilder()
-        k_html.Append("<b>").Append(WebUtility.HtmlEncode(If(String.IsNullOrWhiteSpace(k_r.FurnizorDenumire), "Furnizor necunoscut", k_r.FurnizorDenumire))).Append("</b>")
-        Dim k_sorted As List(Of EFacturaContariAvertisment) = SortedWarnings(k_r)
-        If k_sorted.Count > 0 Then
-            Dim k_text As String = WebUtility.HtmlEncode(k_sorted(0).Text)
-            k_html.Append("  ·  ").Append(If(String.Equals(k_sorted(0).Grav, "eroare", StringComparison.Ordinal), "<b>" & k_text & "</b>", k_text))
-            If k_sorted.Count > 1 Then k_html.Append($"  (+{(k_sorted.Count - 1).ToString(CultureInfo.InvariantCulture)})")
-        End If
-        Return k_html.ToString()
-    End Function
 
     Private Shared Function SortedWarnings(k_r As EFacturaContariRaspuns) As List(Of EFacturaContariAvertisment)
         Dim k_order As New Dictionary(Of String, Integer)(StringComparer.Ordinal) From {{"eroare", 0}, {"confirmare", 1}, {"atentie", 2}, {"info", 3}}
@@ -350,6 +469,10 @@ Public Class FacturiCumparareContarePage
     ' A click on a template chooses it; a click on the chosen payment template takes it off (without one there is no order of payment).
     Private Sub LstEvidentiere_CellClick(sender As Object, e As KBotCellEventArgs) Handles lstEvidentiere.CellClick
         Try
+            If _booked Then
+                lstEvidentiere.CurrentRowIndex = _bookedRowE   ' slice 03EF-13: read only, the template used stays chosen
+                Return
+            End If
             If _filling OrElse e.RowIndex < 0 OrElse e.RowIndex >= lstEvidentiere.Rows.Count Then Return
             Dim k_template As EFacturaContariSablon = TryCast(lstEvidentiere.Rows(e.RowIndex).Tag, EFacturaContariSablon)
             If k_template Is Nothing OrElse (_ultim IsNot Nothing AndAlso _ultim.IdSablonE.HasValue AndAlso _ultim.IdSablonE.Value = k_template.IdSablon) Then Return
@@ -361,6 +484,10 @@ Public Class FacturiCumparareContarePage
 
     Private Sub LstPlata_CellClick(sender As Object, e As KBotCellEventArgs) Handles lstPlata.CellClick
         Try
+            If _booked Then
+                lstPlata.CurrentRowIndex = _bookedRowP
+                Return
+            End If
             If _filling OrElse e.RowIndex < 0 OrElse e.RowIndex >= lstPlata.Rows.Count Then Return
             Dim k_template As EFacturaContariSablon = TryCast(lstPlata.Rows(e.RowIndex).Tag, EFacturaContariSablon)
             If k_template Is Nothing Then Return
@@ -404,7 +531,7 @@ Public Class FacturiCumparareContarePage
             Dim k_text As String = Explanation(_ultim)
             gridPlata.Rows(0)("explicatie") = k_text
             _explicatieLen = k_text.Length
-            UpdateBar(_explicatieLen, True)
+            UpdateBar(_explicatieLen)
             UpdateSave()
         Finally
             _filling = False
@@ -456,7 +583,8 @@ Public Class FacturiCumparareContarePage
                     If k_text.Length > OpExplicatie.MaxLength Then k_text = k_text.Substring(0, OpExplicatie.MaxLength)
                     e.Text = k_text
                     _explicatieLen = k_text.Trim().Length
-                    UpdateBar(_explicatieLen, True)
+                    UpdateBar(_explicatieLen)
+                    UpdateSave()
                 Case "nrop"
                     e.Text = Regex.Replace(e.Text, "\D", String.Empty)
             End Select
@@ -492,9 +620,10 @@ Public Class FacturiCumparareContarePage
                     ShareNote(Convert.ToString(e.NewValue, CultureInfo.InvariantCulture))
                 Case "nrop"
                     _nrOp = Convert.ToString(e.NewValue, CultureInfo.InvariantCulture)
+                    UpdateSave()
                 Case "explicatie"
                     _explicatieLen = Convert.ToString(e.NewValue, CultureInfo.InvariantCulture).Length
-                    UpdateBar(_explicatieLen, True)
+                    UpdateBar(_explicatieLen)
                     UpdateSave()
             End Select
         Catch ex As Exception
@@ -518,22 +647,7 @@ Public Class FacturiCumparareContarePage
         End Try
         gridEvidenta.Invalidate()
         gridPlata.Invalidate()
-    End Sub
-
-    Private Sub BtnSalveaza_Click(sender As Object, e As EventArgs) Handles btnSalveaza.Click
-        Try
-            RaiseEvent SalveazaCerut()
-        Catch ex As Exception
-            GlobalErrorLog.Write("FacturiCumparareContarePage.BtnSalveaza_Click", ex)
-        End Try
-    End Sub
-
-    Private Sub BtnRenunta_Click(sender As Object, e As EventArgs) Handles btnRenunta.Click
-        Try
-            RaiseEvent RenuntaCerut()
-        Catch ex As Exception
-            GlobalErrorLog.Write("FacturiCumparareContarePage.BtnRenunta_Click", ex)
-        End Try
+        UpdateSave()
     End Sub
 
     Public Sub ApplyTheme(k_scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
@@ -544,7 +658,6 @@ Public Class FacturiCumparareContarePage
             '    k_header.BackColor = k_scheme.Palette.ButtonBackColor
             '    k_header.ForeColor = k_scheme.Palette.ButtonTextColor
             'Next
-            UpdateBar(_explicatieLen, gridPlata.Rows.Count > 0)
         Catch ex As Exception
             GlobalErrorLog.Write("FacturiCumparareContarePage.ApplyTheme", ex)
         End Try

@@ -36,6 +36,7 @@ Public Class MfImportView
 
     Public Sub New()
         InitializeComponent()
+        grid.Column("value").ValueFormatter = Function(k_value) CDec(k_value).ToString("N2", CultureInfo.GetCultureInfo("ro-RO"))
     End Sub
 
     Public Sub Attach(k_context As AdminContext) Implements IAdminView.Attach
@@ -100,10 +101,10 @@ Public Class MfImportView
                 k_row("sel") = True
                 k_row("code") = k_asset.Code
                 k_row("name") = k_asset.Name
-                k_row("entry") = k_asset.EntryDate.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture)
-                k_row("value") = k_asset.Value.ToString("N2", CultureInfo.GetCultureInfo("ro-RO"))
-                k_row("dnf") = k_asset.Dnf.ToString(CultureInfo.InvariantCulture)
-                k_row("df") = k_asset.Df.ToString(CultureInfo.InvariantCulture)
+                k_row("entry") = k_asset.EntryDate
+                k_row("value") = k_asset.Value
+                k_row("dnf") = k_asset.Dnf
+                k_row("df") = k_asset.Df
                 k_row("cc") = k_asset.Cc
                 k_row("verdict") = String.Empty
             Next

@@ -49,7 +49,7 @@ Partial Class MfImportView
         lblNewGestiune = New Label()
         txtNewGestiune = New KBotTextBox()
         lblCreateDefaults = New Label()
-        grid = New KBotDataView()
+        grid = New AdminDataView()
         tlyMain.SuspendLayout()
         tlyFile.SuspendLayout()
         tlyTarget.SuspendLayout()
@@ -369,6 +369,7 @@ Partial Class MfImportView
         KBotDataColumn1.HeaderText = "Alege"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "sel"
+        KBotDataColumn1.ValueType = KBotValueType.Boolean
         KBotDataColumn1.MinWidth = 50
         KBotDataColumn1.OptionGroup = Nothing
         KBotDataColumn1.Width = 64
@@ -395,6 +396,8 @@ Partial Class MfImportView
         KBotDataColumn4.HeaderText = "Data intrării"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "entry"
+        KBotDataColumn4.ValueType = KBotValueType.DateTime
+        KBotDataColumn4.FormatString = "dd.MM.yyyy"
         KBotDataColumn4.MinWidth = 70
         KBotDataColumn4.OptionGroup = Nothing
         KBotDataColumn4.ReadOnly = True
@@ -403,6 +406,7 @@ Partial Class MfImportView
         KBotDataColumn5.HeaderText = "Valoare"
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "value"
+        KBotDataColumn5.ValueType = KBotValueType.Number
         KBotDataColumn5.MinWidth = 70
         KBotDataColumn5.OptionGroup = Nothing
         KBotDataColumn5.ReadOnly = True
@@ -413,6 +417,7 @@ Partial Class MfImportView
         KBotDataColumn6.HeaderText = "DNF"
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn6.Key = "dnf"
+        KBotDataColumn6.ValueType = KBotValueType.Number
         KBotDataColumn6.OptionGroup = Nothing
         KBotDataColumn6.ReadOnly = True
         KBotDataColumn6.TextAlign = ContentAlignment.MiddleRight
@@ -422,6 +427,7 @@ Partial Class MfImportView
         KBotDataColumn7.HeaderText = "DF"
         KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn7.Key = "df"
+        KBotDataColumn7.ValueType = KBotValueType.Number
         KBotDataColumn7.OptionGroup = Nothing
         KBotDataColumn7.ReadOnly = True
         KBotDataColumn7.TextAlign = ContentAlignment.MiddleRight
@@ -455,7 +461,6 @@ Partial Class MfImportView
         grid.Columns.Add(KBotDataColumn9)
         grid.Dock = DockStyle.Fill
         grid.FillColumnKey = "verdict"
-        grid.HeaderHeight = 24
         grid.Location = New Point(8, 172)
         grid.Margin = New Padding(0)
         grid.Name = "grid"
@@ -499,6 +504,6 @@ Partial Class MfImportView
     Friend WithEvents txtNewGestiune As KBotTextBox
     Friend WithEvents btnCreate As KBotButton
     Friend WithEvents lblCreateDefaults As Label
-    Friend WithEvents grid As KBotDataView
+    Friend WithEvents grid As AdminDataView
     Friend WithEvents lblState As Label
 End Class

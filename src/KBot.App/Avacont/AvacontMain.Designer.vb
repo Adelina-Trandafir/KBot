@@ -28,8 +28,6 @@ Partial Class AvacontMain
         Dim resources As System.ComponentModel.ComponentResourceManager = New System.ComponentModel.ComponentResourceManager(GetType(AvacontMain))
         Dim KBotRibbonButton4 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton5 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
-        Dim KBotRibbonField1 As KBot.Controls.KBotRibbonField = New Controls.KBotRibbonField()
-        Dim KBotRibbonField2 As KBot.Controls.KBotRibbonField = New Controls.KBotRibbonField()
         Dim KBotRibbonButton6 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim historyButton As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton7 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
@@ -102,6 +100,11 @@ Partial Class AvacontMain
         Dim btnParteneriRenunta As New Controls.KBotRibbonButton()
         Dim btnParteneriAdauga As New Controls.KBotRibbonButton()
         Dim btnParteneriSalveaza As New Controls.KBotRibbonButton()
+        Dim btnContareAdauga As New Controls.KBotRibbonButton()
+        Dim btnContareSalveaza As New Controls.KBotRibbonButton()
+        Dim btnContareRenunta As New Controls.KBotRibbonButton()
+        Dim btnContareSalveazaCa As New Controls.KBotRibbonButton()
+        Dim btnContareAscunde As New Controls.KBotRibbonButton()
         Dim KBotSidePanelSection1 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection2 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection3 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
@@ -152,7 +155,7 @@ Partial Class AvacontMain
         KBotRibbonButton5.Key = "ef_primite_sync"
         KBotRibbonButton5.Text = "Sincronizează facturi primite"
         KBotRibbonButton5.ToolTipHeader = "Sincronizează facturi primite"
-        KBotRibbonButton5.ToolTipText = "Aduce de la ANAF facturile primite în perioada aleasă alături (7-60 de zile)."
+        KBotRibbonButton5.ToolTipText = "Aduce de la ANAF facturile primite: alegi perioada (7-60 de zile) din lista care se deschide."
         KBotRibbonButton5.Visible = False
         KBotRibbonButton43.Image = CType(resources.GetObject("KBotRibbonButton4.Image"), Image)
         KBotRibbonButton43.Key = "parteneri_access_preia"
@@ -180,28 +183,6 @@ Partial Class AvacontMain
         ribbon.FormGroup.Buttons.Add(KBotRibbonButton43)
         ribbon.FormGroup.Buttons.Add(KBotRibbonButton44)
         ribbon.FormGroup.Buttons.Add(KBotRibbonButton45)
-        KBotRibbonField1.Items.Add("Ultimele 7 zile")
-        KBotRibbonField1.Items.Add("Ultimele 15 zile")
-        KBotRibbonField1.Items.Add("Ultimele 30 zile")
-        KBotRibbonField1.Items.Add("Ultimele 45 zile")
-        KBotRibbonField1.Items.Add("Ultimele 60 zile")
-        KBotRibbonField1.Key = "ef_primite_zile_combo"
-        KBotRibbonField1.PlaceholderText = "Perioada de adus"
-        KBotRibbonField1.ToolTipHeader = "Perioada sincronizării"
-        KBotRibbonField1.ToolTipText = "Câte zile în urmă se aduc facturile primite. Se folosește doar dacă nu ai scris un număr de zile în caseta de dedesubt; fără nicio alegere se aduc ultimele 7 zile."
-        KBotRibbonField1.Visible = False
-        KBotRibbonField1.Width = 150
-        KBotRibbonField2.DigitsOnly = True
-        KBotRibbonField2.Key = "ef_primite_zile_text"
-        KBotRibbonField2.Kind = KBot.Controls.KBotRibbonFieldKind.Text
-        KBotRibbonField2.MaxLength = 2
-        KBotRibbonField2.PlaceholderText = "Între 1 și 60 de zile"
-        KBotRibbonField2.ToolTipHeader = "Număr de zile"
-        KBotRibbonField2.ToolTipText = "Scrie un număr între 1 și 60: sincronizarea ia atunci această perioadă, nu pe cea din lista de deasupra. Gol = se folosește lista."
-        KBotRibbonField2.Visible = False
-        KBotRibbonField2.Width = 150
-        ribbon.FormGroup.Fields.Add(KBotRibbonField1)
-        ribbon.FormGroup.Fields.Add(KBotRibbonField2)
         ribbon.Location = New Point(1, 2)
         ribbon.Margin = New Padding(0)
         ribbon.Name = "ribbon"
@@ -374,6 +355,43 @@ Partial Class AvacontMain
         btnParteneriSalveaza.ToolTipText = "Salvează partenerul și modificările din tabele."
         btnParteneriSalveaza.Visible = False
         ribbon.RightGroup.Buttons.Add(btnParteneriSalveaza)
+        btnContareAdauga.Image = My.Resources.Resources.plus_green
+        btnContareAdauga.Key = "ef_contare_adauga"
+        btnContareAdauga.SeparatorAfter = True
+        btnContareAdauga.Text = "Adaugă operații contabile"
+        btnContareAdauga.ToolTipHeader = "Adaugă operații contabile"
+        btnContareAdauga.ToolTipText = "Începe înregistrarea facturii alese în arbore: factura se bifează, iar pagina se umple cu calculul. Se pot bifa și celelalte facturi ale aceluiași furnizor."
+        btnContareAdauga.Visible = False
+        ribbon.RightGroup.Buttons.Add(btnContareAdauga)
+        btnContareSalveaza.Image = My.Resources.Resources.save_32
+        btnContareSalveaza.Key = "ef_contare_salveaza"
+        btnContareSalveaza.Text = "Salvează"
+        btnContareSalveaza.ToolTipHeader = "Salvează"
+        btnContareSalveaza.ToolTipText = "Înregistrează facturile bifate cu șablonul de evidențiere ales: o notă contabilă, un document și o operație pentru fiecare factură. Plata se înregistrează separat (încă nu este disponibilă)."
+        btnContareSalveaza.Visible = False
+        ribbon.RightGroup.Buttons.Add(btnContareSalveaza)
+        btnContareRenunta.Image = My.Resources.Resources.Everaldo_Crystal_Clear_Action_cancel_128_resized
+        btnContareRenunta.Key = "ef_contare_renunta"
+        btnContareRenunta.SeparatorAfter = True
+        btnContareRenunta.Text = "Renunță"
+        btnContareRenunta.ToolTipHeader = "Renunță"
+        btnContareRenunta.ToolTipText = "Scoate toate bifele din arbore și golește pagina."
+        btnContareRenunta.Visible = False
+        ribbon.RightGroup.Buttons.Add(btnContareRenunta)
+        btnContareSalveazaCa.Image = My.Resources.Resources.export
+        btnContareSalveazaCa.Key = "ef_contare_salveaza_ca"
+        btnContareSalveazaCa.Text = "Exportă..."
+        btnContareSalveazaCa.ToolTipHeader = "Exportă factura"
+        btnContareSalveazaCa.ToolTipText = "Exportă pe disc factura aleasă în arbore: ca arhivă ZIP sau ca fișier XML."
+        btnContareSalveazaCa.Visible = False
+        ribbon.RightGroup.Buttons.Add(btnContareSalveazaCa)
+        btnContareAscunde.Image = My.Resources.Resources.Umut_Pulat_Tulliana_2_File_locked_32
+        btnContareAscunde.Key = "ef_contare_ascunde"
+        btnContareAscunde.Text = "Ascunde..."
+        btnContareAscunde.ToolTipHeader = "Ascunde factura"
+        btnContareAscunde.ToolTipText = "Pune factura aleasă în arhivă: dispare din arbore până alegi «Afișare facturi din arhivă». O factură cu operații contabile nu se poate ascunde."
+        btnContareAscunde.Visible = False
+        ribbon.RightGroup.Buttons.Add(btnContareAscunde)
         ribbon.SelectedTabIndex = 1
         ribbon.Size = New Size(1920, 184)
         ribbon.TabIndex = 1

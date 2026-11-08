@@ -68,6 +68,8 @@ Public Class FacturiCumparareView
 
     ' Slice 00EF-35 -- the options of the header menu (the session's, not stored): what is shown, how the tree is grouped.
     Private _onlyWithoutOperations As Boolean
+    ' Slice 03EF-14: the filters «without operations», «with operations» and «from the archive» (_showArchived) are one choice, never combined: at most one of the three is on (none = the working list).
+    Private _onlyWithOperations As Boolean
     Private _onlyNew As Boolean
     Private _groupBySupplier As Boolean
     Private _ascending As Boolean
@@ -107,8 +109,7 @@ Public Class FacturiCumparareView
         AddHandler detalii.pgContare.ClasificatieAleasa, AddressOf PgContare_ClasificatieAleasa
         AddHandler detalii.pgContare.SablonAles, AddressOf PgContare_SablonAles
         AddHandler detalii.pgContare.PlatitSchimbat, AddressOf PgContare_PlatitSchimbat
-        AddHandler detalii.pgContare.RenuntaCerut, AddressOf PgContare_RenuntaCerut
-        AddHandler detalii.pgContare.SalveazaCerut, AddressOf PgContare_SalveazaCerut
+        AddHandler detalii.pgContare.SalvareStareSchimbata, AddressOf PgContare_SalvareStareSchimbata
     End Sub
 
     ''' <summary>
@@ -122,6 +123,12 @@ Public Class FacturiCumparareView
         _api = k_api
         _gate = k_gate
         _year = k_year
+        ' Slice 03EF-13: the window of the received invoices starts grouped by supplier and showing only the invoices without operations in AVACONT (the header menu changes both);
+        ' the view of an angajament has neither option.
+        If Not _angajamentView Then
+            _groupBySupplier = True
+            _onlyWithoutOperations = True
+        End If
         detalii.pgPdf.ViewerFactory = k_viewerFactory
         receptii.Initialize(k_api, k_gate, k_year)
         receptii.AttachAngajamente(angajamente)
@@ -258,6 +265,7 @@ Public Class FacturiCumparareView
             _linked = k_linkedIds
             BuildTree(If(_shownId > 0, CType(_shownId, Integer?), Nothing))
             If _shownId > 0 AndAlso Not _nodes.ContainsKey(_shownId) Then ClearDetail()
+            NotifyContare()   ' the archive and the shown invoice may have changed: the ribbon buttons of «Contari»
         Catch ex As OperationCanceledException
             ' The host was closed.
         Catch ex As ApiException
@@ -311,15 +319,18 @@ Public Class FacturiCumparareView
         ' Slice 01EF-03: the archive is a separate list: the working list has no archived invoice, the archive shows only them.
         If Not _angajamentView Then k_list = k_list.Where(Function(k_x) _archived.ContainsKey(k_x.IdPrimita) = _showArchived)
         If _onlyWithoutOperations Then k_list = k_list.Where(Function(k_x) k_x.NrOperatii = 0)
+        If _onlyWithOperations Then k_list = k_list.Where(Function(k_x) k_x.NrOperatii > 0)
         If _onlyNew Then k_list = k_list.Where(Function(k_x) _newIds.Contains(k_x.IdPrimita))
         If _receptiiWide Then k_list = k_list.Where(Function(k_x) ReceptiiListed(k_x))   ' slice KE21: the view «Recepții» lists by its own filter
         Return k_list.ToList()
     End Function
 
     ''' <summary>
-    ''' Rebuilds the tree from <c>_items</c> (less what the header menu filters out). Grouped by month (the default): the root «Toate
-    ''' facturile», the months newest first, under a month the suppliers (by tax code, in name order), under a supplier its invoices;
-    ''' in the view of an angajament there is no supplier level: the invoices are directly under their month (slice 0114-22).
+    ''' Rebuilds the tree from <c>_items</c> (less what the header menu filters out). Grouped by date (the default; slice 03EF-12): the root «Toate
+    ''' facturile», the months newest first, under a month the days (dd.mm.yyyy, newest first), under a day its invoices, each as «Furnizor - Număr»
+    ''' with the value. While the view «Recepții» is on screen the month still holds the suppliers (by tax code, in name order) with their invoices:
+    ''' the button of a supplier proposes the links of its invoices. In the view of an angajament there is no supplier or day level: the invoices are
+    ''' directly under their month (slice 0114-22).
     ''' Grouped by supplier: the suppliers are the roots, in name order, and their invoices are under them, ascending or descending by
     ''' date. The search of the tree's header narrows it; the tree is not rebuilt when an invoice is opened.
     ''' </summary>
@@ -381,6 +392,22 @@ Public Class FacturiCumparareView
                 AddInvoiceNodes(k_group.OrderByDescending(Function(k_x) k_x.DataFact).ThenByDescending(Function(k_x) k_x.IdPrimita), k_month, k_palette)
                 Continue For
             End If
+            If Not _receptiiWide Then
+                ' Slice 03EF-12: under a month the days, under a day the invoices as «Furnizor - Număr ~~~ Valoare».
+                Dim k_days As IEnumerable(Of IGrouping(Of Date, EFacturaPrimita)) =
+                    k_group.GroupBy(Function(k_x) If(k_x.DataFact.HasValue, k_x.DataFact.Value.Date, Date.MinValue)).OrderByDescending(Function(k_g) k_g.Key)
+                For Each k_dayGroup As IGrouping(Of Date, EFacturaPrimita) In k_days
+                    Dim k_dayHasSelected As Boolean = k_selectId.HasValue AndAlso k_dayGroup.Any(Function(k_x) k_x.IdPrimita = k_selectId.Value)
+                    Dim k_daySum As Decimal = k_dayGroup.Sum(Function(k_x) k_x.Total)
+                    Dim k_dayLabel As String = If(k_dayGroup.Key = Date.MinValue, "fără dată", k_dayGroup.Key.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture))
+                    Dim k_day As AdvancedTreeControl.TreeItem = tree.AddItem(
+                        "D_" & k_dayGroup.Key.ToString("yyyyMMdd", CultureInfo.InvariantCulture), $"{k_dayLabel}~~~{k_daySum.ToString("N2", _ro)}", k_month,
+                        pLeftIconClosed:=k_icon, pLeftIconOpen:=k_icon, pExpanded:=k_dayHasSelected)
+                    AddInvoiceNodes(k_dayGroup.OrderBy(Function(k_x) InvoiceSupplierName(k_x), StringComparer.CurrentCultureIgnoreCase).ThenBy(Function(k_x) k_x.NrFact, StringComparer.CurrentCultureIgnoreCase).ThenBy(Function(k_x) k_x.IdPrimita),
+                                    k_day, k_palette, True)
+                Next
+                Continue For
+            End If
             Dim k_suppliers As IEnumerable(Of IGrouping(Of String, EFacturaPrimita)) =
                 k_group.GroupBy(Function(k_x) SupplierKey(k_x)).
                         OrderBy(Function(k_g) SupplierName(k_g), StringComparer.CurrentCultureIgnoreCase)
@@ -423,11 +450,16 @@ Public Class FacturiCumparareView
     End Sub
 
     ' The invoice rows (leaves) under a parent: a supplier, or in the view of an angajament a month.
-    Private Sub AddInvoiceNodes(k_invoices As IEnumerable(Of EFacturaPrimita), k_parent As AdvancedTreeControl.TreeItem, k_palette As ThemePalette)
+    ' Slice 03EF-12: k_underDay = the parent is a day, so the date is the parent's and the row says «Furnizor - Număr» instead.
+    Private Sub AddInvoiceNodes(k_invoices As IEnumerable(Of EFacturaPrimita), k_parent As AdvancedTreeControl.TreeItem, k_palette As ThemePalette,
+                                Optional k_underDay As Boolean = False)
         For Each k_p As EFacturaPrimita In k_invoices
             Dim k_dot As Image = FacturaIcons.StateDot(DotOf(k_p), k_palette, tree.LeftIconSize.Width)
             Dim k_date As String = If(k_p.DataFact.HasValue, k_p.DataFact.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), "fără dată")
-            Dim k_caption As String = $"{k_date} · {If(k_p.Tip = "NC", "NC ", String.Empty)}{k_p.NrFact}~~~{k_p.Total.ToString("N2", _ro)}"
+            Dim k_number As String = $"{If(k_p.Tip = "NC", "NC ", String.Empty)}{k_p.NrFact}"
+            Dim k_caption As String = If(k_underDay,
+                $"{InvoiceSupplierName(k_p)} - {k_number}~~~{k_p.Total.ToString("N2", _ro)}",
+                $"{k_date} · {k_number}~~~{k_p.Total.ToString("N2", _ro)}")
             Dim k_leaf As AdvancedTreeControl.TreeItem = tree.AddItem(
                 "P_" & k_p.IdPrimita.ToString(CultureInfo.InvariantCulture), k_caption, k_parent,
                 pLeftIconClosed:=k_dot, pLeftIconOpen:=k_dot)
@@ -443,6 +475,13 @@ Public Class FacturiCumparareView
     Private Shared Function SupplierKey(k_p As EFacturaPrimita) As String
         If Not String.IsNullOrWhiteSpace(k_p.CuiNormalizat) Then Return k_p.CuiNormalizat.Trim()
         Return "N" & k_p.Furnizor.Trim().ToUpperInvariant()
+    End Function
+
+    ' The supplier as written on one invoice (the name, else the tax code), for the row of the invoice.
+    Private Shared Function InvoiceSupplierName(k_p As EFacturaPrimita) As String
+        If Not String.IsNullOrWhiteSpace(k_p.Furnizor) Then Return k_p.Furnizor.Trim()
+        If Not String.IsNullOrWhiteSpace(k_p.Cui) Then Return k_p.Cui.Trim()
+        Return "Furnizor necunoscut"
     End Function
 
     ' The name shown for a supplier: the one on its newest invoice (the same code may be written with different names).
@@ -503,6 +542,8 @@ Public Class FacturiCumparareView
     Private Sub ClearDetail()
         _shownId = 0
         _detail = Nothing
+        If _contare AndAlso _tickedIds.Count = 0 Then detalii.pgContare.ShowEmpty()   ' slice 03EF-13
+        NotifyContare()
         gridLinii().ClearRows()
         detalii.pgLinii.ClearSupplier()
         gridMesaje().ClearRows()
@@ -555,6 +596,7 @@ Public Class FacturiCumparareView
             ntfMesaj.Visible = False
             If k_id <> _shownId Then _keCod = String.Empty   ' slice KE02: the angajament chosen last belongs to the previous invoice
             _shownId = k_id
+            NotifyContare()   ' the buttons of «Contari» that work on the shown invoice
             Dim k_mySeq As Integer = Interlocked.Increment(_seq)
             Dim k_detail As EFacturaPrimitaDetaliu = Await _gate.RunAsync(
                 Function() _api.GetPrimitaAsync(k_id, _cts.Token)).ConfigureAwait(True)
@@ -563,6 +605,7 @@ Public Class FacturiCumparareView
             FillLines(k_detail)
             detalii.pgPdf.SetAttachments(k_detail.Atasamente)
             FillMessages(k_detail)
+            If _contare Then Await ShowBookedAsync().ConfigureAwait(True)   ' slice 03EF-13: «Contari» shows the operations the invoice already has
             ' «Mesaje» is always there: it is where a message to the supplier is written.
             detalii.navDetaliu.SetItemVisible(FacturiCumparareDetaliiView.ViewMesaje, True)
             detalii.navDetaliu.SetItemVisible(FacturiCumparareDetaliiView.ViewXml, True)
@@ -803,6 +846,7 @@ Public Class FacturiCumparareView
     ' ── Tree header ─────────────────────────────────────────────────────────────
 
     Private Const OptFaraOperatii As String = "fara_operatii"
+    Private Const OptCuOperatii As String = "cu_operatii"
     Private Const OptNoi As String = "noi"
     Private Const OptArhiva As String = "arhiva"
     Private Const OptPeFurnizor As String = "grup_furnizor"
@@ -825,7 +869,8 @@ Public Class FacturiCumparareView
             Dim k_anchor As Rectangle = tree.HeaderRightIconRect
             If k_anchor.IsEmpty Then Return
             Dim k_items As New List(Of CustomPopupItem) From {
-                New CustomPopupItem(OptFaraOperatii, "Afișare facturi fără operații în AVACONT") With {.Checked = _onlyWithoutOperations}}
+                New CustomPopupItem(OptFaraOperatii, "Afișare facturi fără operații în AVACONT") With {.Checked = _onlyWithoutOperations},
+                New CustomPopupItem(OptCuOperatii, "Afișare facturi cu operații în AVACONT") With {.Checked = _onlyWithOperations}}
             If _newIds.Count > 0 AndAlso Not _idDdf.HasValue Then
                 k_items.Add(New CustomPopupItem(OptNoi, "Afișare facturi noi") With {.Checked = _onlyNew})
             End If
@@ -854,11 +899,20 @@ Public Class FacturiCumparareView
             If ChooseReceptiiFilter(k_key) Then Return
             Select Case k_key
                 Case OptFaraOperatii
-                    _onlyWithoutOperations = Not _onlyWithoutOperations
+                    ' Slice 03EF-14: the three «Afisare» options are a radio choice: exactly one is on, a click on the one in force changes nothing.
+                    _onlyWithoutOperations = True
+                    _onlyWithOperations = False
+                    _showArchived = False
+                Case OptCuOperatii
+                    _onlyWithoutOperations = False
+                    _onlyWithOperations = True
+                    _showArchived = False
                 Case OptNoi
                     _onlyNew = Not _onlyNew
                 Case OptArhiva
-                    _showArchived = Not _showArchived
+                    _onlyWithoutOperations = False
+                    _onlyWithOperations = False
+                    _showArchived = True
                 Case OptPeFurnizor
                     _groupBySupplier = True
                 Case OptPeLuna
@@ -904,17 +958,7 @@ Public Class FacturiCumparareView
             If CustomPopup.ClosedJustNow Then Return
             Dim k_band As Rectangle = tree.FooterBandRect
             If k_band.IsEmpty Then Return
-            Dim k_combo As CustomPopupItem = CustomPopupItem.Combo(MenuZileCombo, "Perioada de adus",
-                SyncDayChoices.Select(Function(k_d) $"Ultimele {k_d.ToString(CultureInfo.InvariantCulture)} zile"))
-            k_combo.Image = My.Resources.Resources.anaf
-            Dim k_text As CustomPopupItem = CustomPopupItem.TextInput(MenuZileText, "Între 1 și 60 de zile", "Între 1 și 60 de zile", 2, True)
-            k_text.Image = My.Resources.Resources.anaf
-            ' Under the two ANAF rows, a separator, then the other way to update: read the list again from the K-BOT server.
-            Dim k_items As New List(Of CustomPopupItem) From {
-                k_combo, k_text, CustomPopupItem.Separator(),
-                New CustomPopupItem(MenuServer, "Sincronizează cu serverul", My.Resources.Resources.refresh)}
-            Dim k_menu As New CustomPopup(k_items) With {.IconBarSide = PopupIconBarSide.Right}   ' bar and text on the right, by the button
-            AddHandler k_menu.ItemClicked, Sub(k_sender As Object, k_args As CustomPopupItemEventArgs) SyncMenuAnswered(k_args.Item)
+            Dim k_menu As CustomPopup = BuildSyncMenu()
             ' Over the button: above the footer, its right edge on the button's right edge.
             Dim k_icon As Rectangle = tree.FooterRightIconRect
             k_menu.ShowAboveRightAligned(tree, k_band, If(k_icon.IsEmpty, k_band.Right, k_icon.Right))
@@ -922,6 +966,37 @@ Public Class FacturiCumparareView
             GlobalErrorLog.Write("FacturiCumparareView.OpenSyncPopup", ex)
         End Try
     End Sub
+
+    ''' <summary>
+    ''' Slice 03EF-01: the same popup, opened by the ribbon button «Sincronizeaza facturi primite»: just under the button
+    ''' (<paramref name="k_rect"/> is the button in the client coordinates of <paramref name="k_anchor"/>, the ribbon). UI boundary: logs and swallows.
+    ''' </summary>
+    Public Sub OpenSyncPopup(k_anchor As Control, k_rect As Rectangle)
+        Try
+            ArgumentNullException.ThrowIfNull(k_anchor)
+            If _api Is Nothing OrElse _syncing Then Return
+            If CustomPopup.ClosedJustNow OrElse k_rect.IsEmpty Then Return
+            BuildSyncMenu().ShowBelow(k_anchor, k_rect)
+        Catch ex As Exception
+            GlobalErrorLog.Write("FacturiCumparareView.OpenSyncPopup", ex)
+        End Try
+    End Sub
+
+    ' The popup of the update: two ANAF rows (the preset periods, a number of days), a separator, then the re-read from the K-BOT server.
+    Private Function BuildSyncMenu() As CustomPopup
+        Dim k_combo As CustomPopupItem = CustomPopupItem.Combo(MenuZileCombo, "Perioada de adus",
+            SyncDayChoices.Select(Function(k_d) $"Ultimele {k_d.ToString(CultureInfo.InvariantCulture)} zile"))
+        k_combo.Image = My.Resources.Resources.anaf
+        Dim k_text As CustomPopupItem = CustomPopupItem.TextInput(MenuZileText, "Între 1 și 60 de zile", "Între 1 și 60 de zile", 2, True)
+        k_text.Image = My.Resources.Resources.anaf
+        ' Under the two ANAF rows, a separator, then the other way to update: read the list again from the K-BOT server.
+        Dim k_items As New List(Of CustomPopupItem) From {
+            k_combo, k_text, CustomPopupItem.Separator(),
+            New CustomPopupItem(MenuServer, "Sincronizează cu serverul", My.Resources.Resources.refresh)}
+        Dim k_menu As New CustomPopup(k_items) With {.IconBarSide = PopupIconBarSide.Right}   ' bar and text on the right, by the button
+        AddHandler k_menu.ItemClicked, Sub(k_sender As Object, k_args As CustomPopupItemEventArgs) SyncMenuAnswered(k_args.Item)
+        Return k_menu
+    End Function
 
     ' The answer of the popup: the list (a preset period) or the box (days written by hand).
     Private Sub SyncMenuAnswered(k_item As CustomPopupItem)

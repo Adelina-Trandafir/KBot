@@ -35,7 +35,7 @@ Partial Class AuditView
         lblUser = New Label()
         txtUser = New KBotTextField()
         btnRefresh = New KBotButton()
-        grid = New KBotDataView()
+        grid = New AdminDataView()
         lblState = New Label()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         tlyMain.SuspendLayout()
@@ -157,6 +157,8 @@ Partial Class AuditView
         KBotDataColumn1.HeaderText = "Moment"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "moment"
+        KBotDataColumn1.ValueType = KBotValueType.DateTime
+        KBotDataColumn1.FormatString = "yyyy-MM-dd HH:mm:ss"
         KBotDataColumn1.MinWidth = 90
         KBotDataColumn1.OptionGroup = Nothing
         KBotDataColumn1.ReadOnly = True
@@ -234,7 +236,6 @@ Partial Class AuditView
         grid.Columns.Add(KBotDataColumn8)
         grid.Dock = DockStyle.Fill
         grid.FillColumnKey = "details"
-        grid.HeaderHeight = 24
         grid.Location = New Point(8, 52)
         grid.Margin = New Padding(0)
         grid.Name = "grid"
@@ -276,6 +277,6 @@ Partial Class AuditView
     Friend WithEvents lblUser As Label
     Friend WithEvents txtUser As KBotTextField
     Friend WithEvents btnRefresh As KBotButton
-    Friend WithEvents grid As KBotDataView
+    Friend WithEvents grid As AdminDataView
     Friend WithEvents lblState As Label
 End Class

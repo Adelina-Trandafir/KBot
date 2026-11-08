@@ -164,3 +164,34 @@ Public NotInheritable Class EFacturaContariRaspuns
     Public ReadOnly Property Operatii As New List(Of EFacturaContariOperatie)()
     Public ReadOnly Property Avertismente As New List(Of EFacturaContariAvertisment)()
 End Class
+
+''' <summary>Slice 03EF-13 -- one accounting operation an invoice already has: <see cref="Faza"/> E (evidence) or P (payment).</summary>
+Public NotInheritable Class EFacturaContariExistenta
+    Public Property Faza As String = String.Empty
+    Public Property Suma As Decimal
+
+    ''' <summary>The template the operation was made from; Nothing for a migrated one or one typed by hand.</summary>
+    Public Property IdSablon As Integer?
+    Public Property Explicatie As String = String.Empty
+    Public Property NumarDocument As String = String.Empty
+    Public Property DataDocument As Date?
+    Public Property FelDocument As String = String.Empty
+    Public Property NumarNC As Integer?
+    Public Property Subunitate As String = String.Empty
+End Class
+
+''' <summary>Slice 03EF-13 -- what is already booked for one invoice, to show on the page «Contari» when the invoice is clicked.</summary>
+Public NotInheritable Class EFacturaContariExistente
+    Public Property IdPrimita As Integer
+    Public Property NrFact As String = String.Empty
+    Public Property NumarDocument As String = String.Empty
+    Public Property DataFact As Date?
+    Public Property FelDocument As String = String.Empty
+
+    ''' <summary>The total of the invoice (negative for a credit note).</summary>
+    Public Property Total As Decimal
+    Public Property Clasificatie As EFacturaContariClsf
+    Public ReadOnly Property SabloaneEvidentiere As New List(Of EFacturaContariSablon)()
+    Public ReadOnly Property SabloanePlata As New List(Of EFacturaContariSablon)()
+    Public ReadOnly Property Operatii As New List(Of EFacturaContariExistenta)()
+End Class

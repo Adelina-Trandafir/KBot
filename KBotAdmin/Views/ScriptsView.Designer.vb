@@ -33,11 +33,11 @@ Partial Class ScriptsView
         lblState = New Label()
         tlyMain = New KBotTableLayoutPanel()
         tlyMid = New KBotTableLayoutPanel()
-        gridScripts = New KBotDataView()
+        gridScripts = New AdminDataView()
         splSide = New SplitContainer()
         lblNotesHead = New Label()
         rtbNotes = New KBotNotesBox()
-        gridSwitches = New KBotDataView()
+        gridSwitches = New AdminDataView()
         logBox = New KBotLogBox()
         tlyMain.SuspendLayout()
         tlyMid.SuspendLayout()
@@ -213,7 +213,6 @@ Partial Class ScriptsView
         KBotGroupLevel1.ShowFooterAggregates = False
         KBotGroupLevel1.SortDirection = KBotSortDirection.Descending
         gridScripts.Groups.Add(KBotGroupLevel1)
-        gridScripts.HeaderHeight = 24
         gridScripts.Location = New Point(0, 0)
         gridScripts.Margin = New Padding(0)
         gridScripts.Name = "gridScripts"
@@ -252,6 +251,7 @@ Partial Class ScriptsView
         KBotDataColumn5.HeaderText = ""
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "on"
+        KBotDataColumn5.ValueType = KBotValueType.Boolean
         KBotDataColumn5.OptionGroup = Nothing
         KBotDataColumn5.Resizable = False
         KBotDataColumn5.Width = 48
@@ -278,7 +278,6 @@ Partial Class ScriptsView
         gridSwitches.Columns.Add(KBotDataColumn7)
         gridSwitches.Dock = DockStyle.Fill
         gridSwitches.FillColumnKey = "desc"
-        gridSwitches.HeaderHeight = 24
         gridSwitches.Location = New Point(0, 0)
         gridSwitches.Margin = New Padding(0)
         gridSwitches.Name = "gridSwitches"
@@ -323,11 +322,11 @@ Partial Class ScriptsView
     Friend WithEvents tips As KBotToolTip
     Friend WithEvents tlyMain As KBotTableLayoutPanel
     Friend WithEvents tlyMid As KBotTableLayoutPanel
-    Friend WithEvents gridScripts As KBotDataView
+    Friend WithEvents gridScripts As AdminDataView
     Friend WithEvents splSide As SplitContainer
     Friend WithEvents lblNotesHead As Label
     Friend WithEvents rtbNotes As KBotNotesBox
-    Friend WithEvents gridSwitches As KBotDataView
+    Friend WithEvents gridSwitches As AdminDataView
     Friend WithEvents txtNotes As KBotTextBox
     Friend WithEvents lblCommand As Label
     Friend WithEvents logBox As KBotLogBox

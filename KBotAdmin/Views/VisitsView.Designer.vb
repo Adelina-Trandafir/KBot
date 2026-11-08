@@ -33,7 +33,7 @@ Partial Class VisitsView
         cmbDays = New KBotComboBox()
         chkBots = New KBotCheckBox()
         btnRefresh = New KBotButton()
-        grid = New KBotDataView()
+        grid = New AdminDataView()
         lblState = New Label()
         CType(grid, ComponentModel.ISupportInitialize).BeginInit()
         tlyMain.SuspendLayout()
@@ -140,6 +140,8 @@ Partial Class VisitsView
         KBotDataColumn1.HeaderText = "Prima"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "first"
+        KBotDataColumn1.ValueType = KBotValueType.DateTime
+        KBotDataColumn1.FormatString = "yyyy-MM-dd HH:mm:ss"
         KBotDataColumn1.MinWidth = 90
         KBotDataColumn1.OptionGroup = Nothing
         KBotDataColumn1.ReadOnly = True
@@ -149,6 +151,7 @@ Partial Class VisitsView
         KBotDataColumn2.HeaderText = "Durată (s)"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "seconds"
+        KBotDataColumn2.ValueType = KBotValueType.Number
         KBotDataColumn2.MinWidth = 50
         KBotDataColumn2.OptionGroup = Nothing
         KBotDataColumn2.ReadOnly = True
@@ -219,7 +222,6 @@ Partial Class VisitsView
         grid.Columns.Add(KBotDataColumn8)
         grid.Dock = DockStyle.Fill
         grid.FillColumnKey = "sections"
-        grid.HeaderHeight = 24
         grid.Location = New Point(8, 52)
         grid.Margin = New Padding(0)
         grid.Name = "grid"
@@ -260,6 +262,6 @@ Partial Class VisitsView
     Friend WithEvents cmbDays As KBotComboBox
     Friend WithEvents chkBots As KBotCheckBox
     Friend WithEvents btnRefresh As KBotButton
-    Friend WithEvents grid As KBotDataView
+    Friend WithEvents grid As AdminDataView
     Friend WithEvents lblState As Label
 End Class

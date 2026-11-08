@@ -36,7 +36,7 @@ Partial Class RequestsView
         btnApprove = New KBotButton()
         btnReject = New KBotButton()
         btnLink = New KBotButton()
-        grid = New KBotDataView()
+        grid = New AdminDataView()
         tlyEdit = New KBotTableLayoutPanel()
         lblDb = New Label()
         txtDb = New KBotTextField()
@@ -168,6 +168,7 @@ Partial Class RequestsView
         KBotDataColumn1.HeaderText = "Nr."
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "id"
+        KBotDataColumn1.ValueType = KBotValueType.Number
         KBotDataColumn1.MinWidth = 40
         KBotDataColumn1.OptionGroup = Nothing
         KBotDataColumn1.ReadOnly = True
@@ -178,6 +179,8 @@ Partial Class RequestsView
         KBotDataColumn2.HeaderText = "Data cererii"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "date"
+        KBotDataColumn2.ValueType = KBotValueType.DateTime
+        KBotDataColumn2.FormatString = "yyyy-MM-dd HH:mm"
         KBotDataColumn2.MinWidth = 80
         KBotDataColumn2.OptionGroup = Nothing
         KBotDataColumn2.ReadOnly = True
@@ -223,6 +226,7 @@ Partial Class RequestsView
         KBotDataColumn7.HeaderText = "An"
         KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn7.Key = "year"
+        KBotDataColumn7.ValueType = KBotValueType.Number
         KBotDataColumn7.MinWidth = 40
         KBotDataColumn7.OptionGroup = Nothing
         KBotDataColumn7.ReadOnly = True
@@ -233,6 +237,7 @@ Partial Class RequestsView
         KBotDataColumn8.HeaderText = "Rânduri"
         KBotDataColumn8.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn8.Key = "rows"
+        KBotDataColumn8.ValueType = KBotValueType.Number
         KBotDataColumn8.MinWidth = 50
         KBotDataColumn8.OptionGroup = Nothing
         KBotDataColumn8.ReadOnly = True
@@ -258,7 +263,6 @@ Partial Class RequestsView
         grid.Columns.Add(KBotDataColumn9)
         grid.Dock = DockStyle.Fill
         grid.FillColumnKey = "decision"
-        grid.HeaderHeight = 24
         grid.Location = New Point(8, 52)
         grid.Margin = New Padding(0, 0, 0, 6)
         grid.Name = "grid"
@@ -404,7 +408,7 @@ Partial Class RequestsView
     Friend WithEvents btnApprove As KBotButton
     Friend WithEvents btnReject As KBotButton
     Friend WithEvents btnLink As KBotButton
-    Friend WithEvents grid As KBotDataView
+    Friend WithEvents grid As AdminDataView
     Friend WithEvents tlyEdit As KBotTableLayoutPanel
     Friend WithEvents lblDb As Label
     Friend WithEvents txtDb As KBotTextField

@@ -17,6 +17,9 @@ Public Class ReleaseNotesView
 
     Public Sub New()
         InitializeComponent()
+        If Not KBotDesignTime.IsDesignTime(Me) Then
+            gridNotes.Column(KBotDataView.CheckColumnKey).ValueType = KBotValueType.Boolean
+        End If
     End Sub
 
     Public Sub Attach(k_context As AdminContext) Implements IAdminView.Attach
@@ -68,7 +71,7 @@ Public Class ReleaseNotesView
                 Next
                 AddRow(k_key, Integer.MaxValue)
             Next
-            gridNotes.ApplySort(ColOrder, KBotSortDirection.Ascending)
+            If gridNotes.SortDirection = KBotSortDirection.None Then gridNotes.ApplySort(ColOrder, KBotSortDirection.Ascending)
         Finally
             gridNotes.EndUpdate()
         End Try
@@ -80,6 +83,8 @@ Public Class ReleaseNotesView
         k_row(ColOrder) = k_order
         k_row(ColNote) = If(k_note?.NoteText, String.Empty)
         k_row.Tag = k_note
+        k_row.IsDraft = k_note Is Nothing
+        k_row(KBotDataView.CheckColumnKey) = False
     End Sub
 
     Private Shared Function VersionKey(k_version As Version) As String
@@ -129,6 +134,7 @@ Public Class ReleaseNotesView
         Dim k_key As String = CStr(k_row(ColVersion))
         gridNotes.BeginUpdate()
         Try
+            k_row.IsDraft = False
             gridNotes.SetRowChecked(e.RowIndex, False)
             Dim k_order As Integer = 0
             For Each k_noteRow In gridNotes.Rows.Where(Function(k_item) CStr(k_item(ColVersion)) = k_key AndAlso k_item.Tag IsNot Nothing).
@@ -145,20 +151,6 @@ Public Class ReleaseNotesView
 
     Private Sub GridNotes_RowChecked(k_sender As Object, e As KBotRowCheckedEventArgs) Handles gridNotes.RowChecked
         If e.Pending <> 0 Then Return
-        ' The grid counts all model rows for the group checkbox. Mirror the group's state in its hidden draft checkbox.
-        Dim k_key As String = CStr(gridNotes.Rows(e.RowIndex)(ColVersion))
-        Dim k_draft As Integer = -1
-        Dim k_allChecked As Boolean = True
-        For k_i As Integer = 0 To gridNotes.RowCount - 1
-            Dim k_row As KBotDataRow = gridNotes.Rows(k_i)
-            If CStr(k_row(ColVersion)) <> k_key Then Continue For
-            If k_row.Tag Is Nothing Then
-                k_draft = k_i
-            Else
-                k_allChecked = k_allChecked AndAlso gridNotes.GetRowChecked(k_i)
-            End If
-        Next
-        If k_draft >= 0 Then gridNotes.SetRowChecked(k_draft, k_allChecked)
         gridNotes.ClearDirty()
         UpdateMoveButton()
     End Sub

@@ -1305,6 +1305,15 @@ Partial Public NotInheritable Class KBotLaneView
         Return -1
     End Function
 
+    ''' <summary>The plotted marker nearest the given client point, or Nothing.</summary>
+    Public Function MarkerAt(location As Point) As KBotLaneMarker
+        EnsureLayout()
+        Dim laneIndex As Integer = -1
+        Dim markerIndex As Integer = -1
+        HitTestMarker(location, laneIndex, markerIndex)
+        Return If(laneIndex < 0, Nothing, VisibleLanes(laneIndex).Markers(markerIndex))
+    End Function
+
     ''' <summary>
     ''' The marker nearest the pointer, within <see cref="HoverRadius"/>.
     ''' </summary>

@@ -808,9 +808,18 @@ Public NotInheritable Class KBotDataColumn
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Public ReadOnly Property FilterEnabled As Boolean
         Get
-            Return _showColumnFilter AndAlso Not IsFilterForbidden(_columnType)
+            Return Not IsFilterForbidden(_columnType) AndAlso
+                   (_showColumnFilter OrElse (Owner IsNot Nothing AndAlso Owner.ShowDataColumnMenus))
         End Get
     End Property
+
+    ''' <summary>Optional runtime sort key for a cell whose text combines multiple values.</summary>
+    <Browsable(False), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property SortKeySelector As Func(Of KBotDataRow, Object)
+
+    ''' <summary>Optional runtime formatting for a cell that keeps its original typed value.</summary>
+    <Browsable(False), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property ValueFormatter As Func(Of Object, String)
 
     ''' <summary>
     ''' Cât cer pictogramele de antet, cu spațiile dintre ele (px logici). 0 = coloana n-are

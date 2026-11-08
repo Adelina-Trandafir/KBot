@@ -18,14 +18,21 @@ Imports KBot.Theming
 Public Class FacturiCumparareLiniiPage
     Implements IThemedContainer
 
+    ' Slice 03EF-13: the texts of the CPV codes and of the units of measure of the invoice shown, for the tooltips of those two cells.
+    Private _cpvTexts As IReadOnlyDictionary(Of String, String)
+    Private _umTexts As IReadOnlyDictionary(Of String, String)
+
     Public Sub New()
         InitializeComponent()
         rtbNote.Editabil = False
+        gridLinii.CellTooltipTableProvider = AddressOf LineTooltip
     End Sub
 
     ''' <summary>Puts the supplier block and the notes of <paramref name="k_detail"/> on screen.</summary>
     Public Sub ShowSupplier(k_detail As EFacturaPrimitaDetaliu)
         ArgumentNullException.ThrowIfNull(k_detail)
+        _cpvTexts = k_detail.ExplicatiiCpv
+        _umTexts = k_detail.ExplicatiiUm
         Dim k_f As EFacturaPrimita = k_detail.Factura
         Dim k_html As New StringBuilder()
         k_html.Append("<b>").Append(WebUtility.HtmlEncode(If(String.IsNullOrWhiteSpace(k_f.Furnizor), "Furnizor necunoscut", k_f.Furnizor.Trim()))).Append("</b>")
@@ -53,9 +60,35 @@ Public Class FacturiCumparareLiniiPage
 
     ''' <summary>Empties the supplier block and the notes (no invoice is shown).</summary>
     Public Sub ClearSupplier()
+        _cpvTexts = Nothing
+        _umTexts = Nothing
         lblFurnizor.Html = String.Empty
         rtbNote.Rtf = String.Empty
     End Sub
+
+    ' Slice 03EF-13: hovering over the CPV (when it is not empty) shows what the code means (AVACONT_COMUN.CPV.Expl), over the unit of measure what the unit is (EF_UM.Explicatie).
+    ' Nothing = no tooltip of this kind (the grid then falls back to its usual tooltip for a text that does not fit). Called by the grid on hover: never throws.
+    Private Function LineTooltip(k_column As String, k_row As KBotDataRow) As String
+        Try
+            Dim k_line As EFacturaPrimitaLinie = TryCast(k_row?.Tag, EFacturaPrimitaLinie)
+            If k_line Is Nothing Then Return Nothing
+            Dim k_code As String = Nothing
+            Dim k_texts As IReadOnlyDictionary(Of String, String) = Nothing
+            If String.Equals(k_column, "cpv", StringComparison.Ordinal) Then
+                k_code = k_line.Cpv
+                k_texts = _cpvTexts
+            ElseIf String.Equals(k_column, "um", StringComparison.Ordinal) Then
+                k_code = k_line.Unit
+                k_texts = _umTexts
+            End If
+            If String.IsNullOrWhiteSpace(k_code) OrElse k_texts Is Nothing Then Return Nothing
+            Dim k_text As String = Nothing
+            Return If(k_texts.TryGetValue(k_code.Trim(), k_text) AndAlso Not String.IsNullOrWhiteSpace(k_text), k_text, Nothing)
+        Catch ex As Exception
+            GlobalErrorLog.Write("FacturiCumparareLiniiPage.LineTooltip", ex)
+            Return Nothing
+        End Try
+    End Function
 
     ' Slice 00EF-27: a line of an invoice read with the CPV column and without a CPV code is painted in the theme's error
     ' colour (dark red); a line stored before the column existed (Cpv = Nothing) is painted as usual.

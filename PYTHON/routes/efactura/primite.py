@@ -259,7 +259,31 @@ def detaliu(dc, id_primita):
     buyer = {key: buyer.get(key) or unit.get(key, "") for key in ("nume", "cui", "adresa")}
     row.pop("DataAdaugare", None)
     return {"factura": _plain(row), "linii": lines, "cote": rates, "note": notes, "mesaje": messages, "atasamente": files,
-            "cumparator": buyer, "plati": payments, "legaturi": {"auto": auto, "manual": manual}}
+            "cumparator": buyer, "plati": payments, "legaturi": {"auto": auto, "manual": manual}, "explicatii": _explicatii_linii(lines)}
+
+
+def _explicatii_linii(lines):
+    """03EF-13: the text of the CPV codes and of the units of measure of the lines (AVACONT_COMUN.CPV.Expl and EF_UM.Explicatie), for the tooltips of the grid of lines:
+    {"cpv": {code: text}, "um": {code: text}}. A code the common lists do not know is left out; a failed read gives empty lists (the tooltips are only help)."""
+    cpv = sorted({str(l["Cpv"]).strip() for l in lines if l.get("Cpv")})
+    um = sorted({str(l["Unit"]).strip() for l in lines if l.get("Unit")})
+
+    def read(cursor):
+        out = {"cpv": {}, "um": {}}
+        if cpv:
+            # the code of the XML may come without the check digit (45233120 instead of 45233120-6): the first eight digits then decide
+            cursor.execute("SELECT CPV, Expl FROM CPV WHERE CPV IN (%s) OR LEFT(CPV, 8) IN (%s)" % (", ".join(["%s"] * len(cpv)), ", ".join(["%s"] * len(cpv))),
+                           tuple(cpv) + tuple(c[:8] for c in cpv))
+            found = {r["CPV"]: r["Expl"] or "" for r in cursor.fetchall()}
+            for code in cpv:
+                text = found.get(code) or next((t for k, t in found.items() if k[:8] == code[:8]), "")
+                if text:
+                    out["cpv"][code] = text
+        if um:
+            cursor.execute("SELECT Cod, Explicatie FROM EF_UM WHERE Cod IN (%s)" % ", ".join(["%s"] * len(um)), tuple(um))
+            out["um"] = {r["Cod"]: r["Explicatie"] for r in cursor.fetchall() if r["Explicatie"]}
+        return out
+    return F._common(read, {"cpv": {}, "um": {}}, "CPV/EF_UM")
 
 
 def _unit_party(cursor, dc):

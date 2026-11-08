@@ -50,3 +50,14 @@ def contari_salveaza():
     rezultat = primite_contari.salveaza(g.session.db_name, body, role, g.session.username)
     _audit("EF_CONTARE", ",".join(str(i) for i in body.get("ids", [])), "NC=%s operatii=%d" % (rezultat["NumarNC"], len(rezultat["Operatii"])))
     return _json(rezultat, 201)
+
+
+@efactura_bp.route("/api/efactura/contari/existente/<int:id_primita>", methods=["GET"])
+@require_session
+@_guarded("contari/existente")
+def contari_existente(id_primita):
+    """03EF-13: the operations an invoice already has, for the page «Contari» when a booked invoice is clicked.
+    -> { factura: { IdPrimita, NrFact, NumarDocument, DataFact, FelDocument, Total }, clasificatie: { IdClsf, Clsf, Denumire, ... } | null,
+         sabloaneEvidentiere, sabloanePlata (those fitting the classification in the subunit of the note),
+         operatii: [{ IdOperatiePrimita, Faza: E|P, Suma, IdSablon|null, Explicatie, NumarDocument, DataDocument, FelDocument, NumarNC, DataNc, Subunitate }] }"""
+    return _json(primite_contari.existente(g.session.db_name, id_primita))

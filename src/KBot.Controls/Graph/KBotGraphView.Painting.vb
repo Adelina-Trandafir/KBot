@@ -54,7 +54,7 @@ Partial Public NotInheritable Class KBotGraphView
             End If
 
             ' Who is in focus: the hovered dot, else the selected one. Everything else fades.
-            Dim k_focus As Integer = If(_hoverIndex >= 0, _hoverIndex, _selectedIndex)
+            Dim k_focus As Integer = If(_edgeFilter IsNot Nothing, -1, If(_hoverIndex >= 0, _hoverIndex, _selectedIndex))
             If k_focus >= _nodes.Count OrElse (k_focus >= 0 AndAlso Not _nodes(k_focus).Visible) Then k_focus = -1
             Dim k_related(_nodes.Count - 1) As Boolean
             If k_focus >= 0 Then
@@ -68,29 +68,31 @@ Partial Public NotInheritable Class KBotGraphView
             Dim k_defaultEdge As Color = If(_edgeColor = Color.Empty, ThemeShapes.Blend(EffectivePlotBackColor(), k_p.TextColor, 0.6), _edgeColor)
             If _edgePen Is Nothing Then RebuildThemeResources()
 
-            ' ---- lines ----
-            For Each k_edge As KBotGraphEdge In _edges
-                If Not (k_edge.FromNode.Visible AndAlso k_edge.ToNode.Visible) Then Continue For
-                If k_focus >= 0 AndAlso (k_edge.FromNode.Index = k_focus OrElse k_edge.ToNode.Index = k_focus) Then Continue For
-                Dim k_x1 As Single = ScreenX(k_edge.FromNode.X)
-                Dim k_y1 As Single = ScreenY(k_edge.FromNode.Y)
-                Dim k_x2 As Single = ScreenX(k_edge.ToNode.X)
-                Dim k_y2 As Single = ScreenY(k_edge.ToNode.Y)
-                If (k_x1 < 0 AndAlso k_x2 < 0) OrElse (k_y1 < 0 AndAlso k_y2 < 0) OrElse
-                   (k_x1 > k_bounds.Width AndAlso k_x2 > k_bounds.Width) OrElse (k_y1 > k_bounds.Height AndAlso k_y2 > k_bounds.Height) Then Continue For
-                Dim k_alpha As Integer = If(k_edge.Faint, k_baseAlpha \ 2, k_baseAlpha)
-                If k_focus >= 0 Then k_alpha = k_alpha \ 4
-                _edgePen.Color = Color.FromArgb(Math.Max(8, k_alpha), If(k_edge.EdgeColor = Color.Empty, k_defaultEdge, k_edge.EdgeColor))
-                k_g.DrawLine(_edgePen, k_x1, k_y1, k_x2, k_y2)
-            Next
+            ' ---- background lines ----
+            If _edgeFilter Is Nothing Then
+                For Each k_edge As KBotGraphEdge In _edges
+                    If Not (k_edge.FromNode.Visible AndAlso k_edge.ToNode.Visible) Then Continue For
+                    If IsFocusedEdge(k_edge, k_focus) Then Continue For
+                    Dim k_x1 As Single = ScreenX(k_edge.FromNode.X)
+                    Dim k_y1 As Single = ScreenY(k_edge.FromNode.Y)
+                    Dim k_x2 As Single = ScreenX(k_edge.ToNode.X)
+                    Dim k_y2 As Single = ScreenY(k_edge.ToNode.Y)
+                    If (k_x1 < 0 AndAlso k_x2 < 0) OrElse (k_y1 < 0 AndAlso k_y2 < 0) OrElse
+                       (k_x1 > k_bounds.Width AndAlso k_x2 > k_bounds.Width) OrElse (k_y1 > k_bounds.Height AndAlso k_y2 > k_bounds.Height) Then Continue For
+                    Dim k_alpha As Integer = If(k_edge.Faint, k_baseAlpha \ 2, k_baseAlpha)
+                    If k_focus >= 0 Then k_alpha = k_alpha \ 4
+                    _edgePen.Color = Color.FromArgb(Math.Max(8, k_alpha), If(k_edge.EdgeColor = Color.Empty, k_defaultEdge, k_edge.EdgeColor))
+                    k_g.DrawLine(_edgePen, k_x1, k_y1, k_x2, k_y2)
+                Next
+            End If
 
-            ' The lines of the dot in focus, on top of the faded ones.
-            If k_focus >= 0 Then
+            ' The highlighted lines for the hovered dot or the active search.
+            If k_focus >= 0 OrElse _edgeFilter IsNot Nothing Then
                 Dim k_focusPen As New Pen(k_p.AccentColor, _edgePen.Width * 1.8F)
                 Try
                     For Each k_edge As KBotGraphEdge In _edges
                         If Not (k_edge.FromNode.Visible AndAlso k_edge.ToNode.Visible) Then Continue For
-                        If k_edge.FromNode.Index <> k_focus AndAlso k_edge.ToNode.Index <> k_focus Then Continue For
+                        If Not IsFocusedEdge(k_edge, k_focus) Then Continue For
                         k_g.DrawLine(k_focusPen, ScreenX(k_edge.FromNode.X), ScreenY(k_edge.FromNode.Y), ScreenX(k_edge.ToNode.X), ScreenY(k_edge.ToNode.Y))
                     Next
                 Finally
@@ -144,6 +146,13 @@ Partial Public NotInheritable Class KBotGraphView
             GlobalErrorLog.Write("KBotGraphView.OnPaint", ex)
         End Try
     End Sub
+
+    Private Function IsFocusedEdge(k_edge As KBotGraphEdge, k_focus As Integer) As Boolean
+        If _edgeFilter IsNot Nothing Then
+            Return _edgeFilter.Contains(k_edge.FromNode.Key) OrElse _edgeFilter.Contains(k_edge.ToNode.Key)
+        End If
+        Return k_focus >= 0 AndAlso (k_edge.FromNode.Index = k_focus OrElse k_edge.ToNode.Index = k_focus)
+    End Function
 
     Private Sub DrawBorder(k_g As Graphics, k_bounds As Rectangle)
         If _borderPen Is Nothing Then RebuildThemeResources()

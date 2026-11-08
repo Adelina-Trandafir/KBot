@@ -96,7 +96,7 @@ Public Class RecordHistoryForm
             For Each k_version As BackupRecordVersion In _versions
                 Dim k_row As KBotDataRow = gridVersions.AddRow()
                 k_row.Tag = k_version
-                k_row("when") = k_version.Snapshot.FinishedAt.ToString("dd.MM.yyyy HH:mm", CultureInfo.InvariantCulture)
+                k_row("when") = k_version.Snapshot.FinishedAt
                 k_row("state") = StateOf(k_version)
                 k_row("kind") = k_version.Snapshot.Kind
                 k_row("changed") = String.Join(", ", k_version.Changed.OrderBy(Function(k_n) k_n, StringComparer.OrdinalIgnoreCase))

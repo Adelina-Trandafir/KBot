@@ -472,3 +472,46 @@ def salveaza(dc, body, role, user):
             raise EfEroare(str(err), err.reason, err.status) from err
         conn.commit()
     return {"IdNota": id_nota, "NumarNC": numar_nota, "An": an_nota, "Subunitate": sub["Denumire"], "Operatii": operatii}
+
+
+# ---------------------------------------------------------------------------------------------
+# what is ALREADY booked for one invoice (03EF-13)
+# ---------------------------------------------------------------------------------------------
+def existente(dc, id_primita, conn=None):
+    """The accounting operations an invoice already has (EF_PrimiteOperatii -> TZ_Oper -> document -> note), to show them on the page «Contari» when the
+    invoice is clicked: the classification, the templates that fit it (the one used is flagged) and one row per operation, evidence (`Faza` E) or payment (P).
+    An operation made in K-BOT is found by TZ_Oper.IdOper, a migrated one by TZ_Oper.IdOperatieAccess. Read-only: reading is open to every session."""
+    with _conexiune(dc, conn) as conn:
+        cursor = conn.cursor(dictionary=True)
+        cursor.execute("SELECT IdPrimita, NrFact, DataFact, Total, Semn, Tip FROM EF_Primite WHERE IdPrimita = %s", (id_primita,))
+        factura = cursor.fetchone()
+        if factura is None:
+            raise EfEroare("Factura nu mai există.", "FACTURA_INEXISTENTA", 404)
+        cursor.execute(
+            "SELECT e.IdOperatiePrimita, e.Suma AS SumaEf, o.IdOper, o.IdSablon, o.Explicatie, o.Tip AS TipOp, o.DataOperatie, COALESCE(o.IdClsf, e.IdClsf) AS IdClsf, "
+            "c.Clsf, c.Denumire AS DenClsf, c.ClsfX, c.SS, d.NumarDocument, d.DataDocument, d.FelDocument, d.Fel AS FelDoc, n.NumarNC, n.DataNc, n.IdSubunitate, s.Denumire AS Subunitate "
+            "FROM EF_PrimiteOperatii e "
+            "LEFT JOIN TZ_Oper o ON (o.IdOperatieAccess = e.IdOperatie) OR (o.IdOperatieAccess IS NULL AND o.IdOper = e.IdOperatie) "
+            "LEFT JOIN TZ_Documente d ON d.IdDocument = o.IdDocument LEFT JOIN TZ_NoteC n ON n.IdNota = d.IdNota "
+            "LEFT JOIN TZ_Subunitati s ON s.IdSubunitate = n.IdSubunitate LEFT JOIN Clasificatii c ON c.IDClsf = COALESCE(o.IdClsf, e.IdClsf) "
+            "WHERE e.IdPrimita = %s ORDER BY o.DataOperatie, e.IdOperatiePrimita", (id_primita,))
+        randuri = cursor.fetchall()
+        operatii = []
+        for r in randuri:
+            plata = (r["FelDoc"] == "P") or (r["TipOp"] == "P")
+            operatii.append({"IdOperatiePrimita": r["IdOperatiePrimita"], "Faza": "P" if plata else "E", "Suma": _num(_dec(r["SumaEf"])),
+                             "IdSablon": r["IdSablon"], "Explicatie": r["Explicatie"] or "", "NumarDocument": r["NumarDocument"] or "",
+                             "DataDocument": _iso(r["DataDocument"] or r["DataOperatie"]), "FelDocument": r["FelDocument"] or "",
+                             "NumarNC": r["NumarNC"], "DataNc": _iso(r["DataNc"]), "Subunitate": r["Subunitate"] or ""})
+        prima = next((r for r in randuri if r["IdClsf"] is not None), None)
+        clasificatie, sabloane_e, sabloane_p = None, [], []
+        if prima is not None:
+            clasificatie = {"IdClsf": prima["IdClsf"], "Clsf": prima["Clsf"] or "", "Denumire": prima["DenClsf"] or "", "Forma": "", "AlePartenerului": False}
+            slot = _sabloane(cursor, prima["IdSubunitate"]).get((prima["ClsfX"], prima["SS"]))
+            if slot is not None:
+                sabloane_e, sabloane_p = slot["E"], slot["P"]
+        semn = int(factura["Semn"] or 1)
+        return {"factura": {"IdPrimita": id_primita, "NrFact": factura["NrFact"], "NumarDocument": numar_document(factura["NrFact"]),
+                            "DataFact": _iso(factura["DataFact"]), "FelDocument": "Notă credit" if factura["Tip"] == "NC" else "Factură",
+                            "Total": _num(_dec(factura["Total"]) * semn)},
+                "clasificatie": clasificatie, "sabloaneEvidentiere": sabloane_e, "sabloanePlata": sabloane_p, "operatii": operatii}

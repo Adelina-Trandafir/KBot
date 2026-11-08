@@ -53,6 +53,7 @@ Partial Class KBotDataView
         End Get
         Set(value As Integer)
             Dim clamped As Integer = If(value < 0 OrElse value >= _rows.Count, -1, value)
+            If ShowDataColumnMenus AndAlso IsFiltered AndAlso clamped >= 0 AndAlso ViewPositionOf(clamped) < 0 Then clamped = -1
             SetCurrentCell(clamped, _currentColumnKey)
         End Set
     End Property
@@ -486,6 +487,7 @@ Partial Class KBotDataView
                 RaiseEvent CellValueChanged(Me, New KBotCellValueEventArgs(colKey, rowIndex, oldValue, newValue))
                 ' Slice KE12-03: the tick box the grid itself offers (CheckBoxes) also says so with RowChecked.
                 If String.Equals(colKey, CheckColumnKey, StringComparison.Ordinal) Then RaiseEvent RowChecked(Me, New KBotRowCheckedEventArgs(rowIndex, newValue, 0))
+                If ColumnEditChangesView(colKey) Then AfterViewStateChanged()
 
             Case KBotColumnType.OptionButton
                 Dim oldValue As Object = _rows(rowIndex)(colKey)

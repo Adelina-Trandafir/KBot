@@ -50,16 +50,16 @@ Partial Class PushFilesView
         btnNone = New KBotButton()
         lblRoot = New Label()
         tlyMid = New KBotTableLayoutPanel()
-        gridFiles = New KBotDataView()
+        gridFiles = New AdminDataView()
         tlySide = New KBotTableLayoutPanel()
         tlyExtBar = New KBotTableLayoutPanel()
         btnExtAdd = New KBotButton()
         btnExtDel = New KBotButton()
-        gridExt = New KBotDataView()
+        gridExt = New AdminDataView()
         tlyPatBar = New KBotTableLayoutPanel()
         btnPatAdd = New KBotButton()
         btnPatDel = New KBotButton()
-        gridPat = New KBotDataView()
+        gridPat = New AdminDataView()
         logBox = New KBotLogBox()
         lblState = New Label()
         CType(gridFiles, ComponentModel.ISupportInitialize).BeginInit()
@@ -269,6 +269,7 @@ Partial Class PushFilesView
         gridFilesCol1.HeaderText = "Trimite"
         gridFilesCol1.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridFilesCol1.Key = "send"
+        gridFilesCol1.ValueType = KBotValueType.Boolean
         gridFilesCol1.MinWidth = 50
         gridFilesCol1.OptionGroup = Nothing
         gridFilesCol1.Width = 64
@@ -349,6 +350,7 @@ Partial Class PushFilesView
         gridFiles.Columns.Add(gridFilesCol2)
         gridFiles.Columns.Add(gridFilesCol3)
         gridFilesDebug.Key = "debug"
+        gridFilesDebug.ValueType = KBotValueType.Boolean
         gridFilesDebug.HeaderText = "Debugging"
         gridFilesDebug.ColumnType = KBotColumnType.CheckBox
         gridFilesDebug.ReadOnly = False
@@ -371,7 +373,6 @@ Partial Class PushFilesView
         gridFiles.Columns.Add(gridFilesCol8)
         gridFiles.Dock = DockStyle.Fill
         gridFiles.FillColumnKey = "path"
-        gridFiles.HeaderHeight = 24
         gridFiles.Location = New Point(0, 0)
         gridFiles.Margin = New Padding(0)
         gridFiles.Name = "gridFiles"
@@ -458,6 +459,7 @@ Partial Class PushFilesView
         gridExtCol2.HeaderText = "Acceptată"
         gridExtCol2.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridExtCol2.Key = "accepted"
+        gridExtCol2.ValueType = KBotValueType.Boolean
         gridExtCol2.MinWidth = 60
         gridExtCol2.OptionGroup = Nothing
         gridExtCol2.Width = 80
@@ -466,6 +468,7 @@ Partial Class PushFilesView
         gridExtCol3.HeaderText = "Găsite"
         gridExtCol3.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridExtCol3.Key = "found"
+        gridExtCol3.ValueType = KBotValueType.Number
         gridExtCol3.MinWidth = 50
         gridExtCol3.OptionGroup = Nothing
         gridExtCol3.ReadOnly = True
@@ -476,6 +479,7 @@ Partial Class PushFilesView
         gridExtCol4.HeaderText = "De trimis"
         gridExtCol4.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridExtCol4.Key = "tosend"
+        gridExtCol4.ValueType = KBotValueType.Number
         gridExtCol4.MinWidth = 50
         gridExtCol4.OptionGroup = Nothing
         gridExtCol4.ReadOnly = True
@@ -487,7 +491,6 @@ Partial Class PushFilesView
         gridExt.Columns.Add(gridExtCol4)
         gridExt.Dock = DockStyle.Fill
         gridExt.FillColumnKey = "ext"
-        gridExt.HeaderHeight = 24
         gridExt.Location = New Point(0, 0)
         gridExt.Margin = New Padding(0)
         gridExt.Name = "gridExt"
@@ -552,6 +555,7 @@ Partial Class PushFilesView
         gridPatCol2.HeaderText = "Sărite"
         gridPatCol2.HeaderTextAlign = ContentAlignment.MiddleCenter
         gridPatCol2.Key = "skipped"
+        gridPatCol2.ValueType = KBotValueType.Number
         gridPatCol2.MinWidth = 50
         gridPatCol2.OptionGroup = Nothing
         gridPatCol2.ReadOnly = True
@@ -561,7 +565,6 @@ Partial Class PushFilesView
         gridPat.Columns.Add(gridPatCol2)
         gridPat.Dock = DockStyle.Fill
         gridPat.FillColumnKey = "pattern"
-        gridPat.HeaderHeight = 24
         gridPat.Location = New Point(0, 0)
         gridPat.Margin = New Padding(0)
         gridPat.Name = "gridPat"
@@ -625,16 +628,16 @@ Partial Class PushFilesView
     Friend WithEvents btnNone As KBotButton
     Friend WithEvents lblRoot As Label
     Friend WithEvents tlyMid As KBotTableLayoutPanel
-    Friend WithEvents gridFiles As KBotDataView
+    Friend WithEvents gridFiles As AdminDataView
     Friend WithEvents tlySide As KBotTableLayoutPanel
     Friend WithEvents tlyExtBar As KBotTableLayoutPanel
     Friend WithEvents btnExtAdd As KBotButton
     Friend WithEvents btnExtDel As KBotButton
-    Friend WithEvents gridExt As KBotDataView
+    Friend WithEvents gridExt As AdminDataView
     Friend WithEvents tlyPatBar As KBotTableLayoutPanel
     Friend WithEvents btnPatAdd As KBotButton
     Friend WithEvents btnPatDel As KBotButton
-    Friend WithEvents gridPat As KBotDataView
+    Friend WithEvents gridPat As AdminDataView
     Friend WithEvents logBox As KBotLogBox
     Friend WithEvents lblState As Label
 End Class

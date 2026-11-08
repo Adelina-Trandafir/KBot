@@ -120,7 +120,4 @@
   <metadata name="tips.TrayLocation" type="System.Drawing.Point, System.Drawing, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
     <value>17, 17</value>
   </metadata>
-  <data name="barExplicatie.ToolTipText" xml:space="preserve">
-    <value>Explicația ordinului de plată are între 1 și 75 de caractere (limita oficială). Diacriticele se înlocuiesc cu litere simple, iar virgulele se scot: ANAF refuză ordinul cu diacritice, iar codul de bare citește virgula ca «câmpul următor».</value>
-  </data>
 </root>

@@ -48,6 +48,9 @@ Partial Class KBotDataView
     ' Filtrele active, pe cheie de coloană. Un filtru inactiv nu intră aici (vezi SetColumnFilter).
     Private ReadOnly _filters As New Dictionary(Of String, KBotColumnFilter)(StringComparer.Ordinal)
 
+    Protected Friend Property ShowDataColumnMenus As Boolean
+    Protected Property TextSortComparer As StringComparer
+
     ''' <summary>Filtrele s-au schimbat (așezate, modificate sau șterse).</summary>
     Public Event FilterChanged As EventHandler
 
@@ -86,7 +89,7 @@ Partial Class KBotDataView
             _view.Clear()
 
             For i As Integer = 0 To _rows.Count - 1
-                If RowPassesFilters(i) Then _view.Add(i)
+                If _rows(i).IsDraft OrElse RowPassesFilters(i) Then _view.Add(i)
             Next
 
             ' Nivelurile de grupare se recitesc ÎNAINTE de sortare: ele sunt primele chei de
@@ -180,6 +183,13 @@ Partial Class KBotDataView
         Dim cheie As String = If(areSortare, col.Key, Nothing)
         Dim tip As KBotValueType = If(areSortare, col.ValueType, KBotValueType.Text)
         Dim descrescator As Boolean = (_sortDirection = KBotSortDirection.Descending)
+        Dim sortKeys As Object() = Nothing
+        If areSortare AndAlso col.SortKeySelector IsNot Nothing Then
+            sortKeys = New Object(_rows.Count - 1) {}
+            For Each mi As Integer In _view
+                sortKeys(mi) = col.SortKeySelector(_rows(mi))
+            Next
+        End If
 
         If nrNiveluri = 0 AndAlso Not areSortare Then Return
 
@@ -187,22 +197,40 @@ Partial Class KBotDataView
                        For d As Integer = 0 To nrNiveluri - 1
                            Dim semnGrup As Integer
                            If cheiTaiate(d) IsNot Nothing Then
-                               semnGrup = KBotFilterEngine.Compare(cheiTaiate(d)(a), cheiTaiate(d)(b), tipuriGrup(d))
+                               semnGrup = CompareSortValues(cheiTaiate(d)(a), cheiTaiate(d)(b), tipuriGrup(d))
                            Else
-                               semnGrup = KBotFilterEngine.Compare(
+                               semnGrup = CompareSortValues(
                                    _rows(a)(cheiGrup(d)), _rows(b)(cheiGrup(d)), tipuriGrup(d))
                            End If
                            If semnGrup <> 0 Then Return If(descrescatorGrup(d), -semnGrup, semnGrup)
                        Next
 
+                       Dim draftOrder As Integer = _rows(a).IsDraft.CompareTo(_rows(b).IsDraft)
+                       If draftOrder <> 0 Then Return draftOrder
                        If areSortare Then
-                           Dim semn As Integer = KBotFilterEngine.Compare(_rows(a)(cheie), _rows(b)(cheie), tip)
+                           Dim semn As Integer = If(sortKeys Is Nothing,
+                               CompareSortValues(_rows(a)(cheie), _rows(b)(cheie), tip),
+                               CompareSortValues(sortKeys(a), sortKeys(b), tip, explicitKey:=True))
                            If semn <> 0 Then Return If(descrescator, -semn, semn)
                        End If
 
                        Return a.CompareTo(b)
                    End Function)
     End Sub
+
+    Private Function CompareSortValues(a As Object, b As Object, valueType As KBotValueType, Optional explicitKey As Boolean = False) As Integer
+        If (explicitKey OrElse (TextSortComparer IsNot Nothing AndAlso valueType = KBotValueType.Text)) AndAlso
+           Not KBotFilterEngine.IsBlank(a) AndAlso Not KBotFilterEngine.IsBlank(b) Then
+            If explicitKey AndAlso Not TypeOf a Is String AndAlso a.GetType() Is b.GetType() Then
+                Dim key As IComparable = TryCast(a, IComparable)
+                If key IsNot Nothing Then Return key.CompareTo(b)
+            End If
+            If TextSortComparer IsNot Nothing AndAlso valueType = KBotValueType.Text Then
+                Return TextSortComparer.Compare(a.ToString(), b.ToString())
+            End If
+        End If
+        Return KBotFilterEngine.Compare(a, b, valueType)
+    End Function
 
     ' Rândul trece de TOATE filtrele active? Un filtru pe o coloană dispărută între timp se sare.
     Private Function RowPassesFilters(modelIndex As Integer) As Boolean
@@ -230,7 +258,7 @@ Partial Class KBotDataView
     End Function
 
     ''' <summary>Indexul de MODEL al unei poziții de vedere, sau -1 dacă poziția nu există.</summary>
-    Friend Function ModelIndexAt(viewPosition As Integer) As Integer
+    Protected Friend Function ModelIndexAt(viewPosition As Integer) As Integer
         EnsureView()
         If viewPosition < 0 OrElse viewPosition >= _view.Count Then Return -1
         Return _view(viewPosition)
@@ -429,22 +457,25 @@ Partial Class KBotDataView
     Public Function DistinctDisplayValues(colKey As String) As List(Of String)
         Try
             Dim col As KBotDataColumn = Column(colKey)      ' cheie necunoscută => ArgumentException
-            Dim vazute As New HashSet(Of String)(StringComparer.CurrentCultureIgnoreCase)
-            Dim rezultat As New List(Of String)()
+            Dim vazute As New HashSet(Of String)(If(TextSortComparer, StringComparer.CurrentCultureIgnoreCase))
+            Dim rezultat As New List(Of KeyValuePair(Of String, Object))()
 
             For i As Integer = 0 To _rows.Count - 1
-                If Not RowPassesOtherFilters(i, colKey) Then Continue For
+                If _rows(i).IsDraft OrElse Not RowPassesOtherFilters(i, colKey) Then Continue For
                 Dim brut As Object = _rows(i)(colKey)
                 Dim text As String = If(KBotFilterEngine.IsBlank(brut),
                                         KBotFilterEngine.CheieGol,
                                         FormatValue(brut, col))
-                If vazute.Add(text) Then rezultat.Add(text)
+                If Not vazute.Add(text) Then Continue For
+                Dim key As Object = If(TextSortComparer Is Nothing, text, brut)
+                If col.SortKeySelector IsNot Nothing Then key = col.SortKeySelector(_rows(i))
+                rezultat.Add(New KeyValuePair(Of String, Object)(text, key))
             Next
 
             ' Ordinea din listă e cea de sortare a coloanei, nu cea de întâlnire: o listă de valori
             ' în ordine aleatoare se citește la fel de greu ca o coloană nesortată.
-            rezultat.Sort(Function(a, b) KBotFilterEngine.Compare(a, b, col.ValueType))
-            Return rezultat
+            rezultat.Sort(Function(a, b) CompareSortValues(a.Value, b.Value, col.ValueType, col.SortKeySelector IsNot Nothing))
+            Return rezultat.Select(Function(item) item.Key).ToList()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.DistinctDisplayValues", ex)
             Throw
@@ -479,6 +510,11 @@ Partial Class KBotDataView
         DropSelectionIfHidden()
         LayoutChanged()             ' rândurile vizibile s-au schimbat => alt conținut de derulat
     End Sub
+
+    Private Function ColumnEditChangesView(colKey As String) As Boolean
+        Return ShowDataColumnMenus AndAlso (HasColumnFilter(colKey) OrElse
+            String.Equals(_sortKey, colKey, StringComparison.Ordinal))
+    End Function
 
     ' Selecția cade dacă rândul ei a fost FILTRAT AFARĂ. Editarea deschisă se abandonează întâi —
     ' un editor plutind peste un rând care tocmai a dispărut ar rămâne agățat în aer.

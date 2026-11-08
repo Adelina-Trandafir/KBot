@@ -45,8 +45,8 @@ Partial Class LocalBackupView
         btnDelete = New KBotButton()
         btnProfile = New KBotButton()
         tlySplit = New KBotTableLayoutPanel()
-        gridSnaps = New KBotDataView()
-        gridTables = New KBotDataView()
+        gridSnaps = New AdminDataView()
+        gridTables = New AdminDataView()
         lblState = New Label()
         CType(gridSnaps, ComponentModel.ISupportInitialize).BeginInit()
         CType(gridTables, ComponentModel.ISupportInitialize).BeginInit()
@@ -251,6 +251,8 @@ Partial Class LocalBackupView
         SnapColumn2.HeaderText = "Data"
         SnapColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn2.Key = "when"
+        SnapColumn2.ValueType = KBotValueType.DateTime
+        SnapColumn2.FormatString = "dd.MM.yyyy HH:mm"
         SnapColumn2.MinWidth = 90
         SnapColumn2.OptionGroup = Nothing
         SnapColumn2.ReadOnly = True
@@ -287,6 +289,7 @@ Partial Class LocalBackupView
         SnapColumn6.HeaderText = "Tabele"
         SnapColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn6.Key = "tables"
+        SnapColumn6.ValueType = KBotValueType.Number
         SnapColumn6.MinWidth = 40
         SnapColumn6.OptionGroup = Nothing
         SnapColumn6.ReadOnly = True
@@ -297,6 +300,7 @@ Partial Class LocalBackupView
         SnapColumn7.HeaderText = "Pagini noi"
         SnapColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn7.Key = "pagesNew"
+        SnapColumn7.ValueType = KBotValueType.Number
         SnapColumn7.MinWidth = 40
         SnapColumn7.OptionGroup = Nothing
         SnapColumn7.ReadOnly = True
@@ -307,6 +311,7 @@ Partial Class LocalBackupView
         SnapColumn8.HeaderText = "La fel"
         SnapColumn8.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn8.Key = "pagesSame"
+        SnapColumn8.ValueType = KBotValueType.Number
         SnapColumn8.MinWidth = 40
         SnapColumn8.OptionGroup = Nothing
         SnapColumn8.ReadOnly = True
@@ -317,6 +322,8 @@ Partial Class LocalBackupView
         SnapColumn9.HeaderText = "Rânduri"
         SnapColumn9.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn9.Key = "rows"
+        SnapColumn9.ValueType = KBotValueType.Number
+        SnapColumn9.FormatString = "N0"
         SnapColumn9.MinWidth = 50
         SnapColumn9.OptionGroup = Nothing
         SnapColumn9.ReadOnly = True
@@ -327,6 +334,8 @@ Partial Class LocalBackupView
         SnapColumn10.HeaderText = "Durata"
         SnapColumn10.HeaderTextAlign = ContentAlignment.MiddleCenter
         SnapColumn10.Key = "secs"
+        SnapColumn10.ValueType = KBotValueType.Number
+        SnapColumn10.FormatString = "0.#"
         SnapColumn10.MinWidth = 40
         SnapColumn10.OptionGroup = Nothing
         SnapColumn10.ReadOnly = True
@@ -344,7 +353,6 @@ Partial Class LocalBackupView
         gridSnaps.Columns.Add(SnapColumn10)
         gridSnaps.Dock = DockStyle.Fill
         gridSnaps.FillColumnKey = "reason"
-        gridSnaps.HeaderHeight = 24
         gridSnaps.Location = New Point(0, 0)
         gridSnaps.Margin = New Padding(0, 0, 4, 0)
         gridSnaps.Name = "gridSnaps"
@@ -370,6 +378,8 @@ Partial Class LocalBackupView
         TableColumn2.HeaderText = "Rânduri"
         TableColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         TableColumn2.Key = "rows"
+        TableColumn2.ValueType = KBotValueType.Number
+        TableColumn2.FormatString = "N0"
         TableColumn2.MinWidth = 40
         TableColumn2.OptionGroup = Nothing
         TableColumn2.ReadOnly = True
@@ -380,6 +390,7 @@ Partial Class LocalBackupView
         TableColumn3.HeaderText = "Pagini"
         TableColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         TableColumn3.Key = "pages"
+        TableColumn3.ValueType = KBotValueType.Number
         TableColumn3.MinWidth = 36
         TableColumn3.OptionGroup = Nothing
         TableColumn3.ReadOnly = True
@@ -390,6 +401,7 @@ Partial Class LocalBackupView
         TableColumn4.HeaderText = "Schimbate"
         TableColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         TableColumn4.Key = "changed"
+        TableColumn4.ValueType = KBotValueType.Number
         TableColumn4.MinWidth = 40
         TableColumn4.OptionGroup = Nothing
         TableColumn4.ReadOnly = True
@@ -401,7 +413,6 @@ Partial Class LocalBackupView
         gridTables.Columns.Add(TableColumn4)
         gridTables.Dock = DockStyle.Fill
         gridTables.FillColumnKey = "table"
-        gridTables.HeaderHeight = 24
         gridTables.Location = New Point(565, 0)
         gridTables.Margin = New Padding(4, 0, 0, 0)
         gridTables.Name = "gridTables"
@@ -450,7 +461,7 @@ Partial Class LocalBackupView
     Friend WithEvents btnProfile As KBotButton
     Friend WithEvents btnDelete As KBotButton
     Friend WithEvents tlySplit As KBotTableLayoutPanel
-    Friend WithEvents gridSnaps As KBotDataView
-    Friend WithEvents gridTables As KBotDataView
+    Friend WithEvents gridSnaps As AdminDataView
+    Friend WithEvents gridTables As AdminDataView
     Friend WithEvents lblState As Label
 End Class

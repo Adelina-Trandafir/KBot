@@ -715,6 +715,7 @@ Partial Class KBotDataView
     ''' <summary>Valoarea formatată pentru afișare (aplică <c>Column.FormatString</c>).</summary>
     Private Shared Function FormatValue(value As Object, col As KBotDataColumn) As String
         If value Is Nothing Then Return String.Empty
+        If col.ValueFormatter IsNot Nothing Then Return col.ValueFormatter(value)
 
         ' Zecimalele fixate (slice 0028) taie ÎNAINTEA formatării: rotunjim numărul, apoi îl
         ' formatăm. Invers — «N4» peste o valoare deja formatată — n-ar mai avea ce rotunji.

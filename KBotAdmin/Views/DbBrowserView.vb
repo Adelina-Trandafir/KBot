@@ -562,6 +562,7 @@ Public Class DbBrowserView
         End If
         Dim k_isNew As Boolean = k_node.Parent IsNot Nothing AndAlso Not k_node.Parent.Children.Contains(k_node)
         If k_isNew Then k_node.Parent.Children.Add(k_node)
+        Dim k_keepSort As Boolean = Not _queryMode AndAlso ReferenceEquals(_node, k_node)
         _node = k_node
         _queryMode = False
         _queryId = String.Empty
@@ -569,7 +570,7 @@ Public Class DbBrowserView
         _lastQuery = Nothing
         _lastQueryValues = Nothing
         SyncSidePanel()
-        ShowTable(k_result)
+        ShowTable(k_result, k_keepSort)
         UpdateNavButtons()
         RevealInTree(k_node.Table)
         TableNavLog.Write("OPEN", "shown: " & k_node.Caption & ", " & _loadedRows.ToString(CultureInfo.InvariantCulture) & " rows in the grid, " &
@@ -664,6 +665,7 @@ Public Class DbBrowserView
         _queryFacts.Add(New KeyValuePair(Of String, String)("Rânduri", k_result.Page.Rows.Count.ToString("N0", CultureInfo.CurrentCulture) &
                         If(k_cut, " (primele " & QueryLimit.ToString("N0", CultureInfo.CurrentCulture) & "; sunt mai multe)", String.Empty)))
         _queryFacts.Add(New KeyValuePair(Of String, String)("Durată pe server", k_result.ElapsedMs.ToString("N0", CultureInfo.CurrentCulture) & " ms"))
+        Dim k_keepSort As Boolean = _queryMode AndAlso String.Equals(_queryId, k_query.Id, StringComparison.Ordinal)
         _node = New NavNode(QueryCaption(k_query))
         _queryMode = True
         _queryId = k_query.Id
@@ -671,7 +673,7 @@ Public Class DbBrowserView
         _lastQueryValues = k_values
         _queryCutNote = If(k_cut, " Rezultatul a fost tăiat la primele " & QueryLimit.ToString("N0", CultureInfo.CurrentCulture) & " de rânduri: restrângeți-l cu parametrii.", String.Empty)
         FillQueryColumns(k_result)
-        ShowTable(k_result)
+        ShowTable(k_result, k_keepSort)
         UpdateNavButtons()
         RevealInTree(QueryPrefix & k_query.Id)
         TableNavLog.Write("QUERY", "shown: " & k_query.Id & ", " & _loadedRows.ToString(CultureInfo.InvariantCulture) & " rows" & If(k_cut, " (cut at the limit)", String.Empty) & ", " & k_result.ElapsedMs.ToString(CultureInfo.InvariantCulture) & " ms")
@@ -716,7 +718,9 @@ Public Class DbBrowserView
         Next
     End Sub
 
-    Private Sub ShowTable(k_result As DbTableResult)
+    Private Sub ShowTable(k_result As DbTableResult, Optional k_keepSort As Boolean = False)
+        Dim k_sortKey As String = If(k_keepSort, gridData.SortColumnKey, Nothing)
+        Dim k_direction As KBotSortDirection = gridData.SortDirection
         _current = k_result
         _tableName = k_result.Info.Name
         _columnShown = String.Empty
@@ -731,6 +735,9 @@ Public Class DbBrowserView
             gridData.Columns.Clear()
             _loadedRows = 0
             BuildColumns()
+            If k_sortKey IsNot Nothing AndAlso gridData.Columns.Any(Function(k_col) k_col.Key = k_sortKey) Then
+                gridData.ApplySort(k_sortKey, k_direction)
+            End If
             AppendRows(k_result.Page)
             FitColumns()
         Finally
@@ -828,7 +835,7 @@ Public Class DbBrowserView
             k_column.ValueType = ValueTypeOf(k_kind)
             If k_format <> String.Empty Then k_column.FormatString = k_format
             If k_kind = CellKind.Whole OrElse k_kind = CellKind.Fixed OrElse k_kind = CellKind.Floating Then k_column.TextAlign = ContentAlignment.MiddleRight
-            ConfigureHeaderMenu(k_column, k_kind)
+            ConfigureHeaderMenu(k_column, k_kind, k_at)
             _kinds(k_at) = k_kind
             _formats(k_at) = k_format
             _maxWidths(k_at) = k_width
@@ -844,23 +851,32 @@ Public Class DbBrowserView
 
     ''' <summary>
     ''' What the header menu of a column offers, by type: text and dates (and enum / set) sort, filter and group; long texts, numbers and times
-    ''' sort and filter; a tick box only sorts; a blob has no menu. A date or date-time groups on the day (the time never counts), the month or the year.
+    ''' sort and filter, as do tick boxes and blobs. A date or date-time groups on the day, month or year.
     ''' </summary>
-    Private Shared Sub ConfigureHeaderMenu(k_column As KBotDataColumn, k_kind As CellKind)
-        Select Case k_kind
-            Case CellKind.Blob
-                k_column.ShowColumnFilter = False
-            Case CellKind.Flag
-                k_column.ShowColumnFilter = True
-                k_column.AllowFiltering = False
-                k_column.AllowGrouping = False
-            Case CellKind.Plain, CellKind.DateOnly, CellKind.Stamp
-                k_column.ShowColumnFilter = True
-            Case Else
-                k_column.ShowColumnFilter = True
-                k_column.AllowGrouping = False
-        End Select
+    Private Shared Sub ConfigureHeaderMenu(k_column As KBotDataColumn, k_kind As CellKind, k_sourceIndex As Integer)
+        k_column.AllowGrouping = k_kind = CellKind.Plain OrElse k_kind = CellKind.DateOnly OrElse k_kind = CellKind.Stamp
+        If k_kind = CellKind.Blob Then
+            k_column.SortKeySelector = Function(k_row)
+                                           Dim k_blob As BlobMarker = TryCast(DirectCast(k_row.Tag, RowTag).Raw(k_sourceIndex), BlobMarker)
+                                           Return If(k_blob Is Nothing, Nothing, CObj(k_blob.Length))
+                                       End Function
+        ElseIf k_kind = CellKind.TimeOnly Then
+            k_column.SortKeySelector = Function(k_row) TimeSortKey(TryCast(k_row(k_column.Key), String))
+        End If
     End Sub
+
+    Private Shared Function TimeSortKey(k_text As String) As Object
+        If String.IsNullOrEmpty(k_text) Then Return Nothing
+        Dim k_negative As Boolean = k_text.StartsWith("-", StringComparison.Ordinal)
+        Dim k_parts As String() = k_text.TrimStart("-"c).Split(":"c)
+        Dim k_hours, k_minutes, k_seconds As Decimal
+        If k_parts.Length <> 3 OrElse
+           Not Decimal.TryParse(k_parts(0), NumberStyles.None, CultureInfo.InvariantCulture, k_hours) OrElse
+           Not Decimal.TryParse(k_parts(1), NumberStyles.None, CultureInfo.InvariantCulture, k_minutes) OrElse
+           Not Decimal.TryParse(k_parts(2), NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, k_seconds) Then Return Nothing
+        Dim k_total As Decimal = k_hours * 3600D + k_minutes * 60D + k_seconds
+        Return If(k_negative, -k_total, k_total)
+    End Function
 
     ''' <summary>
     ''' The first display: each column is as wide as its header and its text need (the first rows are measured), never wider than its preset
@@ -871,7 +887,7 @@ Public Class DbBrowserView
             For k_i As Integer = 0 To _current.Columns.Count - 1
                 Dim k_name As String = _current.Columns(k_i).Name
                 Dim k_column As KBotDataColumn = gridData.Column(k_name)
-                Dim k_header As Integer = TextWidth(k_name, k_boldFont) + If(k_column.ShowColumnFilter, HeaderIcons, HeaderPad)
+                Dim k_header As Integer = TextWidth(k_name, k_boldFont) + If(k_column.FilterEnabled, HeaderIcons, HeaderPad)
                 Dim k_content As Integer = 0
                 If _kinds(k_i) <> CellKind.Flag Then
                     Dim k_pad As Integer = If(_kinds(k_i) = CellKind.DateOnly OrElse _kinds(k_i) = CellKind.Stamp, DatePad, CellPad)
@@ -1831,7 +1847,7 @@ Public Class DbBrowserView
 
     ''' <summary>
     ''' A tick in the list: the column joins (or leaves) the ones kept on the left. The locks add up, in any number. The grid has no way to move a column, so it is built
-    ''' again with the ticked ones first (what the operator sorted or filtered in the rows grid is lost, the rows themselves are not read again).
+    ''' again with the ticked ones first. The sort stays in place and the rows are reused.
     ''' </summary>
     Private Sub GridQueryColumns_CellValueChanged(k_sender As Object, e As KBotCellValueEventArgs) Handles gridQueryColumns.CellValueChanged
         Try
@@ -1844,7 +1860,7 @@ Public Class DbBrowserView
             End If
             If Convert.ToBoolean(e.NewValue, CultureInfo.InvariantCulture) Then k_locked.Add(k_name) Else k_locked.Remove(k_name)
             TableNavLog.Write("QUERY", _queryId & ": locked on the left now: " & String.Join(", ", k_locked))
-            ShowTable(_current)
+            ShowTable(_current, k_keepSort:=True)
         Catch ex As Exception
             GlobalErrorLog.Write("DbBrowserView.GridQueryColumns_CellValueChanged", ex)
         End Try

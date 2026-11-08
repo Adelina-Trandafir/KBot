@@ -37,6 +37,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Markdig" Version="0.45.0" />
     <PackageReference Include="SSH.NET" Version="2026.0.0" />
     <!-- Import MF din Access: reads the old mf.mdb (ACE provider, as VRC.Migrator does). OleDb is a NuGet package on .NET 8. -->
     <PackageReference Include="System.Data.OleDb" Version="8.0.0" />

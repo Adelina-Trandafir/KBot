@@ -56,6 +56,7 @@ Partial Public NotInheritable Class KBotGraphView
     Private _isDarkScheme As Boolean
     Private _hoverIndex As Integer = -1
     Private _selectedIndex As Integer = -1
+    Private _edgeFilter As HashSet(Of String)
     Private _panning As Boolean
     Private _pressed As Boolean
     Private _pressPoint As Point
@@ -250,7 +251,17 @@ Partial Public NotInheritable Class KBotGraphView
 
     ''' <summary>Asks for a repaint after the host changed a node (Visible, Highlighted, colour) directly.</summary>
     Public Sub RefreshGraph()
+        If _edgeFilter IsNot Nothing AndAlso _hoverIndex >= 0 AndAlso Not _nodes(_hoverIndex).Visible Then SetHover(-1)
         Invalidate()
+    End Sub
+
+    ''' <summary>
+    ''' Shows only edges touching any of the given node keys, in the accent colour.
+    ''' Pass Nothing to restore all edges and their normal hover and selection highlighting.
+    ''' </summary>
+    Public Sub SetEdgeFilter(k_nodeKeys As IEnumerable(Of String))
+        _edgeFilter = If(k_nodeKeys Is Nothing, Nothing, New HashSet(Of String)(k_nodeKeys, StringComparer.Ordinal))
+        Touch()
     End Sub
 
     ''' <summary>
