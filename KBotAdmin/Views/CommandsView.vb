@@ -43,6 +43,8 @@ Public Class CommandsView
 
     ' The wipe of a wrongly migrated VERCON database (slice ME01-16): the typed value must be the database name.
     Private Const WipeCommandName As String = "vercon_golire"
+    ' The same wipe for the accounting data of Avacont (TZ_ + the links of the invoices to their operations): the typed value must be the database name.
+    Private Const AvacontWipeCommandName As String = "avacont_golire"
 
     ' Deleting ONE angajament with everything the FX_ tables hold (EF_ untouched); the typed value is the code.
     ' The analysis (read only) finds what would go; «Șterge angajamentul» deletes it for that code (the delete command only exists behind the button).
@@ -61,6 +63,7 @@ Public Class CommandsView
     Private Shared ReadOnly CommandApps As New Dictionary(Of String, String)(StringComparer.Ordinal) From {
         {"profil_produs", "VERCON"},
         {WipeCommandName, "VERCON"},
+        {AvacontWipeCommandName, "AVACONT"},
         {SignCheckName, "VERCON"},
         {SignRepairName, "VERCON"},
         {StornoCheckName, "VERCON"},
@@ -147,6 +150,7 @@ Public Class CommandsView
         {"oi_semne_repara", "Corectează în registrul OI al bazei alese rândurile cu cantitate negativă și valoare pozitivă: valoarea devine negativă, ca cantitatea. Rândurile cu cantitate pozitivă și valoare negativă nu se ating, rămân în rezultat. SCRIE în baza aleasă, cere confirmare, notează în Jurnal și arată apoi ce a mai rămas. Merge doar pe o bază anume. În mod obișnuit nu se alege de aici: butonul «Repară» apare singur după «Semne greșite»."},
         {"oi_semne", "Caută în registrul OI (VC_OI_Produse) rândurile la care cantitatea și valoarea au semne diferite, de exemplu cantitate -1 și valoare +184,99. Rezultatul: pe fiecare gestiune, câte rânduri sunt, la câte produse, pe ce fel de bon (predare, transfer, casare) și primele numere IDOI. Lista goală înseamnă că nu e nimic de corectat. Se poate rula pe <TOATE BAZELE>; o bază fără tabelele VERCON o spune și trece mai departe. Se citește, nu se schimbă nimic."},
         {WipeCommandName, "Șterge TOATE rândurile din tabelele VC_ ale bazei alese (documente, produse, gestiuni, exerciții, subunități, setări, numerotare, markerii de import) și din tabelele de trimitere spre Vercon ale facturilor primite (EF_PrimiteVercon*, EF_VERCON_*), ca baza să poată fi migrată din nou. Structura tabelelor rămâne. Partenerii, FX_, AD_ și TZ_ nu se ating. Cere o bază anume (nu <TOATE BAZELE>) și numele ei scris în casetă, ca să nu se golească baza greșită. Rezultatul: câte rânduri au fost în fiecare tabelă și câte au rămas (trebuie să fie 0 peste tot). NU SE POATE ANULA: faceți mai întâi o copie a bazei dacă mai e nevoie de date."},
+        {AvacontWipeCommandName, "Șterge TOATE rândurile din tabelele TZ_ ale bazei alese (note, documente, operații, debit/credit, plan de conturi, solduri inițiale, jurnale, șabloane de operații și de salarii, subunități, OP-uri, OPME, plăți pe facturi, setări) și din tabela EF_PrimiteOperatii (legăturile facturilor primite cu operațiile), ca datele contabile să poată fi migrate din nou de la zero. Structura rămâne. Partenerii, clasificațiile, FX_, AD_, VC_ și restul tabelelor EF_ (facturile primite, liniile și mesajele lor) nu se ating. Nu merge pe AVACONT_SURSA și AVACONT_COMUN, care țin doar structura. Cere o bază anume și numele ei scris în caseta de mai sus. Rezultatul: câte rânduri au fost în fiecare tabelă și câte au rămas (trebuie să fie 0 peste tot). După golire: rulați migrarea (Subunități, Plan de conturi, Jurnale, Șabloane, Operații, Plăți) și importul E-Factura din Access, care pune la loc legăturile facturilor. NU SE POATE ANULA: faceți mai întâi o copie a bazei."},
         {"profil_produs","Cere o bază anume și IdProdus (numărul variantei produsului din gestiune, nu codul din nomenclator). Rezultatul, de sus în jos: produsul (denumire, cod, preț, câte gestiuni îl au); în ce tabele VC_ apare și câte rânduri; apoi, pe fiecare gestiune, observațiile despre registrul OI (liniile de bon care nu-și găsesc contul în registru, adică exact cazul OI_ACCOUNT_ORIGIN), stocul OI pe deținător și, la urmă, fiecare rând din fiecare tabelă, cu antetul bonului sau NIR-ului lângă el. Se citește, nu se schimbă nimic. Rezultatul se copiază cu butonul de copiere și se poate lipi în conversație."}
     }
 
@@ -218,6 +222,14 @@ Public Class CommandsView
                 End If
                 If Not UiRun.Confirm("Se șterg TOATE datele VERCON din baza " & _context.SelectedDb & ": toate tabelele VC_ (documente, produse, gestiuni, exerciții, subunități, setări, numerotare) și trimiterile facturilor primite spre Vercon." & vbLf &
                                      "Partenerii, FX_, AD_ și TZ_ nu se ating. Operația NU se poate anula și rămâne în Jurnal. Continuați?", "Golire VERCON") Then Return
+            ElseIf k_command.Name = AvacontWipeCommandName Then
+                If Not String.Equals(k_param, _context.SelectedDb, StringComparison.OrdinalIgnoreCase) Then
+                    KBotMessage.Show("Pentru golire scrieți în casetă exact numele bazei alese: " & _context.SelectedDb & ".", "Golire date contabile", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+                    txtParam.Focus()
+                    Return
+                End If
+                If Not UiRun.Confirm("Se șterg TOATE datele contabile din baza " & _context.SelectedDb & ": toate tabelele TZ_ (note, documente, operații, plan de conturi, solduri, jurnale, șabloane, subunități, OP-uri, setări) și legăturile facturilor primite cu operațiile (EF_PrimiteOperatii)." & vbLf &
+                                     "Partenerii, clasificațiile, FX_, AD_, VC_ și facturile primite nu se ating. Operația NU se poate anula și rămâne în Jurnal. Continuați?", "Golire date contabile") Then Return
             ElseIf k_command.Writes Then
                 If Not UiRun.Confirm("Comanda «" & k_command.Title & "» scrie în " & k_target & "." & vbLf & "Continuați?", "Comenzi") Then Return
             End If

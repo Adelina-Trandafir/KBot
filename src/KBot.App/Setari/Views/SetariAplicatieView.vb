@@ -227,6 +227,7 @@ Public Class SetariAplicatieView
             chkShowBrowser.Checked = s.ShowBrowserButton
             chkReceptii.Checked = s.ReceptiiCheckedOnOpen
             chkKeZi.Checked = s.KeBlockSameDayReception
+            chkProtectiePlati.Checked = s.ContariProtectiePlati
             chkStartMaximized.Checked = s.StartMaximized
             chkTutorialInitial.Checked = s.ShowStartTutorial
             chkAvertismentAdobe.Checked = s.ShowAdobeAdvice
@@ -330,6 +331,13 @@ Public Class SetariAplicatieView
         SalveazaComutator(Sub(s) s.KeBlockSameDayReception = chkKeZi.Checked,
                           If(chkKeZi.Checked, "«Recepție nouă» nu mai merge într-o zi în care angajamentul are deja o recepție.",
                              "«Recepție nouă» poate face și a doua recepție în aceeași zi."))
+    End Sub
+
+    ' Slice 04EF-01: a payment in «Contari» for an invoice with no active reception is refused (on) or only warned about (off).
+    Private Sub ChkProtectiePlati_CheckedChanged(sender As Object, e As EventArgs) Handles chkProtectiePlati.CheckedChanged
+        SalveazaComutator(Sub(s) s.ContariProtectiePlati = chkProtectiePlati.Checked,
+                          If(chkProtectiePlati.Checked, "În «Contări», o plată fără recepție asociată nu se mai poate salva.",
+                             "În «Contări», lipsa recepției doar avertizează; plata se poate salva."))
     End Sub
 
     ' Slice 0097-02: the main window opens maximized. Read once, when the window opens.

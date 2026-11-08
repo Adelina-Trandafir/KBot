@@ -54,6 +54,7 @@ Public Class FacturiCumparareContarePage
 
     ' Slice 03EF-13: the page shows what an invoice ALREADY has booked (read only): the template rows chosen at that time are kept to be put back when a click moves them.
     Private _booked As Boolean
+    Private _nrOpProvisional As Boolean
     Private _bookedRowE As Integer = -1
     Private _bookedRowP As Integer = -1
 
@@ -65,6 +66,7 @@ Public Class FacturiCumparareContarePage
         InitializeComponent()
         gridEvidenta.ReadOnlyGrid = False
         gridPlata.ReadOnlyGrid = False
+        gridPlata.CellTooltipTableProvider = AddressOf PlataTooltip   ' slice 04EF-01: the order number before saving is provisional
         ShowEmpty()
     End Sub
 
@@ -196,10 +198,29 @@ Public Class FacturiCumparareContarePage
             Finally
                 gridPlata.EndUpdate()
             End Try
+            ' Slice 04EF-01: the payments made in K-BOT (they live in the allocations, not among the evidence rows): the order number is the REAL one here.
+            gridPlata.BeginUpdate()
+            Try
+                For Each k_pl As EFacturaContariPlataExistenta In k_b.Plati
+                    Dim k_row As KBotDataRow = gridPlata.AddRow()
+                    k_row.Tag = k_pl
+                    k_row("nc") = If(k_pl.NumarNC.HasValue, k_pl.NumarNC.Value.ToString(CultureInfo.InvariantCulture), String.Empty)
+                    k_row("data") = If(k_pl.DataPlata.HasValue, k_pl.DataPlata.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), String.Empty)
+                    k_row("nrop") = If(k_pl.NrOP.HasValue, k_pl.NrOP.Value.ToString(CultureInfo.InvariantCulture), String.Empty)
+                    k_row("explicatie") = k_pl.Explicatie
+                    k_row("lungime") = Math.Min(k_pl.Explicatie.Length, OpExplicatie.MaxLength)
+                    k_row("valoare") = k_pl.Platit
+                Next
+            Finally
+                gridPlata.EndUpdate()
+            End Try
             gridPlata.ReadOnlyGrid = True
             gridPlata.Enabled = gridPlata.Rows.Count > 0
             Dim k_sub As String = k_b.Operatii.Select(Function(k_o) k_o.Subunitate).FirstOrDefault(Function(k_s) k_s.Length > 0)
             _detalii = $"Factura {k_b.NrFact} are deja operații contabile înregistrate" & If(String.IsNullOrEmpty(k_sub), String.Empty, $" ({k_sub})") & "."
+            If k_b.Operatii.Any(Function(k_o) Not k_o.Gasita) Then
+                _detalii &= " Factura are o legătură fără operație contabilă în baza de date: rândul afișează doar suma legăturii, fără notă și dată."
+            End If
             _canSave = False
             UpdateSave()
         Finally
@@ -235,10 +256,48 @@ Public Class FacturiCumparareContarePage
     End Function
 
     ' The evidence can be booked: the role allows it, the classification and the evidence template are chosen, nothing blocks and something is left to book.
+    ' Slice 04EF-01: the mode decides what must be chosen -- evidence only (the evidence template), payment only (the payment template and something to pay) or both.
     Private Shared Function CanSave(k_r As EFacturaContariRaspuns) As Boolean
-        Return k_r.PoateScrie AndAlso k_r.Clasificatie IsNot Nothing AndAlso k_r.IdSablonE.HasValue AndAlso
+        Dim k_paying As Boolean = Not String.Equals(k_r.[Mod], "evidentiere", StringComparison.Ordinal)
+        Dim k_evidence As Boolean = Not String.Equals(k_r.[Mod], "plata", StringComparison.Ordinal)
+        Return k_r.PoateScrie AndAlso k_r.Clasificatie IsNot Nothing AndAlso (Not k_evidence OrElse k_r.IdSablonE.HasValue) AndAlso
+               (Not k_paying OrElse k_r.IdSablonP.HasValue) AndAlso
                Not k_r.Avertismente.Any(Function(k_a) String.Equals(k_a.Grav, "eroare", StringComparison.Ordinal)) AndAlso
-               k_r.Evidenta.Any(Function(k_e) k_e.Suma <> 0D)
+               If(k_paying, k_r.Evidenta.Any(Function(k_e) k_e.Platit <> 0D), k_r.Evidenta.Any(Function(k_e) k_e.Suma <> 0D))
+    End Function
+
+    ''' <summary>Slice 04EF-01: the order number the page showed before saving (provisional); empty when none.</summary>
+    Public ReadOnly Property NumarOpAfisat As String
+        Get
+            Return _nrOp
+        End Get
+    End Property
+
+    ''' <summary>Slice 04EF-01: the date of the payment and of its order, as typed in the payment row; Nothing = the server uses today.</summary>
+    Public Function DataOP() As Date?
+        If gridPlata.Rows.Count = 0 Then Return Nothing
+        Dim k_date As Date
+        Return If(Date.TryParseExact(Convert.ToString(gridPlata.Rows(0)("data"), CultureInfo.InvariantCulture), "dd.MM.yyyy", CultureInfo.InvariantCulture, DateTimeStyles.None, k_date),
+                  CType(k_date, Date?), Nothing)
+    End Function
+
+    ''' <summary>Slice 04EF-01: the explanation of the order of payment as shown in the payment row (empty when there is none).</summary>
+    Public Function ExplicatieOP() As String
+        Return If(gridPlata.Rows.Count = 0, String.Empty, Convert.ToString(gridPlata.Rows(0)("explicatie"), CultureInfo.InvariantCulture))
+    End Function
+
+    ''' <summary>Slice 04EF-01: the payment (read only view of a booked invoice) the operator stands on; Nothing when none.</summary>
+    Public ReadOnly Property PlataAleasa As EFacturaContariPlataExistenta
+        Get
+            If Not _booked OrElse gridPlata.CurrentRowIndex < 0 OrElse gridPlata.CurrentRowIndex >= gridPlata.Rows.Count Then Return Nothing
+            Return TryCast(gridPlata.Rows(gridPlata.CurrentRowIndex).Tag, EFacturaContariPlataExistenta)
+        End Get
+    End Property
+
+    ' The number of the order before saving is only a PROVISIONAL one: the server gives the real number on save and the page shows it afterwards.
+    Private Function PlataTooltip(k_column As String, k_row As KBotDataRow) As String
+        If _booked OrElse Not _nrOpProvisional OrElse Not String.Equals(k_column, "nrop", StringComparison.Ordinal) Then Return Nothing
+        Return "Număr provizoriu. Numărul final al ordinului de plată se stabilește la salvare și poate fi altul, dacă între timp s-a emis un alt ordin din aceeași plajă de numere. După salvare vezi numărul real."
     End Function
 
     ' «Salvează» (the ribbon button) also needs a valid explanation while an order of payment is being made. The host is told when the answer changes.
@@ -388,7 +447,8 @@ Public Class FacturiCumparareContarePage
         Try
             gridPlata.ClearRows()
             If k_p.Activa Then
-                If _nrOp.Length = 0 AndAlso k_p.NumarOP.HasValue Then _nrOp = k_p.NumarOP.Value.ToString(CultureInfo.InvariantCulture)
+                _nrOpProvisional = k_p.NumarOPProvizoriu
+                If k_p.NumarOP.HasValue Then _nrOp = k_p.NumarOP.Value.ToString(CultureInfo.InvariantCulture)   ' slice 04EF-01: the server's number, read again on every calculation (not typed)
                 Dim k_row As KBotDataRow = gridPlata.AddRow()
                 k_row("nc") = _nota
                 k_row("data") = If(k_p.DataMinima.HasValue, k_p.DataMinima.Value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture), String.Empty)
@@ -475,8 +535,10 @@ Public Class FacturiCumparareContarePage
             End If
             If _filling OrElse e.RowIndex < 0 OrElse e.RowIndex >= lstEvidentiere.Rows.Count Then Return
             Dim k_template As EFacturaContariSablon = TryCast(lstEvidentiere.Rows(e.RowIndex).Tag, EFacturaContariSablon)
-            If k_template Is Nothing OrElse (_ultim IsNot Nothing AndAlso _ultim.IdSablonE.HasValue AndAlso _ultim.IdSablonE.Value = k_template.IdSablon) Then Return
-            RaiseEvent SablonAles("E", k_template.IdSablon)
+            If k_template Is Nothing Then Return
+            ' Slice 04EF-01: a click on the chosen evidence template takes it off (payment only), like the payment template; a click on another one chooses it.
+            Dim k_same As Boolean = _ultim IsNot Nothing AndAlso _ultim.IdSablonE.HasValue AndAlso _ultim.IdSablonE.Value = k_template.IdSablon
+            RaiseEvent SablonAles("E", If(k_same, 0, k_template.IdSablon))
         Catch ex As Exception
             GlobalErrorLog.Write("FacturiCumparareContarePage.LstEvidentiere_CellClick", ex)
         End Try
@@ -559,7 +621,7 @@ Public Class FacturiCumparareContarePage
     Private Sub GridPlata_CellValidating(sender As Object, e As KBotCellValidatingEventArgs) Handles gridPlata.CellValidating
         Try
             Select Case e.ColumnKey
-                Case "nc", "nrop"
+                Case "nc"
                     e.ProposedValue = Digits(e.ProposedValue)
                 Case "explicatie"
                     e.ProposedValue = OpExplicatie.Fit(Convert.ToString(e.ProposedValue, CultureInfo.InvariantCulture))
@@ -585,8 +647,6 @@ Public Class FacturiCumparareContarePage
                     _explicatieLen = k_text.Trim().Length
                     UpdateBar(_explicatieLen)
                     UpdateSave()
-                Case "nrop"
-                    e.Text = Regex.Replace(e.Text, "\D", String.Empty)
             End Select
         Catch ex As Exception
             GlobalErrorLog.Write("FacturiCumparareContarePage.GridPlata_EditorTextChanged", ex)
@@ -618,9 +678,6 @@ Public Class FacturiCumparareContarePage
             Select Case e.ColumnKey
                 Case "nc"
                     ShareNote(Convert.ToString(e.NewValue, CultureInfo.InvariantCulture))
-                Case "nrop"
-                    _nrOp = Convert.ToString(e.NewValue, CultureInfo.InvariantCulture)
-                    UpdateSave()
                 Case "explicatie"
                     _explicatieLen = Convert.ToString(e.NewValue, CultureInfo.InvariantCulture).Length
                     UpdateBar(_explicatieLen)

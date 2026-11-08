@@ -45,6 +45,9 @@ Friend NotInheritable Class AvcContext
     ''' <summary>The CodFiscal of the unit as typed on the form (proposed from the Windows registry); goes into the journal header. Never persisted.</summary>
     Public Property CodFiscal As String = String.Empty
 
+    ''' <summary>The received e-invoice store <c>ef_&lt;year&gt;.accdb</c> (step «E-Factura»); set by the form.</summary>
+    Public Property EfReceivedFile As String = String.Empty
+
     ''' <summary>Every unit of the DC (ticked or not): the subunits step looks up the parents of the ticked ones here.</summary>
     Public Property DcUnits As IReadOnlyList(Of CaiUnit) = New List(Of CaiUnit)()
 

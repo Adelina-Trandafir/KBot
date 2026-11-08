@@ -38,6 +38,11 @@ from .configurari.clasificatii_venituri import clasificatii_venituri  # noqa: E4
 # configurari/sablon_operatii/  (slice AV01-14; sql/AVACONT/Configurari/SablonOperatii/AV01_14_sablon_operatii.sql)
 #   sablon_operatii.py -> GET/POST /api/avacont/sabloane-operatii                          (TZ_SablonOperatii, TZ_SablonOperatiiLinie)
 from .configurari.sablon_operatii import sablon_operatii  # noqa: E402,F401
+# introducere_date/operatii/  (stage 2: AV02-01 posting service postare.py, AV02-02 plati.py, AV02-03 op9.py, AV02-04 facturi_plati.py)
+#   op9.py          -> GET /api/avacont/operatii-diverse/context, POST /api/avacont/operatii-diverse/salveaza           (the Access form OP9)
+#   facturi_plati.py -> GET /api/avacont/facturi-plati/context, GET .../deschise, POST .../salveaza, DELETE .../plata/<id>  (the Access form OPuri2017)
+from .introducere_date.operatii import op9  # noqa: E402,F401
+from .introducere_date.operatii import facturi_plati  # noqa: E402,F401
 # configurari/sablon_salarii/  (slice AV01-15; sql/AVACONT/Configurari/SablonSalarii/AV01_15_sablon_salarii.sql)
 #   sablon_salarii.py -> GET/POST /api/avacont/sabloane-salarii                           (TZ_SablonSalarii, TZ_SablonSalariiLinie)
 from .configurari.sablon_salarii import sablon_salarii  # noqa: E402,F401

@@ -16,7 +16,9 @@ Friend NotInheritable Class AvcCatalog
             New AvcJurnaleStep(),
             New AvcSablonOperatiiStep(),
             New AvcSablonSalariiStep(),
-            New AvcOperatiiStep()
+            New AvcOperatiiStep(),
+            New AvcPlatiStep(),
+            New AvcEFacturaStep()
         }
     End Function
 

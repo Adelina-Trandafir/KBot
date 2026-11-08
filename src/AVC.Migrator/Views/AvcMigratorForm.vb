@@ -449,6 +449,8 @@ Public Class AvcMigratorForm
         _context.DcUnits = CaiRegistry.UnitsOf(_units, _context.Dc)
         _context.SubunitDrafts = BuildSubunitDrafts()
         _context.CodFiscal = txtCodFiscal.Text.Trim()
+        _context.EfReceivedFile = If(_settings.EfReceivedFile.Trim().Length > 0, _settings.EfReceivedFile.Trim(),
+                                     Path.Combine(If(Path.GetDirectoryName(txtRegistru.Text.Trim()), String.Empty), "EFACTURA", $"ef_{AvcContext.TransferYear.ToString(CultureInfo.InvariantCulture)}.accdb"))
         _context.JournalRoot = Path.Combine(AppContext.BaseDirectory, "Jurnale", "AVC")
     End Sub
 

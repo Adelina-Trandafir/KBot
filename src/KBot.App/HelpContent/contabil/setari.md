@@ -43,14 +43,14 @@ la următoarea pornire. Nu schimbă afișarea panoului lateral. **Ctrl+Tab** ră
 debifate: selectorul cu miniaturi comută între machetele deschise, în ordinea ultimei utilizări.
 
 ## Pagina «Aplicație»: cum e grupată fila «Generale»
-<!-- slice: 0100, 0100-02, 0114, 0114-24, 0000-100, 0115-02, 0000-106 -->
+<!-- slice: 0100, 0100-02, 0114, 0114-24, 0000-100, 0115-02, 0000-106, 04EF-01, 0000-175 -->
 
 Comutatoarele filei **Generale** sunt grupate după rostul lor; ce face fiecare nu s-a schimbat:
 
 | Grupul | Ce conține |
 |--------|-----------|
 | **Fereastra principală** | pornirea mărită, tutorialul de început, avertismentul despre Adobe, comutatorul **«Panglica din fereastra principală e compactă»** (iconițe și text mai mici în ribbon, pentru ecrane mici; se aplică imediat — [Ribbonul](topic:contabil.ribbon)), comutatorul **«Meniul lateral stă în spatele machetelor»** (bifat, implicit, panoul lateral se vede doar cât nu e nicio machetă pe ecran, iar o machetă deschisă ocupă toată lățimea; debifat, panoul se vede tot timpul; se aplică imediat — [Panoul lateral](topic:contabil.panou)) și comutatorul **«Rândul «Jurnal activitate» în meniul MENIU al ferestrei principale»** — acum el arată sau ascunde butonul **«Jurnal activitate»** din ribbon (Configurări › Configurare) |
-| **FOREXE** | consola detaliată, butonul «Arată browserul», selectorul de recepții |
+| **FOREXE** | consola detaliată, butonul «Arată browserul», selectorul de recepții, plus bifa **«Protectie contari Plati/Receptii»** (la **Contări**: cu bifa pusă, o plată pentru o factură fără recepție activă nu se poate salva; fără ea doar avertizează — [Contări](topic:contabil.efactura)) |
 | **Avansat** | «Activează opțiuni avansate» și, sub ea, modul de capturi |
 
 Descărcările pe mai multe taburi au pagina lor, **Descărcări multiple** —

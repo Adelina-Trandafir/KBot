@@ -249,6 +249,9 @@ Public Interface IEFacturaApi
     ''' <summary>GET /api/efactura/contari/existente/{id} -- slice 03EF-13: the accounting operations the invoice already has (classification, the templates that fit it, a row per evidence or payment operation).</summary>
     Function GetContariExistenteAsync(k_idPrimita As Integer, ct As CancellationToken) As Task(Of EFacturaContariExistente)
 
+    ''' <summary>Slice 04EF-01: deletes an order of payment with its payment (refused by the server when the order is locked: in an OPME or confirmed by a statement).</summary>
+    Function DeleteContariPlataAsync(k_idOp As Integer, ct As CancellationToken) As Task
+
     ' ── Slice 01EF-03: the archive of the received invoices (PYTHON/routes/efactura/primite_arhiva_routes.py). Writes: role «Contabil» only. ──
 
     ''' <summary>GET /api/efactura/arhiva -- every archived invoice of the unit.</summary>

@@ -36,6 +36,7 @@ Partial Class SetariAplicatieView
         chkAvansate = New CheckBox()
         chkCapturi = New CheckBox()
         chkKeZi = New CheckBox()
+        chkProtectiePlati = New CheckBox()
         cboAdobeMotor = New KBotComboBox()
         btnAdobeGazduire = New Button()
         chkAdobeClasic = New CheckBox()
@@ -152,6 +153,20 @@ Partial Class SetariAplicatieView
         tips.SetToolTipHeader(chkKeZi, "O recepție pe zi")
         tips.SetToolTipText(chkKeZi, "Bifat: dacă angajamentul are deja o recepție la data aleasă, «Recepție nouă» nu merge; se modifică recepția existentă." & vbLf & "Debifat: se poate face și a doua recepție în aceeași zi.")
         chkKeZi.UseVisualStyleBackColor = True
+        '
+        ' chkProtectiePlati
+        '
+        chkProtectiePlati.AutoSize = True
+        tlyComutatoare.SetColumnSpan(chkProtectiePlati, 2)
+        chkProtectiePlati.Location = New Point(4, 191)
+        chkProtectiePlati.Margin = New Padding(4, 0, 4, 10)
+        chkProtectiePlati.Name = "chkProtectiePlati"
+        chkProtectiePlati.Size = New Size(462, 26)
+        chkProtectiePlati.TabIndex = 60
+        chkProtectiePlati.Text = "Protectie contari Plati/Receptii"
+        tips.SetToolTipHeader(chkProtectiePlati, "Plată fără recepție")
+        tips.SetToolTipText(chkProtectiePlati, "Bifat: în «Contări», o plată pentru o factură care nu are o recepție activă asociată nu se poate salva (evidențierea se poate salva oricum)." & vbLf & "Debifat: lipsa recepției doar avertizează, iar plata se poate salva.")
+        chkProtectiePlati.UseVisualStyleBackColor = True
         '
         ' chkRibbonCompact
         '
@@ -618,14 +633,15 @@ Partial Class SetariAplicatieView
         tlyComutatoare.Controls.Add(chkShowBrowser, 0, 11)
         tlyComutatoare.Controls.Add(chkReceptii, 0, 12)
         tlyComutatoare.Controls.Add(chkKeZi, 0, 13)
-        tlyComutatoare.Controls.Add(lblGrupAvansat, 0, 14)
-        tlyComutatoare.Controls.Add(chkAvansate, 0, 15)
-        tlyComutatoare.Controls.Add(chkCapturi, 0, 16)
+        tlyComutatoare.Controls.Add(chkProtectiePlati, 0, 14)
+        tlyComutatoare.Controls.Add(lblGrupAvansat, 0, 15)
+        tlyComutatoare.Controls.Add(chkAvansate, 0, 16)
+        tlyComutatoare.Controls.Add(chkCapturi, 0, 17)
         tlyComutatoare.Dock = DockStyle.Top
         tlyComutatoare.Location = New Point(28, 58)
         tlyComutatoare.Margin = New Padding(4, 0, 4, 24)
         tlyComutatoare.Name = "tlyComutatoare"
-        tlyComutatoare.RowCount = 18
+        tlyComutatoare.RowCount = 19
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
@@ -644,7 +660,8 @@ Partial Class SetariAplicatieView
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
         tlyComutatoare.RowStyles.Add(New RowStyle())
-        tlyComutatoare.Size = New Size(904, 712)
+        tlyComutatoare.RowStyles.Add(New RowStyle())
+        tlyComutatoare.Size = New Size(904, 748)
         tlyComutatoare.TabIndex = 1
         '
         ' lblVerbose
@@ -958,6 +975,7 @@ Partial Class SetariAplicatieView
     Friend WithEvents chkAvansate As CheckBox
     Friend WithEvents chkCapturi As CheckBox
     Friend WithEvents chkKeZi As CheckBox
+    Friend WithEvents chkProtectiePlati As CheckBox
     Friend WithEvents lblGrupFereastra As Label
     Friend WithEvents lblGrupForexe As Label
     Friend WithEvents lblGrupAvansat As Label

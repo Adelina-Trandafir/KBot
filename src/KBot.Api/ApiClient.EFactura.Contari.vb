@@ -37,6 +37,7 @@ Partial Public Class ApiClient
         Public Property Salvat As Decimal
         Public Property Suma As Decimal
         Public Property Platit As Decimal
+        Public Property RestPlata As Decimal?
     End Class
 
     Private NotInheritable Class ContariPlataWire
@@ -44,6 +45,7 @@ Partial Public Class ApiClient
         Public Property ExplicatieOP As String
         Public Property FelOP As String
         Public Property NumarOP As Integer?
+        Public Property NumarOPProvizoriu As Boolean
         Public Property DataMinima As String
         Public Property Activa As Boolean
     End Class
@@ -123,6 +125,7 @@ Partial Public Class ApiClient
         Public Property sabloanePlata As List(Of ContariSablonWire)
         Public Property idSablonE As Integer?
         Public Property idSablonP As Integer?
+        Public Property [mod] As String
         Public Property coduri As ContariCoduriWire
         Public Property contIban As String
         Public Property evidenta As List(Of ContariRandWire)
@@ -147,12 +150,21 @@ Partial Public Class ApiClient
         Return k_result
     End Function
 
+    Private NotInheritable Class ContariPlataSalvataWire
+        Public Property IdOper As Integer
+        Public Property IdOP As Integer
+        Public Property NrOP As Integer
+        Public Property Valoare As Decimal
+        Public Property DataOP As String
+    End Class
+
     Private NotInheritable Class ContariSalvatWire
         Public Property IdNota As Integer
         Public Property NumarNC As Integer
         Public Property An As Integer
         Public Property Subunitate As String
         Public Property Operatii As List(Of Object)
+        Public Property Plata As ContariPlataSalvataWire
     End Class
 
     Private Function ContariBody(k_request As EFacturaContariCerere, k_save As Boolean) As String
@@ -162,10 +174,13 @@ Partial Public Class ApiClient
         Next
         Dim k_fields As New Dictionary(Of String, Object) From {
             {"ids", k_request.Ids}, {"idClsf", k_request.IdClsf}, {"idSablonE", k_request.IdSablonE}, {"idSablonP", k_request.IdSablonP},
-            {"platit", k_platit}, {"an", k_request.An}, {"idSubunitate", k_request.IdSubunitate}, {"idPartener", k_request.IdPartener}}
+            {"platit", k_platit}, {"an", k_request.An}, {"idSubunitate", k_request.IdSubunitate}, {"idPartener", k_request.IdPartener},
+            {"mod", k_request.[Mod]}, {"protectie", k_request.Protectie}}
         If k_save Then
             k_fields("confirmari") = k_request.Confirmari
             k_fields("numarNC") = k_request.NumarNC
+            If k_request.DataOP.HasValue Then k_fields("dataOP") = k_request.DataOP.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
+            If Not String.IsNullOrWhiteSpace(k_request.ExplicatieOP) Then k_fields("explicatieOP") = k_request.ExplicatieOP
         End If
         Return JsonSerializer.Serialize(k_fields, _json)
     End Function
@@ -178,9 +193,14 @@ Partial Public Class ApiClient
                                                            "salvarea contării facturilor", ct).ConfigureAwait(False)
             Dim wire As ContariSalvatWire = JsonSerializer.Deserialize(Of ContariSalvatWire)(k_text, _json)
             If wire Is Nothing Then Throw New ApiException("Serverul nu a confirmat salvarea contării.")
-            Return New EFacturaContariSalvat() With {
+            Dim k_saved As New EFacturaContariSalvat() With {
                 .IdNota = wire.IdNota, .NumarNC = wire.NumarNC, .An = wire.An, .Subunitate = If(wire.Subunitate, String.Empty),
                 .NrOperatii = If(wire.Operatii Is Nothing, 0, wire.Operatii.Count)}
+            If wire.Plata IsNot Nothing Then
+                k_saved.Plata = New EFacturaContariPlataSalvata() With {
+                    .IdOper = wire.Plata.IdOper, .IdOP = wire.Plata.IdOP, .NrOP = wire.Plata.NrOP, .Valoare = wire.Plata.Valoare, .DataOP = ParseDay(wire.Plata.DataOP)}
+            End If
+            Return k_saved
         Catch ex As ApiException
             Throw
         Catch ex As Exception
@@ -199,7 +219,7 @@ Partial Public Class ApiClient
             If wire Is Nothing Then Throw New ApiException("Serverul nu a trimis calculul contării.")
             Dim k_result As New EFacturaContariRaspuns() With {
                 .PoateScrie = wire.poate_scrie, .ClasificatieSugerata = wire.clasificatieSugerata, .IdSablonE = wire.idSablonE, .IdSablonP = wire.idSablonP,
-                .ContIban = If(wire.contIban, String.Empty)}
+                .ContIban = If(wire.contIban, String.Empty), .[Mod] = If(wire.[mod], "evidentiere")}
             If wire.furnizor IsNot Nothing Then
                 k_result.FurnizorDenumire = If(wire.furnizor.Denumire, String.Empty)
                 k_result.FurnizorCui = If(wire.furnizor.Cui, String.Empty)
@@ -244,12 +264,12 @@ Partial Public Class ApiClient
                     k_result.Evidenta.Add(New EFacturaContariRand() With {
                         .IdPrimita = w.IdPrimita, .NrFact = If(w.NrFact, String.Empty), .NumarDocument = If(w.NumarDocument, String.Empty),
                         .DataDocument = ParseDay(w.DataDocument), .FelDocument = If(w.FelDocument, String.Empty),
-                        .Total = w.Total, .Salvat = w.Salvat, .Suma = w.Suma, .Platit = w.Platit})
+                        .Total = w.Total, .Salvat = w.Salvat, .Suma = w.Suma, .Platit = w.Platit, .RestPlata = w.RestPlata})
                 Next
             End If
             If wire.plata IsNot Nothing Then
                 k_result.Plata = New EFacturaContariPlata() With {
-                    .Valoare = wire.plata.Valoare, .ExplicatieOP = If(wire.plata.ExplicatieOP, String.Empty), .FelOP = If(wire.plata.FelOP, String.Empty), .NumarOP = wire.plata.NumarOP,
+                    .Valoare = wire.plata.Valoare, .ExplicatieOP = If(wire.plata.ExplicatieOP, String.Empty), .FelOP = If(wire.plata.FelOP, String.Empty), .NumarOP = wire.plata.NumarOP, .NumarOPProvizoriu = wire.plata.NumarOPProvizoriu,
                     .DataMinima = ParseDay(wire.plata.DataMinima), .Activa = wire.plata.Activa}
             End If
             If wire.operatii IsNot Nothing Then
@@ -301,7 +321,21 @@ Partial Public Class ApiClient
         Public Property Total As Decimal
     End Class
 
+    Private NotInheritable Class ContariPlataExistentaWire
+        Public Property IdOP As Integer?
+        Public Property IdPlata As Integer
+        Public Property NrOP As Integer?
+        Public Property Platit As Decimal
+        Public Property DataPlata As String
+        Public Property Explicatie As String
+        Public Property NumarNC As Integer?
+        Public Property Blocat As Boolean
+        Public Property MotivBlocare As String
+    End Class
+
     Private NotInheritable Class ContariExistenteWire
+        Public Property plati As List(Of ContariPlataExistentaWire)
+        Public Property restPlata As Decimal
         Public Property factura As ContariExistenteFacturaWire
         Public Property clasificatie As ContariClsfWire
         Public Property sabloaneEvidentiere As List(Of ContariSablonWire)
@@ -330,11 +364,33 @@ Partial Public Class ApiClient
                         .NumarNC = w.NumarNC, .Subunitate = If(w.Subunitate, String.Empty)})
                 Next
             End If
+            k_result.RestPlata = wire.restPlata
+            If wire.plati IsNot Nothing Then
+                For Each w As ContariPlataExistentaWire In wire.plati
+                    k_result.Plati.Add(New EFacturaContariPlataExistenta() With {
+                        .IdOP = w.IdOP, .IdPlata = w.IdPlata, .NrOP = w.NrOP, .Platit = w.Platit, .DataPlata = ParseDay(w.DataPlata), .Explicatie = If(w.Explicatie, String.Empty), .NumarNC = w.NumarNC,
+                        .Blocat = w.Blocat, .MotivBlocare = If(w.MotivBlocare, String.Empty)})
+                Next
+            End If
             Return k_result
         Catch ex As ApiException
             Throw
         Catch ex As Exception
             GlobalErrorLog.Write("ApiClient.GetContariExistenteAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ' Slice 04EF-01 -- DELETE /api/efactura/contari/plata/{idOP}: an order of payment with its payment; the server refuses a locked one (the text comes in the ApiException).
+    Public Async Function DeleteContariPlataAsync(k_idOp As Integer, ct As CancellationToken) _
+        As Task Implements IEFacturaApi.DeleteContariPlataAsync
+        Try
+            Await SendEFacturaAsync(HttpMethod.Delete, $"/api/efactura/contari/plata/{k_idOp.ToString(CultureInfo.InvariantCulture)}", Nothing,
+                                    "ștergerea plății și a ordinului de plată", ct).ConfigureAwait(False)
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.DeleteContariPlataAsync", ex)
             Throw
         End Try
     End Function

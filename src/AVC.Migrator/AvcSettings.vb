@@ -17,6 +17,8 @@ Friend NotInheritable Class AvcSettings
     Public Property Port As Integer = 3306
     Public Property User As String = "Admin"
     Public Property CommonDatabase As String = "AVACONT_COMUN"
+    ''' <summary>Where the received e-invoice store <c>ef_&lt;year&gt;.accdb</c> is when it is NOT in the <c>EFACTURA</c> folder next to <c>cale.accdb</c> (empty = there).</summary>
+    Public Property EfReceivedFile As String = String.Empty
 
     Private Shared Function FilePath() As String
         Return Path.Combine(AppContext.BaseDirectory, FileName)

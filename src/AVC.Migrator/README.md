@@ -38,7 +38,21 @@ Erorile merg in `Logs\harness_errors.log`; la fiecare lansare jurnalul anterior 
 
 Pentru o migrare completă, bifați și pașii **Subunități**, **Plan de conturi** și **Jurnale** împreună cu **Operații**. Verificarea ține cont atât de datele deja existente, cât și de cele pregătite de pașii bifați. La scriere, «Operații» folosește ID-urile din aceeași tranzacție. Puteți rula pașii și separat.
 
-Partenerii și clasificațiile trebuie migrate în prealabil cu `KBot.Migrator`. Raportul arată operațiile omise din cauza unui cont, jurnal, partener sau clasificații indisponibile. Fiecare operație eligibilă se scrie cu toate liniile ei. Ultima instrucțiune schimbă cheia legăturii din `EF_PrimiteOperatii.IdOperatie` de la numărul din Access la `TZ_Oper.IdOper`, o singură dată și numai dacă baza nu conține operații făcute în K-BOT. Înainte de prima migrare, aplicați scriptul `sql/AVACONT/IntroducereDate/Operatii/AV02_01_operatii.sql` conform instrucțiunilor din fișier.
+Partenerii și clasificațiile trebuie migrate în prealabil cu `KBot.Migrator`. Raportul arată operațiile omise din cauza unui cont, jurnal, partener sau clasificații indisponibile. Fiecare operație eligibilă se scrie cu toate liniile ei. Legăturile facturilor: `EF_PrimiteOperatii.IdOperatie` este mereu `TZ_Oper.IdOper`; numărul din Access stă în coloana `IdOperatieAccess` (importul E-Factura din Access îl scrie acolo). Ultima instrucțiune a pasului «Operații» pune `IdOperatie` pentru toate legăturile care au număr Access (operația se găsește prin număr Access + unitate), la fiecare rulare, în orice ordine față de importul facturilor; legăturile făcute în K-BOT (`IdOperatieAccess` gol) nu se ating. Înainte de prima migrare, aplicați scripturile `sql/AVACONT/IntroducereDate/Operatii/AV02_01_operatii.sql` și `sql/00EF_66_primite_operatii_id_access.sql` conform instrucțiunilor din fișiere.
+
+## Migrare repetată și golire
+
+Migrarea se poate rula de mai multe ori: fiecare pas adaugă doar ce lipsește (după cheile Access păstrate în coloanele `*Access`, după simbolul contului, după codul jurnalului, după explicația șablonului) și nu modifică ce există deja. Ce s-a adăugat în Access după o rulare intră la următoarea; ce s-a modificat sau șters în Access după aceea NU se actualizează în MariaDB. Pentru a începe de la zero: KBotAdmin ▸ Comenzi ▸ AVACONT ▸ «Golire date contabile» (golește tabelele `TZ_` și `EF_PrimiteOperatii` ale bazei alese), apoi migrarea și importul E-Factura din Access.
+
+## Pasul «E-Factura» (mutat din fila E-Factura a KBot.Migrator)
+
+Ultimul pas al listei. Bifat **singur** inseamna «doar e-facturi»: se poate rula oricand, ca sa aduca ce e nou, fara sa atinga pasii contabili. Muta din Access in baza unitatii: datele furnizorului (`Unitati_Date`), clientii, facturile emise cu liniile lor, facturile primite cu liniile, notele si mesajele lor (doar mesajele cu codul fiscal al unitatii), legaturile facturilor primite cu operatiile contabile (`EFT_O`) si legaturile cu receptiile. Lucrul il face `EfImporter` (ramas in KBot.Migrator ca biblioteca), pe conexiunea si tranzactia migrarii: o eroare anuleaza tot.
+
+- **Randurile existente raman cum sunt** (ce s-a lucrat in K-BOT nu se suprascrie); se adauga doar ce e nou in Access.
+- **Exceptie, legaturile cu operatiile (`EFT_O`)**: cele venite din Access se sterg si se citesc din nou la fiecare rulare, ca sa fie toate (o operatie stearsa in Access nu lasa legatura). Cele facute in K-BOT raman. Fiecare legatura primeste `IdOperatie` = `TZ_Oper.IdOper` (numarul din Access sta in `IdOperatieAccess`); daca operatiile nu sunt migrate inca, se leaga la pasul «Operatii».
+- **Fisiere**: furnizorul, clientii si facturile emise vin din fisierul primei unitati bifate care are fisier; cele primite din `<dosarul lui cale.accdb>\EFACTURA\ef_<an>.accdb` sau din calea scrisa in `avc-migrator-settings.json` la `EfReceivedFile`. Anul este cel al migrarii (2026): pentru alt an se scrie calea.
+- Are nevoie de **codul fiscal** completat pe formular, de scriptul `sql/00EF_66_primite_operatii_id_access.sql` si de clasificatiile mutate de KBot.Migrator.
+- Fila «E-Factura» din KBot.Migrator nu mai exista.
 
 Pasul «Solduri initiale pe parteneri» are nevoie de «Plan de conturi» (aceeasi rulare sau una anterioara) si de partenerii mutati de KBot.Migrator. Un sold al carui cont sau partener lipseste din tinta NU se scrie si este numit in verificare (ATENTIE); celelalte se scriu.
 

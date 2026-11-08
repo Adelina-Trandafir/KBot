@@ -79,6 +79,13 @@ Public NotInheritable Class AppSettings
     ''' </summary>
     Public Property KeBlockSameDayReception As Boolean = False
 
+    ''' <summary>
+    ''' Slice 04EF-01: the tick «Protectie contari Plati/Receptii» (Setari &gt; Aplicatie). In «Contari» a payment for an invoice with no active reception linked is REFUSED when
+    ''' this is on; when off (the default in 2026) it only warns and the payment can be saved. The evidence can always be saved. The operator turns it on by hand for the users
+    ''' chosen for tests; the annual closing 2026 -&gt; 2027 turns it on by itself (rule in KBOT_STATUS_AV.md, «Inchidere anuala»; that closing is not built yet).
+    ''' </summary>
+    Public Property ContariProtectiePlati As Boolean = False
+
     ' ── Multi-thread downloads (slice 0100) ──────────────────────────────
 
     ''' <summary>Fewest FOREXE tabs a multi-thread download can use.</summary>
@@ -709,6 +716,7 @@ Public NotInheritable Class AppSettings
             .ForexeHideBrowserChrome = ForexeHideBrowserChrome,
             .ReceptiiCheckedOnOpen = ReceptiiCheckedOnOpen,
             .KeBlockSameDayReception = KeBlockSameDayReception,
+            .ContariProtectiePlati = ContariProtectiePlati,
             .MultiThreadDownloads = MultiThreadDownloads,
             .DownloadThreads = DownloadThreads,
             .AutoUpdateOnConnect = AutoUpdateOnConnect,
@@ -780,6 +788,7 @@ Public NotInheritable Class AppSettings
         If dto.ForexeHideBrowserChrome.HasValue Then s.ForexeHideBrowserChrome = dto.ForexeHideBrowserChrome.Value
         If dto.ReceptiiCheckedOnOpen.HasValue Then s.ReceptiiCheckedOnOpen = dto.ReceptiiCheckedOnOpen.Value
         If dto.KeBlockSameDayReception.HasValue Then s.KeBlockSameDayReception = dto.KeBlockSameDayReception.Value
+        If dto.ContariProtectiePlati.HasValue Then s.ContariProtectiePlati = dto.ContariProtectiePlati.Value
         If dto.MultiThreadDownloads.HasValue Then s.MultiThreadDownloads = dto.MultiThreadDownloads.Value
         ' A count / a number of days out of range in the file (hand-edited) keeps the default.
         If dto.DownloadThreads.HasValue AndAlso
@@ -884,6 +893,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ForexeHideBrowserChrome As Boolean?
     Public Property ReceptiiCheckedOnOpen As Boolean?
     Public Property KeBlockSameDayReception As Boolean?
+    Public Property ContariProtectiePlati As Boolean?
     Public Property MultiThreadDownloads As Boolean?
     Public Property DownloadThreads As Integer?
     Public Property AutoUpdateOnConnect As Boolean?

@@ -25,6 +25,7 @@ Partial Public Class FacturiCumparareView
     Private _contareClsf As Integer?
     Private _contareE As Integer?
     Private _contareP As Integer?
+    Private _contareENone As Boolean   ' slice 04EF-01: the evidence template was taken off -> payment only
     Private _contarePartner As Integer?
     Private _contarePartnerAsked As Boolean
     Private ReadOnly _contarePlatit As New Dictionary(Of Integer, Decimal)()
@@ -149,6 +150,7 @@ Partial Public Class FacturiCumparareView
         _contareClsf = Nothing
         _contareE = Nothing
         _contareP = Nothing
+        _contareENone = False
         _contarePartner = Nothing
         _contarePartnerAsked = False
         _contarePlatit.Clear()
@@ -276,8 +278,15 @@ Partial Public Class FacturiCumparareView
         End Try
     End Function
 
+    ' Slice 04EF-01: what is booked follows the templates the operator holds: evidence only; evidence and payment; payment only (the evidence template taken off).
+    Private Function ContareMode() As String
+        If Not _contareP.HasValue Then Return "evidentiere"
+        Return If(_contareENone, "plata", "ambele")
+    End Function
+
     Private Async Function AskContareAsync(k_ids As List(Of Integer)) As Task(Of EFacturaContariRaspuns)
-        Dim k_request As New EFacturaContariCerere() With {.IdClsf = _contareClsf, .IdSablonE = _contareE, .IdSablonP = _contareP, .An = YearFilter(), .IdSubunitate = SubunitInForce(), .IdPartener = _contarePartner}
+        Dim k_request As New EFacturaContariCerere() With {.IdClsf = _contareClsf, .IdSablonE = If(_contareENone, CType(Nothing, Integer?), _contareE), .IdSablonP = _contareP,
+            .An = YearFilter(), .IdSubunitate = SubunitInForce(), .IdPartener = _contarePartner, .[Mod] = ContareMode(), .Protectie = AppSettings.Current.ContariProtectiePlati}
         k_request.Ids.AddRange(k_ids)
         For Each k_pair As KeyValuePair(Of Integer, Decimal) In _contarePlatit
             If k_ids.Contains(k_pair.Key) Then k_request.Platit(k_pair.Key) = k_pair.Value
@@ -292,6 +301,7 @@ Partial Public Class FacturiCumparareView
             _contareClsf = k_idClsf
             _contareE = Nothing
             _contareP = Nothing
+            _contareENone = False
             Await RefreshContareAsync().ConfigureAwait(True)
         Catch ex As Exception
             GlobalErrorLog.Write("FacturiCumparareView.PgContare_ClasificatieAleasa", ex)
@@ -301,7 +311,9 @@ Partial Public Class FacturiCumparareView
     Private Async Sub PgContare_SablonAles(k_fel As String, k_idSablon As Integer)
         Try
             If String.Equals(k_fel, "E", StringComparison.Ordinal) Then
-                _contareE = k_idSablon
+                ' 0 = the evidence template was taken off: payment only (needs a payment template; without one the page goes back to evidence)
+                _contareENone = k_idSablon <= 0
+                _contareE = If(k_idSablon > 0, CType(k_idSablon, Integer?), Nothing)
             Else
                 _contareP = If(k_idSablon > 0, CType(k_idSablon, Integer?), Nothing)   ' 0 = the payment template was taken off: no order of payment
             End If
@@ -388,10 +400,6 @@ Partial Public Class FacturiCumparareView
                                        Environment.NewLine & Environment.NewLine & "Continuați cu salvarea?"
                 If KBotMessage.Show(FindForm(), k_text, "Contări", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then Return
             End If
-            If detalii.pgContare.PlataActiva Then
-                If KBotMessage.Show(FindForm(), "Plata nu se înregistrează încă: se salvează doar evidențierea facturilor. Continuați?", "Contări",
-                                    MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
-            End If
             Dim k_noteValid As Boolean
             Dim k_note As Integer? = detalii.pgContare.NotaAleasa(k_noteValid)
             If Not k_noteValid Then
@@ -400,13 +408,24 @@ Partial Public Class FacturiCumparareView
             End If
             Dim k_request As New EFacturaContariCerere() With {
                 .IdClsf = If(k_answer.Clasificatie Is Nothing, CType(Nothing, Integer?), k_answer.Clasificatie.IdClsf),
-                .IdSablonE = k_answer.IdSablonE, .An = YearFilter(), .IdSubunitate = SubunitInForce(),
-                .NumarNC = k_note, .IdPartener = _contarePartner}
+                .IdSablonE = k_answer.IdSablonE, .IdSablonP = k_answer.IdSablonP, .An = YearFilter(), .IdSubunitate = SubunitInForce(),
+                .NumarNC = k_note, .IdPartener = _contarePartner, .[Mod] = k_answer.[Mod], .Protectie = AppSettings.Current.ContariProtectiePlati}
+            If Not String.Equals(k_answer.[Mod], "evidentiere", StringComparison.Ordinal) Then
+                k_request.DataOP = detalii.pgContare.DataOP()
+                k_request.ExplicatieOP = detalii.pgContare.ExplicatieOP()
+            End If
             k_request.Ids.AddRange(_tickedIds.Where(Function(k_id) _nodes.ContainsKey(k_id)).OrderBy(Function(k_id) k_id))
+            For Each k_row As EFacturaContariRand In k_answer.Evidenta
+                k_request.Platit(k_row.IdPrimita) = k_row.Platit   ' the amounts shown are the ones booked
+            Next
             k_request.Confirmari.AddRange(k_confirm.Select(Function(k_a) k_a.Cod))
             Dim k_saved As EFacturaContariSalvat = Await _gate.RunAsync(Function() _api.SaveContariAsync(k_request, _cts.Token)).ConfigureAwait(True)
+            ' Slice 04EF-01: the order number the operator saw before saving was provisional; the REAL one comes back here.
+            Dim k_op As String = If(k_saved.Plata Is Nothing, String.Empty,
+                $" Ordinul de plată are numărul {k_saved.Plata.NrOP.ToString(CultureInfo.CurrentCulture)}" &
+                If(k_saved.Plata.NrOP.ToString(CultureInfo.InvariantCulture) <> detalii.pgContare.NumarOpAfisat, " (numărul afișat înainte de salvare era provizoriu).", "."))
             KBotMessage.Show(FindForm(), $"Salvare efectuată: nota contabilă {k_saved.NumarNC.ToString(CultureInfo.CurrentCulture)} ({k_saved.Subunitate}), " &
-                             $"{k_saved.NrOperatii.ToString(CultureInfo.CurrentCulture)} operații.", "Contări", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                             $"{k_saved.NrOperatii.ToString(CultureInfo.CurrentCulture)} operații." & k_op, "Contări", MessageBoxButtons.OK, MessageBoxIcon.Information)
             ClearTicks()
             Await LoadAsync(_idDdf).ConfigureAwait(True)
             Await ShowBookedAsync().ConfigureAwait(True)   ' slice 03EF-13: what was just saved
@@ -423,6 +442,29 @@ Partial Public Class FacturiCumparareView
         End Try
     End Sub
 
+    ' Slice 04EF-01: «Șterge plata» -- the payment the operator stands on goes together with its order of payment (the server refuses a locked order and says why).
+    ' UI boundary (async Sub): logs and swallows; a failure becomes a line in the notice.
+    Private Async Sub DeletePayment()
+        Try
+            Dim k_pay As EFacturaContariPlataExistenta = detalii.pgContare.PlataAleasa
+            If k_pay Is Nothing OrElse Not k_pay.IdOP.HasValue Then Return
+            If KBotMessage.Show(FindForm(), $"Ștergeți plata și ordinul de plată {k_pay.NrOP.GetValueOrDefault().ToString(CultureInfo.CurrentCulture)}? Operația nu se poate anula.", "Contări",
+                                MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then Return
+            Dim k_idOp As Integer = k_pay.IdOP.Value
+            Await _gate.RunAsync(Function() _api.DeleteContariPlataAsync(k_idOp, _cts.Token)).ConfigureAwait(True)
+            Await LoadAsync(_idDdf).ConfigureAwait(True)
+            Await ShowBookedAsync().ConfigureAwait(True)
+        Catch ex As OperationCanceledException
+            ' The host was closed.
+        Catch ex As ApiException
+            GlobalErrorLog.Write("FacturiCumparareView.DeletePayment", ex)
+            ShowProblem(ex.Message)
+        Catch ex As Exception
+            GlobalErrorLog.Write("FacturiCumparareView.DeletePayment", ex)
+            ShowProblem("Plata nu a putut fi ștearsă. Detalii în jurnalul de erori.")
+        End Try
+    End Sub
+
     ' ── The buttons of the ribbon (slice 03EF-02..05): the view group of the window shows them while «Contari» is on screen ──
     ' KBot.EFactura cannot see the ribbon (it lives in the shell): the window asks these functions and hears ReceptiiActionChanged when an answer changes.
 
@@ -431,8 +473,9 @@ Partial Public Class FacturiCumparareView
     Public Const RibbonContareRenunta As String = "ef_contare_renunta"
     Public Const RibbonContareSalveazaCa As String = "ef_contare_salveaza_ca"
     Public Const RibbonContareAscunde As String = "ef_contare_ascunde"
+    Public Const RibbonContareStergePlata As String = "ef_contare_sterge_plata"
 
-    Private Const SalveazaTip As String = "Înregistrează facturile bifate cu șablonul de evidențiere ales: o notă contabilă, un document și o operație pentru fiecare factură. Plata se înregistrează separat (încă nu este disponibilă)."
+    Private Const SalveazaTip As String = "Înregistrează facturile bifate cu șablonul de evidențiere ales: o notă contabilă, un document și o operație pentru fiecare factură. Dacă ai ales și șablonul de plată, se înregistrează și plata cu ordinul de plată (poți salva și doar plata, scoțând șablonul de evidențiere)."
 
     ' Tells the window that the buttons of «Contari» may have changed (it asks them again). Safe before the handle exists: only an event.
     Private Sub NotifyContare()
@@ -462,6 +505,8 @@ Partial Public Class FacturiCumparareView
                 Return ContareEditing()
             Case RibbonContareSalveazaCa, RibbonContareAscunde
                 Return True
+            Case RibbonContareStergePlata
+                Return Not ContareEditing()   ' slice 04EF-01: while an invoice with payments is only looked at
             Case Else
                 Throw New ArgumentException($"Buton necunoscut al vederii Contări: {k_key}", NameOf(k_key))
         End Select
@@ -478,6 +523,10 @@ Partial Public Class FacturiCumparareView
                 Return Not _contareSalveaza AndAlso detalii.pgContare.PoateSalva
             Case RibbonContareRenunta
                 Return True
+            Case RibbonContareStergePlata
+                ' Only an order that is not locked (not in an OPME, not confirmed by a statement) can be deleted.
+                Dim k_pay As EFacturaContariPlataExistenta = detalii.pgContare.PlataAleasa
+                Return k_pay IsNot Nothing AndAlso k_pay.IdOP.HasValue AndAlso Not k_pay.Blocat
             Case RibbonContareAscunde
                 ' An invoice with accounting operations cannot be archived (the server refuses); one already archived can be taken out.
                 Return k_p IsNot Nothing AndAlso (_archived.ContainsKey(k_p.IdPrimita) OrElse (k_listed IsNot Nothing AndAlso k_listed.NrOperatii = 0))
@@ -495,6 +544,11 @@ Partial Public Class FacturiCumparareView
 
     ''' <summary>The tooltip of the button when it carries news: «Salvează» adds what the foot of the page used to say (the supplier, the warnings, the bookings). Empty = the designer's text stays.</summary>
     Public Function ContareRibbonTip(k_key As String) As String
+        If String.Equals(k_key, RibbonContareStergePlata, StringComparison.Ordinal) Then
+            Dim k_pay As EFacturaContariPlataExistenta = detalii.pgContare.PlataAleasa
+            If k_pay IsNot Nothing AndAlso k_pay.Blocat Then Return "Plata nu se mai poate șterge. " & k_pay.MotivBlocare
+            Return String.Empty
+        End If
         If Not String.Equals(k_key, RibbonContareSalveaza, StringComparison.Ordinal) Then Return String.Empty
         Dim k_details As String = detalii.pgContare.Detalii
         Return If(k_details.Length = 0, SalveazaTip, SalveazaTip & vbLf & vbLf & k_details)
@@ -525,6 +579,8 @@ Partial Public Class FacturiCumparareView
                     Dim k_invoice As EFacturaPrimita = k_p
                     AddHandler k_menu.ItemClicked, Sub(k_sender As Object, k_args As CustomPopupItemEventArgs) RunMenuAction(k_args.Item.Key, k_invoice)
                     k_menu.ShowBelow(k_anchor, k_rect)
+                Case RibbonContareStergePlata
+                    If ContareRibbonEnabled(k_key) Then DeletePayment()
                 Case RibbonContareAscunde
                     If k_p Is Nothing Then Return
                     RunMenuAction(If(_archived.ContainsKey(k_p.IdPrimita), MenuScoateArhiva, MenuArhiveaza), k_p)

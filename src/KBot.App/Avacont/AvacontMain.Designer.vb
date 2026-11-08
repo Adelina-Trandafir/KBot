@@ -95,6 +95,7 @@ Partial Class AvacontMain
         Dim KBotRibbonButton51 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton52 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton53 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonButton54 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim btnClasificatiiAdauga As New Controls.KBotRibbonButton()
         Dim btnParteneriSterge As New Controls.KBotRibbonButton()
         Dim btnParteneriRenunta As New Controls.KBotRibbonButton()
@@ -105,6 +106,7 @@ Partial Class AvacontMain
         Dim btnContareRenunta As New Controls.KBotRibbonButton()
         Dim btnContareSalveazaCa As New Controls.KBotRibbonButton()
         Dim btnContareAscunde As New Controls.KBotRibbonButton()
+        Dim btnContareStergePlata As New Controls.KBotRibbonButton()
         Dim KBotSidePanelSection1 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection2 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
         Dim KBotSidePanelSection3 As KBot.Controls.KBotSidePanelSection = New Controls.KBotSidePanelSection()
@@ -392,6 +394,13 @@ Partial Class AvacontMain
         btnContareAscunde.ToolTipText = "Pune factura aleasă în arhivă: dispare din arbore până alegi «Afișare facturi din arhivă». O factură cu operații contabile nu se poate ascunde."
         btnContareAscunde.Visible = False
         ribbon.RightGroup.Buttons.Add(btnContareAscunde)
+        btnContareStergePlata.Image = My.Resources.Resources.Everaldo_Crystal_Clear_Action_cancel_128_resized
+        btnContareStergePlata.Key = "ef_contare_sterge_plata"
+        btnContareStergePlata.Text = "Șterge plata"
+        btnContareStergePlata.ToolTipHeader = "Șterge plata"
+        btnContareStergePlata.ToolTipText = "Șterge plata aleasă în tabel împreună cu ordinul ei de plată. Nu merge dacă ordinul este într-un OPME sau este confirmat printr-un extras de cont."
+        btnContareStergePlata.Visible = False
+        ribbon.RightGroup.Buttons.Add(btnContareStergePlata)
         ribbon.SelectedTabIndex = 1
         ribbon.Size = New Size(1920, 184)
         ribbon.TabIndex = 1
@@ -423,8 +432,14 @@ Partial Class AvacontMain
         KBotRibbonButton40.Text = "Șabloane"
         KBotRibbonButton40.ToolTipHeader = "Șabloane"
         KBotRibbonButton40.ToolTipText = "Șabloanele operațiilor contabile: cu clasificație și diverse."
+        KBotRibbonButton54.Image = My.Resources.Resources.credit_card
+        KBotRibbonButton54.Key = "operatii_sabloane"
+        KBotRibbonButton54.Text = "Operații"
+        KBotRibbonButton54.ToolTipHeader = "Operații contabile"
+        KBotRibbonButton54.ToolTipText = "Introducerea operațiilor contabile: operații diverse (din șabloane) și facturi și plăți cu ordine de plată."
         KBotRibbonGroup1.Buttons.Add(KBotRibbonButton39)
         KBotRibbonGroup1.Buttons.Add(KBotRibbonButton40)
+        KBotRibbonGroup1.Buttons.Add(KBotRibbonButton54)
         KBotRibbonGroup1.Text = "Date"
         KBotRibbonButton15.Image = My.Resources.Resources.Folder_blue_24
         KBotRibbonButton15.Key = "jurnal"

@@ -219,6 +219,9 @@ Public Class AvacontMain
                 Case "sabloane"
                     ' Slice AV01-14 / AV01-16: the operation and salary templates, a modal window (KbotForm.Sabloane.vb).
                     _kbot.DeschideSabloane()
+                Case "operatii_sabloane"
+                    ' Slices AV02-03 / AV02-04: the posting window (operatii diverse, facturi si plati), a modal window (KbotForm.Operatii.vb).
+                    _kbot.DeschideOperatiiSabloane()
                 Case "efactura_vanzare", "efactura_cumparare", "efactura_vercon"
                     ' the ribbon key is the key of the macheta
                     _kbot.OpenRegistered(e.Key, Sub() _kbot.RunEFacturaCommand(e.Key))
@@ -230,7 +233,7 @@ Public Class AvacontMain
                     _kbot.RunEFacturaCommand(e.Key)
                 Case "ef_primite_sync"
                     RunPrimiteSync()
-                Case KeyContareAdauga, KeyContareSalveaza, KeyContareRenunta, KeyContareSalveazaCa, KeyContareAscunde
+                Case KeyContareAdauga, KeyContareSalveaza, KeyContareRenunta, KeyContareSalveazaCa, KeyContareAscunde, KeyContareStergePlata
                     ' Slice 03EF-02: the buttons of the view «Contari» of the received invoices window.
                     Dim k_contareBounds As Rectangle = ribbon.ButtonScreenBounds(e.Key)
                     TryCast(CurrentPage, FacturiCumparareForm)?.RunContareRibbon(e.Key, ribbon,
@@ -269,6 +272,7 @@ Public Class AvacontMain
     Friend Const KeyContareRenunta As String = FacturiCumparareView.RibbonContareRenunta
     Friend Const KeyContareSalveazaCa As String = FacturiCumparareView.RibbonContareSalveazaCa
     Friend Const KeyContareAscunde As String = FacturiCumparareView.RibbonContareAscunde
+    Friend Const KeyContareStergePlata As String = FacturiCumparareView.RibbonContareStergePlata   ' slice 04EF-01
     ' Slice 00EF-43: the two buttons of the received invoices window that talk to the Access e-invoice store (Access clients only).
     Private Const KeyAccessTrimite As String = "ef_access_trimite"
     Private Const KeyAccessPreia As String = "ef_access_preia"
@@ -544,14 +548,14 @@ Public Class AvacontMain
     Private Shared ReadOnly ViewGroupKeys As String() = {KeySumarParteneri,
         "rezervari_repara", "rezervari_grafic", "rezervari_adauga", "receptii_reface", "receptii_asociere", "ddf_repara_program",
         "notecab_trimite", "plan_cont_solduri", "plan_cont_excel", KeyReceptieActiune, KeyReceptieRezervare, KeyReceptieOrd,
-        KeyContareAdauga, KeyContareSalveaza, KeyContareRenunta, KeyContareSalveazaCa, KeyContareAscunde,
+        KeyContareAdauga, KeyContareSalveaza, KeyContareRenunta, KeyContareSalveazaCa, KeyContareAscunde, KeyContareStergePlata,
         "plati_leaga_ord", ClasificatiiBugetView.KeyAdd, "clasificatii_salveaza", "clasificatii_verifica", "clasificatii_access", "clasificatii_sterge",
         ParteneriForm.RibbonSterge, ParteneriForm.RibbonRenunta, ParteneriForm.RibbonAdauga, ParteneriForm.RibbonSalveaza}
 
     Private Shared Function IsContareKey(k_key As String) As Boolean
         Return String.Equals(k_key, KeyContareAdauga, StringComparison.Ordinal) OrElse String.Equals(k_key, KeyContareSalveaza, StringComparison.Ordinal) OrElse
                String.Equals(k_key, KeyContareRenunta, StringComparison.Ordinal) OrElse String.Equals(k_key, KeyContareSalveazaCa, StringComparison.Ordinal) OrElse
-               String.Equals(k_key, KeyContareAscunde, StringComparison.Ordinal)
+               String.Equals(k_key, KeyContareAscunde, StringComparison.Ordinal) OrElse String.Equals(k_key, KeyContareStergePlata, StringComparison.Ordinal)
     End Function
 
     Private Sub UpdateViewGroup()

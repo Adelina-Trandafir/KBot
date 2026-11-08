@@ -456,6 +456,13 @@ def _c_vercon_golire(conn, db, param):
     return wipe(conn, db, param, _block)
 
 
+def _c_avacont_golire(conn, db, param):
+    """AVACONT, WRITES, IRREVERSIBLE: empties every TZ_ table and EF_PrimiteOperatii of ONE unit database so the accounting data can be migrated again
+    (routes/admin_cli/avacont_wipe.py); the typed value must be the database name."""
+    from routes.admin_cli.avacont_wipe import wipe
+    return wipe(conn, db, param, _block)
+
+
 def _c_angajament_analiza(conn, db, param):
     """KBOT, read only: what deleting ONE angajament would remove, table by table, and what it would leave
     (routes/admin_cli/angajament_stergere.py); the button «Sterge angajamentul» of KBotAdmin runs the deletion after it."""
@@ -524,6 +531,10 @@ COMMANDS = {
     "vercon_golire": ("Golire VERCON (VC_ si trimiteri EF)", "Goleste TOATE tabelele VC_ ale bazei alese si tabelele EF_ de trimitere catre Vercon "
                       "(EF_PrimiteVercon*, EF_VERCON_*), ca baza sa poata fi migrata din nou. FX_, AD_, TZ_ si Parteneri nu se ating. "
                       "SCRIE si NU se poate anula; cere o baza anume si numele ei scris ca confirmare.", True, _c_vercon_golire),
+    "avacont_golire": ("Golire date contabile (TZ_ si legaturi EF)", "Goleste TOATE tabelele TZ_ ale bazei alese (note, documente, operatii, plan de conturi, "
+                       "solduri, jurnale, sabloane, subunitati, OP-uri, setari) si legaturile facturilor primite cu operatiile (EF_PrimiteOperatii), ca "
+                       "datele contabile sa poata fi migrate din nou. Parteneri, Clasificatii, FX_, AD_, VC_ si restul EF_ nu se ating. "
+                       "SCRIE si NU se poate anula; cere o baza anume si numele ei scris ca confirmare.", True, _c_avacont_golire),
     "angajament_analiza": ("Analiza stergere angajament (fara EF)", "Arata ce s-ar sterge pentru un cod de angajament, tabela cu tabela (indicatori, "
                            "istoric, documente de fundamentare, rezervari, receptii, plati, ordonantari, corectii de note CAB) si ce ramane (tabelele EF_, "
                            "Clasificatii, Parteneri...). Doar citire; cere o baza anume si codul. Stergerea se porneste din butonul «Sterge angajamentul» "
@@ -542,13 +553,14 @@ COMMAND_PARAMS = {
     "ddf_antete_repara": "Cod angajament",
     "receptii_lanturi_repara": "Cod angajament",
     "vercon_golire": "Numele bazei (confirmare)",
+    "avacont_golire": "Numele bazei (confirmare)",
     "angajament_analiza": "Cod angajament",
     "angajament_stergere": "Cod angajament",
 }
 
 # Commands restricted to one selected database (including database-wide VERCON checks).
 SINGLE_DB_COMMANDS = {"oi_semne_repara", "storno_preturi", "storno_preturi_repara", "ddf_antete", "ddf_antete_explica", "ddf_antete_repara",
-                     "receptii_lanturi", "receptii_lanturi_repara", "vercon_golire", "clasificatii_dubluri_repara", "angajament_analiza", "angajament_stergere"}
+                     "receptii_lanturi", "receptii_lanturi_repara", "vercon_golire", "avacont_golire", "clasificatii_dubluri_repara", "angajament_analiza", "angajament_stergere"}
 
 
 def cmd_commands(args):

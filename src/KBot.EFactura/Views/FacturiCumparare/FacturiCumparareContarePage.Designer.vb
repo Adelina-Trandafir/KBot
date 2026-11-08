@@ -423,6 +423,7 @@ Partial Class FacturiCumparareContarePage
         KBotDataColumn11.HeaderText = "Număr OP"
         KBotDataColumn11.HeaderTextAlign = Drawing.ContentAlignment.MiddleCenter
         KBotDataColumn11.Key = "nrop"
+        KBotDataColumn11.ReadOnly = True
         KBotDataColumn11.OptionGroup = Nothing
         KBotDataColumn11.TextAlign = Drawing.ContentAlignment.MiddleCenter
         KBotDataColumn12.AggregateFormatString = Nothing

@@ -103,9 +103,10 @@ End Class
 ''' <c>CreatedAt</c> takes the Access <c>DTQ</c>; the template (<c>IDA</c>) is not carried over, <c>IdSablon</c> stays empty.
 ''' </para>
 ''' <para>
-''' LAST STATEMENT: the invoices already migrated point (<c>EF_PrimiteOperatii.IdOperatie</c>) at the Access operation number; for the operations INSERTED by this run the number is
-''' replaced by the new <c>IdOper</c>, in one statement (a temporary table), matching the unit (<c>IdUnitate</c> = the Access unit). Not done when an operation made in K-BOT already exists
-''' (its number could be taken for an Access one) and never for operations that existed before the run, so a repeat does not touch the links again. Only the key of the link changes.
+''' LAST STATEMENT: the links of the invoices (<c>EF_PrimiteOperatii</c>) keep the Access operation number in their own column <c>IdOperatieAccess</c>; <c>IdOperatie</c> is the key of
+''' the operation (<c>TZ_Oper.IdOper</c>). The statement sets <c>IdOperatie</c> for every link that has an Access number, matching the operation by Access number + unit
+''' (<c>IdUnitate</c> = the Access unit of the subunit). It reads only <c>IdOperatieAccess</c>, so it is safe on every run and in any order with the import of the invoices, and K-BOT links
+''' (<c>IdOperatieAccess</c> NULL) are never touched. Needs <c>sql/00EF_66_primite_operatii_id_access.sql</c>.
 ''' </para>
 ''' </remarks>
 Friend NotInheritable Class AvcOperatiiStep
@@ -402,15 +403,8 @@ Friend NotInheritable Class AvcOperatiiStep
                                            $"«TZ_Oper» are deja {k_existing} operații. Se adaugă doar ce lipsește (după numerele din Access); nimic existent nu se modifică.", CInt(Math.Min(k_existing, Integer.MaxValue))))
             End If
             If AvcSql.TableExists(k_cn, k_db, "EF_PrimiteOperatii") Then
-                Using k_cmd As New MySqlCommand("SELECT COUNT(*) FROM `TZ_Oper` WHERE `IdOperatieAccess` IS NULL", k_cn)
-                    If Convert.ToInt64(k_cmd.ExecuteScalar(), CultureInfo.InvariantCulture) > 0 Then
-                        k_findings.Add(New Finding(AvcKinds.REZUMAT, FindingClass.Atentie, "EF_PrimiteOperatii", "IdOperatie",
-                                                   "Există deja operații făcute în K-BOT: legăturile facturilor migrate NU se actualizează (un număr nou ar putea fi luat drept număr din Access)."))
-                    Else
-                        k_findings.Add(New Finding(AvcKinds.REZUMAT, FindingClass.Informativ, "EF_PrimiteOperatii", "IdOperatie",
-                                                   "Ultima instrucțiune: legăturile facturilor migrate din «EF_PrimiteOperatii» primesc numerele noi ale operațiilor (se schimbă doar cheia legăturii)."))
-                    End If
-                End Using
+                k_findings.Add(New Finding(AvcKinds.REZUMAT, FindingClass.Informativ, "EF_PrimiteOperatii", "IdOperatie",
+                                           "Ultima instrucțiune: legăturile facturilor care au numărul din Access (IdOperatieAccess) primesc cheia operației noi (IdOperatie = TZ_Oper.IdOper); poate rula oricând, de câte ori."))
             End If
             Return k_findings
         Catch ex As Exception
@@ -458,13 +452,7 @@ Friend NotInheritable Class AvcOperatiiStep
             Dim k_ops As New HashSet(Of String)(StringComparer.Ordinal)
             ReadPairs(k_cn, k_transaction, "SELECT `IdDocument`, `IdOperatieAccess` FROM `TZ_Oper` WHERE `IdOperatieAccess` IS NOT NULL",
                       Sub(k_r) k_ops.Add(k_r.GetInt32(0).ToString(CultureInfo.InvariantCulture) & "|" & k_r.GetInt32(1).ToString(CultureInfo.InvariantCulture)))
-            Dim k_keptByKbot As Boolean
-            Using k_cmd As New MySqlCommand("SELECT COUNT(*) FROM `TZ_Oper` WHERE `IdOperatieAccess` IS NULL", k_cn, k_transaction)
-                k_keptByKbot = Convert.ToInt64(k_cmd.ExecuteScalar(), CultureInfo.InvariantCulture) > 0
-            End Using
-
             Dim k_count As New Dictionary(Of String, Integer)(StringComparer.Ordinal) From {{"TZ_NoteC", 0}, {"TZ_Documente", 0}, {"TZ_Oper", 0}, {"TZ_Debit", 0}, {"TZ_Credit", 0}}
-            Dim k_remap As New List(Of Tuple(Of Integer, Integer, Long))()
             Dim k_docsTotal As Integer = k_plan.DocumenteCount()
             Dim k_docsDone As Integer = 0
             For Each k_nota In k_plan.Note
@@ -506,7 +494,6 @@ Friend NotInheritable Class AvcOperatiiStep
                             {"Auto", Nb(k_op.Row.Auto)}, {"Platit", Nb(k_op.Row.Platit)}, {"IdOperatieAccess", k_op.Row.IdOperatie},
                             {"IdxAccess", If(k_op.Row.Idx.HasValue, CObj(k_op.Row.Idx.Value), Nothing)}, {"CreatedAt", k_created}})
                         k_count("TZ_Oper") += 1
-                        k_remap.Add(Tuple.Create(k_nota.IdUnitate, k_op.Row.IdOperatie, k_idOper))
                         For Each k_pair In {Tuple.Create("TZ_Debit", k_op.Debit), Tuple.Create("TZ_Credit", k_op.Credit)}
                             For Each k_line In k_pair.Item2
                                 InsertRow(k_cn, k_transaction, k_dump, k_pair.Item1, New Dictionary(Of String, Object)(StringComparer.Ordinal) From {
@@ -518,7 +505,7 @@ Friend NotInheritable Class AvcOperatiiStep
                     Next
                 Next
             Next
-            RemapInvoiceLinks(k_cn, k_transaction, k_dump, k_remap, k_keptByKbot, k_progress)
+            PointInvoiceLinks(k_cn, k_transaction, k_dump, k_progress)
             k_dump.FlushAll()
             k_progress.Report($"«TZ_Oper»: {k_count("TZ_NoteC")} note, {k_count("TZ_Documente")} documente, {k_count("TZ_Oper")} operații (confirmate la COMMIT).")
             Return Tables.Select(Function(k_t) New AvcWritten(k_t, k_count(k_t))).ToList()
@@ -530,34 +517,32 @@ Friend NotInheritable Class AvcOperatiiStep
         End Try
     End Function
 
-    ' The last statement: the migrated invoices point at the NEW operations. One statement over a temporary table, so no number is replaced twice
-    ' (an old number may equal a new one). Only the key of the link changes.
-    Private Shared Sub RemapInvoiceLinks(k_cn As MySqlConnection, k_transaction As MySqlTransaction, k_dump As SqlDumpWriter,
-                                         k_remap As List(Of Tuple(Of Integer, Integer, Long)), k_keptByKbot As Boolean, k_progress As IProgress(Of String))
-        If k_remap.Count = 0 Then Return
-        If k_keptByKbot OrElse Not AvcSql.TableExists(k_cn, k_cn.Database, "EF_PrimiteOperatii", k_transaction) Then
-            k_progress.Report("«EF_PrimiteOperatii»: legăturile facturilor nu s-au actualizat (există operații făcute în K-BOT sau tabelul lipsește).")
+    ' The last statement: EVERY link of an invoice that still holds only the Access number (IdOperatieAccess) gets the key of its operation (IdOperatie = TZ_Oper.IdOper).
+    ' The operation is found by Access number + unit (unique); the Access number stays in its own column, so the statement can run again and again: it never reads
+    ' IdOperatie as an Access number and no K-BOT link is ever touched (those have IdOperatieAccess NULL). Needs sql/00EF_66 (the column).
+    Private Shared Sub PointInvoiceLinks(k_cn As MySqlConnection, k_transaction As MySqlTransaction, k_dump As SqlDumpWriter, k_progress As IProgress(Of String))
+        If Not AvcSql.TableExists(k_cn, k_cn.Database, "EF_PrimiteOperatii", k_transaction) Then
+            k_progress.Report("«EF_PrimiteOperatii»: tabelul lipsește, legăturile facturilor nu s-au actualizat.")
             Return
         End If
-        Dim k_create As String = "CREATE TEMPORARY TABLE `tmp_av_remap_oper` (`IdUnitate` INT NOT NULL, `Vechi` INT NOT NULL, `Nou` INT NOT NULL)"
-        k_dump.WriteStatement("EF_PrimiteOperatii", k_create)
-        Using k_cmd As New MySqlCommand(k_create, k_cn, k_transaction)
-            k_cmd.ExecuteNonQuery()
+        Dim k_hasColumn As Boolean
+        Using k_cmd As New MySqlCommand("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'EF_PrimiteOperatii' AND COLUMN_NAME = 'IdOperatieAccess'", k_cn, k_transaction)
+            k_hasColumn = Convert.ToInt64(k_cmd.ExecuteScalar(), CultureInfo.InvariantCulture) > 0
         End Using
-        For Each k_item In k_remap
-            InsertRow(k_cn, k_transaction, k_dump, "tmp_av_remap_oper", New Dictionary(Of String, Object)(StringComparer.Ordinal) From {
-                {"IdUnitate", k_item.Item1}, {"Vechi", k_item.Item2}, {"Nou", CInt(k_item.Item3)}})
-        Next
-        Dim k_update As String = "UPDATE `EF_PrimiteOperatii` e JOIN `tmp_av_remap_oper` m ON e.`IdOperatie` = m.`Vechi` AND e.`IdUnitate` = m.`IdUnitate` SET e.`IdOperatie` = m.`Nou`"
+        If Not k_hasColumn Then
+            k_progress.Report("«EF_PrimiteOperatii»: lipsește coloana «IdOperatieAccess» (rulați sql/00EF_66_primite_operatii_id_access.sql); legăturile facturilor nu s-au actualizat.")
+            Return
+        End If
+        Dim k_update As String = "UPDATE `EF_PrimiteOperatii` e JOIN (SELECT o.`IdOper`, o.`IdOperatieAccess`, s.`IdUnitateAccess` FROM `TZ_Oper` o " &
+            "JOIN `TZ_Documente` d ON d.`IdDocument` = o.`IdDocument` JOIN `TZ_NoteC` n ON n.`IdNota` = d.`IdNota` JOIN `TZ_Subunitati` s ON s.`IdSubunitate` = n.`IdSubunitate` " &
+            "WHERE o.`IdOperatieAccess` IS NOT NULL AND s.`IdUnitateAccess` IS NOT NULL) m ON e.`IdOperatieAccess` = m.`IdOperatieAccess` AND e.`IdUnitate` = m.`IdUnitateAccess` " &
+            "SET e.`IdOperatie` = m.`IdOper` WHERE e.`IdOperatie` <> m.`IdOper`"
         k_dump.WriteStatement("EF_PrimiteOperatii", k_update)
         Dim k_changed As Integer
         Using k_cmd As New MySqlCommand(k_update, k_cn, k_transaction)
             k_changed = k_cmd.ExecuteNonQuery()
         End Using
-        Using k_cmd As New MySqlCommand("DROP TEMPORARY TABLE `tmp_av_remap_oper`", k_cn, k_transaction)
-            k_cmd.ExecuteNonQuery()
-        End Using
-        k_progress.Report($"«EF_PrimiteOperatii»: {k_changed.ToString(CultureInfo.InvariantCulture)} legături de facturi trimise la operațiile noi.")
+        k_progress.Report($"«EF_PrimiteOperatii»: {k_changed.ToString(CultureInfo.InvariantCulture)} legături de facturi au primit cheia operației (IdOperatie = TZ_Oper.IdOper).")
     End Sub
 
 End Class

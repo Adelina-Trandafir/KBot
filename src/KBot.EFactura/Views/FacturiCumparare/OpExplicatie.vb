@@ -9,7 +9,7 @@ Imports System.Text
 ''' of the order reads a comma as «next field»: so the text is ASCII only and has NO comma anywhere, whatever the operator typed or pasted. The official limit of the
 ''' explanation is <see cref="MaxLength"/> characters; an empty one is refused (<see cref="MinLength"/>).
 ''' </summary>
-Friend NotInheritable Class OpExplicatie
+Public NotInheritable Class OpExplicatie
 
     ''' <summary>The shortest explanation an order of payment accepts.</summary>
     Public Const MinLength As Integer = 1

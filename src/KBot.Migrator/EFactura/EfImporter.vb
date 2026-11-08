@@ -105,8 +105,14 @@ Public NotInheritable Class EfImporter
         Dim accessReceived As OleDbConnection = Nothing
         Dim plans As New List(Of EfTablePlan)()
         Try
-            cnUnit = _options.Server.Open(_options.UnitDatabase)
-            If k_write Then txUnit = cnUnit.BeginTransaction()
+            If k_write AndAlso _options.ExternalConnection IsNot Nothing Then
+                cnUnit = _options.ExternalConnection
+                txUnit = _options.ExternalTransaction
+                If txUnit Is Nothing Then Throw New InvalidOperationException("Conexiunea externă are nevoie de tranzacția ei.")
+            Else
+                cnUnit = _options.Server.Open(_options.UnitDatabase)
+                If k_write Then txUnit = cnUnit.BeginTransaction()
+            End If
 
             Dim totalSteps As Integer = StepCount()
             _stepsDone = 0
@@ -142,7 +148,10 @@ Public NotInheritable Class EfImporter
                 k_token.ThrowIfCancellationRequested()
                 Dim source As OleDbConnection = If(IsReceivedTable(spec), accessReceived, accessIssued)
                 If source Is Nothing Then Continue For
+                Dim isLinks As Boolean = String.Equals(spec.TargetTable, "EF_PrimiteOperatii", StringComparison.Ordinal)
+                If isLinks Then ReportLinkRewrite(k_write, k_report, cnUnit, txUnit)
                 CopyTable(spec, source, k_write, k_report, cnUnit, txUnit, plans, totalSteps, k_token)
+                If isLinks AndAlso k_write AndAlso Not k_report.HasBlocking Then PointLinksAtOperations(cnUnit, txUnit)
             Next
 
             If _options.DoPrimite AndAlso accessReceived IsNot Nothing Then
@@ -164,21 +173,27 @@ Public NotInheritable Class EfImporter
                     Throw New InvalidOperationException(
                         "Importul a găsit date care nu se pot scrie (vezi constatările BLOCANTE din jurnal). Nu s-a scris nimic.")
                 End If
-                txUnit?.Commit()
-                If k_result IsNot Nothing Then k_result.Committed = True
+                If _options.ExternalConnection Is Nothing Then
+                    txUnit?.Commit()
+                    If k_result IsNot Nothing Then k_result.Committed = True
+                End If
             End If
         Catch
-            Try
-                txUnit?.Rollback()
-            Catch rollbackEx As Exception
-                GlobalErrorLog.Write("EfImporter.Pass.RollbackUnit", rollbackEx)
-            End Try
+            If _options.ExternalConnection Is Nothing Then
+                Try
+                    txUnit?.Rollback()
+                Catch rollbackEx As Exception
+                    GlobalErrorLog.Write("EfImporter.Pass.RollbackUnit", rollbackEx)
+                End Try
+            End If
             Throw
         Finally
             If accessIssued IsNot Nothing Then accessIssued.Dispose()
             If accessReceived IsNot Nothing Then accessReceived.Dispose()
-            If txUnit IsNot Nothing Then txUnit.Dispose()
-            If cnUnit IsNot Nothing Then cnUnit.Dispose()
+            If _options.ExternalConnection Is Nothing Then
+                If txUnit IsNot Nothing Then txUnit.Dispose()
+                If cnUnit IsNot Nothing Then cnUnit.Dispose()
+            End If
         End Try
     End Sub
 
@@ -661,7 +676,11 @@ Public NotInheritable Class EfImporter
         s.ExtraSourceColumns.Add("IdClsf")
         s.Columns.Add(Col("IdOperatiePrimita", "IDEFTO", EfKind.Whole, k_required:=True))
         s.Columns.Add(Col("IdPrimita", "IDEFT", EfKind.Whole, k_required:=True))
-        s.Columns.Add(Col("IdOperatie", "IdOperatie", EfKind.Whole, k_default:=0))
+        ' sql/00EF_66: IdOperatie is the key of the operation (TZ_Oper.IdOper), set after the copy; the number Access held goes to IdOperatieAccess.
+        s.Columns.Add(New EfColumn("IdOperatie", Nothing, EfKind.Whole) With {.Compute = Function(r As AccessTableReader) As Object
+                                                                                  Return 0
+                                                                              End Function})
+        s.Columns.Add(Col("IdOperatieAccess", "IdOperatie", EfKind.Whole, k_default:=0))
         s.Columns.Add(New EfColumn("IdClsf", Nothing, EfKind.Whole) With {
             .Compute = Function(r As AccessTableReader) As Object
                            Dim k_resolved = ResolveClassification(ToInt(r.ValueOrMissing("IdClsf")), ToInt(r.ValueOrMissing("IdUnitate")))
@@ -751,6 +770,57 @@ Public NotInheritable Class EfImporter
         s.Columns.Add(Col("DataMesaj", "Data", EfKind.DateAndTime))
         s.Columns.Add(Col("DataAdaugare", "DTQ", EfKind.DateAndTime))
         Return s
+    End Function
+
+    ' ---- the links of the invoices to their operations (EFT_O) ---------------------------------------------------
+
+    ''' <summary>
+    ''' EFT_O is rewritten COMPLETE on every run: the links that came from Access (IdOperatieAccess filled) are deleted and read again, so an operation deleted in Access
+    ''' leaves no link behind. Links made in K-BOT (IdOperatieAccess empty) stay. Needs sql/00EF_66.
+    ''' </summary>
+    Private Sub ReportLinkRewrite(k_write As Boolean, k_report As EfImportReport, k_cn As MySqlConnection, k_tx As MySqlTransaction)
+        If k_cn Is Nothing OrElse Not TableExists(k_cn, "EF_PrimiteOperatii", k_tx) Then Return
+        If Not ColumnExists(k_cn, "EF_PrimiteOperatii", "IdOperatieAccess", k_tx) Then
+            k_report.Add(EfSeverity.Blocking, "EF_PrimiteOperatii", "Lipsește coloana «IdOperatieAccess». Rulați scriptul sql/00EF_66_primite_operatii_id_access.sql și sincronizați schema.")
+            Return
+        End If
+        Dim existing As Long
+        Using cmd As New MySqlCommand("SELECT COUNT(*) FROM `EF_PrimiteOperatii` WHERE `IdOperatieAccess` IS NOT NULL", k_cn, k_tx)
+            existing = Convert.ToInt64(cmd.ExecuteScalar(), CultureInfo.InvariantCulture)
+        End Using
+        k_report.Add(EfSeverity.Info, "EF_PrimiteOperatii", $"Legăturile din Access ({existing} existente) se rescriu complet; cele făcute în K-BOT rămân.")
+        If Not k_write Then Return
+        Using cmd As New MySqlCommand("DELETE FROM `EF_PrimiteOperatii` WHERE `IdOperatieAccess` IS NOT NULL", k_cn, k_tx)
+            cmd.ExecuteNonQuery()
+        End Using
+    End Sub
+
+    ''' <summary>
+    ''' After the copy: every link that has an Access number gets the key of its operation (IdOperatie = TZ_Oper.IdOper; the operation is found by Access number + unit).
+    ''' Without the TZ_ tables (operations not migrated yet) the links stay at 0 and the migration of the operations sets them.
+    ''' </summary>
+    Private Sub PointLinksAtOperations(k_cn As MySqlConnection, k_tx As MySqlTransaction)
+        For Each table In {"TZ_Oper", "TZ_Documente", "TZ_NoteC", "TZ_Subunitati"}
+            If Not TableExists(k_cn, table, k_tx) Then
+                _say("EF_PrimiteOperatii: operațiile contabile nu sunt migrate încă; legăturile se leagă la migrarea operațiilor.")
+                Return
+            End If
+        Next
+        Using cmd As New MySqlCommand(
+            "UPDATE `EF_PrimiteOperatii` e JOIN (SELECT o.`IdOper`, o.`IdOperatieAccess`, s.`IdUnitateAccess` FROM `TZ_Oper` o " &
+            "JOIN `TZ_Documente` d ON d.`IdDocument` = o.`IdDocument` JOIN `TZ_NoteC` n ON n.`IdNota` = d.`IdNota` JOIN `TZ_Subunitati` s ON s.`IdSubunitate` = n.`IdSubunitate` " &
+            "WHERE o.`IdOperatieAccess` IS NOT NULL AND s.`IdUnitateAccess` IS NOT NULL) m ON e.`IdOperatieAccess` = m.`IdOperatieAccess` AND e.`IdUnitate` = m.`IdUnitateAccess` " &
+            "SET e.`IdOperatie` = m.`IdOper` WHERE e.`IdOperatie` <> m.`IdOper`", k_cn, k_tx)
+            _say($"EF_PrimiteOperatii: {cmd.ExecuteNonQuery().ToString(CultureInfo.InvariantCulture)} legături au primit cheia operației (IdOperatie = TZ_Oper.IdOper).")
+        End Using
+    End Sub
+
+    Private Shared Function ColumnExists(k_cn As MySqlConnection, k_table As String, k_column As String, k_tx As MySqlTransaction) As Boolean
+        Using cmd As New MySqlCommand("SELECT COUNT(*) FROM information_schema.COLUMNS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = @t AND COLUMN_NAME = @c", k_cn, k_tx)
+            cmd.Parameters.AddWithValue("@t", k_table)
+            cmd.Parameters.AddWithValue("@c", k_column)
+            Return Convert.ToInt64(cmd.ExecuteScalar(), CultureInfo.InvariantCulture) > 0
+        End Using
     End Function
 
     ' ---- copying one table ------------------------------------------------------------------------------------

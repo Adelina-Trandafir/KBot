@@ -183,8 +183,9 @@ def preia(dc, mesaje):
     rezultat = _rezultat()
     with F._unit(dc, SQL_FILES) as conn:
         cursor = conn.cursor(dictionary=True)
-        tables = _unit_cursor_tables(cursor, ("EF_PrimiteOperatii", "Clasificatii"))
-        context = {"cu_operatii": "EF_PrimiteOperatii" in tables, "clasificatii": None, "cursor": cursor}
+        tables = _unit_cursor_tables(cursor, ("EF_PrimiteOperatii", "Clasificatii", "TZ_Oper", "TZ_Documente", "TZ_NoteC", "TZ_Subunitati"))
+        context = {"cu_operatii": "EF_PrimiteOperatii" in tables, "clasificatii": None, "cursor": cursor,
+                   "cu_oper_tz": all(t in tables for t in ("TZ_Oper", "TZ_Documente", "TZ_NoteC", "TZ_Subunitati"))}
         if not context["cu_operatii"]:
             _problema(rezultat, "Tabelul EF_PrimiteOperatii lipsește: operațiunile contabile din Access nu se preiau.")
         for mesaj in mesaje:
@@ -333,10 +334,20 @@ def _operatii(context, id_primita, operatii, rezultat):
                                     "Clasificații (trebuie exact una); nu s-a preluat.")
                 continue
             id_clsf = found[0]
+        # The Access operation number goes in its own column (IdOperatieAccess); IdOperatie is the key of TZ_Oper (IdOper). When the operation is already
+        # migrated it is set now (an Access operation is unique by unit + number); otherwise 0, and the migration of the operations sets it.
+        acces = _whole(op.get("IdOperatie"), 0)
+        id_oper = 0
+        if acces and unit and context["cu_oper_tz"]:
+            cursor.execute("SELECT o.IdOper FROM TZ_Oper o JOIN TZ_Documente d ON d.IdDocument = o.IdDocument JOIN TZ_NoteC n ON n.IdNota = d.IdNota "
+                           "JOIN TZ_Subunitati s ON s.IdSubunitate = n.IdSubunitate WHERE o.IdOperatieAccess = %s AND s.IdUnitateAccess = %s", (acces, unit))
+            gasite = cursor.fetchall()
+            if len(gasite) == 1:
+                id_oper = gasite[0]["IdOper"]
         cursor.execute(
-            "INSERT INTO EF_PrimiteOperatii (IdOperatiePrimita, IdPrimita, IdOperatie, IdClsf, IdUnitate, Sursa, Suma, DataAdaugare) "
-            "VALUES (%s, %s, %s, %s, %s, %s, %s, COALESCE(%s, NOW()))",
-            (id_op, id_primita, _whole(op.get("IdOperatie"), 0), id_clsf, unit or None, _text(op.get("Sursa"), 255),
+            "INSERT INTO EF_PrimiteOperatii (IdOperatiePrimita, IdPrimita, IdOperatie, IdOperatieAccess, IdClsf, IdUnitate, Sursa, Suma, DataAdaugare) "
+            "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, COALESCE(%s, NOW()))",
+            (id_op, id_primita, id_oper, acces or None, id_clsf, unit or None, _text(op.get("Sursa"), 255),
              _amount(op.get("Suma")), _datetime(op.get("DataAdaugare"))))
         rezultat["operatii"] += 1
 

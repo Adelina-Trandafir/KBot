@@ -3,8 +3,7 @@
 01EF-02: the CALCULATION of the «Contari» of received e-invoices (the accounting half of the Access form EFACTURA_2025 with its subforms EF_F and EF_P).
 NOTHING IS WRITTEN HERE. The operator ticks invoices of ONE supplier, the server answers what Access kept in its work tables tmpFacturi / tmpDoc2017P:
 the evidence rows, the payment row, the templates that fit the classification, the codes of the partner and the warnings; and, from the chosen
-templates, the debit / credit lines each booking would produce. The save (documents, operations, debit, credit, notes, order of payment) is 01EF-04/05:
-it needs the posting tables of AVACONT stage 2, which do not exist yet.
+templates, the debit / credit lines each booking would produce. The save (documents, operations, debit, credit, notes) is 01EF-04; the payment and its order (OP) are 04EF-01 (primite_plata.py).
 
 Rules taken from Access (verified in EFACTURA_2025 / EF_F / EF_P / QEF_EV / QEF_Plata / SAV_*), with the FOREXE part of Access left out on purpose
 (operator rule 31.10.2026) and without any link to receptions (the «Contari» has nothing to do with them):
@@ -19,6 +18,7 @@ The role only decides `poate_scrie`; reading is open to every session.
 import logging
 import re
 from contextlib import contextmanager
+from datetime import date
 from decimal import Decimal
 
 from . import facturi as F
@@ -30,6 +30,7 @@ logger = logging.getLogger(__name__)
 
 CONTARI_SQL = "sql/00EF_27_primite_operatii.sql, sql/AV01_14_sablon_operatii.sql, sql/00EF_55_furnizor_partener.sql"
 MAX_FACTURI = 200
+MODURI = ("evidentiere", "plata", "ambele")
 MIN_EXPLICATIE_OP = 1
 MAX_EXPLICATIE_OP = 75   # the official limit of the explanation of an order of payment
 
@@ -217,9 +218,13 @@ def calcul(dc, body, role, conn=None, interne=None, blocheaza=False, fara_plata=
     The save (01EF-04) calls it with its own connection (`conn`), `blocheaza` (the invoices are locked), `fara_plata` (no payment template, no payment warnings) and an
     `interne` dict that receives the objects it needs (invoices, exact rests, partner, classification, subunit, dates)."""
     ids = _ids(body.get("ids"))
+    mod = body.get("mod") or "evidentiere"   # 04EF-01: evidentiere | plata | ambele
+    if mod not in MODURI:
+        raise EfEroare("Câmpul «mod» nu este valid.", "CAMP_INVALID", 400)
+    protectie = bool(body.get("protectie"))   # the tick «Protectie contari Plati/Receptii» of the operator (Setari > Aplicatie)
     id_clsf = _opt_int(body, "idClsf")
     id_e = _opt_int(body, "idSablonE")
-    id_p = None if fara_plata else _opt_int(body, "idSablonP")
+    id_p = None if (fara_plata or mod == "evidentiere") else _opt_int(body, "idSablonP")
     an = _opt_int(body, "an")
     platit_cerut = body.get("platit") or {}
     if not isinstance(platit_cerut, dict):
@@ -228,6 +233,8 @@ def calcul(dc, body, role, conn=None, interne=None, blocheaza=False, fara_plata=
         cursor = conn.cursor(dictionary=True)
         facturi = _facturi(cursor, ids, blocheaza)
         salvat = _salvat(cursor, ids)
+        from routes.avacont.introducere_date.operatii import plati
+        rest_plata = plati.rest_de_plata(cursor, ids) if mod != "evidentiere" else {}
         cui = (facturi[0]["CuiNormalizat"] or "").strip()
         # The partner is found by TAX CODE ONLY (hidden ones too): the one named in the body (`idPartener`), else the one kept for the code, else the only one;
         # several and none kept: None and the operator chooses.
@@ -265,12 +272,23 @@ def calcul(dc, body, role, conn=None, interne=None, blocheaza=False, fara_plata=
             ramas = total - salvat.get(r["IdPrimita"], Decimal(0))
             ramas_exacte[r["IdPrimita"]] = ramas
             cerut = platit_cerut.get(str(r["IdPrimita"]))
-            platit = _dec(cerut) if cerut is not None else ramas
-            if (ramas >= 0 and (platit < 0 or platit > ramas)) or (ramas < 0 and (platit > 0 or platit < ramas)):
-                raise EfEroare("Suma plătită a facturii %s nu poate depăși valoarea rămasă de înregistrat (%s)." % (r["NrFact"], _num(ramas)),
-                               "PLATA_PESTE_RAMAS", 400)
-            if ramas == 0:
+            if mod == "evidentiere":
+                limita = ramas   # old behaviour: the amount is bounded by what is left to evidence
+            else:
+                # a payment is bounded by what is evidenced and not paid yet; with the combined save also by what this save evidences
+                limita = rest_plata[r["IdPrimita"]] + (ramas if mod == "ambele" else Decimal(0))
+            platit = _dec(cerut) if cerut is not None else limita
+            if (limita >= 0 and (platit < 0 or platit > limita)) or (limita < 0 and (platit > 0 or platit < limita)):
+                raise EfEroare("Suma plătită a facturii %s nu poate depăși %s (%s)." % (r["NrFact"], "valoarea rămasă de înregistrat" if mod == "evidentiere" else "restul de plată", _num(limita)),
+                               "PLATA_PESTE_RAMAS" if mod == "evidentiere" else "PLATA_PESTE_REST", 400)
+            if mod == "evidentiere" and ramas == 0:
                 avertismente.append({"Cod": "FACTURA_COMPLETA", "Grav": "eroare", "Text": "Factura %s este deja înregistrată integral." % r["NrFact"]})
+            if mod != "evidentiere" and limita == 0:
+                avertismente.append({"Cod": "FACTURA_ACHITATA", "Grav": "eroare", "Text": "Factura %s nu mai are rest de plată." % r["NrFact"]})
+            if mod != "evidentiere" and platit != 0 and not plati.are_receptie(cursor, r["IdPrimita"]):
+                # 04EF-01: the factura has no reception. Tick OFF (2026 default): a warning only; tick ON: the payment is refused (the evidence stays possible)
+                avertismente.append({"Cod": "RECEPTIE_LIPSA", "Grav": "eroare" if protectie else "atentie",
+                                     "Text": "Factura %s nu are o recepție activă asociată%s." % (r["NrFact"], ". Plata nu se poate salva" if protectie else "")})
             if r["Tip"] == "NC":
                 avertismente.append({"Cod": "NOTA_CREDIT", "Grav": "confirmare",
                                      "Text": "Atenție! Rândul %s reprezintă o notă de credit, nu o factură!" % r["NrFact"]})
@@ -278,7 +296,8 @@ def calcul(dc, body, role, conn=None, interne=None, blocheaza=False, fara_plata=
                 avertismente.append({"Cod": "ALT_AN", "Grav": "confirmare", "Text": "Atenție! Factura %s este din alt an decât cel curent!" % r["NrFact"]})
             evidenta.append({"IdPrimita": r["IdPrimita"], "NrFact": r["NrFact"], "NumarDocument": numar_document(r["NrFact"]),
                              "DataDocument": _iso(r["DataFact"]), "FelDocument": "Notă credit" if r["Tip"] == "NC" else "Factură",
-                             "Total": _num(total), "Salvat": _num(salvat.get(r["IdPrimita"], Decimal(0))), "Suma": _num(ramas), "Platit": _num(platit)})
+                             "Total": _num(total), "Salvat": _num(salvat.get(r["IdPrimita"], Decimal(0))), "Suma": _num(ramas), "Platit": _num(platit),
+                             "RestPlata": _num(rest_plata[r["IdPrimita"]]) if mod != "evidentiere" else None})
             total_platit += platit
             if platit != 0:
                 numere.append(numar_document(r["NrFact"]))
@@ -302,7 +321,7 @@ def calcul(dc, body, role, conn=None, interne=None, blocheaza=False, fara_plata=
                 raise EfEroare("Șablonul de evidențiere ales nu se potrivește clasificației.", "SABLON_INVALID", 409)
             if id_p and id_p not in valid_p:
                 raise EfEroare("Șablonul de plată ales nu se potrivește clasificației.", "SABLON_INVALID", 409)
-            if id_e is None and len(sabloane_e) == 1:
+            if id_e is None and len(sabloane_e) == 1 and mod != "plata":   # a payment alone has no evidence template (the operator took it off)
                 id_e = sabloane_e[0]["IdSablon"]
             # The payment template is NEVER taken for the operator (01EF-07): the order of payment exists only when a payment operation is chosen.
             coduri = _coduri(cursor, (partener or {}).get("IdPartener"), clsf["IdClsf"])
@@ -325,6 +344,8 @@ def calcul(dc, body, role, conn=None, interne=None, blocheaza=False, fara_plata=
                     continue
                 nume.update(_parti(cursor, linii))
                 if suma_de is None:
+                    if mod == "plata":
+                        continue
                     for e in evidenta:
                         if e["Suma"] != 0:
                             operatii.append(dict(_operatie("%s · %s" % (eticheta, e["NrFact"]), linii, _dec(e["Suma"]), partener, nume), Faza="E",
@@ -368,6 +389,9 @@ def calcul(dc, body, role, conn=None, interne=None, blocheaza=False, fara_plata=
         explicatie = " ".join(x for x in ["F " + " ".join(numere) if numere else "", fel_op] if x)
         explicatie = text_op(explicatie, MAX_EXPLICATIE_OP)
         data_minima = max((f["DataFact"] for f in facturi if f["DataFact"] is not None), default=None)
+        numar_op = None
+        if id_p and total_platit != 0 and subunitate is not None:
+            numar_op = plati.numar_op_urmator(cursor, subunitate["IdSubunitate"])   # PROVISIONAL: the real number comes back from the save
         rezultat = {
             "poate_scrie": (role or "").strip().lower() == primite_ke.ROL_CONTABIL.lower(),
             "furnizor": {"Cui": cui, "Denumire": facturi[0]["DenumireP"] or "", "Partener": partener, "Parteneri": candidati},
@@ -378,14 +402,16 @@ def calcul(dc, body, role, conn=None, interne=None, blocheaza=False, fara_plata=
             "subunitate": ({"IdSubunitate": subunitate["IdSubunitate"], "Denumire": subunitate["Denumire"]} if subunitate else None),
             "subunitati": [{"IdSubunitate": s["IdSubunitate"], "Denumire": s["Denumire"]} for s in subunitati],
             "note": note,
-            "sabloaneEvidentiere": sabloane_e, "sabloanePlata": sabloane_p, "idSablonE": id_e, "idSablonP": id_p,
+            "sabloaneEvidentiere": sabloane_e, "sabloanePlata": sabloane_p, "idSablonE": id_e, "idSablonP": id_p, "mod": mod,
             "coduri": coduri, "contIban": cont_iban,
             "evidenta": evidenta,
-            "plata": {"Valoare": _num(total_platit), "ExplicatieOP": explicatie, "FelOP": fel_op, "NumarOP": None,
+            "plata": {"Valoare": _num(total_platit), "ExplicatieOP": explicatie, "FelOP": fel_op, "NumarOP": numar_op, "NumarOPProvizoriu": numar_op is not None,
                       "DataMinima": _iso(data_minima), "Activa": bool(id_p) and total_platit != 0},
             "operatii": operatii, "avertismente": avertismente}
         if interne is not None:
-            interne.update(facturi=facturi, ramas=ramas_exacte, partener=partener, clsf=clsf, id_e=id_e, subunitate=subunitate, date_doc=date_doc)
+            interne.update(facturi=facturi, ramas=ramas_exacte, partener=partener, clsf=clsf, id_e=id_e, id_p=id_p, subunitate=subunitate, date_doc=date_doc,
+                           platit={f["IdPrimita"]: _dec(e["Platit"]) for f, e in zip(facturi, evidenta)}, coduri=coduri, cont_iban=cont_iban,
+                           explicatie_op=explicatie, cui=cui, mod=mod)
         return rezultat
 
 
@@ -399,22 +425,32 @@ def _id_partener(mod, id_fix, partener):
 
 
 def salveaza(dc, body, role, user):
-    """Books the EVIDENCE of the ticked invoices through the posting service, in ONE transaction: one accounting note, a document per invoice, an operation per
-    template line with its debit and credit, and a row of EF_PrimiteOperatii that ties the operation to the invoice. The payment is 01EF-05.
-    body: the same fields as the calculation plus `confirmari` (the codes of the warnings the operator confirmed). Role «Contabil» only (checked here)."""
+    """Books, through the posting service and in ONE transaction, the EVIDENCE and/or the PAYMENT of the ticked invoices (`mod`: evidentiere | plata | ambele).
+    Evidence: one accounting note, a document per invoice, an operation per template line with its debit and credit, and a row of EF_PrimiteOperatii that ties the
+    operation to the invoice. Payment (04EF-01, primite_plata.py): one document «OP», one payment operation, one order of payment, the allocations on the invoices.
+    body: the same fields as the calculation plus `confirmari` (the codes of the warnings the operator confirmed) and, for a payment, `dataOP`, `explicatieOP`.
+    Role «Contabil» only (checked here)."""
     primite_ke.cere_contabil(role)
     from routes.avacont.introducere_date.operatii import postare
+    from . import primite_plata
     confirmari = body.get("confirmari") or []
     if not isinstance(confirmari, list) or any(not isinstance(c, str) for c in confirmari):
         raise EfEroare("Câmpul «confirmari» nu este valid.", "CAMP_INVALID", 400)
+    mod = body.get("mod") or "evidentiere"
+    if mod not in MODURI:
+        raise EfEroare("Câmpul «mod» nu este valid.", "CAMP_INVALID", 400)
+    cu_evidenta, cu_plata = mod != "plata", mod != "evidentiere"
     an = _opt_int(body, "an")
     numar_cerut = _opt_int(body, "numarNC")
+    data_op = primite_plata.data_ordin(body) if cu_plata else None
     with F._unit(dc, CONTARI_SQL) as conn:
         interne = {}
-        r = calcul(dc, body, role, conn=conn, interne=interne, blocheaza=True, fara_plata=True)
-        clsf, id_e, sub = interne.get("clsf"), interne.get("id_e"), interne.get("subunitate")
-        if clsf is None or not id_e:
+        r = calcul(dc, body, role, conn=conn, interne=interne, blocheaza=True, fara_plata=not cu_plata)
+        clsf, id_e, id_p, sub = interne.get("clsf"), interne.get("id_e"), interne.get("id_p"), interne.get("subunitate")
+        if clsf is None or (cu_evidenta and not id_e):
             raise EfEroare("Alegeți clasificația și șablonul de evidențiere.", "ALEGERE_INCOMPLETA", 400)
+        if cu_plata and not id_p:
+            raise EfEroare("Alegeți șablonul de plată.", "ALEGERE_INCOMPLETA", 400)
         for a in r["avertismente"]:
             if a["Grav"] == "eroare":
                 raise EfEroare(a["Text"], "AVERTISMENT_BLOCANT", 409)
@@ -423,21 +459,22 @@ def salveaza(dc, body, role, user):
             err = EfEroare("Confirmați avertismentele înainte de salvare.", "CONFIRMARE_NECESARA", 409)
             err.extra = {"confirmari_necesare": [{"Cod": a["Cod"], "Text": a["Text"]} for a in necesare]}
             raise err
-        randuri = [(f, interne["ramas"][f["IdPrimita"]]) for f in interne["facturi"] if primite_ke._cent(interne["ramas"][f["IdPrimita"]]) != 0]
-        if not randuri or sub is None:
-            raise EfEroare("Nimic de înregistrat: facturile alese sunt deja înregistrate integral.", "NIMIC_DE_INREGISTRAT", 409)
+        randuri = [(f, interne["ramas"][f["IdPrimita"]]) for f in interne["facturi"] if primite_ke._cent(interne["ramas"][f["IdPrimita"]]) != 0] if cu_evidenta else []
+        platite = [(f, interne["platit"][f["IdPrimita"]]) for f in interne["facturi"] if interne["platit"][f["IdPrimita"]] != 0] if cu_plata else []
+        if sub is None or (mod == "evidentiere" and not randuri) or (mod == "plata" and not platite) or (mod == "ambele" and not randuri and not platite):
+            raise EfEroare("Nimic de înregistrat: facturile alese sunt deja înregistrate integral." if not cu_plata
+                           else "Nimic de plătit: nicio factură aleasă nu are sumă de plată.", "NIMIC_DE_INREGISTRAT", 409)
+        cursor = conn.cursor(dictionary=True)
         ani = {interne["date_doc"][f["IdPrimita"]].year for f, _ in randuri}
+        if cu_plata:
+            inchidere = postare.data_ultimei_inchideri(cursor, sub["IdSubunitate"], data_op.year)
+            data_op, _motiv = postare.ajusteaza_data(data_op, inchidere, None)   # a closed month moves the payment to the 1st of the next one
+            ani.add(data_op.year)
         an_nota = an or max(ani)
         if ani - {an_nota}:
-            raise EfEroare("Data unui document iese din anul de lucru (%d). Alegeți alt an sau corectați data facturii." % an_nota, "AN_DIFERIT", 409)
-        cursor = conn.cursor(dictionary=True)
+            raise EfEroare("Data unui document iese din anul de lucru (%d). Alegeți alt an sau corectați data facturii/plății." % an_nota, "AN_DIFERIT", 409)
+        operatii, plata = [], None
         try:
-            cursor.execute("SELECT IdJurnal, Explicatie, Compartiment FROM TZ_SablonOperatii WHERE IdSablon = %s", (id_e,))
-            sablon = cursor.fetchone()
-            linii = _linii_sablon(cursor, id_e, clsf["Forma"])
-            if sablon is None or not linii:
-                raise postare.PostareEroare("Șablonul de evidențiere nu are linie pentru forma %s a clasificației." % clsf["Forma"], "SABLON_FARA_LINIE")
-            linie = linii[0]   # a template has at most one line per form (the window allows no more), or one line valid for every form
             sid = sub["IdSubunitate"]
             # the note the operator chose: an existing one takes the new documents, a number not used yet makes a new note with that number, none = the next number
             id_nota = postare.nota_existenta(cursor, sid, an_nota, numar_cerut) if numar_cerut else None
@@ -445,33 +482,51 @@ def salveaza(dc, body, role, user):
                 numar_nota = numar_cerut
             else:
                 id_nota, numar_nota = postare.creeaza_nota(cursor, sid, an_nota, user, numar_cerut)
-            cursor.execute("SELECT COALESCE(MAX(IdOperatiePrimita), 0) AS M FROM EF_PrimiteOperatii FOR UPDATE")
-            urmator = int(cursor.fetchone()["M"]) + 1
             partener = interne["partener"]
-            activeaza_partener(cursor, partener["IdPartener"])   # the partner the evidence is booked for enters the flow (not hidden) and is kept for the tax code, in this transaction
+            activeaza_partener(cursor, partener["IdPartener"])   # the partner the booking is made for enters the flow (not hidden) and is kept for the tax code, in this transaction
             leaga_partener(cursor, interne["facturi"][0]["CuiNormalizat"], partener["IdPartener"], user)
-            operatii = []
-            for f, ramas in randuri:
-                suma = primite_ke._cent(ramas)
-                data = interne["date_doc"][f["IdPrimita"]]
-                id_doc = postare.creeaza_document(cursor, id_nota, numar_document(f["NrFact"]), data, "Notă credit" if f["Tip"] == "NC" else "Factură", "E", True, user)
-                cont_d = postare.cont_pentru(cursor, sid, linie["ContDebit"], linie["AnaliticDebit"], clsf["ClsfF"], clsf["ClsfE"])
-                cont_c = postare.cont_pentru(cursor, sid, linie["ContCredit"], linie["AnaliticCredit"], clsf["ClsfF"], clsf["ClsfE"])
-                antet = {"IdJurnal": sablon["IdJurnal"], "IdClsf": clsf["IdClsf"], "IdSablon": id_e, "DataOperatie": data, "Explicatie": sablon["Explicatie"], "Tip": "E",
-                         "Compartiment": sablon["Compartiment"], "Angajament": linie["PA"], "Propunere": linie["PA"], "Ordonantare": linie["Ordonantare"],
-                         "Chelt": linie["Chelt"], "Auto": True}
-                id_oper, nr_ang = postare.creeaza_operatie(
-                    cursor, sid, an_nota, id_doc, antet,
-                    [(cont_d, _id_partener(linie["PartDebitMod"], linie["IdPartDebit"], partener), suma)],
-                    [(cont_c, _id_partener(linie["PartCreditMod"], linie["IdPartCredit"], partener), suma)], user)
-                cursor.execute("INSERT INTO EF_PrimiteOperatii (IdOperatiePrimita, IdPrimita, IdOperatie, IdClsf, IdUnitate, Sursa, Suma) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                               (urmator, f["IdPrimita"], id_oper, clsf["IdClsf"], clsf["IdUnitate"], clsf["SS"], suma))
-                urmator += 1
-                operatii.append({"IdPrimita": f["IdPrimita"], "IdDocument": id_doc, "IdOper": id_oper, "NrAng": nr_ang})
+            if randuri:
+                cursor.execute("SELECT IdJurnal, Explicatie, Compartiment FROM TZ_SablonOperatii WHERE IdSablon = %s", (id_e,))
+                sablon = cursor.fetchone()
+                linii = _linii_sablon(cursor, id_e, clsf["Forma"])
+                if sablon is None or not linii:
+                    raise postare.PostareEroare("Șablonul de evidențiere nu are linie pentru forma %s a clasificației." % clsf["Forma"], "SABLON_FARA_LINIE")
+                linie = linii[0]   # a template has at most one line per form (the window allows no more), or one line valid for every form
+                cursor.execute("SELECT COALESCE(MAX(IdOperatiePrimita), 0) AS M FROM EF_PrimiteOperatii FOR UPDATE")
+                urmator = int(cursor.fetchone()["M"]) + 1
+                for f, ramas in randuri:
+                    suma = primite_ke._cent(ramas)
+                    data = interne["date_doc"][f["IdPrimita"]]
+                    id_doc = postare.creeaza_document(cursor, id_nota, numar_document(f["NrFact"]), data, "Notă credit" if f["Tip"] == "NC" else "Factură", "E", True, user)
+                    cont_d = postare.cont_pentru(cursor, sid, linie["ContDebit"], linie["AnaliticDebit"], clsf["ClsfF"], clsf["ClsfE"])
+                    cont_c = postare.cont_pentru(cursor, sid, linie["ContCredit"], linie["AnaliticCredit"], clsf["ClsfF"], clsf["ClsfE"])
+                    antet = {"IdJurnal": sablon["IdJurnal"], "IdClsf": clsf["IdClsf"], "IdSablon": id_e, "DataOperatie": data, "Explicatie": sablon["Explicatie"], "Tip": "E",
+                             "Compartiment": sablon["Compartiment"], "Angajament": linie["PA"], "Propunere": linie["PA"], "Ordonantare": linie["Ordonantare"],
+                             "Chelt": linie["Chelt"], "Auto": True}
+                    id_oper, nr_ang = postare.creeaza_operatie(
+                        cursor, sid, an_nota, id_doc, antet,
+                        [(cont_d, _id_partener(linie["PartDebitMod"], linie["IdPartDebit"], partener), suma)],
+                        [(cont_c, _id_partener(linie["PartCreditMod"], linie["IdPartCredit"], partener), suma)], user)
+                    cursor.execute("INSERT INTO EF_PrimiteOperatii (IdOperatiePrimita, IdPrimita, IdOperatie, IdClsf, IdUnitate, Sursa, Suma) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                                   (urmator, f["IdPrimita"], id_oper, clsf["IdClsf"], clsf["IdUnitate"], clsf["SS"], suma))
+                    urmator += 1
+                    operatii.append({"IdPrimita": f["IdPrimita"], "IdDocument": id_doc, "IdOper": id_oper, "NrAng": nr_ang})
+            if platite:
+                cursor.execute("SELECT IdJurnal, Explicatie, Compartiment FROM TZ_SablonOperatii WHERE IdSablon = %s", (id_p,))
+                sablon_p = cursor.fetchone()
+                linii_p = _linii_sablon(cursor, id_p, clsf["Forma"])
+                if sablon_p is None or not linii_p:
+                    raise postare.PostareEroare("Șablonul de plată nu are linie pentru forma %s a clasificației." % clsf["Forma"], "SABLON_FARA_LINIE")
+                cerut = body.get("explicatieOP")
+                explicatie = cerut if isinstance(cerut, str) and cerut.strip() else interne["explicatie_op"]
+                plata = primite_plata.posteaza(cursor, dc, user, {
+                    "clsf": clsf, "partener": partener, "sid": sid, "an_nota": an_nota, "id_nota": id_nota, "data_op": data_op, "id_p": id_p, "linie_p": linii_p[0],
+                    "sablon_p": sablon_p, "explicatie_op": explicatie, "cont_iban": interne["cont_iban"], "coduri": interne["coduri"], "cui": interne["cui"],
+                    "facturi_platite": platite})
         except postare.PostareEroare as err:
             raise EfEroare(str(err), err.reason, err.status) from err
         conn.commit()
-    return {"IdNota": id_nota, "NumarNC": numar_nota, "An": an_nota, "Subunitate": sub["Denumire"], "Operatii": operatii}
+    return {"IdNota": id_nota, "NumarNC": numar_nota, "An": an_nota, "Subunitate": sub["Denumire"], "Operatii": operatii, "Plata": plata}
 
 
 # ---------------------------------------------------------------------------------------------
@@ -480,30 +535,32 @@ def salveaza(dc, body, role, user):
 def existente(dc, id_primita, conn=None):
     """The accounting operations an invoice already has (EF_PrimiteOperatii -> TZ_Oper -> document -> note), to show them on the page «Contari» when the
     invoice is clicked: the classification, the templates that fit it (the one used is flagged) and one row per operation, evidence (`Faza` E) or payment (P).
-    An operation made in K-BOT is found by TZ_Oper.IdOper, a migrated one by TZ_Oper.IdOperatieAccess. Read-only: reading is open to every session."""
+    The operation of a link is TZ_Oper.IdOper = EF_PrimiteOperatii.IdOperatie, for K-BOT and migrated links alike. Read-only: reading is open to every session."""
     with _conexiune(dc, conn) as conn:
         cursor = conn.cursor(dictionary=True)
         cursor.execute("SELECT IdPrimita, NrFact, DataFact, Total, Semn, Tip FROM EF_Primite WHERE IdPrimita = %s", (id_primita,))
         factura = cursor.fetchone()
         if factura is None:
             raise EfEroare("Factura nu mai există.", "FACTURA_INEXISTENTA", 404)
-        cursor.execute(
-            "SELECT e.IdOperatiePrimita, e.Suma AS SumaEf, o.IdOper, o.IdSablon, o.Explicatie, o.Tip AS TipOp, o.DataOperatie, COALESCE(o.IdClsf, e.IdClsf) AS IdClsf, "
-            "c.Clsf, c.Denumire AS DenClsf, c.ClsfX, c.SS, d.NumarDocument, d.DataDocument, d.FelDocument, d.Fel AS FelDoc, n.NumarNC, n.DataNc, n.IdSubunitate, s.Denumire AS Subunitate "
-            "FROM EF_PrimiteOperatii e "
-            "LEFT JOIN TZ_Oper o ON (o.IdOperatieAccess = e.IdOperatie) OR (o.IdOperatieAccess IS NULL AND o.IdOper = e.IdOperatie) "
-            "LEFT JOIN TZ_Documente d ON d.IdDocument = o.IdDocument LEFT JOIN TZ_NoteC n ON n.IdNota = d.IdNota "
-            "LEFT JOIN TZ_Subunitati s ON s.IdSubunitate = n.IdSubunitate LEFT JOIN Clasificatii c ON c.IDClsf = COALESCE(o.IdClsf, e.IdClsf) "
-            "WHERE e.IdPrimita = %s ORDER BY o.DataOperatie, e.IdOperatiePrimita", (id_primita,))
-        randuri = cursor.fetchall()
-        operatii = []
-        for r in randuri:
-            plata = (r["FelDoc"] == "P") or (r["TipOp"] == "P")
-            operatii.append({"IdOperatiePrimita": r["IdOperatiePrimita"], "Faza": "P" if plata else "E", "Suma": _num(_dec(r["SumaEf"])),
-                             "IdSablon": r["IdSablon"], "Explicatie": r["Explicatie"] or "", "NumarDocument": r["NumarDocument"] or "",
-                             "DataDocument": _iso(r["DataDocument"] or r["DataOperatie"]), "FelDocument": r["FelDocument"] or "",
-                             "NumarNC": r["NumarNC"], "DataNc": _iso(r["DataNc"]), "Subunitate": r["Subunitate"] or ""})
-        prima = next((r for r in randuri if r["IdClsf"] is not None), None)
+        # what the page shows is what is saved: the link EF_PrimiteOperatii.IdOperatie = TZ_Oper.IdOper and the document / note of that operation. A link with no
+        # operation under its key is sent as it is (empty fields, an explanation that says so).
+        from routes.avacont.introducere_date.operatii import plati as plati_modul
+        legate = plati_modul.operatii_legate(cursor, [id_primita])[id_primita]
+        operatii, prima = [], None
+        for rand in sorted(legate, key=lambda x: ((x["Oper"] or {}).get("DataOperatie") or date.max, x["Legatura"]["IdOperatiePrimita"])):
+            e, o = rand["Legatura"], rand["Oper"]
+            if o is None:
+                operatii.append({"IdOperatiePrimita": e["IdOperatiePrimita"], "Faza": "E", "Suma": _num(_dec(e["Suma"])), "IdSablon": None,
+                                 "Explicatie": "Legătura facturii nu are operație contabilă în TZ_Oper (IdOperatie %s)." % e["IdOperatie"], "NumarDocument": "", "DataDocument": None,
+                                 "FelDocument": "", "NumarNC": None, "DataNc": None, "Subunitate": "", "Gasita": False})
+                continue
+            plata = (o["FelDoc"] == "P") or (o["TipOp"] == "P")
+            operatii.append({"IdOperatiePrimita": e["IdOperatiePrimita"], "Faza": "P" if plata else "E", "Suma": _num(_dec(e["Suma"])),
+                             "IdSablon": o["IdSablon"], "Explicatie": o["Explicatie"] or "", "NumarDocument": o["NumarDocument"] or "",
+                             "DataDocument": _iso(o["DataDocument"] or o["DataOperatie"]), "FelDocument": o["FelDocument"] or "",
+                             "NumarNC": o["NumarNC"], "DataNc": _iso(o["DataNc"]), "Subunitate": o["Subunitate"] or ""})
+            if prima is None and (o["IdClsfOp"] or e["IdClsf"]) is not None:
+                prima = {"IdClsf": o["IdClsfOp"] or e["IdClsf"], "Clsf": o["Clsf"], "DenClsf": o["DenClsf"], "ClsfX": o["ClsfX"], "SS": o["SS"], "IdSubunitate": o["IdSubunitate"]}
         clasificatie, sabloane_e, sabloane_p = None, [], []
         if prima is not None:
             clasificatie = {"IdClsf": prima["IdClsf"], "Clsf": prima["Clsf"] or "", "Denumire": prima["DenClsf"] or "", "Forma": "", "AlePartenerului": False}
@@ -511,7 +568,18 @@ def existente(dc, id_primita, conn=None):
             if slot is not None:
                 sabloane_e, sabloane_p = slot["E"], slot["P"]
         semn = int(factura["Semn"] or 1)
-        return {"factura": {"IdPrimita": id_primita, "NrFact": factura["NrFact"], "NumarDocument": numar_document(factura["NrFact"]),
+        # 04EF-01: the payments already made on the invoice, each with its order and whether the order is still open to change
+        from routes.avacont.introducere_date.operatii import plati
+        cursor.execute("SELECT a.IdOP, a.IdPlata, a.Platit, a.DataPlata, p.NrOP, p.Explicatie, n.NumarNC FROM TZ_PlatiFacturi a "
+                       "LEFT JOIN TZ_OPuri p ON p.IdOP = a.IdOP LEFT JOIN TZ_Oper po ON po.IdOper = a.IdPlata LEFT JOIN TZ_Documente pd ON pd.IdDocument = po.IdDocument "
+                       "LEFT JOIN TZ_NoteC n ON n.IdNota = pd.IdNota WHERE a.IdPrimita = %s ORDER BY a.DataPlata, a.IdAlocare", (id_primita,))
+        plati_facturii = []
+        for a in cursor.fetchall():
+            motiv = plati.motiv_blocare(cursor, a["IdOP"]) if a["IdOP"] is not None else None
+            plati_facturii.append({"IdOP": a["IdOP"], "IdPlata": a["IdPlata"], "NrOP": a["NrOP"], "Platit": _num(_dec(a["Platit"])), "DataPlata": _iso(a["DataPlata"]), "Explicatie": a["Explicatie"] or "", "NumarNC": a["NumarNC"],
+                                   "Blocat": motiv is not None, "MotivBlocare": motiv or ""})
+        rest = plati.rest_de_plata(cursor, [id_primita])[id_primita]
+        return {"plati": plati_facturii, "restPlata": _num(rest), "factura": {"IdPrimita": id_primita, "NrFact": factura["NrFact"], "NumarDocument": numar_document(factura["NrFact"]),
                             "DataFact": _iso(factura["DataFact"]), "FelDocument": "Notă credit" if factura["Tip"] == "NC" else "Factură",
                             "Total": _num(_dec(factura["Total"]) * semn)},
                 "clasificatie": clasificatie, "sabloaneEvidentiere": sabloane_e, "sabloanePlata": sabloane_p, "operatii": operatii}

@@ -28,6 +28,18 @@ Public NotInheritable Class EFacturaContariCerere
 
     ''' <summary>The partner chosen when several have the supplier's tax code (Nothing = the server uses the only one, or answers that a choice is needed).</summary>
     Public Property IdPartener As Integer?
+
+    ''' <summary>Slice 04EF-01: what is booked -- «evidentiere» (the default), «plata» or «ambele».</summary>
+    Public Property [Mod] As String = "evidentiere"
+
+    ''' <summary>Slice 04EF-01: the tick «Protectie contari Plati/Receptii» of the operator: a missing reception then blocks the payment (without it, it only warns).</summary>
+    Public Property Protectie As Boolean
+
+    ''' <summary>Slice 04EF-01 (the save only): the date of the payment and of its order; Nothing = today.</summary>
+    Public Property DataOP As Date?
+
+    ''' <summary>Slice 04EF-01 (the save only): the explanation of the order of payment as the operator left it; Nothing = the server's composition.</summary>
+    Public Property ExplicatieOP As String
 End Class
 
 ''' <summary>A subunit of the booking.</summary>
@@ -43,6 +55,15 @@ Public NotInheritable Class EFacturaContariNota
     Public Property Documente As Integer
 End Class
 
+''' <summary>Slice 04EF-01 -- the payment the server booked: the order of payment with its REAL number (the one shown before saving was only provisional).</summary>
+Public NotInheritable Class EFacturaContariPlataSalvata
+    Public Property IdOper As Integer
+    Public Property IdOP As Integer
+    Public Property NrOP As Integer
+    Public Property Valoare As Decimal
+    Public Property DataOP As Date?
+End Class
+
 ''' <summary>What the server booked (slice 01EF-04).</summary>
 Public NotInheritable Class EFacturaContariSalvat
     Public Property IdNota As Integer
@@ -50,6 +71,9 @@ Public NotInheritable Class EFacturaContariSalvat
     Public Property An As Integer
     Public Property Subunitate As String = String.Empty
     Public Property NrOperatii As Integer
+
+    ''' <summary>Slice 04EF-01: the payment and its order, when the save made one; Nothing for an evidence-only save.</summary>
+    Public Property Plata As EFacturaContariPlataSalvata
 End Class
 
 ''' <summary>A classification a template fits.</summary>
@@ -86,8 +110,11 @@ Public NotInheritable Class EFacturaContariRand
     ''' <summary>Left to book (negative for a credit note).</summary>
     Public Property Suma As Decimal
 
-    ''' <summary>The value to pay; never above <see cref="Suma"/>.</summary>
+    ''' <summary>The value to pay; never above <see cref="Suma"/> (evidence only) or the rest to pay (a payment).</summary>
     Public Property Platit As Decimal
+
+    ''' <summary>Slice 04EF-01: what is evidenced on the invoice and not yet paid; Nothing while only the evidence is booked.</summary>
+    Public Property RestPlata As Decimal?
 End Class
 
 ''' <summary>The payment row (Access EF_P).</summary>
@@ -98,8 +125,11 @@ Public NotInheritable Class EFacturaContariPlata
     ''' <summary>The «kind of invoice» of the chosen payment template (<c>FelOP</c>; empty when the template has none): it ends the explanation of the order.</summary>
     Public Property FelOP As String = String.Empty
 
-    ''' <summary>The next free number of an order of payment; Nothing while the table of orders does not exist yet (01EF-05), the operator then types it.</summary>
+    ''' <summary>The number the order of payment would get now (highest + 1 by the setting PlajaComunaOPuri). Slice 04EF-01: it is only PROVISIONAL, the server gives the real one on save.</summary>
     Public Property NumarOP As Integer?
+
+    ''' <summary>True when <see cref="NumarOP"/> is a provisional number (the cell says so in its tooltip).</summary>
+    Public Property NumarOPProvizoriu As Boolean
 
     ''' <summary>The newest date of the invoices: the order of payment cannot be older.</summary>
     Public Property DataMinima As Date?
@@ -156,6 +186,9 @@ Public NotInheritable Class EFacturaContariRaspuns
     Public ReadOnly Property SabloanePlata As New List(Of EFacturaContariSablon)()
     Public Property IdSablonE As Integer?
     Public Property IdSablonP As Integer?
+
+    ''' <summary>Slice 04EF-01: the mode the server calculated for -- «evidentiere», «plata» or «ambele».</summary>
+    Public Property [Mod] As String = "evidentiere"
     Public Property CodAng As String = String.Empty
     Public Property CodInd As String = String.Empty
     Public Property ContIban As String = String.Empty
@@ -178,6 +211,24 @@ Public NotInheritable Class EFacturaContariExistenta
     Public Property FelDocument As String = String.Empty
     Public Property NumarNC As Integer?
     Public Property Subunitate As String = String.Empty
+
+    ''' <summary>False = no TZ_Oper row under the key of the link (the figures of the row are only the amount of the link).</summary>
+    Public Property Gasita As Boolean = True
+End Class
+
+''' <summary>Slice 04EF-01 -- a payment already made on an invoice, with its order and whether the order can still be changed.</summary>
+Public NotInheritable Class EFacturaContariPlataExistenta
+    Public Property IdOP As Integer?
+    Public Property IdPlata As Integer
+    Public Property NrOP As Integer?
+    Public Property Platit As Decimal
+    Public Property DataPlata As Date?
+    Public Property Explicatie As String = String.Empty
+    Public Property NumarNC As Integer?
+
+    ''' <summary>The order sits in an OPME or a bank statement confirms it: neither the payment nor the order can be edited or deleted.</summary>
+    Public Property Blocat As Boolean
+    Public Property MotivBlocare As String = String.Empty
 End Class
 
 ''' <summary>Slice 03EF-13 -- what is already booked for one invoice, to show on the page «Contari» when the invoice is clicked.</summary>
@@ -194,4 +245,8 @@ Public NotInheritable Class EFacturaContariExistente
     Public ReadOnly Property SabloaneEvidentiere As New List(Of EFacturaContariSablon)()
     Public ReadOnly Property SabloanePlata As New List(Of EFacturaContariSablon)()
     Public ReadOnly Property Operatii As New List(Of EFacturaContariExistenta)()
+
+    ''' <summary>Slice 04EF-01: the payments of the invoice and what is left to pay.</summary>
+    Public ReadOnly Property Plati As New List(Of EFacturaContariPlataExistenta)()
+    Public Property RestPlata As Decimal
 End Class

@@ -1,4 +1,5 @@
 Imports System.Globalization
+Imports MySqlConnector
 
 ''' <summary>How serious one finding of the E-Factura import is.</summary>
 Public Enum EfSeverity
@@ -140,6 +141,13 @@ Public NotInheritable Class EfImportOptions
     Public Property ReceivedFile As String = String.Empty
     ''' <summary>The unit's tax code. Selects the received messages that belong to this unit.</summary>
     Public Property UnitCui As String = String.Empty
+
+    ''' <summary>
+    ''' Set by AVC.Migrator (its step «E-Factura»): the importer then writes on THIS connection and transaction and neither commits, rolls back nor closes them (the runner does).
+    ''' Both Nothing (the default) = the importer opens its own connection and commits itself.
+    ''' </summary>
+    Public Property ExternalConnection As MySqlConnection
+    Public Property ExternalTransaction As MySqlTransaction
 
     Public Property DoFurnizor As Boolean
     Public Property DoClienti As Boolean
