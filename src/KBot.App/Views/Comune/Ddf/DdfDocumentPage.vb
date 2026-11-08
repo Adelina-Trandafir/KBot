@@ -129,7 +129,7 @@ Public Class DdfDocumentPage
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
 
-            BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
 
             previewPdf.ApplyTheme(scheme)
         Catch ex As Exception

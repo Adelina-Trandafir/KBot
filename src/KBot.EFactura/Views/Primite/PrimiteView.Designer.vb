@@ -61,7 +61,6 @@ Partial Class PrimiteView
         ' 
         ' tree
         ' 
-        tree.BorderColor = Drawing.SystemColors.ActiveBorder
         tree.CollapseButtonTooltip ="Strânge arborele la o bandă îngustă." & vbLf & "Rândurile se citesc atunci prin eticheta care iese la survolare."
         tree.Dock = System.Windows.Forms.DockStyle.Fill
         tree.DynamicColumns = False

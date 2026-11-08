@@ -65,7 +65,6 @@ Partial Class XmlViz
         tree.HeaderFont = New System.Drawing.Font("Calibri", 9.0!, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
         tree.HeaderForeColor = Drawing.Color.Black
         tree.HeaderHeight = 30
-        tree.HeaderSeparatorColor = Drawing.Color.Gainsboro
         tree.HeaderSeparatorWidth = 2
         tree.HeaderVisible = True
         tree.Indent = 8

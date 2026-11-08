@@ -18,7 +18,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.14.2.6</FileVersion>
+    <FileVersion>1.14.2.8</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -111,6 +111,23 @@
     </EmbeddedResource>
     <Compile Update="Views\Receptii\KeAngajamenteView.Designer.vb;Views\Receptii\KeAngajamenteView.Fill.vb;Views\Receptii\KeAngajamenteView.Grid.vb;Views\Receptii\KeAngajamenteView.Link.vb;Views\Receptii\KeAngajamenteView.Load.vb">
       <DependentUpon>KeAngajamenteView.vb</DependentUpon>
+    </Compile>
+  </ItemGroup>
+  <!-- Safety net: a .resx with two dots (Class.Part.resx) is never a real resource here; Visual Studio creates one when a partial file is double-clicked, and it would clash with Class.resx (MSB3577). -->
+  <ItemGroup>
+    <EmbeddedResource Remove="**\*.*.resx" />
+  </ItemGroup>
+  <!-- Partial files are plain code: SubType Code stops Visual Studio opening the designer on them (a double-click there creates a stray .resx, and two .resx for one class break the build with MSB3577). -->
+  <ItemGroup>
+    <Compile Update="FacturiForm.Arbore.vb;FacturiForm.Client.vb;FacturiForm.Furnizor.vb;FacturiForm.Linii.vb;FacturiForm.Pagini.vb;FacturiForm.Pdf.vb;FacturiForm.Trimitere.vb;Forms\VerconForm.Tutorial.vb">
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Views\Primite\PrimiteView.Access.vb;Views\Primite\PrimiteView.Contare.vb;Views\Primite\PrimiteView.Lista.vb;Views\Primite\PrimiteView.RecepArbore.vb;Views\Primite\PrimiteView.Receptii.vb">
+      <DependentUpon>PrimiteView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Views\Receptii\KeReceptiiView.Amounts.vb;Views\Receptii\KeReceptiiView.Angajamente.vb;Views\Receptii\KeReceptiiView.Commit.vb;Views\Receptii\KeReceptiiView.Invoices.vb;Views\Receptii\KeReceptiiView.Lines.vb;Views\Receptii\KeReceptiiView.Receptii.vb;Views\Receptii\KeReceptiiView.Ribbon.vb;Views\Receptii\KeReceptiiView.Viewing.vb;Views\Receptii\KeAngajamenteView.Fill.vb;Views\Receptii\KeAngajamenteView.Grid.vb;Views\Receptii\KeAngajamenteView.Link.vb;Views\Receptii\KeAngajamenteView.Load.vb">
+      <SubType>Code</SubType>
     </Compile>
   </ItemGroup>
 </Project>

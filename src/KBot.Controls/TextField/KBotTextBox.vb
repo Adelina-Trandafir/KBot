@@ -736,7 +736,7 @@ Public NotInheritable Class KBotTextBox
             Dim p As ThemePalette = scheme.Palette
             _fundalTema = p.InputBackColor
             _textTema = p.InputTextColor
-            _chenarTema = p.InputBorderColor
+            _chenarTema = scheme.OuterBorder(p.InputBorderColor)   ' SLICE-0130
             _chenarFocusTema = p.AccentColor
             _inner.PlaceholderColor = p.DisabledTextColor
             AplicaFundalTema()
@@ -745,6 +745,7 @@ Public NotInheritable Class KBotTextBox
             ' tematizat de mână (banc de probă, previzualizare).
             _vBar.ApplyTheme(scheme)
             _hBar.ApplyTheme(scheme)
+            ClipInnerToFrame()      ' the scheme's corner radius may have changed
             Invalidate()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotTextBox.ApplyTheme", ex)
@@ -761,6 +762,17 @@ Public NotInheritable Class KBotTextBox
             MyBase.ForeColor = _textTema
             _inner.ForeColor = _textTema
         End If
+    End Sub
+
+    ' The corners outside the arc show the PARENT's colour (ThemeShapes.BackdropColor); when the page
+    ' behind changes colour (theme switch, surface role applied after the traversal) the box must repaint.
+    Protected Overrides Sub OnParentBackColorChanged(e As EventArgs)
+        MyBase.OnParentBackColorChanged(e)
+        Try
+            Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotTextBox.OnParentBackColorChanged", ex)
+        End Try
     End Sub
 
     ' ═══ Așezare ═════════════════════════════════════════════════════════════
@@ -827,6 +839,7 @@ Public NotInheritable Class KBotTextBox
             Dim sus As Integer = zona.Y + Math.Max(0, (inaltimeText - _inner.Height) \ 2)
             _inner.SetBounds(zona.X, sus, latimeText, _inner.Height)
         End If
+        ClipInnerToFrame()
 
         If cuV Then
             Dim sus As Integer = cadru.Y + aerV.Top
@@ -838,6 +851,34 @@ Public NotInheritable Class KBotTextBox
             Dim dreapta As Integer = If(cuV, cadru.Right - bandaV, cadru.Right - aerH.Right)
             _hBar.SetBounds(stanga, cadru.Bottom - aerH.Bottom - grosime, Math.Max(0, dreapta - stanga), grosime)
         End If
+    End Sub
+
+    ''' <summary>
+    ''' The inner editor is a real TextBox: a rectangle, opaque. On a multiline box it fills the whole interior, so its square
+    ''' corners sit ON TOP of the rounded frame (white squares poking out of the arc). A control cannot be rounded from inside,
+    ''' so its window is cut with a rounded region: the frame's own rounded interior, one pixel smaller than the outline's inner
+    ''' edge. The cut edge is not anti-aliased, but it cannot show -- the frame paints the same white fill right under it.
+    ''' </summary>
+    Private Sub ClipInnerToFrame()
+        Try
+            Dim k_radius As Integer = ThemeShapes.CornerRadiusPx(Me, _raza)
+            Dim k_edge As Integer = ChenarRezervat() + 1
+            Dim k_arc As Integer = k_radius - k_edge
+            If k_arc <= 0 OrElse _inner.Width <= 0 OrElse _inner.Height <= 0 Then
+                If _inner.Region IsNot Nothing Then _inner.Region = Nothing
+                Return
+            End If
+            ' The rounded interior, in the inner box's own coordinates.
+            Dim k_hole As New RectangleF(k_edge - _inner.Left, k_edge - _inner.Top,
+                                         Width - 2.0F * k_edge, Height - 2.0F * k_edge)
+            Using k_path As GraphicsPath = ThemeShapes.RoundedRectF(k_hole, k_arc)
+                Dim k_region As New Region(New Rectangle(0, 0, _inner.Width, _inner.Height))
+                k_region.Intersect(k_path)
+                _inner.Region = k_region
+            End Using
+        Catch ex As Exception
+            If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotTextBox.ClipInnerToFrame", ex)
+        End Try
     End Sub
 
     ' Inner box and scrollbars are placed by RefaLayout from the frame's own size; scaling them
@@ -909,20 +950,24 @@ Public NotInheritable Class KBotTextBox
     Protected Overrides Sub OnPaint(e As PaintEventArgs)
         Try
             Dim g As Graphics = e.Graphics
+            ' The default background pass filled the WHOLE rectangle with BackColor; the corners
+            ' outside the arc must show what is behind the box, not the box's own colour.
+            g.Clear(ThemeShapes.BackdropColor(Me))
             g.SmoothingMode = SmoothingMode.AntiAlias
 
             Dim grosime As Integer = ThemeShapes.ScaleDpi(Me, If(_areFocus, _grosimeChenarFocus, _grosimeChenar))
             Dim raza As Integer = ThemeShapes.CornerRadiusPx(Me, _raza)
 
-            ' Conturul se desenează PE mijlocul liniei, deci cadrul se strânge cu jumătate de
-            ' grosime ca să nu iasă din control.
-            Dim jum As Integer = Math.Max(0, (grosime - 1) \ 2)
-            Dim zona As New Rectangle(jum, jum,
-                                      Math.Max(0, Width - 1 - 2 * jum),
-                                      Math.Max(0, Height - 1 - 2 * jum))
+            ' The outline is drawn ON the middle of the line, so the frame is inset by half the
+            ' stroke, on half pixels (ThemeShapes.FrameBounds): the line fills whole pixels
+            ' instead of two rows at ~50% (a doubled, washed outline, worst on the corners).
+            ' PixelOffsetMode.Half: pixel centres on half-integers, so the line fills whole pixels
+            ' and the corner arc keeps the weight of the sides.
+            g.PixelOffsetMode = PixelOffsetMode.Half
+            Dim zona As RectangleF = ThemeShapes.FrameBounds(Size, grosime)
             If zona.Width <= 0 OrElse zona.Height <= 0 Then Return
 
-            Using cale As GraphicsPath = ThemeShapes.RoundedRect(zona, raza)
+            Using cale As GraphicsPath = ThemeShapes.RoundedRectF(zona, raza)
                 Using b As New SolidBrush(BackColor)
                     g.FillPath(b, cale)
                 End Using

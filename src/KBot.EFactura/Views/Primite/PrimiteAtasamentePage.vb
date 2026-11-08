@@ -16,7 +16,7 @@ Public Class PrimiteAtasamentePage
     Public Sub ApplyTheme(k_scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try
             If k_scheme Is Nothing Then Return
-            BackColor = k_scheme.Palette.SurfaceAltColor
+            BackColor = k_scheme.PanelBack()
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteAtasamentePage.ApplyTheme", ex)
         End Try

@@ -67,7 +67,7 @@ Public Class VanzarePdfPage
     Public Sub ApplyTheme(k_scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try
             If k_scheme Is Nothing Then Return
-            BackColor = k_scheme.Palette.SurfaceAltColor
+            BackColor = k_scheme.PanelBack()
             lblNota.ForeColor = k_scheme.Palette.TextDimColor
         Catch ex As Exception
             GlobalErrorLog.Write("VanzarePdfPage.ApplyTheme", ex)

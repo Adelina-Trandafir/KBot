@@ -210,10 +210,10 @@ Public Class DdfPartnersView
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            tlyRoot.BackColor = p.SurfaceAltColor
-            tlyPick.BackColor = p.SurfaceAltColor
-            tlyBottom.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tlyRoot.BackColor = scheme.PanelBack()
+            tlyPick.BackColor = scheme.PanelBack()
+            tlyBottom.BackColor = scheme.PanelBack()
             lblPick.ForeColor = p.TextDimColor
             lblPick.BackColor = Color.Transparent
             lblState.ForeColor = p.TextDimColor

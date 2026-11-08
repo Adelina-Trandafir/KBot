@@ -706,13 +706,13 @@ Public Class NoteCabView
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            split.BackColor = p.SurfaceAltColor
-            split.Panel1.BackColor = p.SurfaceAltColor
-            split.Panel2.BackColor = p.SurfaceAltColor
-            pnlPages.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            split.BackColor = scheme.PanelBack()
+            split.Panel1.BackColor = scheme.PanelBack()
+            split.Panel2.BackColor = scheme.PanelBack()
+            pnlPages.BackColor = scheme.PanelBack()
             lblEmpty.ForeColor = p.TextDimColor
-            lblEmpty.BackColor = p.SurfaceAltColor
+            lblEmpty.BackColor = scheme.PanelBack()
             For Each page As ICabNotePage In _pages.Values
                 TryCast(page, IThemedControl)?.ApplyTheme(scheme)
             Next

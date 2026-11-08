@@ -375,9 +375,9 @@ Public Class RobotQueueForm
             BackColor = p.BorderColor
 
             lblCurent.ForeColor = p.TextColor
-            lblCurent.BackColor = p.SurfaceAltColor
+            lblCurent.BackColor = scheme.PanelBack()
             lblInCoada.ForeColor = p.TextColor
-            lblInCoada.BackColor = p.SurfaceAltColor
+            lblInCoada.BackColor = scheme.PanelBack()
 
             ButtonStyles.ApplySecondary(btnPauza, scheme)
             ButtonStyles.ApplySecondary(btnGoleste, scheme)

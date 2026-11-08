@@ -526,13 +526,13 @@ Public Class OrdBeneficiariPage
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
 
-            BackColor = p.SurfaceAltColor
-            split.BackColor = p.SurfaceAltColor
-            split.Panel1.BackColor = p.SurfaceAltColor
-            split.Panel2.BackColor = p.SurfaceAltColor
-            tlyStanga.BackColor = p.SurfaceAltColor
-            tlyDreapta.BackColor = p.SurfaceAltColor
-            tlyAntetBene.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            split.BackColor = scheme.PanelBack()
+            split.Panel1.BackColor = scheme.PanelBack()
+            split.Panel2.BackColor = scheme.PanelBack()
+            tlyStanga.BackColor = scheme.PanelBack()
+            tlyDreapta.BackColor = scheme.PanelBack()
+            tlyAntetBene.BackColor = scheme.PanelBack()
 
             chkClsf.ForeColor = p.TextColor
             chkClsf.BackColor = Color.Transparent

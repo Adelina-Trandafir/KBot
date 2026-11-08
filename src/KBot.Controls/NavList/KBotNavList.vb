@@ -151,6 +151,22 @@ Public NotInheritable Class KBotNavList
     Private _badgeText As Color = SystemColors.GrayText
     Private _separatorColor As Color = SystemColors.ControlDark
 
+    ' 0128-02. Fundal: BackColor-ul pus de operator in designer castiga (conventia casei: ne-pus = din tema).
+    ' Sub o schema INTUNECATA tema bate preferinta (aceeasi regula ca la benzile KBotDataView).
+    Private _backPinned As Boolean
+    Private _themeBack As Color = SystemColors.Control
+    Private _backValue As Color
+    Private _schemeIsDark As Boolean
+
+    ' Bordura de subsol (muchia de jos a barei): aceeasi regula de culoare ca linia de subsol din
+    ' KBotDataView / AdvancedTreeControl -- Classic = ActiveBorder, Modern = accentul temei; orice alta
+    ' tema = InactiveBorder. Culoarea pusa in designer castiga peste tema.
+    Friend Const DefaultFooterBorderWidth As Integer = 2
+    Private _footerBorderVisible As Boolean = True
+    Private _footerBorderWidth As Integer = DefaultFooterBorderWidth     ' px logici
+    Private _footerBorderColorPinned As Color = Color.Empty
+    Private _themeFooterBorder As Color = SystemColors.InactiveBorder
+
     ' Font semibold pentru elementul selectat (derivat din fontul ambient).
     Private _semiboldFont As Font
 
@@ -608,6 +624,109 @@ Public NotInheritable Class KBotNavList
         End Set
     End Property
 
+    ' ── Fundal + bordura de subsol ─────────────────────────────────────────────
+
+    ''' <summary>
+    ''' Fundalul barei. Pus in designer = ramane (castiga peste tema); nepus = fundalul temei.
+    ''' Sub o schema intunecata tema bate preferinta, ca la benzile KBotDataView. Un control proaspat
+    ''' pus pe forma nu scrie nicio linie de BackColor.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Fundalul barei. Gol = fundalul din tema activa; o culoare pusa aici castiga (in afara schemelor intunecate).")>
+    Public Overrides Property BackColor As Color
+        Get
+            Return MyBase.BackColor
+        End Get
+        Set(value As Color)
+            _backPinned = True
+            _backValue = value
+            MyBase.BackColor = If(_schemeIsDark, _themeBack, value)
+            Invalidate()
+        End Set
+    End Property
+
+    Public Function ShouldSerializeBackColor() As Boolean
+        Return _backPinned
+    End Function
+
+    Public Overrides Sub ResetBackColor()
+        _backPinned = False
+        MyBase.BackColor = _themeBack
+        Invalidate()
+    End Sub
+
+    ''' <summary>
+    ''' Bordura de subsol: o linie pe muchia de jos a barei (sub butoane). False = fara linie si fara
+    ''' spatiul ei rezervat.
+    ''' </summary>
+    <Category("K-BOT: Footer")>
+    <Description("Afiseaza linia de subsol (muchia de jos a barei). Implicit True.")>
+    <DefaultValue(True)>
+    Public Property FooterBorderVisible As Boolean
+        Get
+            Return _footerBorderVisible
+        End Get
+        Set(value As Boolean)
+            If value = _footerBorderVisible Then Return
+            _footerBorderVisible = value
+            InvalidateLayout()
+        End Set
+    End Property
+
+    ''' <summary>Grosimea liniei de subsol, in pixeli LOGICI (la 96 dpi). Implicit 2; 0 = fara linie.</summary>
+    <Category("K-BOT: Footer")>
+    <Description("Grosimea liniei de subsol, in pixeli la 96 dpi. Implicit 2; 0 = fara linie.")>
+    <DefaultValue(DefaultFooterBorderWidth)>
+    Public Property FooterBorderWidth As Integer
+        Get
+            Return _footerBorderWidth
+        End Get
+        Set(value As Integer)
+            Dim clamped As Integer = Math.Max(0, value)
+            If clamped = _footerBorderWidth Then Return
+            _footerBorderWidth = clamped
+            InvalidateLayout()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Culoarea liniei de subsol. <c>Color.Empty</c> (implicit) = ca linia de subsol din KBotDataView /
+    ''' AdvancedTreeControl: Classic = ActiveBorder, Modern = accentul temei, orice alta tema = InactiveBorder.
+    ''' O culoare pusa aici castiga in orice schema.
+    ''' </summary>
+    <Category("K-BOT: Footer")>
+    <Description("Culoarea liniei de subsol. Gol = ca la grile: Classic ActiveBorder, Modern accentul temei, restul InactiveBorder.")>
+    Public Property FooterBorderColor As Color
+        Get
+            Return _footerBorderColorPinned
+        End Get
+        Set(value As Color)
+            If _footerBorderColorPinned = value Then Return
+            _footerBorderColorPinned = value
+            Invalidate()
+        End Set
+    End Property
+
+    Private Function ShouldSerializeFooterBorderColor() As Boolean
+        Return _footerBorderColorPinned <> Color.Empty
+    End Function
+
+    Private Sub ResetFooterBorderColor()
+        FooterBorderColor = Color.Empty
+    End Sub
+
+    ' Grosimea liniei de subsol in px de DEVICE (0 = nu se deseneaza si nu rezerva loc).
+    Private Function FooterBorderPx() As Integer
+        ' A VERTICAL bar never has a footer border, whatever the three properties say (operator, 08.11.2026).
+        If _orientation = KBotNavOrientation.Vertical Then Return 0
+        If Not _footerBorderVisible OrElse _footerBorderWidth <= 0 Then Return 0
+        Return Math.Max(1, ThemeShapes.ScaleDpi(Me, _footerBorderWidth))
+    End Function
+
+    Private Function FooterBorderColorResolved() As Color
+        Return If(_footerBorderColorPinned = Color.Empty, _themeFooterBorder, _footerBorderColorPinned)
+    End Function
+
     ''' <summary>
     ''' Starea curentă de strângere. STARE DE RULARE, nu valoare de designer: nu se serializează
     ''' (ar îngheța formularul strâns și s-ar bate cu <c>Size</c>-ul scris tot de designer).
@@ -1032,7 +1151,7 @@ Public NotInheritable Class KBotNavList
         If side <= 0 Then Return Rectangle.Empty
         Dim gap As Integer = CollapseButtonMargin()
         Dim x As Integer = If(CornerIsLeft(), gap, Width - gap - side)
-        Dim y As Integer = If(CornerIsTop(), gap, Height - gap - side)
+        Dim y As Integer = If(CornerIsTop(), gap, Height - FooterBorderPx() - gap - side)
         Return New Rectangle(x, y, side, side)
     End Function
 
@@ -1424,6 +1543,8 @@ Public NotInheritable Class KBotNavList
         If IsCompletelyCollapsed() Then Return
 
         Dim pad As System.Windows.Forms.Padding = ScaledPadding()
+        ' Bordura de subsol sta pe muchia de jos: butoanele nu au voie sa intre sub ea.
+        pad.Bottom += FooterBorderPx()
         Dim vertical As Boolean = (_orientation = KBotNavOrientation.Vertical)
         Dim mainStart As Integer = If(vertical, pad.Top, pad.Left)
         Dim mainEnd As Integer = If(vertical, Height - pad.Bottom, Width - pad.Right)
@@ -1631,7 +1752,20 @@ Public NotInheritable Class KBotNavList
         _badgeFill = p.SurfaceColor
         _badgeText = p.TextDimColor
         _separatorColor = p.BorderColor
-        BackColor = p.SurfaceColor
+
+        ' Fundal: al temei, sau cel pus de operator (nu sub o schema intunecata). MyBase = nu marcam "pus".
+        _schemeIsDark = scheme.IsDark
+        _themeBack = p.SurfaceColor
+        MyBase.BackColor = If(_backPinned AndAlso Not _schemeIsDark, _backValue, _themeBack)
+
+        ' Linia de subsol: Classic / Modern ca la grile (SLICE-0130: Classic = ActiveBorder), restul InactiveBorder.
+        If String.Equals(scheme.Name, BuiltInSchemes.ClassicName, StringComparison.OrdinalIgnoreCase) Then
+            _themeFooterBorder = SystemColors.ActiveBorder
+        ElseIf String.Equals(scheme.Name, BuiltInSchemes.ModernName, StringComparison.OrdinalIgnoreCase) Then
+            _themeFooterBorder = p.AccentColor
+        Else
+            _themeFooterBorder = SystemColors.InactiveBorder
+        End If
         Invalidate()
         RefreshFlyout()                 ' schema s-a schimbat cu eticheta afară
     End Sub
@@ -1695,6 +1829,15 @@ Public NotInheritable Class KBotNavList
             EnsureLayout()
             Dim g As Graphics = e.Graphics
             g.Clear(BackColor)
+
+            ' Bordura de subsol: banda plina pe muchia de jos (device px, fara anti-aliasing).
+            Dim fb As Integer = FooterBorderPx()
+            If fb > 0 AndAlso Height > fb Then
+                Using b As New SolidBrush(FooterBorderColorResolved())
+                    g.FillRectangle(b, 0, Height - fb, Width, fb)
+                End Using
+            End If
+
             g.SmoothingMode = SmoothingMode.AntiAlias
 
             Dim radius As Integer = ItemRadius()

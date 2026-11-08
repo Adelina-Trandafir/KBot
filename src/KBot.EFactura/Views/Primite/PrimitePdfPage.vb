@@ -192,8 +192,8 @@ Public Class PrimitePdfPage
     Public Sub ApplyTheme(k_scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try
             If k_scheme Is Nothing Then Return
-            BackColor = k_scheme.Palette.SurfaceAltColor
-            picAtas.BackColor = k_scheme.Palette.SurfaceAltColor
+            BackColor = k_scheme.PanelBack()
+            picAtas.BackColor = k_scheme.PanelBack()
         Catch ex As Exception
             GlobalErrorLog.Write("PrimitePdfPage.ApplyTheme", ex)
         End Try

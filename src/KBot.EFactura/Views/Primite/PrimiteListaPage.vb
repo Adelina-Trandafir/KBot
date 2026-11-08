@@ -226,9 +226,9 @@ Public Class PrimiteListaPage
     Public Sub ApplyTheme(k_scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try
             If k_scheme Is Nothing Then Return
-            BackColor = k_scheme.Palette.SurfaceAltColor
-            pnlJos.BackColor = k_scheme.Palette.SurfaceAltColor
-            pnlGap.BackColor = k_scheme.Palette.SurfaceAltColor
+            BackColor = k_scheme.PanelBack()
+            pnlJos.BackColor = k_scheme.PanelBack()
+            pnlGap.BackColor = k_scheme.PanelBack()
             lblStatus.ForeColor = k_scheme.Palette.TextDimColor
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteListaPage.ApplyTheme", ex)

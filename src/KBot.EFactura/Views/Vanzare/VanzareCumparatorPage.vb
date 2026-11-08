@@ -19,14 +19,14 @@ Public Class VanzareCumparatorPage
         Try
             If k_scheme Is Nothing Then Return
             Dim k_palette As ThemePalette = k_scheme.Palette
-            BackColor = k_palette.SurfaceAltColor
-            tlyClient.BackColor = k_palette.SurfaceAltColor
-            tlyLoc.BackColor = k_palette.SurfaceAltColor
-            lblOrasClientT.BackColor = k_palette.SurfaceAltColor
-            lblSectorT.BackColor = k_palette.SurfaceAltColor
-            tlyCf.BackColor = k_palette.SurfaceAltColor
-            lblIndT.BackColor = k_palette.SurfaceAltColor
-            tlyBtn.BackColor = k_palette.SurfaceAltColor
+            BackColor = k_scheme.PanelBack()
+            tlyClient.BackColor = k_scheme.PanelBack()
+            tlyLoc.BackColor = k_scheme.PanelBack()
+            lblOrasClientT.BackColor = k_scheme.PanelBack()
+            lblSectorT.BackColor = k_scheme.PanelBack()
+            tlyCf.BackColor = k_scheme.PanelBack()
+            lblIndT.BackColor = k_scheme.PanelBack()
+            tlyBtn.BackColor = k_scheme.PanelBack()
             For Each k_b As Button In New Button() {btnClientNou, btnClientSalveaza, btnClientSterge}
                 ButtonStyles.ApplySecondary(k_b, k_scheme)
             Next

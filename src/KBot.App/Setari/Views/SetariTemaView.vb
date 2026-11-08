@@ -404,9 +404,9 @@ Public Class SetariTemaView
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            tlyTop.BackColor = p.SurfaceAltColor
-            tlyScaling.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tlyTop.BackColor = scheme.PanelBack()
+            tlyScaling.BackColor = scheme.PanelBack()
             For Each caption As Label In New Label() {lblScheme, lblSchemeState, lblScalingMode, lblScalingFactor,
                                                       lblTextScale, lblFitBaseline, lblScalingHint}
                 caption.ForeColor = p.TextDimColor

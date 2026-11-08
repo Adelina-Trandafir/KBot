@@ -700,10 +700,10 @@ Public Class SetariAplicatieView
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
             For Each t As Control In New Control() {tlyGenerale, tlyComutatoare, tlyPaginaDocumente, tlyDocumente,
                                                    tlyPaginaKbot, tlyArbore}
-                t.BackColor = p.SurfaceAltColor
+                t.BackColor = scheme.PanelBack()
             Next
             For Each caption As Label In New Label() {lblVerbose, lblAdobeMotor, lblExcelRibbon,
                                                       lblSortare, lblOrdine, lblColoaneNume, lblColoaneData,

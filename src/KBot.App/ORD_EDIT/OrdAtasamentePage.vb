@@ -525,15 +525,15 @@ Public Class OrdAtasamentePage
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
 
-            BackColor = p.SurfaceAltColor
-            split.BackColor = p.SurfaceAltColor
-            split.Panel1.BackColor = p.SurfaceAltColor
-            split.Panel2.BackColor = p.SurfaceAltColor
-            splitDreapta.BackColor = p.SurfaceAltColor
-            splitDreapta.Panel1.BackColor = p.SurfaceAltColor
-            splitDreapta.Panel2.BackColor = p.SurfaceAltColor
-            tlyLista.BackColor = p.SurfaceAltColor
-            pnlPreview.BackColor = p.SurfaceColor
+            BackColor = scheme.PanelBack()
+            split.BackColor = scheme.PanelBack()
+            split.Panel1.BackColor = scheme.PanelBack()
+            split.Panel2.BackColor = scheme.PanelBack()
+            splitDreapta.BackColor = scheme.PanelBack()
+            splitDreapta.Panel1.BackColor = scheme.PanelBack()
+            splitDreapta.Panel2.BackColor = scheme.PanelBack()
+            tlyLista.BackColor = scheme.PanelBack()
+            pnlPreview.BackColor = scheme.PanelBack()
             picPreview.BackColor = p.SurfaceColor
 
             lblPreviewGol.ForeColor = p.TextDimColor

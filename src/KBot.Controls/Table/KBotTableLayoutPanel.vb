@@ -246,11 +246,13 @@ Public Class KBotTableLayoutPanel
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            _borderTheme = p.BorderColor
-            ' Same surface as the generic TableLayoutPanel rule; "Card" tagged panels take the
+            _borderTheme = scheme.OuterBorder(p.BorderColor)   ' SLICE-0130
+            ' Unpinned default (operator, 08.11.2026): Classic -> SystemColors.Window, Dark -> its
+            ' window slot (SurfaceAlt, the colour inputs and tab pages use), every other scheme
+            ' (Modern, Colorful, custom) -> the Control-like Surface. "Card" tagged panels take the
             ' alternate surface, exactly as ThemeManager.IsCard does.
-            Dim tag As String = TryCast(Me.Tag, String)
-            _surfaceTheme = If(String.Equals(tag, "Card", StringComparison.OrdinalIgnoreCase), p.SurfaceAltColor, p.SurfaceColor)
+            ' SLICE-0129-03: "Card" or not, the same PanelBack() as every other container.
+            _surfaceTheme = scheme.PanelBack()
             ApplyThemeColors()
             SyncDpiScale()
             Invalidate()

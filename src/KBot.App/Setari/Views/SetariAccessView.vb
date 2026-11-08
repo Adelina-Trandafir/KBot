@@ -224,9 +224,9 @@ Public Class SetariAccessView
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
             For Each t As Control In New Control() {tlyPagina, tlyCale}
-                t.BackColor = p.SurfaceAltColor
+                t.BackColor = scheme.PanelBack()
             Next
             For Each caption As Label In New Label() {lblCale, lblStare}
                 caption.ForeColor = p.TextDimColor

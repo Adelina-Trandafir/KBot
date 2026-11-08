@@ -6,6 +6,8 @@ Planul și șase etape implementate documentar sunt reunite. Dependențele sunt 
 
 ## SLICE-0121 - Supplier <-> angajament links by CodFiscal (PLAN, 19.10.2026) <a id="slice-0121-plan"></a>
 
+**Stare 08.11.2026 (operator):** 0121-01…05 și 0121-07 sunt rulate și verificate pe ecran. Rămâne 0121-06 (închidere). Notele «nerulat / netestat / nevăzut» de mai jos sunt istoricul din 19-23.10.2026, nu starea de acum.
+
 **Checkpoint 19.10.2026:** DDL 01 și interogarea 07 scrise, nerulate; 02…05 construite, nepornite/netestate. Închiderea 06 rămâne la cuvântul operatorului. Numărul 0121 a fost ales ca următorul liber (operator, 19.10.2026); fiecare punct are subfelia `0121-NN`.
 
 ### Why

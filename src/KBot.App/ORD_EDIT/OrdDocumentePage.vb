@@ -592,15 +592,15 @@ Public Class OrdDocumentePage
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
 
-            BackColor = p.SurfaceAltColor
-            split.BackColor = p.SurfaceAltColor
-            split.Panel1.BackColor = p.SurfaceAltColor
-            split.Panel2.BackColor = p.SurfaceAltColor
-            splitDreapta.BackColor = p.SurfaceAltColor
-            splitDreapta.Panel1.BackColor = p.SurfaceAltColor
-            splitDreapta.Panel2.BackColor = p.SurfaceAltColor
-            tlyText.BackColor = p.SurfaceAltColor
-            tlyFisiere.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            split.BackColor = scheme.PanelBack()
+            split.Panel1.BackColor = scheme.PanelBack()
+            split.Panel2.BackColor = scheme.PanelBack()
+            splitDreapta.BackColor = scheme.PanelBack()
+            splitDreapta.Panel1.BackColor = scheme.PanelBack()
+            splitDreapta.Panel2.BackColor = scheme.PanelBack()
+            tlyText.BackColor = scheme.PanelBack()
+            tlyFisiere.BackColor = scheme.PanelBack()
 
 
             ' «Adaugă» e actiunea, deci poarta accentul; «Șterge» ramane secundar — un buton

@@ -208,14 +208,19 @@ Public Class KBotButton
 
             Dim k_rect As New Rectangle(0, 0, Width - 1, Height - 1)
             Dim k_radius As Integer = ThemeShapes.CornerRadiusPx(Me, -1)
-            Using k_path As GraphicsPath = ThemeShapes.RoundedRect(k_rect, k_radius)
+            ' Half pixels: the outline fills whole pixel rows and the corner arc keeps the weight of
+            ' the sides (see ThemeShapes.RoundedRectF).
+            Dim k_thick As Integer = If(_isDefault AndAlso Not _primary, 2, 1)
+            k_g.PixelOffsetMode = PixelOffsetMode.Half
+            Using k_path As GraphicsPath = ThemeShapes.RoundedRectF(ThemeShapes.FrameBounds(Size, k_thick), k_radius)
                 Using k_brush As New SolidBrush(k_back)
                     k_g.FillPath(k_brush, k_path)
                 End Using
-                Using k_pen As New Pen(k_border, If(_isDefault AndAlso Not _primary, 2.0F, 1.0F))
+                Using k_pen As New Pen(k_border, CSng(k_thick))
                     k_g.DrawPath(k_pen, k_path)
                 End Using
             End Using
+            k_g.PixelOffsetMode = PixelOffsetMode.Default
 
             If Focused AndAlso ShowFocusCues Then
                 Dim k_inner As Rectangle = Rectangle.Inflate(k_rect, -ThemeShapes.ScaleDpi(Me, 3), -ThemeShapes.ScaleDpi(Me, 3))

@@ -36,25 +36,12 @@ Public Class PrimiteContarePage
     ''' <summary>«Salvează»: the host confirms the warnings and asks the server to book.</summary>
     Public Event SalveazaCerut()
 
-    ' An item of a combo: the id and what it shows.
-    Private NotInheritable Class Optiune
-        Public ReadOnly Property Id As Integer
-        Public ReadOnly Property Text As String
-
-        Public Sub New(k_id As Integer, k_text As String)
-            Id = k_id
-            Text = k_text
-        End Sub
-
-        Public Overrides Function ToString() As String
-            Return Text
-        End Function
-    End Class
-
     Private Shared ReadOnly _ro As New CultureInfo("ro-RO")
+    Private Shared ReadOnly _clsfNameComparer As StringComparer = StringComparer.Create(_ro, True)
+    ' Clsf is Capitol.Subcapitol.Articol.Alineat, with an article code of the form NN.NN.
+    Private Shared ReadOnly _clsfArticle As New Regex("\.([0-9]{2}\.[0-9]{2})\.[0-9]{0,2}$", RegexOptions.CultureInvariant)
 
     Private _filling As Boolean
-    Private _clsfSignature As String = String.Empty
     Private _ultim As EFacturaContariRaspuns
     Private _supplierCui As String = String.Empty
     Private _nota As String = String.Empty
@@ -66,7 +53,6 @@ Public Class PrimiteContarePage
 
     Public Sub New()
         InitializeComponent()
-        cmbClsf.CaptionSelector = Function(k_o As Object) k_o.ToString()
         gridEvidenta.ReadOnlyGrid = False
         gridPlata.ReadOnlyGrid = False
         ShowEmpty("Clic dreapta pe o factură și alegeți «Adaugă operații contabile».")
@@ -81,7 +67,6 @@ Public Class PrimiteContarePage
             _nota = String.Empty
             _nrOp = String.Empty
             _felOpFor = Nothing
-            _clsfSignature = String.Empty
             gridEvidenta.ClearRows()
             gridPlata.ClearRows()
             gridPlata.Enabled = False
@@ -90,6 +75,7 @@ Public Class PrimiteContarePage
             lstEvidentiere.Enabled = False
             lstPlata.Enabled = False
             cmbClsf.Items.Clear()
+            cmbClsf.Text = String.Empty
             cmbClsf.Enabled = False
             txtIban.Text = String.Empty
             txtCodClient.Text = String.Empty
@@ -162,31 +148,48 @@ Public Class PrimiteContarePage
         End Get
     End Property
 
-    ' The classifications change only with the supplier: the list is rebuilt when its content changed, otherwise only the selection follows.
+    ' SLICE-01EF-08: article headers only expand or collapse. Each selectable leaf carries its classification ID.
     Private Sub FillClassifications(k_r As EFacturaContariRaspuns)
-        Dim k_signature As String = String.Join(",", k_r.Clasificatii.Select(Function(k_c) k_c.IdClsf.ToString(CultureInfo.InvariantCulture)))
-        cmbClsf.Enabled = True
-        If Not String.Equals(k_signature, _clsfSignature, StringComparison.Ordinal) Then
-            _clsfSignature = k_signature
+        Dim k_leaves As New List(Of KBotComboGroupedItem)()
+        Dim k_ordered = k_r.Clasificatii.
+            Select(Function(k_c) New With {.Classification = k_c, .Article = _clsfArticle.Match(k_c.Clsf).Groups(1).Value}).
+            OrderByDescending(Function(k_x) k_x.Classification.AlePartenerului).
+            ThenBy(Function(k_x) k_x.Article.Length = 0).
+            ThenBy(Function(k_x) k_x.Article, StringComparer.Ordinal).
+            ThenBy(Function(k_x) k_x.Classification.Denumire, _clsfNameComparer).
+            ThenBy(Function(k_x) k_x.Classification.Clsf, StringComparer.Ordinal)
+        For Each k_entry In k_ordered
+            Dim k_c As EFacturaContariClsf = k_entry.Classification
+            Dim k_branch As String = If(k_entry.Article.Length > 0, $"Articol {k_entry.Article}", "Alte clasificații")
+            If k_c.AlePartenerului Then k_branch &= " · configurate pentru furnizor"
+            Dim k_text As String = $"{k_c.Clsf}  {k_c.Denumire}"
+            k_leaves.Add(New KBotComboGroupedItem(k_text, k_branch, k_text, k_c.IdClsf))
+        Next
+
+        If Not k_leaves.SequenceEqual(cmbClsf.Items.Cast(Of KBotComboGroupedItem)()) Then
             cmbClsf.BeginUpdate()
             Try
                 cmbClsf.Items.Clear()
-                For Each k_c As EFacturaContariClsf In k_r.Clasificatii.OrderByDescending(Function(k_x) k_x.AlePartenerului)
-                    cmbClsf.Items.Add(New Optiune(k_c.IdClsf, $"{k_c.Clsf}  {k_c.Denumire}"))
-                Next
+                cmbClsf.Items.AddRange(k_leaves)
             Finally
                 cmbClsf.EndUpdate()
             End Try
         End If
-        cmbClsf.SelectedIndex = -1
-        If k_r.Clasificatie IsNot Nothing Then
-            For k_i As Integer = 0 To cmbClsf.Items.Count - 1
-                If DirectCast(cmbClsf.Items(k_i), Optiune).Id = k_r.Clasificatie.IdClsf Then
-                    cmbClsf.SelectedIndex = k_i
-                    Exit For
-                End If
-            Next
+        cmbClsf.Enabled = k_leaves.Count > 0
+        Dim k_selected As Integer = If(k_r.Clasificatie Is Nothing, -1,
+            k_leaves.FindIndex(Function(k_leaf) CInt(k_leaf.Tag) = k_r.Clasificatie.IdClsf))
+        If k_selected < 0 Then
+            cmbClsf.Text = String.Empty
+        Else
+            cmbClsf.SelectedIndex = k_selected
         End If
+    End Sub
+
+    Private Sub Clsf_UpdateDropDownWidth(sender As Object, e As EventArgs) Handles cmbClsf.HandleCreated, cmbClsf.SizeChanged, cmbClsf.DpiChangedAfterParent
+        If Not cmbClsf.IsHandleCreated Then Return
+        Dim k_scale As Single = AppScaling.FactorFor(cmbClsf)
+        Dim k_width As Integer = CInt(Math.Ceiling(cmbClsf.Width / k_scale))
+        cmbClsf.DropDownWidth = Math.Max(680, k_width + 240)
     End Sub
 
     ' The templates of one kind: a row each, the chosen one is the current row. The explanation of a template is shown; the journal only when two templates would look alike.
@@ -337,7 +340,8 @@ Public Class PrimiteContarePage
     Private Sub CmbClsf_SelectedIndexChanged(sender As Object, e As EventArgs) Handles cmbClsf.SelectedIndexChanged
         Try
             If _filling OrElse cmbClsf.SelectedIndex < 0 Then Return
-            RaiseEvent ClasificatieAleasa(DirectCast(cmbClsf.SelectedItem, Optiune).Id)
+            Dim k_leaf As KBotComboGroupedItem = DirectCast(cmbClsf.SelectedItem, KBotComboGroupedItem)
+            RaiseEvent ClasificatieAleasa(CInt(k_leaf.Tag))
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteContarePage.CmbClsf_SelectedIndexChanged", ex)
         End Try
@@ -535,11 +539,11 @@ Public Class PrimiteContarePage
     Public Sub ApplyTheme(k_scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try
             If k_scheme Is Nothing Then Return
-            BackColor = k_scheme.Palette.SurfaceAltColor
-            For Each k_header As KBotLabel In New KBotLabel() {lblClsf, lblCodClient, lblIban, lblFelOp}
-                k_header.BackColor = k_scheme.Palette.ButtonBackColor
-                k_header.ForeColor = k_scheme.Palette.ButtonTextColor
-            Next
+            BackColor = k_scheme.PanelBack()
+            'For Each k_header As KBotLabel In New KBotLabel() {lblClsf, lblCodClient, lblIban, lblFelOp}
+            '    k_header.BackColor = k_scheme.Palette.ButtonBackColor
+            '    k_header.ForeColor = k_scheme.Palette.ButtonTextColor
+            'Next
             UpdateBar(_explicatieLen, gridPlata.Rows.Count > 0)
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteContarePage.ApplyTheme", ex)

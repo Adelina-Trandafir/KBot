@@ -417,11 +417,11 @@ Friend Class PrintListPage
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            pnlJos.BackColor = p.SurfaceAltColor
-            pnlGap.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            pnlJos.BackColor = scheme.PanelBack()
+            pnlGap.BackColor = scheme.PanelBack()
             lblStatus.ForeColor = p.TextDimColor
-            lblStatus.BackColor = p.SurfaceAltColor
+            lblStatus.BackColor = scheme.PanelBack()
         Catch ex As Exception
             GlobalErrorLog.Write("PrintListPage.ApplyTheme", ex)
         End Try

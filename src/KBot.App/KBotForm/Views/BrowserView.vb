@@ -401,12 +401,12 @@ Public Class BrowserView
         Try
             If scheme Is Nothing Then Return
             Dim p = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            pnlAntet.BackColor = p.SurfaceAltColor
-            pnlBrowser.BackColor = p.SurfaceAltColor
-            lblStare.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            pnlAntet.BackColor = scheme.PanelBack()
+            pnlBrowser.BackColor = scheme.PanelBack()
+            lblStare.BackColor = scheme.PanelBack()
             lblStare.ForeColor = p.TextColor
-            lblGol.BackColor = p.SurfaceAltColor
+            lblGol.BackColor = scheme.PanelBack()
             lblGol.ForeColor = p.TextDimColor
             ButtonStyles.ApplySecondary(btnAdu, scheme)
             busy.ApplyTheme(scheme)

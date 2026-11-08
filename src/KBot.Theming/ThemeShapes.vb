@@ -62,6 +62,53 @@ Public Module ThemeShapes
         Return path
     End Function
 
+    ''' <summary>
+    ''' The colour BEHIND a control with rounded corners: the first ancestor with an opaque BackColor, else the theme's surface. A
+    ''' control with an opaque BackColor of its own (a white text box) must paint this in the corners outside its arc: the default
+    ''' background pass fills the whole rectangle with the control's own colour, which shows as white corner squares on a grey page.
+    ''' </summary>
+    Public Function BackdropColor(k_ctrl As Control) As Color
+        Dim k_parent As Control = k_ctrl.Parent
+        Do While k_parent IsNot Nothing
+            If k_parent.BackColor.A = 255 Then Return k_parent.BackColor
+            k_parent = k_parent.Parent
+        Loop
+        Return ThemeManager.Current.Palette.SurfaceColor
+    End Function
+
+    ''' <summary>
+    ''' Same as <see cref="RoundedRect"/> but on float bounds, so a frame can sit on HALF pixels: a pen of width t centred on a path at
+    ''' integer coordinates straddles two pixel rows and, anti-aliased, paints both at ~50% (a washed, doubled outline, worst on the
+    ''' rounded corners). <see cref="FrameBounds"/> gives the bounds that put the stroke exactly inside the control.
+    ''' </summary>
+    Public Function RoundedRectF(k_bounds As RectangleF, k_radius As Single) As GraphicsPath
+        Dim k_path As New GraphicsPath()
+        Dim k_d As Single = Math.Min(k_radius * 2.0F, Math.Min(k_bounds.Width, k_bounds.Height))
+        If k_d <= 0.0F Then
+            k_path.AddRectangle(k_bounds)
+            Return k_path
+        End If
+        Dim k_arc As New RectangleF(k_bounds.Location, New SizeF(k_d, k_d))
+        k_path.AddArc(k_arc, 180, 90)
+        k_arc.X = k_bounds.Right - k_d
+        k_path.AddArc(k_arc, 270, 90)
+        k_arc.Y = k_bounds.Bottom - k_d
+        k_path.AddArc(k_arc, 0, 90)
+        k_arc.X = k_bounds.Left
+        k_path.AddArc(k_arc, 90, 90)
+        k_path.CloseFigure()
+        Return k_path
+    End Function
+
+    ''' <summary>
+    ''' The path bounds for a frame whose outline (<paramref name="k_thickness"/> px, centred on the path) must lie fully inside a
+    ''' control of <paramref name="k_size"/>: inset by half the stroke on every side. 1px -> 0.5, so the line fills exactly one pixel.
+    ''' </summary>
+    Public Function FrameBounds(k_size As Size, k_thickness As Integer) As RectangleF
+        Dim k_half As Single = Math.Max(0, k_thickness) / 2.0F
+        Return New RectangleF(k_half, k_half, k_size.Width - 2.0F * k_half, k_size.Height - 2.0F * k_half)
+    End Function
+
     ''' <summary>Amestec liniar între două culori: t=0 => a, t=1 => b (t clamp-at 0..1).</summary>
     Public Function Blend(a As Color, b As Color, t As Double) As Color
         Dim tt As Double = Math.Max(0.0, Math.Min(1.0, t))

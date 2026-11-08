@@ -233,11 +233,11 @@ Public Class SetariInfoView
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            tlyBody.BackColor = p.SurfaceAltColor
-            tlyCont.BackColor = p.SurfaceAltColor
-            tlyLicenta.BackColor = p.SurfaceAltColor
-            tlyParola.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tlyBody.BackColor = scheme.PanelBack()
+            tlyCont.BackColor = scheme.PanelBack()
+            tlyLicenta.BackColor = scheme.PanelBack()
+            tlyParola.BackColor = scheme.PanelBack()
             For Each caption As Label In New Label() {lblOperatorCaption, lblUnitateCaption, lblRolCaption,
                                                       lblBazaCaption, lblTipCaption, lblVersiuneCaption,
                                                       lblParolaActuala, lblCod, lblParolaNoua, lblParolaConfirmare}

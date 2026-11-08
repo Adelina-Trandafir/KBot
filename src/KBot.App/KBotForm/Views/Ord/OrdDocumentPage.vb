@@ -130,9 +130,9 @@ Public Class OrdDocumentPage
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
 
-            BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
             lblEmpty.ForeColor = p.TextDimColor
-            lblEmpty.BackColor = p.SurfaceAltColor
+            lblEmpty.BackColor = scheme.PanelBack()
 
             previewPdf.ApplyTheme(scheme)
         Catch ex As Exception

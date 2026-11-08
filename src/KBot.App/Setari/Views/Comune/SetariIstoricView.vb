@@ -42,7 +42,7 @@ Public Class SetariIstoricView
     Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try
             If scheme Is Nothing Then Return
-            BackColor = scheme.Palette.SurfaceAltColor
+            BackColor = scheme.PanelBack()
         Catch ex As Exception
             GlobalErrorLog.Write("SetariIstoricView.ApplyTheme", ex)
         End Try

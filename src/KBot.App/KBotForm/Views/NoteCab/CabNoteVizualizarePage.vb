@@ -84,10 +84,10 @@ Public Class CabNoteVizualizarePage
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            lblStare.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            lblStare.BackColor = scheme.PanelBack()
             lblStare.ForeColor = p.TextColor
-            lblEmpty.BackColor = p.SurfaceAltColor
+            lblEmpty.BackColor = scheme.PanelBack()
             lblEmpty.ForeColor = p.TextDimColor
             grdRanduri.ApplyTheme(scheme)
         Catch ex As Exception

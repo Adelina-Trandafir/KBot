@@ -489,14 +489,14 @@ Public Class DdfFisierPreview
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
 
-            BackColor = p.SurfaceAltColor
-            lblTitlu.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            lblTitlu.BackColor = scheme.PanelBack()
             lblTitlu.ForeColor = p.TextColor
-            lblMesaj.BackColor = p.SurfaceAltColor
+            lblMesaj.BackColor = scheme.PanelBack()
             lblMesaj.ForeColor = p.TextDimColor
             ' The host panel keeps the plain surface colour: what covers it is a foreign window, and
             ' the thin border around it should read as the document's edge, not as our own panel.
-            pnlGazda.BackColor = p.SurfaceColor
+            pnlGazda.BackColor = scheme.PanelBack()
             picImagine.BackColor = p.SurfaceColor
         Catch ex As Exception
             GlobalErrorLog.Write("DdfFisierPreview.ApplyTheme", ex)

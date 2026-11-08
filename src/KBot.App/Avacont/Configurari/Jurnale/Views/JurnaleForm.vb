@@ -320,7 +320,7 @@ Public Class JurnaleForm
             ' The form background IS the 1px outline of the window (Padding(1)).
             BackColor = k_scheme.Palette.BorderColor
             For Each k_c As Control In {tlyMain, pnlCard, tlyCorp, tlySubsol}
-                k_c.BackColor = k_scheme.Palette.SurfaceAltColor
+                k_c.BackColor = k_scheme.PanelBack()
             Next
             ButtonStyles.ApplyPrimary(btnSalveaza, k_scheme)
             ButtonStyles.ApplySecondary(btnRenunta, k_scheme)

@@ -59,9 +59,9 @@ Public Class ParolaAvansataForm
             Dim scheme As ThemeScheme = ThemeManager.Current
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            tlyMain.BackColor = p.SurfaceAltColor
-            tlyCampuri.BackColor = p.SurfaceAltColor
-            tlySubsol.BackColor = p.SurfaceAltColor
+            tlyMain.BackColor = scheme.PanelBack()
+            tlyCampuri.BackColor = scheme.PanelBack()
+            tlySubsol.BackColor = scheme.PanelBack()
             For Each caption As Label In New Label() {lblIntro, lblParola}
                 caption.ForeColor = p.TextDimColor
                 caption.BackColor = Color.Transparent

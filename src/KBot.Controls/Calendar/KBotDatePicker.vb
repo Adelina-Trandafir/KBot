@@ -1146,7 +1146,7 @@ Public NotInheritable Class KBotDatePicker
 
             _autoBack = p.InputBackColor
             _autoFore = p.InputTextColor
-            _autoBorder = p.InputBorderColor
+            _autoBorder = scheme.OuterBorder(p.InputBorderColor)   ' SLICE-0130
             _autoFocus = p.FocusRingColor
             _autoHover = p.ButtonHoverColor
             _autoDisabled = p.DisabledTextColor

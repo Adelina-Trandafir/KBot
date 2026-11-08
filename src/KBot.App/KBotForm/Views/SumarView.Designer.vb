@@ -50,7 +50,6 @@ Partial Class SumarView
         ' 
         ' pnlHeader
         ' 
-        pnlHeader.BackColor = SystemColors.Window
         pnlHeader.Controls.Add(tblHeader)
         pnlHeader.Dock = DockStyle.Top
         pnlHeader.Location = New Point(0, 0)
@@ -385,12 +384,10 @@ Partial Class SumarView
         grid.Dock = DockStyle.Fill
         grid.FilterIconSize = New Size(14, 14)
         grid.FooterCaption = "TOTALURI"
-        grid.FooterColumnSeparatorColor = Color.Gainsboro
         grid.FooterForeColor = SystemColors.ActiveCaptionText
         grid.FooterIconSize = New Size(14, 14)
         grid.FooterVisible = True
         grid.FrozenColumnCount = 1
-        grid.HeaderColumnSeparatorColor = Color.Gainsboro
         grid.HeaderForeColor = SystemColors.ActiveCaptionText
         grid.Location = New Point(0, 208)
         grid.Margin = New Padding(0)

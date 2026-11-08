@@ -23,15 +23,15 @@ chenare = `Border` (ActiveBorder). Classic are deja exact aceste valori (#F0F0F0
 
 ## Files touched
 70 `*.Designer.vb` sub `src/KBot.App`, `src/KBot.EFactura`, `src/KBot.Forexe`, `src/KBot.Controls`
-(`Xml/XmlViz`), `src/KBot.DevHarness`. Neatinse: `_reference/`, `KBot.Migrator`, `AVC.Migrator`.
+(`Xml/XmlViz`), `src/KBot.DevHarness`; 08.11.2026 si `KBotForm/KbotForm.Designer.vb`, `KBotForm/Views/SumarView.Designer.vb` (`pnlHeader`). Neatinse: `_reference/`, `KBot.Migrator`, `AVC.Migrator`.
 
 ## Test results
 Nici un test scris sau rulat. `dotnet build KBot.sln`: 0 avertismente, 0 erori.
 
 ## Unverified / deferred
-- Nimic vazut pe ecran: aspectul in Classic / Modern / Dark / Colorful nu a fost comparat.
-- `pnlHeader` din `SumarView` si `KbotForm` ramane `Window` fixat (header alb ales din design).
+- Aspectul in Classic / Modern / Dark / Colorful: testat si rulat de operator, 08.11.2026.
+- `pnlHeader` din `SumarView` si `KbotForm`: `BackColor = Window` scos din designer, urmeaza tema; verificat pe ecran de operator, 08.11.2026.
 - Raman culori proprii intentionate: butoanele portocaliu / albastru din `CertificateSelectionForm`,
   bannerul rosu din `SimulatedForexePage`, fereastra de debug `FrmNodeDebug`.
-- Culorile fixate direct in cod `.vb` (nu in designere) nu au fost cautate.
+- Culorile containerelor fixate direct in cod `.vb` au fost aduse la regula comuna in 0129-02 / 0129-03.
 - Ajutor: 0000-166.

@@ -85,6 +85,9 @@ Friend NotInheritable Class AvcRunner
     Public Shared Function Verify(k_context As AvcContext, k_steps As IReadOnlyList(Of AvcStep), Optional k_progress As IProgress(Of AvcProgressInfo) = Nothing) As VerificationReport
         Try
             RequireTarget(k_context)
+            k_context.PlannedSubunits.Clear()
+            k_context.PlannedAccounts.Clear()
+            k_context.PlannedJournals.Clear()
             Dim k_report As New VerificationReport()
             Dim k_selected = k_steps.Where(Function(s) s.Selected).ToList()
             If k_selected.Count = 0 Then

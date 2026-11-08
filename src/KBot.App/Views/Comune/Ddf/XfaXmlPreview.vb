@@ -202,16 +202,19 @@ Public Class XfaXmlPreview
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
 
-            BackColor = p.SurfaceAltColor
-            For Each pnl As Control In New Control() {pnlContent, pnlHeader, tblHeader, pnlMissing, tblMissing}
-                pnl.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            For Each pnl As Control In New Control() {tblHeader, tblMissing}
+                pnl.BackColor = scheme.PanelBack()
             Next
+            pnlContent.BackColor = scheme.PanelBack()
+            pnlHeader.BackColor = scheme.PanelBack()
+            pnlMissing.BackColor = scheme.PanelBack()
             lblNota.ForeColor = p.TextDimColor
             lblNota.BackColor = Color.Transparent
             lblMissing.ForeColor = p.TextDimColor
             lblMissing.BackColor = Color.Transparent
             lblMessage.ForeColor = p.TextDimColor
-            lblMessage.BackColor = p.SurfaceAltColor
+            lblMessage.BackColor = scheme.PanelBack()
 
             btnGenereaza.BackColor = p.AccentColor
             btnGenereaza.ForeColor = p.AccentTextColor

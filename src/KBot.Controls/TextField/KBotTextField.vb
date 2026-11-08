@@ -629,7 +629,7 @@ Public NotInheritable Class KBotTextField
             Dim p As ThemePalette = scheme.Palette
             _fillTheme = p.InputBackColor
             _textTheme = p.InputTextColor
-            _borderTheme = p.InputBorderColor
+            _borderTheme = scheme.OuterBorder(p.InputBorderColor)   ' SLICE-0130
             _focusTheme = p.AccentColor
             _glyphTheme = p.TextDimColor
             ApplyInnerColors()
@@ -661,13 +661,18 @@ Public NotInheritable Class KBotTextField
             g.SmoothingMode = SmoothingMode.AntiAlias
 
             Dim radius As Integer = EffectiveRadius()
-            Dim rect As New Rectangle(0, 0, Width - 1, Height - 1)
+            Dim thickness As Integer = ThemeShapes.ScaleDpi(Me, If(_focused, _focusBorderWidth, _borderWidth))
+            ' Half-pixel frame: the stroke lies exactly inside the control (see ThemeShapes.RoundedRectF).
+            ' PixelOffsetMode.Half puts pixel centres on half-integers, so a 1px line on a half
+            ' coordinate fills exactly one pixel row and the corner arc has the same weight as the sides
+            ' (on the default mode the arc came out thinner and paler than the straight edges).
+            g.PixelOffsetMode = PixelOffsetMode.Half
+            Dim rect As RectangleF = ThemeShapes.FrameBounds(Size, thickness)
             If rect.Width <= 0 OrElse rect.Height <= 0 Then Return
-            Using path As GraphicsPath = ThemeShapes.RoundedRect(rect, radius)
+            Using path As GraphicsPath = ThemeShapes.RoundedRectF(rect, radius)
                 Using fill As New SolidBrush(FillColor)
                     g.FillPath(fill, path)
                 End Using
-                Dim thickness As Integer = ThemeShapes.ScaleDpi(Me, If(_focused, _focusBorderWidth, _borderWidth))
                 If thickness > 0 Then
                     Using pen As New Pen(If(_focused, FocusBorderColor, BorderColor), thickness)
                         g.DrawPath(pen, path)
@@ -675,6 +680,7 @@ Public NotInheritable Class KBotTextField
                 End If
             End Using
 
+            g.PixelOffsetMode = PixelOffsetMode.Default
             If _passwordMode Then DrawEye(g, EyeRect())
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotTextField.OnPaint", ex)

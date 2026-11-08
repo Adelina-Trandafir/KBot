@@ -129,6 +129,8 @@ Partial Class KBotDataView
     ' Chenarul controlului. Empty = din temă, Transparent = fără chenar (vocabularul lui
     ' AdvancedTreeControl.BorderColor — două controale vecine n-au voie să spună altfel același lucru).
     Private _borderPinned As Color = Color.Empty
+    ' SLICE-0130: the theme's outer frame (ActiveBorder on Classic / Modern, the palette border elsewhere).
+    Private _cOuterBorder As Color = SystemColors.ActiveBorder
     Private _borderWidth As Integer = DefaultCellSeparatorWidth
 
     ''' <summary>The standard header and footer font family, in every grid.</summary>
@@ -174,7 +176,9 @@ Partial Class KBotDataView
             ' Antet.
             _cHeaderBack = p.SurfaceAltColor
             _cHeaderText = p.TextColor
-            _cHeaderSep = p.BorderColor
+            ' SLICE-0130: the lines BETWEEN cells / headers are SoftBorder on Classic and Modern.
+            _cHeaderSep = scheme.InnerLine(p.BorderColor)
+            _cOuterBorder = scheme.OuterBorder(p.BorderColor)
             _cHeaderBaseline = p.AccentColor
             _cHeaderGradientEnd = Blend(p.SurfaceAltColor, p.SurfaceColor, 0.65)
 
@@ -182,18 +186,18 @@ Partial Class KBotDataView
             ' vadă din prima că jos e altceva decât un rând de date.
             _cFooterBack = Blend(p.SurfaceAltColor, p.AccentColor, 0.1)
             _cFooterText = p.TextColor
-            _cFooterSep = p.BorderColor
+            _cFooterSep = scheme.InnerLine(p.BorderColor)
             _cFooterBaseline = p.AccentColor
 
-            ' BAND RULE (operator, 07.11.2026): the band back colour and the separator line are the
-            ' SAME in every grid and are dictated by the theme, never by a designer.
-            ' Classic = Control + Gainsboro; any other scheme (Modern, ...) = the values derived
-            ' above. A new grid sets none of these in its designer.
+            ' BAND RULE (operator, 07.11.2026; SLICE-0130): the band back colour and the separator line
+            ' are the SAME in every grid and are dictated by the theme, never by a designer.
+            ' Classic = Control + ActiveBorder; any other scheme (Modern = the accent blue, ...) = the
+            ' values derived above. A new grid sets none of these in its designer.
             If String.Equals(scheme.Name, BuiltInSchemes.ClassicName, StringComparison.OrdinalIgnoreCase) Then
                 _cHeaderBack = SystemColors.Control
                 _cFooterBack = SystemColors.Control
-                _cHeaderBaseline = Color.Gainsboro
-                _cFooterBaseline = Color.Gainsboro
+                _cHeaderBaseline = SystemColors.ActiveBorder
+                _cFooterBaseline = SystemColors.ActiveBorder
                 _cHeaderGradientEnd = _cHeaderBack
             End If
             _cFooterGradientEnd = Blend(_cFooterBack, p.SurfaceColor, 0.55)
@@ -212,7 +216,7 @@ Partial Class KBotDataView
             _cRowBack = p.InputBackColor
             _cRowAltBack = Blend(p.InputBackColor, p.SurfaceColor, 0.5)
             _cCellText = p.TextColor
-            _cGridLine = p.BorderColor
+            _cGridLine = scheme.InnerLine(p.BorderColor)
 
             ' Selecție: spălare ușoară de accent peste fundalul REAL al rândului, ca textul
             ' să rămână lizibil (de aceea două variante: rând normal / rând alternant).
@@ -278,14 +282,15 @@ Partial Class KBotDataView
     Private Sub SetDefaultColors()
         _cHeaderBack = SystemColors.Control
         _cHeaderText = SystemColors.ControlText
-        _cHeaderSep = SystemColors.ControlDark
+        _cHeaderSep = ThemeScheme.SoftBorder
+        _cOuterBorder = SystemColors.ActiveBorder
         ' Pre-theme = the Classic look (see the band rule in ApplyTheme).
-        _cHeaderBaseline = Color.Gainsboro
+        _cHeaderBaseline = SystemColors.ActiveBorder
         _cHeaderGradientEnd = SystemColors.Control
         _cFooterBack = SystemColors.Control
         _cFooterText = SystemColors.ControlText
-        _cFooterSep = SystemColors.ControlDark
-        _cFooterBaseline = Color.Gainsboro
+        _cFooterSep = ThemeScheme.SoftBorder
+        _cFooterBaseline = SystemColors.ActiveBorder
         _cFooterGradientEnd = Blend(_cFooterBack, SystemColors.Window, 0.55)
         _cGroupHeaderBack = Blend(SystemColors.Control, SystemColors.Highlight, 0.28)
         _cGroupHeaderText = SystemColors.ControlText
@@ -298,7 +303,7 @@ Partial Class KBotDataView
         _cSelAltBack = Blend(_cRowAltBack, SystemColors.Highlight, 0.18)
         _cSelText = SystemColors.WindowText
         _cCellText = SystemColors.WindowText
-        _cGridLine = SystemColors.ControlLight
+        _cGridLine = ThemeScheme.SoftBorder
         _cCheckBorder = SystemColors.ControlDark
         _cCheckFill = SystemColors.Highlight
         _cCheckMark = SystemColors.HighlightText
@@ -586,7 +591,7 @@ Partial Class KBotDataView
 
     ''' <summary>Culoarea chenarului; gol = marginea temei, <c>Transparent</c> = fără chenar.</summary>
     Friend Function BorderColorResolved() As Color
-        Return If(_borderPinned = Color.Empty, _cHeaderSep, _borderPinned)
+        Return If(_borderPinned = Color.Empty, _cOuterBorder, _borderPinned)
     End Function
 
     ''' <summary>

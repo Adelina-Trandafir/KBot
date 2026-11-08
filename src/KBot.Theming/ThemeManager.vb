@@ -569,9 +569,10 @@ Public Module ThemeManager
             ApplyBaseFont(ctrl, st)
 
         ElseIf TypeOf ctrl Is SplitContainer Then
-            ctrl.BackColor = p.SurfaceColor
-            DirectCast(ctrl, SplitContainer).Panel1.BackColor = p.SurfaceColor
-            DirectCast(ctrl, SplitContainer).Panel2.BackColor = p.SurfaceColor
+            ' SLICE-0129-03: every control that hosts other controls takes the SAME background, PanelBack().
+            ctrl.BackColor = scheme.PanelBack()
+            DirectCast(ctrl, SplitContainer).Panel1.BackColor = scheme.PanelBack()
+            DirectCast(ctrl, SplitContainer).Panel2.BackColor = scheme.PanelBack()
 
         ElseIf TypeOf ctrl Is TabControl Then
             Dim tc = DirectCast(ctrl, TabControl)
@@ -579,19 +580,21 @@ Public Module ThemeManager
             SetupTabOwnerDraw(tc, st.OwnerDrawTabs)
 
         ElseIf TypeOf ctrl Is TabPage Then
-            ctrl.BackColor = p.SurfaceAltColor
+            ctrl.BackColor = scheme.PanelBack()
 
         ElseIf IsCard(ctrl) Then
-            ctrl.BackColor = p.SurfaceAltColor
+            ctrl.BackColor = scheme.PanelBack()
 
         ElseIf TypeOf ctrl Is TableLayoutPanel Then
-            ctrl.BackColor = p.SurfaceColor
+            ctrl.BackColor = scheme.PanelBack()
 
         ElseIf TypeOf ctrl Is Panel Then
-            ctrl.BackColor = p.SurfaceColor
+            ' Same unpinned rule as KBotTableLayoutPanel (operator, 08.11.2026): Dark -> its window
+            ' slot (SurfaceAlt), every other scheme -> Surface. Classic (system colours) is in StyleSystem.
+            ctrl.BackColor = scheme.PanelBack()
 
         ElseIf TypeOf ctrl Is GroupBox Then
-            ctrl.BackColor = p.SurfaceColor
+            ctrl.BackColor = scheme.PanelBack()
             ctrl.ForeColor = p.TextColor
 
         ElseIf TypeOf ctrl Is Label Then
@@ -692,9 +695,10 @@ Public Module ThemeManager
             ctrl.BackColor = SystemColors.Control
 
         ElseIf TypeOf ctrl Is SplitContainer Then
-            ctrl.BackColor = SystemColors.Control
-            DirectCast(ctrl, SplitContainer).Panel1.BackColor = SystemColors.Control
-            DirectCast(ctrl, SplitContainer).Panel2.BackColor = SystemColors.Control
+            ' SLICE-0129-03: same colour as every other container (ThemeScheme.PanelBack, Classic = Window).
+            ctrl.BackColor = SystemColors.Window
+            DirectCast(ctrl, SplitContainer).Panel1.BackColor = SystemColors.Window
+            DirectCast(ctrl, SplitContainer).Panel2.BackColor = SystemColors.Window
 
         ElseIf TypeOf ctrl Is TabControl Then
             Dim tc = DirectCast(ctrl, TabControl)
@@ -706,16 +710,17 @@ Public Module ThemeManager
             DirectCast(ctrl, TabPage).UseVisualStyleBackColor = True
 
         ElseIf IsCard(ctrl) Then
-            ctrl.BackColor = Color.White
+            ctrl.BackColor = SystemColors.Window
 
         ElseIf TypeOf ctrl Is TableLayoutPanel Then
-            ctrl.BackColor = SystemColors.Control
+            ctrl.BackColor = SystemColors.Window
 
         ElseIf TypeOf ctrl Is Panel Then
-            ctrl.BackColor = SystemColors.Control
+            ' Same unpinned rule as KBotTableLayoutPanel (operator, 08.11.2026): Classic -> Window.
+            ctrl.BackColor = SystemColors.Window
 
         ElseIf TypeOf ctrl Is GroupBox Then
-            ctrl.BackColor = SystemColors.Control
+            ctrl.BackColor = SystemColors.Window
             ctrl.ForeColor = SystemColors.ControlText
 
         ElseIf TypeOf ctrl Is Label Then

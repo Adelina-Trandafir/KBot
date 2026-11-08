@@ -134,6 +134,7 @@ Baza are acceptare vizuală la 08.08; subsolul/strângerea din 02 au verdict par
 | 0028-07 | Schema «Modern»: butonul crește cât să încapă și umplutura, și textul | DONE (code) / **niciodată văzut pe ecran** | [0028-07](../SLICE-0028-dataview-footer-collapse-tooltip.md#slice-0028-07) | Contracte, fișiere, probe și limite în jurnalul consolidat D001-10. |
 | 0028-08 | Trecerea OPERATORULUI peste cele două ferestre de filtrare (+ ce a rupt designerul pe drum) | DONE (code) / partea operatorului **văzută de el în designer**, restul neconfirmat | [0028-08](../SLICE-0028-dataview-footer-collapse-tooltip.md#slice-0028-08) | Contracte, fișiere, probe și limite în jurnalul consolidat D001-10. |
 | 0028-09 | Butonul de TEMĂ intră în bara de titlu (selectorul de teme nu mai stă în gazdă) | DONE (code) / **niciodată văzut pe ecran** | [0028-09](../SLICE-0028-dataview-footer-collapse-tooltip.md#slice-0028-09) | Contracte, fișiere, probe și limite în jurnalul consolidat D001-10. |
+| 0028-10 | Schema «Modern»: butoanele Windows obișnuite se desenează singure (arc cu netezire), fără regiune de fereastră | DONE (code) / **văzut pe ecran de operator** (08.11.2026) | [0028-10](../SLICE-0028-10-butoane-modern-desenate-de-noi.md) | Butoanele cu imagine păstrează regiunea; raza 0 neatinsă; apăsarea cu mouse-ul neîncercată. |
 
 ### Current focus
 

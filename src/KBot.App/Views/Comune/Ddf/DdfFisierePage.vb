@@ -59,9 +59,9 @@ Public Class DdfFisierePage
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
             lblFisiereGol.ForeColor = p.TextDimColor
-            lblFisiereGol.BackColor = p.SurfaceAltColor
+            lblFisiereGol.BackColor = scheme.PanelBack()
             browser.ApplyTheme(scheme)
         Catch ex As Exception
             GlobalErrorLog.Write("DdfFisierePage.ApplyTheme", ex)

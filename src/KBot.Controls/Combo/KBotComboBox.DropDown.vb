@@ -39,6 +39,16 @@ Partial Public Class KBotComboBox
     ''' <summary>Raised when the operator PICKS a row of the list (click or Enter in it); not when the text is typed or the selection is set from code.</summary>
     Public Event ItemPicked As EventHandler
 
+    ''' <summary>Keep the order of the items when filtering the list by typed text.</summary>
+    <Category("K-BOT Combo")>
+    <DefaultValue(False)>
+    Public Property FindInItemOrder As Boolean
+
+    ''' <summary>Keep the list within the monitor's working area, showing fewer rows if needed.</summary>
+    <Category("K-BOT Combo")>
+    <DefaultValue(False)>
+    Public Property FitDropDownToWorkingArea As Boolean
+
     ''' <summary>How many rows the list shows before it scrolls.</summary>
     <Category("K-BOT Combo")>
     <Description("How many rows the list shows before it scrolls. Minimum 1.")>
@@ -280,6 +290,7 @@ Partial Public Class KBotComboBox
                     Return
                 End If
                 If _findAsYouType Then
+                    If FindInItemOrder Then hits.Sort()
                     Dim k_highlightRow As Integer
                     Dim rows As List(Of KBotComboListRow) = BuildRows(hits, -1, True, k_highlightRow)
                     Dim keepArrow As Boolean = _openedByArrow

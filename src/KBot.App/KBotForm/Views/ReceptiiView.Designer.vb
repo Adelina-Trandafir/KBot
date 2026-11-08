@@ -187,12 +187,10 @@ Partial Class ReceptiiView
         grid.FillColumnKey = "descriere"
         grid.FilterIconSize = New Size(14, 14)
         grid.FooterCaption = "TOTALURI"
-        grid.FooterColumnSeparatorColor = Color.Gainsboro
         grid.FooterForeColor = SystemColors.ActiveCaptionText
         grid.FooterIconSize = New Size(14, 14)
         grid.FooterVisible = True
         grid.FrozenColumnCount = 1
-        grid.HeaderColumnSeparatorColor = Color.Gainsboro
         grid.HeaderForeColor = SystemColors.ActiveCaptionText
         grid.Location = New Point(0, 0)
         grid.Margin = New Padding(4, 5, 4, 5)

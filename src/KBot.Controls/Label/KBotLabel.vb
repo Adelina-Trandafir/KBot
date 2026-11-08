@@ -189,7 +189,7 @@ Public Class KBotLabel
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            _chenarTema = p.BorderColor
+            _chenarTema = scheme.OuterBorder(p.BorderColor)   ' SLICE-0130
             _textTema = p.TextColor
             ' Eticheta stă pe suprafața gazdei: fundalul rămâne transparent, ca regula generică
             ' de Label din ThemeManager. Cine vrea altceva îl pune în designer și câștigă.

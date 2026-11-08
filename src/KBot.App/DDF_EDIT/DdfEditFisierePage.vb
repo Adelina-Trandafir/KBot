@@ -346,9 +346,9 @@ Public Class DdfEditFisierePage
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
 
-            BackColor = p.SurfaceAltColor
-            tlyRoot.BackColor = p.SurfaceAltColor
-            tlyButoane.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tlyRoot.BackColor = scheme.PanelBack()
+            tlyButoane.BackColor = scheme.PanelBack()
             lblStare.ForeColor = p.TextDimColor
             lblStare.BackColor = Color.Transparent
 

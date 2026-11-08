@@ -634,7 +634,7 @@ Partial Public Class GrupeForm
             ' The form background IS the 1px outline of the window (Padding(1)).
             BackColor = k_p.BorderColor
             For Each k_c As Control In {tlyMain, pnlCard, tlyBody, tlyDetalii, tlySubsol}
-                k_c.BackColor = k_p.SurfaceAltColor
+                k_c.BackColor = k_scheme.PanelBack()
             Next
             lblAngajamente.ForeColor = k_p.TextColor
             lblStare.ForeColor = k_p.TextDimColor

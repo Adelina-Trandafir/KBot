@@ -394,9 +394,9 @@ Public Class AcasaPage
         Try
             MyBase.OnThemeChanged()
             Dim k_palette As ThemePalette = ThemeManager.Current.Palette
-            pnlNoutati.BackColor = k_palette.SurfaceColor
-            pnlNoutatiHead.BackColor = k_palette.SurfaceColor
-            lblNoutati.BackColor = k_palette.SurfaceColor
+            pnlNoutati.BackColor = ThemeManager.Current.PanelBack()
+            pnlNoutatiHead.BackColor = ThemeManager.Current.PanelBack()
+            lblNoutati.BackColor = ThemeManager.Current.PanelBack()
             lblNoutati.ForeColor = k_palette.TextColor
             ButtonStyles.ApplyTransparent(btnNoutati, ThemeManager.Current, k_palette.SurfaceColor, k_palette.TextColor)
             BuildNewsArrows()

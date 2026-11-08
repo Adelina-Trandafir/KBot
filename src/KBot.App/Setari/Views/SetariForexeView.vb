@@ -554,22 +554,22 @@ Public Class SetariForexeView
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            tlyBody.BackColor = p.SurfaceAltColor
-            tlyStare.BackColor = p.SurfaceAltColor
-            tlyCertificat.BackColor = p.SurfaceAltColor
-            tlyBrowser.BackColor = p.SurfaceAltColor
-            tlyCaptura.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tlyBody.BackColor = scheme.PanelBack()
+            tlyStare.BackColor = scheme.PanelBack()
+            tlyCertificat.BackColor = scheme.PanelBack()
+            tlyBrowser.BackColor = scheme.PanelBack()
+            tlyCaptura.BackColor = scheme.PanelBack()
             cmbCaptura.ApplyTheme(scheme)
-            tlyFoldere.BackColor = p.SurfaceAltColor
-            tlyTests.BackColor = p.SurfaceAltColor
-            tlyIstoric.BackColor = p.SurfaceAltColor
+            tlyFoldere.BackColor = scheme.PanelBack()
+            tlyTests.BackColor = scheme.PanelBack()
+            tlyIstoric.BackColor = scheme.PanelBack()
             ButtonStyles.ApplySecondary(btnStergeLuna, scheme)
             lblIstoricLuna.ForeColor = p.TextDimColor
             lblIstoricLuna.BackColor = Color.Transparent
             lblIstoricHint.ForeColor = p.TextDimColor
             lblIstoricHint.BackColor = Color.Transparent
-            tlyViteza.BackColor = p.SurfaceAltColor
+            tlyViteza.BackColor = scheme.PanelBack()
             cmbMultiplicator.ApplyTheme(scheme)
             ButtonStyles.ApplySecondary(btnTesteazaViteza, scheme)
             For Each caption As Label In New Label() {lblConexiuneCaption, lblCertificatCaption, lblCertMemoratCaption,

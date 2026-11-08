@@ -17,7 +17,6 @@ Partial Class PrimiteDetaliiView
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        components = New ComponentModel.Container()
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
@@ -53,12 +52,13 @@ Partial Class PrimiteDetaliiView
         ' 
         ' pgContare
         ' 
+        pgContare.BackColor = Drawing.SystemColors.Window
         pgContare.Dock = System.Windows.Forms.DockStyle.Fill
         pgContare.Font = New System.Drawing.Font("Calibri", 9F)
         pgContare.Location = New System.Drawing.Point(0, 0)
         pgContare.Margin = New System.Windows.Forms.Padding(0)
         pgContare.Name = "pgContare"
-        pgContare.Padding = New System.Windows.Forms.Padding(0)
+        pgContare.Padding = New System.Windows.Forms.Padding(4, 4, 4, 0)
         pgContare.Size = New System.Drawing.Size(1140, 811)
         pgContare.TabIndex = 6
         pgContare.Visible = False
@@ -70,7 +70,7 @@ Partial Class PrimiteDetaliiView
         pgLinii.Location = New System.Drawing.Point(0, 0)
         pgLinii.Margin = New System.Windows.Forms.Padding(0)
         pgLinii.Name = "pgLinii"
-        pgLinii.Padding = New System.Windows.Forms.Padding(0)
+        pgLinii.Padding = New System.Windows.Forms.Padding(4, 4, 4, 0)
         pgLinii.Size = New System.Drawing.Size(1140, 811)
         pgLinii.TabIndex = 0
         ' 
@@ -92,7 +92,7 @@ Partial Class PrimiteDetaliiView
         pgMesaje.Location = New System.Drawing.Point(0, 0)
         pgMesaje.Margin = New System.Windows.Forms.Padding(0)
         pgMesaje.Name = "pgMesaje"
-        pgMesaje.Padding = New System.Windows.Forms.Padding(0)
+        pgMesaje.Padding = New System.Windows.Forms.Padding(4, 4, 4, 0)
         pgMesaje.Size = New System.Drawing.Size(1140, 811)
         pgMesaje.TabIndex = 3
         pgMesaje.Visible = False
@@ -104,7 +104,6 @@ Partial Class PrimiteDetaliiView
         pgXml.Location = New System.Drawing.Point(0, 0)
         pgXml.Margin = New System.Windows.Forms.Padding(0)
         pgXml.Name = "pgXml"
-        pgXml.Padding = New System.Windows.Forms.Padding(0)
         pgXml.Size = New System.Drawing.Size(1140, 811)
         pgXml.TabIndex = 5
         pgXml.Visible = False
@@ -116,15 +115,16 @@ Partial Class PrimiteDetaliiView
         pnlNav.Location = New System.Drawing.Point(0, 0)
         pnlNav.Margin = New System.Windows.Forms.Padding(0)
         pnlNav.Name = "pnlNav"
-        pnlNav.Padding = New System.Windows.Forms.Padding(0)
         pnlNav.Size = New System.Drawing.Size(1140, 45)
         pnlNav.TabIndex = 0
         ' 
         ' navDetaliu
         ' 
+        navDetaliu.BackColor = Drawing.SystemColors.Window
         navDetaliu.Dock = System.Windows.Forms.DockStyle.Fill
         navDetaliu.IconSize = 18
         navDetaliu.ItemCornerRadius = 2
+        navDetaliu.ItemGradient = 0
         navDetaliu.ItemPadding = New System.Windows.Forms.Padding(0)
         KBotNavItem1.AutoSize = True
         KBotNavItem1.Image = My.Resources.Resources.cells
@@ -160,16 +160,16 @@ Partial Class PrimiteDetaliiView
         navDetaliu.Items.Add(KBotNavItem4)
         navDetaliu.Items.Add(KBotNavItem5)
         navDetaliu.Items.Add(KBotNavItem6)
-        navDetaliu.Location = New System.Drawing.Point(4, 0)
+        navDetaliu.Location = New System.Drawing.Point(0, 0)
         navDetaliu.Margin = New System.Windows.Forms.Padding(0)
         navDetaliu.Name = "navDetaliu"
         navDetaliu.Orientation = KBotNavOrientation.Horizontal
         navDetaliu.SelectedKey = "linii"
-        navDetaliu.Size = New System.Drawing.Size(1132, 45)
+        navDetaliu.Size = New System.Drawing.Size(1140, 45)
         navDetaliu.TabIndex = 0
-        '
+        ' 
         ' PrimiteDetaliiView
-        '
+        ' 
         AutoScaleDimensions = New System.Drawing.SizeF(144F, 144F)
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
         Controls.Add(pnlPages)

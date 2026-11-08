@@ -418,9 +418,10 @@ Public Class PlanContForm
             Dim k_p As ThemePalette = k_scheme.Palette
             ' The form background IS the 1px outline of the window (Padding(2)).
             BackColor = k_p.BorderColor
-            For Each k_c As Control In {tlyMain, pnlCard, tlyBody, pnlHost}
-                k_c.BackColor = k_p.SurfaceAltColor
+            For Each k_c As Control In {tlyMain, pnlCard, tlyBody}
+                k_c.BackColor = k_scheme.PanelBack()
             Next
+            pnlHost.BackColor = k_scheme.PanelBack()
         Catch ex As Exception
             GlobalErrorLog.Write("PlanContForm.OnThemeChanged", ex)
         End Try

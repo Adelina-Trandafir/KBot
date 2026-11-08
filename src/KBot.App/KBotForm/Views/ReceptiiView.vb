@@ -1037,16 +1037,16 @@ Public Class ReceptiiView
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
 
-            BackColor = p.SurfaceAltColor
-            split.BackColor = p.SurfaceAltColor
-            split.Panel1.BackColor = p.SurfaceAltColor
-            split.Panel2.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            split.BackColor = scheme.PanelBack()
+            split.Panel1.BackColor = scheme.PanelBack()
+            split.Panel2.BackColor = scheme.PanelBack()
 
             ' Arborele e IThemedControl: își ia singur paleta, iar ThemeManager nu mai recurge
             ' în copiii lui. Culorile puse în designer câștigă; cele lăsate goale urmează tema.
 
             lblEmpty.ForeColor = p.TextDimColor
-            lblEmpty.BackColor = p.SurfaceAltColor
+            lblEmpty.BackColor = scheme.PanelBack()
 
             ' Re-tintarea iconițelor de stare pe noua paletă (grila rămâne golită — LISTA
             ' se reface la următorul click pe un nod).

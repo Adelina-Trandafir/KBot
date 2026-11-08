@@ -1045,7 +1045,7 @@ Partial Public NotInheritable Class KBotCalendar
 
             _autoBack = p.InputBackColor
             _autoFore = p.InputTextColor
-            _autoBorder = p.InputBorderColor
+            _autoBorder = scheme.OuterBorder(p.InputBorderColor)   ' SLICE-0130
             _autoHeaderBack = p.SurfaceColor
             _autoHeaderFore = p.TextColor
             _autoArrow = p.TextDimColor

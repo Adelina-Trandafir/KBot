@@ -19,7 +19,7 @@ Public Class PrimiteReceptieNouaView
 
     Public Sub ApplyTheme(k_scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         If k_scheme Is Nothing Then Return
-        BackColor = k_scheme.Palette.SurfaceAltColor
+        BackColor = k_scheme.PanelBack()
         tlyNoua.BackColor = BackColor
     End Sub
 End Class

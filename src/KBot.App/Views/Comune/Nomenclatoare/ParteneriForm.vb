@@ -1142,9 +1142,9 @@ Public Class ParteneriForm
             Dim p As ThemePalette = scheme.Palette
             ' The form background IS the 1px outline of the window (Padding(1)).
             BackColor = p.BorderColor
-            tree.BorderColor = p.BorderColor
+            tree.BorderColor = scheme.OuterBorder(p.BorderColor)   ' SLICE-0130
             For Each c As Control In {tlyMain, pnlCard, tlyBody, tlyLeft, tlyDetalii}
-                c.BackColor = p.SurfaceAltColor
+                c.BackColor = scheme.PanelBack()
             Next
             lblCoduri.ForeColor = p.TextColor
             lblSolduri.ForeColor = p.TextColor

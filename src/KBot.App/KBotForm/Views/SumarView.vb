@@ -298,10 +298,12 @@ Public Class SumarView
     Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try
             If scheme Is Nothing Then Return
-            BackColor = scheme.Palette.SurfaceAltColor
+            ' Same background rule as every other panel / KBotTableLayoutPanel (0129-02): Classic Window, Dark SurfaceAlt, rest Surface.
+            Dim k_surface As Color = If(scheme.Style.UseSystemColors, SystemColors.Window, If(scheme.IsDark, scheme.Palette.SurfaceAltColor, scheme.Palette.SurfaceColor))
+            BackColor = k_surface
 
-            pnlHeader.BackColor = scheme.Palette.SurfaceAltColor
-            tblHeader.BackColor = scheme.Palette.SurfaceAltColor
+            pnlHeader.BackColor = k_surface
+            tblHeader.BackColor = k_surface
 
             ' Etichetele-titlu sunt estompate; valorile stau în culoarea normală a textului.
             For Each caption As Label In New Label() {lblCodCaption, lblDataFxCaption,
@@ -309,18 +311,18 @@ Public Class SumarView
                                                       lblStareCaption, lblStatusCaption,
                                                       lblDescriereCaption}
                 caption.ForeColor = scheme.Palette.TextDimColor
-                caption.BackColor = scheme.Palette.SurfaceAltColor
+                caption.BackColor = k_surface
             Next
 
             For Each value As Label In New Label() {lblCod, lblDataFx, lblDataCreare,
                                                     lblDataDef, lblStare, lblStatus,
                                                     lblDescriere}
                 value.ForeColor = scheme.Palette.TextColor
-                value.BackColor = scheme.Palette.SurfaceAltColor
+                value.BackColor = k_surface
             Next
 
             lblEmpty.ForeColor = scheme.Palette.TextDimColor
-            lblEmpty.BackColor = scheme.Palette.SurfaceAltColor
+            lblEmpty.BackColor = k_surface
         Catch ex As Exception
             ' Boundary UI (cascada de temă): logăm și înghițim.
             GlobalErrorLog.Write("SumarView.ApplyTheme", ex)

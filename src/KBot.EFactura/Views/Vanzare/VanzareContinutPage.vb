@@ -19,8 +19,8 @@ Public Class VanzareContinutPage
         Try
             If k_scheme Is Nothing Then Return
             Dim k_palette As ThemePalette = k_scheme.Palette
-            BackColor = k_palette.SurfaceAltColor
-            tlyContinut.BackColor = k_palette.SurfaceAltColor
+            BackColor = k_scheme.PanelBack()
+            tlyContinut.BackColor = k_scheme.PanelBack()
         Catch ex As Exception
             GlobalErrorLog.Write("VanzareContinutPage.ApplyTheme", ex)
         End Try

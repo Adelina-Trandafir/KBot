@@ -248,8 +248,8 @@ Public Class PlanContSolduriView
         Try
             If k_scheme Is Nothing Then Return
             Dim k_p As ThemePalette = k_scheme.Palette
-            BackColor = k_p.SurfaceAltColor
-            tlyRoot.BackColor = k_p.SurfaceAltColor
+            BackColor = k_scheme.PanelBack()
+            tlyRoot.BackColor = k_scheme.PanelBack()
             lblTitlu.ForeColor = k_p.TextColor
         Catch ex As Exception
             GlobalErrorLog.Write("PlanContSolduriView.ApplyTheme", ex)

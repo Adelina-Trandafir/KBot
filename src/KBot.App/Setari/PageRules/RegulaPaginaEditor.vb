@@ -163,8 +163,8 @@ Public Class RegulaPaginaEditor
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            tlyCampuri.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tlyCampuri.BackColor = scheme.PanelBack()
             For Each l As Label In New Label() {lblNota, lblSelector, lblPagina, lblStil}
                 l.ForeColor = p.TextColor
                 l.BackColor = Color.Transparent

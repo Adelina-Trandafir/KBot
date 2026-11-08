@@ -199,7 +199,17 @@ Friend NotInheritable Class KBotComboList
 
         Dim area As Rectangle = Screen.FromRectangle(anchor).WorkingArea
         Dim y As Integer = anchor.Bottom
-        If y + h > area.Bottom Then
+        If _combo.FitDropDownToWorkingArea Then
+            w = Math.Min(w, area.Width)
+            Dim spaceBelow As Integer = Math.Max(0, area.Bottom - anchor.Bottom)
+            Dim spaceAbove As Integer = Math.Max(0, anchor.Top - area.Top)
+            If h > spaceBelow AndAlso spaceAbove > spaceBelow Then
+                h = Math.Max(1, Math.Min(h, spaceAbove))
+                y = anchor.Top - h
+            Else
+                h = Math.Max(1, Math.Min(h, spaceBelow))
+            End If
+        ElseIf y + h > area.Bottom Then
             Dim above As Integer = anchor.Top - h
             If above >= area.Top Then y = above
         End If

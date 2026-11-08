@@ -17,64 +17,67 @@ Partial Class PrimiteForm
 
     <System.Diagnostics.DebuggerStepThrough()>
     Private Sub InitializeComponent()
-        components = New System.ComponentModel.Container()
+        components = New ComponentModel.Container()
         tips = New KBotToolTip(components)
         capBar = New KBotCaptionBar()
         pnlCard = New System.Windows.Forms.Panel()
         primite = New PrimiteView()
         pnlCard.SuspendLayout()
         SuspendLayout()
-        '
+        ' 
         ' capBar
-        '
+        ' 
         capBar.Dock = System.Windows.Forms.DockStyle.Top
         capBar.IconImage = My.Resources.Resources.kbot_e_64
-        capBar.Location = New System.Drawing.Point(3, 3)
+        capBar.Location = New System.Drawing.Point(4, 4)
         capBar.Margin = New System.Windows.Forms.Padding(0)
         capBar.Name = "capBar"
+        capBar.OptionButtonImage = Nothing
         capBar.OptionButtonPadding = 0
         capBar.ShowMaximize = True
-        capBar.ShowOptionsButton = False
         capBar.ShowTextScaleSlider = False
-        capBar.Size = New System.Drawing.Size(1194, 66)
+        capBar.Size = New System.Drawing.Size(1642, 55)
         capBar.TabIndex = 0
         capBar.TabStop = False
         capBar.Text = "Facturi primite"
-        '
+        ' 
         ' pnlCard
-        '
+        ' 
         pnlCard.Controls.Add(primite)
         pnlCard.Dock = System.Windows.Forms.DockStyle.Fill
-        pnlCard.Location = New System.Drawing.Point(3, 69)
+        pnlCard.Location = New System.Drawing.Point(4, 59)
         pnlCard.Margin = New System.Windows.Forms.Padding(0)
         pnlCard.Name = "pnlCard"
-        pnlCard.Padding = New System.Windows.Forms.Padding(12, 9, 12, 9)
-        pnlCard.Size = New System.Drawing.Size(1194, 778)
+        pnlCard.Padding = New System.Windows.Forms.Padding(4)
+        pnlCard.Size = New System.Drawing.Size(1642, 987)
         pnlCard.TabIndex = 1
         pnlCard.Tag = "Card"
-        '
+        ' 
         ' primite
-        '
+        ' 
+        primite.AngajamentCode = ""
         primite.Dock = System.Windows.Forms.DockStyle.Fill
-        primite.Location = New System.Drawing.Point(12, 9)
+        primite.Font = New System.Drawing.Font("Calibri", 9F)
+        primite.Location = New System.Drawing.Point(4, 4)
         primite.Margin = New System.Windows.Forms.Padding(0)
         primite.Name = "primite"
-        primite.Size = New System.Drawing.Size(1170, 760)
+        primite.Size = New System.Drawing.Size(1634, 979)
         primite.TabIndex = 0
-        '
+        ' 
         ' PrimiteForm
-        '
+        ' 
         AutoFitToTheme = False
-        AutoScaleDimensions = New System.Drawing.SizeF(96.0!, 96.0!)
+        AutoScaleDimensions = New System.Drawing.SizeF(144F, 144F)
         AutoScaleMode = System.Windows.Forms.AutoScaleMode.Dpi
-        ClientSize = New System.Drawing.Size(1200, 908)
+        ClientSize = New System.Drawing.Size(1650, 1050)
         Controls.Add(pnlCard)
         Controls.Add(capBar)
         FormBorderStyle = System.Windows.Forms.FormBorderStyle.None
+        Margin = New System.Windows.Forms.Padding(4, 4, 4, 4)
         MinimizeBox = False
-        MinimumSize = New System.Drawing.Size(1100, 700)
+        MinimumSize = New System.Drawing.Size(1650, 1050)
         Name = "PrimiteForm"
-        Padding = New System.Windows.Forms.Padding(3)
+        Padding = New System.Windows.Forms.Padding(4, 4, 4, 4)
         ShowInTaskbar = False
         StartPosition = System.Windows.Forms.FormStartPosition.CenterScreen
         Text = "E-Factura — facturi primite"

@@ -1081,9 +1081,9 @@ Public Class ClasificatiiVenituriView
         Try
             If k_scheme Is Nothing Then Return
             Dim k_p As ThemePalette = k_scheme.Palette
-            BackColor = k_p.SurfaceAltColor
+            BackColor = k_scheme.PanelBack()
             For Each k_c As Control In {tlyMain, pnlCard, tlyBody, tlyRight}
-                k_c.BackColor = k_p.SurfaceAltColor
+                k_c.BackColor = k_scheme.PanelBack()
             Next
             ClasificatiiTreeStyle.ApplyFrame(tree, k_scheme)   ' slice 0126-04
         Catch ex As Exception

@@ -1,5 +1,7 @@
 # SLICE-0122 — Identitatea furnizorului după CodFiscal
 
+**Stare 08.11.2026 (operator): slice-ul este INCHIS - toate feliile din tabelul de stare sunt rulate si testate.** Notele «nerulat / netestat» din corp sunt istoricul din 20.10-03.11.2026, nu starea de acum.
+
 **Stare.** Planul (CodFiscal în `CodPartener`) e decis de operator (20.10.2026). 01/01b și controalele au rulat curat pe O singură bază (celelalte rămân de parcurs). 02/03 sunt construite, nerulate, cu clientul neschimbat și protecția prin id păstrată până la eliminarea cheilor. 08 e scris, nerulat (ascundere reversibilă, nu DELETE). 04…07 rămân propuneri, inclusiv lucrul Vercon făcut separat în paralel. Nu se execută interogări, DDL, ascunderi sau migrări din acest document. 09 și 10 nu țin de parteneri; sunt depuse aici (vezi mai jos).
 
 ## SLICE-0122 - Break the dependency on Parteneri.IdPartener / CodPartener outside the Access migration (PLAN, 20.10.2026) <a id="slice-0122-plan"></a>

@@ -17,7 +17,7 @@ Friend NotInheritable Class ClasificatiiTreeStyle
     Friend Shared Sub ApplyFrame(k_tree As AdvancedTreeControl, k_scheme As ThemeScheme)
         ArgumentNullException.ThrowIfNull(k_tree)
         If k_scheme Is Nothing Then Return
-        k_tree.BorderColor = k_scheme.Palette.BorderColor
+        k_tree.BorderColor = k_scheme.OuterBorder(k_scheme.Palette.BorderColor)   ' SLICE-0130
     End Sub
 
 End Class

@@ -205,11 +205,11 @@ Public Class SetariAutentificareView
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            tlyBody.BackColor = p.SurfaceAltColor
-            tlyMemorie.BackColor = p.SurfaceAltColor
-            tlyLucru.BackColor = p.SurfaceAltColor
-            tlyServer.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tlyBody.BackColor = scheme.PanelBack()
+            tlyMemorie.BackColor = scheme.PanelBack()
+            tlyLucru.BackColor = scheme.PanelBack()
+            tlyServer.BackColor = scheme.PanelBack()
             For Each caption As Label In New Label() {lblUtilizatorCaption, lblUnitateCaption, lblServerCaption,
                                                       lblTimeoutCaption, lblServerHint, lblIntervalCaption,
                                                       lblReloginHint}

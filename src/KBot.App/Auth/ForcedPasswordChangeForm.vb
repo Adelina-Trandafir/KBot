@@ -192,9 +192,9 @@ Public NotInheritable Class ForcedPasswordChangeForm
             Dim k_scheme As ThemeScheme = ThemeManager.Current
             If k_scheme Is Nothing Then Return
             Dim k_p As ThemePalette = k_scheme.Palette
-            tlyMain.BackColor = k_p.SurfaceAltColor
-            tlyCampuri.BackColor = k_p.SurfaceAltColor
-            tlySubsol.BackColor = k_p.SurfaceAltColor
+            tlyMain.BackColor = k_scheme.PanelBack()
+            tlyCampuri.BackColor = k_scheme.PanelBack()
+            tlySubsol.BackColor = k_scheme.PanelBack()
             For Each k_caption As Label In New Label() {lblIntro, lblStare, lblCod, lblNoua, lblConfirmare, lblCerinte}
                 k_caption.ForeColor = k_p.TextDimColor
                 k_caption.BackColor = Color.Transparent

@@ -12,6 +12,7 @@ Text: `Text`, `Lines`, `Multiline = True`, `WordWrap = True`, `ReadOnly = False`
 Scrolling: `ScrollBars = Vertical`, `AutoHideScrollBars = True`, `ScrollBarThickness = KBotScrollBar.GrosimeImplicita`, `VerticalScrollBar` / `HorizontalScrollBar` (the real `KBotScrollBar` instances), `SincronizeazaBare()`, `ViewChanged` event. The mouse wheel scrolls the box also over the text (slice 00EF-54): the inner edit has no native bars, so it hands the wheel to the frame.
 
 Frame: `BorderColor`, `FocusBorderColor` (Empty = accent), `BorderWidth = 1`, `FocusBorderWidth = 1`, `CornerRadius = 4`, `ContentBounds`, `GetPreferredSize`.
+Rounded corners (slice 00EF-61): the corners outside the arc show the parent's colour (`ThemeShapes.BackdropColor`), the frame is drawn on half pixels, and the inner editor (a real, rectangular `TextBox`) is cut with a rounded region so its square corners never poke out of the arc.
 
 Paddings (all `Padding`, all logical px, all with ShouldSerialize/Reset — C4):
 - `TextPadding = (6,6,6,6)` — outline → text, per side. Where a bar shows, the text stops at the bar's band on that side instead.

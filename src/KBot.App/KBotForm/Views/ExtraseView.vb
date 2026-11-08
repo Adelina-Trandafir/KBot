@@ -118,10 +118,10 @@ Public Class ExtraseView
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
             panel.ApplyTheme(scheme)
             lblEmpty.ForeColor = p.TextDimColor
-            lblEmpty.BackColor = p.SurfaceAltColor
+            lblEmpty.BackColor = scheme.PanelBack()
         Catch ex As Exception
             GlobalErrorLog.Write("ExtraseView.ApplyTheme", ex)
         End Try

@@ -317,14 +317,14 @@ Public Class DeSemnatRestransForm
             Dim p As ThemePalette = scheme.Palette
             ' The form background IS the 1px outline of the window (Padding(1)).
             BackColor = p.BorderColor
-            tlyMain.BackColor = p.SurfaceAltColor
-            split.BackColor = p.SurfaceAltColor
-            split.Panel1.BackColor = p.SurfaceAltColor
-            split.Panel2.BackColor = p.SurfaceAltColor
-            pnlDocument.BackColor = p.SurfaceAltColor
-            tlySubsol.BackColor = p.SurfaceAltColor
-            lblTitlu.BackColor = p.SurfaceAltColor
-            lblDocument.BackColor = p.SurfaceAltColor
+            tlyMain.BackColor = scheme.PanelBack()
+            split.BackColor = scheme.PanelBack()
+            split.Panel1.BackColor = scheme.PanelBack()
+            split.Panel2.BackColor = scheme.PanelBack()
+            pnlDocument.BackColor = scheme.PanelBack()
+            tlySubsol.BackColor = scheme.PanelBack()
+            lblTitlu.BackColor = scheme.PanelBack()
+            lblDocument.BackColor = scheme.PanelBack()
             lblDocument.ForeColor = p.TextDimColor
             lblStare.ForeColor = p.TextDimColor
             ButtonStyles.ApplyPrimary(btnReincarca, scheme)

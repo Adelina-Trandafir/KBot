@@ -105,11 +105,9 @@ Partial Class DdfValoriPage
         grid.EnableGrouping = True
         grid.FillColumnKey = "element"
         grid.FooterCaption = "TOTAL"
-        grid.FooterColumnSeparatorColor = Color.Gainsboro
         grid.FooterForeColor = SystemColors.ActiveCaptionText
         grid.FooterVisible = True
         grid.FrozenColumnCount = 1
-        grid.HeaderColumnSeparatorColor = Color.Gainsboro
         grid.HeaderForeColor = SystemColors.ActiveCaptionText
         grid.Location = New Point(0, 0)
         grid.Margin = New Padding(4, 5, 4, 5)

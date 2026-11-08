@@ -171,7 +171,6 @@ Partial Class DirectorForm
         lstDocumente.Dock = DockStyle.Fill
         lstDocumente.EnableGrouping = False
         lstDocumente.FillColumnKey = "obiect"
-        lstDocumente.HeaderColumnSeparatorColor = Color.Gainsboro
         lstDocumente.HeaderForeColor = SystemColors.ActiveCaptionText
         lstDocumente.Location = New Point(8, 0)
         lstDocumente.Margin = New Padding(0)

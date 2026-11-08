@@ -659,10 +659,10 @@ Public Class ExtrasePanel
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
             For Each c As Control In New Control() {split, split.Panel1, split.Panel2, innerSplit,
                                                     innerSplit.Panel1, innerSplit.Panel2, detailPane, detailTable}
-                c.BackColor = p.SurfaceAltColor
+                c.BackColor = scheme.PanelBack()
             Next
             tree.ApplyTheme(scheme)
             gridAntete.ApplyTheme(scheme)
@@ -675,7 +675,7 @@ Public Class ExtrasePanel
                 lbl.ForeColor = If(lbl.Name.StartsWith("cap", StringComparison.Ordinal), p.TextDimColor, p.TextColor)
             Next
             lblDetailMessage.ForeColor = p.TextDimColor
-            lblDetailMessage.BackColor = p.SurfaceAltColor
+            lblDetailMessage.BackColor = scheme.PanelBack()
         Catch ex As Exception
             ' UI boundary (theme cascade): log and swallow.
             GlobalErrorLog.Write("ExtrasePanel.ApplyTheme", ex)

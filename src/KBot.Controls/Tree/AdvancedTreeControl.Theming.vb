@@ -29,8 +29,8 @@ Partial Public Class AdvancedTreeControl
     ' Pre-theme = the Classic look, as in KBotDataView (band rule, see ApplyTheme).
     Private _autoHeaderBack As Color = SystemColors.Control
     Private _autoHeaderFore As Color = Color.FromArgb(50, 50, 60)
-    Private _autoHeaderSep As Color = Color.Gainsboro
-    Private _autoFooterSep As Color = Color.Gainsboro
+    Private _autoHeaderSep As Color = SystemColors.ActiveBorder
+    Private _autoFooterSep As Color = SystemColors.ActiveBorder
     Private _autoFooterBack As Color = SystemColors.Control
     Private _autoFooterFore As Color = Color.FromArgb(50, 50, 60)
     Private _autoSearchBack As Color = Color.FromArgb(222, 222, 222)
@@ -252,14 +252,14 @@ Partial Public Class AdvancedTreeControl
             _autoHeaderBack = p.SurfaceAltColor
             _autoHeaderFore = p.TextColor
             _autoFooterFore = p.TextColor
-            ' BAND RULE (operator, 07.11.2026): same colours as KBotDataView. Classic = Control back
-            ' + Gainsboro line; any other scheme = the DGV defaults (footer washed toward the accent,
-            ' line = accent).
+            ' BAND RULE (operator, 07.11.2026; SLICE-0130): same colours as KBotDataView. Classic =
+            ' Control back + ActiveBorder line; any other scheme = the DGV defaults (footer washed
+            ' toward the accent, line = accent).
             If String.Equals(scheme.Name, BuiltInSchemes.ClassicName, StringComparison.OrdinalIgnoreCase) Then
                 _autoHeaderBack = SystemColors.Control
                 _autoFooterBack = SystemColors.Control
-                _autoHeaderSep = Color.Gainsboro
-                _autoFooterSep = Color.Gainsboro
+                _autoHeaderSep = SystemColors.ActiveBorder
+                _autoFooterSep = SystemColors.ActiveBorder
             Else
                 _autoFooterBack = Blend(p.SurfaceAltColor, p.AccentColor, 0.1F)
                 _autoHeaderSep = p.AccentColor
@@ -278,7 +278,10 @@ Partial Public Class AdvancedTreeControl
             _autoCheckMark = p.AccentTextColor
             _autoExpanderBack = p.InputBackColor
             _autoExpanderSign = p.TextColor
-            _autoBorder = Color.Transparent
+            ' SLICE-0130: the outer frame is ActiveBorder on Classic / Modern, none elsewhere.
+            Dim k_newBorder As Color = scheme.OuterBorder(Color.Transparent)
+            Dim k_borderChanged As Boolean = (_autoBorder <> k_newBorder)
+            _autoBorder = k_newBorder
             _autoTooltipBack = p.SurfaceColor
             _autoTooltipFore = p.TextColor
 
@@ -301,6 +304,8 @@ Partial Public Class AdvancedTreeControl
 
             RestyleSearchChildren()
             CancelCollapsedFlyout()   ' o etichetă afară ar rămâne cu culorile schemei vechi
+            ' A frame appearing or disappearing moves the scrollbar inside it (same as the BorderColor setter).
+            If k_borderChanged Then RefreshScrollVisibility()
             Me.Invalidate()
         Catch ex As Exception
             GlobalErrorLog.Write("AdvancedTreeControl.ApplyTheme", ex)

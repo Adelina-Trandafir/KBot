@@ -141,8 +141,8 @@ Public Class DdfVizualizarePage
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
 
-            BackColor = p.SurfaceAltColor
-            tblHeader.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tblHeader.BackColor = scheme.PanelBack()
 
             For Each eticheta As Label In {lblCodCaption, lblDataCreareCaption, lblCompartimentCaption,
                                            lblStareCaption, lblBeneficiarCaption, lblObiectDDFCaption}

@@ -128,11 +128,11 @@ Public Class ExtraseForm
             Dim p As ThemePalette = scheme.Palette
             ' The form background IS the 1px outline of the window (Padding(1)).
             BackColor = p.BorderColor
-            tlyMain.BackColor = p.SurfaceAltColor
-            pnlCard.BackColor = p.SurfaceAltColor
-            tlySubsol.BackColor = p.SurfaceAltColor
+            tlyMain.BackColor = scheme.PanelBack()
+            pnlCard.BackColor = scheme.PanelBack()
+            tlySubsol.BackColor = scheme.PanelBack()
             lblEmpty.ForeColor = p.TextDimColor
-            lblEmpty.BackColor = p.SurfaceAltColor
+            lblEmpty.BackColor = scheme.PanelBack()
             lblStare.ForeColor = p.TextDimColor
             ButtonStyles.ApplySecondary(btnInchide, scheme)
         Catch ex As Exception

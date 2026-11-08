@@ -184,11 +184,11 @@ Public Class SetariJurnalView
 
             Dim p As ThemePalette = scheme.Palette
 
-            BackColor = p.SurfaceAltColor
-            tlyMain.BackColor = p.SurfaceAltColor
-            tlyFilter.BackColor = p.SurfaceAltColor
-            tlyFilterActual.BackColor = p.SurfaceAltColor
-            tlyFooter.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tlyMain.BackColor = scheme.PanelBack()
+            tlyFilter.BackColor = scheme.PanelBack()
+            tlyFilterActual.BackColor = scheme.PanelBack()
+            tlyFooter.BackColor = scheme.PanelBack()
 
             For Each caption As Label In New Label() {lblCauta, lblDeLa, lblPanaLa, lblStare}
                 caption.ForeColor = p.TextDimColor

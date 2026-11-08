@@ -45,6 +45,9 @@ Three measuring rules landed in 0066 because the bench showed the fit could not 
 ## Painting
 `ThemedCellBorder = True` fills the background and paints the grid in `EffectiveCellBorderColor` (`CellBorderColor`, Empty = theme `BorderColor`) in the gap the native `CellBorderStyle` reserves; `None` is promoted to `Single` and refused afterwards. The gap itself (1/2/3 px) is the platform's and is not scaled.
 
+## BackColor
+Unset (not pinned in the designer) it follows the theme: Classic = `SystemColors.Window`, Dark = the palette's `SurfaceAlt` (its window slot), Modern and every other scheme = the palette's `Surface` (Control-like); a `Tag = "Card"` panel always takes `SurfaceAlt`. Setting `BackColor` by hand pins it and the theme no longer touches it; `Reset` in the designer gives the theme back (08.11.2026).
+
 ## Where it stops
 - Children's `Margin`s belong to the platform. The old 1.43 x 1.67 measurement at 150% came from Font autoscaling; 0066-02 later changed the forms to Dpi, as recorded above. This is not a second table-owned margin scale. A cell whose margin must match a drawn measure exactly does not exist yet; if one appears, the margin belongs in the child, not here.
 - A table built in code and added to a form already on screen has no stamp of its own: its styles are read as logical. Write them through `SetRowHeight` / `SetColumnWidth` to be sure.

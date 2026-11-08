@@ -198,7 +198,7 @@ Public Class ClasificatiiForm
             ' The form background IS the 1px outline of the window (Padding(2)).
             BackColor = k_p.BorderColor
             For Each k_c As Control In {tlyMain, pnlWork, pnlHost}
-                k_c.BackColor = k_p.SurfaceAltColor
+                k_c.BackColor = ThemeManager.Current.PanelBack()
             Next
         Catch ex As Exception
             GlobalErrorLog.Write("ClasificatiiForm.OnThemeChanged", ex)

@@ -894,19 +894,19 @@ Public Class ReaderHostPreview
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            pnlHost.BackColor = p.SurfaceColor
-            pnlLoading.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            pnlHost.BackColor = scheme.PanelBack()
+            pnlLoading.BackColor = scheme.PanelBack()
             lblLoading.ForeColor = p.TextDimColor
-            lblLoading.BackColor = p.SurfaceAltColor
-            pnlMissing.BackColor = p.SurfaceAltColor
-            tblMissing.BackColor = p.SurfaceAltColor
+            lblLoading.BackColor = scheme.PanelBack()
+            pnlMissing.BackColor = scheme.PanelBack()
+            tblMissing.BackColor = scheme.PanelBack()
             lblMissing.ForeColor = p.TextDimColor
             lblMissing.BackColor = Color.Transparent
             lblMessage.ForeColor = p.TextDimColor
-            lblMessage.BackColor = p.SurfaceAltColor
+            lblMessage.BackColor = scheme.PanelBack()
             lblNote.ForeColor = p.TextDimColor
-            lblNote.BackColor = p.SurfaceAltColor
+            lblNote.BackColor = scheme.PanelBack()
             btnGenereaza.BackColor = p.AccentColor
             btnGenereaza.ForeColor = p.AccentTextColor
             btnGenereaza.FlatAppearance.BorderColor = p.AccentColor

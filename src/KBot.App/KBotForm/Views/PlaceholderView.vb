@@ -88,9 +88,9 @@ Public Class PlaceholderView
     Public Sub ApplyTheme(scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try
             If scheme Is Nothing Then Return
-            BackColor = scheme.Palette.SurfaceAltColor
+            BackColor = scheme.PanelBack()
             lblMessage.ForeColor = scheme.Palette.TextDimColor
-            lblMessage.BackColor = scheme.Palette.SurfaceAltColor
+            lblMessage.BackColor = scheme.PanelBack()
             ' Vederea e IThemedControl, deci ThemeManager NU recurge în copiii ei — banda își ia
             ' accentul doar dacă i-l dăm noi.
             busy.ApplyTheme(scheme)

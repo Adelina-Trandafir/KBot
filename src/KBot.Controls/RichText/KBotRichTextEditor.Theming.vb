@@ -320,7 +320,11 @@ Partial Public Class KBotRichTextEditor
     End Property
 
     Private Function ResolvedEditorBorderColor() As Color
-        Return Resolve(_editorBorderColor, Function(p) p.InputBorderColor, AUTO_EDITOR_BORDER)
+        ' SLICE-0130: the outer frame is InactiveBorder on Classic / Modern.
+        If Not _editorBorderColor.IsEmpty Then Return _editorBorderColor
+        Dim k_scheme As ThemeScheme = ThemeManager.Current
+        If k_scheme Is Nothing Then Return AUTO_EDITOR_BORDER
+        Return k_scheme.OuterBorder(k_scheme.Palette.InputBorderColor)
     End Function
 
     Private Function ResolvedHeaderSeparatorColor() As Color

@@ -31,8 +31,8 @@ Public Class SetariFolder
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            tlyBody.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tlyBody.BackColor = scheme.PanelBack()
             For Each caption As Label In New Label() {lblFoldereHint, lblFoldereStare}
                 caption.ForeColor = p.TextDimColor
                 caption.BackColor = Color.Transparent

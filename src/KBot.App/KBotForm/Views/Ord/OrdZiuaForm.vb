@@ -43,8 +43,8 @@ Public Class OrdZiuaForm
             Dim scheme As ThemeScheme = ThemeManager.Current
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            tlyMain.BackColor = p.SurfaceAltColor
-            tlySubsol.BackColor = p.SurfaceAltColor
+            tlyMain.BackColor = scheme.PanelBack()
+            tlySubsol.BackColor = scheme.PanelBack()
             lblIntro.ForeColor = p.TextDimColor
             lblIntro.BackColor = Color.Transparent
         Catch ex As Exception

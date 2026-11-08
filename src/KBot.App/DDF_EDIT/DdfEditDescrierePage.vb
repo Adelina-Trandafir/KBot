@@ -113,8 +113,8 @@ Public Class DdfEditDescrierePage
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            tlyRoot.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tlyRoot.BackColor = scheme.PanelBack()
             For Each capt As Label In New Label() {lblScurtaCaption, lblLungaCaption}
                 capt.ForeColor = p.TextDimColor
                 capt.BackColor = Color.Transparent

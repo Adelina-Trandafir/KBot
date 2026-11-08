@@ -21,9 +21,9 @@ Partial Class PrimiteReceptieNouaView
         dtpData = New Controls.KBotDatePicker()
         txtDescriere = New Controls.KBotTextBox()
         tlyNoua = New Controls.KBotTableLayoutPanel()
-        lblTip = New Global.KBot.Controls.KBotLabel()
-        lblData = New Global.KBot.Controls.KBotLabel()
-        lblDescriere = New Global.KBot.Controls.KBotLabel()
+        lblTip = New Controls.KBotLabel()
+        lblData = New Controls.KBotLabel()
+        lblDescriere = New Controls.KBotLabel()
         tlyNoua.SuspendLayout()
         SuspendLayout()
         ' 
@@ -33,7 +33,7 @@ Partial Class PrimiteReceptieNouaView
         cmbTip.Location = New System.Drawing.Point(0, 30)
         cmbTip.Margin = New System.Windows.Forms.Padding(0, 0, 0, 6)
         cmbTip.Name = "cmbTip"
-        cmbTip.Size = New System.Drawing.Size(403, 37)
+        cmbTip.Size = New System.Drawing.Size(283, 37)
         cmbTip.TabIndex = 1
         cmbTip.TextAlign = System.Windows.Forms.HorizontalAlignment.Center
         tips.SetToolTipHeader(cmbTip, "Tipul recepției")
@@ -45,7 +45,7 @@ Partial Class PrimiteReceptieNouaView
         dtpData.Location = New System.Drawing.Point(0, 109)
         dtpData.Margin = New System.Windows.Forms.Padding(0, 0, 0, 6)
         dtpData.Name = "dtpData"
-        dtpData.Size = New System.Drawing.Size(403, 42)
+        dtpData.Size = New System.Drawing.Size(283, 48)
         dtpData.TabIndex = 3
         tips.SetToolTipHeader(dtpData, "Data recepției")
         tips.SetToolTipText(dtpData, "Data scrisă în recepția din FOREXE. Implicit, data celei mai noi facturi bifate.")
@@ -53,11 +53,11 @@ Partial Class PrimiteReceptieNouaView
         ' txtDescriere
         ' 
         txtDescriere.Dock = System.Windows.Forms.DockStyle.Fill
-        txtDescriere.Location = New System.Drawing.Point(0, 190)
+        txtDescriere.Location = New System.Drawing.Point(0, 193)
         txtDescriere.Margin = New System.Windows.Forms.Padding(0)
         txtDescriere.MaxLength = 200
         txtDescriere.Name = "txtDescriere"
-        txtDescriere.Size = New System.Drawing.Size(403, 102)
+        txtDescriere.Size = New System.Drawing.Size(283, 11)
         txtDescriere.TabIndex = 5
         tips.SetToolTipHeader(txtDescriere, "Descrierea recepției")
         tips.SetToolTipText(txtDescriere, "Textul scris în recepția din FOREXE, de obicei «plata factura număr/data». K-BOT adaugă la sfârșit marcajul lui.")
@@ -83,7 +83,7 @@ Partial Class PrimiteReceptieNouaView
         tlyNoua.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 54F))
         tlyNoua.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Absolute, 30F))
         tlyNoua.RowStyles.Add(New System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 100F))
-        tlyNoua.Size = New System.Drawing.Size(532, 204)
+        tlyNoua.Size = New System.Drawing.Size(283, 204)
         tlyNoua.TabIndex = 0
         ' 
         ' lblTip
@@ -93,7 +93,7 @@ Partial Class PrimiteReceptieNouaView
         lblTip.Location = New System.Drawing.Point(0, 0)
         lblTip.Margin = New System.Windows.Forms.Padding(0)
         lblTip.Name = "lblTip"
-        lblTip.Size = New System.Drawing.Size(532, 30)
+        lblTip.Size = New System.Drawing.Size(283, 30)
         lblTip.TabIndex = 0
         lblTip.Text = "Tip:"
         lblTip.TextAlign = Drawing.ContentAlignment.MiddleLeft
@@ -105,7 +105,7 @@ Partial Class PrimiteReceptieNouaView
         lblData.Location = New System.Drawing.Point(0, 79)
         lblData.Margin = New System.Windows.Forms.Padding(0)
         lblData.Name = "lblData"
-        lblData.Size = New System.Drawing.Size(532, 30)
+        lblData.Size = New System.Drawing.Size(283, 30)
         lblData.TabIndex = 2
         lblData.Text = "Data:"
         lblData.TextAlign = Drawing.ContentAlignment.MiddleLeft
@@ -114,10 +114,10 @@ Partial Class PrimiteReceptieNouaView
         ' 
         lblDescriere.BorderWidth = 0
         lblDescriere.Dock = System.Windows.Forms.DockStyle.Fill
-        lblDescriere.Location = New System.Drawing.Point(0, 160)
+        lblDescriere.Location = New System.Drawing.Point(0, 163)
         lblDescriere.Margin = New System.Windows.Forms.Padding(0)
         lblDescriere.Name = "lblDescriere"
-        lblDescriere.Size = New System.Drawing.Size(532, 30)
+        lblDescriere.Size = New System.Drawing.Size(283, 30)
         lblDescriere.TabIndex = 4
         lblDescriere.Text = "Descriere:"
         lblDescriere.TextAlign = Drawing.ContentAlignment.MiddleLeft
@@ -130,7 +130,7 @@ Partial Class PrimiteReceptieNouaView
         Margin = New System.Windows.Forms.Padding(0)
         Name = "PrimiteReceptieNouaView"
         Padding = New System.Windows.Forms.Padding(4)
-        Size = New System.Drawing.Size(540, 212)
+        Size = New System.Drawing.Size(291, 212)
         tlyNoua.ResumeLayout(False)
         ResumeLayout(False)
     End Sub

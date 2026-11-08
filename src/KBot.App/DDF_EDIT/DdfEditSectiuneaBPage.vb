@@ -120,8 +120,8 @@ Public Class DdfEditSectiuneaBPage
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            tlyRoot.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tlyRoot.BackColor = scheme.PanelBack()
             lblNota.ForeColor = p.TextDimColor
             lblNota.BackColor = Color.Transparent
         Catch ex As Exception

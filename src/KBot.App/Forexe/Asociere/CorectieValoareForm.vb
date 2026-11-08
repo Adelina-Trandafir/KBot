@@ -414,7 +414,7 @@ Public Class CorectieValoareForm
             Dim scheme As ThemeScheme = ThemeManager.Current
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            tlyCorp.BackColor = p.SurfaceAltColor
+            tlyCorp.BackColor = scheme.PanelBack()
             For Each lbl As Label In {lblAntet, lblSume, lblMotivCaption}
                 lbl.ForeColor = p.TextDimColor
                 lbl.BackColor = Color.Transparent

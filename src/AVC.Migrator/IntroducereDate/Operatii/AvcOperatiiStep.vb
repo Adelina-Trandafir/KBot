@@ -4,16 +4,16 @@ Imports KBot.Common
 Imports KBot.Migrator
 Imports MySqlConnector
 
-''' <summary>What the target already holds that the operations point at (read-only).</summary>
+''' <summary>References in the target. During verification, planned entries are also present, with no target ID yet.</summary>
 Friend NotInheritable Class AvcOperatiiLookups
-    ''' <summary>IdUnitate (Access) ▸ the subunit of the unit.</summary>
-    Public ReadOnly Property Subunits As Dictionary(Of Integer, AvcSubunitRef) = New Dictionary(Of Integer, AvcSubunitRef)()
-    ''' <summary>"IdSubunitate|composed symbol" ▸ IdCont.</summary>
-    Public ReadOnly Property Conturi As New Dictionary(Of String, Integer)(StringComparer.Ordinal)
+    ''' <summary>IdUnitate (Access) ▸ subunit ID and sector/source.</summary>
+    Public ReadOnly Property Subunits As New Dictionary(Of Integer, (IdSubunitate As Integer?, SursaSector As String))()
+    ''' <summary>Access unit and composed symbol ▸ IdCont.</summary>
+    Public ReadOnly Property Conturi As New Dictionary(Of (IdUnitate As Integer, Simbol As String), Integer?)()
     ''' <summary>"IdUnitate|Access key" ▸ composed symbol (what the step «Plan de conturi» wrote).</summary>
     Public ReadOnly Property SimbolComp As New Dictionary(Of String, String)(StringComparer.Ordinal)
     ''' <summary>"SursaSector|COD" ▸ IdJurnal.</summary>
-    Public ReadOnly Property Jurnale As New Dictionary(Of String, Integer)(StringComparer.OrdinalIgnoreCase)
+    Public ReadOnly Property Jurnale As New Dictionary(Of String, Integer?)(StringComparer.OrdinalIgnoreCase)
     ''' <summary>"IdUnitate|IdClsfAcc" ▸ IDClsf.</summary>
     Public ReadOnly Property Clasificatii As New Dictionary(Of String, Integer)(StringComparer.Ordinal)
     ''' <summary>IdClsfAcc ▸ every IDClsf with it (used only when exactly one: a unit reading the classifications of its parent).</summary>
@@ -23,14 +23,14 @@ Friend NotInheritable Class AvcOperatiiLookups
 End Class
 
 Friend NotInheritable Class AvcPlanLinie
-    Public Property IdCont As Integer
+    Public Property IdCont As Integer?
     Public Property IdPartener As Integer?
     Public Property Suma As Decimal
 End Class
 
 Friend NotInheritable Class AvcPlanOper
     Public Property Row As AvcOperRow
-    Public Property IdJurnal As Integer
+    Public Property IdJurnal As Integer?
     Public Property IdClsf As Integer?
     Public ReadOnly Property Debit As New List(Of AvcPlanLinie)()
     Public ReadOnly Property Credit As New List(Of AvcPlanLinie)()
@@ -43,7 +43,7 @@ End Class
 
 Friend NotInheritable Class AvcPlanNota
     Public Property IdUnitate As Integer
-    Public Property IdSubunitate As Integer
+    Public Property IdSubunitate As Integer?
     Public Property NumarNC As Integer
     Public Property DataNc As Date?
     Public ReadOnly Property Documente As New List(Of AvcPlanDoc)()
@@ -61,7 +61,8 @@ Friend NotInheritable Class AvcOperatiiPlan
 
     ''' <summary>The unit names of <see cref="UnitatiFaraSubunitate"/>, for the messages.</summary>
     Public Function UnitatiFaraSubunitateText() As String
-        Return String.Join(", ", UnitatiFaraSubunitate.Select(Function(k_id) UnitName(k_id)))
+        Return String.Join(", ", UnitatiFaraSubunitate.Select(Function(k_id) UnitName(k_id)).
+                           OrderBy(Function(k_name) k_name, StringComparer.Create(CultureInfo.GetCultureInfo("ro-RO"), True)))
     End Function
 
     Public Sub Omit(k_reason As String, k_what As String)
@@ -93,9 +94,9 @@ End Class
 ''' </summary>
 ''' <remarks>
 ''' <para>
-''' The steps «Subunitati», «Plan de conturi» and «Jurnale» of AVC.Migrator and the partners and classifications of KBot.Migrator must ALREADY be in the target (an earlier
-''' migration): the verification looks the accounts, journals, partners and classifications up there, and what it cannot find is left out of the migration and named
-''' (an operation is never written half: either with all its lines or not at all; a document without a kept operation, and a note without a kept document, are left out too).
+''' Verification resolves subunits, accounts and journals against the target and the plans of earlier selected steps.
+''' The writer resolves their actual IDs inside the transaction. Partners and classifications must already be in the target.
+''' An unresolved operation is omitted with all its lines, as are documents and notes left empty by those omissions.
 ''' </para>
 ''' <para>
 ''' The Access ids are kept in <c>IdDocumentAccess</c> / <c>IdOperatieAccess</c> (and the salary links in <c>IdSalariiAccess</c> / <c>IdxAccess</c>), so a repeat adds only what is missing.
@@ -166,14 +167,15 @@ Friend NotInheritable Class AvcOperatiiStep
 
     ' ── the lookups and the plan ────────────────────────────────────────────────
 
-    Private Function LoadLookups(k_cn As MySqlConnection, k_transaction As MySqlTransaction) As AvcOperatiiLookups
+    Private Function LoadLookups(k_cn As MySqlConnection, k_transaction As MySqlTransaction, Optional k_preview As AvcContext = Nothing) As AvcOperatiiLookups
         Try
             Dim k_result As New AvcOperatiiLookups()
             For Each k_pair In AvcSubunitStore.UnitMap(k_cn, k_transaction)
-                k_result.Subunits(k_pair.Key) = k_pair.Value
+                k_result.Subunits(k_pair.Key) = (k_pair.Value.IdSubunitate, k_pair.Value.SursaSector)
             Next
-            ReadPairs(k_cn, k_transaction, "SELECT `IdSubunitate`, `SimbolCont`, `IdCont` FROM `TZ_PlanCont`",
-                      Sub(k_r) k_result.Conturi(k_r.GetInt32(0).ToString(CultureInfo.InvariantCulture) & "|" & k_r.GetString(1)) = k_r.GetInt32(2))
+            ReadPairs(k_cn, k_transaction, "SELECT s.`IdUnitateAccess`, p.`SimbolCont`, p.`IdCont` FROM `TZ_PlanCont` p " &
+                      "JOIN `TZ_Subunitati` s ON s.`IdSubunitate` = p.`IdSubunitate` WHERE s.`IdUnitateAccess` IS NOT NULL",
+                      Sub(k_r) k_result.Conturi((k_r.GetInt32(0), k_r.GetString(1))) = k_r.GetInt32(2))
             ReadPairs(k_cn, k_transaction, "SELECT `SursaSector`, `Cod`, `IdJurnal` FROM `TZ_Jurnale`",
                       Sub(k_r) k_result.Jurnale(k_r.GetString(0) & "|" & k_r.GetString(1)) = k_r.GetInt32(2))
             ReadPairs(k_cn, k_transaction, "SELECT `IDClsf`, `IdClsfAcc`, `IdUnitate` FROM `Clasificatii`",
@@ -192,6 +194,17 @@ Friend NotInheritable Class AvcOperatiiStep
             For Each k_row In _planContRows.Rows
                 k_result.SimbolComp(k_row.IdUnitate.ToString(CultureInfo.InvariantCulture) & "|" & k_row.SimbolAccess) = k_row.ComposedSymbol()
             Next
+            If k_preview IsNot Nothing Then
+                For Each k_pair In k_preview.PlannedSubunits
+                    k_result.Subunits.TryAdd(k_pair.Key, (CType(Nothing, Integer?), k_pair.Value.SursaSector))
+                Next
+                For Each k_account In k_preview.PlannedAccounts
+                    k_result.Conturi.TryAdd(k_account, Nothing)
+                Next
+                For Each k_journal In k_preview.PlannedJournals
+                    k_result.Jurnale.TryAdd(k_journal, Nothing)
+                Next
+            End If
             Return k_result
         Catch ex As Exception
             GlobalErrorLog.Write("AvcOperatiiStep.LoadLookups", ex)
@@ -213,7 +226,7 @@ Friend NotInheritable Class AvcOperatiiStep
         Return k_a.ToString(CultureInfo.InvariantCulture) & "|" & k_b
     End Function
 
-    ''' <summary>Resolves every operation against the lookups; nothing is written. Pure: the same lookups give the same plan.</summary>
+    ''' <summary>Resolves operations without writing. The same lookups give the same plan.</summary>
     Private Function BuildPlan(k_look As AvcOperatiiLookups, k_context As AvcContext) As AvcOperatiiPlan
         Dim k_plan As New AvcOperatiiPlan() With {.UnitName = AddressOf k_context.UnitLabel}
         Dim k_notes = _set.Note.GroupBy(Function(k_n) Key2(k_n.IdUnitate, k_n.NumarNC.ToString(CultureInfo.InvariantCulture))).ToDictionary(Function(k_g) k_g.Key, Function(k_g) k_g.First(), StringComparer.Ordinal)
@@ -227,7 +240,7 @@ Friend NotInheritable Class AvcOperatiiStep
 
         Dim k_groups = _set.Documente.GroupBy(Function(k_d) New With {k_d.IdUnitate, .Nota = k_d.NumarNC.GetValueOrDefault(0)})
         For Each k_group In k_groups.OrderBy(Function(k_g) k_g.Key.IdUnitate).ThenBy(Function(k_g) k_g.Key.Nota)
-            Dim k_sub As AvcSubunitRef = Nothing
+            Dim k_sub As (IdSubunitate As Integer?, SursaSector As String)
             If Not k_look.Subunits.TryGetValue(k_group.Key.IdUnitate, k_sub) Then
                 k_plan.UnitatiFaraSubunitate.Add(k_group.Key.IdUnitate)
                 Continue For
@@ -241,7 +254,7 @@ Friend NotInheritable Class AvcOperatiiStep
             Dim k_noteRow As AvcNotaRow = Nothing
             k_notes.TryGetValue(Key2(k_group.Key.IdUnitate, k_group.Key.Nota.ToString(CultureInfo.InvariantCulture)), k_noteRow)
             Dim k_nota As New AvcPlanNota() With {
-                .IdUnitate = k_group.Key.IdUnitate, .IdSubunitate = k_sub.IdSubunitate, .NumarNC = k_group.Key.Nota, .DataNc = If(k_noteRow Is Nothing, Nothing, k_noteRow.DataNc)}
+                .IdUnitate = k_group.Key.IdUnitate, .IdSubunitate = k_sub.IdSubunitate, .NumarNC = k_group.Key.Nota, .DataNc = k_noteRow?.DataNc}
             For Each k_doc In k_group.OrderBy(Function(k_d) k_d.IdDocument)
                 Dim k_planDoc As New AvcPlanDoc() With {.Row = k_doc}
                 Dim k_ops As List(Of AvcOperRow) = Nothing
@@ -251,7 +264,7 @@ Friend NotInheritable Class AvcOperatiiStep
                     Continue For
                 End If
                 For Each k_op In k_ops.OrderBy(Function(k_o) k_o.IdOperatie)
-                    Dim k_planOp As AvcPlanOper = ResolveOperation(k_op, k_sub, k_look, k_debit, k_credit, k_plan)
+                    Dim k_planOp = ResolveOperation(k_op, k_sub.SursaSector, k_look, k_debit, k_credit, k_plan)
                     If k_planOp IsNot Nothing Then k_planDoc.Operatii.Add(k_planOp)
                 Next
                 If k_planDoc.Operatii.Count = 0 Then
@@ -265,7 +278,7 @@ Friend NotInheritable Class AvcOperatiiStep
         Return k_plan
     End Function
 
-    Private Shared Function ResolveOperation(k_op As AvcOperRow, k_sub As AvcSubunitRef, k_look As AvcOperatiiLookups,
+    Private Shared Function ResolveOperation(k_op As AvcOperRow, k_sursaSector As String, k_look As AvcOperatiiLookups,
                                              k_debit As Dictionary(Of String, List(Of AvcLinieRow)), k_credit As Dictionary(Of String, List(Of AvcLinieRow)),
                                              k_plan As AvcOperatiiPlan) As AvcPlanOper
         Dim k_result As New AvcPlanOper() With {.Row = k_op}
@@ -273,9 +286,10 @@ Friend NotInheritable Class AvcOperatiiStep
             k_plan.Omit("Operații fără dată", k_plan.Describe(k_op))
             Return Nothing
         End If
-        Dim k_journal As Integer
-        If Not k_look.Jurnale.TryGetValue(k_sub.SursaSector & "|" & k_op.CodJurnal.ToUpperInvariant(), k_journal) Then
-            k_plan.Omit($"Jurnal «{k_op.CodJurnal}» negăsit în TZ_Jurnale (rulați pasul «Jurnale»)", k_plan.Describe(k_op))
+        Dim k_journalKey = k_sursaSector & "|" & k_op.CodJurnal.ToUpperInvariant()
+        Dim k_journal As Integer?
+        If Not k_look.Jurnale.TryGetValue(k_journalKey, k_journal) Then
+            k_plan.Omit($"Jurnal «{k_op.CodJurnal}» indisponibil pentru sectorul și sursa «{k_sursaSector}» (pasul «Jurnale»)", k_plan.Describe(k_op))
             Return Nothing
         End If
         k_result.IdJurnal = k_journal
@@ -303,10 +317,10 @@ Friend NotInheritable Class AvcOperatiiStep
         For Each k_pair In {Tuple.Create(k_d, k_result.Debit), Tuple.Create(k_c, k_result.Credit)}
             For Each k_line In k_pair.Item1
                 Dim k_composed As String = Nothing
-                Dim k_cont As Integer
+                Dim k_idCont As Integer?
                 If Not k_look.SimbolComp.TryGetValue(Key2(k_line.IdUnitate, k_line.SimbolCont), k_composed) OrElse
-                   Not k_look.Conturi.TryGetValue(Key2(k_sub.IdSubunitate, k_composed), k_cont) Then
-                    k_plan.Omit($"Cont «{k_line.SimbolCont}» negăsit în TZ_PlanCont (rulați pasul «Plan de conturi»)", k_plan.Describe(k_op))
+                   Not k_look.Conturi.TryGetValue((k_line.IdUnitate, k_composed), k_idCont) Then
+                    k_plan.Omit($"Cont «{k_line.SimbolCont}» indisponibil pentru unitatea {k_plan.UnitName(k_line.IdUnitate)} (pasul «Plan de conturi»)", k_plan.Describe(k_op))
                     Return Nothing
                 End If
                 Dim k_partner As Integer? = Nothing
@@ -318,7 +332,7 @@ Friend NotInheritable Class AvcOperatiiStep
                     End If
                     k_partner = k_id
                 End If
-                k_pair.Item2.Add(New AvcPlanLinie() With {.IdCont = k_cont, .IdPartener = k_partner, .Suma = k_line.Suma})
+                k_pair.Item2.Add(New AvcPlanLinie() With {.IdCont = k_idCont, .IdPartener = k_partner, .Suma = k_line.Suma})
             Next
         Next
         If k_result.Debit.Sum(Function(k_l) k_l.Suma) <> k_result.Credit.Sum(Function(k_l) k_l.Suma) Then
@@ -369,18 +383,19 @@ Friend NotInheritable Class AvcOperatiiStep
             Next
             If k_findings.Any(Function(f) f.IsBlocking) Then Return k_findings
 
-            Dim k_plan = BuildPlan(LoadLookups(k_cn, Nothing), k_context)
+            Dim k_plan = BuildPlan(LoadLookups(k_cn, Nothing, k_preview:=k_context), k_context)
             If k_plan.UnitatiFaraSubunitate.Count > 0 Then
                 k_findings.Add(New Finding(AvcKinds.SUBUNITATE_LIPSA, FindingClass.Blocant, "TZ_NoteC", "IdSubunitate",
-                                           $"Unitățile {k_plan.UnitatiFaraSubunitateText()} nu au încă subunitate. Rulați întâi pașii «Subunități», «Plan de conturi» și «Jurnale» într-o migrare anterioară."))
+                                           $"Unitățile {k_plan.UnitatiFaraSubunitateText()} au nevoie de subunități. Bifați pasul «Subunități» în aceeași migrare sau creați-le înainte."))
             End If
             For Each k_pair In k_plan.Omise
                 k_findings.Add(New Finding(AvcKinds.REZUMAT, FindingClass.Atentie, "TZ_Oper", String.Empty,
                                            $"{k_pair.Value.Count} rânduri NU se migrează: {k_pair.Key}", k_pair.Value.Count).WithDetail(String.Join(vbLf, k_pair.Value.Take(30))))
             Next
+            RowsToWrite = k_plan.OperatiiCount()
             k_findings.Add(New Finding(AvcKinds.REZUMAT, FindingClass.Informativ, "TZ_Oper", String.Empty,
-                                       $"{k_plan.Note.Count} note, {k_plan.DocumenteCount()} documente, {k_plan.OperatiiCount()} operații ▸ TZ_NoteC / TZ_Documente / TZ_Oper / TZ_Debit / TZ_Credit " &
-                                       $"(din {_set.Operatii.Count} operații Access).", k_plan.OperatiiCount()))
+                                       $"{k_plan.Note.Count} note, {k_plan.DocumenteCount()} documente, {RowsToWrite} operații ▸ TZ_NoteC / TZ_Documente / TZ_Oper / TZ_Debit / TZ_Credit " &
+                                       $"(din {_set.Operatii.Count} operații Access).", RowsToWrite))
             Dim k_existing As Long = AvcSql.CountRows(k_cn, k_db, "TZ_Oper")
             If k_existing > 0 Then
                 k_findings.Add(New Finding(Finding.RANDURI_EXISTENTE, FindingClass.Atentie, "TZ_Oper", String.Empty,
@@ -454,11 +469,12 @@ Friend NotInheritable Class AvcOperatiiStep
             Dim k_docsDone As Integer = 0
             For Each k_nota In k_plan.Note
                 k_cancel.ThrowIfCancellationRequested()
-                Dim k_noteKey As String = $"{k_nota.IdSubunitate.ToString(CultureInfo.InvariantCulture)}|{AvcContext.TransferYear.ToString(CultureInfo.InvariantCulture)}|{k_nota.NumarNC.ToString(CultureInfo.InvariantCulture)}"
+                Dim k_idSubunitate = k_nota.IdSubunitate.Value
+                Dim k_noteKey As String = $"{k_idSubunitate.ToString(CultureInfo.InvariantCulture)}|{AvcContext.TransferYear.ToString(CultureInfo.InvariantCulture)}|{k_nota.NumarNC.ToString(CultureInfo.InvariantCulture)}"
                 Dim k_idNota As Integer
                 If Not k_notes.TryGetValue(k_noteKey, k_idNota) Then
                     k_idNota = CInt(InsertRow(k_cn, k_transaction, k_dump, "TZ_NoteC", New Dictionary(Of String, Object)(StringComparer.Ordinal) From {
-                        {"IdSubunitate", k_nota.IdSubunitate}, {"An", AvcContext.TransferYear}, {"NumarNC", k_nota.NumarNC},
+                        {"IdSubunitate", k_idSubunitate}, {"An", AvcContext.TransferYear}, {"NumarNC", k_nota.NumarNC},
                         {"DataNc", If(k_nota.DataNc.HasValue, CObj(k_nota.DataNc.Value), Nothing)}, {"CreatedAt", If(k_nota.DataNc.HasValue, CObj(k_nota.DataNc.Value), Nothing)}}))
                     k_notes(k_noteKey) = k_idNota
                     k_count("TZ_NoteC") += 1
@@ -482,7 +498,7 @@ Friend NotInheritable Class AvcOperatiiStep
                         If k_ops.Contains(k_opKey) Then Continue For
                         Dim k_created As Object = If(k_op.Row.Dtq.HasValue, CObj(k_op.Row.Dtq.Value), Nothing)
                         Dim k_idOper As Long = InsertRow(k_cn, k_transaction, k_dump, "TZ_Oper", New Dictionary(Of String, Object)(StringComparer.Ordinal) From {
-                            {"IdDocument", k_idDoc}, {"IdJurnal", k_op.IdJurnal}, {"IdClsf", If(k_op.IdClsf.HasValue, CObj(k_op.IdClsf.Value), Nothing)},
+                            {"IdDocument", k_idDoc}, {"IdJurnal", k_op.IdJurnal.Value}, {"IdClsf", If(k_op.IdClsf.HasValue, CObj(k_op.IdClsf.Value), Nothing)},
                             {"DataOperatie", k_op.Row.DataOperatie.Value}, {"Explicatie", k_op.Row.Explicatie}, {"Tip", If(k_op.Row.Tip.Length > 0, k_op.Row.Tip, Nothing)},
                             {"Fel", If(k_op.Row.Fel.Length > 0, k_op.Row.Fel, Nothing)}, {"Compartiment", If(k_op.Row.Comp.Length > 0, k_op.Row.Comp, Nothing)},
                             {"Cfpp", Nb(k_op.Row.Cfpp)}, {"Angajament", Nb(k_op.Row.Angajament)}, {"Propunere", Nb(k_op.Row.Propunere)}, {"Ordonantare", Nb(k_op.Row.Ordonantare)},
@@ -494,7 +510,7 @@ Friend NotInheritable Class AvcOperatiiStep
                         For Each k_pair In {Tuple.Create("TZ_Debit", k_op.Debit), Tuple.Create("TZ_Credit", k_op.Credit)}
                             For Each k_line In k_pair.Item2
                                 InsertRow(k_cn, k_transaction, k_dump, k_pair.Item1, New Dictionary(Of String, Object)(StringComparer.Ordinal) From {
-                                    {"IdOper", k_idOper}, {"IdCont", k_line.IdCont}, {"IdPartener", If(k_line.IdPartener.HasValue, CObj(k_line.IdPartener.Value), Nothing)},
+                                    {"IdOper", k_idOper}, {"IdCont", k_line.IdCont.Value}, {"IdPartener", If(k_line.IdPartener.HasValue, CObj(k_line.IdPartener.Value), Nothing)},
                                     {"Suma", k_line.Suma}, {"CreatedAt", k_created}})
                                 k_count(k_pair.Item1) += 1
                             Next

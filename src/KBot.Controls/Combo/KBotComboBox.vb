@@ -1286,7 +1286,7 @@ Partial Public Class KBotComboBox
 
             _autoBack = p.InputBackColor
             _autoFore = p.InputTextColor
-            _autoBorder = p.InputBorderColor
+            _autoBorder = scheme.OuterBorder(p.InputBorderColor)   ' SLICE-0130
             _autoHover = p.ButtonHoverColor
             _autoArrow = p.TextDimColor
             _autoSelBack = p.AccentColor
@@ -1432,6 +1432,16 @@ Partial Public Class KBotComboBox
     ' PAINTING
     ' =====================================================================
 
+    ' The corners outside the arc show the PARENT's colour (ThemeShapes.BackdropColor): repaint when it changes.
+    Protected Overrides Sub OnParentBackColorChanged(e As EventArgs)
+        MyBase.OnParentBackColorChanged(e)
+        Try
+            Invalidate()
+        Catch ex As Exception
+            GlobalErrorLog.Write("KBotComboBox.OnParentBackColorChanged", ex)
+        End Try
+    End Sub
+
     ''' <summary>The face: rounded background + outline + arrow, and the caption when no text box shows it.</summary>
     Protected Overrides Sub OnPaint(e As PaintEventArgs)
         Try
@@ -1441,7 +1451,13 @@ Partial Public Class KBotComboBox
             If _cellEditorMode Then
                 g.Clear(BackColor)
             Else
+                ' The default background pass filled the WHOLE rectangle with BackColor: the corners
+                ' outside the arc must show what is behind the combo, not the combo's own colour.
+                g.Clear(ThemeShapes.BackdropColor(Me))
                 g.SmoothingMode = SmoothingMode.AntiAlias
+                ' Half pixels: a 1px outline on a half coordinate fills exactly one pixel row and the
+                ' corner arc keeps the weight of the sides (see ThemeShapes.RoundedRectF).
+                g.PixelOffsetMode = PixelOffsetMode.Half
                 ' With the text box showing, it repaints its own rectangle with its own
                 ' background, so a hover wash would only show as a thick frame: hover moves to
                 ' the outline instead.
@@ -1449,8 +1465,8 @@ Partial Public Class KBotComboBox
                 Dim fill As Color = If(hot AndAlso Not _edit.Visible, EffectiveHoverColor, BackColor)
                 Dim outline As Color = If(ContainsFocus OrElse (hot AndAlso _edit.Visible),
                                           ThemeManager.Current.Palette.FocusRingColor, EffectiveBorderColor)
-                Dim rect As New Rectangle(0, 0, Width - 1, Height - 1)
-                Using path As GraphicsPath = ThemeShapes.RoundedRect(rect, EffectiveRadius())
+                Dim rect As RectangleF = ThemeShapes.FrameBounds(Size, 1)
+                Using path As GraphicsPath = ThemeShapes.RoundedRectF(rect, EffectiveRadius())
                     Using b As New SolidBrush(fill)
                         g.FillPath(b, path)
                     End Using
@@ -1458,6 +1474,7 @@ Partial Public Class KBotComboBox
                         g.DrawPath(pen, path)
                     End Using
                 End Using
+                g.PixelOffsetMode = PixelOffsetMode.Default
                 DrawArrow(g, ArrowRect())
             End If
 

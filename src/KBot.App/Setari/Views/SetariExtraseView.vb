@@ -252,10 +252,10 @@ Public Class SetariExtraseView
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            tlyBody.BackColor = p.SurfaceAltColor
-            tlyGrila.BackColor = p.SurfaceAltColor
-            tlyButoane.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tlyBody.BackColor = scheme.PanelBack()
+            tlyGrila.BackColor = scheme.PanelBack()
+            tlyButoane.BackColor = scheme.PanelBack()
             lblTitlu.ForeColor = p.TextColor
             lblTitlu.BackColor = Color.Transparent
             lblHint.ForeColor = p.TextDimColor

@@ -660,21 +660,21 @@ Public Class IstoricView
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
 
-            BackColor = p.SurfaceAltColor
-            splitTree.BackColor = p.SurfaceAltColor
-            splitTree.Panel1.BackColor = p.SurfaceAltColor
-            splitTree.Panel2.BackColor = p.SurfaceAltColor
-            split.BackColor = p.SurfaceAltColor
-            split.Panel1.BackColor = p.SurfaceAltColor
-            split.Panel2.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            splitTree.BackColor = scheme.PanelBack()
+            splitTree.Panel1.BackColor = scheme.PanelBack()
+            splitTree.Panel2.BackColor = scheme.PanelBack()
+            split.BackColor = scheme.PanelBack()
+            split.Panel1.BackColor = scheme.PanelBack()
+            split.Panel2.BackColor = scheme.PanelBack()
 
             ' Arborele e IThemedControl: își ia singur paleta, iar ThemeManager nu mai recurge în
             ' copiii lui. Iconițele nodurilor sunt bitmap-uri fixe (My.Resources), deci arborele
             ' NU se reconstruiește la schimbarea temei.
 
-            pnlFiltre.BackColor = p.SurfaceColor
-            pnlDetaliu.BackColor = p.SurfaceColor
-            detailTable.BackColor = p.SurfaceColor
+            pnlFiltre.BackColor = scheme.PanelBack()
+            pnlDetaliu.BackColor = scheme.PanelBack()
+            detailTable.BackColor = scheme.PanelBack()
             lblCapDescriere.ForeColor = p.TextDimColor
             lblCapDescriere.BackColor = Color.Transparent
             'lblCapValori.ForeColor = p.TextDimColor
@@ -697,7 +697,7 @@ Public Class IstoricView
             ThemeMenu(menuData, p)
 
             lblEmpty.ForeColor = p.TextDimColor
-            lblEmpty.BackColor = p.SurfaceAltColor
+            lblEmpty.BackColor = scheme.PanelBack()
         Catch ex As Exception
             ' Boundary UI (cascada de temă): logăm și înghițim.
             GlobalErrorLog.Write("IstoricView.ApplyTheme", ex)

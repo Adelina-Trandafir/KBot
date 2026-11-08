@@ -717,9 +717,9 @@ Public Class PlanContConturiView
         Try
             If k_scheme Is Nothing Then Return
             Dim k_p As ThemePalette = k_scheme.Palette
-            BackColor = k_p.SurfaceAltColor
+            BackColor = k_scheme.PanelBack()
             For Each k_c As Control In {tlyRoot, tlyCont, tlyDetalii, tlyButoane}
-                k_c.BackColor = k_p.SurfaceAltColor
+                k_c.BackColor = k_scheme.PanelBack()
             Next
             lblSimbol.ForeColor = k_p.TextColor
             ButtonStyles.ApplyPrimary(btnSalveaza, k_scheme)

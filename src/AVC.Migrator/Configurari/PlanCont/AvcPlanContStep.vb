@@ -150,7 +150,11 @@ Friend NotInheritable Class AvcPlanContStep
                 k_findings.Add(New Finding(AvcKinds.PLAN_CONT_INVALID, k_issue.Severity, "TZ_PlanCont", k_issue.Column,
                                            k_issue.Message, k_issue.Count).WithDetail(k_issue.Detail))
             Next
-            RowsToWrite = _set.ActiveRows().Count
+            Dim k_active = _set.ActiveRows()
+            RowsToWrite = k_active.Count
+            If Not k_findings.Any(Function(f) f.IsBlocking) Then
+                k_context.PlannedAccounts.UnionWith(k_active.Select(Function(r) (r.IdUnitate, r.ComposedSymbol())))
+            End If
             If _set.UsageUnknownUnits.Count > 0 Then
                 k_findings.Add(New Finding(AvcKinds.PLAN_CONT_INVALID, FindingClass.Informativ, "TZ_PlanCont", String.Empty,
                                            "Folosirea conturilor în «Debit», «Credit» și «ParteneriSI» nu a putut fi citită la unitățile: " &
@@ -159,7 +163,7 @@ Friend NotInheritable Class AvcPlanContStep
             End If
 
             For Each k_unitId In _set.UnitsWithRows.OrderBy(Function(u) u)
-                Dim k_unitRows = _set.ActiveRows().Where(Function(r) r.IdUnitate = k_unitId).ToList()
+                Dim k_unitRows = k_active.Where(Function(r) r.IdUnitate = k_unitId).ToList()
                 If k_unitRows.Count = 0 Then Continue For
                 If Not k_map.ContainsKey(k_unitId) Then
                     ' Its subunit does not exist yet: the subunits step creates it just before this step writes.

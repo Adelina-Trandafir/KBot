@@ -87,7 +87,7 @@ Public Class PrimiteObservatiiPage
     Public Sub ApplyTheme(k_scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try
             If k_scheme Is Nothing Then Return
-            BackColor = k_scheme.Palette.SurfaceAltColor
+            BackColor = k_scheme.PanelBack()
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteObservatiiPage.ApplyTheme", ex)
         End Try

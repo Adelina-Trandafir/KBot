@@ -1523,10 +1523,10 @@ Public Class DdfEditForm
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
 
-            tlyMain.BackColor = p.SurfaceAltColor
-            tlyAntet.BackColor = p.SurfaceAltColor
-            tlySubsol.BackColor = p.SurfaceAltColor
-            pnlPages.BackColor = p.SurfaceAltColor
+            tlyMain.BackColor = scheme.PanelBack()
+            tlyAntet.BackColor = scheme.PanelBack()
+            tlySubsol.BackColor = scheme.PanelBack()
+            pnlPages.BackColor = scheme.PanelBack()
 
             For Each capt As Label In New Label() {lblCodCaption, lblCualCaption,
                                                    lblDataCreareCaption, lblTotalCaption,

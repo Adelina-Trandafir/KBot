@@ -108,7 +108,7 @@ Public Class InternalInfoForm
             BackColor = p.BorderColor
 
             lblHeader.ForeColor = p.TextColor
-            lblHeader.BackColor = p.SurfaceAltColor
+            lblHeader.BackColor = scheme.PanelBack()
             txtInfo.BackColor = p.SurfaceAltColor
             txtInfo.ForeColor = p.TextColor
 

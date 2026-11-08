@@ -1390,12 +1390,12 @@ Public Class SablonOperatiiView
         Try
             If k_scheme Is Nothing Then Return
             Dim k_p As ThemePalette = k_scheme.Palette
-            BackColor = k_p.SurfaceAltColor
+            BackColor = k_scheme.PanelBack()
             For Each k_c As Control In {tlyMain, pnlCard, tlyBody, tlyRight, tlySubsol}
-                k_c.BackColor = k_p.SurfaceAltColor
+                k_c.BackColor = k_scheme.PanelBack()
             Next
             For Each k_l As Label In {lblExplicatie, lblJurnal, lblCompartiment, lblFel, lblFelOp}
-                k_l.BackColor = k_p.SurfaceAltColor
+                k_l.BackColor = k_scheme.PanelBack()
                 k_l.ForeColor = k_p.TextDimColor
             Next
             lblStare.ForeColor = k_p.TextDimColor

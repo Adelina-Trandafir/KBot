@@ -19,8 +19,8 @@ Public Class VanzareGeneralePage
         Try
             If k_scheme Is Nothing Then Return
             Dim k_palette As ThemePalette = k_scheme.Palette
-            BackColor = k_palette.SurfaceAltColor
-            tlyGenerale.BackColor = k_palette.SurfaceAltColor
+            BackColor = k_scheme.PanelBack()
+            tlyGenerale.BackColor = k_scheme.PanelBack()
             lblInfoFactura.ForeColor = k_palette.TextDimColor
         Catch ex As Exception
             GlobalErrorLog.Write("VanzareGeneralePage.ApplyTheme", ex)

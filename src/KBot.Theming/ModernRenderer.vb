@@ -80,10 +80,97 @@ Public Module ModernRenderer
             AddHandler btn.Resize, AddressOf OnButtonResize
             AddHandler btn.HandleCreated, AddressOf OnButtonResize
             AddHandler btn.HandleDestroyed, AddressOf OnButtonDestroyed
+            AddHandler btn.Paint, AddressOf OnButtonPaint
         End If
 
         UpdateButtonRegion(btn, scheme)
     End Sub
+
+    ''' <summary>
+    ''' A plain text button is painted by us (anti-aliased rounded outline) instead of being cut with a window region. A region is
+    ''' a hard-edged, pixel-stepped clip: it also erases the corners of the rectangular flat border Windows draws, so the sides had
+    ''' an outline and the corners had none. Buttons with an image keep the old region path (their content is not ours to redraw).
+    ''' </summary>
+    Private Function PaintsItself(btn As Button, scheme As ThemeScheme) As Boolean
+        ' Radius 0 = square corners: the stock flat button is already right, leave it alone.
+        Return scheme IsNot Nothing AndAlso scheme.Style.CornerRadius > 0 AndAlso
+               btn.Image Is Nothing AndAlso btn.BackgroundImage Is Nothing AndAlso btn.ImageList Is Nothing
+    End Function
+
+    ' Runs AFTER the stock button painted itself (the Paint event is raised last, inside the same double-buffered pass), so this
+    ' repaints the whole face: the surface behind the corners, the rounded fill and outline, then the caption.
+    Private Sub OnButtonPaint(sender As Object, e As PaintEventArgs)
+        Try
+            Dim btn As Button = TryCast(sender, Button)
+            If btn Is Nothing Then Return
+            Dim st As ButtonState = Nothing
+            If Not _buttons.TryGetValue(btn, st) OrElse Not PaintsItself(btn, st.Scheme) Then Return
+            Dim p As ThemePalette = st.Scheme.Palette
+            Dim g As Graphics = e.Graphics
+
+            Dim inside As Boolean = btn.Enabled AndAlso btn.ClientRectangle.Contains(btn.PointToClient(Control.MousePosition))
+            Dim pressed As Boolean = inside AndAlso (Control.MouseButtons And MouseButtons.Left) <> 0
+            Dim back As Color
+            Dim border As Color
+            Dim text As Color
+            If Not btn.Enabled Then
+                back = p.SurfaceAltColor
+                border = p.BorderColor
+                text = p.DisabledTextColor
+            Else
+                back = If(pressed, btn.FlatAppearance.MouseDownBackColor, If(inside, btn.FlatAppearance.MouseOverBackColor, btn.BackColor))
+                border = If(btn.Focused, p.AccentColor, btn.FlatAppearance.BorderColor)
+                text = btn.ForeColor
+            End If
+
+            g.Clear(ThemeShapes.BackdropColor(btn))
+            g.SmoothingMode = SmoothingMode.AntiAlias
+            ' Pixel centres on half-integers: a 1px outline on a half coordinate fills one whole row and the corner arc keeps the
+            ' weight of the sides (see ThemeShapes.RoundedRectF).
+            g.PixelOffsetMode = PixelOffsetMode.Half
+            Dim thick As Integer = Math.Max(1, btn.FlatAppearance.BorderSize)
+            Dim radius As Integer = ScaleForDpi(btn, st.Scheme.Style.CornerRadius)
+            Using path As GraphicsPath = ThemeShapes.RoundedRectF(ThemeShapes.FrameBounds(btn.Size, thick), radius)
+                Using b As New SolidBrush(back)
+                    g.FillPath(b, path)
+                End Using
+                Using pen As New Pen(border, CSng(thick))
+                    g.DrawPath(pen, path)
+                End Using
+            End Using
+            g.PixelOffsetMode = PixelOffsetMode.Default
+
+            Dim area As Rectangle = Rectangle.Round(New RectangleF(
+                btn.Padding.Left, btn.Padding.Top,
+                Math.Max(1, btn.Width - btn.Padding.Horizontal), Math.Max(1, btn.Height - btn.Padding.Vertical)))
+            Dim flags As TextFormatFlags = TextFlags(btn.TextAlign) Or TextFormatFlags.EndEllipsis
+            If Not btn.UseMnemonic Then flags = flags Or TextFormatFlags.NoPrefix
+            TextRenderer.DrawText(g, If(btn.Text, String.Empty), btn.Font, area, text, flags)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ModernRenderer.OnButtonPaint", ex)
+        End Try
+    End Sub
+
+    Private Function TextFlags(align As ContentAlignment) As TextFormatFlags
+        Dim flags As TextFormatFlags = TextFormatFlags.SingleLine
+        Select Case align
+            Case ContentAlignment.TopLeft, ContentAlignment.MiddleLeft, ContentAlignment.BottomLeft
+                flags = flags Or TextFormatFlags.Left
+            Case ContentAlignment.TopRight, ContentAlignment.MiddleRight, ContentAlignment.BottomRight
+                flags = flags Or TextFormatFlags.Right
+            Case Else
+                flags = flags Or TextFormatFlags.HorizontalCenter
+        End Select
+        Select Case align
+            Case ContentAlignment.TopLeft, ContentAlignment.TopCenter, ContentAlignment.TopRight
+                flags = flags Or TextFormatFlags.Top
+            Case ContentAlignment.BottomLeft, ContentAlignment.BottomCenter, ContentAlignment.BottomRight
+                flags = flags Or TextFormatFlags.Bottom
+            Case Else
+                flags = flags Or TextFormatFlags.VerticalCenter
+        End Select
+        Return flags
+    End Function
 
     ''' <summary>
     ''' Cât trebuie să fie ÎNALT butonul ca să încapă un rând de text peste umplutura cerută de
@@ -132,8 +219,10 @@ Public Module ModernRenderer
             RemoveHandler btn.Resize, AddressOf OnButtonResize
             RemoveHandler btn.HandleCreated, AddressOf OnButtonResize
             RemoveHandler btn.HandleDestroyed, AddressOf OnButtonDestroyed
+            RemoveHandler btn.Paint, AddressOf OnButtonPaint
         End If
         _buttons.Remove(btn)
+        btn.Invalidate()
         Try
             btn.Region = Nothing
         Catch ex As Exception
@@ -158,6 +247,12 @@ Public Module ModernRenderer
     ' Setează Region la un dreptunghi rotunjit; rază scalată la DPI. 0 => fără rotunjire.
     Private Sub UpdateButtonRegion(btn As Button, scheme As ThemeScheme)
         Try
+            ' A plain text button is painted by us (OnButtonPaint): no hard-edged window region.
+            If PaintsItself(btn, scheme) Then
+                btn.Region = Nothing
+                btn.Invalidate()
+                Return
+            End If
             Dim radiusLogical As Integer = scheme.Style.CornerRadius
             If radiusLogical <= 0 OrElse btn.Width <= 0 OrElse btn.Height <= 0 Then
                 btn.Region = Nothing

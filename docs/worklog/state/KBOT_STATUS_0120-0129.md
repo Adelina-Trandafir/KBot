@@ -24,17 +24,17 @@ Operator, 19.10.2026 (page «Recepții», KE16): an angajament picked for a supp
 
 | Slice | Name | Status | Worklog |
 |------:|------|--------|---------|
-| 0121-01 | Schema: legături și indicatori | SCRIS (`sql/P121_01_parteneri_angajamente.sql`), NERULAT: the operator runs it on AVACONT_SURSA + sync | [0121-01](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md#slice-0121-01) |
-| 0121-02 | Migrator: conversie și raport | CONSTRUIT (build 0 warn/0 err), NEPORNIT, netestat (operator: nu se poate testa acum) | [0121-02](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md#slice-0121-02) |
-| 0121-03 | Fereastra Parteneri: noile legături | CONSTRUIT (build 0 warn/0 err, py_compile), NEPORNIT, netestat; ajutor 0000-113 | [0121-03](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md#slice-0121-03) |
-| 0121-04 | Asociere DDF/furnizor: hook-uri | CONSTRUIT (py_compile), NEPORNIT, netestat; route `POST /api/forexe/parteneri/angajament` for 0121-05 | [0121-04](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md#slice-0121-04) |
-| 0121-05 | Recepții: alegere persistentă pe furnizor | CONSTRUIT (build 0 warn/0 err, py_compile), NEPORNIT, netestat; ajutor 0000-114 | [0121-05](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md#slice-0121-05) |
-| 0121-07 | Copie unică din vechile coduri | SCRIS, NERULAT (operatorul o ruleaza din «Interogari unice», dupa P121_01 + sync + fisierele Python) | [0121-07](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md#slice-0121-07) |
-| 0121-06 | Închidere condiționată de probe și operator | NEPORNIT | [0121-06](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md#slice-0121-06) |
+| 0121-01 | Schema: legături și indicatori | RULAT și văzut pe ecran de operator, 08.11.2026 (`sql/P121_01_parteneri_angajamente.sql`, AVACONT_SURSA + sync) | [0121-01](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md#slice-0121-01) |
+| 0121-02 | Migrator: conversie și raport | RULAT și văzut pe ecran de operator, 08.11.2026 (build 0 warn/0 err) | [0121-02](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md#slice-0121-02) |
+| 0121-03 | Fereastra Parteneri: noile legături | RULAT și văzut pe ecran de operator, 08.11.2026 (build 0 warn/0 err, py_compile); ajutor 0000-113 | [0121-03](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md#slice-0121-03) |
+| 0121-04 | Asociere DDF/furnizor: hook-uri | RULAT și văzut pe ecran de operator, 08.11.2026 (py_compile); route `POST /api/forexe/parteneri/angajament` for 0121-05 | [0121-04](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md#slice-0121-04) |
+| 0121-05 | Recepții: alegere persistentă pe furnizor | RULAT și văzut pe ecran de operator, 08.11.2026 (build 0 warn/0 err, py_compile); ajutor 0000-114 | [0121-05](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md#slice-0121-05) |
+| 0121-07 | Copie unică din vechile coduri | RULAT și văzut pe ecran de operator, 08.11.2026 («Interogari unice», după P121_01 + sync + fișierele Python) | [0121-07](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md#slice-0121-07) |
+| 0121-06 | Închidere condiționată de probe și operator | NEPORNIT: rămâne la cuvântul operatorului (șterge `Parteneri_Coduri`) | [0121-06](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md#slice-0121-06) |
 
 ### Open threads — 0121
 
-- [Instalare, probele Migratorului și conținutul vechi nevăzut](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md): schema/interogările nu au fost rulate la checkpoint, iar 02…05 nu au fost pornite. 07 completează ruta de preluare a codurilor vechi; 06 așteaptă rezultatul, ultima unitate și cuvântul operatorului.
+- [Închiderea 0121-06](../SLICE-0121-parteneri-angajamente-pe-cod-fiscal.md): 01…05 și 07 sunt rulate și văzute pe ecran de operator (08.11.2026). 06 (ștergerea `Parteneri_Coduri`) așteaptă ultima unitate trecută prin Migrator și cuvântul operatorului; neconfirmat pe câte baze/unități s-a rulat.
 
 ---
 
@@ -44,15 +44,15 @@ Operator, 20.10.2026: end the dependence of `FX_DDF_REV_SA`, `FX_DDF_REV_SB`, `F
 
 | Slice | Name | Status | Worklog |
 |------:|------|--------|---------|
-| 0122 | Plan: CodFiscal în CodPartener, fără dependența de id | PLAN decided by the operator, 20.10.2026 | [0122](../SLICE-0122-parteneri-fara-idpartener.md#slice-0122-plan) |
-| 0122-01 | Conversia datelor și corecția 01b | DDL on all databases; queries `0122_01` + `0122_01b` (`sql/0122_01b_interogare_unica.sql`) + checks (`sql/0122_01_verificari.sql`) run CLEAN on ONE database (23.10.2026), the others still to be done | [0122-01](../SLICE-0122-parteneri-fara-idpartener.md#slice-0122-01) |
-| 0122-02 | Server DDF/ORD: CodFiscal normalizat | CONSTRUIT (py_compile), NEPORNIT, netestat; client unchanged | [0122-02](../SLICE-0122-parteneri-fara-idpartener.md#slice-0122-02) |
-| 0122-03 | Cititori și protecția la ștergere | CONSTRUIT (py_compile), NEPORNIT, netestat; the old by-id test stays until the keys are dropped | [0122-03](../SLICE-0122-parteneri-fara-idpartener.md#slice-0122-03) |
-| 0122-08 | Ascunderea partenerilor nefolosiți, cu previzualizare | SCRIS, NERULAT; nothing is deleted, reversible; preview first | [0122-08](../SLICE-0122-parteneri-fara-idpartener.md#slice-0122-08) |
-| 0122-11 | Partenerii fără activitate (ascunși de `0122_08`) lipseau din lista «Parteneri» și din combo-ul de parteneri al DDF: ambele interogări de server trimit acum și rândurile cu `Ascuns = 1` | SCRIS, testat de operator (merge, 03.11.2026); `ast.parse` doar; cauza din cod, neconfirmată pe bază; un partener ascuns de mână nu se mai deosebește de unul ascuns de `0122_08`; VERCON neschimbat (își are interogarea lui) | [0122-11](../SLICE-0122-11-parteneri-ascunse-fara-activitate.md) |
-| 0122-09 | DDF edit: «Recepții» din revizia din rezervare însumează `DIF`, nu `Valoare` | SCRIS, NERULAT, netestat; server nedeployat; nu are legătură cu partenerii (slice-ul e doar cel mai recent care a atins `ddf_edit.py`) | [0122-09](../SLICE-0122-09-ddf-receptii-dif.md) |
-| 0122-10 | Recepții vs rezervări: prag de o lună la așezarea automată (server + Asocieri) și detector în tooltipul arborelui | SCRIS + build curat (App 0/0; py_compile); NERULAT, netestat; server nedeployat; fără excepția «suma se potrivește» (cazul real avea suma identică). 31.10.2026: nu mai arată ziua în care recepția vine doar mai târziu (suma lipsă o aduce întreagă următoarea zi cu recepții, înainte de următoarea rezervare); verificat doar pe două jurnale, codul Python nerulat | [0122-10](../SLICE-0122-10-receptii-vs-rezervari-o-luna.md) |
-| 0122-12 | Fereastra de asociere: roșu = EROARE (lanțul nu se închide), portocaliu = AVERTISMENT (recepția are valori pe indicatori pe care instantaneul nu îi are; zerourile nu se socotesc), tooltip-tabel pe recepție, culorile din grafic pe rânduri doar cât e deschisă fereastra «Grafice și benzi» | SCRIS + build curat (KBot.App 0/0); NERULAT pe ecran, netestat; culoarea `WarningColor` a temei nevăzută | [0122-12](../SLICE-0122-12-asociere-culori-rosu-portocaliu.md) |
+| 0122 | Plan: CodFiscal în CodPartener, fără dependența de id | ÎNCHIS: RULAT și testat de operator, 08.11.2026 | [0122](../SLICE-0122-parteneri-fara-idpartener.md#slice-0122-plan) |
+| 0122-01 | Conversia datelor și corecția 01b | RULAT și testat de operator, 08.11.2026 | [0122-01](../SLICE-0122-parteneri-fara-idpartener.md#slice-0122-01) |
+| 0122-02 | Server DDF/ORD: CodFiscal normalizat | RULAT și testat de operator, 08.11.2026 | [0122-02](../SLICE-0122-parteneri-fara-idpartener.md#slice-0122-02) |
+| 0122-03 | Cititori și protecția la ștergere | RULAT și testat de operator, 08.11.2026 | [0122-03](../SLICE-0122-parteneri-fara-idpartener.md#slice-0122-03) |
+| 0122-08 | Ascunderea partenerilor nefolosiți, cu previzualizare | RULAT și testat de operator, 08.11.2026 | [0122-08](../SLICE-0122-parteneri-fara-idpartener.md#slice-0122-08) |
+| 0122-11 | Partenerii fără activitate (ascunși de `0122_08`) lipseau din lista «Parteneri» și din combo-ul de parteneri al DDF: ambele interogări de server trimit acum și rândurile cu `Ascuns = 1` | RULAT și testat de operator, 08.11.2026 | [0122-11](../SLICE-0122-11-parteneri-ascunse-fara-activitate.md) |
+| 0122-09 | DDF edit: «Recepții» din revizia din rezervare însumează `DIF`, nu `Valoare` | RULAT și testat de operator, 08.11.2026 | [0122-09](../SLICE-0122-09-ddf-receptii-dif.md) |
+| 0122-10 | Recepții vs rezervări: prag de o lună la așezarea automată (server + Asocieri) și detector în tooltipul arborelui | RULAT și testat de operator, 08.11.2026 | [0122-10](../SLICE-0122-10-receptii-vs-rezervari-o-luna.md) |
+| 0122-12 | Fereastra de asociere: roșu = EROARE (lanțul nu se închide), portocaliu = AVERTISMENT (recepția are valori pe indicatori pe care instantaneul nu îi are; zerourile nu se socotesc), tooltip-tabel pe recepție, culorile din grafic pe rânduri doar cât e deschisă fereastra «Grafice și benzi» | RULAT și testat de operator, 08.11.2026 | [0122-12](../SLICE-0122-12-asociere-culori-rosu-portocaliu.md) |
 
 ---
 
@@ -174,6 +174,7 @@ Operator, 05-06.11.2026: felie nouă cu subfelii, cerută pe loc («slice nou cu
 | Slice | Name | Status | Worklog |
 |------:|------|--------|---------|
 | 0128-01 | Așezarea la prima afișare: bara «Recepție nouă / Recepții existente» își recalculează butoanele când devine vizibilă; formularul incorporat refă layoutul; decalajul spre dreapta (prima coloană scrisă de mână în `ColumnStyles`, citită înapoi ca lățimea copilului ascuns) reparat cu `SetColumnWidth` + `SetColumnCollapsed` | GATA pe cod (build 0/0); văzut pe ecran de operator la 06.11.2026; cauza decalajului dedusă din cod | [0128-01](../SLICE-0128-01-receptii-prima-afisare-si-decalaj.md) |
+| 0128-02 | `KBotNavList`: `BackColor` pus în designer rămâne (nu mai e suprascris de temă; sub temă întunecată câștigă tema) + bordură de subsol cu `FooterBorderVisible` / `FooterBorderWidth` (2 px) / `FooterBorderColor` (gol = Classic Gainsboro, Modern accent, restul InactiveBorder) | GATA pe cod (build 0/0); văzut pe ecran de operator la 08.11.2026; bordura e pornită implicit pe toate barele; fără ajutor | [0128-02](../SLICE-0128-02-navlist-fundal-si-bordura-subsol.md) |
 | 0128-03 | Butonul «Creează recepția» / «Leagă» / «Modifică recepția» în grupul din dreapta al ribbon-ului, doar cât vederea e pe ecran; scos din subsol | GATA pe cod (build 0/0); nicio recepție reală făcută din ribbon | [0128-03](../SLICE-0128-03-receptii-buton-in-ribbon.md) |
 
 ### Open threads — 0128
@@ -190,11 +191,10 @@ Operator, 07.11.2026: fundal view/formă = «Control», fundal controale = «Win
 
 | Slice | Name | Status | Worklog |
 |------:|------|--------|---------|
-| 0129-01 | 137 de linii `BackColor` / `BorderColor` fixate pe `SystemColors` (Window, ActiveBorder, Control) sau pe alb / WhiteSmoke scoase din 70 de `.Designer.vb`; controalele revin la «din temă» | GATA pe cod (build 0/0); nimic văzut pe ecran; ajutor 0000-166 | [0129-01](../SLICE-0129-01-culori-din-tema-in-designere.md) |
+| 0129-01 | 137 de linii `BackColor` / `BorderColor` fixate pe `SystemColors` (Window, ActiveBorder, Control) sau pe alb / WhiteSmoke scoase din 70 de `.Designer.vb`; controalele revin la «din temă» | GATA pe cod (build 0/0); aspectul în Classic / Modern / Dark / Colorful testat și rulat de operator, 08.11.2026; ajutor 0000-166 | [0129-01](../SLICE-0129-01-culori-din-tema-in-designere.md) |
+| 0129-02 | Regula generică de `Panel` din `ThemeManager` ca la `KBotTableLayoutPanel`: Classic = Window, Dark = SurfaceAlt, restul = Surface (Card, split, tabele, GroupBox: vezi 0129-03); `pnlHeader` din `SumarView` / `KbotForm` fără `Window` fixat | GATA (build `KBot.Theming` 0/0); verificat pe ecran și testat de operator, 08.11.2026; fără ajutor | [0129-02](../SLICE-0129-02-panel-fundal-ca-tabelul.md) |
+| 0129-03 | Toate controalele care gazduiesc alte controale (SplitContainer + panouri, Panel, Card, TableLayoutPanel, GroupBox, KBotTableLayoutPanel, vederi / pagini / formulare cu etichetele lor) iau acelasi fundal `ThemeScheme.PanelBack()`; `KBotNavList` neatins | GATA (build `KBot.App` + `KBot.EFactura` 0/0); verificat pe ecran si aprobat de operator, 08.11.2026; fara ajutor | [0129-03](../SLICE-0129-03-toate-containerele-acelasi-fundal.md) |
 
 ### Open threads — 0129
 
-- Aspectul în Classic / Modern / Dark / Colorful nu a fost comparat pe ecran.
-- `pnlHeader` din `SumarView` și `KbotForm` rămâne `Window` fixat (de hotărât dacă urmează tema).
-- Culorile fixate direct în cod `.vb` (nu în designere) nu au fost căutate.
 - `FileVersion` neridicat; nimic în `NOUTATI.md`; nu s-a atins niciun fișier care ajunge pe server.

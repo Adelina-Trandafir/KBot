@@ -766,9 +766,10 @@ Public Class FacturiForm
             ' The form background IS the 1px outline of the window (Padding(2)).
             BackColor = k_palette.BorderColor
             ' The pages of the views are controls of their own and theme themselves (Vanzare*Page.ApplyTheme).
-            For Each k_c As Control In New Control() {tlyMain, pnlCard, tlyBody, pnlDetaliu, pnlPages, tlySubsol}
-                k_c.BackColor = k_palette.SurfaceAltColor
+            For Each k_c As Control In New Control() {tlyMain, pnlCard, tlyBody, pnlDetaliu, tlySubsol}
+                k_c.BackColor = k_scheme.PanelBack()
             Next
+            pnlPages.BackColor = k_scheme.PanelBack()
             'lblAntet.ForeColor = k_palette.TextColor
             lblStare.ForeColor = k_palette.TextDimColor
             ButtonStyles.ApplyPrimary(btnSalveaza, k_scheme)

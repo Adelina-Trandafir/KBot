@@ -208,10 +208,10 @@ Public Class OrdVizualizarePage
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
 
-            BackColor = p.SurfaceAltColor
-            tlyMain.BackColor = p.SurfaceAltColor
-            tlyHeader.BackColor = p.SurfaceAltColor
-            tblFooter.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tlyMain.BackColor = scheme.PanelBack()
+            tlyHeader.BackColor = scheme.PanelBack()
+            tblFooter.BackColor = scheme.PanelBack()
 
             ' Etichetele-titlu sunt stinse, valorile sunt în culoarea textului: perechea se
             ' citește ca «etichetă: valoare», nu ca două texte de aceeași greutate.

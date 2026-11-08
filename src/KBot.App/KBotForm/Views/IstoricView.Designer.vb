@@ -249,7 +249,6 @@ Partial Class IstoricView
         grid.FilterIconTooltip = "Filtrează coloana." & vbLf & "Bifează valorile pe care vrei să le vezi; fără nicio bifă, se văd toate."
         grid.FooterForeColor = SystemColors.ActiveCaptionText
         grid.FrozenColumnCount = 1
-        grid.HeaderColumnSeparatorColor = Color.Gainsboro
         grid.HeaderForeColor = SystemColors.ActiveCaptionText
         grid.Location = New Point(0, 0)
         grid.Margin = New Padding(4, 5, 4, 5)
@@ -349,7 +348,6 @@ Partial Class IstoricView
         gridValori.Columns.Add(KBotDataColumn5)
         gridValori.Columns.Add(KBotDataColumn6)
         gridValori.Dock = DockStyle.Fill
-        gridValori.HeaderColumnSeparatorColor = Color.Gainsboro
         gridValori.HeaderForeColor = SystemColors.ActiveCaptionText
         gridValori.Location = New Point(361, 0)
         gridValori.Margin = New Padding(2, 0, 0, 0)

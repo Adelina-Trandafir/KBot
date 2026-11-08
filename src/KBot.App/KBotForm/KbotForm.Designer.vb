@@ -483,7 +483,6 @@ Partial Class KbotForm
         ' 
         ' pnlHeader
         ' 
-        pnlHeader.BackColor = SystemColors.Window
         pnlHeader.Controls.Add(tlyHeader)
         pnlHeader.Dock = DockStyle.Top
         pnlHeader.Location = New Point(0, 62)

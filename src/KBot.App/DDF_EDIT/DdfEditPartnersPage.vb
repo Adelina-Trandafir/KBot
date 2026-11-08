@@ -89,8 +89,8 @@ Public Class DdfEditPartnersPage
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            tlyRoot.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tlyRoot.BackColor = scheme.PanelBack()
             lblInfo.ForeColor = p.TextDimColor
             lblInfo.BackColor = Color.Transparent
         Catch ex As Exception

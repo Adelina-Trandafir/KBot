@@ -167,10 +167,10 @@ Public Class RegulaPaginaForm
             Dim scheme As ThemeScheme = ThemeManager.Current
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            tlyCorp.BackColor = p.SurfaceAltColor
-            pnlArbore.BackColor = p.SurfaceAltColor
+            tlyCorp.BackColor = scheme.PanelBack()
+            pnlArbore.BackColor = scheme.PanelBack()
             lblFaraPagina.ForeColor = p.TextDimColor
-            lblFaraPagina.BackColor = p.SurfaceAltColor
+            lblFaraPagina.BackColor = scheme.PanelBack()
             lblStare.ForeColor = p.TextDimColor
             lblStare.BackColor = Color.Transparent
             ButtonStyles.ApplySecondary(btnRenunta, scheme)

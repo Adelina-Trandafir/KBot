@@ -2,7 +2,7 @@
 
 K-BOT's own push button (slice 0112): a rounded face drawn from the active theme, no system colours.
 
-`Button/KBotButton.vb` · `Control` · Toolbox · `IButtonControl`, `IThemedControl` Conventions: [C1..C9](../CONTROLS.md). Status: builds; not seen on screen.
+`Button/KBotButton.vb` · `Control` · Toolbox · `IButtonControl`, `IThemedControl` Conventions: [C1..C9](../CONTROLS.md). Status: builds; seen on screen (08.11.2026, slice 00EF-64: frame on half pixels).
 
 ## API
 - `Text`, `Font`, `Enabled`, `TabStop` — as on a `Button`.

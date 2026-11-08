@@ -94,6 +94,10 @@ Friend NotInheritable Class AvcContext
     ''' <summary>IdUnitate ▸ the subunit the run will CREATE for it; filled by the subunits step's verification so the steps after it know the unit gets one.</summary>
     Public ReadOnly Property PlannedSubunits As New Dictionary(Of Integer, AvcSubunit)()
 
+    ''' <summary>The account symbols and journal keys contributed by the verified steps of this run.</summary>
+    Public ReadOnly Property PlannedAccounts As New HashSet(Of (IdUnitate As Integer, Simbol As String))()
+    Public ReadOnly Property PlannedJournals As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
+
     ''' <summary>The year the opening balances and turnovers belong to (the <c>An</c> of the <c>TZ_</c> rows).</summary>
     Public ReadOnly Property Year As Integer
         Get

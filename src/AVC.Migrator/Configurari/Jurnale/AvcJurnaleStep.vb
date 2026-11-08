@@ -202,9 +202,12 @@ Friend NotInheritable Class AvcJurnaleStep
                     WithDetail(String.Join(vbLf, k_conflicts)))
             End If
 
-            Dim k_codes = _set.Rows.Select(Function(k_r) k_r.SursaSector & "|" & k_r.CodTinta).Distinct(StringComparer.Ordinal).Count()
+            Dim k_codes = _set.Rows.Select(Function(k_r) k_r.SursaSector & "|" & k_r.CodTinta).Distinct(StringComparer.Ordinal).ToList()
+            If Not k_findings.Any(Function(f) f.IsBlocking) Then
+                k_context.PlannedJournals.UnionWith(k_codes)
+            End If
             k_findings.Add(New Finding(AvcKinds.REZUMAT, FindingClass.Informativ, "TZ_Jurnale", String.Empty,
-                                       $"{k_codes} jurnale ▸ «TZ_Jurnale» (din {_set.Rows.Count} rânduri Access).", k_codes))
+                                       $"{k_codes.Count} jurnale ▸ «TZ_Jurnale» (din {_set.Rows.Count} rânduri Access).", k_codes.Count))
 
             Using k_cmd As New MySqlCommand("SELECT COUNT(*) FROM `TZ_Jurnale`", k_cn)
                 Dim k_existing As Long = Convert.ToInt64(k_cmd.ExecuteScalar(), CultureInfo.InvariantCulture)

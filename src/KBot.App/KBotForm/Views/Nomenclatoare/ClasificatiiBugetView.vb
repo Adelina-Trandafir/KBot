@@ -1664,11 +1664,11 @@ Public Class ClasificatiiBugetView
         Try
             If scheme Is Nothing Then Return
             Dim p As ThemePalette = scheme.Palette
-            BackColor = p.SurfaceAltColor
-            tlyMain.BackColor = p.SurfaceAltColor
-            pnlCard.BackColor = p.SurfaceAltColor
-            tlyBody.BackColor = p.SurfaceAltColor
-            tlyRight.BackColor = p.SurfaceAltColor
+            BackColor = scheme.PanelBack()
+            tlyMain.BackColor = scheme.PanelBack()
+            pnlCard.BackColor = scheme.PanelBack()
+            tlyBody.BackColor = scheme.PanelBack()
+            tlyRight.BackColor = scheme.PanelBack()
             ClasificatiiTreeStyle.ApplyFrame(tree, scheme)   ' slice 0126-04
             ' The footer colour of the grids is part of the theme: the heights and the «footer-like» row follow it.
             If IsHandleCreated AndAlso _api IsNot Nothing Then BeginInvoke(New Action(AddressOf ApplyGridHeights))
