@@ -107,7 +107,6 @@ Partial Class AvcSubunitsForm
         dgvSubunitati.ColumnFillMode = KBot.Controls.KBotFillMode.SpecificColumn
         dgvSubunitati.FillColumnKey = "denumire"
         dgvSubunitati.Dock = DockStyle.Fill
-        dgvSubunitati.HeaderHeight = 26
         dgvSubunitati.Name = "dgvSubunitati"
         dgvSubunitati.RowHeight = 24
         dgvSubunitati.TabIndex = 1

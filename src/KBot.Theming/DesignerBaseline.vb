@@ -124,6 +124,13 @@ Public Module DesignerBaseline
         _snapshots.Remove(ctrl)
     End Sub
 
+    Friend Function TryGetAuthoredBackColor(ctrl As Control, ByRef value As Color) As Boolean
+        Dim snap As Snapshot = Nothing
+        If Not _snapshots.TryGetValue(ctrl, snap) OrElse Not snap.HasBackColor Then Return False
+        value = snap.BackColor
+        Return True
+    End Function
+
     ' Calea pe care merge Visual Studio când decide dacă scrie proprietatea în .Designer.vb —
     ' NU ShouldSerializeX apelat direct (vezi regula casei din CLAUDE.md).
     Private Function IsSerialized(ctrl As Control, propName As String) As Boolean

@@ -42,11 +42,11 @@ End Class
 Public NotInheritable Class ReleasePreview
 
     Private Const ProjectFile As String = "src\KBot.App\KBot.App.vbproj"
-    Private Const NotesFile As String = "docs\release-notes\NOUTATI.md"
+    Friend Const NotesFile As String = "docs\release-notes\NOUTATI.md"
 
     Private Shared ReadOnly FileVersionTag As New Regex("<FileVersion>\s*([0-9.]+)\s*</FileVersion>", RegexOptions.CultureInvariant)
-    Private Shared ReadOnly SectionHeading As New Regex("^##\s+(\d+(?:\.\d+){1,3})(?![\d.])(.*)$", RegexOptions.CultureInvariant)
-    Private Shared ReadOnly BulletLine As New Regex("^\s*[-*]\s+(\S.*)$", RegexOptions.CultureInvariant)
+    Friend Shared ReadOnly SectionHeading As New Regex("^##\s+(\d+(?:\.\d+){1,3})(?![\d.])(.*)$", RegexOptions.CultureInvariant)
+    Friend Shared ReadOnly BulletLine As New Regex("^\s*[-*]\s+(\S.*)$", RegexOptions.CultureInvariant)
 
     ' The highest value a part may hold (publish-release.ps1 $VersionCaps); one past it resets the part and carries into the one above.
     Private Shared ReadOnly Caps As Integer() = {Integer.MaxValue, 9, 99, 9}

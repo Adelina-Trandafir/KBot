@@ -130,6 +130,30 @@ _SQL_VALORI_RECEPTII = (
     "GROUP BY R.IDRR, R.DataR, R.TipReceptie, R.Descriere, H.IDRH, H.DataH, I.IdClsf "
     "ORDER BY R.DataR DESC, R.IDRR DESC")
 
+def _cond_h(alias):
+    """The snapshots that count for a reception (not deleted rows, a deletion mark or one that has lines), for the snapshot alias `alias`."""
+    return (f"{alias}.IDRR = R.IDRR AND COALESCE({alias}.Sters, 0) = 0 "
+            f"AND (COALESCE({alias}.EsteStergere, 0) <> 0 OR EXISTS (SELECT 1 FROM FX_Receptii L WHERE L.IDRH = {alias}.IDRH))")
+
+
+# Slice KE20-02: the same receptions, but as they stood ON A DAY (params: code, day). The value is read the way the payment orders read it (ord_edit.py `_SQL_REC_ANT`):
+# SUM(FX_Receptii.DIF) -- the delta of each snapshot -- of the lines dated (FX_Receptii.Data) up to the day, per reception and classification; NOT the date typed on the
+# reception (DataR). A reception made AFTER the day (the usual case: the reception follows the invoice) has no line up to it: it is read up to the date of its FIRST line,
+# so it shows the value it was made with instead of 0. A reception deleted now (its last counting snapshot is a deletion, or FX_Receptii_R.Sters) is left out, as before.
+_SQL_VALORI_RECEPTII_LA_ZI = (
+    "SELECT R.IDRR, R.DataR, R.TipReceptie, R.Descriere, MAX(H.IDRH) AS IDRH, MAX(H.DataH) AS DataH, I.IdClsf, SUM(Rc.DIF) AS Valoare "
+    "FROM FX_Receptii_R R "
+    "JOIN FX_Receptii_H H ON H.IDRR = R.IDRR AND COALESCE(H.Sters, 0) = 0 "
+    "JOIN FX_Receptii Rc ON Rc.IDRH = H.IDRH "
+    "LEFT JOIN FX_Indicatori I ON I.CodAI = Rc.CodAI "
+    "WHERE R.CodAngajament = %s AND COALESCE(R.Sters, 0) = 0 "
+    "AND COALESCE((SELECT H4.EsteStergere FROM FX_Receptii_H H4 WHERE " + _cond_h("H4") + " "
+    "              ORDER BY H4.DataH DESC, H4.NrCrt DESC, H4.IDRH DESC LIMIT 1), 0) = 0 "
+    "AND DATE(Rc.Data) <= GREATEST(%s, (SELECT MIN(DATE(Rx.Data)) FROM FX_Receptii Rx JOIN FX_Receptii_H Hx ON Hx.IDRH = Rx.IDRH "
+    "                                    WHERE Hx.IDRR = R.IDRR AND COALESCE(Hx.Sters, 0) = 0)) "
+    "GROUP BY R.IDRR, R.DataR, R.TipReceptie, R.Descriere, I.IdClsf "
+    "ORDER BY R.DataR DESC, R.IDRR DESC")
+
 _SQL_INDICATORI = (
     "SELECT I.CodAI, I.CodIndicator, I.IdClsf, I.IndicatorFX, I.Angajament_Legal, I.Receptii, I.Plati, I.SS, I.NrCrt, "
     "(SELECT C.Clsf FROM Clasificatii C WHERE C.IDClsf = I.IdClsf LIMIT 1) AS Clsf, "
@@ -163,8 +187,18 @@ def _completeaza_cote(conn, cursor, id_primita, id_sol, lines):
 
 
 def _cote(cursor, id_primita):
+    """The VAT of the invoice per rate. Slice KE20-03: an invoice that has no rows in EF_PrimiteTVA (the ones brought from the old system have none) is read from its
+    own header (rate, taxable value, VAT), as ONE rate: without it the cents of rounding between the lines and the VAT the invoice states are never put on the last
+    line, and the lines come to a few cents LESS than the total (IdPrimita 46: 136158.55 against 136158.58), so the invoice stays «partial» for ever."""
     cursor.execute("SELECT Categorie, CotaTVA, Baza, TVA FROM EF_PrimiteTVA WHERE IdPrimita = %s", (id_primita,))
-    return cursor.fetchall()
+    rows = cursor.fetchall()
+    if rows:
+        return rows
+    cursor.execute("SELECT CotaTVA, Valoare AS Baza, TVA FROM EF_Primite WHERE IdPrimita = %s", (id_primita,))
+    head = cursor.fetchone()
+    if head is None or head["CotaTVA"] is None or head["Baza"] is None or head["TVA"] is None:
+        return []
+    return [{"Categorie": None, "CotaTVA": head["CotaTVA"], "Baza": head["Baza"], "TVA": head["TVA"]}]
 
 
 def _factura_si_linii(conn, cursor, id_primita):
@@ -350,11 +384,48 @@ def angajamente(dc, q=None):
         return {"angajamente": [primite._plain(r) for r in cursor.fetchall()]}
 
 
-def disponibil(dc, cod, ziua):
-    """Slice KE12-03: per indicator of the angajament, the budget of its classification ON `ziua` and the receptions taken BEFORE that day -- the rule of the
-    fundamentation document (routes/forexe/ddf_edit.py: «Buget» = budget_on_day, «Receptii» = FX_Receptii with DATE(Data) < the day). A classification with no budget
+def _detalii_disponibil(cursor, cod, day):
+    """SLICE-KE20-07: the same source rows and keys used by the three totals in disponibil."""
+    totaluri, rezervari, receptii = {}, {}, {}
+    cursor.execute(
+        "SELECT IdClsf, CodAngajament AS Eticheta, SUM(DIF) AS Suma FROM FX_Receptii "
+        "WHERE IdClsf IN (SELECT IdClsf FROM FX_Indicatori WHERE CodAngajament = %s "
+        "AND IdClsf IS NOT NULL) AND DATE(Data) < %s GROUP BY IdClsf, CodAngajament",
+        (cod, day),
+    )
+    for row in cursor.fetchall():
+        totaluri.setdefault(row["IdClsf"], []).append({
+            "Eticheta": row["Eticheta"] or "Fără cod", "Suma": float(_dec(row["Suma"])),
+        })
+    cursor.execute(
+        "SELECT CodIndicator, DATE(DataRezervare) AS Data, EInitiala, EMarire, EMicsorare, "
+        "R_Valoare AS Suma FROM FX_Rezervari WHERE CodAngajament = %s",
+        (cod,),
+    )
+    for row in cursor.fetchall():
+        tip = ("Inițială" if row["EInitiala"] else "Majorare" if row["EMarire"]
+               else "Micșorare" if row["EMicsorare"] else "Rezervare")
+        rezervari.setdefault(row["CodIndicator"], []).append(primite._plain({
+            "Data": row["Data"], "Eticheta": tip, "Suma": float(_dec(row["Suma"])),
+        }))
+    cursor.execute(
+        "SELECT R.CodIndicator, DATE(R.Data) AS Data, H.Descriere AS Eticheta, R.DIF AS Suma "
+        "FROM FX_Receptii R LEFT JOIN FX_Receptii_H H ON H.IDRH = R.IDRH "
+        "WHERE R.CodAngajament = %s AND DATE(R.Data) < %s",
+        (cod, day),
+    )
+    for row in cursor.fetchall():
+        receptii.setdefault(row["CodIndicator"], []).append(primite._plain({
+            "Data": row["Data"], "Eticheta": row["Eticheta"] or "", "Suma": float(_dec(row["Suma"])),
+        }))
+    return totaluri, rezervari, receptii
+
+
+def disponibil(dc, cod, ziua, detalii=False):
+    """Slice KE12-03: per indicator of the angajament, the budget of its classification ON `ziua` and the receptions of that classification (ALL angajamente,
+    summed on IdClsf, SUM(DIF)) taken BEFORE that day -- «Buget» = budget_on_day, «Receptii» = FX_Receptii with DATE(Data) < the day. A classification with no budget
     version on that day keeps today's credit (FX_Indicatori_Buget) and the answer says so in `avertismente`.
-    {ziua, indicatori: [{IdClsf, CodIndicator, Buget (or null), Receptii}], avertismente: [text]}"""
+    {ziua, indicatori: [{IdClsf, CodIndicator, Buget (or null), Receptii, RezervariAng, ReceptiiAng}], avertismente: [text]}"""
     from routes.forexe.budget_on_day import BudgetByDay, as_day  # lazy: the forexe package must not load with this module
     day = as_day(ziua)
     if day is None:
@@ -364,9 +435,20 @@ def disponibil(dc, cod, ziua):
         _angajament(cursor, cod)
         cursor.execute(_SQL_INDICATORI, (cod,))
         indicators = cursor.fetchall()
-        cursor.execute("SELECT CodIndicator, SUM(Valoare) AS T FROM FX_Receptii WHERE CodAngajament = %s AND DATE(Data) < %s GROUP BY CodIndicator",
-                       (cod, day))
-        before = {(r["CodIndicator"] or ""): r["T"] for r in cursor.fetchall()}
+        # «Receptii» = ALL the receptions of the classification (every angajament, the same key the budget has), taken BEFORE the day; SUM(DIF) -- the delta of
+        # each snapshot -- because every re-posted reception adds a new row and SUM(Valoare) would count the same money again (same rule as Sumar / ddf_edit).
+        cursor.execute("SELECT IdClsf, SUM(DIF) AS T FROM FX_Receptii WHERE IdClsf IN (SELECT IdClsf FROM FX_Indicatori WHERE CodAngajament = %s "
+                       "AND IdClsf IS NOT NULL) AND DATE(Data) < %s GROUP BY IdClsf", (cod, day))
+        before = {r["IdClsf"]: r["T"] for r in cursor.fetchall()}
+        # Slice 02EF-02: the figures of THIS angajament per indicator, as the Sumar view defines them (same tables, same keys CodAngajament + CodIndicator):
+        # «RezervariAng» = SUM(FX_Rezervari.R_Valoare), «ReceptiiAng» = SUM(FX_Receptii.DIF) of the receptions taken BEFORE the day (like «Receptii» above, but only this angajament).
+        # FX_Indicatori.Receptii is NOT used: the downloads never refresh it.
+        cursor.execute("SELECT CodIndicator, SUM(DIF) AS T FROM FX_Receptii WHERE CodAngajament = %s AND DATE(Data) < %s GROUP BY CodIndicator", (cod, day))
+        receptii_ang = {r["CodIndicator"]: r["T"] for r in cursor.fetchall()}
+        cursor.execute("SELECT CodIndicator, SUM(R_Valoare) AS T FROM FX_Rezervari WHERE CodAngajament = %s GROUP BY CodIndicator", (cod,))
+        rezervari_ang = {r["CodIndicator"]: r["T"] for r in cursor.fetchall()}
+        if detalii:
+            totaluri, rezervari, receptii = _detalii_disponibil(cursor, cod, day)
         budget = BudgetByDay(cursor)
         rows = []
         for ind in indicators:
@@ -379,13 +461,24 @@ def disponibil(dc, cod, ziua):
                     credit = cursor.fetchone()
                     value = credit["CreditBugetar"] if credit else None
             rows.append({"IdClsf": id_clsf, "CodIndicator": ind["CodIndicator"], "Buget": None if value is None else _num(value),
-                         "Receptii": _num(before.get(ind["CodIndicator"] or "", 0))})
+                         "Receptii": _num(before.get(id_clsf, 0) if id_clsf is not None else 0),
+                         "RezervariAng": _num(rezervari_ang.get(ind["CodIndicator"])), "ReceptiiAng": _num(receptii_ang.get(ind["CodIndicator"]))})
+            if detalii:
+                rows[-1]["Detalii"] = {
+                    "ReceptiiPeAngajamente": totaluri.get(id_clsf, []),
+                    "Rezervari": rezervari.get(ind["CodIndicator"], []),
+                    "Receptii": receptii.get(ind["CodIndicator"], []),
+                }
         return {"ziua": day.isoformat(), "indicatori": rows, "avertismente": budget.warnings()}
 
 
-def _valori_receptii(cursor, cod):
-    """{IDRR: {DataR, TipReceptie, Descriere, IDRH, valori: {IdClsf: Decimal}}} of the angajament, deleted ones left out."""
-    cursor.execute(_SQL_VALORI_RECEPTII, (cod,))
+def _valori_receptii(cursor, cod, la_zi=None):
+    """{IDRR: {DataR, TipReceptie, Descriere, IDRH, valori: {IdClsf: Decimal}}} of the angajament, deleted ones left out.
+    `la_zi` (KE20-02, a date) = as the receptions stood ON THAT DAY (see _SQL_VALORI_RECEPTII_LA_ZI); None = now."""
+    if la_zi is None:
+        cursor.execute(_SQL_VALORI_RECEPTII, (cod,))
+    else:
+        cursor.execute(_SQL_VALORI_RECEPTII_LA_ZI, (cod, la_zi))
     out = {}
     for row in cursor.fetchall():
         item = out.setdefault(row["IDRR"], {"IDRR": row["IDRR"], "DataR": row["DataR"], "TipReceptie": row["TipReceptie"],
@@ -396,6 +489,7 @@ def _valori_receptii(cursor, cod):
 
 
 def _alocat_receptii(cursor, cod):
+    """What the links of ALL invoices take from each reception and classification (whatever the invoice's date: a reception a newer invoice already took is not free)."""
     cursor.execute(_SQL_ALOCAT_RECEPTII, (cod,))
     return {(r["IdReceptie"], r["IdClsf"]): _dec(r["Suma"]) for r in cursor.fetchall() if r["IdReceptie"] is not None}
 
@@ -408,16 +502,31 @@ def _angajament(cursor, cod):
     return row
 
 
-def receptii_angajament(dc, cod):
+def _zi_optionala(text):
+    """Slice KE20-02: the optional day of a request ('aaaa-ll-zz'); empty = None; anything else is refused."""
+    if text is None or str(text).strip() == "":
+        return None
+    from routes.forexe.budget_on_day import as_day  # lazy: the forexe package must not load with this module
+    day = as_day(text)
+    if day is None:
+        raise EfEroare("Data nu este validă (aaaa-ll-zz).", "CAMP_INVALID", 400)
+    return day
+
+
+def receptii_angajament(dc, cod, la_data=None):
     """The indicators and the receptions of an angajament, with what the invoices already cover and what is left on each
-    classification. {indicatori, receptii: [{IDRR, DataR, TipReceptie, Descriere, pe_clasificatie: [{IdClsf, Clsf, Valoare, Alocat, Rest}]}]}"""
+    classification. {indicatori, receptii: [{IDRR, DataR, TipReceptie, Descriere, pe_clasificatie: [{IdClsf, Clsf, Valoare, Alocat, Rest}]}], la_data}
+    Slice KE20-02: with `la_data` ('aaaa-ll-zz', the date of an invoice) every reception has the value it had on that day, read as the payment orders do (SUM(FX_Receptii.DIF)
+    of the lines dated up to it; a reception made later shows the value it was made with); `Alocat` is always what ALL the links take. With a day, a rest that would go
+    below 0 (the reception was raised after that day for other invoices) is shown as 0. The indicators are always the current ones."""
+    day = _zi_optionala(la_data)
     with F._unit(dc, KE_SQL) as conn:
         cursor = conn.cursor(dictionary=True)
         _angajament(cursor, cod)
         cursor.execute(_SQL_INDICATORI, (cod,))
         indicators = cursor.fetchall()
         names = {i["IdClsf"]: i["Clsf"] for i in indicators if i["IdClsf"] is not None}
-        values, allocated = _valori_receptii(cursor, cod), _alocat_receptii(cursor, cod)
+        values, allocated = _valori_receptii(cursor, cod, day), _alocat_receptii(cursor, cod)
         # every snapshot number of each reception: the K-BOT marker the site keeps in the description names one of them
         cursor.execute("SELECT IDRR, IDRH FROM FX_Receptii_H WHERE CodAngajament = %s AND IDRR IS NOT NULL ORDER BY IDRH", (cod,))
         snapshots = {}
@@ -428,8 +537,11 @@ def receptii_angajament(dc, cod):
             classes = []
             for id_clsf, value in sorted(item["valori"].items()):
                 done = allocated.get((item["IDRR"], id_clsf), Decimal(0))
+                rest = value - done
+                if day is not None and rest != 0 and _sign(rest) != _sign(value):
+                    rest = Decimal(0)   # KE20-02: worth less on that day than the links already take -> nothing left for this invoice
                 classes.append({"IdClsf": id_clsf, "Clsf": names.get(id_clsf), "Valoare": _num(value), "Alocat": _num(done),
-                                "Rest": _num(value - done)})
+                                "Rest": _num(rest)})
             receptions.append({"IDRR": item["IDRR"], "DataR": item["DataR"].isoformat() if item["DataR"] else None,
                                "TipReceptie": item["TipReceptie"], "Descriere": item["Descriere"], "IDRH": item["IDRH"],
                                "Total": _num(sum(item["valori"].values(), Decimal(0))), "Idrhs": snapshots.get(item["IDRR"], []),
@@ -437,7 +549,7 @@ def receptii_angajament(dc, cod):
         return {"indicatori": [{"CodAI": i["CodAI"], "CodIndicator": i["CodIndicator"], "IdClsf": i["IdClsf"], "Clsf": i["Clsf"],
                                 "Denumire": i["Denumire"], "AngajamentLegal": _num(i["Angajament_Legal"]),
                                 "Receptii": _num(i["Receptii"]), "Plati": _num(i["Plati"]), "SS": i["SS"]} for i in indicators],
-                "receptii": receptions}
+                "receptii": receptions, "la_data": day.isoformat() if day else None}
 
 
 # ---------------------------------------------------------------------------------------------
@@ -466,56 +578,103 @@ def _alocari(items):
     return out
 
 
-def _verifica(cursor, conn, id_primita, cod, alocari, tip):
-    """Returns (problems, warnings, rows). rows = one per allocation with what the robot needs to find the indicator on the site."""
+def _surplus(items):
+    """Slice KE20-01: the value a NEW / MODIFIED reception takes on a classification ABOVE what the invoices cover there, as [(IdClsf, Decimal > 0)].
+    Nothing (None) = none. The surplus belongs to the reception, not to an invoice: it is never written as a link, it only travels to the robot."""
+    if items is None:
+        return []
+    if not isinstance(items, list):
+        raise EfEroare("Valorile în plus trebuie să fie o listă.", "CAMP_INVALID", 400)
+    out, seen = [], set()
+    for item in items:
+        if not isinstance(item, dict):
+            raise EfEroare("O valoare în plus nu are forma cerută.", "CAMP_INVALID", 400)
+        id_clsf, suma = item.get("IdClsf"), item.get("Suma")
+        if isinstance(id_clsf, bool) or not isinstance(id_clsf, int):
+            raise EfEroare("Clasificația unei valori în plus trebuie să fie un număr.", "CAMP_INVALID", 400)
+        if isinstance(suma, bool) or not isinstance(suma, (int, float)):
+            raise EfEroare("O valoare în plus trebuie să fie un număr.", "CAMP_INVALID", 400)
+        if id_clsf in seen:
+            raise EfEroare("O clasificație apare de două ori la valorile în plus.", "CAMP_INVALID", 400)
+        seen.add(id_clsf)
+        if _cent(suma) <= 0:
+            raise EfEroare("O valoare în plus trebuie să fie pozitivă.", "CAMP_INVALID", 400)
+        out.append((id_clsf, _cent(suma)))
+    return out
+
+
+def _verifica(cursor, conn, id_primita, cod, alocari, tip, surplus=()):
+    """Returns (problems, warnings, rows). rows = one per allocation with what the robot needs to find the indicator on the site.
+    `surplus` (KE20-01) = [(IdClsf, Decimal)] the reception takes ABOVE the invoices: it rides on the row of its classification (key `Surplus`), and a
+    classification no invoice stands on gets a row of its own (Suma 0). Only a new / modified reception can take it."""
     problems, warnings, rows = [], [], []
-    row, lines = _factura_si_linii(conn, cursor, id_primita)
+    extra = dict(surplus)
+    if extra and tip == "existenta":
+        problems.append("O recepție existentă nu poate primi valoare în plus: valoarea ei nu se schimbă.")
+        extra = {}
+    used = set()
+    # Slice KE20-04: an invoice is covered on its TOTAL (what the invoice says), split on the classifications the accountant gives, NOT on its lines: the sum of all the
+    # allocations may not pass what is left of the total after every link the invoice already has (any classification), and has the sign of the invoice.
+    row = primite._row(cursor, id_primita)
     sign = int(row["Semn"] or 1)
-    by, _ = _pe_clasificatie(lines, sign)
-    links = _legaturi(cursor, id_primita)
-    done = {}
-    for link in links:
-        done[link["IdClsf"]] = done.get(link["IdClsf"], Decimal(0)) + _dec(link["Suma"])
+    total = _cent(_dec(row["Total"]) * sign)
+    done_total = sum((_dec(link["Suma"]) for link in _legaturi(cursor, id_primita)), Decimal(0))
+    rest = total - done_total
     cursor.execute(_SQL_INDICATORI, (cod,))
     indicators = {}
     for ind in cursor.fetchall():
         if ind["IdClsf"] is not None:
             indicators.setdefault(ind["IdClsf"], ind)
+    asked = sum((suma for _, suma in alocari), Decimal(0))
+    if any(_sign(suma) != _sign(total) for _, suma in alocari):
+        problems.append("Semnul unei sume nu se potrivește cu al facturii.")
+    elif abs(asked) > abs(rest) + TOLERANTA:
+        problems.append(f"Suma alocată ({_cent(asked)}) depășește restul facturii ({_cent(rest)}).")
     for id_clsf, suma in alocari:
-        entry = by.get(id_clsf)
         ind = indicators.get(id_clsf)
-        label = (ind or {}).get("Clsf") or (entry or {}).get("Clsf") or f"clasificația {id_clsf}"
-        if entry is None:
-            problems.append(f"{label}: nicio linie a facturii nu are această clasificație.")
-        else:
-            rest = entry["Valoare"] - done.get(id_clsf, Decimal(0))
-            if _sign(suma) != _sign(entry["Valoare"]):
-                problems.append(f"{label}: semnul sumei nu se potrivește cu al facturii.")
-            elif abs(suma) > abs(rest) + TOLERANTA:
-                problems.append(f"{label}: suma {suma} depășește restul facturii ({_cent(rest)}).")
+        label = (ind or {}).get("Clsf") or f"clasificația {id_clsf}"
         if ind is None:
             problems.append(f"{label}: clasificația nu există ca indicator al angajamentului {cod}. Este nevoie întâi de o revizie "
                             "nouă de rezervare (documentul de fundamentare), apoi de recepție.")
             continue
         legal = _dec(ind["Angajament_Legal"])
-        if tip in ("noua", "modificata") and legal > 0 and _dec(ind["Receptii"]) + suma > legal + TOLERANTA:
-            warnings.append(f"{label}: recepțiile ({_cent(_dec(ind['Receptii']) + suma)}) depășesc angajamentul legal ({_cent(legal)}).")
+        more = extra.get(id_clsf, Decimal(0))
+        used.add(id_clsf)
+        if tip in ("noua", "modificata") and legal > 0 and _dec(ind["Receptii"]) + suma + more > legal + TOLERANTA:
+            warnings.append(f"{label}: recepțiile ({_cent(_dec(ind['Receptii']) + suma + more)}) depășesc angajamentul legal ({_cent(legal)}).")
         rows.append({"IdClsf": id_clsf, "CodAI": ind["CodAI"], "CodIndicator": ind["CodIndicator"], "Clsf": ind["Clsf"],
                      "ClsfSal": re.sub(r"[^A-Za-z0-9]", "", ind["ClsfSal"] or ind["IndicatorFX"] or ""), "SS": ind["SS"],
-                     "Suma": float(suma)})
+                     "Suma": float(suma), "Surplus": float(more)})
+    # KE20-01: a classification only the reception stands on (no invoice line is there, its invoice may be missing): a row of its own
+    for id_clsf, more in extra.items():
+        if id_clsf in used:
+            continue
+        ind = indicators.get(id_clsf)
+        if ind is None:
+            problems.append(f"clasificația {id_clsf}: nu există ca indicator al angajamentului {cod}. Este nevoie întâi de o revizie "
+                            "nouă de rezervare (documentul de fundamentare), apoi de recepție.")
+            continue
+        legal = _dec(ind["Angajament_Legal"])
+        if legal > 0 and _dec(ind["Receptii"]) + more > legal + TOLERANTA:
+            warnings.append(f"{ind['Clsf']}: recepțiile ({_cent(_dec(ind['Receptii']) + more)}) depășesc angajamentul legal ({_cent(legal)}).")
+        rows.append({"IdClsf": id_clsf, "CodAI": ind["CodAI"], "CodIndicator": ind["CodIndicator"], "Clsf": ind["Clsf"],
+                     "ClsfSal": re.sub(r"[^A-Za-z0-9]", "", ind["ClsfSal"] or ind["IndicatorFX"] or ""), "SS": ind["SS"],
+                     "Suma": 0.0, "Surplus": float(more)})
     return problems, warnings, rows
 
 
-def verifica(dc, id_primita, role, cod, tip, alocari_brute, id_receptie=None):
-    """Checks an allocation before the robot is started or a link written. {ok, probleme, avertismente, randuri}"""
+def verifica(dc, id_primita, role, cod, tip, alocari_brute, id_receptie=None, surplus_brut=None):
+    """Checks an allocation before the robot is started or a link written. {ok, probleme, avertismente, randuri}
+    `surplus_brut` (KE20-01) = [{IdClsf, Suma}] the reception takes above the invoices; each row answers it as `Surplus`."""
     cere_contabil(role)
     if tip not in TIPURI_LEGATURA:
         raise EfEroare("Tipul legăturii nu este cunoscut.", "CAMP_INVALID", 400)
     alocari = _alocari(alocari_brute)
+    surplus = _surplus(surplus_brut)
     with F._unit(dc, KE_SQL) as conn:
         cursor = conn.cursor(dictionary=True)
         _angajament(cursor, cod)
-        problems, warnings, rows = _verifica(cursor, conn, id_primita, cod, alocari, tip)
+        problems, warnings, rows = _verifica(cursor, conn, id_primita, cod, alocari, tip, surplus)
         if tip == "modificata" and id_receptie:
             current = _valori_receptii(cursor, cod).get(id_receptie)
             if current is None:
@@ -524,20 +683,22 @@ def verifica(dc, id_primita, role, cod, tip, alocari_brute, id_receptie=None):
                 for item in rows:
                     old = current["valori"].get(item["IdClsf"], Decimal(0))
                     item["ValoareVeche"] = float(old)
-                    item["ValoareNoua"] = float(_cent(old + _dec(item["Suma"])))
+                    item["ValoareNoua"] = float(_cent(old + _dec(item["Suma"]) + _dec(item.get("Surplus"))))
         return {"ok": not problems, "probleme": problems, "avertismente": warnings, "randuri": rows}
 
 
 # ---------------------------------------------------------------------------------------------
 # writing the links
 # ---------------------------------------------------------------------------------------------
-def leaga(dc, id_primita, role, user, cod, tip, id_receptie, idrh, idr, alocari_brute):
+def leaga(dc, id_primita, role, user, cod, tip, id_receptie, idrh, idr, alocari_brute, la_data=None):
     """Writes the links of one reception. `existenta`: the reception must have the rest; `noua`: the reception is named by the numbers the
-    marker reserved (written AFTER the robot saved it); `modificata`: the reception is the one just changed. Answers the new state."""
+    marker reserved (written AFTER the robot saved it); `modificata`: the reception is the one just changed. Answers the new state.
+    `la_data` (KE20-02, `existenta` only) = the day the rest of the reception is measured on, the one the screen showed (see receptii_angajament)."""
     cere_contabil(role)
     if tip not in TIPURI_LEGATURA:
         raise EfEroare("Tipul legăturii nu este cunoscut.", "CAMP_INVALID", 400)
     alocari = _alocari(alocari_brute)
+    day = _zi_optionala(la_data) if tip == "existenta" else None
     if tip == "noua":
         if not isinstance(idrh, int) or not isinstance(idr, int) or isinstance(idrh, bool) or isinstance(idr, bool):
             raise EfEroare("Recepția nouă nu are numerele rezervate de marcaj.", "CAMP_INVALID", 400)
@@ -550,7 +711,7 @@ def leaga(dc, id_primita, role, user, cod, tip, id_receptie, idrh, idr, alocari_
         if problems:
             raise _refuz(problems)
         if tip == "existenta":
-            values, allocated = _valori_receptii(cursor, cod), _alocat_receptii(cursor, cod)
+            values, allocated = _valori_receptii(cursor, cod, day), _alocat_receptii(cursor, cod)
             reception = values.get(id_receptie)
             if reception is None:
                 raise EfEroare("Recepția aleasă nu există sau a fost ștearsă.", "NU_EXISTA", 404)

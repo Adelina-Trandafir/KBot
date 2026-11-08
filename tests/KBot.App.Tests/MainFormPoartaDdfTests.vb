@@ -42,9 +42,13 @@ Public Class MainFormPoartaDdfTests
         BindingFlags.Instance Or BindingFlags.NonPublic
 
     Private Shared Sub PuneSelectia(f As KbotForm, info As AngajamentTreeInfo)
-        Dim camp As FieldInfo = GetType(KbotForm).GetField("_currentInfo", LEGATURI)
+        ' Slice 0086-01: the selection lives in the shell state object (ShellState.CurrentInfo).
+        Dim camp As FieldInfo = GetType(KbotForm).GetField("_state", LEGATURI)
         Assert.NotNull(camp)
-        camp.SetValue(f, info)
+        Dim k_state As Object = camp.GetValue(f)
+        Dim k_prop As PropertyInfo = k_state.GetType().GetProperty("CurrentInfo", LEGATURI Or BindingFlags.Public)
+        Assert.NotNull(k_prop)
+        k_prop.SetValue(k_state, info)
     End Sub
 
     Private Shared Sub Poarta(f As KbotForm, cod As String, iddf As Integer, sters As Boolean)

@@ -1,0 +1,12 @@
+.vi-page #vi-app .btn { cursor: pointer; border: 1px solid var(--border, #aeb8c5); border-radius: 5px; padding: 8px 12px; font: inherit; background: var(--surface, #fff); color: inherit; white-space: nowrap; }
+.vi-page #vi-app .btn:disabled { opacity: .5; cursor: default; }
+.vi-page #vi-app .btn:not(:disabled):hover { border-color: #3185ca; }
+.vi-page #vi-app .vi-primary { background: #126ab3; color: white; border-color: #126ab3; }
+.vi-page #vi-app .vi-primary:not(:disabled):hover { background: #0c5794; }
+.vi-page .vi-status.is-success { color: #16703b; }
+.vi-page .confirm-box--message.confirm-box--warning .confirm-box__text { color: #b42318; max-height: 55vh; overflow-y: auto; }
+.vi-page [hidden] { display: none !important; }
+html[data-theme="dark"] .vi-page { background: #171e29; color: #e6ebf2; }
+html[data-theme="dark"] .vi-page #vi-app .btn { background: #253143; border-color: #48566a; }
+html[data-theme="dark"] .vi-page #vi-app .vi-primary { background: #126ab3; }
+html[data-theme="dark"] .vi-page .confirm-box--message.confirm-box--warning .confirm-box__text { color: #ffb4ab; }

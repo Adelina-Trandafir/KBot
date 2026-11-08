@@ -43,6 +43,8 @@ from collections import defaultdict
 from datetime import date, datetime
 from typing import Dict, List, Optional
 
+from .prelucrare_helpers import fara_receptii_sterse
+
 logger = logging.getLogger(__name__)
 
 TOLERANTA = 0.01
@@ -55,10 +57,12 @@ _SQL_REZERVARI = (
     " WHERE CodIndicator IS NOT NULL AND DataRezervare IS NOT NULL AND R_Definitiva IS NOT NULL{filtru}"
 )
 # Same filter as the ordonantare (`COALESCE(H.Sters, 0) = 0`); `DIF` NULL (a snapshot not placed) adds nothing.
+# 07.11.2026: a DELETED reception (observed in FOREXE or with its deletion row) is left out altogether.
 _SQL_RECEPTII = (
     "SELECT R.CodAngajament, R.CodIndicator, DATE(R.Data) AS Zi, SUM(R.DIF) AS Dif "
     "  FROM FX_Receptii R JOIN FX_Receptii_H H ON R.IDRH = H.IDRH "
-    " WHERE COALESCE(H.Sters, 0) = 0 AND R.CodIndicator IS NOT NULL AND R.Data IS NOT NULL{filtru} "
+    " WHERE COALESCE(H.Sters, 0) = 0 AND " + fara_receptii_sterse("H") + " "
+    "   AND R.CodIndicator IS NOT NULL AND R.Data IS NOT NULL{filtru} "
     " GROUP BY R.CodAngajament, R.CodIndicator, DATE(R.Data)"
 )
 

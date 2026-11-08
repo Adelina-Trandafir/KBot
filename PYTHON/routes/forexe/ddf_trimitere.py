@@ -33,6 +33,7 @@ from routes.auth.guard import require_session
 from utils.database import get_kbot_connection
 
 from . import forexe_bp
+from .ddf_flux_core import ROL_DIRECTOR, ROLURI_RESTRANSE, rol_sesiune
 from .ddf_stare import (MISSING_COLUMN_MESSAGE, STAGE_FINAL_PDF, STAGE_INTERRUPTED,
                         STAGE_NOT_SENT, STAGE_SENT_IN_PROGRESS, are_stare_trimitere)
 
@@ -142,17 +143,19 @@ def _roluri(semnatura) -> list:
     return [x.strip() for x in str(semnatura or "").split(",") if x.strip()]
 
 
-def _start(cursor, idrev: int) -> dict:
+def _start(cursor, idrev: int, permite_fara_semnatura: bool = False, reluare=None) -> dict:
     rev = citeste_revizia(cursor, idrev)
     stage = int(rev.get("StareTrimitere") or 0)
+    if stage != STAGE_INTERRUPTED and (stage != STAGE_NOT_SENT or deja_in_forexe(rev)):
+        raise Refuz("Revizia a fost deja trimisă în FOREXE.", 409)
+    if not permite_fara_semnatura and "A" not in _roluri(rev.get("Semnatura")):
+        raise Refuz("Revizia nu este semnată pe Secțiunea A. Semnați-o sau activați opțiunea de "
+                    "salvare înainte de semnare din Setări › FOREXE.", 409)
     if stage == STAGE_INTERRUPTED:
+        if reluare is False:
+            raise Refuz("Trimiterea a fost deja pornită. Reîmprospătați revizia înainte de a continua.", 409)
         # A resume: the stage is already right, forexecab may be half changed.
         return {"idrev": idrev, "stare_trimitere": stage, "reluare": True}
-    if stage != STAGE_NOT_SENT or deja_in_forexe(rev):
-        raise Refuz("Revizia a fost deja trimisă în FOREXE.", 409)
-    if "A" not in _roluri(rev.get("Semnatura")):
-        raise Refuz("Revizia nu este semnată A pe documentul intermediar. Generați-l, semnați "
-                    "secțiunea A, apoi trimiteți.", 409)
     cursor.execute("UPDATE FX_DDF_REV SET StareTrimitere = %s WHERE IDREV = %s",
                    (STAGE_INTERRUPTED, idrev))
     return {"idrev": idrev, "stare_trimitere": STAGE_INTERRUPTED, "reluare": False}
@@ -161,9 +164,16 @@ def _start(cursor, idrev: int) -> dict:
 @forexe_bp.route("/api/forexe/ddf/trimitere/<int:idrev>/start", methods=["POST"])
 @require_session
 def post_ddf_trimitere_start(idrev):
-    """S1 -> stage 1 ("interrupted") BEFORE forexecab is touched: a crash halfway must leave
-    S1x behind, never a revision that looks unsent. A revision already at stage 1 is a resume."""
-    return _in_tranzactie(lambda c: _start(c, idrev), f"start {idrev}")
+    """Records stage 1 before FOREXE is touched. An explicit JSON true allows an unsigned send."""
+    corp = request.get_json(silent=True)
+    if not isinstance(corp, dict):
+        corp = {}
+    permite_fara_semnatura = corp.get("permite_fara_semnatura") is True
+    if permite_fara_semnatura:
+        rol = rol_sesiune()
+        if rol == ROL_DIRECTOR or rol in ROLURI_RESTRANSE:
+            return _json_utf8({"error": "Acest rol nu poate trimite o revizie în FOREXE înainte de semnare."}, 403)
+    return _in_tranzactie(lambda c: _start(c, idrev, permite_fara_semnatura, corp.get("reluare")), f"start {idrev}")
 
 
 # ---- the "!" code -> forexecab's code --------------------------------------------------

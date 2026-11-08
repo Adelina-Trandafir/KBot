@@ -1,5 +1,6 @@
 import { openMenu } from '../components/menu/menu.js';
 import { tooltipSettingsMenuEntry } from '../components/tooltip/tooltip-settings.js';
+import { searchSettingsMenuEntry } from './search-settings-dialog.js';
 import { applicationAccountEntries } from '../portal/application-access.js';
 
 let applicationMenu;
@@ -12,10 +13,13 @@ async function openApplications(anchor) {
   openMenu(anchor, [
     { icon: '🏢', label: context() || 'Contul curent', disabled: true },
     ...entries.applications,
+    ...(window.location.pathname === '/vercon-inventar' ? [{ label: 'VERCON', run: () => navigate('/vercon') }] : []),
+    { label: 'Inventar Excel', run: () => navigate('/vercon-inventar') },
     { icon: '📋', label: 'ADECHIT', run: () => navigate('/adechit') },
     { icon: '📒', label: 'Avacont · în curând', disabled: true },
     ...entries.certificates,
-    tooltipSettingsMenuEntry(),
+    { ...searchSettingsMenuEntry(), rule: true },
+    { ...tooltipSettingsMenuEntry(), rule: false },
   ], { label: 'Aplicații', below: anchor.closest('header') });
 }
 

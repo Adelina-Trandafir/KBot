@@ -510,6 +510,9 @@ _R_MARCHEAZA_STEARSA_SQL = "UPDATE FX_Receptii_R SET Sters = 1 WHERE IDRR = %s"
 # deleted, so its Sters follows its deletion row like everyone else's.
 _R_DEMARCHEAZA_SQL = (
     "UPDATE FX_Receptii_R SET Sters = 0 WHERE IDRR = %s "
+    # Slice 0076-02: a deletion SEEN in the FOREXE page (StersObservatLa) is proven by FOREXE, not
+    # by a placement: no window of the association can take it back.
+    "  AND StersObservatLa IS NULL "
     "  AND NOT EXISTS (SELECT 1 FROM (SELECT IDRH FROM FX_Receptii_H "
     "                                 WHERE IDRR = %s AND EsteStergere = 1) X)"
 )

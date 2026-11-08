@@ -1,4 +1,4 @@
-' The «Interogari unice» page of «Publicare» (slice ME01): one query text run once on AVACONT_SURSA and on the databases ticked in the main tree, with a ledger on the server.
+' The «Interogari unice» page of «Publicare» (slice ME01): one query text run once on AVACONT_SURSA and on the database chosen in the main tree (or all of them), with a ledger on the server.
 ' All controls are declared HERE; coordinates are in the 96 dpi it was authored at.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class OnceQueryView
@@ -140,7 +140,7 @@ Partial Class OnceQueryView
         btnRun.TabIndex = 5
         btnRun.Text = "Execută"
         tips.SetToolTipHeader(btnRun, "Execută")
-        tips.SetToolTipText(btnRun, "Rulează interogarea întâi pe AVACONT_SURSA, apoi pe bazele bifate în arborele din stânga. O bază care a rulat deja textul e sărită; modificările nu se pot anula.")
+        tips.SetToolTipText(btnRun, "Rulează interogarea întâi pe AVACONT_SURSA, apoi pe baza aleasă în arborele din stânga (sau pe toate, cu «TOATE BAZELE»). O bază care a rulat deja textul e sărită; modificările nu se pot anula.")
         '
         ' btnStatus
         '

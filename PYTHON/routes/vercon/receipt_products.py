@@ -39,7 +39,7 @@ def draft(cursor, repo, ctx, raw, errors, key):
             duration = cleaned.get('DNF')
             if low is None or high is None:
                 raise nom.NomError('INVALID', 'Alegeți o clasificare MF cu limite de durată.', 422)
-            if duration is None or not low * 12 <= duration <= high * 12:
+            if duration is None or (not ctx.get('preserve_legacy_mf_duration') and not low * 12 <= duration <= high * 12):
                 raise nom.NomError('INVALID', duration_message(classification['code'], low, high), 422)
         return cleaned
     except nom.NomError as error:

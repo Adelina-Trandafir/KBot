@@ -10,6 +10,7 @@ Built in code, shown with `ShowAt` / `ShowBelow` / `ShowAtCursor`, closes itself
 ## CustomPopupItem
 - `Key` (non-empty, unique; ignored on separators), `Text`, `Image`, `Enabled = True`, `Tag` (never read by the popup), `Mnemonic` (read-only)
 - `Text` carries the access letter: `"&Salvează"` → S; `"&&"` is a literal ampersand.
+- `Italic = False` (0097-09) — optional italic command text, used for closed navigation-history entries. Measurement and drawing use the same row font.
 - `IsSeparator = False` — thin unselectable line; key/text/image ignored.
 - `IsSlider = False` + `SliderMinimum = 0` / `SliderMaximum = 100` / `SliderValue` / `SliderFraction` — a row that DRAGS instead of clicking. It does not close the menu; it raises `SliderValueChanged` while dragging and `SliderValueCommitted` on release.
 - `SliderSnapPoints` (Integer(), empty = free) + `SliderSnapTolerance = 3` — values the thumb sticks to while DRAGGING when it passes within the tolerance; drawn as thin ticks on the track. Keyboard steps are not snapped. `SnapSliderValue(v)` is the pure rule.
@@ -22,6 +23,8 @@ Built in code, shown with `ShowAt` / `ShowBelow` / `ShowAtCursor`, closes itself
 - Show: `ShowAt(anchor, screenPoint)`, `ShowAtCursor(anchor)`, `ShowBelow(anchor[, anchorRect])`
 - `ClosedJustNow` (Shared, read-only) — lets an anchor swallow the click that closed the menu instead of reopening it.
 - Look: `ImageSize = 16`, `ItemHeight = 0` (0 = from the font), `MinimumPopupWidth = 120`, `MaximumPopupWidth = 420`, `CornerRadius = -1`, `ItemGradient = 14` (logical px, C2)
+- `FontSizeOffset = 0` (0097-09) — extra points on the anchor's font for command rows; navigation history sets 2. Derived fonts are owned by the popup and released on font changes/disposal.
+- `PreviewColumns = 0` (0097-09) — zero retains command rows; a positive value lays commands out as thumbnail tiles. Each `CustomPopupItem.PreviewImage` is a borrowed snapshot (fallback: item icon). The existing palette supplies selection and caption/icon bands; the host owns and keeps images alive until closing. `ShowCentered(anchor)` shows this mode centred on the host, clamped to its monitor. The regular history menu keeps its 180 px list; only the Ctrl+Tab selector enables tiles. Held-key and MRU behaviour belong to the application filter.
 - Colours: `PopupBackColor`, `BorderColor`, `ItemForeColor`, `DisabledForeColor`, `HighlightBackColor`, `HighlightForeColor`, `SeparatorColor` — Empty = theme (C1), each with an `Effective*` read-only counterpart. `ApplyTheme(scheme)`.
 
 ## IPopupAnchor
@@ -30,7 +33,7 @@ The control that opened the menu implements `Sub SetPopupOpen(open As Boolean)` 
 ## Limits
 - **It ACTIVATES** (unlike `KBotNavFlyout`/`TreeNodeFlyout`, which are `WS_EX_NOACTIVATE`): without activation there is no keyboard focus, and keyboard is half the requirement. The price is that the form underneath draws its title bar as inactive while the menu is open.
 - Opening with zero items → `InvalidOperationException`; `ShowBelow` with an empty `anchorRect`, or an unknown/empty key, → `ArgumentException` (C3).
-- Flat menu only: no submenus, no checkable rows, no multi-column layout, no scrolling for very long lists.
+- One menu level per window; very long lists scroll with the mouse wheel and keep the keyboard selection visible. No multi-column layout.
 - `WS_EX_TOOLWINDOW` (no taskbar button) + `CS_DROPSHADOW` (the usual menu shadow).
 
 ## Input rows: combo and text box (slice 00EF-34)

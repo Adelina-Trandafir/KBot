@@ -23,14 +23,24 @@ def read(source, spec, node_id, *, recursive=False):
     def token(value):
         return 'none' if value is None or value == '' else quote(str(value), safe='')
 
+    fields = list(zip(dimensions, path))
+
+    def in_branch(row):
+        return all(token(row.get(field)) == value for field, value in fields)
+
     if mode == 'depreciation':
         rows = report_mf.depreciation_options(source)
     elif mode == 'bons':
-        rows = report_oi.documents(source, spec)
+        rows = report_oi.documents(source, spec, in_branch=in_branch if path else None)
     else:
-        rows = report_oi.balances(source, spec)
-    for field, value in zip(dimensions, path):
-        rows = [row for row in rows if token(row.get(field)) == value]
+        movement_fields = [('holder' if field == 'receiver' else field, value) for field, value in fields]
+
+        def in_balance_branch(row):
+            return all(token(row.get(field)) == value for field, value in movement_fields)
+
+        rows = report_oi.balances(source, spec, in_branch=in_balance_branch if path else None)
+    if path:
+        rows = [row for row in rows if in_branch(row)]
 
     details = {}
 

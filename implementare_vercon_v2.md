@@ -1,5 +1,9 @@
 # Implementare VERCON v2
 
+## Actualizare 07.11.2026 — Bifarea arborelui din Rapoarte Online (SLICE-VC08-23)
+
+[Worklog SLICE-VC08-23](docs/worklog/SLICE-VC08-23-rapoarte-bifare-arbore.md).
+
 ## Actualizare 30.10.2026 — Certificat digital Administrator (SLICE-WB02-01)
 
 [Worklog SLICE-WB02-01](docs/worklog/SLICE-WB02-01-certificat-digital-administrator.md).
@@ -935,3 +939,29 @@ La salvare, daca valoarea din antet difera de totalul liniilor cu cel mult 1 leu
 ### [2026-11-03 — SLICE-VC06-39: «Rezolvă Acum» deschide «NIR din e-Factura…» din informare](docs/worklog/SLICE-VC06-39-rezolva-acum-din-informarea-efactura.md)
 
 ### [2026-11-03 — SLICE-VC06-39: Completare ajutor VERCON pentru «Rezolvă Acum»](docs/worklog/SLICE-VC06-39-rezolva-acum-din-informarea-efactura.md#completare-ulterioară--ajutor-vercon-03112026)
+
+### [2026-11-05 — SLICE-VC08-20: Data NIR/factură și liste de inventar pe primitori cu pagini și semnături separate](docs/worklog/SLICE-VC08-20-date-nir-inventar-primitori.md)
+
+### [2026-11-05 — SLICE-VC06-40: Eliminarea informării despre recalcularea prețului în NIR din eFactura](docs/worklog/SLICE-VC06-40-fara-informare-recalculare-pret.md)
+
+### [2026-11-06 — SLICE-VC12-01: Comparație inventar Excel cu nomenclatorul VERCON în KBOTADMIN](docs/worklog/SLICE-VC12-01-comparatie-inventar-excel.md)
+
+### [2026-11-06 — SLICE-VC12-02: Pornirea tranzacției de comparație inventar în sintaxa MariaDB](docs/worklog/SLICE-VC12-02-comparatie-inventar-tranzactie-mariadb.md)
+
+### [2026-11-06 — SLICE-VC12-03: Candidați de comparație inventar exclusiv din ProduseP](docs/worklog/SLICE-VC12-03-comparatie-exclusiv-produsep.md)
+
+### [2026-11-06 — SLICE-VC12-04: Miniaplicație web pentru asocierea inventarului, exclusiv OI](docs/worklog/SLICE-VC12-04-inventar-web-asocieri.md)
+
+### [2026-11-06 — SLICE-VC12-05: Încărcarea managerului z-index pentru dropdown-urile inventarului](docs/worklog/SLICE-VC12-05-inventar-combobox-zindex.md)
+
+### [2026-11-06 — SLICE-VC12-06: Omiterea rândurilor Excel invalide și raportare prin sistemul comun de mesaje](docs/worklog/SLICE-VC12-06-inventar-citire-erori-pe-rand.md)
+
+### [2026-11-06 — SLICE-VC12-07: Denumirea, UM și prețul sursă în mesajele rândurilor omise](docs/worklog/SLICE-VC12-07-inventar-detalii-randuri-omise.md)
+
+### [2026-11-06 — SLICE-VC08-21: Filtre DGV cu debifare la tastare, căutare în text și debounce de 300 ms](docs/worklog/SLICE-VC08-21-dgv-cautare-bife-si-debounce.md)
+
+### [2026-11-06 — SLICE-VC12-08: Lățimile și footerele grilelor, separator pentru lista de asocieri](docs/worklog/SLICE-VC12-08-inventar-grile-latimi-splitter.md)
+
+### [2026-11-06 — SLICE-VC12-09: Antet standard și context comun VERCON/inventar, cont OIM implicit](docs/worklog/SLICE-VC12-09-inventar-antet-context-vercon.md)
+
+### [2026-11-06 — SLICE-VC08-22: Căutare în casete cu pauză editabilă și minimum 2 caractere](docs/worklog/SLICE-VC08-22-cautare-casete-debounce-minim-2.md)

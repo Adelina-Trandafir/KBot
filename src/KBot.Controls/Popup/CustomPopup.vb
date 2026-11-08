@@ -913,6 +913,11 @@ Public Class CustomPopup
         Try
             _layoutDirty = False
 
+            If PreviewColumns > 0 Then
+                RecalcPreviewLayout()
+                Return
+            End If
+
             Dim padX As Integer = ThemeShapes.ScaleDpi(ScaleRef, PadXLogical)
             Dim padY As Integer = ThemeShapes.ScaleDpi(ScaleRef, PadYLogical)
             Dim gutter As Integer = IconGutter()
@@ -923,7 +928,7 @@ Public Class CustomPopup
             Dim textW As Integer = 0
             For Each it As CustomPopupItem In _items
                 If it.IsSeparator Then Continue For
-                Dim sz As Size = TextRenderer.MeasureText(If(it.Text, String.Empty), Font,
+                Dim sz As Size = TextRenderer.MeasureText(If(it.Text, String.Empty), RowFont(it.Italic),
                                                           New Size(Integer.MaxValue, Integer.MaxValue),
                                                           MeasureFlags())
                 Dim latime As Integer = sz.Width
@@ -996,7 +1001,7 @@ Public Class CustomPopup
     ''' <summary>Înălțimea unui rând: cea cerută, altfel fontul + aer, dar niciodată sub pictogramă.</summary>
     Friend Function EffectiveRowHeight() As Integer
         If _itemHeight > 0 Then Return ThemeShapes.ScaleDpi(ScaleRef, _itemHeight)
-        Return Math.Max(Font.Height + ThemeShapes.ScaleDpi(ScaleRef, RowAirLogical),
+        Return Math.Max(RowFont().Height + ThemeShapes.ScaleDpi(ScaleRef, RowAirLogical),
                         ThemeShapes.ScaleDpi(ScaleRef, _imageSize + 4))
     End Function
 
@@ -1010,6 +1015,7 @@ Public Class CustomPopup
     ' Fontul se poate schimba (ShowCore îl ia de la gazdă) => rândurile se remăsoară.
     Protected Overrides Sub OnFontChanged(e As EventArgs)
         MyBase.OnFontChanged(e)
+        DisposeRowFonts()
         InvalidateLayout()
     End Sub
 

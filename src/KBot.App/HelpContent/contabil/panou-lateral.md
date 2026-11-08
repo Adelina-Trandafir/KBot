@@ -31,16 +31,18 @@ revin.
 <!-- capture: panou-lateral-strans | caption: Panoul lateral strâns la banda cu pictograme | prepare: Strângeți panoul lateral cu butonul din partea lui de jos. După captură, desfaceți-l la loc. | redo: 2026-10-17 12:00 | why: 0115-01: butonul a coborât jos -->
 
 ## Machete deschise
-<!-- slice: 0116, 0113-01, 0115-01, AV01-13 -->
+<!-- slice: 0116, 0113-01, 0115-01, AV01-13, 0097-09 -->
 
-Până la **10** rânduri, de la pornirea K-BOT, ca o **stivă**:
+Lista machetelor folosite de la pornirea K-BOT este comună cu [istoricul navigării](topic:contabil.fereastra),
+deschis din **«Istoric»** în ribbon sau din butonul opțional al barei de titlu:
 
-- sus sunt machetele **deschise acum**, în ordinea în care le-ai deschis. **Ordinea nu se schimbă** cât timp rămân
-  deschise: dacă treci de la una la alta, rândurile stau pe loc. O machetă nouă se adaugă după ultima deschisă;
-- machetele **închise** sunt scrise **cu litere italice** și stau jos, în coadă; cea închisă ultima e la capăt. Dacă
-  deschizi din nou una închisă, ea iese din coadă și se pune după ultima deschisă;
+- sus sunt machetele **deschise acum**, ordonate alfabetic;
+- machetele **închise** sunt scrise **cu litere italice** și stau jos, tot alfabetic. Dacă redeschizi una, ea revine
+  în grupul celor deschise. În meniul de istoric cele două grupuri au un separator între ele;
 - când lista e plină, ies din ea cele **închise**, începând cu cea închisă de cel mai mult timp, ca machetele deschise
   să rămână vizibile cât mai mult.
+
+Istoricul păstrează până la **10** rânduri; dacă sunt mai mult de 10 machete deschise, le păstrează pe toate.
 
 În listă apar paginile din ribbon (Extrase de cont, Clasificații cheltuieli, Setări…) și **lista angajamentelor**.
 **Vederile unui angajament** (Sumar, Rezervări…) **nu apar**, și nici **ferestrele care cer un răspuns** (editoarele DDF și

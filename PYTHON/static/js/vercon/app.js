@@ -24,6 +24,7 @@ import { mountPartners } from "./partners.js";
 import { createLock } from "./lock.js";
 import { createSaver } from "./save.js";
 import { writePreference } from "./documents.js";
+import { contextUrl, initialContext, rememberContext } from "./context-link.js";
 import { el, preview, scope } from "./ui.js";
 import { bindApplicationMenu } from "./application-menu.js";
 import { bindReportIdentity } from "./report-identity.js";
@@ -127,6 +128,7 @@ async function loadContext(k_wanted) {
 
 function applyContext(k_ctx) {
   state.ctx = k_ctx;
+  rememberContext(state.unit, k_ctx.selection);
   const k_sel = k_ctx.selection;
   const k_opt = k_ctx.options;
   const k_set = (k_name, k_items, k_current) => {
@@ -611,7 +613,7 @@ async function start() {
     state.unit = k_who.db_name;
     $("vc-subunit-combo").title = `Unitate: ${k_who.db_name}`;
     $("vc-context").textContent = k_who.email || "";
-    await loadContext({});
+    await loadContext(initialContext(state.unit));
   } catch (k_error) {
     paint("error", k_error.message || "Eroare necunoscută.");
     report(k_error);
@@ -682,7 +684,7 @@ function bind() {
       (async () => {
         if (await allowLeave()) {
           await lock.release();
-          window.location.href = path;
+          window.location.href = contextUrl(path, state.unit, state.ctx?.selection);
         }
       })().catch(report),
     signal: lifetime.signal,

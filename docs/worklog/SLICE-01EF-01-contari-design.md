@@ -37,7 +37,7 @@ Defects seen and **not ported**: the closed-month check compares month numbers w
 | Access | K-BOT |
 |---|---|
 | Fetching, tree by supplier, state filters | 00EF-17..33 (`PrimiteView`) |
-| Link to the FOREXE reception, classification per line | `KeLegaForm`, KE11, 00EF-39 (not used by «Contari») |
+| Link to the FOREXE reception, classification per line | the former reception window, KE11, 00EF-39 (not used by «Contari») |
 | Send to Vercon | 00EF-45..49 |
 | `EFT_O` | `EF_PrimiteOperatii` (`IdPrimita`, `IdOperatie` without foreign key, `IdClsf`, `IdUnitate`, `Sursa`, `Suma`), filled only by the Migrator |
 | `DefaNote` / `DefaNoteA` | `TZ_SablonOperatii` (`Tip` M/A, **`Fel` E/P/A**, `FelOP`, `Cheie` with `XX.XX`, `Compartiment`, `IdJurnal`) + `TZ_SablonOperatiiLinie` (`Forma`, `IdClsf`, debit/credit base account + analytic, partner mode NIMIC/OPERATIE/FIX, `PA`, `Ordonantare`, `Chelt`) |

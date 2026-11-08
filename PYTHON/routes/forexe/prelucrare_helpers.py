@@ -432,6 +432,34 @@ SNAPSHOT_COUNTS_SQL = (
     " OR EXISTS (SELECT 1 FROM FX_Receptii L WHERE L.IDRH = H.IDRH))"
 )
 
+# F22 (OPERATOR, 26.08.2026) + 07.11.2026: a DELETED reception counts for the payments made BEFORE its
+# deletion and stops counting FROM that day on. A reception is deleted when `FX_Receptii_R.Sters = 1` and
+# the deletion has a date: the moment K-BOT SAW it happen in the FOREXE page (`StersObservatLa`, slice
+# 0076-02) or, failing that, the date of its «Stergere receptie» row (`EsteStergere`, F21). The lines
+# (`FX_Receptii.DIF`) of such a reception stay in the base -- the deletion row has no lines of its own,
+# so nothing cancels them -- and the readers that add `DIF` up have to leave them out through this fragment.
+STERGERE_DATA_SQL = (
+    "DATE(COALESCE(RX.StersObservatLa, "
+    "(SELECT MAX(HD.DataH) FROM FX_Receptii_H HD "
+    "  WHERE HD.IDRR = RX.IDRR AND COALESCE(HD.EsteStergere, 0) = 1)))"
+)
+
+
+def fara_receptii_sterse(alias_h: str, pana_la: Optional[str] = None) -> str:
+    """
+    A WHERE fragment that leaves out the headers of DELETED receptions (see above).
+
+    `alias_h` is the alias of `FX_Receptii_H` in the caller (its `IDRR` names the reception).
+    `pana_la` is a SQL expression for the day the caller counts up to (e.g. «%s»): a reception
+    deleted on or before that day is left out, one deleted later still counts. Without it the
+    reception is left out as soon as it is deleted at all (no «as of» day: trees, summaries).
+    The caller adds the parameter once for every «%s» it passes in `pana_la`.
+    """
+    conditie = f"{STERGERE_DATA_SQL} IS NOT NULL" if pana_la is None \
+        else f"{STERGERE_DATA_SQL} <= {pana_la}"
+    return (f"NOT EXISTS (SELECT 1 FROM FX_Receptii_R RX "
+            f"WHERE RX.IDRR = {alias_h}.IDRR AND COALESCE(RX.Sters, 0) = 1 AND {conditie})")
+
 
 def is_rand_contract_row(obs: Optional[str]) -> bool:
     """Port of IsRandContractRow -- first 14 characters are 'rand contract:'."""

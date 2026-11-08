@@ -34,6 +34,7 @@ export class Combobox {
       onSelect: options.onSelect || null,
       showLoader: options.showLoader !== false,
       minSearchLength: options.minSearchLength || 0,
+      minSearchIgnoreSpaces: options.minSearchIgnoreSpaces === true,   // spaces do not count toward minSearchLength
       maxResults: options.maxResults || 50,
       highlightMatches: options.highlightMatches !== false,
       allowEmpty: options.allowEmpty !== false,

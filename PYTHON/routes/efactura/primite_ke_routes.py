@@ -12,13 +12,15 @@ session's. The rules are in primite_ke.py. Every WRITE needs the role «Contabil
                                                            angajamente: [{ CodAngajament, Descriere, Stare, Sursa }] }
   PUT    /api/efactura/primite/<id>/ke/clasificatii    body { linii: [{ IdLinie, IdClsf | null }] } -> the state as GET
   GET    /api/efactura/ke/angajamente?q=               -> { angajamente: [{ CodAngajament, Descriere, Alias, Stare, DataCreare, Parteneri }] }
-  GET    /api/efactura/ke/angajament/<cod>/receptii    -> { indicatori: [...], receptii: [{ IDRR, DataR, TipReceptie, Descriere, IDRH, Total,
-                                                           pe_clasificatie: [{ IdClsf, Clsf, Valoare, Alocat, Rest }] }] }
-  POST   /api/efactura/primite/<id>/ke/verifica        body { CodAngajament, Tip, IDRR?, alocari: [{ IdClsf, Suma }] }
+  GET    /api/efactura/ke/angajament/<cod>/receptii?data=aaaa-ll-zz   (KE20-02: data = the day of an invoice -> the receptions as they stood THEN, links of invoices up to it)
+                                                       -> { indicatori: [...], receptii: [{ IDRR, DataR, TipReceptie, Descriere, IDRH, Total,
+                                                           pe_clasificatie: [{ IdClsf, Clsf, Valoare, Alocat, Rest }] }], la_data }
+  POST   /api/efactura/primite/<id>/ke/verifica        body { CodAngajament, Tip, IDRR?, alocari: [{ IdClsf, Suma }], surplus?: [{ IdClsf, Suma > 0 }] }   (surplus = KE20-01: the value the
+                                                       new / modified reception takes ABOVE the invoices; never a link; sent once per reception)
                                                        -> { ok, probleme, avertismente, randuri: [{ IdClsf, CodAI, CodIndicator, Clsf, ClsfSal, SS,
-                                                                                                  Suma, ValoareVeche?, ValoareNoua? }] }
+                                                                                                  Suma, Surplus, ValoareVeche?, ValoareNoua? }] }
   GET    /api/efactura/ke/angajament/<cod>/disponibil?data=aaaa-ll-zz   (KE12-03) -> { ziua, indicatori: [{ IdClsf, CodIndicator, Buget|null, Receptii }], avertismente }
-  POST   /api/efactura/primite/<id>/ke/legaturi        body { CodAngajament, Tip, IDRR?, IDRH?, IDR?, alocari } -> 201, the state as GET
+  POST   /api/efactura/primite/<id>/ke/legaturi        body { CodAngajament, Tip, IDRR?, IDRH?, IDR?, alocari, la_data? } -> 201, the state as GET   (la_data = KE20-02, Tip existenta: the day the rest was measured on)
   DELETE /api/efactura/primite/<id>/ke/legaturi/<idl>  -> the state as GET
   POST   /api/efactura/ke/propuneri                    (KE16) body { facturi: [IdPrimita], angajamente?: [CodAngajament] } -> { zile_dupa_factura, omise,
                                                            angajamente: [{ CodAngajament, Descriere }],
@@ -87,14 +89,15 @@ def ke_angajamente():
 @require_session
 @_guarded("ke/receptii")
 def ke_receptii(cod):
-    return _json(primite_ke.receptii_angajament(g.session.db_name, cod))
+    return _json(primite_ke.receptii_angajament(g.session.db_name, cod, request.args.get("data")))
 
 
 @efactura_bp.route("/api/efactura/ke/angajament/<path:cod>/disponibil", methods=["GET"])
 @require_session
 @_guarded("ke/disponibil")
 def ke_disponibil(cod):
-    return _json(primite_ke.disponibil(g.session.db_name, cod, request.args.get("data")))
+    return _json(primite_ke.disponibil(g.session.db_name, cod, request.args.get("data"),
+                                      detalii=request.args.get("detalii") == "1"))
 
 
 @efactura_bp.route("/api/efactura/primite/<int:id_primita>/ke/verifica", methods=["POST"])
@@ -102,10 +105,10 @@ def ke_disponibil(cod):
 @_guarded("ke/verifica")
 def ke_verifica(id_primita):
     body = _body()
-    if set(body) - {"CodAngajament", "Tip", "IDRR", "alocari"}:
+    if set(body) - {"CodAngajament", "Tip", "IDRR", "alocari", "surplus"}:
         raise EfEroare("Corpul contine campuri nepermise.", "CAMP_NEPERMIS", 400)
     return _json(primite_ke.verifica(g.session.db_name, id_primita, _role(), _text(body, "CodAngajament"), _text(body, "Tip"),
-                                     body.get("alocari"), _optional_int(body, "IDRR")))
+                                     body.get("alocari"), _optional_int(body, "IDRR"), body.get("surplus")))
 
 
 @efactura_bp.route("/api/efactura/primite/<int:id_primita>/ke/legaturi", methods=["POST"])
@@ -113,11 +116,11 @@ def ke_verifica(id_primita):
 @_guarded("ke/leaga")
 def ke_leaga(id_primita):
     body = _body()
-    if set(body) - {"CodAngajament", "Tip", "IDRR", "IDRH", "IDR", "alocari"}:
+    if set(body) - {"CodAngajament", "Tip", "IDRR", "IDRH", "IDR", "alocari", "la_data"}:
         raise EfEroare("Corpul contine campuri nepermise.", "CAMP_NEPERMIS", 400)
     state = primite_ke.leaga(g.session.db_name, id_primita, _role(), g.session.username, _text(body, "CodAngajament"),
                              _text(body, "Tip"), _optional_int(body, "IDRR"), _optional_int(body, "IDRH"), _optional_int(body, "IDR"),
-                             body.get("alocari"))
+                             body.get("alocari"), body.get("la_data"))
     _audit("EF_KE_LEGA", str(id_primita), "cod=%s tip=%s" % (body.get("CodAngajament"), body.get("Tip")))
     return _json(state, 201)
 

@@ -1,5 +1,6 @@
 import { ComboTree } from '../components/combotree/combotree.js';
 import { el, docNode } from './ui.js';
+import { searchOptions } from './search-settings.js';
 import { format, formatMoney } from './fields.js';
 import { decimalText } from './decimal-text.js';
 
@@ -51,6 +52,7 @@ export function consumptionCategory(owner, spec, value, editable, onChange, onTa
   node.append(host, input);
   let message = '', pending = null;
   const combo = owner.own(new ComboTree(host, {
+    ...searchOptions(),
     nodes: [{ id: 'categories', label: 'Categorii / conturi', children: spec.options.map(item => ({ id: String(item.value), label: item.label })) }],
     expanded: ['categories'], placeholder: 'Alegeți categoria…', onTab,
     onSelect: selection => {

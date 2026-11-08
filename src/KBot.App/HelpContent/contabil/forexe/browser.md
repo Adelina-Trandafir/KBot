@@ -33,10 +33,17 @@ rezervare**, K-BOT preia singur modificarea, fără să mai apeși iconița de d
 | o recepție (nouă sau modificată) | descarcă acea recepție |
 | o rezervare | păstrează rândurile modificate și te întreabă «Ați terminat modificarea rezervărilor?» — **DA** le preia acum, **NU** te lasă să continui și te întreabă din nou după următoarea salvare |
 
+### Schimbi data unei receptii
+<!-- slice: 0076-01 -->
+
+Dacă modifici în pagină **data unei recepții** (deschizi recepția cu ochiul, schimbi data și salvezi), K-BOT știe că e **aceeași recepție** și îi schimbă data, cu tot cu istoricul ei. Nu mai apare o recepție nouă lângă cea veche.
+
+Dacă K-BOT nu poate spune care recepție din ziua veche este (de exemplu sunt mai multe în aceeași zi, cu aceeași valoare), te anunță și te întreabă dacă salvezi totuși descărcarea: la **Da**, recepția cu data nouă se creează ca recepție nouă, iar cea veche rămâne cu istoricul ei; la **Nu**, nu se salvează nimic și schimbarea rămâne păstrată pentru următoarea descărcare.
+
 ### Nu incepi o rezervare cat alta asteapta revizia
 <!-- slice: 0114-26, 0000-120 -->
 
-Dacă angajamentul are **rezervări fără revizie** de fundamentare (în vederea «Rezervări» au încă «+»), în pagină **nu poți începe o rezervare nouă** — nici cu **«Adaugă»**, nici deschizând (ochiul) o rezervare existentă. K-BOT arată un mesaj cu zilele rezervărilor care așteaptă, iar rezervarea nu începe. Mergi în vederea «Rezervări», apasă «+» pe fiecare rezervare până nu mai rămâne niciuna și abia apoi lucrezi în pagină. Vezi [Rezervări](topic:contabil.vederi.rezervari).
+Dacă angajamentul are **rezervări fără revizie** de fundamentare (în vederea «Rezervări» au încă «+»), în pagină **nu poți începe o rezervare nouă** — nici cu **«Adaugă»**, nici deschizând (ochiul) o rezervare existentă. K-BOT arată un mesaj cu zilele rezervărilor care așteaptă, iar rezervarea nu începe. Mergi în vederea «Rezervări», apasă «+» pe fiecare rezervare până nu mai rămâne niciuna și abia apoi lucrezi în pagină. Dacă nu vrei această oprire, debifează din **Setări › FOREXE** «Oprește rezervarea nouă dacă angajamentul are rezervări fără revizie de fundamentare». Vezi [Rezervări](topic:contabil.vederi.rezervari).
 
 ### Motivul unei rezervări se păstrează pentru revizie
 <!-- slice: 0127-01, 0000-151 -->

@@ -34,10 +34,10 @@ Partial Class PrimiteContarePage
         tips = New KBotToolTip(components)
         tlyPagina = New KBotTableLayoutPanel()
         tlySus = New KBotTableLayoutPanel()
-        lblClsf = New System.Windows.Forms.Label()
-        lblCodClient = New System.Windows.Forms.Label()
-        lblIban = New System.Windows.Forms.Label()
-        lblFelOp = New System.Windows.Forms.Label()
+        lblClsf = New Global.KBot.Controls.KBotLabel()
+        lblCodClient = New Global.KBot.Controls.KBotLabel()
+        lblIban = New Global.KBot.Controls.KBotLabel()
+        lblFelOp = New Global.KBot.Controls.KBotLabel()
         cmbClsf = New KBotComboBox()
         txtCodClient = New KBotTextBox()
         txtIban = New KBotTextBox()
@@ -51,7 +51,7 @@ Partial Class PrimiteContarePage
         gridPlata = New KBotDataView()
         tlyBara = New KBotTableLayoutPanel()
         barExplicatie = New KBotProgressBar()
-        lblLungime = New System.Windows.Forms.Label()
+        lblLungime = New Global.KBot.Controls.KBotLabel()
         pnlJos = New KBotTableLayoutPanel()
         btnRenunta = New KBotButton()
         lblInfo = New KBotHtmlLabel()
@@ -116,6 +116,7 @@ Partial Class PrimiteContarePage
         '
         ' lblClsf
         '
+        lblClsf.BorderWidth = 0
         lblClsf.Dock = System.Windows.Forms.DockStyle.Fill
         lblClsf.Font = New System.Drawing.Font("Calibri", 11.0!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CByte(0))
         lblClsf.Margin = New System.Windows.Forms.Padding(0, 0, 2, 2)
@@ -126,6 +127,7 @@ Partial Class PrimiteContarePage
         '
         ' lblCodClient
         '
+        lblCodClient.BorderWidth = 0
         lblCodClient.Dock = System.Windows.Forms.DockStyle.Fill
         lblCodClient.Font = New System.Drawing.Font("Calibri", 11.0!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CByte(0))
         lblCodClient.Margin = New System.Windows.Forms.Padding(0, 0, 2, 2)
@@ -136,6 +138,7 @@ Partial Class PrimiteContarePage
         '
         ' lblIban
         '
+        lblIban.BorderWidth = 0
         lblIban.Dock = System.Windows.Forms.DockStyle.Fill
         lblIban.Font = New System.Drawing.Font("Calibri", 11.0!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CByte(0))
         lblIban.Margin = New System.Windows.Forms.Padding(0, 0, 2, 2)
@@ -146,6 +149,7 @@ Partial Class PrimiteContarePage
         '
         ' lblFelOp
         '
+        lblFelOp.BorderWidth = 0
         lblFelOp.Dock = System.Windows.Forms.DockStyle.Fill
         lblFelOp.Font = New System.Drawing.Font("Calibri", 11.0!, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, CByte(0))
         lblFelOp.Margin = New System.Windows.Forms.Padding(0, 0, 0, 2)
@@ -460,6 +464,7 @@ Partial Class PrimiteContarePage
         '
         ' lblLungime
         '
+        lblLungime.BorderWidth = 0
         lblLungime.Dock = System.Windows.Forms.DockStyle.Fill
         lblLungime.Font = New System.Drawing.Font("Calibri", 9.0!, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, CByte(0))
         lblLungime.Margin = New System.Windows.Forms.Padding(0)
@@ -537,10 +542,10 @@ Partial Class PrimiteContarePage
     Friend WithEvents tips As KBotToolTip
     Friend WithEvents tlyPagina As KBotTableLayoutPanel
     Friend WithEvents tlySus As KBotTableLayoutPanel
-    Friend WithEvents lblClsf As System.Windows.Forms.Label
-    Friend WithEvents lblCodClient As System.Windows.Forms.Label
-    Friend WithEvents lblIban As System.Windows.Forms.Label
-    Friend WithEvents lblFelOp As System.Windows.Forms.Label
+    Friend WithEvents lblClsf As Global.KBot.Controls.KBotLabel
+    Friend WithEvents lblCodClient As Global.KBot.Controls.KBotLabel
+    Friend WithEvents lblIban As Global.KBot.Controls.KBotLabel
+    Friend WithEvents lblFelOp As Global.KBot.Controls.KBotLabel
     Friend WithEvents cmbClsf As KBotComboBox
     Friend WithEvents txtCodClient As KBotTextBox
     Friend WithEvents txtIban As KBotTextBox
@@ -554,7 +559,7 @@ Partial Class PrimiteContarePage
     Friend WithEvents gridPlata As KBotDataView
     Friend WithEvents tlyBara As KBotTableLayoutPanel
     Friend WithEvents barExplicatie As KBotProgressBar
-    Friend WithEvents lblLungime As System.Windows.Forms.Label
+    Friend WithEvents lblLungime As Global.KBot.Controls.KBotLabel
     Friend WithEvents pnlJos As KBotTableLayoutPanel
     Friend WithEvents btnRenunta As KBotButton
     Friend WithEvents lblInfo As KBotHtmlLabel

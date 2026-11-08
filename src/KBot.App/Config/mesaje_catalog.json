@@ -4,7 +4,7 @@
   "messages": [
     {
       "id": "AdobeAdvice.ShowIfDue#1",
-      "file": "src/KBot.App/AdobeAdvice.vb",
+      "file": "src/KBot.App/Adobe/AdobeAdvice.vb",
       "line": 34,
       "function": "AdobeAdvice.ShowIfDue",
       "api": "KBotMessage.Show",
@@ -1038,7 +1038,7 @@
     },
     {
       "id": "ActualizareMultiplaForm.BtnActualizeaza_Click#1",
-      "file": "src/KBot.App/Forexe/ActualizareMultiplaForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/ActualizareMultiplaForm.vb",
       "line": 148,
       "function": "ActualizareMultiplaForm.BtnActualizeaza_Click",
       "api": "KBotMessage.Show",
@@ -1060,7 +1060,7 @@
     },
     {
       "id": "AsociereForm.DeschideCorectia#1",
-      "file": "src/KBot.App/Forexe/AsociereForm.vb",
+      "file": "src/KBot.App/Forexe/Asociere/AsociereForm.vb",
       "line": 2697,
       "function": "AsociereForm.DeschideCorectia",
       "api": "KBotMessage.Show",
@@ -1082,7 +1082,7 @@
     },
     {
       "id": "AsociereForm.SpuneSiInchide#1",
-      "file": "src/KBot.App/Forexe/AsociereForm.vb",
+      "file": "src/KBot.App/Forexe/Asociere/AsociereForm.vb",
       "line": 2842,
       "function": "AsociereForm.SpuneSiInchide",
       "api": "KBotMessage.Show",
@@ -1104,7 +1104,7 @@
     },
     {
       "id": "AsociereForm.btnReseteaza_Click#1",
-      "file": "src/KBot.App/Forexe/AsociereForm.vb",
+      "file": "src/KBot.App/Forexe/Asociere/AsociereForm.vb",
       "line": 3190,
       "function": "AsociereForm.btnReseteaza_Click",
       "api": "KBotMessage.Show",
@@ -1126,7 +1126,7 @@
     },
     {
       "id": "AsociereForm.AsociereForm_FormClosing#1",
-      "file": "src/KBot.App/Forexe/AsociereForm.vb",
+      "file": "src/KBot.App/Forexe/Asociere/AsociereForm.vb",
       "line": 3238,
       "function": "AsociereForm.AsociereForm_FormClosing",
       "api": "KBotMessage.Show",
@@ -1148,7 +1148,7 @@
     },
     {
       "id": "AsociereForm.AsociereForm_FormClosing#2",
-      "file": "src/KBot.App/Forexe/AsociereForm.vb",
+      "file": "src/KBot.App/Forexe/Asociere/AsociereForm.vb",
       "line": 3251,
       "function": "AsociereForm.AsociereForm_FormClosing",
       "api": "KBotMessage.Show",
@@ -1170,7 +1170,7 @@
     },
     {
       "id": "CorectieValoareForm.grdValori_CellValidating#1",
-      "file": "src/KBot.App/Forexe/CorectieValoareForm.vb",
+      "file": "src/KBot.App/Forexe/Asociere/CorectieValoareForm.vb",
       "line": 250,
       "function": "CorectieValoareForm.grdValori_CellValidating",
       "api": "KBotMessage.Show",
@@ -1192,7 +1192,7 @@
     },
     {
       "id": "CorectieValoareForm.btnSalveaza_Click#1",
-      "file": "src/KBot.App/Forexe/CorectieValoareForm.vb",
+      "file": "src/KBot.App/Forexe/Asociere/CorectieValoareForm.vb",
       "line": 337,
       "function": "CorectieValoareForm.btnSalveaza_Click",
       "api": "KBotMessage.Show",
@@ -1214,7 +1214,7 @@
     },
     {
       "id": "CorectieValoareForm.btnSalveaza_Click#2",
-      "file": "src/KBot.App/Forexe/CorectieValoareForm.vb",
+      "file": "src/KBot.App/Forexe/Asociere/CorectieValoareForm.vb",
       "line": 344,
       "function": "CorectieValoareForm.btnSalveaza_Click",
       "api": "KBotMessage.Show",
@@ -1236,7 +1236,7 @@
     },
     {
       "id": "CorectieValoareForm.ShowSaveError#1",
-      "file": "src/KBot.App/Forexe/CorectieValoareForm.vb",
+      "file": "src/KBot.App/Forexe/Asociere/CorectieValoareForm.vb",
       "line": 381,
       "function": "CorectieValoareForm.ShowSaveError",
       "api": "KBotMessage.Show",
@@ -1258,7 +1258,7 @@
     },
     {
       "id": "CorectieValoareForm.ShowSaveError#2",
-      "file": "src/KBot.App/Forexe/CorectieValoareForm.vb",
+      "file": "src/KBot.App/Forexe/Asociere/CorectieValoareForm.vb",
       "line": 388,
       "function": "CorectieValoareForm.ShowSaveError",
       "api": "KBotMessage.Show",
@@ -1280,7 +1280,7 @@
     },
     {
       "id": "CorectieValoareForm.ShowSaveError#3",
-      "file": "src/KBot.App/Forexe/CorectieValoareForm.vb",
+      "file": "src/KBot.App/Forexe/Asociere/CorectieValoareForm.vb",
       "line": 394,
       "function": "CorectieValoareForm.ShowSaveError",
       "api": "KBotMessage.Show",
@@ -1302,7 +1302,7 @@
     },
     {
       "id": "CorectieValoareForm.ShowSaveError#4",
-      "file": "src/KBot.App/Forexe/CorectieValoareForm.vb",
+      "file": "src/KBot.App/Forexe/Asociere/CorectieValoareForm.vb",
       "line": 397,
       "function": "CorectieValoareForm.ShowSaveError",
       "api": "KBotMessage.Show",
@@ -1324,7 +1324,7 @@
     },
     {
       "id": "ForexeConsoleForm.BtnAnulare_Click#1",
-      "file": "src/KBot.App/Forexe/ForexeConsoleForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/ForexeConsoleForm.vb",
       "line": 146,
       "function": "ForexeConsoleForm.BtnAnulare_Click",
       "api": "KBotMessage.Show",
@@ -1346,7 +1346,7 @@
     },
     {
       "id": "ForexeConsoleForm.BtnAfiseazaBrowser_Click#1",
-      "file": "src/KBot.App/Forexe/ForexeConsoleForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/ForexeConsoleForm.vb",
       "line": 160,
       "function": "ForexeConsoleForm.BtnAfiseazaBrowser_Click",
       "api": "KBotMessage.Show",
@@ -1368,7 +1368,7 @@
     },
     {
       "id": "ForexeConsoleForm.BtnRecorder_Click#1",
-      "file": "src/KBot.App/Forexe/ForexeConsoleForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/ForexeConsoleForm.vb",
       "line": 173,
       "function": "ForexeConsoleForm.BtnRecorder_Click",
       "api": "KBotMessage.Show",
@@ -1390,7 +1390,7 @@
     },
     {
       "id": "ForexeConsoleForm.BtnRecorder_Click#2",
-      "file": "src/KBot.App/Forexe/ForexeConsoleForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/ForexeConsoleForm.vb",
       "line": 180,
       "function": "ForexeConsoleForm.BtnRecorder_Click",
       "api": "KBotMessage.Show",
@@ -1412,7 +1412,7 @@
     },
     {
       "id": "ForexeConsoleForm.BtnAfiseazaLog_Click#1",
-      "file": "src/KBot.App/Forexe/ForexeConsoleForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/ForexeConsoleForm.vb",
       "line": 188,
       "function": "ForexeConsoleForm.BtnAfiseazaLog_Click",
       "api": "KBotMessage.Show",
@@ -1434,7 +1434,7 @@
     },
     {
       "id": "ForexeConsoleForm.BtnAfiseazaLog_Click#2",
-      "file": "src/KBot.App/Forexe/ForexeConsoleForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/ForexeConsoleForm.vb",
       "line": 195,
       "function": "ForexeConsoleForm.BtnAfiseazaLog_Click",
       "api": "KBotMessage.Show",
@@ -1456,7 +1456,7 @@
     },
     {
       "id": "ForexeController.AnswerFromFile#1",
-      "file": "src/KBot.App/Forexe/ForexeController.vb",
+      "file": "src/KBot.App/Forexe/Robot/ForexeController.vb",
       "line": 1224,
       "function": "ForexeController.AnswerFromFile",
       "api": "KBotMessage.Show",
@@ -1478,7 +1478,7 @@
     },
     {
       "id": "ForexeController.AnswerFromFile#2",
-      "file": "src/KBot.App/Forexe/ForexeController.vb",
+      "file": "src/KBot.App/Forexe/Robot/ForexeController.vb",
       "line": 1245,
       "function": "ForexeController.AnswerFromFile",
       "api": "KBotMessage.Show",
@@ -1500,7 +1500,7 @@
     },
     {
       "id": "ForexeHistoryForm.Reincarca#1",
-      "file": "src/KBot.App/Forexe/ForexeHistoryForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/ForexeHistoryForm.vb",
       "line": 102,
       "function": "ForexeHistoryForm.Reincarca",
       "api": "KBotMessage.Show",
@@ -1522,7 +1522,7 @@
     },
     {
       "id": "ForexeHistoryForm.BtnExport_Click#1",
-      "file": "src/KBot.App/Forexe/ForexeHistoryForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/ForexeHistoryForm.vb",
       "line": 222,
       "function": "ForexeHistoryForm.BtnExport_Click",
       "api": "KBotMessage.Show",
@@ -1544,7 +1544,7 @@
     },
     {
       "id": "ForexeHistoryForm.BtnExport_Click#2",
-      "file": "src/KBot.App/Forexe/ForexeHistoryForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/ForexeHistoryForm.vb",
       "line": 228,
       "function": "ForexeHistoryForm.BtnExport_Click",
       "api": "KBotMessage.Show",
@@ -1565,52 +1565,8 @@
       "isNew": false
     },
     {
-      "id": "IstoricIntervalForm.IstoricIntervalForm_Load#1",
-      "file": "src/KBot.App/Forexe/IstoricIntervalForm.vb",
-      "line": 86,
-      "function": "IstoricIntervalForm.IstoricIntervalForm_Load",
-      "api": "KBotMessage.Show",
-      "type": "Warning",
-      "buttons": "OK",
-      "defaultButton": 1,
-      "extraButton": "",
-      "caption": "{Me.Text}",
-      "text": "Istoricul nu a putut fi încărcat: {ex.Message}",
-      "header": "",
-      "closeButton": "Auto",
-      "dynamic": true,
-      "fromVariable": false,
-      "origType": "Warning",
-      "origButtons": "OK",
-      "origCaption": "{Me.Text}",
-      "origText": "Istoricul nu a putut fi încărcat: {ex.Message}",
-      "isNew": false
-    },
-    {
-      "id": "IstoricIntervalForm.BtnTotIstoricul_Click#1",
-      "file": "src/KBot.App/Forexe/IstoricIntervalForm.vb",
-      "line": 99,
-      "function": "IstoricIntervalForm.BtnTotIstoricul_Click",
-      "api": "KBotMessage.Show",
-      "type": "Warning",
-      "buttons": "OK",
-      "defaultButton": 1,
-      "extraButton": "",
-      "caption": "{Me.Text}",
-      "text": "Istoricul nu a putut fi reîncărcat: {ex.Message}",
-      "header": "",
-      "closeButton": "Auto",
-      "dynamic": true,
-      "fromVariable": false,
-      "origType": "Warning",
-      "origButtons": "OK",
-      "origCaption": "{Me.Text}",
-      "origText": "Istoricul nu a putut fi reîncărcat: {ex.Message}",
-      "isNew": false
-    },
-    {
       "id": "PrelucrareCoordinator.IntrebaInregistrarea#1",
-      "file": "src/KBot.App/Forexe/PrelucrareCoordinator.vb",
+      "file": "src/KBot.App/Forexe/Asociere/PrelucrareCoordinator.vb",
       "line": 218,
       "function": "PrelucrareCoordinator.IntrebaInregistrarea",
       "api": "KBotMessage.Show",
@@ -1632,7 +1588,7 @@
     },
     {
       "id": "RobotQueueForm.BtnGoleste_Click#1",
-      "file": "src/KBot.App/Forexe/RobotQueueForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/RobotQueueForm.vb",
       "line": 339,
       "function": "RobotQueueForm.BtnGoleste_Click",
       "api": "KBotMessage.Show",
@@ -1654,7 +1610,7 @@
     },
     {
       "id": "SelectieReceptiiForm.btnDescarca_Click#1",
-      "file": "src/KBot.App/Forexe/SelectieReceptiiForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/SelectieReceptiiForm.vb",
       "line": 335,
       "function": "SelectieReceptiiForm.btnDescarca_Click",
       "api": "KBotMessage.Show",
@@ -1962,7 +1918,7 @@
     },
     {
       "id": "KbotForm.AsociereGuard.AsocierePermiteAsync#1",
-      "file": "src/KBot.App/KbotForm.AsociereGuard.vb",
+      "file": "src/KBot.App/KBotForm/Operations/KbotForm.AsociereGuard.vb",
       "line": 48,
       "function": "KbotForm.AsociereGuard.AsocierePermiteAsync",
       "api": "KBotMessage.Show",
@@ -1984,7 +1940,7 @@
     },
     {
       "id": "KbotForm.AsociereGuard.AsocierePermiteAsync#2",
-      "file": "src/KBot.App/KbotForm.AsociereGuard.vb",
+      "file": "src/KBot.App/KBotForm/Operations/KbotForm.AsociereGuard.vb",
       "line": 57,
       "function": "KbotForm.AsociereGuard.AsocierePermiteAsync",
       "api": "KBotMessage.Show",
@@ -2006,7 +1962,7 @@
     },
     {
       "id": "KbotForm.Browser.CreeazaAngajamentInForexe#1",
-      "file": "src/KBot.App/KbotForm.Browser.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Browser.vb",
       "line": 136,
       "function": "KbotForm.Browser.CreeazaAngajamentInForexe",
       "api": "KBotMessage.Show",
@@ -2028,7 +1984,7 @@
     },
     {
       "id": "KbotForm.Browser.CreeazaAngajamentInForexe#2",
-      "file": "src/KBot.App/KbotForm.Browser.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Browser.vb",
       "line": 144,
       "function": "KbotForm.Browser.CreeazaAngajamentInForexe",
       "api": "KBotMessage.Show",
@@ -2050,7 +2006,7 @@
     },
     {
       "id": "KbotForm.Browser.CreeazaAngajamentInForexe#3",
-      "file": "src/KBot.App/KbotForm.Browser.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Browser.vb",
       "line": 166,
       "function": "KbotForm.Browser.CreeazaAngajamentInForexe",
       "api": "KBotMessage.Show",
@@ -2072,7 +2028,7 @@
     },
     {
       "id": "KbotForm.CabNotes.ShowUncorrelatedAsync#1",
-      "file": "src/KBot.App/KbotForm.CabNotes.vb",
+      "file": "src/KBot.App/KBotForm/Operations/KbotForm.CabNotes.vb",
       "line": 115,
       "function": "KbotForm.CabNotes.ShowUncorrelatedAsync",
       "api": "KBotMessage.Show",
@@ -2094,7 +2050,7 @@
     },
     {
       "id": "KbotForm.CabNotes.ShowUncorrelatedAsync#2",
-      "file": "src/KBot.App/KbotForm.CabNotes.vb",
+      "file": "src/KBot.App/KBotForm/Operations/KbotForm.CabNotes.vb",
       "line": 119,
       "function": "KbotForm.CabNotes.ShowUncorrelatedAsync",
       "api": "KBotMessage.Show",
@@ -2116,7 +2072,7 @@
     },
     {
       "id": "KbotForm.CabNotes.UploadCabNoteAsync#1",
-      "file": "src/KBot.App/KbotForm.CabNotes.vb",
+      "file": "src/KBot.App/KBotForm/Operations/KbotForm.CabNotes.vb",
       "line": 164,
       "function": "KbotForm.CabNotes.UploadCabNoteAsync",
       "api": "KBotMessage.Show",
@@ -2138,7 +2094,7 @@
     },
     {
       "id": "KbotForm.CabNotes.UploadCabNoteAsync#2",
-      "file": "src/KBot.App/KbotForm.CabNotes.vb",
+      "file": "src/KBot.App/KBotForm/Operations/KbotForm.CabNotes.vb",
       "line": 176,
       "function": "KbotForm.CabNotes.UploadCabNoteAsync",
       "api": "KBotMessage.Show",
@@ -2160,7 +2116,7 @@
     },
     {
       "id": "KbotForm.CabNotes.UploadCabNoteAsync#3",
-      "file": "src/KBot.App/KbotForm.CabNotes.vb",
+      "file": "src/KBot.App/KBotForm/Operations/KbotForm.CabNotes.vb",
       "line": 223,
       "function": "KbotForm.CabNotes.UploadCabNoteAsync",
       "api": "KBotMessage.Show",
@@ -2182,7 +2138,7 @@
     },
     {
       "id": "KbotForm.CabNotes.OpenReceiptWindow#1",
-      "file": "src/KBot.App/KbotForm.CabNotes.vb",
+      "file": "src/KBot.App/KBotForm/Operations/KbotForm.CabNotes.vb",
       "line": 254,
       "function": "KbotForm.CabNotes.OpenReceiptWindow",
       "api": "KBotMessage.Show",
@@ -2204,7 +2160,7 @@
     },
     {
       "id": "KbotForm.Chrome.ShowLog#1",
-      "file": "src/KBot.App/KbotForm.Chrome.vb",
+      "file": "src/KBot.App/KBotForm/KbotForm.Chrome.vb",
       "line": 84,
       "function": "KbotForm.Chrome.ShowLog",
       "api": "KBotMessage.Show",
@@ -2226,7 +2182,7 @@
     },
     {
       "id": "KbotForm.Chrome.ShowSettings#1",
-      "file": "src/KBot.App/KbotForm.Chrome.vb",
+      "file": "src/KBot.App/KBotForm/KbotForm.Chrome.vb",
       "line": 95,
       "function": "KbotForm.Chrome.ShowSettings",
       "api": "KBotMessage.Show",
@@ -2248,7 +2204,7 @@
     },
     {
       "id": "KbotForm.Console.ConectareForexe#1",
-      "file": "src/KBot.App/KbotForm.Console.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Console.vb",
       "line": 62,
       "function": "KbotForm.Console.ConectareForexe",
       "api": "KBotMessage.Show",
@@ -2270,7 +2226,7 @@
     },
     {
       "id": "KbotForm.Console.forexeFooter_ConectareForexeDefaultRequested#1",
-      "file": "src/KBot.App/KbotForm.Console.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Console.vb",
       "line": 74,
       "function": "KbotForm.Console.forexeFooter_ConectareForexeDefaultRequested",
       "api": "KBotMessage.Show",
@@ -2292,7 +2248,7 @@
     },
     {
       "id": "KbotForm.Console.forexeFooter_ShowBrowserRequested#1",
-      "file": "src/KBot.App/KbotForm.Console.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Console.vb",
       "line": 125,
       "function": "KbotForm.Console.forexeFooter_ShowBrowserRequested",
       "api": "KBotMessage.Show",
@@ -2314,7 +2270,7 @@
     },
     {
       "id": "KbotForm.Console.SincronizeazaAsync#1",
-      "file": "src/KBot.App/KbotForm.Console.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Console.vb",
       "line": 153,
       "function": "KbotForm.Console.SincronizeazaAsync",
       "api": "KBotMessage.Show",
@@ -2336,7 +2292,7 @@
     },
     {
       "id": "KbotForm.Ddf.ExecutaComandaDdf#1",
-      "file": "src/KBot.App/KbotForm.Ddf.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ddf.vb",
       "line": 62,
       "function": "KbotForm.Ddf.ExecutaComandaDdf",
       "api": "KBotMessage.Show",
@@ -2358,7 +2314,7 @@
     },
     {
       "id": "KbotForm.Ddf.ExecutaComandaDdf#2",
-      "file": "src/KBot.App/KbotForm.Ddf.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ddf.vb",
       "line": 66,
       "function": "KbotForm.Ddf.ExecutaComandaDdf",
       "api": "KBotMessage.Show",
@@ -2380,7 +2336,7 @@
     },
     {
       "id": "KbotForm.Ddf.ModificaDdfAsync#1",
-      "file": "src/KBot.App/KbotForm.Ddf.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ddf.vb",
       "line": 114,
       "function": "KbotForm.Ddf.ModificaDdfAsync",
       "api": "KBotMessage.Show",
@@ -2402,7 +2358,7 @@
     },
     {
       "id": "KbotForm.Ddf.ModificaDdfAsync#2",
-      "file": "src/KBot.App/KbotForm.Ddf.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ddf.vb",
       "line": 123,
       "function": "KbotForm.Ddf.ModificaDdfAsync",
       "api": "KBotMessage.Show",
@@ -2424,7 +2380,7 @@
     },
     {
       "id": "KbotForm.Ddf.DeschideAngajamentNou#1",
-      "file": "src/KBot.App/KbotForm.Ddf.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ddf.vb",
       "line": 153,
       "function": "KbotForm.Ddf.DeschideAngajamentNou",
       "api": "KBotMessage.Show",
@@ -2446,7 +2402,7 @@
     },
     {
       "id": "KbotForm.Ddf.DeschideAngajamentNou#2",
-      "file": "src/KBot.App/KbotForm.Ddf.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ddf.vb",
       "line": 162,
       "function": "KbotForm.Ddf.DeschideAngajamentNou",
       "api": "KBotMessage.Show",
@@ -2468,7 +2424,7 @@
     },
     {
       "id": "KbotForm.Ddf.ExecutaMeniulRezervari#1",
-      "file": "src/KBot.App/KbotForm.Ddf.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ddf.vb",
       "line": 196,
       "function": "KbotForm.Ddf.ExecutaMeniulRezervari",
       "api": "KBotMessage.Show",
@@ -2490,7 +2446,7 @@
     },
     {
       "id": "KbotForm.Ddf.ExecutaMeniulRezervari#2",
-      "file": "src/KBot.App/KbotForm.Ddf.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ddf.vb",
       "line": 199,
       "function": "KbotForm.Ddf.ExecutaMeniulRezervari",
       "api": "KBotMessage.Show",
@@ -2512,7 +2468,7 @@
     },
     {
       "id": "KbotForm.Ddf.AdaugaRezervareDdfAsync#1",
-      "file": "src/KBot.App/KbotForm.Ddf.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ddf.vb",
       "line": 226,
       "function": "KbotForm.Ddf.AdaugaRezervareDdfAsync",
       "api": "KBotMessage.Show",
@@ -2534,7 +2490,7 @@
     },
     {
       "id": "KbotForm.Ddf.ReanalizeazaRezervariAsync#1",
-      "file": "src/KBot.App/KbotForm.Ddf.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ddf.vb",
       "line": 322,
       "function": "KbotForm.Ddf.ReanalizeazaRezervariAsync",
       "api": "KBotMessage.Show",
@@ -2556,7 +2512,7 @@
     },
     {
       "id": "KbotForm.Ddf.ReanalizeazaRezervariAsync#2",
-      "file": "src/KBot.App/KbotForm.Ddf.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ddf.vb",
       "line": 336,
       "function": "KbotForm.Ddf.ReanalizeazaRezervariAsync",
       "api": "KBotMessage.Show",
@@ -2578,7 +2534,7 @@
     },
     {
       "id": "KbotForm.Ddf.ReanalizeazaRezervariAsync#3",
-      "file": "src/KBot.App/KbotForm.Ddf.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ddf.vb",
       "line": 354,
       "function": "KbotForm.Ddf.ReanalizeazaRezervariAsync",
       "api": "KBotMessage.Show",
@@ -2600,7 +2556,7 @@
     },
     {
       "id": "KbotForm.DdfDelete.StergeRevizieDdfAsync#1",
-      "file": "src/KBot.App/KbotForm.DdfDelete.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfDelete.vb",
       "line": 18,
       "function": "KbotForm.DdfDelete.StergeRevizieDdfAsync",
       "api": "KBotMessage.Show",
@@ -2622,7 +2578,7 @@
     },
     {
       "id": "KbotForm.DdfDelete.StergeRevizieDdfAsync#2",
-      "file": "src/KBot.App/KbotForm.DdfDelete.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfDelete.vb",
       "line": 25,
       "function": "KbotForm.DdfDelete.StergeRevizieDdfAsync",
       "api": "KBotMessage.Show",
@@ -2644,7 +2600,7 @@
     },
     {
       "id": "KbotForm.DdfDelete.StergeRevizieDdfAsync#3",
-      "file": "src/KBot.App/KbotForm.DdfDelete.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfDelete.vb",
       "line": 37,
       "function": "KbotForm.DdfDelete.StergeRevizieDdfAsync",
       "api": "KBotMessage.Show",
@@ -2666,7 +2622,7 @@
     },
     {
       "id": "KbotForm.DdfDelete.StergeDocumentDdfAsync#1",
-      "file": "src/KBot.App/KbotForm.DdfDelete.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfDelete.vb",
       "line": 68,
       "function": "KbotForm.DdfDelete.StergeDocumentDdfAsync",
       "api": "KBotMessage.Show",
@@ -2688,7 +2644,7 @@
     },
     {
       "id": "KbotForm.DdfDelete.StergeDocumentDdfAsync#2",
-      "file": "src/KBot.App/KbotForm.DdfDelete.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfDelete.vb",
       "line": 79,
       "function": "KbotForm.DdfDelete.StergeDocumentDdfAsync",
       "api": "KBotMessage.Show",
@@ -2710,7 +2666,7 @@
     },
     {
       "id": "KbotForm.DdfDelete.StergeLunaDdfAsync#1",
-      "file": "src/KBot.App/KbotForm.DdfDelete.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfDelete.vb",
       "line": 107,
       "function": "KbotForm.DdfDelete.StergeLunaDdfAsync",
       "api": "KBotMessage.Show",
@@ -2732,7 +2688,7 @@
     },
     {
       "id": "KbotForm.DdfDelete.StergeLunaDdfAsync#2",
-      "file": "src/KBot.App/KbotForm.DdfDelete.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfDelete.vb",
       "line": 118,
       "function": "KbotForm.DdfDelete.StergeLunaDdfAsync",
       "api": "KBotMessage.Show",
@@ -2754,7 +2710,7 @@
     },
     {
       "id": "KbotForm.DdfDelete.StergeToateReviziileDdfAsync#1",
-      "file": "src/KBot.App/KbotForm.DdfDelete.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfDelete.vb",
       "line": 174,
       "function": "KbotForm.DdfDelete.StergeToateReviziileDdfAsync",
       "api": "KBotMessage.Show",
@@ -2776,7 +2732,7 @@
     },
     {
       "id": "KbotForm.DdfDelete.StergeToateReviziileDdfAsync#2",
-      "file": "src/KBot.App/KbotForm.DdfDelete.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfDelete.vb",
       "line": 179,
       "function": "KbotForm.DdfDelete.StergeToateReviziileDdfAsync",
       "api": "KBotMessage.Show",
@@ -2798,7 +2754,7 @@
     },
     {
       "id": "KbotForm.DdfDelete.StergeToateReviziileDdfAsync#3",
-      "file": "src/KBot.App/KbotForm.DdfDelete.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfDelete.vb",
       "line": 191,
       "function": "KbotForm.DdfDelete.StergeToateReviziileDdfAsync",
       "api": "KBotMessage.Show",
@@ -2820,7 +2776,7 @@
     },
     {
       "id": "KbotForm.DdfSend.TrimiteDdfAsync#1",
-      "file": "src/KBot.App/KbotForm.DdfSend.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSend.vb",
       "line": 44,
       "function": "KbotForm.DdfSend.TrimiteDdfAsync",
       "api": "KBotMessage.Show",
@@ -2842,7 +2798,7 @@
     },
     {
       "id": "KbotForm.DdfSend.TrimiteDdfAsync#2",
-      "file": "src/KBot.App/KbotForm.DdfSend.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSend.vb",
       "line": 55,
       "function": "KbotForm.DdfSend.TrimiteDdfAsync",
       "api": "KBotMessage.Show",
@@ -2864,7 +2820,7 @@
     },
     {
       "id": "KbotForm.DdfSend.TrimiteDdfAsync#3",
-      "file": "src/KBot.App/KbotForm.DdfSend.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSend.vb",
       "line": 60,
       "function": "KbotForm.DdfSend.TrimiteDdfAsync",
       "api": "KBotMessage.Show",
@@ -2886,7 +2842,7 @@
     },
     {
       "id": "KbotForm.DdfSend.TrimiteDdfAsync#4",
-      "file": "src/KBot.App/KbotForm.DdfSend.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSend.vb",
       "line": 79,
       "function": "KbotForm.DdfSend.TrimiteDdfAsync",
       "api": "KBotMessage.Show",
@@ -2908,7 +2864,7 @@
     },
     {
       "id": "KbotForm.DdfSend.TrimiteDdfAsync#5",
-      "file": "src/KBot.App/KbotForm.DdfSend.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSend.vb",
       "line": 98,
       "function": "KbotForm.DdfSend.TrimiteDdfAsync",
       "api": "KBotMessage.Show",
@@ -2930,7 +2886,7 @@
     },
     {
       "id": "KbotForm.DdfSend.TrimiteDdfAsync#6",
-      "file": "src/KBot.App/KbotForm.DdfSend.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSend.vb",
       "line": 223,
       "function": "KbotForm.DdfSend.TrimiteDdfAsync",
       "api": "KBotMessage.Show",
@@ -2952,7 +2908,7 @@
     },
     {
       "id": "KbotForm.DdfSend.CodulCreariiIntreruptelorAsync#1",
-      "file": "src/KBot.App/KbotForm.DdfSend.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSend.vb",
       "line": 241,
       "function": "KbotForm.DdfSend.CodulCreariiIntreruptelorAsync",
       "api": "KBotMessage.Show",
@@ -2974,7 +2930,7 @@
     },
     {
       "id": "KbotForm.DdfSend.CodulCreariiIntreruptelorAsync#2",
-      "file": "src/KBot.App/KbotForm.DdfSend.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSend.vb",
       "line": 249,
       "function": "KbotForm.DdfSend.CodulCreariiIntreruptelorAsync",
       "api": "KBotMessage.Show",
@@ -2996,7 +2952,7 @@
     },
     {
       "id": "KbotForm.DdfSend.AnuntaTrimitereaIntrerupta#1",
-      "file": "src/KBot.App/KbotForm.DdfSend.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSend.vb",
       "line": 262,
       "function": "KbotForm.DdfSend.AnuntaTrimitereaIntrerupta",
       "api": "KBotMessage.Show",
@@ -3018,7 +2974,7 @@
     },
     {
       "id": "KbotForm.DdfSend.ReportDryRunStop#1",
-      "file": "src/KBot.App/KbotForm.DdfSend.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSend.vb",
       "line": 300,
       "function": "KbotForm.DdfSend.ReportDryRunStop",
       "api": "KBotMessage.Show",
@@ -3040,7 +2996,7 @@
     },
     {
       "id": "KbotForm.DdfSendHelpers.UrcaCapturileAsync#1",
-      "file": "src/KBot.App/KbotForm.DdfSendHelpers.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSendHelpers.vb",
       "line": 76,
       "function": "KbotForm.DdfSendHelpers.UrcaCapturileAsync",
       "api": "KBotMessage.Show",
@@ -3062,7 +3018,7 @@
     },
     {
       "id": "KbotForm.DdfSendMenu.SchimbaStareaAngajamentuluiAsync#1",
-      "file": "src/KBot.App/KbotForm.DdfSendMenu.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSendMenu.vb",
       "line": 34,
       "function": "KbotForm.DdfSendMenu.SchimbaStareaAngajamentuluiAsync",
       "api": "KBotMessage.Show",
@@ -3084,7 +3040,7 @@
     },
     {
       "id": "KbotForm.DdfSendMenu.SchimbaStareaAngajamentuluiAsync#2",
-      "file": "src/KBot.App/KbotForm.DdfSendMenu.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSendMenu.vb",
       "line": 42,
       "function": "KbotForm.DdfSendMenu.SchimbaStareaAngajamentuluiAsync",
       "api": "KBotMessage.Show",
@@ -3106,7 +3062,7 @@
     },
     {
       "id": "KbotForm.DdfSendMenu.SchimbaStareaAngajamentuluiAsync#3",
-      "file": "src/KBot.App/KbotForm.DdfSendMenu.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSendMenu.vb",
       "line": 60,
       "function": "KbotForm.DdfSendMenu.SchimbaStareaAngajamentuluiAsync",
       "api": "KBotMessage.Show",
@@ -3128,7 +3084,7 @@
     },
     {
       "id": "KbotForm.DdfSendMenu.GenereazaPdfFinalDinMeniuAsync#1",
-      "file": "src/KBot.App/KbotForm.DdfSendMenu.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSendMenu.vb",
       "line": 83,
       "function": "KbotForm.DdfSendMenu.GenereazaPdfFinalDinMeniuAsync",
       "api": "KBotMessage.Show",
@@ -3150,7 +3106,7 @@
     },
     {
       "id": "KbotForm.DdfSendMenu.GenereazaPdfFinalAsync#1",
-      "file": "src/KBot.App/KbotForm.DdfSendMenu.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSendMenu.vb",
       "line": 114,
       "function": "KbotForm.DdfSendMenu.GenereazaPdfFinalAsync",
       "api": "KBotMessage.Show",
@@ -3172,7 +3128,7 @@
     },
     {
       "id": "KbotForm.DdfSendMenu.GenereazaPdfFinalAsync#2",
-      "file": "src/KBot.App/KbotForm.DdfSendMenu.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.DdfSendMenu.vb",
       "line": 150,
       "function": "KbotForm.DdfSendMenu.GenereazaPdfFinalAsync",
       "api": "KBotMessage.Show",
@@ -3194,7 +3150,7 @@
     },
     {
       "id": "KbotForm.Download.Tree_FooterRightIconClicked#1",
-      "file": "src/KBot.App/KbotForm.Download.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Download.vb",
       "line": 39,
       "function": "KbotForm.Download.Tree_FooterRightIconClicked",
       "api": "KBotMessage.Show",
@@ -3216,7 +3172,7 @@
     },
     {
       "id": "KbotForm.Download.DescarcaListaAsync#1",
-      "file": "src/KBot.App/KbotForm.Download.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Download.vb",
       "line": 64,
       "function": "KbotForm.Download.DescarcaListaAsync",
       "api": "KBotMessage.Show",
@@ -3238,7 +3194,7 @@
     },
     {
       "id": "KbotForm.Download.ShowForexeFailure#1",
-      "file": "src/KBot.App/KbotForm.Download.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Download.vb",
       "line": 115,
       "function": "KbotForm.Download.ShowForexeFailure",
       "api": "KBotMessage.Show",
@@ -3260,7 +3216,7 @@
     },
     {
       "id": "KbotForm.Download.PuneNodulInCoadaAsync#1",
-      "file": "src/KBot.App/KbotForm.Download.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Download.vb",
       "line": 178,
       "function": "KbotForm.Download.PuneNodulInCoadaAsync",
       "api": "KBotMessage.Show",
@@ -3282,7 +3238,7 @@
     },
     {
       "id": "KbotForm.Download.IntreabaDacaRefolosescLista#1",
-      "file": "src/KBot.App/KbotForm.Download.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Download.vb",
       "line": 266,
       "function": "KbotForm.Download.IntreabaDacaRefolosescLista",
       "api": "KBotMessage.Show",
@@ -3304,7 +3260,7 @@
     },
     {
       "id": "KbotForm.Download.IntreabaDacaRefolosescPachetul#1",
-      "file": "src/KBot.App/KbotForm.Download.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Download.vb",
       "line": 313,
       "function": "KbotForm.Download.IntreabaDacaRefolosescPachetul",
       "api": "KBotMessage.Show",
@@ -3326,7 +3282,7 @@
     },
     {
       "id": "KbotForm.EFactura.DeschideEFactura#1",
-      "file": "src/KBot.App/KbotForm.EFactura.vb",
+      "file": "src/KBot.App/KBotForm/Integrations/KbotForm.EFactura.vb",
       "line": 22,
       "function": "KbotForm.EFactura.DeschideEFactura",
       "api": "KBotMessage.Show",
@@ -3348,7 +3304,7 @@
     },
     {
       "id": "KbotForm.EFactura.DeschideEFactura#2",
-      "file": "src/KBot.App/KbotForm.EFactura.vb",
+      "file": "src/KBot.App/KBotForm/Integrations/KbotForm.EFactura.vb",
       "line": 36,
       "function": "KbotForm.EFactura.DeschideEFactura",
       "api": "KBotMessage.Show",
@@ -3370,7 +3326,7 @@
     },
     {
       "id": "KbotForm.Extrase.(module level)#1",
-      "file": "src/KBot.App/KbotForm.Extrase.vb",
+      "file": "src/KBot.App/KBotForm/Operations/KbotForm.Extrase.vb",
       "line": 54,
       "function": "KbotForm.Extrase.(module level)",
       "api": "KBotMessage.Show",
@@ -3392,7 +3348,7 @@
     },
     {
       "id": "KbotForm.Extrase.DescarcaExtraseAsync#1",
-      "file": "src/KBot.App/KbotForm.Extrase.vb",
+      "file": "src/KBot.App/KBotForm/Operations/KbotForm.Extrase.vb",
       "line": 90,
       "function": "KbotForm.Extrase.DescarcaExtraseAsync",
       "api": "KBotMessage.Show",
@@ -3414,7 +3370,7 @@
     },
     {
       "id": "KbotForm.Extrase.DescarcaExtraseAcumAsync#1",
-      "file": "src/KBot.App/KbotForm.Extrase.vb",
+      "file": "src/KBot.App/KBotForm/Operations/KbotForm.Extrase.vb",
       "line": 128,
       "function": "KbotForm.Extrase.DescarcaExtraseAcumAsync",
       "api": "KBotMessage.Show",
@@ -3436,7 +3392,7 @@
     },
     {
       "id": "KbotForm.Extrase.ImportaExtraseAsync#1",
-      "file": "src/KBot.App/KbotForm.Extrase.vb",
+      "file": "src/KBot.App/KBotForm/Operations/KbotForm.Extrase.vb",
       "line": 175,
       "function": "KbotForm.Extrase.ImportaExtraseAsync",
       "api": "KBotMessage.Show",
@@ -3458,7 +3414,7 @@
     },
     {
       "id": "KbotForm.Extrase.ImportaExtraseAsync#2",
-      "file": "src/KBot.App/KbotForm.Extrase.vb",
+      "file": "src/KBot.App/KBotForm/Operations/KbotForm.Extrase.vb",
       "line": 183,
       "function": "KbotForm.Extrase.ImportaExtraseAsync",
       "api": "KBotMessage.Show",
@@ -3480,7 +3436,7 @@
     },
     {
       "id": "KbotForm.ForexeWatch.TrateazaOperatiuneaCapturata#1",
-      "file": "src/KBot.App/KbotForm.ForexeWatch.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.ForexeWatch.vb",
       "line": 102,
       "function": "KbotForm.ForexeWatch.TrateazaOperatiuneaCapturata",
       "api": "KBotMessage.Show",
@@ -3502,7 +3458,7 @@
     },
     {
       "id": "KbotForm.ForexeWatch.PreiaOperatiuneaAsync#1",
-      "file": "src/KBot.App/KbotForm.ForexeWatch.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.ForexeWatch.vb",
       "line": 116,
       "function": "KbotForm.ForexeWatch.PreiaOperatiuneaAsync",
       "api": "KBotMessage.Show",
@@ -3524,7 +3480,7 @@
     },
     {
       "id": "KbotForm.ForexeWatch.PreiaOperatiuneaAsync#2",
-      "file": "src/KBot.App/KbotForm.ForexeWatch.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.ForexeWatch.vb",
       "line": 147,
       "function": "KbotForm.ForexeWatch.PreiaOperatiuneaAsync",
       "api": "KBotMessage.Show",
@@ -3546,7 +3502,7 @@
     },
     {
       "id": "KbotForm.ForexeWatch.PastreazaRezervareaAsync#1",
-      "file": "src/KBot.App/KbotForm.ForexeWatch.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.ForexeWatch.vb",
       "line": 305,
       "function": "KbotForm.ForexeWatch.PastreazaRezervareaAsync",
       "api": "KBotMessage.Show",
@@ -3567,10 +3523,10 @@
       "isNew": false
     },
     {
-      "id": "KbotForm.ForexeWatch.IntreabaStergereaCapturilor#1",
-      "file": "src/KBot.App/KbotForm.ForexeWatch.vb",
+      "id": "CaptureFlow.AskToDelete#1",
+      "file": "src/KBot.App/KBotForm/Robot/CaptureFlow.vb",
       "line": 498,
-      "function": "KbotForm.ForexeWatch.IntreabaStergereaCapturilor",
+      "function": "CaptureFlow.AskToDelete",
       "api": "KBotMessage.Show",
       "type": "Question",
       "buttons": "YesNo",
@@ -3589,10 +3545,10 @@
       "isNew": false
     },
     {
-      "id": "KbotForm.ForexeWatch.IntreabaStergereaCapturilor#2",
-      "file": "src/KBot.App/KbotForm.ForexeWatch.vb",
+      "id": "CaptureFlow.AskToDelete#2",
+      "file": "src/KBot.App/KBotForm/Robot/CaptureFlow.vb",
       "line": 517,
-      "function": "KbotForm.ForexeWatch.IntreabaStergereaCapturilor",
+      "function": "CaptureFlow.AskToDelete",
       "api": "KBotMessage.Show",
       "type": "Warning",
       "buttons": "OK",
@@ -3612,7 +3568,7 @@
     },
     {
       "id": "KbotForm.ForexeWatch.CoduriNoiDupaSincronizareAsync#1",
-      "file": "src/KBot.App/KbotForm.ForexeWatch.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.ForexeWatch.vb",
       "line": 644,
       "function": "KbotForm.ForexeWatch.CoduriNoiDupaSincronizareAsync",
       "api": "KBotMessage.Show",
@@ -3634,7 +3590,7 @@
     },
     {
       "id": "KbotForm.HelpCapture.DeschideCapturileAjutorului#1",
-      "file": "src/KBot.App/KbotForm.HelpCapture.vb",
+      "file": "src/KBot.App/KBotForm/Help/KbotForm.HelpCapture.vb",
       "line": 64,
       "function": "KbotForm.HelpCapture.DeschideCapturileAjutorului",
       "api": "KBotMessage.Show",
@@ -3655,10 +3611,10 @@
       "isNew": false
     },
     {
-      "id": "KbotForm.Ingest.DuLaIngestieAsync#1",
-      "file": "src/KBot.App/KbotForm.Ingest.vb",
+      "id": "IngestFlow.IngestAsync#1",
+      "file": "src/KBot.App/KBotForm/Robot/IngestFlow.vb",
       "line": 57,
-      "function": "KbotForm.Ingest.DuLaIngestieAsync",
+      "function": "IngestFlow.IngestAsync",
       "api": "KBotMessage.Show",
       "type": "Info",
       "buttons": "OK",
@@ -3677,10 +3633,10 @@
       "isNew": false
     },
     {
-      "id": "KbotForm.Ingest.DuLaIngestieAsync#2",
-      "file": "src/KBot.App/KbotForm.Ingest.vb",
+      "id": "IngestFlow.IngestAsync#2",
+      "file": "src/KBot.App/KBotForm/Robot/IngestFlow.vb",
       "line": 144,
-      "function": "KbotForm.Ingest.DuLaIngestieAsync",
+      "function": "IngestFlow.IngestAsync",
       "api": "KBotMessage.Show",
       "type": "Warning",
       "buttons": "OK",
@@ -3699,10 +3655,10 @@
       "isNew": false
     },
     {
-      "id": "KbotForm.Ingest.SalveazaFaraMachetaAsync#1",
-      "file": "src/KBot.App/KbotForm.Ingest.vb",
+      "id": "IngestFlow.SaveWithoutFormAsync#1",
+      "file": "src/KBot.App/KBotForm/Robot/IngestFlow.vb",
       "line": 194,
-      "function": "KbotForm.Ingest.SalveazaFaraMachetaAsync",
+      "function": "IngestFlow.SaveWithoutFormAsync",
       "api": "KBotMessage.Show",
       "type": "Warning",
       "buttons": "OK",
@@ -3721,10 +3677,10 @@
       "isNew": false
     },
     {
-      "id": "KbotForm.Ingest.SalveazaFaraMachetaAsync#2",
-      "file": "src/KBot.App/KbotForm.Ingest.vb",
+      "id": "IngestFlow.SaveWithoutFormAsync#2",
+      "file": "src/KBot.App/KBotForm/Robot/IngestFlow.vb",
       "line": 208,
-      "function": "KbotForm.Ingest.SalveazaFaraMachetaAsync",
+      "function": "IngestFlow.SaveWithoutFormAsync",
       "api": "KBotMessage.Show",
       "type": "Warning",
       "buttons": "OK",
@@ -3743,10 +3699,10 @@
       "isNew": false
     },
     {
-      "id": "KbotForm.Ingest.SalveazaFaraMachetaAsync#3",
-      "file": "src/KBot.App/KbotForm.Ingest.vb",
+      "id": "IngestFlow.SaveWithoutFormAsync#3",
+      "file": "src/KBot.App/KBotForm/Robot/IngestFlow.vb",
       "line": 215,
-      "function": "KbotForm.Ingest.SalveazaFaraMachetaAsync",
+      "function": "IngestFlow.SaveWithoutFormAsync",
       "api": "KBotMessage.Show",
       "type": "Error",
       "buttons": "OK",
@@ -3765,10 +3721,10 @@
       "isNew": false
     },
     {
-      "id": "KbotForm.Ingest.SalveazaFaraMachetaAsync#4",
-      "file": "src/KBot.App/KbotForm.Ingest.vb",
+      "id": "IngestFlow.SaveWithoutFormAsync#4",
+      "file": "src/KBot.App/KBotForm/Robot/IngestFlow.vb",
       "line": 220,
-      "function": "KbotForm.Ingest.SalveazaFaraMachetaAsync",
+      "function": "IngestFlow.SaveWithoutFormAsync",
       "api": "KBotMessage.Show",
       "type": "Error",
       "buttons": "OK",
@@ -3787,10 +3743,10 @@
       "isNew": false
     },
     {
-      "id": "KbotForm.Ingest.ReimprospateazaReceptii#1",
-      "file": "src/KBot.App/KbotForm.Ingest.vb",
+      "id": "IngestFlow.RefreshReceptii#1",
+      "file": "src/KBot.App/KBotForm/Robot/IngestFlow.vb",
       "line": 317,
-      "function": "KbotForm.Ingest.ReimprospateazaReceptii",
+      "function": "IngestFlow.RefreshReceptii",
       "api": "KBotMessage.Show",
       "type": "Warning",
       "buttons": "OK",
@@ -3809,10 +3765,10 @@
       "isNew": false
     },
     {
-      "id": "KbotForm.Ingest.OferaReimprospatareaReceptiilorAsync#1",
-      "file": "src/KBot.App/KbotForm.Ingest.vb",
+      "id": "IngestFlow.OfferRefreshOfCutReceptiiAsync#1",
+      "file": "src/KBot.App/KBotForm/Robot/IngestFlow.vb",
       "line": 386,
-      "function": "KbotForm.Ingest.OferaReimprospatareaReceptiilorAsync",
+      "function": "IngestFlow.OfferRefreshOfCutReceptiiAsync",
       "api": "KBotMessage.Show",
       "type": "Warning",
       "buttons": "YesNo",
@@ -3831,10 +3787,10 @@
       "isNew": false
     },
     {
-      "id": "KbotForm.Ingest.OferaReimprospatareaReceptiilorAsync#2",
-      "file": "src/KBot.App/KbotForm.Ingest.vb",
+      "id": "IngestFlow.OfferRefreshOfCutReceptiiAsync#2",
+      "file": "src/KBot.App/KBotForm/Robot/IngestFlow.vb",
       "line": 424,
-      "function": "KbotForm.Ingest.OferaReimprospatareaReceptiilorAsync",
+      "function": "IngestFlow.OfferRefreshOfCutReceptiiAsync",
       "api": "KBotMessage.Show",
       "type": "Warning",
       "buttons": "OK",
@@ -3853,10 +3809,10 @@
       "isNew": false
     },
     {
-      "id": "KbotForm.Ingest.ReimprospateazaRezervari#1",
-      "file": "src/KBot.App/KbotForm.Ingest.vb",
+      "id": "IngestFlow.RefreshRezervari#1",
+      "file": "src/KBot.App/KBotForm/Robot/IngestFlow.vb",
       "line": 451,
-      "function": "KbotForm.Ingest.ReimprospateazaRezervari",
+      "function": "IngestFlow.RefreshRezervari",
       "api": "KBotMessage.Show",
       "type": "Warning",
       "buttons": "OK",
@@ -3875,10 +3831,10 @@
       "isNew": false
     },
     {
-      "id": "KbotForm.Ingest.AratEsecul#1",
-      "file": "src/KBot.App/KbotForm.Ingest.vb",
+      "id": "ForexeNotices.RobotFailure#1",
+      "file": "src/KBot.App/KBotForm/Robot/ForexeNotices.vb",
       "line": 493,
-      "function": "KbotForm.Ingest.AratEsecul",
+      "function": "ForexeNotices.RobotFailure",
       "api": "KBotMessage.Show",
       "type": "Warning",
       "buttons": "OK",
@@ -3898,7 +3854,7 @@
     },
     {
       "id": "KbotForm.MessageCatalog.DeschideCatalogulDeMesaje#1",
-      "file": "src/KBot.App/KbotForm.MessageCatalog.vb",
+      "file": "src/KBot.App/KBotForm/KbotForm.MessageCatalog.vb",
       "line": 30,
       "function": "KbotForm.MessageCatalog.DeschideCatalogulDeMesaje",
       "api": "KBotMessage.Show",
@@ -3920,7 +3876,7 @@
     },
     {
       "id": "KbotForm.Nomenclatoare.NomenclatoareContext#1",
-      "file": "src/KBot.App/KbotForm.Nomenclatoare.vb",
+      "file": "src/KBot.App/KBotForm/Navigation/KbotForm.Nomenclatoare.vb",
       "line": 114,
       "function": "KbotForm.Nomenclatoare.NomenclatoareContext",
       "api": "KBotMessage.Show",
@@ -3942,7 +3898,7 @@
     },
     {
       "id": "KbotForm.Nomenclatoare.DeschideClasificatiile#1",
-      "file": "src/KBot.App/KbotForm.Nomenclatoare.vb",
+      "file": "src/KBot.App/KBotForm/Navigation/KbotForm.Nomenclatoare.vb",
       "line": 154,
       "function": "KbotForm.Nomenclatoare.DeschideClasificatiile",
       "api": "KBotMessage.Show",
@@ -3964,7 +3920,7 @@
     },
     {
       "id": "KbotForm.Nomenclatoare.DeschidePartenerii#1",
-      "file": "src/KBot.App/KbotForm.Nomenclatoare.vb",
+      "file": "src/KBot.App/KBotForm/Navigation/KbotForm.Nomenclatoare.vb",
       "line": 173,
       "function": "KbotForm.Nomenclatoare.DeschidePartenerii",
       "api": "KBotMessage.Show",
@@ -3986,7 +3942,7 @@
     },
     {
       "id": "KbotForm.Ord.ExecutaComandaOrd#1",
-      "file": "src/KBot.App/KbotForm.Ord.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ord.vb",
       "line": 41,
       "function": "KbotForm.Ord.ExecutaComandaOrd",
       "api": "KBotMessage.Show",
@@ -4008,7 +3964,7 @@
     },
     {
       "id": "KbotForm.Ord.ExecutaComandaOrd#2",
-      "file": "src/KBot.App/KbotForm.Ord.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ord.vb",
       "line": 44,
       "function": "KbotForm.Ord.ExecutaComandaOrd",
       "api": "KBotMessage.Show",
@@ -4030,7 +3986,7 @@
     },
     {
       "id": "KbotForm.Ord.ModificaOrdonantareAsync#1",
-      "file": "src/KBot.App/KbotForm.Ord.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ord.vb",
       "line": 97,
       "function": "KbotForm.Ord.ModificaOrdonantareAsync",
       "api": "KBotMessage.Show",
@@ -4052,7 +4008,7 @@
     },
     {
       "id": "KbotForm.Ord.StergeOrdonantareAsync#1",
-      "file": "src/KBot.App/KbotForm.Ord.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ord.vb",
       "line": 141,
       "function": "KbotForm.Ord.StergeOrdonantareAsync",
       "api": "KBotMessage.Show",
@@ -4074,7 +4030,7 @@
     },
     {
       "id": "KbotForm.Ord.StergeOrdonantareAsync#2",
-      "file": "src/KBot.App/KbotForm.Ord.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ord.vb",
       "line": 156,
       "function": "KbotForm.Ord.StergeOrdonantareAsync",
       "api": "KBotMessage.Show",
@@ -4096,7 +4052,7 @@
     },
     {
       "id": "KbotForm.Ord.StergeOrdonantarileAsync#1",
-      "file": "src/KBot.App/KbotForm.Ord.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ord.vb",
       "line": 200,
       "function": "KbotForm.Ord.StergeOrdonantarileAsync",
       "api": "KBotMessage.Show",
@@ -4118,7 +4074,7 @@
     },
     {
       "id": "KbotForm.Ord.StergeOrdonantarileAsync#2",
-      "file": "src/KBot.App/KbotForm.Ord.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ord.vb",
       "line": 213,
       "function": "KbotForm.Ord.StergeOrdonantarileAsync",
       "api": "KBotMessage.Show",
@@ -4140,7 +4096,7 @@
     },
     {
       "id": "KbotForm.Ord.StergeOrdonantarileAsync#3",
-      "file": "src/KBot.App/KbotForm.Ord.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ord.vb",
       "line": 243,
       "function": "KbotForm.Ord.StergeOrdonantarileAsync",
       "api": "KBotMessage.Show",
@@ -4162,7 +4118,7 @@
     },
     {
       "id": "KbotForm.Ord.GenereazaInLotAsync#1",
-      "file": "src/KBot.App/KbotForm.Ord.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ord.vb",
       "line": 293,
       "function": "KbotForm.Ord.GenereazaInLotAsync",
       "api": "KBotMessage.Show",
@@ -4184,7 +4140,7 @@
     },
     {
       "id": "KbotForm.Ord.GenereazaInLotAsync#2",
-      "file": "src/KBot.App/KbotForm.Ord.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ord.vb",
       "line": 303,
       "function": "KbotForm.Ord.GenereazaInLotAsync",
       "api": "KBotMessage.Show",
@@ -4206,7 +4162,7 @@
     },
     {
       "id": "KbotForm.Ord.GenereazaInLotAsync#3",
-      "file": "src/KBot.App/KbotForm.Ord.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Ord.vb",
       "line": 338,
       "function": "KbotForm.Ord.GenereazaInLotAsync",
       "api": "KBotMessage.Show",
@@ -4228,7 +4184,7 @@
     },
     {
       "id": "KbotForm.Parallel.PornesteActualizareaLaConectare#1",
-      "file": "src/KBot.App/KbotForm.Parallel.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Parallel.vb",
       "line": 88,
       "function": "KbotForm.Parallel.PornesteActualizareaLaConectare",
       "api": "KBotMessage.Show",
@@ -4250,7 +4206,7 @@
     },
     {
       "id": "KbotForm.Parallel.DeschideActualizareaMultipla#1",
-      "file": "src/KBot.App/KbotForm.Parallel.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Parallel.vb",
       "line": 103,
       "function": "KbotForm.Parallel.DeschideActualizareaMultipla",
       "api": "KBotMessage.Show",
@@ -4272,7 +4228,7 @@
     },
     {
       "id": "KbotForm.Parallel.DeschideActualizareaMultipla#2",
-      "file": "src/KBot.App/KbotForm.Parallel.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Parallel.vb",
       "line": 125,
       "function": "KbotForm.Parallel.DeschideActualizareaMultipla",
       "api": "KBotMessage.Show",
@@ -4294,7 +4250,7 @@
     },
     {
       "id": "KbotForm.Parallel.IntreabaDespreAngajamenteleNoiAsync#1",
-      "file": "src/KBot.App/KbotForm.Parallel.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Parallel.vb",
       "line": 139,
       "function": "KbotForm.Parallel.IntreabaDespreAngajamenteleNoiAsync",
       "api": "KBotMessage.Show",
@@ -4316,7 +4272,7 @@
     },
     {
       "id": "KbotForm.Parallel.IntreabaDespreAngajamenteleNoiAsync#2",
-      "file": "src/KBot.App/KbotForm.Parallel.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Parallel.vb",
       "line": 147,
       "function": "KbotForm.Parallel.IntreabaDespreAngajamenteleNoiAsync",
       "api": "KBotMessage.Show",
@@ -4338,7 +4294,7 @@
     },
     {
       "id": "KbotForm.Parallel.ActualizeazaMaiMulteCuCoadaAsync#1",
-      "file": "src/KBot.App/KbotForm.Parallel.vb",
+      "file": "src/KBot.App/KBotForm/Robot/KbotForm.Parallel.vb",
       "line": 246,
       "function": "KbotForm.Parallel.ActualizeazaMaiMulteCuCoadaAsync",
       "api": "KBotMessage.Show",
@@ -4360,7 +4316,7 @@
     },
     {
       "id": "KbotForm.Periods.LoadPeriodsAsync#1",
-      "file": "src/KBot.App/KbotForm.Periods.vb",
+      "file": "src/KBot.App/KBotForm/KbotForm.Periods.vb",
       "line": 43,
       "function": "KbotForm.Periods.LoadPeriodsAsync",
       "api": "KBotMessage.Show",
@@ -4382,7 +4338,7 @@
     },
     {
       "id": "KbotForm.Receptii.DeschideLegaturileReceptiilor#1",
-      "file": "src/KBot.App/KbotForm.Receptii.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Receptii.vb",
       "line": 31,
       "function": "KbotForm.Receptii.DeschideLegaturileReceptiilor",
       "api": "KBotMessage.Show",
@@ -4404,7 +4360,7 @@
     },
     {
       "id": "KbotForm.Receptii.RebuildReceptiiFromIstoric#1",
-      "file": "src/KBot.App/KbotForm.Receptii.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Receptii.vb",
       "line": 101,
       "function": "KbotForm.Receptii.RebuildReceptiiFromIstoric",
       "api": "KBotMessage.Show",
@@ -4426,7 +4382,7 @@
     },
     {
       "id": "KbotForm.Receptii.RebuildReceptiiFromIstoric#2",
-      "file": "src/KBot.App/KbotForm.Receptii.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Receptii.vb",
       "line": 115,
       "function": "KbotForm.Receptii.RebuildReceptiiFromIstoric",
       "api": "KBotMessage.Show",
@@ -4448,7 +4404,7 @@
     },
     {
       "id": "KbotForm.Receptii.RebuildReceptiiFromIstoric#3",
-      "file": "src/KBot.App/KbotForm.Receptii.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Receptii.vb",
       "line": 133,
       "function": "KbotForm.Receptii.RebuildReceptiiFromIstoric",
       "api": "KBotMessage.Show",
@@ -4470,7 +4426,7 @@
     },
     {
       "id": "KbotForm.Receptii.RebuildReceptiiFromIstoric#4",
-      "file": "src/KBot.App/KbotForm.Receptii.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Receptii.vb",
       "line": 145,
       "function": "KbotForm.Receptii.RebuildReceptiiFromIstoric",
       "api": "KBotMessage.Show",
@@ -4492,7 +4448,7 @@
     },
     {
       "id": "KbotForm.Receptii.RebuildReceptiiFromIstoric#5",
-      "file": "src/KBot.App/KbotForm.Receptii.vb",
+      "file": "src/KBot.App/KBotForm/Documents/KbotForm.Receptii.vb",
       "line": 150,
       "function": "KbotForm.Receptii.RebuildReceptiiFromIstoric",
       "api": "KBotMessage.Show",
@@ -4514,7 +4470,7 @@
     },
     {
       "id": "KbotForm.Tree.LoadTreeAsync#1",
-      "file": "src/KBot.App/KbotForm.Tree.vb",
+      "file": "src/KBot.App/KBotForm/Navigation/KbotForm.Tree.vb",
       "line": 71,
       "function": "KbotForm.Tree.LoadTreeAsync",
       "api": "KBotMessage.Show",
@@ -4536,7 +4492,7 @@
     },
     {
       "id": "KbotForm.TreeOptions.TreeOptionsMenu_ItemClicked#1",
-      "file": "src/KBot.App/KbotForm.TreeOptions.vb",
+      "file": "src/KBot.App/KBotForm/Navigation/KbotForm.TreeOptions.vb",
       "line": 349,
       "function": "KbotForm.TreeOptions.TreeOptionsMenu_ItemClicked",
       "api": "KBotMessage.Show",
@@ -4558,7 +4514,7 @@
     },
     {
       "id": "KbotForm.Tutorial.DeschideDesignerulDeTutoriale#1",
-      "file": "src/KBot.App/KbotForm.Tutorial.vb",
+      "file": "src/KBot.App/KBotForm/Help/KbotForm.Tutorial.vb",
       "line": 36,
       "function": "KbotForm.Tutorial.DeschideDesignerulDeTutoriale",
       "api": "KBotMessage.Show",
@@ -4580,7 +4536,7 @@
     },
     {
       "id": "KbotForm.UncorrectedOperations.SalveazaOperatiunileNecorectateAsync#1",
-      "file": "src/KBot.App/KbotForm.UncorrectedOperations.vb",
+      "file": "src/KBot.App/KBotForm/Operations/KbotForm.UncorrectedOperations.vb",
       "line": 81,
       "function": "KbotForm.UncorrectedOperations.SalveazaOperatiunileNecorectateAsync",
       "api": "KBotMessage.Show",
@@ -4602,7 +4558,7 @@
     },
     {
       "id": "KbotForm.Units.CapBar_SelectorChanged#1",
-      "file": "src/KBot.App/KbotForm.Units.vb",
+      "file": "src/KBot.App/KBotForm/KbotForm.Units.vb",
       "line": 76,
       "function": "KbotForm.Units.CapBar_SelectorChanged",
       "api": "KBotMessage.Show",
@@ -4624,7 +4580,7 @@
     },
     {
       "id": "KbotForm.Units.CapBar_SelectorChanged#2",
-      "file": "src/KBot.App/KbotForm.Units.vb",
+      "file": "src/KBot.App/KBotForm/KbotForm.Units.vb",
       "line": 81,
       "function": "KbotForm.Units.CapBar_SelectorChanged",
       "api": "KBotMessage.Show",
@@ -4646,7 +4602,7 @@
     },
     {
       "id": "KbotForm.Units.CapBar_SelectorChanged#3",
-      "file": "src/KBot.App/KbotForm.Units.vb",
+      "file": "src/KBot.App/KBotForm/KbotForm.Units.vb",
       "line": 112,
       "function": "KbotForm.Units.CapBar_SelectorChanged",
       "api": "KBotMessage.Show",
@@ -4668,7 +4624,7 @@
     },
     {
       "id": "KbotForm.Units.CapBar_SelectorChanged#4",
-      "file": "src/KBot.App/KbotForm.Units.vb",
+      "file": "src/KBot.App/KBotForm/KbotForm.Units.vb",
       "line": 116,
       "function": "KbotForm.Units.CapBar_SelectorChanged",
       "api": "KBotMessage.Show",
@@ -4690,7 +4646,7 @@
     },
     {
       "id": "KbotForm.MainForm_Load#1",
-      "file": "src/KBot.App/KbotForm.vb",
+      "file": "src/KBot.App/KBotForm/KbotForm.vb",
       "line": 276,
       "function": "KbotForm.MainForm_Load",
       "api": "KBotMessage.Show",
@@ -4712,7 +4668,7 @@
     },
     {
       "id": "KbotForm.MainForm_Load#2",
-      "file": "src/KBot.App/KbotForm.vb",
+      "file": "src/KBot.App/KBotForm/KbotForm.vb",
       "line": 288,
       "function": "KbotForm.MainForm_Load",
       "api": "KBotMessage.Show",
@@ -5152,7 +5108,7 @@
     },
     {
       "id": "AdobeGazduireForm.BtnSalveaza_Click#1",
-      "file": "src/KBot.App/Setari/AdobeGazduireForm.vb",
+      "file": "src/KBot.App/Setari/Dialogs/AdobeGazduireForm.vb",
       "line": 86,
       "function": "AdobeGazduireForm.BtnSalveaza_Click",
       "api": "KBotMessage.Show",
@@ -5174,7 +5130,7 @@
     },
     {
       "id": "AdobeGazduireForm.BtnSalveaza_Click#2",
-      "file": "src/KBot.App/Setari/AdobeGazduireForm.vb",
+      "file": "src/KBot.App/Setari/Dialogs/AdobeGazduireForm.vb",
       "line": 109,
       "function": "AdobeGazduireForm.BtnSalveaza_Click",
       "api": "KBotMessage.Show",
@@ -5196,7 +5152,7 @@
     },
     {
       "id": "AdobeMesajeForm.BtnSalveaza_Click#1",
-      "file": "src/KBot.App/Setari/AdobeMesajeForm.vb",
+      "file": "src/KBot.App/Setari/Dialogs/AdobeMesajeForm.vb",
       "line": 127,
       "function": "AdobeMesajeForm.BtnSalveaza_Click",
       "api": "KBotMessage.Show",
@@ -5218,7 +5174,7 @@
     },
     {
       "id": "AdobeMesajeForm.BtnSalveaza_Click#2",
-      "file": "src/KBot.App/Setari/AdobeMesajeForm.vb",
+      "file": "src/KBot.App/Setari/Dialogs/AdobeMesajeForm.vb",
       "line": 133,
       "function": "AdobeMesajeForm.BtnSalveaza_Click",
       "api": "KBotMessage.Show",
@@ -5240,7 +5196,7 @@
     },
     {
       "id": "AdobeMesajeForm.BtnSalveaza_Click#3",
-      "file": "src/KBot.App/Setari/AdobeMesajeForm.vb",
+      "file": "src/KBot.App/Setari/Dialogs/AdobeMesajeForm.vb",
       "line": 147,
       "function": "AdobeMesajeForm.BtnSalveaza_Click",
       "api": "KBotMessage.Show",
@@ -5262,7 +5218,7 @@
     },
     {
       "id": "RegulaPaginaForm.Accept#1",
-      "file": "src/KBot.App/Setari/RegulaPaginaForm.vb",
+      "file": "src/KBot.App/Setari/PageRules/RegulaPaginaForm.vb",
       "line": 156,
       "function": "RegulaPaginaForm.Accept",
       "api": "KBotMessage.Show",
@@ -5284,7 +5240,7 @@
     },
     {
       "id": "SetariAutentificareView.BtnUita_Click#1",
-      "file": "src/KBot.App/Setari/SetariAutentificareView.vb",
+      "file": "src/KBot.App/Setari/Views/SetariAutentificareView.vb",
       "line": 99,
       "function": "SetariAutentificareView.BtnUita_Click",
       "api": "KBotMessage.Show",
@@ -5306,7 +5262,7 @@
     },
     {
       "id": "SetariExtraseView.CanClose#1",
-      "file": "src/KBot.App/Setari/SetariExtraseView.vb",
+      "file": "src/KBot.App/Setari/Views/SetariExtraseView.vb",
       "line": 65,
       "function": "SetariExtraseView.CanClose",
       "api": "KBotMessage.Show",
@@ -5328,7 +5284,7 @@
     },
     {
       "id": "SetariExtraseView.BtnSalveaza_Click#1",
-      "file": "src/KBot.App/Setari/SetariExtraseView.vb",
+      "file": "src/KBot.App/Setari/Views/SetariExtraseView.vb",
       "line": 231,
       "function": "SetariExtraseView.BtnSalveaza_Click",
       "api": "KBotMessage.Show",
@@ -5350,7 +5306,7 @@
     },
     {
       "id": "SetariForexeView.BtnUitaCertificat_Click#1",
-      "file": "src/KBot.App/Setari/SetariForexeView.vb",
+      "file": "src/KBot.App/Setari/Views/SetariForexeView.vb",
       "line": 164,
       "function": "SetariForexeView.BtnUitaCertificat_Click",
       "api": "KBotMessage.Show",
@@ -5372,7 +5328,7 @@
     },
     {
       "id": "SetariJurnalView.btnCopiaza_Click#1",
-      "file": "src/KBot.App/Setari/SetariJurnalView.vb",
+      "file": "src/KBot.App/Setari/Views/Comune/SetariJurnalView.vb",
       "line": 889,
       "function": "SetariJurnalView.btnCopiaza_Click",
       "api": "KBotMessage.Show",
@@ -5394,7 +5350,7 @@
     },
     {
       "id": "SetariJurnalView.btnExporta_Click#1",
-      "file": "src/KBot.App/Setari/SetariJurnalView.vb",
+      "file": "src/KBot.App/Setari/Views/Comune/SetariJurnalView.vb",
       "line": 934,
       "function": "SetariJurnalView.btnExporta_Click",
       "api": "KBotMessage.Show",
@@ -5416,7 +5372,7 @@
     },
     {
       "id": "SetariJurnalView.btnDeschideDosar_Click#1",
-      "file": "src/KBot.App/Setari/SetariJurnalView.vb",
+      "file": "src/KBot.App/Setari/Views/Comune/SetariJurnalView.vb",
       "line": 945,
       "function": "SetariJurnalView.btnDeschideDosar_Click",
       "api": "KBotMessage.Show",
@@ -5438,7 +5394,7 @@
     },
     {
       "id": "SetariJurnalView.btnGoleste_Click#1",
-      "file": "src/KBot.App/Setari/SetariJurnalView.vb",
+      "file": "src/KBot.App/Setari/Views/Comune/SetariJurnalView.vb",
       "line": 972,
       "function": "SetariJurnalView.btnGoleste_Click",
       "api": "KBotMessage.Show",
@@ -5460,7 +5416,7 @@
     },
     {
       "id": "SetariPaginaView.CanClose#1",
-      "file": "src/KBot.App/Setari/SetariPaginaView.vb",
+      "file": "src/KBot.App/Setari/Views/SetariPaginaView.vb",
       "line": 54,
       "function": "SetariPaginaView.CanClose",
       "api": "KBotMessage.Show",
@@ -5482,7 +5438,7 @@
     },
     {
       "id": "SetariPaginaView.BtnImplicite_Click#1",
-      "file": "src/KBot.App/Setari/SetariPaginaView.vb",
+      "file": "src/KBot.App/Setari/Views/SetariPaginaView.vb",
       "line": 203,
       "function": "SetariPaginaView.BtnImplicite_Click",
       "api": "KBotMessage.Show",
@@ -5504,7 +5460,7 @@
     },
     {
       "id": "SetariPaginaView.BtnSalveaza_Click#1",
-      "file": "src/KBot.App/Setari/SetariPaginaView.vb",
+      "file": "src/KBot.App/Setari/Views/SetariPaginaView.vb",
       "line": 222,
       "function": "SetariPaginaView.BtnSalveaza_Click",
       "api": "KBotMessage.Show",
@@ -5526,7 +5482,7 @@
     },
     {
       "id": "SetariTemaView.CanClose#1",
-      "file": "src/KBot.App/Setari/SetariTemaView.vb",
+      "file": "src/KBot.App/Setari/Views/SetariTemaView.vb",
       "line": 55,
       "function": "SetariTemaView.CanClose",
       "api": "KBotMessage.Show",
@@ -5548,7 +5504,7 @@
     },
     {
       "id": "SetariTemaView.ConfirmaPierderea#1",
-      "file": "src/KBot.App/Setari/SetariTemaView.vb",
+      "file": "src/KBot.App/Setari/Views/SetariTemaView.vb",
       "line": 168,
       "function": "SetariTemaView.ConfirmaPierderea",
       "api": "KBotMessage.Show",
@@ -5570,7 +5526,7 @@
     },
     {
       "id": "SetariTemaView.BtnReset_Click#1",
-      "file": "src/KBot.App/Setari/SetariTemaView.vb",
+      "file": "src/KBot.App/Setari/Views/SetariTemaView.vb",
       "line": 189,
       "function": "SetariTemaView.BtnReset_Click",
       "api": "KBotMessage.Show",
@@ -5592,7 +5548,7 @@
     },
     {
       "id": "SetariTemaView.ShowError#1",
-      "file": "src/KBot.App/Setari/SetariTemaView.vb",
+      "file": "src/KBot.App/Setari/Views/SetariTemaView.vb",
       "line": 434,
       "function": "SetariTemaView.ShowError",
       "api": "KBotMessage.Show",
@@ -6230,7 +6186,7 @@
     },
     {
       "id": "DdfView.SectiuneaBInseratAsync#1",
-      "file": "src/KBot.App/Views/DdfView.vb",
+      "file": "src/KBot.App/Views/Comune/DdfView.vb",
       "line": 746,
       "function": "DdfView.SectiuneaBInseratAsync",
       "api": "KBotMessage.Show",
@@ -6252,7 +6208,7 @@
     },
     {
       "id": "DdfView.SectiuneaBInseratAsync#2",
-      "file": "src/KBot.App/Views/DdfView.vb",
+      "file": "src/KBot.App/Views/Comune/DdfView.vb",
       "line": 771,
       "function": "DdfView.SectiuneaBInseratAsync",
       "api": "KBotMessage.Show",
@@ -6274,7 +6230,7 @@
     },
     {
       "id": "DdfView.SectiuneaBInseratAsync#3",
-      "file": "src/KBot.App/Views/DdfView.vb",
+      "file": "src/KBot.App/Views/Comune/DdfView.vb",
       "line": 777,
       "function": "DdfView.SectiuneaBInseratAsync",
       "api": "KBotMessage.Show",
@@ -6296,7 +6252,7 @@
     },
     {
       "id": "DdfView.AplicaComandaDeMeniu#1",
-      "file": "src/KBot.App/Views/DdfView.vb",
+      "file": "src/KBot.App/Views/Comune/DdfView.vb",
       "line": 1393,
       "function": "DdfView.AplicaComandaDeMeniu",
       "api": "KBotMessage.Show",
@@ -6318,7 +6274,7 @@
     },
     {
       "id": "DdfView.CereComanda#1",
-      "file": "src/KBot.App/Views/DdfView.vb",
+      "file": "src/KBot.App/Views/Comune/DdfView.vb",
       "line": 1443,
       "function": "DdfView.CereComanda",
       "api": "KBotMessage.Show",
@@ -6340,7 +6296,7 @@
     },
     {
       "id": "DdfPartnersView.BtnAdd_Click#1",
-      "file": "src/KBot.App/Views/Ddf/DdfPartnersView.vb",
+      "file": "src/KBot.App/Views/Comune/Ddf/DdfPartnersView.vb",
       "line": 186,
       "function": "DdfPartnersView.BtnAdd_Click",
       "api": "KBotMessage.Show",
@@ -6362,7 +6318,7 @@
     },
     {
       "id": "ReaderHostPreview.OnSaveNotSent#1",
-      "file": "src/KBot.App/Views/Ddf/ReaderHostPreview.vb",
+      "file": "src/KBot.App/Views/Comune/Ddf/ReaderHostPreview.vb",
       "line": 410,
       "function": "ReaderHostPreview.OnSaveNotSent",
       "api": "KBotMessage.Show",
@@ -6384,7 +6340,7 @@
     },
     {
       "id": "ReaderHostPreview.OnSaveTrapFailed#1",
-      "file": "src/KBot.App/Views/Ddf/ReaderHostPreview.vb",
+      "file": "src/KBot.App/Views/Comune/Ddf/ReaderHostPreview.vb",
       "line": 430,
       "function": "ReaderHostPreview.OnSaveTrapFailed",
       "api": "KBotMessage.Show",
@@ -6406,7 +6362,7 @@
     },
     {
       "id": "LogClearDialog.btnSterge_Click#1",
-      "file": "src/KBot.App/Views/LogClearDialog.vb",
+      "file": "src/KBot.App/Views/Comune/LogClearDialog.vb",
       "line": 206,
       "function": "LogClearDialog.btnSterge_Click",
       "api": "KBotMessage.Show",
@@ -6428,7 +6384,7 @@
     },
     {
       "id": "LogClearDialog.btnSterge_Click#2",
-      "file": "src/KBot.App/Views/LogClearDialog.vb",
+      "file": "src/KBot.App/Views/Comune/LogClearDialog.vb",
       "line": 215,
       "function": "LogClearDialog.btnSterge_Click",
       "api": "KBotMessage.Show",
@@ -6450,7 +6406,7 @@
     },
     {
       "id": "LogClearDialog.Sterge#1",
-      "file": "src/KBot.App/Views/LogClearDialog.vb",
+      "file": "src/KBot.App/Views/Comune/LogClearDialog.vb",
       "line": 259,
       "function": "LogClearDialog.Sterge",
       "api": "KBotMessage.Show",
@@ -6472,7 +6428,7 @@
     },
     {
       "id": "BudgetCheckForm.RunAsync#1",
-      "file": "src/KBot.App/Views/Nomenclatoare/BudgetCheckForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/BudgetCheckForm.vb",
       "line": 71,
       "function": "BudgetCheckForm.RunAsync",
       "api": "KBotMessage.Show",
@@ -6494,7 +6450,7 @@
     },
     {
       "id": "BudgetCheckForm.RunAsync#2",
-      "file": "src/KBot.App/Views/Nomenclatoare/BudgetCheckForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/BudgetCheckForm.vb",
       "line": 74,
       "function": "BudgetCheckForm.RunAsync",
       "api": "KBotMessage.Show",
@@ -6516,7 +6472,7 @@
     },
     {
       "id": "ClasificatiiAddForm.BtnAdauga_Click#1",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiAddForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiAddForm.vb",
       "line": 193,
       "function": "ClasificatiiAddForm.BtnAdauga_Click",
       "api": "KBotMessage.Show",
@@ -6538,7 +6494,7 @@
     },
     {
       "id": "ClasificatiiAddForm.BtnAdauga_Click#2",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiAddForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiAddForm.vb",
       "line": 201,
       "function": "ClasificatiiAddForm.BtnAdauga_Click",
       "api": "KBotMessage.Show",
@@ -6560,7 +6516,7 @@
     },
     {
       "id": "ClasificatiiAddForm.BtnAdauga_Click#3",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiAddForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiAddForm.vb",
       "line": 206,
       "function": "ClasificatiiAddForm.BtnAdauga_Click",
       "api": "KBotMessage.Show",
@@ -6582,7 +6538,7 @@
     },
     {
       "id": "ClasificatiiForm.Tree_FooterRightIconClicked#1",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiForm.vb",
       "line": 295,
       "function": "ClasificatiiForm.Tree_FooterRightIconClicked",
       "api": "KBotMessage.Show",
@@ -6604,7 +6560,7 @@
     },
     {
       "id": "ClasificatiiForm.SaveAsync#1",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiForm.vb",
       "line": 782,
       "function": "ClasificatiiForm.SaveAsync",
       "api": "KBotMessage.Show",
@@ -6626,7 +6582,7 @@
     },
     {
       "id": "ClasificatiiForm.SaveAsync#2",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiForm.vb",
       "line": 787,
       "function": "ClasificatiiForm.SaveAsync",
       "api": "KBotMessage.Show",
@@ -6648,7 +6604,7 @@
     },
     {
       "id": "ClasificatiiForm.SaveAsync#3",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiForm.vb",
       "line": 807,
       "function": "ClasificatiiForm.SaveAsync",
       "api": "KBotMessage.Show",
@@ -6670,7 +6626,7 @@
     },
     {
       "id": "ClasificatiiForm.SaveAsync#4",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiForm.vb",
       "line": 813,
       "function": "ClasificatiiForm.SaveAsync",
       "api": "KBotMessage.Show",
@@ -6692,7 +6648,7 @@
     },
     {
       "id": "ClasificatiiForm.AskToSave#1",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiForm.vb",
       "line": 885,
       "function": "ClasificatiiForm.AskToSave",
       "api": "KBotMessage.Show",
@@ -6714,7 +6670,7 @@
     },
     {
       "id": "ClasificatiiForm.BtnTrimiteAccess_Click#1",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiForm.vb",
       "line": 981,
       "function": "ClasificatiiForm.BtnTrimiteAccess_Click",
       "api": "KBotMessage.Show",
@@ -6736,7 +6692,7 @@
     },
     {
       "id": "ClasificatiiForm.BtnTrimiteAccess_Click#2",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiForm.vb",
       "line": 986,
       "function": "ClasificatiiForm.BtnTrimiteAccess_Click",
       "api": "KBotMessage.Show",
@@ -6758,7 +6714,7 @@
     },
     {
       "id": "ClasificatiiForm.BtnTrimiteAccess_Click#3",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiForm.vb",
       "line": 990,
       "function": "ClasificatiiForm.BtnTrimiteAccess_Click",
       "api": "KBotMessage.Show",
@@ -6780,7 +6736,7 @@
     },
     {
       "id": "ClasificatiiForm.(module level)#1",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiForm.vb",
       "line": 1020,
       "function": "ClasificatiiForm.(module level)",
       "api": "KBotMessage.Show",
@@ -6802,7 +6758,7 @@
     },
     {
       "id": "ClasificatiiForm.(module level)#2",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiForm.vb",
       "line": 1026,
       "function": "ClasificatiiForm.(module level)",
       "api": "KBotMessage.Show",
@@ -6824,7 +6780,7 @@
     },
     {
       "id": "ClasificatiiForm.(module level)#3",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiForm.vb",
       "line": 1029,
       "function": "ClasificatiiForm.(module level)",
       "api": "KBotMessage.Show",
@@ -6846,7 +6802,7 @@
     },
     {
       "id": "ClasificatiiForm.(module level)#4",
-      "file": "src/KBot.App/Views/Nomenclatoare/ClasificatiiForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiForm.vb",
       "line": 1032,
       "function": "ClasificatiiForm.(module level)",
       "api": "KBotMessage.Show",
@@ -6868,7 +6824,7 @@
     },
     {
       "id": "ParteneriForm.ConfirmLeaveAsync#1",
-      "file": "src/KBot.App/Views/Nomenclatoare/ParteneriForm.vb",
+      "file": "src/KBot.App/Views/Comune/Nomenclatoare/ParteneriForm.vb",
       "line": 195,
       "function": "ParteneriForm.ConfirmLeaveAsync",
       "api": "KBotMessage.Show",
@@ -6890,7 +6846,7 @@
     },
     {
       "id": "ParteneriForm.LookupFiscalCode#1",
-      "file": "src/KBot.App/Views/Nomenclatoare/ParteneriForm.vb",
+      "file": "src/KBot.App/Views/Comune/Nomenclatoare/ParteneriForm.vb",
       "line": 353,
       "function": "ParteneriForm.LookupFiscalCode",
       "api": "KBotMessage.Show",
@@ -6912,7 +6868,7 @@
     },
     {
       "id": "ParteneriForm.LookupFiscalCode#2",
-      "file": "src/KBot.App/Views/Nomenclatoare/ParteneriForm.vb",
+      "file": "src/KBot.App/Views/Comune/Nomenclatoare/ParteneriForm.vb",
       "line": 359,
       "function": "ParteneriForm.LookupFiscalCode",
       "api": "KBotMessage.Show",
@@ -6934,7 +6890,7 @@
     },
     {
       "id": "ParteneriForm.LookupFiscalCode#3",
-      "file": "src/KBot.App/Views/Nomenclatoare/ParteneriForm.vb",
+      "file": "src/KBot.App/Views/Comune/Nomenclatoare/ParteneriForm.vb",
       "line": 377,
       "function": "ParteneriForm.LookupFiscalCode",
       "api": "KBotMessage.Show",
@@ -6956,7 +6912,7 @@
     },
     {
       "id": "ParteneriForm.BtnSterge_Click#1",
-      "file": "src/KBot.App/Views/Nomenclatoare/ParteneriForm.vb",
+      "file": "src/KBot.App/Views/Comune/Nomenclatoare/ParteneriForm.vb",
       "line": 487,
       "function": "ParteneriForm.BtnSterge_Click",
       "api": "KBotMessage.Show",
@@ -6978,7 +6934,7 @@
     },
     {
       "id": "ParteneriForm.BtnSterge_Click#2",
-      "file": "src/KBot.App/Views/Nomenclatoare/ParteneriForm.vb",
+      "file": "src/KBot.App/Views/Comune/Nomenclatoare/ParteneriForm.vb",
       "line": 492,
       "function": "ParteneriForm.BtnSterge_Click",
       "api": "KBotMessage.Show",
@@ -7000,7 +6956,7 @@
     },
     {
       "id": "ParteneriForm.BtnSterge_Click#3",
-      "file": "src/KBot.App/Views/Nomenclatoare/ParteneriForm.vb",
+      "file": "src/KBot.App/Views/Comune/Nomenclatoare/ParteneriForm.vb",
       "line": 507,
       "function": "ParteneriForm.BtnSterge_Click",
       "api": "KBotMessage.Show",
@@ -7022,7 +6978,7 @@
     },
     {
       "id": "ParteneriForm.BtnSterge_Click#4",
-      "file": "src/KBot.App/Views/Nomenclatoare/ParteneriForm.vb",
+      "file": "src/KBot.App/Views/Comune/Nomenclatoare/ParteneriForm.vb",
       "line": 511,
       "function": "ParteneriForm.BtnSterge_Click",
       "api": "KBotMessage.Show",
@@ -7044,7 +7000,7 @@
     },
     {
       "id": "ParteneriForm.SaveAsync#1",
-      "file": "src/KBot.App/Views/Nomenclatoare/ParteneriForm.vb",
+      "file": "src/KBot.App/Views/Comune/Nomenclatoare/ParteneriForm.vb",
       "line": 551,
       "function": "ParteneriForm.SaveAsync",
       "api": "KBotMessage.Show",
@@ -7066,7 +7022,7 @@
     },
     {
       "id": "ParteneriForm.SaveAsync#2",
-      "file": "src/KBot.App/Views/Nomenclatoare/ParteneriForm.vb",
+      "file": "src/KBot.App/Views/Comune/Nomenclatoare/ParteneriForm.vb",
       "line": 577,
       "function": "ParteneriForm.SaveAsync",
       "api": "KBotMessage.Show",
@@ -7088,7 +7044,7 @@
     },
     {
       "id": "ParteneriForm.SaveAsync#3",
-      "file": "src/KBot.App/Views/Nomenclatoare/ParteneriForm.vb",
+      "file": "src/KBot.App/Views/Comune/Nomenclatoare/ParteneriForm.vb",
       "line": 582,
       "function": "ParteneriForm.SaveAsync",
       "api": "KBotMessage.Show",
@@ -7110,7 +7066,7 @@
     },
     {
       "id": "ParteneriForm.OnFormClosing#1",
-      "file": "src/KBot.App/Views/Nomenclatoare/ParteneriForm.vb",
+      "file": "src/KBot.App/Views/Comune/Nomenclatoare/ParteneriForm.vb",
       "line": 625,
       "function": "ParteneriForm.OnFormClosing",
       "api": "KBotMessage.Show",
@@ -7132,7 +7088,7 @@
     },
     {
       "id": "NoteCabView.OnValidateRequested#1",
-      "file": "src/KBot.App/Views/NoteCabView.vb",
+      "file": "src/KBot.App/KBotForm/Views/NoteCabView.vb",
       "line": 436,
       "function": "NoteCabView.OnValidateRequested",
       "api": "KBotMessage.Show",
@@ -7154,7 +7110,7 @@
     },
     {
       "id": "NoteCabView.GenerateAsync#1",
-      "file": "src/KBot.App/Views/NoteCabView.vb",
+      "file": "src/KBot.App/KBotForm/Views/NoteCabView.vb",
       "line": 484,
       "function": "NoteCabView.GenerateAsync",
       "api": "KBotMessage.Show",
@@ -7176,7 +7132,7 @@
     },
     {
       "id": "NoteCabView.GenerateAsync#2",
-      "file": "src/KBot.App/Views/NoteCabView.vb",
+      "file": "src/KBot.App/KBotForm/Views/NoteCabView.vb",
       "line": 501,
       "function": "NoteCabView.GenerateAsync",
       "api": "KBotMessage.Show",
@@ -7198,7 +7154,7 @@
     },
     {
       "id": "NoteCabView.UploadAsync#1",
-      "file": "src/KBot.App/Views/NoteCabView.vb",
+      "file": "src/KBot.App/KBotForm/Views/NoteCabView.vb",
       "line": 511,
       "function": "NoteCabView.UploadAsync",
       "api": "KBotMessage.Show",
@@ -7220,7 +7176,7 @@
     },
     {
       "id": "CabNoteForm.btnSalveaza_Click#1",
-      "file": "src/KBot.App/Views/NoteCab/CabNoteForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/NoteCab/CabNoteForm.vb",
       "line": 460,
       "function": "CabNoteForm.btnSalveaza_Click",
       "api": "KBotMessage.Show",
@@ -7242,7 +7198,7 @@
     },
     {
       "id": "CabNoteForm.btnSalveaza_Click#2",
-      "file": "src/KBot.App/Views/NoteCab/CabNoteForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/NoteCab/CabNoteForm.vb",
       "line": 479,
       "function": "CabNoteForm.btnSalveaza_Click",
       "api": "KBotMessage.Show",
@@ -7264,7 +7220,7 @@
     },
     {
       "id": "CabNoteForm.btnSalveaza_Click#3",
-      "file": "src/KBot.App/Views/NoteCab/CabNoteForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/NoteCab/CabNoteForm.vb",
       "line": 519,
       "function": "CabNoteForm.btnSalveaza_Click",
       "api": "KBotMessage.Show",
@@ -7286,7 +7242,7 @@
     },
     {
       "id": "CabNoteForm.btnSalveaza_Click#4",
-      "file": "src/KBot.App/Views/NoteCab/CabNoteForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/NoteCab/CabNoteForm.vb",
       "line": 537,
       "function": "CabNoteForm.btnSalveaza_Click",
       "api": "KBotMessage.Show",
@@ -7308,7 +7264,7 @@
     },
     {
       "id": "OrdView.CereComanda#1",
-      "file": "src/KBot.App/Views/OrdView.vb",
+      "file": "src/KBot.App/KBotForm/Views/OrdView.vb",
       "line": 248,
       "function": "OrdView.CereComanda",
       "api": "KBotMessage.Show",
@@ -7330,7 +7286,7 @@
     },
     {
       "id": "OrdView.CereComandaGrup#1",
-      "file": "src/KBot.App/Views/OrdView.vb",
+      "file": "src/KBot.App/KBotForm/Views/OrdView.vb",
       "line": 258,
       "function": "OrdView.CereComandaGrup",
       "api": "KBotMessage.Show",
@@ -7352,7 +7308,7 @@
     },
     {
       "id": "OrdTextForm.BtnOk_Click#1",
-      "file": "src/KBot.App/Views/Ord/OrdTextForm.vb",
+      "file": "src/KBot.App/Views/Comune/Ord/OrdTextForm.vb",
       "line": 53,
       "function": "OrdTextForm.BtnOk_Click",
       "api": "KBotMessage.Show",
@@ -7374,7 +7330,7 @@
     },
     {
       "id": "PrintListPage.OnListatChanged#1",
-      "file": "src/KBot.App/Views/Print/PrintListPage.vb",
+      "file": "src/KBot.App/Views/Comune/Print/PrintListPage.vb",
       "line": 222,
       "function": "PrintListPage.OnListatChanged",
       "api": "KBotMessage.Show",
@@ -7396,7 +7352,7 @@
     },
     {
       "id": "PrintListPage.OnListatChanged#2",
-      "file": "src/KBot.App/Views/Print/PrintListPage.vb",
+      "file": "src/KBot.App/Views/Comune/Print/PrintListPage.vb",
       "line": 239,
       "function": "PrintListPage.OnListatChanged",
       "api": "KBotMessage.Show",
@@ -7418,7 +7374,7 @@
     },
     {
       "id": "PrintListPage.btnImprima_Click#1",
-      "file": "src/KBot.App/Views/Print/PrintListPage.vb",
+      "file": "src/KBot.App/Views/Comune/Print/PrintListPage.vb",
       "line": 337,
       "function": "PrintListPage.btnImprima_Click",
       "api": "KBotMessage.Show",
@@ -7440,7 +7396,7 @@
     },
     {
       "id": "PrintListPage.btnImprima_Click#2",
-      "file": "src/KBot.App/Views/Print/PrintListPage.vb",
+      "file": "src/KBot.App/Views/Comune/Print/PrintListPage.vb",
       "line": 344,
       "function": "PrintListPage.btnImprima_Click",
       "api": "KBotMessage.Show",
@@ -7462,7 +7418,7 @@
     },
     {
       "id": "PrintListPage.btnSalveaza_Click#1",
-      "file": "src/KBot.App/Views/Print/PrintListPage.vb",
+      "file": "src/KBot.App/Views/Comune/Print/PrintListPage.vb",
       "line": 390,
       "function": "PrintListPage.btnSalveaza_Click",
       "api": "KBotMessage.Show",
@@ -7484,7 +7440,7 @@
     },
     {
       "id": "PrintListPage.btnSalveaza_Click#2",
-      "file": "src/KBot.App/Views/Print/PrintListPage.vb",
+      "file": "src/KBot.App/Views/Comune/Print/PrintListPage.vb",
       "line": 397,
       "function": "PrintListPage.btnSalveaza_Click",
       "api": "KBotMessage.Show",
@@ -7506,7 +7462,7 @@
     },
     {
       "id": "ReceptiiView.tree_HeaderRightIconClicked#1",
-      "file": "src/KBot.App/Views/ReceptiiView.vb",
+      "file": "src/KBot.App/KBotForm/Views/ReceptiiView.vb",
       "line": 151,
       "function": "ReceptiiView.tree_HeaderRightIconClicked",
       "api": "KBotMessage.Show",
@@ -7528,7 +7484,7 @@
     },
     {
       "id": "ReceptiiView.Tree_FooterRightIconClicked#1",
-      "file": "src/KBot.App/Views/ReceptiiView.vb",
+      "file": "src/KBot.App/KBotForm/Views/ReceptiiView.vb",
       "line": 180,
       "function": "ReceptiiView.Tree_FooterRightIconClicked",
       "api": "KBotMessage.Show",
@@ -7550,7 +7506,7 @@
     },
     {
       "id": "ReceptiiView.Tree_FooterLeftIconClicked#1",
-      "file": "src/KBot.App/Views/ReceptiiView.vb",
+      "file": "src/KBot.App/KBotForm/Views/ReceptiiView.vb",
       "line": 206,
       "function": "ReceptiiView.Tree_FooterLeftIconClicked",
       "api": "KBotMessage.Show",
@@ -7572,7 +7528,7 @@
     },
     {
       "id": "RezervariView.Tree_FooterRightIconClicked#1",
-      "file": "src/KBot.App/Views/RezervariView.vb",
+      "file": "src/KBot.App/KBotForm/Views/RezervariView.vb",
       "line": 228,
       "function": "RezervariView.Tree_FooterRightIconClicked",
       "api": "KBotMessage.Show",
@@ -7594,7 +7550,7 @@
     },
     {
       "id": "RezervariView.tree_HeaderRightIconClicked#1",
-      "file": "src/KBot.App/Views/RezervariView.vb",
+      "file": "src/KBot.App/KBotForm/Views/RezervariView.vb",
       "line": 514,
       "function": "RezervariView.tree_HeaderRightIconClicked",
       "api": "KBotMessage.Show",
@@ -7616,7 +7572,7 @@
     },
     {
       "id": "RezervariView.tree_HeaderRightIconClicked#2",
-      "file": "src/KBot.App/Views/RezervariView.vb",
+      "file": "src/KBot.App/KBotForm/Views/RezervariView.vb",
       "line": 520,
       "function": "RezervariView.tree_HeaderRightIconClicked",
       "api": "KBotMessage.Show",
@@ -7638,7 +7594,7 @@
     },
     {
       "id": "RezervariView.CereComanda#1",
-      "file": "src/KBot.App/Views/RezervariView.vb",
+      "file": "src/KBot.App/KBotForm/Views/RezervariView.vb",
       "line": 650,
       "function": "RezervariView.CereComanda",
       "api": "KBotMessage.Show",
@@ -7660,7 +7616,7 @@
     },
     {
       "id": "SigningMessages.ShowOutcome#1",
-      "file": "src/KBot.App/Views/SigningMessages.vb",
+      "file": "src/KBot.App/Documents/Signing/SigningMessages.vb",
       "line": 24,
       "function": "SigningMessages.ShowOutcome",
       "api": "KBotMessage.Show",
@@ -7682,7 +7638,7 @@
     },
     {
       "id": "SigningMessages.ShowLocalReplaced#1",
-      "file": "src/KBot.App/Views/SigningMessages.vb",
+      "file": "src/KBot.App/Documents/Signing/SigningMessages.vb",
       "line": 33,
       "function": "SigningMessages.ShowLocalReplaced",
       "api": "KBotMessage.Show",
@@ -7704,7 +7660,7 @@
     },
     {
       "id": "SigningMessages.ShowPendingUploaded#1",
-      "file": "src/KBot.App/Views/SigningMessages.vb",
+      "file": "src/KBot.App/Documents/Signing/SigningMessages.vb",
       "line": 46,
       "function": "SigningMessages.ShowPendingUploaded",
       "api": "KBotMessage.Show",
@@ -7726,7 +7682,7 @@
     },
     {
       "id": "SigningMessages.ShowPendingConflict#1",
-      "file": "src/KBot.App/Views/SigningMessages.vb",
+      "file": "src/KBot.App/Documents/Signing/SigningMessages.vb",
       "line": 57,
       "function": "SigningMessages.ShowPendingConflict",
       "api": "KBotMessage.Show",
@@ -7748,7 +7704,7 @@
     },
     {
       "id": "SigningMessages.ShowSignedNeverRegenerated#1",
-      "file": "src/KBot.App/Views/SigningMessages.vb",
+      "file": "src/KBot.App/Documents/Signing/SigningMessages.vb",
       "line": 74,
       "function": "SigningMessages.ShowSignedNeverRegenerated",
       "api": "KBotMessage.Show",
@@ -7770,7 +7726,7 @@
     },
     {
       "id": "SigningMessages.ShowRetrySummary#1",
-      "file": "src/KBot.App/Views/SigningMessages.vb",
+      "file": "src/KBot.App/Documents/Signing/SigningMessages.vb",
       "line": 89,
       "function": "SigningMessages.ShowRetrySummary",
       "api": "KBotMessage.Show",
@@ -7792,7 +7748,7 @@
     },
     {
       "id": "SigningMessages.AskDeletePending#1",
-      "file": "src/KBot.App/Views/SigningMessages.vb",
+      "file": "src/KBot.App/Documents/Signing/SigningMessages.vb",
       "line": 109,
       "function": "SigningMessages.AskDeletePending",
       "api": "KBotMessage.Show",
@@ -7814,7 +7770,7 @@
     },
     {
       "id": "SigningMessages.AskDeletePending#2",
-      "file": "src/KBot.App/Views/SigningMessages.vb",
+      "file": "src/KBot.App/Documents/Signing/SigningMessages.vb",
       "line": 121,
       "function": "SigningMessages.AskDeletePending",
       "api": "KBotMessage.Show",
@@ -7836,7 +7792,7 @@
     },
     {
       "id": "SumarPartnersForm.SumarPartnersForm_Shown#1",
-      "file": "src/KBot.App/Views/SumarPartnersForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/SumarPartnersForm.vb",
       "line": 100,
       "function": "SumarPartnersForm.SumarPartnersForm_Shown",
       "api": "KBotMessage.Show",
@@ -7858,7 +7814,7 @@
     },
     {
       "id": "SumarPartnersForm.SumarPartnersForm_Shown#2",
-      "file": "src/KBot.App/Views/SumarPartnersForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/SumarPartnersForm.vb",
       "line": 105,
       "function": "SumarPartnersForm.SumarPartnersForm_Shown",
       "api": "KBotMessage.Show",
@@ -7880,7 +7836,7 @@
     },
     {
       "id": "SumarPartnersForm.VwPartners_AddRequested#1",
-      "file": "src/KBot.App/Views/SumarPartnersForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/SumarPartnersForm.vb",
       "line": 123,
       "function": "SumarPartnersForm.VwPartners_AddRequested",
       "api": "KBotMessage.Show",
@@ -7902,7 +7858,7 @@
     },
     {
       "id": "SumarPartnersForm.BtnSave_Click#1",
-      "file": "src/KBot.App/Views/SumarPartnersForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/SumarPartnersForm.vb",
       "line": 163,
       "function": "SumarPartnersForm.BtnSave_Click",
       "api": "KBotMessage.Show",
@@ -7924,7 +7880,7 @@
     },
     {
       "id": "SumarPartnersForm.BtnSave_Click#2",
-      "file": "src/KBot.App/Views/SumarPartnersForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/SumarPartnersForm.vb",
       "line": 166,
       "function": "SumarPartnersForm.BtnSave_Click",
       "api": "KBotMessage.Show",
@@ -7946,7 +7902,7 @@
     },
     {
       "id": "SumarPartnersForm.SumarPartnersForm_FormClosing#1",
-      "file": "src/KBot.App/Views/SumarPartnersForm.vb",
+      "file": "src/KBot.App/KBotForm/Views/SumarPartnersForm.vb",
       "line": 175,
       "function": "SumarPartnersForm.SumarPartnersForm_FormClosing",
       "api": "KBotMessage.Show",
@@ -7968,7 +7924,7 @@
     },
     {
       "id": "SumarView.btnPartners_Click#1",
-      "file": "src/KBot.App/Views/SumarView.vb",
+      "file": "src/KBot.App/KBotForm/Views/SumarView.vb",
       "line": 330,
       "function": "SumarView.btnPartners_Click",
       "api": "KBotMessage.Show",
@@ -7990,7 +7946,7 @@
     },
     {
       "id": "SumarView.lblCod_Click#1",
-      "file": "src/KBot.App/Views/SumarView.vb",
+      "file": "src/KBot.App/KBotForm/Views/SumarView.vb",
       "line": 342,
       "function": "SumarView.lblCod_Click",
       "api": "KBotMessage.Show",

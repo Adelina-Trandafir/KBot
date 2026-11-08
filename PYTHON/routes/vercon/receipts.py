@@ -45,7 +45,11 @@ def _clean_nir(cursor, repo, ctx, exercise, body, family, source=None, stored=No
     cols['NrFact'] = _text(header.get('NrFact'), 'h.NrFact', errors, required=doc_type == 'NIR' or family == 'storno')
     if doc_type == 'STOC_INITIAL' and not cols['NrFact']:
         cols['NrFact'] = 'STOC INITIAL'
-    cols['DataFc'] = protocol.to_date(header.get('DataFc'), 'Data facturii', None, errors, 'h.DataFc')
+    # SLICE-VC11-03: initial stock has an entry date, but need not have an invoice date.
+    if doc_type == 'STOC_INITIAL' and header.get('DataFc') in (None, ''):
+        cols['DataFc'] = None
+    else:
+        cols['DataFc'] = protocol.to_date(header.get('DataFc'), 'Data facturii', None, errors, 'h.DataFc')
     cols['Data'] = protocol.to_date(header.get('Data'), 'Data NIR', exercise if ctx['type'] not in ('OI', 'MF') else None, errors, 'h.Data')
     for field, table, pk in (('IdMasina', 'VC_Masini', 'IdMasina'), ('IdComisie', 'VC_ComisieNIR', 'IdComisie')):
         value = _int(header.get(field))
@@ -167,7 +171,7 @@ def _clean_nir(cursor, repo, ctx, exercise, body, family, source=None, stored=No
             classification = receipt_products.classification(cursor, repo, ctx, product, drafted)
             if not classification or classification['DNF_MIN'] is None or classification['DNF_MAX'] is None:
                 bad('DNF', 'Alegeți o clasificare MF cu limite de durată înainte de DNF.')
-            if classification and classification['DNF_MIN'] is not None and classification['DNF_MAX'] is not None and dnf is not None and not classification['DNF_MIN'] * 12 <= dnf <= classification['DNF_MAX'] * 12:
+            if not ctx.get('preserve_legacy_mf_duration') and classification and classification['DNF_MIN'] is not None and classification['DNF_MAX'] is not None and dnf is not None and not classification['DNF_MIN'] * 12 <= dnf <= classification['DNF_MAX'] * 12:
                 bad('DNF', receipt_products.duration_message(classification['code'], classification['DNF_MIN'], classification['DNF_MAX']))
             line['DNF'], line['DF'] = dnf, df or 0
         elif family == 'nir' and 'product' in raw:

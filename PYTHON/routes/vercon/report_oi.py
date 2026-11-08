@@ -5,7 +5,7 @@ from .report_data import exact, selected, accepted, aggregate
 from .nomenclatoare import NomError
 
 
-def documents(source, spec):
+def documents(source, spec, *, in_branch=None):
     metadata, params, scale = source.metadata(), source.params, source.ctx['scale']
     accounts = {row['category']: row['account'] for row in source.rows('oi_accounts')}
     rows = []
@@ -16,7 +16,7 @@ def documents(source, spec):
         if info is None:
             raise NomError('REPORT_SOURCE', 'O linie OI nu are produsul în nomenclatorul contextului.', 409)
         row = {**info, **raw, 'account': accounts.get(raw['category']) or 'Fără cont'}
-        if not accepted(row, params):
+        if not accepted(row, params) or in_branch is not None and not in_branch(row):
             continue
         rows.append({**row, 'date': stock.day_of(row['date']).isoformat(),
                      **{key: exact(row[key], scale) for key in ('quantity', 'price', 'value')}})
@@ -26,7 +26,7 @@ def documents(source, spec):
     return rows
 
 
-def balances(source, spec):
+def balances(source, spec, *, in_branch=None):
     metadata, params, scale = source.metadata(), source.params, source.ctx['scale']
     product_balance = spec['id'] == 'OI_Balanta'
     accounts = {row['category']: row['account'] for row in source.rows('oi_accounts')}
@@ -38,6 +38,9 @@ def balances(source, spec):
     for row in movements:
         if row['p'] not in metadata or row['q'] is None:
             raise NomError('REPORT_SOURCE', 'O mișcare OI are produsul sau cantitatea lipsă.', 409)
+    # A selection branch fixes whole balance groups. Keep their full movement history.
+    if in_branch is not None:
+        movements = [row for row in movements if in_branch(row)]
     dimensions = ('category', 'p') if product_balance else ('holder', 'category', 'p')
     grouped, statements = stock.balance(movements, params['start'], params['end'], dimensions)
 

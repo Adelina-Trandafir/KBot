@@ -35,8 +35,7 @@ Partial Public Class PrimiteView
         ' The viewer lets go of the document before it is hidden (the same as when the window is put away).
         PutAway()
         _listShown = True
-        pnlNav.Visible = False
-        pnlPages.Visible = False
+        detalii.Visible = False
         pgLista.Visible = True
         FillList()
         If _listStale Then
@@ -49,8 +48,7 @@ Partial Public Class PrimiteView
     Private Sub ShowDetailSurface()
         _listShown = False
         pgLista.Visible = False
-        pnlNav.Visible = True
-        pnlPages.Visible = True
+        detalii.Visible = True
     End Sub
 
     ' What the tree holds now, newest first (the filters of the header menu apply, as they do to the tree).

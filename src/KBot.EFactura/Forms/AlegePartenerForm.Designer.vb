@@ -79,7 +79,6 @@ Partial Class AlegePartenerForm
         grilaParteneri.Columns.Add(KBotDataColumn4)
         grilaParteneri.Dock = System.Windows.Forms.DockStyle.Fill
         grilaParteneri.FillColumnKey = "denumire"
-        grilaParteneri.HeaderHeight = 24
         grilaParteneri.Location = New System.Drawing.Point(0, 106)
         grilaParteneri.Name = "grilaParteneri"
         grilaParteneri.ReadOnlyGrid = True

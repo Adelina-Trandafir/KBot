@@ -451,7 +451,6 @@ Partial Class MigratorForm
         dgvUnitati.Columns.Add(KBotDataColumn6)
         dgvUnitati.Dock = DockStyle.Fill
         dgvUnitati.FillColumnKey = "nume"
-        dgvUnitati.HeaderHeight = 26
         dgvUnitati.Location = New Point(527, 26)
         dgvUnitati.Margin = New Padding(4, 5, 4, 5)
         dgvUnitati.Name = "dgvUnitati"
@@ -852,7 +851,6 @@ Partial Class MigratorForm
         dgvTabele.Columns.Add(KBotDataColumn9)
         dgvTabele.Columns.Add(KBotDataColumn10)
         dgvTabele.Dock = DockStyle.Fill
-        dgvTabele.HeaderHeight = 26
         dgvTabele.Location = New Point(4, 5)
         dgvTabele.Margin = New Padding(4, 5, 4, 5)
         dgvTabele.Name = "dgvTabele"
@@ -925,7 +923,6 @@ Partial Class MigratorForm
         dgvConstatari.Columns.Add(KBotDataColumn14)
         dgvConstatari.Columns.Add(KBotDataColumn15)
         dgvConstatari.Dock = DockStyle.Fill
-        dgvConstatari.HeaderHeight = 26
         dgvConstatari.Location = New Point(4, 5)
         dgvConstatari.Margin = New Padding(4, 5, 4, 5)
         dgvConstatari.Name = "dgvConstatari"

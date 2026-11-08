@@ -79,8 +79,9 @@ Above the first `## ` heading of `NOUTATI.md` (newest first), in exactly this sh
 - **On-screen text as it is on screen** (minus diacritics, see above), in «». Take it from the
   worklog or the code, never from memory.
 - **Plain text**: no `**bold**`, no backticks, no links — the box shows them as typed.
-- **At most 12 lines, each under about 110 characters.** Most important first. Several small
-  fixes in one area → one line. The help brought up to date → at most one line, last.
+- **As many lines as the changes need (no limit on the count, operator 07.11.2026); each line under about 110
+  characters.** Most important first. Several small fixes in one area → one line. The help brought up to
+  date → at most one line, last.
 - **Never invent.** Every line must come from a worklog on the list. A worklog saying «built
   clean, not run» still ships: describe what the change does, do not promise it was verified.
 - Describe **only what is new since the previous version**. A worklog marked «already listed

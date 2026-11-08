@@ -75,31 +75,30 @@
   </section>
 </main>
 <dialog id="ade-bank-dialog" class="ade-catalog ade-bank-window" aria-labelledby="ade-bank-title">
-  <header class="ade-catalog-header"><h2 id="ade-bank-title">Asociere extrase cu copii</h2><button id="ade-bank-close" class="btn" type="button">Închide</button></header>
+  <header class="ade-catalog-header"><h2 id="ade-bank-title">Asociere extrase cu copii</h2></header>
   <div class="ade-bank-workspace">
-    <div class="ade-bank-source-row">
-      <aside class="ade-bank-periods"><h3>LUNA / ANUL</h3><div id="ade-bank-period-tree" class="ade-tree" aria-label="Luna extraselor"></div></aside>
-      <div class="ade-bank-source-content">
-        <div class="ade-bank-filters"><label>Caută în explicația extrasului <input id="ade-bank-search" type="search" autocomplete="off" placeholder="Scrie minimum 2 caractere, de exemplu gr"></label><button id="ade-bank-reload" class="btn" type="button">Reîncarcă</button></div>
-        <section class="ade-bank-extracts ade-bank-manual"><h3>Încasări neasociate · toate subunitățile</h3><div id="ade-bank-extract-list" class="ade-list-grid"></div><button id="ade-bank-more" class="btn" type="button" hidden>Mai multe încasări</button></section>
-        <section id="ade-bank-auto-panel" class="ade-bank-auto-panel" hidden><div id="ade-bank-auto-table" class="ade-bank-auto-table"></div><button id="ade-bank-auto-next" class="btn" type="button" hidden>Pagina următoare</button></section>
+    <aside class="ade-bank-periods"><h3>LUNA / ANUL</h3><div id="ade-bank-period-tree" class="ade-tree" aria-label="Luna extraselor"></div></aside>
+    <div class="ade-bank-filters"><label>Caută în explicația extrasului <input id="ade-bank-search" type="search" autocomplete="off" placeholder="Scrie minimum 2 caractere, de exemplu gr"></label><button id="ade-bank-reload" class="btn" type="button">Reîncarcă</button></div>
+    <section class="ade-bank-extracts ade-bank-manual"><h3>Încasări neasociate · toate subunitățile</h3><div id="ade-bank-extract-list" class="ade-list-grid"></div><button id="ade-bank-more" class="btn" type="button" hidden>Mai multe încasări</button></section>
+    <section id="ade-bank-auto-panel" class="ade-bank-auto-panel" hidden><div id="ade-bank-auto-table" class="ade-bank-auto-table"></div><button id="ade-bank-auto-next" class="btn" type="button" hidden>Pagina următoare</button></section>
+    <div class="ade-bank-targets ade-bank-manual">
+      <div class="ade-bank-child-filter ade-bank-manual"><label for="ade-bank-child-query">Caută copil în toate grupele vizibile</label><div id="ade-bank-child-search"></div></div>
+      <div class="ade-bank-columns">
+        <section class="ade-list-panel ade-bank-manual"><h3>Grupe</h3><div id="ade-bank-groups" class="ade-list-grid"></div><label class="ade-bank-hidden"><input id="ade-bank-show-hidden" type="checkbox"><span>Arată ascunse</span></label></section>
+        <section class="ade-list-panel ade-bank-manual"><h3>Copii</h3><div id="ade-bank-children" class="ade-list-grid"></div></section>
+        <section class="ade-list-panel ade-bank-manual"><h3>Plătitori · istoricul copilului</h3><div id="ade-bank-payers" class="ade-list-grid"></div></section>
       </div>
     </div>
-    <div class="ade-bank-columns">
-      <section class="ade-list-panel ade-bank-manual"><h3>Grupe</h3><div id="ade-bank-groups" class="ade-list-grid"></div><label class="ade-bank-hidden"><input id="ade-bank-show-hidden" type="checkbox"><span>Arată ascunse</span></label></section>
-      <section class="ade-list-panel ade-bank-manual"><h3>Copii</h3><div id="ade-bank-children" class="ade-list-grid"></div></section>
-      <section class="ade-list-panel ade-bank-manual"><h3>Plătitori · istoricul copilului</h3><div id="ade-bank-payers" class="ade-list-grid"></div></section>
-      <div class="ade-bank-association"><label>Luna înregistrării <select id="ade-bank-month" aria-label="Luna înregistrării"><option value="">Alegeți luna</option></select></label><label class="ade-bank-explanation ade-bank-manual">Explicație document <textarea id="ade-bank-explanation" rows="3" maxlength="255" placeholder="Generată automat; poate fi editată"></textarea></label>
-        <section class="ade-bank-distribution ade-bank-manual" aria-label="Repartizarea încasării">
-          <label>Suma pentru copil (lei) <input id="ade-bank-amount" type="number" min="1" max="2147483647" step="1"></label>
-          <button id="ade-bank-add-child" class="btn" type="button" disabled>Adaugă copil la repartizare</button>
-          <ul id="ade-bank-allocations" aria-label="Copii și sume repartizate"></ul>
-          <p id="ade-bank-total" role="status"></p>
-        </section>
-      </div>
+    <div class="ade-bank-association"><label>Luna înregistrării <select id="ade-bank-month" aria-label="Luna înregistrării"><option value="">Alegeți luna</option></select></label><label class="ade-bank-manual"><span id="ade-bank-number-label">Număr document</span><input id="ade-bank-number" type="text" inputmode="numeric" maxlength="255" required aria-label="Numărul documentului pentru copil"></label><label class="ade-bank-explanation ade-bank-manual">Explicație document <textarea id="ade-bank-explanation" rows="3" maxlength="255" placeholder="Generată automat; poate fi editată"></textarea></label>
+      <section class="ade-bank-distribution ade-bank-manual" aria-label="Repartizarea încasării">
+        <label>Suma pentru copil (lei) <input id="ade-bank-amount" type="number" min="1" max="2147483647" step="1"></label>
+        <button id="ade-bank-add-child" class="btn" type="button" disabled>Adaugă copil la repartizare</button>
+        <ul id="ade-bank-allocations" aria-label="Copii și sume repartizate"></ul>
+        <p id="ade-bank-total" role="status"></p>
+      </section>
     </div>
   </div>
-  <footer><nav class="ade-bank-modes" aria-label="Mod asociere"><button id="ade-bank-manual-mode" class="btn" type="button" aria-pressed="true" hidden>Asociere manuală</button><button id="ade-bank-auto-mode" class="btn" type="button" aria-pressed="false">Previzualizare automată</button></nav><p id="ade-bank-message" class="msg" role="status" hidden></p><button id="ade-bank-save" class="btn ade-bank-manual" type="button" disabled>Asociază și înregistrează în Alte plăți</button><button id="ade-bank-auto-save" class="btn" type="button" hidden disabled>Generează documentele bifate</button></footer>
+  <footer><button id="ade-bank-close" class="btn" type="button">Închide</button><p id="ade-bank-message" class="msg" role="status" hidden></p><nav class="ade-bank-modes" aria-label="Mod asociere"><button id="ade-bank-manual-mode" class="btn" type="button" aria-pressed="true" hidden>Asociere manuală</button><button id="ade-bank-auto-mode" class="btn" type="button" aria-pressed="false">Previzualizare automată</button></nav><button id="ade-bank-save" class="btn ade-bank-manual" type="button" disabled>Asociază și înregistrează în Alte plăți</button><button id="ade-bank-auto-save" class="btn" type="button" hidden disabled>Generează documentele bifate</button></footer>
 </dialog>
 <dialog id="ade-intake-dialog" class="ade-catalog ade-intake-window" aria-labelledby="ade-intake-title">
   <header class="ade-catalog-header"><h2 id="ade-intake-title">Încărcare extrase bancare</h2><button id="ade-intake-close" class="btn" type="button">Închide</button></header>

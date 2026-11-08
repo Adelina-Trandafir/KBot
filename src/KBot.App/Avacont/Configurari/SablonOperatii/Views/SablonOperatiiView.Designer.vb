@@ -112,12 +112,8 @@ Partial Class SablonOperatiiView
         ' 
         ' tree
         ' 
-        tree.BackColor = SystemColors.Window
-        tree.BorderColor = SystemColors.ActiveBorder
         tree.Dock = DockStyle.Fill
-        tree.HeaderBackColor = SystemColors.Control
         tree.HeaderCaption = " OPERAȚII CONTABILE"
-        tree.HeaderHeight = 24
         tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
         tree.HeaderRightIcon = My.Resources.Resources.settings__1_
@@ -287,7 +283,6 @@ Partial Class SablonOperatiiView
         ' gridLinii
         ' 
         gridLinii.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridLinii.BackColor = SystemColors.Window
         gridLinii.ColumnFillMode = KBotFillMode.SpecificColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing
@@ -435,12 +430,7 @@ Partial Class SablonOperatiiView
         gridLinii.Dock = DockStyle.Fill
         gridLinii.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
         gridLinii.FillColumnKey = "contd"
-        gridLinii.FooterBackColor = SystemColors.Control
-        gridLinii.FooterHeight = 24
-        gridLinii.FooterSeparatorColor = SystemColors.ActiveBorder
         gridLinii.FooterVisible = False
-        gridLinii.HeaderHeight = 24
-        gridLinii.HeaderSeparatorColor = SystemColors.ActiveBorder
         gridLinii.Location = New Point(0, 477)
         gridLinii.Margin = New Padding(0, 12, 0, 0)
         gridLinii.Name = "gridLinii"

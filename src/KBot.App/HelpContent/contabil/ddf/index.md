@@ -15,7 +15,7 @@ Documentul de fundamentare (DDF) justifică fiecare rezervare de credite a unui 
 <!-- capture: ddf-vedere | caption: Vederea «Fundamentare» cu reviziile unui angajament | goto: view:ddf | prepare: Selectați un angajament cu cel puțin două revizii DDF și alegeți una în arbore. | redo: 2026-10-17 20:00 | why: 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor; 0114-05: arborii nu mai au iconita de descarcare a extraselor (cea cu cardul din lista angajamentelor a plecat; descarcarea e butonul din ribbon) -->
 
 ## Drumul unei revizii
-<!-- slice: 0078-06, 0081, 0000-14 -->
+<!-- slice: 0078-06, 0081, 0000-14, 0081-14 -->
 
 1. **Scrii revizia**: antetul și Secțiunea A (valorile, pe clasificații) — [Editorul DDF](topic:contabil.ddf.editor).
 2. K-BOT face **PDF-ul intermediar** (fără Secțiunea B). Îl **semnezi pe Secțiunea A** — [Semnarea](topic:contabil.ddf.semnare).
@@ -26,6 +26,9 @@ Documentul de fundamentare (DDF) justifică fiecare rezervare de credite a unui 
 5. **Semnezi Secțiunea B**.
 6. **Directorul** semnează ultimul, în K-BOT-ul lui.
 
+Cu opțiunea de salvare înainte de semnare activată, poți trimite ciorna direct din arbore.
+K-BOT pregătește apoi PDF-ul final cu ambele secțiuni pentru semnare. [Trimiterea](topic:contabil.ddf.trimitere)
+
 ## Stările unei revizii
 <!-- slice: 0081-01, 0097, 0078-06, 0000-15 -->
 
@@ -33,11 +36,12 @@ Starea se vede la fiecare revizie din arborele vederii «Fundamentare».
 
 | Stare | Ce înseamnă | Ce poți face |
 |-------|-------------|--------------|
-| **Ciornă** | revizia e scrisă, nesemnată | o modifici; o semnezi pe A |
+| **Ciornă** | revizia e scrisă, nesemnată | o modifici, o semnezi pe A sau o trimiți în FOREXE cu bifa activată |
 | **Semnat A — gata de trimis** | PDF-ul intermediar e semnat pe A | **Trimite în FOREXE** (nu se mai modifică și nu se mai șterge) |
 | **Trimitere întreruptă** | trimiterea s-a oprit la jumătate | **Reia trimiterea în FOREXE** |
 | **Trimis în FOREXE — în lucru** | doar la un angajament nou: urmează Definitivează / Derulează | pașii din meniul Rezervărilor — [Definitivează, Derulează](topic:contabil.ddf.rezervare) |
 | **PDF final — de semnat B** | FOREXE s-a terminat; Secțiunea B e pusă în documentul semnat pe A | semnezi B |
+| **PDF final — de semnat A și B** | operațiunile din FOREXE s-au încheiat înainte de semnare | semnezi A, apoi B |
 | **Semnat A și B — la director** | așteaptă semnătura directorului | nimic |
 | **Aprobat** | directorul a semnat | capătul drumului |
 

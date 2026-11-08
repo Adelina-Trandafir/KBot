@@ -1643,6 +1643,25 @@ Public NotInheritable Class KBotNavList
         InvalidateLayout()
     End Sub
 
+    ' A bar built inside a page that was not on screen yet measured its buttons with the metrics of that moment (font / dpi of a hidden
+    ' parent); the first time it is really shown, or its window handle is made, the slots are worked out again.
+    Protected Overrides Sub OnVisibleChanged(e As EventArgs)
+        MyBase.OnVisibleChanged(e)
+        If Visible Then InvalidateLayout()
+    End Sub
+
+    Protected Overrides Sub OnHandleCreated(e As EventArgs)
+        MyBase.OnHandleCreated(e)
+        InvalidateLayout()
+    End Sub
+
+    Protected Overrides Sub OnDpiChangedAfterParent(e As EventArgs)
+        MyBase.OnDpiChangedAfterParent(e)
+        _semiboldFont?.Dispose()
+        _semiboldFont = Nothing
+        InvalidateLayout()
+    End Sub
+
     Protected Overrides Sub OnSizeChanged(e As EventArgs)
         MyBase.OnSizeChanged(e)
         ' „Mărimea inițială" la care se întoarce butonul de strângere = ultima mărime avută

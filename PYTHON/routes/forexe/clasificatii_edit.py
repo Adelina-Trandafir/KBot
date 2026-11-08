@@ -297,6 +297,66 @@ _SQL_SUMMARY_ACTIVE = (
 )
 
 
+# Slice 0126-05: the budget versions and the corrections of EVERY classification for one year, in one answer (two queries), so the
+# window reads them once when it opens and binds a click from memory. Same row shapes as _read_budget.
+_SQL_ALL_BUDGETS = (
+    "SELECT IdClsf, IdBuget, DataInceput, Trim1, Trim2, Trim3, Trim4 FROM Clasificatii_Buget "
+    " WHERE An = %s ORDER BY IdClsf, DataInceput, IdBuget"
+)
+_SQL_ALL_CORRECTIONS = (
+    "SELECT IdClsf, ID, Document, Data, Trim1, Trim2, Trim3, Trim4 "
+    "  FROM Clasificatii_Rectificari "
+    " WHERE YEAR(Data) = %s "
+    " ORDER BY IdClsf, Data, Document, ID"
+)
+
+
+def _read_all_budgets(cursor, an: int) -> list:
+    """[{"id_clsf", "budgets": [...], "corrections": [...]}] for every classification that has a budget version or a correction."""
+    by_id: dict = {}
+    cursor.execute(_SQL_ALL_BUDGETS, (an,))
+    for r in cursor.fetchall():
+        entry = by_id.setdefault(int(r["IdClsf"]), {"id_clsf": int(r["IdClsf"]), "budgets": [], "corrections": []})
+        entry["budgets"].append({
+            "id": int(r["IdBuget"]),
+            "data_inceput": r["DataInceput"].isoformat() if r["DataInceput"] is not None else None,
+            "trim1": _number(r["Trim1"]), "trim2": _number(r["Trim2"]),
+            "trim3": _number(r["Trim3"]), "trim4": _number(r["Trim4"]),
+        })
+    cursor.execute(_SQL_ALL_CORRECTIONS, (an,))
+    for r in cursor.fetchall():
+        entry = by_id.setdefault(int(r["IdClsf"]), {"id_clsf": int(r["IdClsf"]), "budgets": [], "corrections": []})
+        entry["corrections"].append({
+            "id": int(r["ID"]),
+            "document": _text(r["Document"]),
+            "data": r["Data"].date().isoformat() if r["Data"] is not None else None,
+            "trim1": _number(r["Trim1"]), "trim2": _number(r["Trim2"]),
+            "trim3": _number(r["Trim3"]), "trim4": _number(r["Trim4"]),
+        })
+    return [by_id[k] for k in sorted(by_id)]
+
+
+@forexe_bp.route("/api/forexe/nomenclatoare/clasificatii/buget-toate", methods=["GET"])
+@require_session
+def get_clasificatii_buget_toate():
+    """Slice 0126-05: the budget versions and the corrections of every classification, for one year (query: an)."""
+    db_name = g.session.db_name
+    conn = None
+    try:
+        an = _year(request.args.get("an"))
+        conn = get_kbot_connection(db_name)
+        cursor = conn.cursor(dictionary=True, buffered=True)
+        return _json_utf8({"items": _read_all_budgets(cursor, an)}, 200)
+    except _Refused as e:
+        return _json_utf8({"error": str(e)}, 400)
+    except Exception as e:
+        logger.error("[forexe.clasificatii_edit] buget-toate %s: %s", db_name, e, exc_info=True)
+        return _json_utf8({"error": f"Eroare la citirea bugetelor: {e}"}, 500)
+    finally:
+        if conn is not None:
+            conn.close()
+
+
 def _read_summary(cursor, an: int) -> list:
     """{"id_clsf", "activ", "budget": {...}|null, "corrections": {"trim1".."trim4"}|null} for every
     classification that has a budget version or a correction in the year."""
@@ -350,24 +410,31 @@ def get_clasificatii_sumar_buget():
 # indicator row = one output row; hidden angajamente are left out, like in the tree. No year filter: the totals are the ones of
 # the angajament, as in the summary.
 _MAX_CLASSIFICATIONS = 5000
+# Slice 0126-05: every row carries its IdClsf, so the client can read ALL of them once and bind them to a classification (or to
+# the leaves under a node) from memory; "all" = no IdClsf filter (a null IdClsf is left out).
 _SQL_ANGAJAMENTE = (
-    "SELECT I.CodAngajament, A.Descriere, I.CodIndicator, "
+    "SELECT I.IdClsf, I.CodAngajament, A.Descriere, I.CodIndicator, "
     "       COALESCE((SELECT SUM(R.R_Valoare) FROM FX_Rezervari R WHERE R.CodAI = I.CodAI), 0) AS TotalRezervari, "
     "       COALESCE((SELECT SUM(R.DIF) FROM FX_Receptii R WHERE R.CodAI = I.CodAI), 0) AS TotalReceptii, "
     "       COALESCE((SELECT SUM(P.Suma) FROM FX_Plati P WHERE P.CodAI = I.CodAI), 0) AS TotalPlati "
     "  FROM FX_Indicatori I "
     "  JOIN FX_Angajamente A ON A.CodAngajament = I.CodAngajament "
-    " WHERE COALESCE(A.Ascuns, 0) = 0 AND I.IdClsf IN ({marks}) "
+    " WHERE COALESCE(A.Ascuns, 0) = 0 AND {filter} "
     " ORDER BY I.CodAngajament, I.CodIndicator"
 )
 
 
-def _read_angajamente(cursor, ids: list) -> list:
-    """{"cod_angajament", "cod_indicator", "total_rezervari", "total_receptii", "total_plati"} per indicator on the classifications."""
-    if not ids:
-        return []
-    cursor.execute(_SQL_ANGAJAMENTE.format(marks=", ".join(["%s"] * len(ids))), tuple(ids))
+def _read_angajamente(cursor, ids) -> list:
+    """{"id_clsf", "cod_angajament", "cod_indicator", "total_rezervari", "total_receptii", "total_plati"} per indicator on the
+    classifications; ids None = every classification that has an indicator."""
+    if ids is None:
+        cursor.execute(_SQL_ANGAJAMENTE.format(filter="I.IdClsf IS NOT NULL"))
+    else:
+        if not ids:
+            return []
+        cursor.execute(_SQL_ANGAJAMENTE.format(filter="I.IdClsf IN (" + ", ".join(["%s"] * len(ids)) + ")"), tuple(ids))
     return [{
+        "id_clsf": int(r["IdClsf"]),
         "cod_angajament": _text(r["CodAngajament"]),
         "descriere": _text(r["Descriere"]),
         "cod_indicator": _text(r["CodIndicator"]),
@@ -381,11 +448,16 @@ def _read_angajamente(cursor, ids: list) -> list:
 @require_session
 def post_clasificatii_angajamente():
     """The angajamente that lead to the given classifications, with their totals (read only; POST because a tree node
-    can name hundreds of classifications). Body: {"ids": [IDClsf, ...]}."""
+    can name hundreds of classifications). Body: {"ids": [IDClsf, ...]} or, slice 0126-05, {"all": true} = every classification
+    (the window reads them once when it opens and binds them from memory)."""
     db_name = g.session.db_name
     conn = None
     try:
         body = request.get_json(silent=True) or {}
+        if body.get("all") is True:
+            conn = get_kbot_connection(db_name)
+            cursor = conn.cursor(dictionary=True, buffered=True)
+            return _json_utf8({"items": _read_angajamente(cursor, None)}, 200)
         raw = body.get("ids")
         if not isinstance(raw, list):
             raise _Refused("Lista de clasificații lipsește.")

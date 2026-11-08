@@ -368,8 +368,10 @@ def _remember_check(db_name, text):
 def history(db_name):
     with _connection(db_name) as connection:
         try:
-            rows = _rows(connection, 'SELECT ID,SURSA,FISIER,STARE,MESAJ,RANDURI,EMAIL_DE,EMAIL_DATA,INCARCAT_DE,INCARCAT_LA '
-                                     'FROM AD_EXTRASE_INCARCARI ORDER BY ID DESC LIMIT %s', (HISTORY_ROWS,))
+            rows = _rows(connection, 'SELECT i.ID,i.SURSA,i.FISIER,i.STARE,i.MESAJ,i.RANDURI,i.EMAIL_DE,i.EMAIL_DATA,'
+                                     'i.INCARCAT_DE,i.INCARCAT_LA,DATE(f.DataExtras) AS DataExtras '
+                                     'FROM AD_EXTRASE_INCARCARI i LEFT JOIN FX_Extrase_F f ON f.IDEXF=i.IDEXF '
+                                     'ORDER BY i.ID DESC LIMIT %s', (HISTORY_ROWS,))
         except Exception as error:
             _schema_error(error)
     return {'rows': [_plain(row) for row in rows]}

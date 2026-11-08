@@ -81,6 +81,11 @@ Grupele și copiii au pe rând un buton ➡️ într-o coloană fără nume, fil
 
 Lățimea butonului se scade numai din denumire/nume. Filtrarea denumirii/numelelor rămâne disponibilă și pe mobil.
 
+## Numărul documentului în Alte plăți — AD20-01
+
+<!-- slice: AD20-01 -->
+În **Prezență → Alte plăți**, **Număr** este prima casetă editabilă a rândului nou. Introduceți numărul, apoi data, valoarea și explicația. Salvarea fără număr sau cu textul «Fără număr» este refuzată. Numărul trebuie să fie liber în subunitatea curentă în **anul calendaristic al datei documentului, de la 1 ianuarie până la 31 decembrie**, inclusiv față de documentele altor copii sau cele anulate. La 1 ianuarie al anului următor, același număr poate fi utilizat din nou. Refuzul apare în dialogul comun de eroare peste ecran; datele introduse rămân disponibile pentru corectare și reîncercare.
+
 ## Anularea unui document
 
 <!-- slice: AD11-01 -->
@@ -167,7 +172,77 @@ La **Asociază și înregistrează în Alte plăți**, verifică fiecare copil/s
 
 O încasare deja salvată nu se poate repartiza din nou, nici în altă subunitate; anularea unui document păstrează proveniența și rezervarea extrasului. La schimbarea extrasului, a lunii, a modului, la reîncărcare sau închidere, repartizarea pregătită cere confirmare înainte de abandonare. Sunt necesare drepturile Încasare și Catalog. Repartizarea între copii necesită aplicarea manuală a [AD_15_extrase_repartizare.sql](../sql/AD_15_extrase_repartizare.sql), după AD_11, în baza unității.
 
+## Ștergerea plăților preluate din extrase pentru repreluare — AD20-15
+
+Pentru corecția solicitată la 05.11.2026 este pregătit [scriptul SQL manual](../sql/AD_20_15_reset_plati_extrase_luna_curenta.sql), limitat explicit la **noiembrie 2026**, după luna înregistrării plății, pentru toate subunitățile bazei selectate. Închide ferestrele ADECHIT de asociere/plăți, selectează baza unității și rulează **întregul fișier** într-o sesiune nouă de client MariaDB/HeidiSQL cu suport `DELIMITER`. La reușită scriptul confirmă tranzacția și afișează numărul plăților, documentelor și repartizărilor eliminate. Redeschide apoi ferestrele și reia asocierea.
+
+Sunt șterse numai plățile identificate prin evidența preluării din extrase și documentele lor din AlteDoc. Se elimină și rezervările **extras–plată**, necesare pentru reapariția încasărilor în lista neasociată. Legăturile **copil–plătitor**, istoricul și datele bancare ale plătitorilor rămân păstrate, la fel ca prezența, plățile manuale, chitanțele, extrasele originale și istoricul încărcărilor. Scriptul se oprește fără ștergeri dacă identifică o lună închisă, situații salvate afectate sau legături neconcordante. Nu a fost executat de agent.
+
+## Butoanele asocierii extraselor — AD20-01
+
+<!-- slice: AD20-13 -->
+În tabelul încasărilor din **Asociere extrase cu copii**, prima coloană este **Data extras** și afișează atributul **Data_extras** din antetul XML al extrasului importat. Pentru `Data_extras="04-Nov-2026"`, data afișată este **04.11.2026**. Aceeași coloană **Data extras** apare în **Ultimele încărcări**, imediat după **Încărcat**. Datele se sortează cronologic; Încărcat păstrează data și ora încărcării. Dacă o încărcare nu are legătură cu un extras importat, Data extras rămâne goală.
+
+<!-- slice: AD20-14 -->
+Arborele **LUNA / ANUL** din asociere folosește tot **Data_extras din antetul XML** pentru grupare. Luna aleasă filtrează încasările după aceeași dată, în modul manual și în previzualizarea automată. Astfel, antetul **04-Nov-2026** plasează extrasul în **Noiembrie 2026**, indiferent de data bancară sau de data documentului operațiunii. Anii și lunile își păstrează ordinea cronologică descrescătoare.
+
+<!-- slice: AD20-01 -->
+În fereastra **Asociere extrase cu copii**, **Închide** este în stânga jos. **Previzualizare automată** este în dreapta jos, lângă **Asociază și înregistrează în Alte plăți**. Modul automat păstrează în aceeași zonă comanda de revenire la asociere manuală și generarea documentelor bifate.
+
+## Căutarea copilului în asocierea extraselor — AD20-03
+
+<!-- slice: AD20-03 -->
+Deasupra listelor **Grupe / Copii** este **Caută copil în toate grupele vizibile**. Introduceți minimum **2 caractere** din nume sau CNP. Lista arată numele, grupa și ultimele cifre din CNP, în ordine alfabetică românească după nume și grupă. Alegeți rezultatul: grupa și copilul se selectează și sunt aduși automat în vedere, iar plătitorii copilului se încarcă pentru asociere.
+
+Căutarea include copiii din toate grupele **vizibile** ale subunității curente, indiferent de luna extrasului sau de existența prezenței în luna înregistrării. **Grupele ascunse nu apar în rezultate**, nici când «Arată ascunse» este bifat. Căutarea nu activează această bifă. Extrasul ales, luna și repartizările deja pregătite se păstrează la alegerea copilului. Pentru mai mult de 100 de potriviri, completați numele pentru a restrânge rezultatele.
+
+### Eticheta și înlocuirea textului căutării — AD20-04
+
+<!-- slice: AD20-04 -->
+Eticheta **Caută copil în toate grupele vizibile** este în stânga comboboxului, inclusiv pe ecrane înguste. La intrarea în casetă cu mouse-ul, atingerea ecranului sau tastatura se selectează tot textul, astfel încât noua căutare poate fi scrisă direct peste cea existentă. Un clic ulterior, cât caseta are deja focus, permite poziționarea cursorului pentru corectarea textului.
+
+### Panoul de înregistrare și butoanele — AD20-05
+
+<!-- slice: AD20-05 -->
+Pe calculator, **Luna înregistrării**, **Explicație document**, **Suma pentru copil** și repartizările ocupă o coloană în dreapta, care începe la nivelul părții de sus a tabelului de extrase și continuă până deasupra footerului. Tabelul de extrase este restrâns cu lățimea acelei coloane. Panoul are derulare proprie când conținutul nu încape. În modul automat, luna înregistrării rămâne în coloana din dreapta, lângă tabelul de revizuire.
+
+Butoanele din footer (**Închide**, comutarea modului, **Asociază și înregistrează în Alte plăți** / **Generează documentele bifate**) au înălțimea minimă de **56 px**, dublu față de cei 28 px anteriori. Pe ecrane înguste, panourile se așază succesiv; butoanele păstrează înălțimea mărită.
+
+### CNP, SID și suma propusă în asociere — AD20-06
+
+<!-- slice: AD20-06 -->
+<!-- slice: AD20-12 -->
+Lista **Copii** afișează **CNP-ul complet** și soldurile **Lunii înregistrării**. **Suma pentru copil (lei)** propune inițial **întreaga încasare din extras**, apoi **diferența rămasă după sumele copiilor deja adăugați la repartizare**. Se actualizează la selectarea copilului, adăugare și ștergere. Când totalul este repartizat integral, restul propus este **0**. Suma rămâne editabilă.
+
+Verificarea depășirii sumei se face la **ieșirea din casetă (lost focus)**. O sumă mai mare decât încasarea sau restul disponibil afișează eroare. La adăugarea copilului și la **Asociază și înregistrează** se reverifică limita; pentru salvare, suma copilului unic sau totalul repartizat trebuie să fie **exact egal cu suma extrasului**. Orice diferență afișează eroare și oprește salvarea întregului lot. Nu se afișează validări în timpul tastării.
+
+Schimbarea lunii reîncarcă soldurile afișate. Pentru o lună închisă se folosesc soldurile salvate; pentru o lună deschisă, calculul existent. Copiii fără prezență în luna aleasă își pot afișa soldurile din istoric, fără ca simpla consultare să creeze prezență sau plată. În lista **Plătitori**, coloana **Banca** este eliminată.
+
+### SIC în lista Copii — AD20-11
+
+<!-- slice: AD20-11 -->
+Lista **Copii** afișează și **SIC**, lângă **SID**, în lei, pentru **Luna înregistrării** aleasă. Ambele solduri se citesc din situația salvată a lunii închise sau din calculul existent, după caz, și se actualizează împreună la schimbarea lunii. Coloanele se sortează numeric. Lățimile interne sunt adaptate pentru CNP și cele două solduri, păstrând proporția Copii/Plătitori cerută în AD20-07. Propunerea sumei urmează restul din extras, conform AD20-12.
+
+### Redistribuirea lățimii listelor — AD20-07
+
+<!-- slice: AD20-07 -->
+În asocierea extraselor, lățimea listei **Copii** este redusă cu **25%** față de varianta AD20-06, iar întregul spațiu eliberat este transferat listei **Plătitori**. Redistribuirea se aplică ambelor configurații pentru calculator; pe ecrane înguste se păstrează afișarea succesivă a listelor.
+
+### Numere distincte pentru documentele copiilor — AD20-08
+
+<!-- slice: AD20-08 -->
+<!-- slice: AD20-10 -->
+În asocierea manuală, caseta **Număr document** de sub **Luna înregistrării** este **editabilă**. Propune automat următorul număr pentru un copil nou: cu unu mai mare decât cel mai mare număr integral din **AlteDoc**, în subunitatea curentă și anul calendaristic afișat. Puteți înlocui propunerea cu alt număr întreg, pozitiv și liber în acel an. Se ține cont și de documentele anulate. Dacă anul nu are numere, se pornește de la **1**. Numerele nenumerice nu intră în calculul seriei.
+
+<!-- slice: AD20-09 -->
+Ultimul număr din AlteDoc se caută exclusiv în **anul calendaristic în curs**, stabilit după data curentă din România: de la **1 ianuarie până la 31 decembrie**. La 05.11.2026, se folosește anul **2026**. Aceeași regulă se aplică propunerii și reverificării la salvare, indiferent de luna aleasă sau data extrasului. La trecerea în anul următor, o propunere rămasă din anul anterior este refăcută înaintea salvării. Data extrasului afișată și data documentului sursă se păstrează.
+
+Fiecare copil primește **numărul introdus în casetă** când este adăugat în repartizare. Lista și confirmarea finală arată copilul, numărul și suma. După adăugare, caseta propune numărul următor celui introdus, evitând numerele deja atribuite în repartizare. Numerele copiilor adăugați se păstrează la sortare sau ștergere; pentru corectarea numărului unui copil, ștergeți-l din repartizare și adăugați-l din nou cu numărul corect. Pentru salvarea directă a unui singur copil se folosește numărul din casetă. Simpla pregătire a listei nu consumă numere.
+
+Serverul reverifică numerele la salvarea întregii repartizări. Un număr deja folosit în anul calendaristic în curs sau repetat între copii oprește întregul lot și apare un mesaj pentru corectare. Dacă a început un an nou, anul și propunerea sunt actualizate pentru revizuire și o nouă confirmare. Nu se schimbă numerotarea celorlalte fluxuri.
+
 ## Subunități — ADE10-04
+
 
 <!-- slice: ADE10-04 -->
 

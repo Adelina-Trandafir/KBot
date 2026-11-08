@@ -1,6 +1,6 @@
 ' The main window (slice ME01, ribbon since ME01-05): a ribbon on top, ONE tree on the left (the databases and, under each,
-' the accounts linked to it; or the users and, under each, their databases: the bar above the tree chooses), a «select all»
-' tick under it, the pages on the right.
+' the accounts linked to it; or the users and, under each, their databases: the bar above the tree chooses; a search box
+' always on top of the tree), the pages on the right.
 ' All controls are declared HERE (docs/kbot-forms-ui-convention.md); coordinates are in the 96 dpi the
 ' form was authored at and AutoScaleDimensions carries the same stamp.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
@@ -49,7 +49,9 @@ Partial Class MainForm
         Dim rbPublicare As KBotRibbonButton = New KBotRibbonButton()
         Dim rbRapoarte As KBotRibbonButton = New KBotRibbonButton()
         Dim rbImportMf As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbInventoryCompare As KBotRibbonButton = New KBotRibbonButton()
         Dim rbScripturi As KBotRibbonButton = New KBotRibbonButton()
+        Dim rbNoutati As KBotRibbonButton = New KBotRibbonButton()
         Dim rgRasfoire As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgRulare As KBotRibbonGroup = New KBotRibbonGroup()
         Dim rgSchema As KBotRibbonGroup = New KBotRibbonGroup()
@@ -71,6 +73,7 @@ Partial Class MainForm
         Dim rtMonitorizare As KBotRibbonTab = New KBotRibbonTab()
         Dim rtCopii As KBotRibbonTab = New KBotRibbonTab()
         Dim rtPublicare As KBotRibbonTab = New KBotRibbonTab()
+        Dim rtVercon As KBotRibbonTab = New KBotRibbonTab()
         tips = New KBotToolTip(components)
         notify = New NotifyIcon(components)
         mnuTray = New ContextMenuStrip(components)
@@ -88,7 +91,6 @@ Partial Class MainForm
         tlyLeft = New KBotTableLayoutPanel()
         navMode = New KBotNavList()
         treeDb = New AdvancedTreeControl()
-        chkAll = New KBotCheckBox()
         pnlViews = New Panel()
         viewCommands = New CommandsView()
         viewSync = New SyncView()
@@ -105,10 +107,12 @@ Partial Class MainForm
         viewLogin = New LoginResetView()
         viewVerconReports = New VerconReportsView()
         viewMfImport = New MfImportView()
+        viewInventoryCompare = New InventoryCompareView()
         viewDemo = New DemoCloneView()
         viewLocalBackup = New LocalBackupView()
         viewMdHistory = New MdHistoryView()
         viewScripts = New ScriptsView()
+        viewReleaseNotes = New ReleaseNotesView()
         viewSchemaGraph = New SchemaGraphView()
         viewSchemaHistory = New SchemaHistoryView()
         viewDbBrowser = New DbBrowserView()
@@ -176,7 +180,7 @@ Partial Class MainForm
         rbUnice.Key = "unice"
         rbUnice.Text = "Interogări unice"
         rbUnice.ToolTipHeader = "Interogări unice"
-        rbUnice.ToolTipText = "Rulează o dată un text SQL pe AVACONT_SURSA și pe bazele bifate, cu istoricul a ce a rulat."
+        rbUnice.ToolTipText = "Rulează o dată un text SQL pe AVACONT_SURSA și pe baza aleasă în arbore (sau pe toate, cu «TOATE BAZELE»), cu istoricul a ce a rulat."
         rbSursa.Image = AdminIcons.Get("once")
         rbSursa.Key = "sursa"
         rbSursa.Text = "Interogare pe SURSA"
@@ -345,6 +349,12 @@ Partial Class MainForm
         rbImportMf.ToolTipHeader = "Import MF din Access"
         rbImportMf.ToolTipText = "Aduce mijloacele fixe active dintr-un mf.mdb vechi într-o gestiune MF a unei unități, în contul de magazie ales, fără primitor."
         rgVercon.Buttons.Add(rbImportMf)
+        rbInventoryCompare.Image = AdminIcons.Get("database")
+        rbInventoryCompare.Key = "inventory-compare"
+        rbInventoryCompare.Text = "Compară inventar Excel"
+        rbInventoryCompare.ToolTipHeader = "Compară inventar Excel cu VERCON"
+        rbInventoryCompare.ToolTipText = "Compară denumirea, codul și prețul din inventarul Excel cu nomenclatorul din Gestiune / Subgestiune / Cont. Arată candidații și exportă CSV, fără import sau modificări în bază."
+        rgVercon.Buttons.Add(rbInventoryCompare)
         rgVercon.Text = "VERCON"
         rbScripturi.Image = AdminIcons.Get("publish")
         rbScripturi.Key = "scripturi"
@@ -352,11 +362,18 @@ Partial Class MainForm
         rbScripturi.ToolTipHeader = "Scripturi"
         rbScripturi.ToolTipText = "Pornește scripturile push-*.ps1 și publish-*.ps1 ale proiectului, cu parametrii bifați, într-o fereastră PowerShell."
         rgScripturi.Buttons.Add(rbScripturi)
+        rbNoutati.Image = AdminIcons.Get("logs")
+        rbNoutati.Key = "noutati"
+        rbNoutati.Text = "NOUTATI"
+        rbNoutati.ToolTipHeader = "NOUTATI"
+        rbNoutati.ToolTipText = "Adaugă și mută noutăți între versiunile K-BOT."
+        rgScripturi.Buttons.Add(rbNoutati)
         rgScripturi.Text = "Scripturi"
         rtPublicare.Groups.Add(rgFisiere)
-        rtPublicare.Groups.Add(rgVercon)
         rtPublicare.Groups.Add(rgScripturi)
         rtPublicare.Text = "Publicare"
+        rtVercon.Groups.Add(rgVercon)
+        rtVercon.Text = "VERCON"
         ribbon.Dock = DockStyle.Top
         ribbon.Location = New Point(0, 44)
         fldNavLog.Caption = "Jurnal navigare"
@@ -377,6 +394,7 @@ Partial Class MainForm
         ribbon.Tabs.Add(rtMonitorizare)
         ribbon.Tabs.Add(rtCopii)
         ribbon.Tabs.Add(rtPublicare)
+        ribbon.Tabs.Add(rtVercon)
         ribbon.Tooltip = tips
         '
         ' pnlStatus
@@ -451,22 +469,20 @@ Partial Class MainForm
         tips.SetToolTipHeader(splMain, "Lățimea arborelui")
         tips.SetToolTipText(splMain, "Trage de bara dintre arbore și pagini ca să le lărgești sau să le îngustezi.")
         '
-        ' tlyLeft: the mode bar glued on top of the tree, the «select all» tick under it
+        ' tlyLeft: the mode bar glued on top of the tree
         '
         tlyLeft.AutoFitToTheme = False
         tlyLeft.ColumnCount = 1
         tlyLeft.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyLeft.Controls.Add(navMode, 0, 0)
         tlyLeft.Controls.Add(treeDb, 0, 1)
-        tlyLeft.Controls.Add(chkAll, 0, 2)
         tlyLeft.Dock = DockStyle.Fill
         tlyLeft.Location = New Point(0, 0)
         tlyLeft.Margin = New Padding(0)
         tlyLeft.Name = "tlyLeft"
-        tlyLeft.RowCount = 3
+        tlyLeft.RowCount = 2
         tlyLeft.RowStyles.Add(New RowStyle(SizeType.Absolute, 36F))
         tlyLeft.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyLeft.RowStyles.Add(New RowStyle(SizeType.Absolute, 30F))
         tlyLeft.Size = New Size(292, 512)
         tlyLeft.TabIndex = 0
         '
@@ -493,9 +509,8 @@ Partial Class MainForm
         tips.SetToolTipHeader(navMode, "Ce arată arborele")
         tips.SetToolTipText(navMode, "Baze date: bazele primele, conturile lor dedesubt." & vbLf & "Utilizatori: conturile primele, bazele lor dedesubt.")
         '
-        ' treeDb: databases and accounts, with a tick on every row (no title above it)
+        ' treeDb: databases and accounts, no tick boxes, search box always on top (code, name, accounts; no title above it)
         '
-        treeDb.CheckBoxes = True
         treeDb.Dock = DockStyle.Fill
         treeDb.FooterVisible = False
         treeDb.HeaderVisible = False
@@ -504,20 +519,10 @@ Partial Class MainForm
         treeDb.Margin = New Padding(0)
         treeDb.Name = "treeDb"
         treeDb.RootExpander = False
-        treeDb.Size = New Size(292, 446)
+        treeDb.SearchDefaultText = "… cod, denumire sau cont (minim 3 caractere) …"
+        treeDb.SearchShow = True
+        treeDb.Size = New Size(292, 476)
         treeDb.TabIndex = 1
-        '
-        ' chkAll: ticks (or unticks) every row of the tree
-        '
-        chkAll.Dock = DockStyle.Fill
-        chkAll.Location = New Point(0, 482)
-        chkAll.Margin = New Padding(0)
-        chkAll.Name = "chkAll"
-        chkAll.Size = New Size(292, 30)
-        chkAll.TabIndex = 2
-        chkAll.Text = "Selectează tot"
-        tips.SetToolTipHeader(chkAll, "Selectează tot")
-        tips.SetToolTipText(chkAll, "Bifează toate rândurile arborelui; bifat din nou, le debifează.")
         '
         ' pnlViews
         '
@@ -536,10 +541,12 @@ Partial Class MainForm
         pnlViews.Controls.Add(viewLogin)
         pnlViews.Controls.Add(viewVerconReports)
         pnlViews.Controls.Add(viewMfImport)
+        pnlViews.Controls.Add(viewInventoryCompare)
         pnlViews.Controls.Add(viewDemo)
         pnlViews.Controls.Add(viewLocalBackup)
         pnlViews.Controls.Add(viewMdHistory)
         pnlViews.Controls.Add(viewScripts)
+        pnlViews.Controls.Add(viewReleaseNotes)
         pnlViews.Controls.Add(viewSchemaGraph)
         pnlViews.Controls.Add(viewSchemaHistory)
         pnlViews.Controls.Add(viewDbBrowser)
@@ -551,6 +558,8 @@ Partial Class MainForm
         viewSchemaGraph.Visible = False
         viewScripts.Dock = DockStyle.Fill
         viewScripts.Visible = False
+        viewReleaseNotes.Dock = DockStyle.Fill
+        viewReleaseNotes.Visible = False
         viewMdHistory.Dock = DockStyle.Fill
         viewMdHistory.Visible = False
         viewLocalBackup.Dock = DockStyle.Fill
@@ -561,6 +570,8 @@ Partial Class MainForm
         viewVerconReports.Visible = False
         viewMfImport.Dock = DockStyle.Fill
         viewMfImport.Visible = False
+        viewInventoryCompare.Dock = DockStyle.Fill
+        viewInventoryCompare.Visible = False
         pnlViews.Dock = DockStyle.Fill
         pnlViews.Location = New Point(0, 0)
         pnlViews.Margin = New Padding(0)
@@ -761,7 +772,6 @@ Partial Class MainForm
     Friend WithEvents tlyLeft As KBotTableLayoutPanel
     Friend WithEvents navMode As KBotNavList
     Friend WithEvents treeDb As AdvancedTreeControl
-    Friend WithEvents chkAll As KBotCheckBox
     Friend WithEvents pnlViews As Panel
     Friend WithEvents viewCommands As CommandsView
     Friend WithEvents viewSync As SyncView
@@ -782,10 +792,12 @@ Partial Class MainForm
     Friend WithEvents viewLogin As LoginResetView
     Friend WithEvents viewVerconReports As VerconReportsView
     Friend WithEvents viewMfImport As MfImportView
+    Friend WithEvents viewInventoryCompare As InventoryCompareView
     Friend WithEvents viewDemo As DemoCloneView
     Friend WithEvents viewLocalBackup As LocalBackupView
     Friend WithEvents viewMdHistory As MdHistoryView
     Friend WithEvents viewScripts As ScriptsView
+    Friend viewReleaseNotes As ReleaseNotesView
     Friend WithEvents viewSchemaGraph As SchemaGraphView
     Friend WithEvents viewSchemaHistory As SchemaHistoryView
     Friend WithEvents viewDbBrowser As DbBrowserView

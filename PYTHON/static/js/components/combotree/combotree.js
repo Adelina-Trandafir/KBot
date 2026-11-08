@@ -1,5 +1,6 @@
 // Searchable tree selector with viewport positioning shared by forms and grid cells.
 import { TreeView } from '../treeview/treeview.js';
+import { searchLength } from '../../utils/search-text.js';
 import { layoutRect, layoutViewport } from '../../utils/layout-geometry.js';
 import { configureComboTreeKeyboard } from './combotree-keyboard.js';
 
@@ -97,17 +98,19 @@ export class ComboTree extends TreeView {
       this.fitsBelowContainer = down;
     };
     this.resizeDropdown = () => { if (this.isVisible) this.positionDropdown(); };
-    this.performSearch = async query => {
+    this.performSearch = async typed => {
       if (!this.isVisible) this.show();
-      this.currentQuery = query;
-      if (this.searchInput) this.searchInput.value = query;
+      this.currentQuery = typed;
+      if (this.searchInput) this.searchInput.value = typed;
+      // Pages that opt in (minSearchIgnoreSpaces): a text shorter than the minimum (spaces not counted) filters nothing.
+      const query = this.options.minSearchIgnoreSpaces === true && searchLength(typed) < this.options.minSearchLength ? '' : typed;
       this.treeContainer.replaceChildren();
       this.highlightedIndex = -1;
       this.flattenedItems = [];
       if (!query) this.expandedNodes = new Set((this.options.expanded || []).map(String));
       this.renderTreeWithData(query);
       if (!this.flattenedItems.length) this.renderNoResults();
-      if (this.searchClear) this.searchClear.style.display = query ? 'block' : 'none';
+      if (this.searchClear) this.searchClear.style.display = typed ? 'block' : 'none';
       this.positionDropdown();
     };
     this.handleLocalSearch = event => {

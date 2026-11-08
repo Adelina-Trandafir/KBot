@@ -22,6 +22,7 @@ Partial Class KBotDataView
 
     Private ReadOnly _cellTooltipOptions As New KBotCellTooltipOptions()
     Private _tipWindow As KBotCellTooltipWindow
+    Private _tableTipWindow As AdvancedTreeControl.TooltipPopup
     Private _tipTimer As Timer
     ' Ținta pentru care s-a pornit așteptarea (-1 / Nothing = niciuna).
     Private _tipRowIndex As Integer = -1
@@ -40,6 +41,10 @@ Partial Class KBotDataView
             Return _cellTooltipOptions
         End Get
     End Property
+
+    ''' <summary>Optional table XML for a cell, shown on hover even when its value fits.</summary>
+    <Browsable(False), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property CellTooltipTableProvider As Func(Of String, KBotDataRow, String)
 
     ' Chemată din constructor: obiectul de setări trebuie să știe cui să-i ceară închiderea
     ' etichetei când e stins din designer sau din cod.
@@ -126,8 +131,8 @@ Partial Class KBotDataView
 
         CancelCellTooltip()
         If rowIndex < 0 OrElse colKey Is Nothing Then Return
-        ' Se măsoară ACUM, nu la expirarea cronometrului: dacă textul încape, nu pornim nimic.
-        If CellTooltipTextFor(colKey, rowIndex) Is Nothing Then Return
+        ' Grilele cu tabel opțional cer conținutul la expirarea cronometrului.
+        If CellTooltipTableProvider Is Nothing AndAlso CellTooltipTextFor(colKey, rowIndex) Is Nothing Then Return
 
         _tipRowIndex = rowIndex
         _tipColKey = colKey
@@ -152,6 +157,7 @@ Partial Class KBotDataView
 
     ' Scoate fereastra la locul ei. Transitiv acoperită de boundary-ul tick-ului.
     Private Sub ShowCellTooltip()
+        If ShowCellTooltipTable() Then Return
         Dim text As String = CellTooltipTextFor(_tipColKey, _tipRowIndex)
         If text Is Nothing Then
             CancelCellTooltip()
@@ -182,6 +188,26 @@ Partial Class KBotDataView
                               TooltipBorderColor(), _cellTooltipOptions.CornerRadius, textRect)
         _tipWindow.Bounds = bounds
         If Not _tipWindow.Visible Then _tipWindow.Show()
+    End Sub
+
+    Private Function ShowCellTooltipTable() As Boolean
+        Dim k_provider = CellTooltipTableProvider
+        If k_provider Is Nothing OrElse _tipRowIndex < 0 OrElse _tipRowIndex >= _rows.Count Then Return False
+        Dim k_cursor As Point = Cursor.Position
+        If Not CellRectangle(_tipColKey, _tipRowIndex).Contains(PointToClient(k_cursor)) Then Return False
+        Dim k_table As String = k_provider(_tipColKey, _rows(_tipRowIndex))
+        If String.IsNullOrEmpty(k_table) Then Return False
+
+        If _tableTipWindow Is Nothing Then _tableTipWindow = New AdvancedTreeControl.TooltipPopup() With {.ScrollableTable = True}
+        _tableTipWindow.TT_BackColor = TooltipBackColor()
+        _tableTipWindow.TT_ForeColor = TooltipForeColor()
+        _tableTipWindow.ShowTooltip(k_table, Font, k_cursor, 0)
+        Return True
+    End Function
+
+    Protected Overrides Sub OnVisibleChanged(e As EventArgs)
+        MyBase.OnVisibleChanged(e)
+        If Not Visible AndAlso CellTooltipTableProvider IsNot Nothing Then CancelCellTooltip()
     End Sub
 
     ''' <summary>
@@ -280,6 +306,7 @@ Partial Class KBotDataView
             _tipRowIndex = -1
             _tipColKey = Nothing
             If _tipWindow IsNot Nothing AndAlso _tipWindow.Visible Then _tipWindow.Hide()
+            If _tableTipWindow IsNot Nothing AndAlso _tableTipWindow.Visible Then _tableTipWindow.Hide()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.CancelCellTooltip", ex)
         End Try
@@ -294,6 +321,8 @@ Partial Class KBotDataView
         End If
         _tipWindow?.Dispose()
         _tipWindow = Nothing
+        _tableTipWindow?.Dispose()
+        _tableTipWindow = Nothing
     End Sub
 
     ' ── Culorile etichetei: din setări dacă operatorul le-a pus, altfel din temă ──

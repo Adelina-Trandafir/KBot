@@ -9,7 +9,7 @@ Planul și șase etape implementate documentar sunt reunite. Dependențele sunt 
 **Checkpoint 19.10.2026:** DDL 01 și interogarea 07 scrise, nerulate; 02…05 construite, nepornite/netestate. Închiderea 06 rămâne la cuvântul operatorului. Numărul 0121 a fost ales ca următorul liber (operator, 19.10.2026); fiecare punct are subfelia `0121-NN`.
 
 ### Why
-Operator, 19.10.2026, «Recepții» (KE16): the chosen angajament belongs to the supplier, not the invoice. `_added` (`KeLegaForm`) keeps it only in memory per supplier; durable `Parteneri`/`Parteneri_Coduri` are per unit/SS (`IdUnitate`/`CodPartener`), requiring the partner in every affected unit. Decision: leave `Parteneri` and key NEW links by normalized **CodFiscal**, DC-wide across its units.
+Operator, 19.10.2026, «Recepții» (KE16): the chosen angajament belongs to the supplier, not the invoice. `_added` (the former reception window) keeps it only in memory per supplier; durable `Parteneri`/`Parteneri_Coduri` are per unit/SS (`IdUnitate`/`CodPartener`), requiring the partner in every affected unit. Decision: leave `Parteneri` and key NEW links by normalized **CodFiscal**, DC-wide across its units.
 
 ### Decisions (all from the operator, 19.10.2026)
 - `Parteneri` is NOT altered (no ALTER, indexes untouched). Partners without a CodFiscal (Access has some) are never linked to angajamente, invoices or reports; they stay in `Parteneri` and just have no rows in the new tables. They are counted and listed by the Migrator, none is lost.
@@ -175,11 +175,11 @@ Server:
 
 Client:
 - `IEFacturaApi` / `ApiClient.EFactura.Ke.vb`: `LinkSupplierAngajamentAsync`, `UnlinkSupplierAngajamentAsync` (paths under `/api/forexe/parteneri/angajament`).
-- `KeLegaForm` retires `_added`/`AddedForContext`. `BeginAddAngajament` saves by `SupplierCui` for each context supplier (ticked invoices, otherwise clicked invoice); missing tax code gives notice/no link. `RefreshContextStatesAsync`/new `_browsedId` discard that supplier invoice states, reread visible ones and rebuild from server. Elimină asociere confirms/removes furnizor links for those suppliers. `KePropuneriForm` gets an empty picked-code list (server resolves); both KE16 routes retain `angajamente` for old clients.
+- the former reception window retires `_added`/`AddedForContext`. `BeginAddAngajament` saves by `SupplierCui` for each context supplier (ticked invoices, otherwise clicked invoice); missing tax code gives notice/no link. `RefreshContextStatesAsync`/new `_browsedId` discard that supplier invoice states, reread visible ones and rebuild from server. Elimină asociere confirms/removes furnizor links for those suppliers. `KePropuneriForm` gets an empty picked-code list (server resolves); both KE16 routes retain `angajamente` for old clients.
 - Help 0000-114 (separate worklog).
 
 ### Files touched
-`PYTHON/routes/efactura/primite_ke.py`, `PYTHON/routes/forexe/partner_links.py`, `PYTHON/routes/actiuni.py`, `src/KBot.Api/IEFacturaApi.vb`, `ApiClient.EFactura.Ke.vb`, `src/KBot.EFactura/Forms/KeLegaForm.vb`; FileVersion: Api 1.0.26.0, EFactura 1.8.0.0; help `contabil/efactura/index.md`.
+`PYTHON/routes/efactura/primite_ke.py`, `PYTHON/routes/forexe/partner_links.py`, `PYTHON/routes/actiuni.py`, `src/KBot.Api/IEFacturaApi.vb`, `ApiClient.EFactura.Ke.vb`, the former reception window; FileVersion: Api 1.0.26.0, EFactura 1.8.0.0; help `contabil/efactura/index.md`.
 
 ### Test results
 `dotnet build src/KBot.App/KBot.App.vbproj`: 0 warnings, 0 errors. `py_compile` of the Python files: OK. **No test written or run, no database touched, nothing seen on screen.**

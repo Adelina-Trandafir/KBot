@@ -135,6 +135,14 @@ Public NotInheritable Class CustomPopupItem
     <Description("Pictograma desenată la stânga textului. Ignorată pe separatori. Elementul nu o deține și nu o eliberează.")>
     Public Property Image As Image
 
+    <Category("K-BOT"), DefaultValue(False)>
+    <Description("Draw this command in italics. Used for closed navigation-history entries.")>
+    Public Property Italic As Boolean
+
+    ''' <summary>Borrowed snapshot shown only by a popup in preview-tile mode.</summary>
+    <Browsable(False), DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Public Property PreviewImage As Image
+
     ' Fără perechea asta, editorul de colecții ar scrie «Item.Image = Nothing» pentru FIECARE
     ' element fără pictogramă. Un tip referință n-are <DefaultValue> utilizabil în VB (atributul
     ' primește un string convertit, iar Nothing nu e unul), deci ShouldSerialize/Reset e singurul

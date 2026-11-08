@@ -58,11 +58,11 @@ why: Nota e opțională; o scrii doar dacă ai ceva de spus Administratorului.
 Aici poți scrie o <b>notă scurtă</b> pe care Administratorul o vede când preia factura. Se salvează o singură dată, la trimitere. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Trimite
-<!-- slice: 00EF-48, 0000-118, 00EF-59, 0000-150 -->
+<!-- slice: 00EF-48, 0000-118, 00EF-59, 0000-150, 00EF-60, 0000-154 -->
 target: VerconForm.btnTrimite
 wait: click
 guard: yes
-Apasă <b>«Trimite la Vercon»</b>. Facturile bifate pleacă cu toate liniile și conturile alese și dispar din dreapta; în arbore primesc cuvântul «Trimisă în VERCON» și rămân bifate.<BR>
+Apasă <b>«Trimite la Vercon»</b>. Facturile bifate pleacă cu toate liniile și conturile alese și dispar din dreapta; în arbore primesc cuvântul «Trimisă în VERCON» și rămân bifate. Arborele se reîncarcă, dar rămâne deschis acolo unde erai: aceleași luni și aceiași furnizori deschiși, același rând ales, aceeași poziție pe ecran.<BR>
 <mark>Nimic nu pleacă până la acest buton. Ca să nu trimiți din greșeală, tutorialul se oprește aici: apasă butonul tu, după ce ai ieșit din tutorial.</mark>
 
 ## Retragere sau schimbare

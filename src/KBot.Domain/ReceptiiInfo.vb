@@ -30,6 +30,12 @@ Public NotInheritable Class ReceptieRow
     ''' after the column was added. Tells two receptions of one day apart.
     ''' </summary>
     Public Property RangZiR As Integer?
+    ''' <summary>
+    ''' The day the reception was DELETED (F22): seen in the FOREXE page by K-BOT, or the date of its
+    ''' «Stergere receptie» row. Nothing = live. A deleted reception counts for nothing in the tree
+    ''' totals and tooltips (its lines stay in the base; the deletion row has none to cancel them).
+    ''' </summary>
+    Public Property DataStergereR As Date?
     Public Property DataR As Date?
     Public Property SumaAntet As Double
     ''' <summary>Receptie incarcata -> iconita „sus". Vezi si <see cref="Preluat"/>.</summary>

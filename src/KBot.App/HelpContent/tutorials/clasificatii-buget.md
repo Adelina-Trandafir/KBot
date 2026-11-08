@@ -71,15 +71,15 @@ target: ClasificatiiBugetView.gridTotal
 Rândul acesta arată <b>ultimul buget</b> (cel cu data cea mai nouă) plus <b>toate rectificările</b>, pe trimestre. Se actualizează pe măsură ce completezi. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Salvează
-<!-- slice: 000T-10 -->
-target: ClasificatiiBugetView.btnSalveaza
-wait: click
+<!-- slice: 000T-10, 0126-03 -->
+anchor: ribbon.clasificatii_salveaza
+wait: signal:ribbon:clasificatii_salveaza
 Apasă <b>«Salvează»</b>. Se scriu în baza de date versiunile de buget și rectificările clasificației alese.
 
 ## Verifică bugetul față de FOREXE
-<!-- slice: 000T-10 -->
-target: ClasificatiiBugetView.btnVerifica
-wait: click
+<!-- slice: 000T-10, 0126-03 -->
+anchor: ribbon.clasificatii_verifica
+wait: opens:BudgetCheckForm
 optional: yes
 why: Verificarea e doar o comparație; nu schimbă nimic în date.
 Dacă vrei, apasă <b>«Verifică bugetul»</b>: compară bugetul și rectificările de azi cu creditul bugetar descărcat din FOREXE, pe fiecare clasificație, și arată diferența.

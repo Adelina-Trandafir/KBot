@@ -1,0 +1,338 @@
+Imports System.Threading
+Imports KBot.Api
+Imports KBot.Common
+Imports KBot.Domain
+Imports KBot.EFactura
+
+''' <summary>
+''' THE DDF EDITOR -- the three deletes (revision, document, month) and what is refreshed after
+''' any DDF write (slice 0086 split out of KbotForm.vb). The dispatch is in KbotForm.Ddf.vb.
+''' </summary>
+Partial Public Class KbotForm
+
+    ''' <summary>
+    ''' «Sterge revizia» -- the port of <c>FX_Stergere_Revizie</c>. The confirmation names the
+    ''' revision, the way Access's <c>FX_Info_DDF</c> summary did.
+    ''' </summary>
+    Private Async Function StergeRevizieDdfAsync(revizie As RevizieRow) As Task
+        If revizie Is Nothing OrElse revizie.Idrev <= 0 Then
+            KBotMessage.Show(Me, "Selectați o revizie din arbore.", "Document de fundamentare",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+        ' Slice 0081-02: a revision K-BOT sent (or began to send) has changed forexecab; deleting
+        ' it here would leave the two out of step (the golden rule, D8).
+        If revizie.StareTrimitere <> DdfSendStage.NotSent Then
+            KBotMessage.Show(Me, $"Revizia este «{DdfRevisionStates.Label(revizie.Stare)}»: a modificat deja " &
+                            "FOREXE, deci nu se mai șterge din K-BOT.", "Șterge revizia",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
+        Dim intrebare As String =
+            "Dorești ștergerea Reviziei curente?" & vbCrLf & vbCrLf &
+            RezumatRevizie(revizie) & vbCrLf & vbCrLf &
+            "Odată cu ea se șterg rândurile din secțiunile A și B și fișierele atașate." & vbCrLf &
+            "Rezervările acoperite redevin fără DDF."
+
+        If KBotMessage.Show(Me, intrebare, "Șterge revizia",
+                           MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then
+            Return
+        End If
+
+        busyBar.Running = True
+        Dim rez As DdfStergereRezultat
+        Try
+            Dim idrev As Integer = revizie.Idrev
+            rez = Await WithReauth(Of DdfStergereRezultat)(
+                Function() _apiClient.DeleteDdfRevizieAsync(idrev, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+
+        AratatRezultatulStergerii(rez, "Șterge revizia")
+        ' The server decides whether the DOCUMENT survived: deleting one revision leaves it
+        ' standing even when it was the last, while the document and month deletes can take it.
+        DupaScriereaDdf(cod:=rez?.Cod, documentSters:=(rez IsNot Nothing AndAlso rez.DocumentSters))
+    End Function
+
+    ''' <summary>
+    ''' «Sterge documentul» -- the port of <c>FX_Stergere_DDF</c>.
+    '''
+    ''' <para>Refused while any ordonantare points at the document. That refusal exists twice
+    ''' over: <c>FX_ORD.IDDF</c> is a RESTRICT foreign key, so the database would stop it
+    ''' anyway -- the server's guard is the readable version of the same "no", and it arrives
+    ''' here as an <see cref="ApiException"/> with the Romanian message.</para>
+    ''' </summary>
+    Private Async Function StergeDocumentDdfAsync(revizie As RevizieRow) As Task
+        If revizie Is Nothing OrElse revizie.Iddf <= 0 Then
+            KBotMessage.Show(Me, "Selectați o revizie din arbore.", "Document de fundamentare",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
+        Dim intrebare As String =
+            "Dorești ștergerea Documentului curent?" & vbCrLf & vbCrLf &
+            RezumatRevizie(revizie) & vbCrLf & vbCrLf &
+            "Se șterg TOATE reviziile documentului, cu rândurile și fișierele lor." & vbCrLf &
+            "Rezervările acoperite redevin fără DDF."
+
+        If KBotMessage.Show(Me, intrebare, "Șterge documentul",
+                           MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then
+            Return
+        End If
+
+        busyBar.Running = True
+        Dim rez As DdfStergereRezultat
+        Try
+            Dim iddf As Integer = revizie.Iddf
+            rez = Await WithReauth(Of DdfStergereRezultat)(
+                Function() _apiClient.DeleteDdfAsync(iddf, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+
+        AratatRezultatulStergerii(rez, "Șterge documentul")
+        DupaScriereaDdf(cod:=rez?.Cod, documentSters:=(rez IsNot Nothing AndAlso rez.DocumentSters))
+    End Function
+
+    ''' <summary>
+    ''' «Sterge TOATE reviziile lunii» -- the port of <c>FX_Stergere_Revizii</c>.
+    '''
+    ''' <para>When the month holds EVERY revision the document has, the server deletes the
+    ''' DOCUMENT instead of the last revision and says so in the result. That is Access's
+    ''' behaviour, kept -- an empty document pointing at nothing is worse than none.</para>
+    ''' </summary>
+    Private Async Function StergeLunaDdfAsync(comanda As DdfComanda) As Task
+        If comanda.Iddf <= 0 OrElse comanda.An <= 0 OrElse comanda.Luna < 1 OrElse comanda.Luna > 12 Then
+            KBotMessage.Show(Me, "Selectați o lună din arbore.", "Document de fundamentare",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
+        Dim intrebare As String =
+            "Dorești ștergerea tuturor Reviziilor din luna selectată?" & vbCrLf & vbCrLf &
+            $"Luna {comanda.Luna:00}.{comanda.An}, angajamentul {comanda.Cod}." & vbCrLf & vbCrLf &
+            "Dacă luna conține toate reviziile documentului, se șterge documentul întreg." & vbCrLf &
+            "Rezervările acoperite redevin fără DDF."
+
+        If KBotMessage.Show(Me, intrebare, "Șterge reviziile lunii",
+                           MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then
+            Return
+        End If
+
+        busyBar.Running = True
+        Dim rez As DdfStergereRezultat
+        Try
+            Dim iddf As Integer = comanda.Iddf
+            Dim an As Integer = comanda.An
+            Dim luna As Integer = comanda.Luna
+            rez = Await WithReauth(Of DdfStergereRezultat)(
+                Function() _apiClient.DeleteDdfLunaAsync(iddf, an, luna, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+
+        AratatRezultatulStergerii(rez, "Șterge reviziile lunii")
+        DupaScriereaDdf(cod:=rez?.Cod, documentSters:=(rez IsNot Nothing AndAlso rez.DocumentSters))
+    End Function
+
+    ''' <summary>The <c>FX_Info_DDF</c> summary, built client-side from what the view already
+    ''' holds rather than fetched: every field in it is already on the revision row.</summary>
+    Private Shared Function RezumatRevizie(revizie As RevizieRow) As String
+        Dim ro As New Globalization.CultureInfo("ro-RO")
+        Dim data As String = If(revizie.DataRev.HasValue,
+                                revizie.DataRev.Value.ToString("dd.MM.yyyy"), "fără dată")
+        Dim descriere As String = If(String.IsNullOrWhiteSpace(revizie.DescScurta),
+                                     "fără descriere", revizie.DescScurta)
+        Return $"Revizia nr. {revizie.NumarRev} din {data}, în valoare de " &
+               $"{revizie.TotalRevizie.ToString("N2", ro)} lei." & vbCrLf & descriere
+    End Function
+
+    ''' <summary>
+    ''' Records what actually went, with real counts. Slice 0097: no box any more (operator) --
+    ''' the counts go to the operator log only.
+    ''' </summary>
+    Private Shared Sub AratatRezultatulStergerii(rez As DdfStergereRezultat, titlu As String)
+        If rez Is Nothing Then Return
+        Dim ce As String = If(rez.DocumentSters, "Documentul de fundamentare a fost șters.",
+                                                 "Reviziile au fost șterse.")
+        OperatorLog.Write("KbotForm.StergereDdf", titlu,
+            ce & " " &
+            $"Revizii: {rez.Revizii} · secțiunea A: {rez.LiniiA} · secțiunea B: {rez.LiniiB} · " &
+            $"fișiere: {rez.Atasamente} · rezervări redevenite fără DDF: {rez.RezervariEliberate}.")
+    End Sub
+
+    ''' <summary>
+    ''' Slice 0097 -- «Sterge documentul» from the «Toate reviziile» root: the whole document,
+    ''' every revision. The same server call as <see cref="StergeDocumentDdfAsync"/>; the
+    ''' confirmation names the count and the total instead of one revision. Refused when any
+    ''' revision is signed (the view offers it only then; re-checked, the list may be older).
+    ''' </summary>
+    Private Async Function StergeToateReviziileDdfAsync(comanda As DdfComanda) As Task
+        Dim revizii As IReadOnlyList(Of RevizieRow) = comanda.Revizii
+        If comanda.Iddf <= 0 OrElse revizii Is Nothing OrElse revizii.Count = 0 Then
+            KBotMessage.Show(Me, "Documentul nu are revizii de șters.", "Document de fundamentare",
+                            MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+        If revizii.Any(Function(r) DdfView.EsteSemnata(r)) Then
+            KBotMessage.Show(Me, "Documentul are revizii semnate; ele nu se mai șterg.",
+                            "Șterge documentul", MessageBoxButtons.OK, MessageBoxIcon.Information)
+            Return
+        End If
+
+        Dim ro As New Globalization.CultureInfo("ro-RO")
+        Dim intrebare As String =
+            $"Dorești ștergerea Documentului de fundamentare, cu toate cele {revizii.Count} revizii?" & vbCrLf & vbCrLf &
+            $"Angajamentul {comanda.Cod}, valoare totală {revizii.Sum(Function(r) r.TotalRevizie).ToString("N2", ro)} lei." &
+            vbCrLf & vbCrLf &
+            "Se șterg TOATE reviziile documentului, cu rândurile și fișierele lor." & vbCrLf &
+            "Rezervările acoperite redevin fără DDF."
+        If KBotMessage.Show(Me, intrebare, "Șterge documentul",
+                           MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then
+            Return
+        End If
+
+        busyBar.Running = True
+        Dim rez As DdfStergereRezultat
+        Try
+            Dim iddf As Integer = comanda.Iddf
+            rez = Await WithReauth(Of DdfStergereRezultat)(
+                Function() _apiClient.DeleteDdfAsync(iddf, CancellationToken.None))
+        Finally
+            busyBar.Running = False
+        End Try
+
+        AratatRezultatulStergerii(rez, "Șterge documentul")
+        DupaScriereaDdf(cod:=rez?.Cod, documentSters:=(rez IsNot Nothing AndAlso rez.DocumentSters))
+    End Function
+
+    ''' <summary>
+    ''' Refreshes what a DDF write invalidated. The reservations view is refreshed too: a save
+    ''' marks reservations as having a DDF and a delete releases them again, so what it shows
+    ''' is no longer true either.
+    ''' </summary>
+    ''' <param name="idrevSalvat">The revision to land on after a save; 0 after a delete.</param>
+    ''' <param name="cod">The angajament the write was for. The view gate is only touched when
+    ''' the selected node is still that one -- flipping the flag on somebody else's angajament
+    ''' would be worse than leaving it stale.</param>
+    ''' <param name="iddfDocument">The document key after a save, which also means «the document
+    ''' exists»; 0 when this write says nothing about whether it does.</param>
+    ''' <param name="documentSters">The whole document went. Only the document delete and the
+    ''' month delete can say this -- deleting a single revision leaves the document standing,
+    ''' even when it was the last one.</param>
+    Private Sub DupaScriereaDdf(Optional idrevSalvat As Integer = 0,
+                                Optional cod As String = Nothing,
+                                Optional iddfDocument As Integer = 0,
+                                Optional documentSters As Boolean = False)
+        Try
+            TryCast(_state.ActiveView, DdfView)?.Reincarca(idrevSalvat)
+
+            ' The reservations view too: a save marks reservations as having a DDF and a delete
+            ' releases them again, so the "+" icon that view draws -- now the trigger for the
+            ' editor -- is no longer where it belongs. Only the ACTIVE view is refreshed:
+            ' `ActivateView` calls `SetContext` on every activation, so an inactive one reloads
+            ' by itself when the operator switches to it.
+            TryCast(_state.ActiveView, RezervariView)?.Reincarca()
+
+            ActualizeazaPoartaDdf(cod, iddfDocument, documentSters)
+
+            ' Slice 00EF-53: the partners of the document may have changed, so the received e-invoices it
+            ' matches may have too.
+            ReimprospateazaEFacturiDdf(cod)
+
+            ' Slice 02EF-12: the pages that show the reservations of the angajament (the window Receptii <> EFactura, the received invoices) read them again.
+            KeRobot.AnuntaDateSchimbate(cod)
+        Catch ex As Exception
+            ' UI boundary: the refresh failed, but the WRITE already succeeded. Logged, and we
+            ' carry on -- a throw here would make it look as though the save had failed.
+            GlobalErrorLog.Write("MainForm.DupaScriereaDdf", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' Slice 00EF-53 (operator, 31.10.2026): the «efactura» entry in the vertical navigation, after a DDF write changed the
+    ''' partners of the document.
+    '''
+    ''' <para><c>ArePrimite</c> is computed by the SERVER (the document's partners matched on tax code against the received
+    ''' e-invoices, or an explicit association) and read once, when the tree is loaded -- so a partner saved on a document did
+    ''' not make the entry appear until the next reload. It cannot be worked out locally, so the tree is asked again and ONLY
+    ''' this flag is copied onto the selected node: <c>LoadTreeAsync</c> would also re-run <c>SetContext</c> on the DDF view,
+    ''' racing the reload that lands it on the revision just saved.</para>
+    ''' UI boundary (Async Sub, fire-and-forget): the write already succeeded, so a failure is logged and never thrown.
+    ''' </summary>
+    Private Async Sub ReimprospateazaEFacturiDdf(k_cod As String)
+        Try
+            If _state.CurrentInfo Is Nothing OrElse Not _state.CurrentInfo.AreDDF Then Return
+            If Not String.IsNullOrEmpty(k_cod) AndAlso
+               Not String.Equals(k_cod, _state.CurrentInfo.CodAngajament, StringComparison.OrdinalIgnoreCase) Then
+                Return
+            End If
+
+            ' The same period the tree was loaded for (see LoadTreeAsync).
+            Dim k_an As Integer? = AnulAles()
+            Dim k_ssAles As String = SsAles()
+            If Not k_an.HasValue OrElse String.IsNullOrEmpty(k_ssAles) Then Return
+            Dim k_anCerut As Integer = If(_grupaActiva Is Nothing, k_an.Value, 0)
+            Dim k_ssCerut As String = If(_grupaActiva IsNot Nothing, ApiClient.TreeAllSources, k_ssAles)
+            Dim k_codCerut As String = _state.CurrentInfo.CodAngajament
+
+            Dim k_randuri As IReadOnlyList(Of AngajamentTreeInfo) =
+                Await WithReauth(Of IReadOnlyList(Of AngajamentTreeInfo))(
+                    Function() _apiClient.GetTreeAsync(k_anCerut, k_ssCerut, _state.IncludeHidden, CancellationToken.None)).ConfigureAwait(True)
+
+            ' The operator may have moved on while the tree was coming: then there is nothing to say about the new node.
+            If k_randuri Is Nothing OrElse _state.CurrentInfo Is Nothing OrElse
+               Not String.Equals(_state.CurrentInfo.CodAngajament, k_codCerut, StringComparison.OrdinalIgnoreCase) Then
+                Return
+            End If
+            Dim k_rand As AngajamentTreeInfo = k_randuri.FirstOrDefault(
+                Function(k_r) String.Equals(k_r.CodAngajament, k_codCerut, StringComparison.OrdinalIgnoreCase))
+            If k_rand Is Nothing OrElse _state.CurrentInfo.ArePrimite = k_rand.ArePrimite Then Return
+
+            _state.CurrentInfo.ArePrimite = k_rand.ArePrimite
+            ApplyViewGating(_state.CurrentInfo)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MainForm.ReimprospateazaEFacturiDdf", ex)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' The «ddf» entry in the vertical navigation, after a write changed whether the
+    ''' angajament has a document at all.
+    '''
+    ''' <para><b>Why it is needed.</b> <c>ApplyViewGating</c> reads
+    ''' <c>AngajamentTreeInfo.AreDDF</c>, which is filled once, when the tree is loaded, and
+    ''' is <c>FX_Angajamente.IDDF IS NOT NULL</c> on the server. The FIRST document of an
+    ''' angajament (revision 0, added from the reservations tree) writes that <c>IDDF</c>, but
+    ''' nothing told the shell -- so the entry stayed hidden and the document the operator had
+    ''' just saved could not be opened until the next year/SS change reloaded the tree.</para>
+    '''
+    ''' <para>Raised LOCALLY, exactly as <see cref="DupaScriereaOrdonantarii"/> raises
+    ''' <c>AreORD</c>: a <c>LoadTreeAsync</c> from here would clear the selection and drop the
+    ''' operator back onto «sumar» the moment they saved. <c>IDDF</c> is carried along with
+    ''' the flag rather than left to drift, because that column is what the flag MEANS.</para>
+    ''' </summary>
+    Private Sub ActualizeazaPoartaDdf(cod As String, iddfDocument As Integer, documentSters As Boolean)
+        If _state.CurrentInfo Is Nothing Then Return
+        ' Nothing to say about the document either way -- a single revision went, and the
+        ' document is still standing.
+        If iddfDocument <= 0 AndAlso Not documentSters Then Return
+
+        ' The write may have been for an angajament the operator has since moved off. Silence
+        ' beats flipping the flag on the wrong node.
+        If Not String.IsNullOrEmpty(cod) AndAlso
+           Not String.Equals(cod, _state.CurrentInfo.CodAngajament, StringComparison.OrdinalIgnoreCase) Then
+            Return
+        End If
+
+        Dim areAcum As Boolean = Not documentSters
+        _state.CurrentInfo.IDDF = If(documentSters, CType(Nothing, Long?), CLng(iddfDocument))
+        If _state.CurrentInfo.AreDDF = areAcum Then Return
+
+        _state.CurrentInfo.AreDDF = areAcum
+        ' Also re-pushes «sumar» when the active view was the one that just disappeared.
+        ApplyViewGating(_state.CurrentInfo)
+    End Sub
+End Class

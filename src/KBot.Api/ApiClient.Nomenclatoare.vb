@@ -75,6 +75,17 @@ Partial Public Class ApiClient
         Public Property corrections As List(Of CorrectionWire)
     End Class
 
+    ' Slice 0126-05: one classification of the all-budgets answer.
+    Private NotInheritable Class AllBudgetWire
+        Public Property id_clsf As Integer
+        Public Property budgets As List(Of BudgetVersionWire)
+        Public Property corrections As List(Of CorrectionWire)
+    End Class
+
+    Private NotInheritable Class AllBudgetsResponse
+        Public Property items As List(Of AllBudgetWire)
+    End Class
+
     Private NotInheritable Class SummaryRowWire
         Public Property id_clsf As Integer
         Public Property activ As Boolean
@@ -90,7 +101,13 @@ Partial Public Class ApiClient
         Public Property ids As List(Of Integer)
     End Class
 
+    ' Slice 0126-05: {"all": true} = every classification.
+    Private NotInheritable Class AngajamenteAllRequest
+        Public Property all As Boolean = True
+    End Class
+
     Private NotInheritable Class AngajamentWire
+        Public Property id_clsf As Integer
         Public Property cod_angajament As String
         Public Property descriere As String
         Public Property cod_indicator As String
@@ -328,6 +345,29 @@ Partial Public Class ApiClient
         End Try
     End Function
 
+    ''' <summary>Slice 0126-05: every classification's budget versions and corrections of the year in one answer.</summary>
+    Public Async Function GetAllBudgetsAsync(an As Integer, ct As CancellationToken) _
+        As Task(Of IReadOnlyDictionary(Of Integer, BugetClasificatie)) _
+        Implements INomenclatoareApi.GetAllBudgetsAsync
+        Try
+            Dim url As String = $"{NomenclatoareRoot}/clasificatii/buget-toate?an={an.ToString(CultureInfo.InvariantCulture)}"
+            Dim respText As String = Await SendNomenclatoareAsync(HttpMethod.Get, url, Nothing,
+                                                                  "citirea bugetelor", ct).ConfigureAwait(False)
+            Dim payload As AllBudgetsResponse = JsonSerializer.Deserialize(Of AllBudgetsResponse)(respText, _json)
+            Dim result As New Dictionary(Of Integer, BugetClasificatie)()
+            If payload Is Nothing Then Return result
+            For Each w As AllBudgetWire In If(payload.items, New List(Of AllBudgetWire)())
+                result(w.id_clsf) = MapBudget(w.budgets, w.corrections)
+            Next
+            Return result
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetAllBudgetsAsync", ex)
+            Throw
+        End Try
+    End Function
+
     Public Async Function GetBudgetSummaryAsync(an As Integer, ct As CancellationToken) _
         As Task(Of IReadOnlyList(Of BudgetSummaryRow)) _
         Implements INomenclatoareApi.GetBudgetSummaryAsync
@@ -378,10 +418,42 @@ Partial Public Class ApiClient
                 HttpMethod.Post, $"{NomenclatoareRoot}/clasificatii/angajamente",
                 New AngajamenteRequest() With {.ids = idClsfs.ToList()},
                 "citirea angajamentelor clasificației", ct).ConfigureAwait(False)
-            Dim payload As AngajamenteResponse = JsonSerializer.Deserialize(Of AngajamenteResponse)(respText, _json)
+            Return ReadAngajamente(respText)
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetClasificatiiAngajamenteAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>Slice 0126-05: every classification's angajamente in one answer (the window keeps them in memory).</summary>
+    Public Async Function GetAllClasificatiiAngajamenteAsync(ct As CancellationToken) _
+        As Task(Of IReadOnlyList(Of ClasificatieAngajament)) _
+        Implements INomenclatoareApi.GetAllClasificatiiAngajamenteAsync
+        Try
+            Dim respText As String = Await SendNomenclatoareAsync(
+                HttpMethod.Post, $"{NomenclatoareRoot}/clasificatii/angajamente",
+                New AngajamenteAllRequest(),
+                "citirea angajamentelor clasificațiilor", ct).ConfigureAwait(False)
+            Return ReadAngajamente(respText)
+        Catch ex As ApiException
+            Throw
+        Catch ex As Exception
+            GlobalErrorLog.Write("ApiClient.GetAllClasificatiiAngajamenteAsync", ex)
+            Throw
+        End Try
+    End Function
+
+    ' Parses the answer of the angajamente route (one row per indicator). Throws on bad JSON; the callers log.
+    Private Function ReadAngajamente(k_respText As String) As IReadOnlyList(Of ClasificatieAngajament)
+        Dim result As New List(Of ClasificatieAngajament)()
+        Try
+            Dim payload As AngajamenteResponse = JsonSerializer.Deserialize(Of AngajamenteResponse)(k_respText, _json)
             If payload Is Nothing Then Return result
             For Each w As AngajamentWire In If(payload.items, New List(Of AngajamentWire)())
                 result.Add(New ClasificatieAngajament() With {
+                    .IdClsf = w.id_clsf,
                     .CodAngajament = If(w.cod_angajament, String.Empty),
                     .Descriere = If(w.descriere, String.Empty),
                     .CodIndicator = If(w.cod_indicator, String.Empty),
@@ -390,10 +462,8 @@ Partial Public Class ApiClient
                     .TotalPlati = ToDecimal(w.total_plati).GetValueOrDefault()})
             Next
             Return result
-        Catch ex As ApiException
-            Throw
         Catch ex As Exception
-            GlobalErrorLog.Write("ApiClient.GetClasificatiiAngajamenteAsync", ex)
+            GlobalErrorLog.Write("ApiClient.ReadAngajamente", ex)
             Throw
         End Try
     End Function
@@ -730,9 +800,14 @@ Partial Public Class ApiClient
 
     Private Shared Function ReadBudget(respText As String) As BugetClasificatie
         Dim payload As BudgetResponse = JsonSerializer.Deserialize(Of BudgetResponse)(respText, _json)
+        If payload Is Nothing Then Return New BugetClasificatie()
+        Return MapBudget(payload.budgets, payload.corrections)
+    End Function
+
+    ' The wire rows of one classification as the domain objects (slice 0126-05: shared by the single and the all-budgets answers).
+    Private Shared Function MapBudget(k_budgets As List(Of BudgetVersionWire), k_corrections As List(Of CorrectionWire)) As BugetClasificatie
         Dim result As New BugetClasificatie()
-        If payload Is Nothing Then Return result
-        For Each b As BudgetVersionWire In If(payload.budgets, New List(Of BudgetVersionWire)())
+        For Each b As BudgetVersionWire In If(k_budgets, New List(Of BudgetVersionWire)())
             Dim start As Date
             Dim hasStart As Boolean = Date.TryParseExact(If(b.data_inceput, String.Empty), "yyyy-MM-dd",
                                                          CultureInfo.InvariantCulture, DateTimeStyles.None, start)
@@ -743,7 +818,7 @@ Partial Public Class ApiClient
                     .Trim1 = ToDecimal(b.trim1), .Trim2 = ToDecimal(b.trim2),
                     .Trim3 = ToDecimal(b.trim3), .Trim4 = ToDecimal(b.trim4)}})
         Next
-        For Each c As CorrectionWire In If(payload.corrections, New List(Of CorrectionWire)())
+        For Each c As CorrectionWire In If(k_corrections, New List(Of CorrectionWire)())
             Dim day As Date
             Dim hasDay As Boolean = Date.TryParseExact(If(c.data, String.Empty), "yyyy-MM-dd",
                                                        CultureInfo.InvariantCulture, DateTimeStyles.None, day)

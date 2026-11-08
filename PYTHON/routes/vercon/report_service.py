@@ -59,6 +59,7 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
     if report_voucher.applies(spec):
         # Each document must carry its own form header, also with saved layouts.
         layout['value'] = {**layout['value'], 'groups': ['document']}
+    layout['value'] = report_body.display_layout(spec, layout['value'])
     if spec['id'] in ('Centralizator_Furnizori', 'nou_Furnizori', 'Bon_Consum', 'Centralizator_BC'):
         layout['value']['title'] = spec['label']
     layout['value']['elements'] = [e for e in layout['value'].get('elements', []) if e['band'] != 'header']

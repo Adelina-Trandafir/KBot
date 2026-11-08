@@ -961,6 +961,8 @@ def _parser():
     vercon_reports.register(sub)
     from routes.admin_cli import vercon_mf_import
     vercon_mf_import.register(sub)
+    from routes.admin_cli import vercon_inventory
+    vercon_inventory.register(sub)
     from routes.admin_cli import admin_demo
     admin_demo.register(sub)
     from routes.admin_cli import admin_source

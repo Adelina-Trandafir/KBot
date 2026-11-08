@@ -102,6 +102,12 @@ Operator: two ERR rows with different numbers were saved under one number (the n
 ## 0088-06 (29.10.2026) — «Omite rândul»
 Own worklog: [SLICE-0088-06-omite-randul.md](SLICE-0088-06-omite-randul.md).
 
+## 0088-07 (05.11.2026) — amounts with the thousands dot
+Own worklog: [SLICE-0088-07-suma-cu-separator-mii.md](SLICE-0088-07-suma-cu-separator-mii.md).
+
+## 0088-08 (05.11.2026) — signed file lands on the Desktop (GR23)
+Own worklog: [SLICE-0088-08-semnatura-pe-desktop.md](SLICE-0088-08-semnatura-pe-desktop.md).
+
 ## Left unverified / deferred
 - ⚠ **Run `sql/0088_fx_note_cab.sql` first** on every unit database + AVACONT_SURSA, then upload `note_cab.py`, `operatiuni.py`, `pdf.py`, `__init__.py`. The new `operatiuni.py` writes `CodAngajament` — without the DDL every login save fails (500).
 - Nothing run against the server, FOREXE or Adobe; the window and the view never seen on screen.

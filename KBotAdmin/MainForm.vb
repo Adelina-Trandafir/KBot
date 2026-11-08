@@ -3,9 +3,9 @@ Imports System.Globalization
 
 ''' <summary>
 ''' The main window (slice ME01, ribbon since ME01-05). Top: the ribbon, which holds every page and the actions that open a window.
-''' Left: ONE tree with a tick on every row, chosen by the bar above it: the databases (one level under «&lt;TOATE BAZELE&gt;») and, under
-''' each database, the accounts linked to it, or the users first and, under each user, the databases it is linked to. A tick under the tree
-''' ticks every row. Right: the pages. The chosen database is the context every
+''' Left: ONE tree (no tick boxes; a search box always on top of it finds by code, by name and by account), chosen by the bar above it: the databases (one level under «&lt;TOATE BAZELE&gt;») and, under
+''' each database, the accounts linked to it, or the users first and, under each user, the databases it is linked to.
+''' Right: the pages. The chosen database is the context every
 ''' page works in; a page learns about a change through <see cref="IAdminView.SelectionChanged"/>.
 ''' </summary>
 Public Class MainForm
@@ -23,7 +23,6 @@ Public Class MainForm
     Private _accounts As New List(Of AccountLink)()
     Private _loading As Boolean
     Private _byUser As Boolean          ' the tree shows the users first (root) and their databases (leaves)
-    Private _syncingAll As Boolean      ' the «select all» tick is being set from the tree, not by the operator
 
     Public Sub New(k_client As AdminClient)
         InitializeComponent()
@@ -52,10 +51,12 @@ Public Class MainForm
         _views("login") = viewLogin
         _views("vercon-reports") = viewVerconReports
         _views("mf-import") = viewMfImport
+        _views("inventory-compare") = viewInventoryCompare
         _views("demo") = viewDemo
         _views("copii-locale") = viewLocalBackup
         _views("istoric-md") = viewMdHistory
         _views("scripturi") = viewScripts
+        _views("noutati") = viewReleaseNotes
         _views("schema-graf") = viewSchemaGraph
         _views("schema-istoric") = viewSchemaHistory
         _views("tabele") = viewDbBrowser
@@ -423,32 +424,24 @@ Public Class MainForm
 
     Private Sub BuildDbTree()
         Dim k_open As HashSet(Of String) = OpenBranches()
-        Dim k_checked As HashSet(Of String) = CheckedLeaves()
         treeDb.Clear()
         treeDb.RootExpander = _byUser   ' the single root of the database view stays open; the users are roots that must open
         Dim k_select As AdvancedTreeControl.TreeItem = If(_byUser, BuildUserBranches(k_open), BuildDatabaseBranches(k_open))
         If Not _byUser AndAlso k_select.Level < 2 Then _context.SelectedAccount = String.Empty   ' the chosen account is gone (or none was chosen)
         If k_select IsNot Nothing Then treeDb.SelectAndReveal(k_select)
-        For Each k_node As AdvancedTreeControl.TreeItem In AllNodes(treeDb.Items).ToList()
-            If k_node.Children.Count = 0 AndAlso k_checked.Contains(Convert.ToString(k_node.Tag, CultureInfo.InvariantCulture)) Then
-                treeDb.SetItemCheckState(k_node, AdvancedTreeControl.TreeCheckState.Checked)   ' also recalculates the rows above it
-            End If
-        Next
-        PublishChecks()
+        treeDb.RerunSearch()   ' the rows are new: a search typed before the reload filters them again
     End Sub
 
     ''' <summary>Root «all databases», a branch per database, the accounts of each database as its leaves.</summary>
     Private Function BuildDatabaseBranches(k_open As HashSet(Of String)) As AdvancedTreeControl.TreeItem
         Dim k_root As AdvancedTreeControl.TreeItem = treeDb.AddItem(AllKey, "<b>" & AdminContext.AllDatabasesCaption & "</b>",
                                                                   Nothing, Nothing, Nothing, Nothing, AllKey, True)
-        k_root.HasCheckBox = True
         Dim k_select As AdvancedTreeControl.TreeItem = k_root
         For Each k_db As DatabaseInfo In _context.Databases
             Dim k_right As String = k_db.Name
             If k_db.SyncPending > 0 Then k_right = "schemă: " & k_db.SyncPending.ToString(CultureInfo.InvariantCulture) & "  " & k_right
             Dim k_item As AdvancedTreeControl.TreeItem = treeDb.AddItem(DbKey(k_db.Db), k_db.Db & "~~~" & k_right, k_root,
                                                                       Nothing, Nothing, Nothing, DbTagPrefix & k_db.Db)
-            k_item.HasCheckBox = True
             DescribeNode(k_item, k_db)
             Dim k_isChosen As Boolean = String.Equals(k_db.Db, _context.SelectedDb, StringComparison.OrdinalIgnoreCase)
             If k_isChosen Then k_select = k_item
@@ -459,7 +452,6 @@ Public Class MainForm
                 Dim k_extra As String = If(k_link.Roles.Count > 0, "  +" & k_link.Roles.Count.ToString(CultureInfo.InvariantCulture), String.Empty)
                 Dim k_leaf As AdvancedTreeControl.TreeItem = treeDb.AddItem(AccountKey(k_db.Db, k_link.Un), k_link.Un & "~~~" & k_link.Rol & k_extra, k_item,
                                                                           Nothing, Nothing, Nothing, AccountTagPrefix & k_db.Db & "|" & k_link.Un)
-                k_leaf.HasCheckBox = True
                 If k_isChosen AndAlso _context.SelectedAccount <> String.Empty AndAlso
                    String.Equals(k_link.Un, _context.SelectedAccount, StringComparison.OrdinalIgnoreCase) Then k_select = k_leaf
             Next
@@ -482,7 +474,6 @@ Public Class MainForm
             Dim k_user As AdvancedTreeControl.TreeItem = treeDb.AddItem(UserTagPrefix & k_group.Key, k_group.Key & "~~~" & k_links.Count.ToString(CultureInfo.InvariantCulture) & " baze",
                                                                       Nothing, Nothing, Nothing, Nothing, UserTagPrefix & k_group.Key,
                                                                       k_open.Contains(UserTagPrefix & k_group.Key))
-            k_user.HasCheckBox = True
             Dim k_isChosenUser As Boolean = _context.SelectedAccount <> String.Empty AndAlso
                                             String.Equals(k_group.Key, _context.SelectedAccount, StringComparison.OrdinalIgnoreCase)
             If k_isChosenUser AndAlso _context.SelectedDb = String.Empty Then k_select = k_user
@@ -490,7 +481,7 @@ Public Class MainForm
                 Dim k_extra As String = If(k_link.Roles.Count > 0, "  +" & k_link.Roles.Count.ToString(CultureInfo.InvariantCulture), String.Empty)
                 Dim k_leaf As AdvancedTreeControl.TreeItem = treeDb.AddItem(AccountKey(k_link.Dc, k_link.Un), k_link.Dc & "~~~" & k_link.Rol & k_extra, k_user,
                                                                           Nothing, Nothing, Nothing, AccountTagPrefix & k_link.Dc & "|" & k_link.Un)
-                k_leaf.HasCheckBox = True
+                k_leaf.SearchExtra = k_known(k_link.Dc).Name   ' the user view finds a database by its name too (the code is in the caption)
                 DescribeNode(k_leaf, k_known(k_link.Dc))
                 If k_isChosenUser AndAlso String.Equals(k_link.Dc, _context.SelectedDb, StringComparison.OrdinalIgnoreCase) Then k_select = k_leaf
             Next
@@ -536,49 +527,6 @@ Public Class MainForm
         Return k_open
     End Function
 
-    ''' <summary>The tags of the ticked rows that have no rows under them; ticking these again rebuilds every tick above them.</summary>
-    Private Function CheckedLeaves() As HashSet(Of String)
-        Dim k_set As New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
-        For Each k_node As AdvancedTreeControl.TreeItem In AllNodes(treeDb.Items)
-            If k_node.Children.Count = 0 AndAlso k_node.CheckState = AdvancedTreeControl.TreeCheckState.Checked Then
-                k_set.Add(Convert.ToString(k_node.Tag, CultureInfo.InvariantCulture))
-            End If
-        Next
-        Return k_set
-    End Function
-
-    ''' <summary>
-    ''' Tells the context which databases and accounts are ticked (a ticked row; in the user view a ticked database leaf is a database, in the
-    ''' database view a ticked account leaf is an account), and brings the «select all» tick in line with the tree.
-    ''' </summary>
-    Private Sub PublishChecks()
-        Dim k_dbs As New List(Of String)()
-        Dim k_accounts As New List(Of String)()
-        For Each k_node As AdvancedTreeControl.TreeItem In AllNodes(treeDb.Items)
-            If k_node.CheckState <> AdvancedTreeControl.TreeCheckState.Checked Then Continue For
-            Dim k_tag As String = Convert.ToString(k_node.Tag, CultureInfo.InvariantCulture)
-            If k_tag.StartsWith(DbTagPrefix, StringComparison.Ordinal) Then
-                k_dbs.Add(k_tag.Substring(DbTagPrefix.Length))
-            ElseIf k_tag.StartsWith(UserTagPrefix, StringComparison.Ordinal) Then
-                k_accounts.Add(k_tag.Substring(UserTagPrefix.Length))
-            ElseIf k_tag.StartsWith(AccountTagPrefix, StringComparison.Ordinal) Then
-                Dim k_parts As String() = k_tag.Substring(AccountTagPrefix.Length).Split({"|"c}, 2)
-                If k_parts.Length = 2 Then
-                    If _byUser Then k_dbs.Add(k_parts(0)) Else k_accounts.Add(k_parts(1))
-                End If
-            End If
-        Next
-        _context.CheckedDatabases = k_dbs.Distinct(StringComparer.OrdinalIgnoreCase).ToList()
-        _context.CheckedAccounts = k_accounts.Distinct(StringComparer.OrdinalIgnoreCase).ToList()
-        Dim k_all As Boolean = treeDb.Items.Count > 0 AndAlso treeDb.Items.All(Function(k_i) k_i.CheckState = AdvancedTreeControl.TreeCheckState.Checked)
-        _syncingAll = True
-        Try
-            chkAll.Checked = k_all
-        Finally
-            _syncingAll = False
-        End Try
-    End Sub
-
     Private Sub NavMode_SelectionChanged(k_key As String) Handles navMode.SelectionChanged
         Try
             Dim k_byUser As Boolean = String.Equals(k_key, "utilizatori", StringComparison.Ordinal)
@@ -588,27 +536,6 @@ Public Class MainForm
             BuildDbTree()
         Catch ex As Exception
             GlobalErrorLog.Write("MainForm.NavMode_SelectionChanged", ex)
-        End Try
-    End Sub
-
-    Private Sub TreeDb_NodeChecked(k_node As AdvancedTreeControl.TreeItem) Handles treeDb.NodeChecked
-        Try
-            PublishChecks()
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.TreeDb_NodeChecked", ex)
-        End Try
-    End Sub
-
-    Private Sub ChkAll_CheckedChanged(k_sender As Object, e As EventArgs) Handles chkAll.CheckedChanged
-        Try
-            If _syncingAll Then Return
-            Dim k_state As AdvancedTreeControl.TreeCheckState = If(chkAll.Checked, AdvancedTreeControl.TreeCheckState.Checked, AdvancedTreeControl.TreeCheckState.Unchecked)
-            For Each k_root As AdvancedTreeControl.TreeItem In treeDb.Items.ToList()
-                treeDb.SetItemCheckState(k_root, k_state)   ' the state goes down to every row under it
-            Next
-            PublishChecks()
-        Catch ex As Exception
-            GlobalErrorLog.Write("MainForm.ChkAll_CheckedChanged", ex)
         End Try
     End Sub
 

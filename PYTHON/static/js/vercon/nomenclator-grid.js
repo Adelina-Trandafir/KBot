@@ -1,6 +1,7 @@
 import { confirmBox, pickBox } from '../utils/confirm-box.js';
 import { el, scope, column, grid, rowMenu, openMenu, showMessage } from './ui.js';
 import { decimalText } from './decimal-text.js';
+import { debounced, effectiveSearchText } from './search-settings.js';
 import { mountProducts } from './product-nomenclator.js';
 import { ActionAddButton } from '../components/action-add-button/action-add-button.js';
 
@@ -311,7 +312,13 @@ function mountCrud(host, opts) {
     if (state.selected != null && !rows.some((row) => row.__key === state.selected)) await choose(null);
     else if (state.selected != null) dataGrid?.selectRow(state.selected);
   }
-  search.addEventListener('input', () => { state.filter = search.value.trim().toLocaleLowerCase('ro'); void refreshVisible().catch(report); });
+  // The list is filtered after a pause in typing, and only once the text has the minimum characters (spaces not counted).
+  const applySearch = debounced(() => {
+    const next = effectiveSearchText(search.value).toLocaleLowerCase('ro');
+    if (disposed || next === state.filter) return;
+    state.filter = next; void refreshVisible().catch(report);
+  });
+  search.addEventListener('input', applySearch);
   filterButton.addEventListener('click', async () => {
     if (!await commit()) return;
     if (opts.productVisibility) {
@@ -346,7 +353,7 @@ function mountCrud(host, opts) {
   }
   return { load, selected, setValue, commit, commitCell: () => ui.commit(), isDirty: dirty, allowDiscard, discard,
     search: (value) => { search.value = value; state.filter = value.trim().toLocaleLowerCase('ro'); void refreshVisible().catch(report); },
-    destroy: () => { disposed = true; ++generation; ++statementGeneration; addControl?.destroy(); ui.clear(); host.replaceChildren(); } };
+    destroy: () => { disposed = true; applySearch.cancel(); ++generation; ++statementGeneration; addControl?.destroy(); ui.clear(); host.replaceChildren(); } };
 }
 
 export function mountNomenclator(host, opts) {

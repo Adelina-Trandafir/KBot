@@ -447,6 +447,7 @@ Public Class KBotDataView
 
     ''' <summary>Golește toate rândurile (și selecția).</summary>
     Public Sub ClearRows()
+        If CellTooltipTableProvider IsNot Nothing Then CancelCellTooltip()
         _rows.Clear()
         _currentRowIndex = -1
         RecomputeDerived()

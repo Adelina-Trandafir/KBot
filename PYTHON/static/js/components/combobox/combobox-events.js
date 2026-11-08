@@ -98,7 +98,7 @@ export const comboboxEventsMixin = {
       this.renderResults('');
       this.show();
     } else if (this.options.onSearch) {
-      return this.performSearch('').then(() => { if (this.isVisible) { this.highlightCurrent(); this.updateHighlight(); } });
+      return this.performSearch('', true).then(() => { if (this.isVisible) { this.highlightCurrent(); this.updateHighlight(); } });
     } else {
       console.warn('⚠️ Nu există date pentru readonly combobox');
       this.hide();

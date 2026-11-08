@@ -90,8 +90,8 @@ Public NotInheritable Class KBotCalendarPopup
     ''' <summary>
     ''' Opens the calendar under a rectangle INSIDE <paramref name="anchor"/> (client coordinates)
     ''' — the drop-down button of the field, which is painted, not a control of its own. When it
-    ''' does not fit below, it flips above the field; when it does not fit to the right, its right
-    ''' edge lines up with the field's.
+    ''' does not fit below, it flips above the field; when the field is wider than the calendar, or
+    ''' the calendar does not fit to the right, its right edge lines up with the field's.
     ''' </summary>
     Public Sub ShowBelow(anchor As Control, anchorRect As Rectangle)
         Try
@@ -113,8 +113,14 @@ Public NotInheritable Class KBotCalendarPopup
             Dim dorit As Size = _calendar.NaturalSize
             Dim wa As Rectangle = Screen.FromPoint(sus).WorkingArea
 
+            ' A field wider than the calendar: the calendar hangs off the field's RIGHT edge, not the
+            ' left one (otherwise it floats in the middle of a wide field). A narrower field keeps
+            ' the left alignment.
+            Dim k_left As Integer = sus.X
+            If anchorRect.Width > dorit.Width Then k_left = sus.X + anchorRect.Width - dorit.Width
+
             Bounds = CustomPopup.FitToWorkArea(dorit,
-                                               New Point(sus.X, sus.Y + anchorRect.Height),
+                                               New Point(k_left, sus.Y + anchorRect.Height),
                                                sus.X + anchorRect.Width, sus.Y, wa)
 
             Owner = anchor.FindForm()

@@ -64,7 +64,6 @@ Partial Class PlanContSolduriView
         ' gridSolduri
         ' 
         gridSolduri.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridSolduri.BackColor = SystemColors.Window
         gridSolduri.ColumnFillMode = KBotFillMode.FirstColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing
@@ -135,8 +134,6 @@ Partial Class PlanContSolduriView
         gridSolduri.Dock = DockStyle.Fill
         gridSolduri.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
         gridSolduri.FooterVisible = False
-        gridSolduri.HeaderHeight = 28
-        gridSolduri.HeaderSeparatorColor = SystemColors.ActiveBorder
         gridSolduri.Margin = New Padding(0)
         gridSolduri.Name = "gridSolduri"
         gridSolduri.RowHeight = 28

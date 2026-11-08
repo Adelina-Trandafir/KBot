@@ -1,0 +1,22 @@
+# SLICE-0126-05 - Clasificatii: angajamente, buget si rectificari citite o data si tinute in memorie; anunt de modificari (07.11.2026)
+
+Operator, 07.11.2026: la fiecare clic pe o clasificatie se asteapta serverul dupa angajamente; sa se aduca TOATE la deschiderea ferestrei si sa se lege din memorie la clic; la fel pentru buget si rectificari; si un sistem prin care fereastra afla ca s-au schimbat bugetul, receptiile, angajamentele si isi innoieste memoria. Numar de felie: urmatorul liber din 0126; de confirmat.
+
+## What changed and why
+1. **Memoria ferestrei (pagina Cheltuieli, `ClasificatiiBugetView`).** La deschidere (dupa arbore) se citesc, in fundal: bugetul si rectificarile TUTUROR clasificatiilor anului (`GetAllBudgetsAsync`) si angajamentele TUTUROR clasificatiilor (`GetAllClasificatiiAngajamenteAsync`). Un clic pe o frunza ia bugetul din `_budgetCache`; un clic pe un nod ia sumarul din `_summaryById` (nu mai cheama `GetBudgetSummaryAsync`); angajamentele vin din `_angByClsf`. In primele clipe tabelul «Angajamente» scrie «se incarca…» si se umple cand soseste citirea. Daca citirea nu reuseste (de ex. server mai vechi), clicul intreaba serverul ca pana acum.
+2. **Server (`PYTHON/routes/forexe/clasificatii_edit.py`):** `POST …/clasificatii/angajamente` primeste si `{"all": true}` si intoarce fiecare rand cu `id_clsf`; ruta noua `GET …/clasificatii/buget-toate?an=` (doua interogari: toate versiunile de buget si toate rectificarile anului). Rutele vechi nu se schimba. **De pus pe server de operator** (nu am deployat nimic).
+3. **Anunt de modificari:** `KBot.Common/DataChangeBus.vb` (`DataKinds`: Buget, Angajamente, Rezervari, Receptii, Plati; eveniment `Changed`; `Classify(path)` care spune din ruta ce a atins o scriere). Il ridica `ServerGateHandler` (locul prin care trece orice cerere, si cele ale robotului) dupa o scriere reusita. Reguli: salvarea bugetului (cu id-ul clasificatiei) → Buget; `angajamente/upsert` si `prelucrare` → toate cele patru; `asociere` → Rezervari/Receptii/Plati; `rezervari/*`, `ddf/save`, `ddf/rev/*`, stergerea unui DDF → Rezervari; `receptii/*` → Receptii; `ord/save`, stergere ordonantare, `ord/genereaza-din-receptie`, `ord/leaga-*`, `extrase/import` → Plati.
+4. **Reinnoirea:** fereastra asculta `DataChangeBus` (marshalling pe firul ecranului); marcheaza ce e vechi si reciteste in fundal. O rafala de scrieri costa citirea in curs plus inca una (fara timer: `_stale` + `_cacheLoading`). Dupa reinnoire se refac sumarele, cifrele din arbore, lista clasificatiilor cu miscare si ecranul: grila de angajamente se rescrie (e doar de citit); bugetul clasificatiei deschise se rescrie DOAR daca s-a schimbat (semnatura `Signature`) si nu are modificari nescrise; altfel linia de jos spune ca s-a schimbat in alta parte. Propria salvare pune direct in memorie rezultatul (ecoul ei, semnatura egala, nu rescrie nimic).
+
+## Files touched
+`PYTHON/routes/forexe/clasificatii_edit.py`; `src/KBot.Common/DataChangeBus.vb` (nou); `src/KBot.Api/ServerGateHandler.vb`, `INomenclatoareApi.vb`, `ApiClient.Nomenclatoare.vb`; `src/KBot.Domain/Nomenclatoare.vb` (`ClasificatieAngajament.IdClsf`); `src/KBot.App/KBotForm/Views/Nomenclatoare/ClasificatiiBugetView.vb`; ajutor `HelpContent/contabil/nomenclatoare/clasificatii.md`; status. FileVersion nebumpat.
+
+## Test results
+`py_compile` pe `clasificatii_edit.py`: verde. Compilare `KBot.App` si `KBot.Api` (Debug, in alt director de iesire, fiindca aplicatia ruleaza): 0 erori, 0 avertismente. Nimic rulat, nici un test.
+
+## Unverified / deferred
+- **Nevazut pe ecran, rutele noi nedeployate**; pana la deploy, fereastra merge ca inainte (citirea «toate» esueaza, se logheaza, clicurile intreaba serverul).
+- Interogarea «toate angajamentele» are subinterogari corelate pe fiecare indicator din baza; pe o baza mare citirea de la deschidere poate dura (o singura data, in fundal). De masurat pe server.
+- Anuntul vede doar scrierile facute DIN acest program (si ale robotului lui); schimbarile altui PC nu se vad pana la redeschiderea ferestrei. Rutele de scriere care nu au regula in `DataChangeBus.Classify` nu anunta nimic: o regula noua se adauga acolo.
+- Pagina **Venituri** nu are memorie (nu s-a cerut). `Classify` e functie pura, dar nu are test (regula proiectului).
+- Un POST care doar citeste, dar are un nume din reguli, costa o reimprospatare in plus, niciodata un ecran gresit; rutele cu care memoria insasi citeste nu se potrivesc cu nicio regula (altfel ar porni una pe alta).

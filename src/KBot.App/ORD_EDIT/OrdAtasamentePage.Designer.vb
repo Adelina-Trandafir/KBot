@@ -146,14 +146,12 @@ Partial Class OrdAtasamentePage
         ' grdBene
         ' 
         grdBene.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        grdBene.BackColor = SystemColors.Window
         grdBene.ColumnFillMode = KBotFillMode.FirstColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn1.CellPadding = New Padding(4, 0, 4, 0)
         KBotDataColumn1.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
-        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.HeaderText = "Beneficiari"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn1.Key = "eticheta"
@@ -164,9 +162,6 @@ Partial Class OrdAtasamentePage
         grdBene.Columns.Add(KBotDataColumn1)
         grdBene.Dock = DockStyle.Fill
         grdBene.FillColumnKey = "eticheta"
-        grdBene.HeaderBackColor = SystemColors.Control
-        grdBene.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        grdBene.HeaderSeparatorColor = SystemColors.ActiveBorder
         grdBene.Location = New Point(10, 0)
         grdBene.Margin = New Padding(0)
         grdBene.Name = "grdBene"
@@ -219,14 +214,12 @@ Partial Class OrdAtasamentePage
         ' grdAtasamente
         ' 
         grdAtasamente.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        grdAtasamente.BackColor = SystemColors.Window
         grdAtasamente.ColumnFillMode = KBotFillMode.FirstColumn
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn2.CellPadding = New Padding(4, 0, 4, 0)
         KBotDataColumn2.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.HeaderText = "Nume fișier"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn2.Key = "nume_fisier"
@@ -238,7 +231,6 @@ Partial Class OrdAtasamentePage
         KBotDataColumn3.CellPadding = New Padding(4, 0, 4, 0)
         KBotDataColumn3.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.FormatString = Nothing
-        KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.HeaderText = "Stare"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "stare"
@@ -252,9 +244,6 @@ Partial Class OrdAtasamentePage
         tlyLista.SetColumnSpan(grdAtasamente, 3)
         grdAtasamente.Dock = DockStyle.Fill
         grdAtasamente.FillColumnKey = "nume_fisier"
-        grdAtasamente.HeaderBackColor = SystemColors.Control
-        grdAtasamente.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        grdAtasamente.HeaderSeparatorColor = SystemColors.ActiveBorder
         grdAtasamente.Location = New Point(0, 0)
         grdAtasamente.Margin = New Padding(0)
         grdAtasamente.Name = "grdAtasamente"

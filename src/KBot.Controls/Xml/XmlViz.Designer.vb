@@ -55,7 +55,6 @@ Partial Class XmlViz
         '
         ' tree
         '
-        tree.BorderColor = Drawing.SystemColors.ActiveBorder
         tree.Dock = System.Windows.Forms.DockStyle.Fill
         tree.DynamicColumns = False
         tree.ExpanderSize = 10

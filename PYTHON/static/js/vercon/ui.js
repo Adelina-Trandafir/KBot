@@ -11,6 +11,7 @@ import { snapshotPdf } from './snapshot-pdf.js';
 import { openPdfReport } from './pdf-preview.js';
 import { parse, format } from './fields.js';
 import { createReportHeader, reportHeading } from './report-header.js';
+import { searchOptions } from './search-settings.js';
 export { statusBar } from './status-bar.js';
 
 export { DataGrid, ValueType, TreeView, Combobox, DatePicker, TextBox, CheckBox, openMenu, closeMenu, showMessage };
@@ -76,7 +77,7 @@ export function field(column, value, editable, onChange, owner) {
     const host = el('div', { className: 'vc-field__combo' }); label.append(host, source);
     const items = () => (typeof column.options === 'function' ? column.options() : column.options || [])
       .map((item) => ({ value: String(item.value ?? item.id), label: item.label }));
-    const combo = owner.own(new Combobox(host, { placeholder: column.placeholder || 'Alegeți…', dropDownStyle: column.dropDownStyle, dropDownOnEnter: column.dropDownOnEnter, maxResults: column.maxResults, dropDownMinWidth: column.dropDownMinWidth, showArrow: column.showArrow,
+    const combo = owner.own(new Combobox(host, { placeholder: column.placeholder || 'Alegeți…', dropDownStyle: column.dropDownStyle, dropDownOnEnter: column.dropDownOnEnter, maxResults: column.maxResults, dropDownMinWidth: column.dropDownMinWidth, showArrow: column.showArrow, ...searchOptions(),
       onSearch: async (query) => items().filter((item) => item.label.toLocaleLowerCase('ro').includes(query.toLocaleLowerCase('ro'))),
       onSelect: (id) => { combo._pendingSelection = false; source.value = id; source.dispatchEvent(new Event('change', { bubbles: true })); } }));
     combo.setValue(source.value, items().find((item) => item.value === source.value)?.label || column.fallback || ''); combo.setEnabled(editable);
@@ -119,6 +120,7 @@ export function column(spec, extras = {}) {
 export function grid(host, options, owner) {
   host.classList.add('vc-dgv');
   const instance = new DataGrid(host, { rowHeight: 30, headerHeight: 30, autoSize: false, enableGrouping: false,
+    filterSearch: { minLength: 3, debounceMs: 300, resetSelection: true },
     theme: document.documentElement.dataset.theme === 'dark' ? 'dark' : 'modern', ...options,
     columns: options.columns.map((item) => ({ width: 120, ...item })) });
   owner?.own(instance); return instance;
@@ -126,7 +128,7 @@ export function grid(host, options, owner) {
 export function paintTree(host, nodes, { selected, onSelect, onAction, onToggle, exclusiveRoots = false, autoCollapse = false, title = 'Documente salvate', checkable = false, onCheckChange, branchChecks = false, showSearchBox = true, collapsed = false, expandRoots = false } = {}, owner) {
   host.replaceChildren();
   const body = el('div', { className: 'vc-tree-body' }); host.append(el('h4', { textContent: title }), body);
-  const tree = new TreeView(body, { inline: true, incrementalRender: true, autoCollapse, autoResize: false, indent: 14, checkable, onCheckChange, branchChecks, showSearchBox, onToggle, exclusiveRoots,
+  const tree = new TreeView(body, { inline: true, incrementalRender: true, autoCollapse, autoResize: false, indent: 14, checkable, onCheckChange, branchChecks, showSearchBox, onToggle, exclusiveRoots, ...searchOptions(),
     onSelect: (selection) => { if (String(selection.id).startsWith('doc:')) onSelect?.(String(selection.id).slice(4)); } });
   owner?.own(() => { if (collapsed) host._vcExpanded = new Set(tree.expandedNodes); tree.destroy(); });
   tree.setData(nodes);

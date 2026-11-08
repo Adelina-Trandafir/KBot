@@ -23,5 +23,12 @@ Plățile (și încasările) angajamentului.
   ordonanțare din plățile ei; pe o lună face câte una pentru fiecare zi a lunii,
   după ce confirmi, fără mesaj la sfârșit — [Ordonanțări noi](topic:contabil.ord.generare).
 
+### Plată legată de o ordonanțare făcută din recepție
+<!-- slice: 02EF-13, 0000-169 -->
+
+Când o ordonanțare a fost făcută din **recepție** (butonul «Generează ordonanțarea» din vederea «Recepții» a facturilor primite), plata nu exista încă. Când plata ajunge din extrasul bancar, K-BOT o leagă **singur** de rândul ordonanțării dacă se potrivesc **angajamentul, indicatorul, codul fiscal al beneficiarului și suma** (plata nu depășește ce mai are rândul; o plată mai mică lasă restul rândului pentru plata următoare). O plată legată nu mai e socotită neordonanțată și nu mai e propusă pentru o ordonanțare nouă.
+
+Dacă legarea automată nu a prins plata, alege-o în grilă și apasă **«Leagă de ordonanțare»** din ribbon (grupul **«Plăți»**, în dreapta): un meniu îți arată ordonanțările în care plata are loc, cu numărul, data, beneficiarul și cât mai e liber; alegi una. Butonul e aprins numai pe o plată neordonanțată.
+
 Căutarea în arbore (lupa), pâlniile coloanelor și rândul **TOTALURI** se folosesc ca peste tot —
 [Arborii și tabelele](topic:contabil.liste).

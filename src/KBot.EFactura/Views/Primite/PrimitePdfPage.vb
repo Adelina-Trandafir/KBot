@@ -13,7 +13,7 @@ Imports KBot.Theming
 ''' <summary>
 ''' The view «Factură PDF» of a received invoice: a horizontal bar over one document area. «Factură clasică» = the invoice K-BOT draws
 ''' from what it stores, «Factură ANAF» = the one ANAF's service draws from the XML, «Atașamente» = a popup with the NAMES of the files
-''' embedded in the invoice; the one chosen opens in the same area (a PDF in the embedded viewer, an image in a picture box).
+''' embedded in the invoice; the one chosen opens in the same area (a PDF in the embedded viewer, an image in the attachment panel).
 '''
 ''' <para>The page does not decide WHAT to fetch: it raises <see cref="ModeChanged"/> / <see cref="AttachmentChosen"/> and
 ''' <see cref="PrimiteView"/> prepares the file and calls <see cref="ShowDocument"/> / <see cref="ShowImage"/> / <see cref="ShowNotice"/>.</para>
@@ -103,8 +103,8 @@ Public Class PrimitePdfPage
                     k_image = New Bitmap(k_original)
                 End Using
             End Using
-            Dim k_old As Image = picAtas.Image
-            picAtas.Image = k_image
+            Dim k_old As Image = picAtas.BackgroundImage
+            picAtas.BackgroundImage = k_image
             k_old?.Dispose()
             pgViewer.ReleaseDocument()
             pgViewer.Visible = False
@@ -119,8 +119,8 @@ Public Class PrimitePdfPage
     Public Sub ReleaseDocument()
         Stamp = Nothing
         pgViewer.ReleaseDocument()
-        Dim k_old As Image = picAtas.Image
-        picAtas.Image = Nothing
+        Dim k_old As Image = picAtas.BackgroundImage
+        picAtas.BackgroundImage = Nothing
         k_old?.Dispose()
     End Sub
 

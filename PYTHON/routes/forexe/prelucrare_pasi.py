@@ -1669,6 +1669,12 @@ def step5_plati_incasari(cursor, cod: str, indicatori: Dict[str, dict],
         dedup.add(id_trezor)
         scrise += 1
 
+    # Slice 02EF-13: a new payment may belong to an ordonantare made from a reception (its statement row may already be here).
+    # Additive and protected: a failure is a warning, never a stop of the import.
+    if scrise:
+        from .ord_receptie_plati import leaga_automat_protejat  # lazy: the package must be fully loaded first
+        leaga_automat_protejat(cursor, cod, warnings)
+
     return scrise, are_plati, are_incasari
 
 

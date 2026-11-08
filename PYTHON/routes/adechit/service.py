@@ -6,6 +6,7 @@ import re
 from calendar import monthrange
 from datetime import date, datetime
 from decimal import Decimal
+from unicodedata import normalize
 from .calculations import calculate, active, total
 from .domain import SCHEMA, EDITABLE, require, nz, access_long, update_situation, DomainError, validate_cnp
 
@@ -333,7 +334,21 @@ def emit_document(repo, db_name, body):
             explanation = (body.get('explanation') or '').strip() or receipt_explanation(config, month)
             require(bool(explanation.strip()), 'EXPLANATION', 'Explicația chitanței este obligatorie.', 400)
         else:
-            require(bool(body.get('number')), 'DOCUMENT', 'Completați numărul documentului.', 400)
+            number = body.get('number')
+            require(isinstance(number, str), 'DOCUMENT_NUMBER_REQUIRED',
+                    'Completați numărul documentului. Salvarea fără număr nu este permisă.', 400)
+            number = number.strip()
+            label = ' '.join(normalize('NFKD', number).encode('ascii', 'ignore').decode().casefold().split())
+            require(bool(number) and label != 'fara numar', 'DOCUMENT_NUMBER_REQUIRED',
+                    'Completați numărul documentului. Salvarea fără număr nu este permisă.', 400)
+            number = validate_values('AlteDoc', {'NrDoc': number})['NrDoc']
+            year = int(day[:4])
+            # The existing subunit lock serializes writes; use a current read after waiting for it.
+            used = repo.query('SELECT IDA FROM AD_AlteDoc WHERE SubunitId=%s '
+                              'AND LOWER(TRIM(NrDoc))=LOWER(%s) AND DataDoc>=%s AND DataDoc<%s LIMIT 1 FOR UPDATE',
+                              (repo.scope(), number, f'{year:04d}-01-01', f'{year + 1:04d}-01-01'))
+            require(not used, 'DOCUMENT_NUMBER_USED',
+                    f'Numărul {number} este deja folosit în Alte plăți în anul calendaristic {year}, în subunitatea curentă. Introduceți un număr diferit.')
         payment = repo.insert('Plati', {**links, **provenance, 'Plata': amount,
                               'TIP': 2 if kind == 'receipt' else 1, 'Anulata': False, 'Valid': True})
         if config:
@@ -342,7 +357,7 @@ def emit_document(repo, db_name, body):
             document = {**document, 'Valoare': amount}  # the amount lives on the payment; the response still shows it
             repo.execute('UPDATE AD_ReceiptConfig SET Numar=Numar+1, Version=Version+1 WHERE SubunitId=%s', (repo.scope(),))
         else:
-            document = repo.insert('AlteDoc', validate_values('AlteDoc', {'IDPL': payment['IDPL'], 'NrDoc': body['number'],
+            document = repo.insert('AlteDoc', validate_values('AlteDoc', {'IDPL': payment['IDPL'], 'NrDoc': number,
                        'DataDoc': day, 'IDL': month['IDL'], 'Anulata': False,
                        'Explicatie': (body.get('explanation') or '').strip() or None}))
     if month['Inchisa']:

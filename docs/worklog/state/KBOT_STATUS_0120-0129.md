@@ -133,8 +133,14 @@ Operator, 30.10.2026, fereastra «Clasificații cheltuieli».
 | Slice | Name | Status | Worklog |
 |------:|------|--------|---------|
 | 0126-01 | Rând gol de adăugare în tabelele de buget și rectificări (3 și 6 rânduri fără derulare), totalul final în arbore (`~~~` a treia parte, aliniat la dreapta, fără zecimale), rândul de total cu culoarea subsolului, tabel nou «Angajamente» (rută `POST …/clasificatii/angajamente`) | GATA pe cod (build Debug 0 erori / 0 avertismente, `py_compile` verde); **nevăzut pe ecran, rută nedeployată, nimic rulat** | [0126-01](../SLICE-0126-01-clasificatii-randuri-goale-totaluri-angajamente.md) |
+| 0126-03 | «Salvează», «Verifică bugetul», «Trimite în Access» mutate în ribbon (grupul din dreapta, `ClasificatiiForm` implementează `IViewRibbon`; cheile `clasificatii_*` în `AvacontMain`), banda de jos doar cu linia de stare, rectificări 6 → 2 rânduri ca «Angajamente» să încapă 3 rânduri fără bară; ajutor `0126-03` (cererea operatorului, 07.11.2026) | GATA pe cod (build Debug 0 erori / 0 avertismente); **nevăzut pe ecran, nimic rulat**; pagina Venituri mutată și ea (+ «Șterge clasificația») | [0126-03](../SLICE-0126-03-clasificatii-butoane-in-ribbon.md) |
+| 0126-04 | Bifele arborelui mutate într-un popup al iconiței din dreapta a antetului; arborii din Clasificații (Cheltuieli și Venituri): culorile de căutare fixate scoase, chenar în culoarea tabelelor (`ClasificatiiTreeStyle`); ajutor `0126-04` (cererea operatorului, 07.11.2026) | GATA pe cod (compilare 0 erori / 0 avertismente); **nevăzut pe ecran, nimic rulat** | [0126-04](../SLICE-0126-04-clasificatii-filtre-in-antet-chenar-arbori.md) |
+| 0126-05 | Memoria ferestrei Clasificații: bugetul, rectificările și angajamentele tuturor clasificațiilor citite o dată la deschidere, legate din memorie la clic; `DataChangeBus` anunță scrierile (buget, angajamente, rezervări, recepții, plăți) și fereastra își reîmprospătează memoria; rută nouă `buget-toate` + `{"all": true}` pe `angajamente` (cererea operatorului, 07.11.2026) | GATA pe cod (compilare 0 erori / 0 avertismente, `py_compile` verde); **nevăzut pe ecran, rutele nedeployate, nimic rulat** | [0126-05](../SLICE-0126-05-clasificatii-memorie-si-anunt-modificari.md) |
+| 0126-06 | Titlurile de deasupra tabelelor (buget, rectificări, angajamente) mutate în antetul primei coloane; etichetele scoase din formular, și la Cheltuieli, și la Venituri (cererea operatorului, 07.11.2026) | GATA pe cod (compilare 0 erori / 0 avertismente); **nevăzut pe ecran** | [0126-06](../SLICE-0126-06-clasificatii-titluri-in-antet.md) |
 
 ### Open threads — 0126
+
+- 0126-03: numărul de felie ales de mine (următorul liber din 0126); operatorul de confirmat. De văzut pe ecran: butoanele din ribbon (pictogramele alese de mine), «Angajamente» cu 3 rânduri fără bară la 100 / 125 / 150%. Idem pentru pagina Venituri.
 
 - Numărul de felie ales de mine (primul liber); operatorul de confirmat.
 - Interpretare: 3 și 6 sunt rânduri cu date, rândul gol vine în plus; două constante de schimbat dacă nu.
@@ -158,3 +164,37 @@ Operator, 04.11.2026, numărul ales de el («ultimul disponibil»). Doar modul L
 - De confirmat: motive diferite la indicatori diferiți ai aceleiași revizii apar împreună cu codul indicatorului, separate prin « | ».
 - Rezervările făcute altfel decât în modul Lucru (robot, FOREXE în alt browser) nu au motiv păstrat; revizia primește tipul operației, ca până acum.
 - Nu s-a rulat `tools\Register-DeploymentTask.ps1`: se face doar după ce Adelina confirmă testul (fișierele py + sql sunt cele care ajung pe server).
+
+---
+
+## Slice 0128 — E-Factura: vederea «Recepții» a facturii primite
+
+Operator, 05-06.11.2026: felie nouă cu subfelii, cerută pe loc («slice nou cu subslice-uri»). Vederea «Recepții» din bara de vederi a facturilor primite (fereastra «Facturi primite» și vederea «E-Factura» a unui angajament).
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0128-01 | Așezarea la prima afișare: bara «Recepție nouă / Recepții existente» își recalculează butoanele când devine vizibilă; formularul incorporat refă layoutul; decalajul spre dreapta (prima coloană scrisă de mână în `ColumnStyles`, citită înapoi ca lățimea copilului ascuns) reparat cu `SetColumnWidth` + `SetColumnCollapsed` | GATA pe cod (build 0/0); văzut pe ecran de operator la 06.11.2026; cauza decalajului dedusă din cod | [0128-01](../SLICE-0128-01-receptii-prima-afisare-si-decalaj.md) |
+| 0128-03 | Butonul «Creează recepția» / «Leagă» / «Modifică recepția» în grupul din dreapta al ribbon-ului, doar cât vederea e pe ecran; scos din subsol | GATA pe cod (build 0/0); nicio recepție reală făcută din ribbon | [0128-03](../SLICE-0128-03-receptii-buton-in-ribbon.md) |
+
+### Open threads — 0128
+
+- Nevăzut: rolul «Director» (butonul din ribbon nu e în `RibbonKeys`), textul butonului pe fiecare mod.
+- `FileVersion` neridicat (se ridică la publicare); nimic în `NOUTATI.md` (se scrie la publicare).
+- Nu s-a rulat `toolsRegister-DeploymentTask.ps1`: nu s-a atins niciun fișier care ajunge pe server.
+
+---
+
+## Slice 0129 — Culorile ferestrelor, grilelor și arborilor vin din temă
+
+Operator, 07.11.2026: fundal view/formă = «Control», fundal controale = «Window», chenar = «Active Border»; valorile sunt cele din Classic, dar trebuie să se schimbe cu tema.
+
+| Slice | Name | Status | Worklog |
+|------:|------|--------|---------|
+| 0129-01 | 137 de linii `BackColor` / `BorderColor` fixate pe `SystemColors` (Window, ActiveBorder, Control) sau pe alb / WhiteSmoke scoase din 70 de `.Designer.vb`; controalele revin la «din temă» | GATA pe cod (build 0/0); nimic văzut pe ecran; ajutor 0000-166 | [0129-01](../SLICE-0129-01-culori-din-tema-in-designere.md) |
+
+### Open threads — 0129
+
+- Aspectul în Classic / Modern / Dark / Colorful nu a fost comparat pe ecran.
+- `pnlHeader` din `SumarView` și `KbotForm` rămâne `Window` fixat (de hotărât dacă urmează tema).
+- Culorile fixate direct în cod `.vb` (nu în designere) nu au fost căutate.
+- `FileVersion` neridicat; nimic în `NOUTATI.md`; nu s-a atins niciun fișier care ajunge pe server.

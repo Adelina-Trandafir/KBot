@@ -22,7 +22,7 @@ Partial Public Class AdvancedTreeControl
         p.Dispose()
     End Sub
 
-    Partial Private Class TooltipPopup
+    Partial Friend Class TooltipPopup
 
         ' Plafon minim pentru o coloană auto strânsă (loc de "…").
         Private Const MIN_AUTO_COL_WIDTH As Integer = 24
@@ -36,6 +36,30 @@ Partial Public Class AdvancedTreeControl
         Private _rowHeight As Integer = 0
         Private _tableWidth As Integer = 0      ' fără PADDING_H
         Private _tableHeight As Integer = 0     ' fără PADDING_V (natural, nelimitat)
+        Private _firstTableRow As Integer
+        Private _visibleTableRows As Integer
+
+        Friend Property ScrollableTable As Boolean
+
+        Private Sub SetTableViewport(k_screenHeight As Integer)
+            _firstTableRow = 0
+            _visibleTableRows = _tableModel.Rows.Count
+            If Not ScrollableTable OrElse _rowHeight <= 0 Then Return
+
+            Dim k_bands As Integer = If(_tableModel.HeaderRow Is Nothing, 0, 1) + If(_tableModel.FooterRow Is Nothing, 0, 1)
+            Dim k_rowsOnScreen As Integer = (k_screenHeight - PADDING_V * 2 - SP(SCREEN_EDGE_GAP)) \ _rowHeight - k_bands
+            _visibleTableRows = Math.Min(_visibleTableRows, Math.Max(1, k_rowsOnScreen))
+            _tableHeight = (_visibleTableRows + k_bands) * _rowHeight
+        End Sub
+
+        Friend Function ScrollTable(k_rows As Integer) As Boolean
+            If Not ScrollableTable OrElse Not Visible OrElse Not _isTableMode OrElse _tableModel Is Nothing Then Return False
+            Dim k_lastStart As Integer = _tableModel.Rows.Count - _visibleTableRows
+            If k_lastStart <= 0 Then Return False
+            _firstTableRow = Math.Clamp(_firstTableRow + k_rows, 0, k_lastStart)
+            Invalidate()
+            Return True
+        End Function
 
         ' ====================================================================
         '  MĂSURARE
@@ -143,8 +167,8 @@ Partial Public Class AdvancedTreeControl
 
                         ' ── Rânduri de date ─────────────────────────────────────
                         Dim hasFooter As Boolean = (_tableModel.FooterRow IsNot Nothing)
-                        Dim lastBody As Integer = _tableModel.Rows.Count - 1
-                        For idx As Integer = 0 To lastBody
+                        Dim lastBody As Integer = _firstTableRow + _visibleTableRows - 1
+                        For idx As Integer = _firstTableRow To lastBody
                             Dim r As TtRow = _tableModel.Rows(idx)
                             If Not r.BackColor.IsEmpty Then
                                 Using rb As New SolidBrush(r.BackColor)

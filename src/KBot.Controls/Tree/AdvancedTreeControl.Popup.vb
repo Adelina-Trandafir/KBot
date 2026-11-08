@@ -2,7 +2,7 @@
 Imports System.Runtime.InteropServices
 
 Partial Public Class AdvancedTreeControl
-    Partial Private Class TooltipPopup
+    Partial Friend Class TooltipPopup
         Inherits Form
 
         Private Const SW_SHOWNOACTIVATE As Integer = 4
@@ -166,15 +166,22 @@ Partial Public Class AdvancedTreeControl
                     If TooltipTableParser.TryParse(text, _tableModel, errMsg) Then
                         MeasureTable()
                         Dim formWt As Integer = _tableWidth + PADDING_H * 2
-                        Dim formHnat As Integer = _tableHeight + PADDING_V * 2
                         Dim scr As Screen = Screen.FromPoint(screenPos)
+                        Dim roomBelow As Integer = scr.WorkingArea.Bottom - screenPos.Y - SP(CURSOR_OFFSET_Y)
+                        Dim roomAbove As Integer = screenPos.Y - scr.WorkingArea.Top - SP(SCREEN_EDGE_GAP)
+                        SetTableViewport(If(ScrollableTable, Math.Max(roomBelow, roomAbove), scr.WorkingArea.Height))
+                        Dim formHnat As Integer = _tableHeight + PADDING_V * 2
                         Dim formHt As Integer = Math.Min(formHnat, scr.WorkingArea.Height)
                         ' Decalajul față de cursor e tot o măsură logică: la 150% săgeata mouse-ului
                         ' e ea însăși mai mare, deci 16/20 px bruți ar lăsa fereastra sub cursor.
                         Dim px As Integer = screenPos.X + SP(CURSOR_OFFSET_X)
                         Dim py As Integer = screenPos.Y + SP(CURSOR_OFFSET_Y)
                         If px + formWt > scr.WorkingArea.Right Then px = screenPos.X - formWt - SP(SCREEN_EDGE_GAP)
-                        If py + formHt > scr.WorkingArea.Bottom Then py = scr.WorkingArea.Bottom - formHt - SP(SCREEN_EDGE_GAP)
+                        If ScrollableTable AndAlso roomAbove > roomBelow Then
+                            py = screenPos.Y - formHt - SP(SCREEN_EDGE_GAP)
+                        ElseIf py + formHt > scr.WorkingArea.Bottom Then
+                            py = scr.WorkingArea.Bottom - formHt - SP(SCREEN_EDGE_GAP)
+                        End If
                         If px < scr.WorkingArea.Left Then px = scr.WorkingArea.Left
                         If py < scr.WorkingArea.Top Then py = scr.WorkingArea.Top
 

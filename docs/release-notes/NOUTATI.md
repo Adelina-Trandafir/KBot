@@ -6,6 +6,29 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
+## 1.1.5.3 (06.11.2026)
+<!-- felii: KE20-01, KE20-02, KE20-03, KE20-04, 0000-157, 0000-158, 0000-163, 02EF-01, 02EF-02, 0000-153, 0000-155, 02EF-10, 02EF-11, 02EF-12, 02EF-13, 0000-168, 0000-169, 0097-09 -->
+
+- «Receptii»: la o receptie noua sau modificata, «Valoare» a unei clasificatii poate depasi facturile bifate.
+- «Receptii»: tabelul clasificatiilor arata toti indicatorii angajamentului; valoarea nu poate fi sub facturile bifate.
+- «Receptii»: factura se leaga pe tot totalul ei sau pe suma scrisa; produsele facturii nu mai apar in tabel.
+- «Receptii existente»: pentru o factura mai veche, receptiile apar cu valoarea de la data facturii, nu cu cea de azi.
+- «Receptii»: o factura are randuri de alocare (clasificatie si suma); un rand gol apare cat timp mai e de alocat.
+- Tabelul clasificatiilor are coloane pe angajament (Rezervari, Receptii, Disponibil).
+- «Ramas» nu poate scadea sub 0: o valoare mai mare decat disponibilul angajamentului nu se primeste.
+- «Total receptii» al unei clasificatii cuprinde receptiile tuturor angajamentelor, de dinaintea zilei receptiei.
+- «Receptii»: «Creeaza rezervare» deschide «Adauga rezervare» cu valoarea receptiei; refuza ce nu incape.
+- «Receptii»: la crearea unei receptii se fac si capturile de ecran pentru ordonantare.
+- «Receptii»: butonul «Genereaza ordonantarea» o face din receptie, cu beneficiarul, contul si codul fiscal din «Parteneri».
+- Platile din extras se leaga singure de ordonantarile din receptie (angajament, indicator, cod fiscal, suma).
+- «Plati»: butonul «Leaga de ordonantare» leaga de mana o plata pe care legarea automata nu a prins-o.
+- «Istoric» din ribbon readuce machetele deschise sau le redeschide pe cele inchise.
+- Istoricul are iconite, previzualizari si separator intre machetele deschise si cele inchise.
+- Ctrl+Tab comuta intre machetele deschise, cu miniaturi, in ordinea ultimei utilizari.
+- Tineti Ctrl apasat pentru alegere; Shift inverseaza sensul, eliberarea lui Ctrl confirma, Esc anuleaza.
+- Setari > Aplicatie: doua bife pentru istoricul din bara de titlu si ribbon; implicit apare doar in ribbon.
+- Ajutor: «Pagina Receptii», «Plati» si istoricul navigarii (cu «Machete deschise») completate.
+
 ## 1.1.5.2 (04.11.2026)
 <!-- release: utc=2026-11-04T10:44:05Z -->
 <!-- felii: 01EF-07, 0000-149, 00EF-59, 00EF-57, 0051-04, VC06-34, VC06-35, VC06-36, VC06-37, VC06-38, VC06-39, AD17-01, AD18-01, 0122-10, 0122-12, 0097-07, 0097-08 -->

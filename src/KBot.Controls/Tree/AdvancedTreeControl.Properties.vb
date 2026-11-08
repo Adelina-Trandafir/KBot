@@ -590,11 +590,18 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
-    Private _headerHeightLogic As Integer = 32
-    Private _headerHeight As Integer = 32
+    ' BAND RULE (operator, 07.11.2026): header and footer look the same as in KBotDataView:
+    ' 30 px, Calibri 9pt Bold, colours and separator from the theme. A tree sets none of these
+    ' in its designer.
+    Friend Const BAND_HEIGHT As Integer = 30
+    Friend Const BAND_SEPARATOR_WIDTH As Integer = 2
+    Private Shared ReadOnly _bandFontBase As New Font("Calibri", 9.0F, FontStyle.Bold)
+
+    Private _headerHeightLogic As Integer = BAND_HEIGHT
+    Private _headerHeight As Integer = BAND_HEIGHT
     <Category("K-BOT: Header")>
     <Description("Înălțimea (px la 96 dpi) benzii de antet.")>
-    <DefaultValue(32)>
+    <DefaultValue(BAND_HEIGHT)>
     Public Property HeaderHeight As Integer
         Get
             Return _headerHeightLogic
@@ -804,7 +811,7 @@ Partial Public Class AdvancedTreeControl
     Public Property HeaderSeparatorColor As Color
         Get
             If _headerSeparatorColor <> Color.Empty Then Return _headerSeparatorColor
-            Return Color.FromArgb(60, HeaderForeColor)
+            Return _autoHeaderSep
         End Get
         Set(value As Color)
             _headerSeparatorColor = value
@@ -823,10 +830,10 @@ Partial Public Class AdvancedTreeControl
     ''' Grosimea liniei dintre antet și corp, în pixeli LOGICI (la 96 dpi) — se scalează cu ecranul,
     ''' ca toate măsurile arborelui de la felia 0035. <c>0</c> = fără linie.
     ''' </summary>
-    Private _headerSeparatorWidth As Integer = DEFAULT_SEPARATOR_WIDTH
+    Private _headerSeparatorWidth As Integer = BAND_SEPARATOR_WIDTH
     <Category("K-BOT: Header")>
     <Description("Grosimea liniei dintre antet și corp, în pixeli la 96 dpi. 0 = fără linie.")>
-    <DefaultValue(DEFAULT_SEPARATOR_WIDTH)>
+    <DefaultValue(BAND_SEPARATOR_WIDTH)>
     Public Property HeaderSeparatorWidth As Integer
         Get
             Return _headerSeparatorWidth
@@ -1006,7 +1013,7 @@ Partial Public Class AdvancedTreeControl
         Get
             ' Fontul FIXAT trece prin mărirea textului: el nu e Control.Font, deci AppScaling nu-l
             ' atinge singur (vezi AppScaling.ScaledFont). Nesetat => fontul arborelui, mărit deja.
-            Return If(AppScaling.ScaledFont(Me, _headerFont), Me.Font)
+            Return AppScaling.ScaledFont(Me, If(_headerFont, _bandFontBase))
         End Get
         Set(value As Font)
             _headerFont = value
@@ -1109,11 +1116,11 @@ Partial Public Class AdvancedTreeControl
         End Set
     End Property
 
-    Private _footerHeightLogic As Integer = 28
-    Private _footerHeight As Integer = 28
+    Private _footerHeightLogic As Integer = BAND_HEIGHT
+    Private _footerHeight As Integer = BAND_HEIGHT
     <Category("K-BOT: Footer")>
     <Description("Înălțimea (px la 96 dpi) benzii de subsol.")>
-    <DefaultValue(28)>
+    <DefaultValue(BAND_HEIGHT)>
     Public Property FooterHeight As Integer
         Get
             Return _footerHeightLogic
@@ -1136,6 +1143,20 @@ Partial Public Class AdvancedTreeControl
         End Get
         Set(value As String)
             _footerCaption = value
+            Me.Invalidate()
+        End Set
+    End Property
+
+    Private _footerCaptionStandalone As Boolean
+    <Category("K-BOT: Footer")>
+    <Description("Afișează text simplu în subsol, independent de iconițe și fără acțiune la clic.")>
+    <DefaultValue(False)>
+    Public Property FooterCaptionStandalone As Boolean
+        Get
+            Return _footerCaptionStandalone
+        End Get
+        Set(value As Boolean)
+            _footerCaptionStandalone = value
             Me.Invalidate()
         End Set
     End Property
@@ -1277,7 +1298,7 @@ Partial Public Class AdvancedTreeControl
     Public Property FooterSeparatorColor As Color
         Get
             If _footerSeparatorColor <> Color.Empty Then Return _footerSeparatorColor
-            Return Color.FromArgb(60, FooterForeColor)
+            Return _autoFooterSep
         End Get
         Set(value As Color)
             _footerSeparatorColor = value
@@ -1295,10 +1316,10 @@ Partial Public Class AdvancedTreeControl
     ''' <summary>
     ''' Grosimea liniei dintre corp și subsol, în pixeli LOGICI (la 96 dpi). <c>0</c> = fără linie.
     ''' </summary>
-    Private _footerSeparatorWidth As Integer = DEFAULT_SEPARATOR_WIDTH
+    Private _footerSeparatorWidth As Integer = BAND_SEPARATOR_WIDTH
     <Category("K-BOT: Footer")>
     <Description("Grosimea liniei dintre corp și subsol, în pixeli la 96 dpi. 0 = fără linie.")>
-    <DefaultValue(DEFAULT_SEPARATOR_WIDTH)>
+    <DefaultValue(BAND_SEPARATOR_WIDTH)>
     Public Property FooterSeparatorWidth As Integer
         Get
             Return _footerSeparatorWidth
@@ -1357,7 +1378,7 @@ Partial Public Class AdvancedTreeControl
     <Description("Fontul textului din subsol (toate atributele); nesetat = Font.")>
     Public Property FooterCaptionFont As Font
         Get
-            Return If(AppScaling.ScaledFont(Me, _footerCaptionFont), Me.Font)
+            Return AppScaling.ScaledFont(Me, If(_footerCaptionFont, _bandFontBase))
         End Get
         Set(value As Font)
             _footerCaptionFont = value

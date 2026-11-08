@@ -12,6 +12,11 @@ Partial Public Class ApiClient
     Implements IDdfSendApi
 
     ' Wire shapes: field names exactly as ddf_trimitere.py reads / writes them.
+    Private NotInheritable Class StartRequest
+        Public Property permite_fara_semnatura As Boolean
+        Public Property reluare As Boolean?
+    End Class
+
     Private NotInheritable Class CoduriRequest
         Public Property cod_real As String
         Public Property randuri As List(Of CodRandWire)
@@ -83,12 +88,15 @@ Partial Public Class ApiClient
                                                    "ApiClient.AnuleazaSemnaturaDdfAsync", ct)
     End Function
 
-    Public Function IncepeTrimitereaDdfAsync(idrev As Integer, ct As CancellationToken) As Task _
+    Public Function IncepeTrimitereaDdfAsync(idrev As Integer, ct As CancellationToken,
+                                            Optional permiteFaraSemnatura As Boolean = False,
+                                            Optional reluare As Boolean? = Nothing) As Task _
         Implements IDdfSendApi.IncepeTrimitereaDdfAsync
         If idrev <= 0 Then Throw New ArgumentException("idrev invalid.", NameOf(idrev))
-        Return TrimiteJsonAsync(Of Object, Object)($"/api/forexe/ddf/trimitere/{idrev}/start",
-                                                   Nothing, "începerea trimiterii",
-                                                   "ApiClient.IncepeTrimitereaDdfAsync", ct)
+        Return TrimiteJsonAsync(Of StartRequest, Object)($"/api/forexe/ddf/trimitere/{idrev}/start",
+                                                        New StartRequest() With {.permite_fara_semnatura = permiteFaraSemnatura,
+                                                                                 .reluare = reluare},
+                                                        "începerea trimiterii", "ApiClient.IncepeTrimitereaDdfAsync", ct)
     End Function
 
     Public Async Function SalveazaCoduriDdfAsync(idrev As Integer, codReal As String,

@@ -51,17 +51,11 @@ Partial Class ClasificatiiVenituriView
         gridBuget = New KBotDataView()
         gridRectificari = New KBotDataView()
         gridTotal = New KBotDataView()
-        btnSalveaza = New Button()
-        btnSterge = New Button()
         tlyMain = New KBotTableLayoutPanel()
         pnlCard = New Panel()
         tlyBody = New KBotTableLayoutPanel()
         tree = New AdvancedTreeControl()
         tlyRight = New KBotTableLayoutPanel()
-        lblBuget = New Label()
-        lblRectificari = New Label()
-        tlySubsol = New KBotTableLayoutPanel()
-        lblStare = New Label()
         CType(gridBuget, ComponentModel.ISupportInitialize).BeginInit()
         CType(gridRectificari, ComponentModel.ISupportInitialize).BeginInit()
         CType(gridTotal, ComponentModel.ISupportInitialize).BeginInit()
@@ -69,18 +63,16 @@ Partial Class ClasificatiiVenituriView
         pnlCard.SuspendLayout()
         tlyBody.SuspendLayout()
         tlyRight.SuspendLayout()
-        tlySubsol.SuspendLayout()
         SuspendLayout()
         ' 
         ' gridBuget
         ' 
         gridBuget.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridBuget.BackColor = SystemColors.Window
         gridBuget.ColumnFillMode = KBotFillMode.SpecificColumn
         gridBuget.FillColumnKey = "clsf"
         KBotDataColumn17.AggregateFormatString = Nothing
         KBotDataColumn17.FormatString = Nothing
-        KBotDataColumn17.HeaderText = "Clsf"
+        KBotDataColumn17.HeaderText = "Buget"
         KBotDataColumn17.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn17.Key = "clsf"
         KBotDataColumn17.MinWidth = 150
@@ -183,15 +175,10 @@ Partial Class ClasificatiiVenituriView
         gridBuget.Columns.Add(KBotDataColumn16)
         gridBuget.Dock = DockStyle.Fill
         gridBuget.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
-        gridBuget.FooterBackColor = SystemColors.Control
         gridBuget.FooterCaption = "Versiuni de buget"
         gridBuget.FooterRightIcon = My.Resources.Resources.plus_green
         gridBuget.FooterRightIconTooltip = "Adaugă o versiune de buget" & vbLf & "Rândul nou se completează direct în tabel."
-        gridBuget.FooterSeparatorColor = SystemColors.ActiveBorder
         gridBuget.FooterVisible = True
-        gridBuget.HeaderBackColor = SystemColors.Control
-        gridBuget.HeaderHeight = 24
-        gridBuget.HeaderSeparatorColor = SystemColors.ActiveBorder
         gridBuget.Location = New Point(0, 45)
         gridBuget.Margin = New Padding(0)
         gridBuget.Name = "gridBuget"
@@ -204,12 +191,11 @@ Partial Class ClasificatiiVenituriView
         ' gridRectificari
         ' 
         gridRectificari.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridRectificari.BackColor = SystemColors.Window
         gridRectificari.ColumnFillMode = KBotFillMode.SpecificColumn
         gridRectificari.FillColumnKey = "document"
         KBotDataColumn18.AggregateFormatString = Nothing
         KBotDataColumn18.FormatString = Nothing
-        KBotDataColumn18.HeaderText = "Clsf"
+        KBotDataColumn18.HeaderText = "Rectificări bugetare"
         KBotDataColumn18.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn18.Key = "clsf"
         KBotDataColumn18.MinWidth = 150
@@ -219,7 +205,7 @@ Partial Class ClasificatiiVenituriView
         KBotDataColumn18.Width = 150
         KBotDataColumn6.AggregateFormatString = Nothing
         KBotDataColumn6.FormatString = Nothing
-        KBotDataColumn6.HeaderText = "Nr. doc."
+        KBotDataColumn6.HeaderText = "Rectificări bugetare — Nr. doc."
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn6.Key = "document"
         KBotDataColumn6.OptionGroup = Nothing
@@ -327,16 +313,12 @@ Partial Class ClasificatiiVenituriView
         gridRectificari.Columns.Add(KBotDataColumn14)
         gridRectificari.Dock = DockStyle.Fill
         gridRectificari.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
-        gridRectificari.FooterBackColor = SystemColors.Control
         gridRectificari.FooterCaption = "Total"
         gridRectificari.FooterRightIcon = My.Resources.Resources.plus_green
         gridRectificari.FooterRightIconTooltip = "Adaugă o rectificare" & vbLf & "Rândul nou se completează direct în tabel."
-        gridRectificari.FooterSeparatorColor = SystemColors.ActiveBorder
         gridRectificari.FooterVisible = True
-        gridRectificari.HeaderHeight = 24
-        gridRectificari.HeaderSeparatorColor = SystemColors.ActiveBorder
         gridRectificari.Location = New Point(0, 192)
-        gridRectificari.Margin = New Padding(0)
+        gridRectificari.Margin = New Padding(0, 12, 0, 0)
         gridRectificari.Name = "gridRectificari"
         gridRectificari.Size = New Size(955, 422)
         gridRectificari.TabIndex = 3
@@ -346,7 +328,6 @@ Partial Class ClasificatiiVenituriView
         ' gridTotal
         '
         gridTotal.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridTotal.BackColor = SystemColors.Window
         gridTotal.ColumnFillMode = KBotFillMode.SpecificColumn
         gridTotal.FillColumnKey = "clsf"
         KBotDataColumn20.AggregateFormatString = Nothing
@@ -448,7 +429,6 @@ Partial Class ClasificatiiVenituriView
         gridTotal.Columns.Add(KBotDataColumn26)
         gridTotal.Columns.Add(KBotDataColumn27)
         gridTotal.Dock = DockStyle.Fill
-        gridTotal.HeaderHeight = 24
         gridTotal.Location = New Point(0, 604)
         gridTotal.Margin = New Padding(0, 12, 0, 0)
         gridTotal.Name = "gridTotal"
@@ -461,51 +441,17 @@ Partial Class ClasificatiiVenituriView
         ' tips.SetToolTipHeader(gridTotal, "Bugetul in vigoare, cu rectificari")
         ' tips.SetToolTipText(gridTotal, "Ultimul buget (cel cu data cea mai noua) plus TOATE rectificarile de mai sus, pe trimestre." & vbLf & "La un nod, insumeaza toate clasificatiile de sub el.")
         ' 
-        ' btnSalveaza
-        ' 
-        btnSalveaza.AutoSize = True
-        btnSalveaza.Enabled = False
-        btnSalveaza.FlatStyle = FlatStyle.Flat
-        btnSalveaza.Location = New Point(1186, 6)
-        btnSalveaza.Margin = New Padding(0)
-        btnSalveaza.Name = "btnSalveaza"
-        btnSalveaza.Padding = New Padding(26, 4, 26, 4)
-        btnSalveaza.Size = New Size(198, 60)
-        btnSalveaza.TabIndex = 1
-        btnSalveaza.Text = "Salvează"
-        tips.SetToolTipHeader(btnSalveaza, "Salvează")
-        tips.SetToolTipText(btnSalveaza, "Scrie în baza de date versiunile de buget și rectificările clasificației alese, pentru unitatea din bara de titlu.")
-        btnSalveaza.UseVisualStyleBackColor = True
-        '
-        ' btnSterge
-        '
-        btnSterge.AutoSize = True
-        btnSterge.Enabled = False
-        btnSterge.FlatStyle = FlatStyle.Flat
-        btnSterge.Location = New Point(900, 6)
-        btnSterge.Margin = New Padding(0, 0, 12, 0)
-        btnSterge.Name = "btnSterge"
-        btnSterge.Padding = New Padding(26, 4, 26, 4)
-        btnSterge.Size = New Size(260, 60)
-        btnSterge.TabIndex = 0
-        btnSterge.Text = "Șterge clasificația"
-        tips.SetToolTipHeader(btnSterge, "Șterge clasificația")
-        tips.SetToolTipText(btnSterge, "Șterge clasificația aleasă din arbore. O clasificație folosită (are buget, rectificări sau este în extrase de cont) nu se șterge.")
-        btnSterge.UseVisualStyleBackColor = True
-        '
         ' tlyMain
         ' 
         tlyMain.ColumnCount = 1
         tlyMain.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyMain.Controls.Add(pnlCard, 0, 0)
-        tlyMain.Controls.Add(tlySubsol, 0, 1)
         tlyMain.Dock = DockStyle.Fill
         tlyMain.Location = New Point(0, 0)
         tlyMain.Margin = New Padding(0)
         tlyMain.Name = "tlyMain"
-        tlyMain.RowCount = 2
+        tlyMain.RowCount = 1
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 78F))
         tlyMain.Size = New Size(1599, 710)
         tlyMain.TabIndex = 0
         ' 
@@ -539,19 +485,10 @@ Partial Class ClasificatiiVenituriView
         ' 
         ' tree
         ' 
-        tree.BackColor = SystemColors.Window
-        tree.BorderColor = SystemColors.ActiveBorder
         tree.Dock = DockStyle.Fill
-        tree.FooterCaption = "Adaugă o clasificație de venituri"
-        tree.FooterHeight = 30
-        tree.FooterIconSize = New Size(18, 18)
-        tree.FooterRightIcon = My.Resources.Resources.plus_green
-        tree.FooterRightIconTooltip = "Adaugă o clasificație de venituri" & vbLf & "Alegeți codul din nomenclator (capitol, subcapitol, paragraf)."
-        tree.FooterTextAlign = ContentAlignment.MiddleRight
+        tree.FooterCaptionStandalone = True
         tree.FooterVisible = True
-        tree.HeaderBackColor = SystemColors.Control
         tree.HeaderCaption = " CLASIFICAȚII DE VENITURI"
-        tree.HeaderHeight = 24
         tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
         tree.HeaderVisible = True
@@ -562,10 +499,7 @@ Partial Class ClasificatiiVenituriView
         tree.Margin = New Padding(0, 0, 12, 0)
         tree.Name = "tree"
         tree.RightTextColumn = 150
-        tree.SearchBackColor = SystemColors.Control
         tree.SearchDefaultText = "… tastați o parte din cod sau din denumire …"
-        tree.SearchSeparatorColor = SystemColors.ActiveBorder
-        tree.SearchSeparatorWidth = 2
         tree.SearchShow = True
         tree.Size = New Size(608, 614)
         tree.TabIndex = 0
@@ -574,80 +508,20 @@ Partial Class ClasificatiiVenituriView
         ' 
         tlyRight.ColumnCount = 1
         tlyRight.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlyRight.Controls.Add(lblBuget, 0, 0)
-        tlyRight.Controls.Add(gridBuget, 0, 1)
-        tlyRight.Controls.Add(lblRectificari, 0, 2)
-        tlyRight.Controls.Add(gridRectificari, 0, 3)
-        tlyRight.Controls.Add(gridTotal, 0, 4)
+        tlyRight.Controls.Add(gridBuget, 0, 0)
+        tlyRight.Controls.Add(gridRectificari, 0, 1)
+        tlyRight.Controls.Add(gridTotal, 0, 2)
         tlyRight.Dock = DockStyle.Fill
         tlyRight.Location = New Point(620, 0)
         tlyRight.Margin = New Padding(0)
         tlyRight.Name = "tlyRight"
-        tlyRight.RowCount = 5
-        tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 45F))
+        ' Slice 0126-06: the titles that stood in labels above the grids are the header of the first column of each grid.
+        tlyRight.RowCount = 3
         tlyRight.RowStyles.Add(New RowStyle(SizeType.Percent, 40F))
-        tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 57F))
         tlyRight.RowStyles.Add(New RowStyle(SizeType.Percent, 60F))
         tlyRight.RowStyles.Add(New RowStyle(SizeType.Absolute, 52F))
         tlyRight.Size = New Size(955, 614)
         tlyRight.TabIndex = 1
-        ' 
-        ' lblBuget
-        ' 
-        lblBuget.AutoEllipsis = True
-        lblBuget.Dock = DockStyle.Fill
-        lblBuget.Font = New Font("Segoe UI", 10F, FontStyle.Bold)
-        lblBuget.Location = New Point(0, 0)
-        lblBuget.Margin = New Padding(0)
-        lblBuget.Name = "lblBuget"
-        lblBuget.Size = New Size(955, 45)
-        lblBuget.TabIndex = 0
-        lblBuget.Text = "Buget"
-        lblBuget.TextAlign = ContentAlignment.MiddleCenter
-        ' 
-        ' lblRectificari
-        ' 
-        lblRectificari.AutoEllipsis = True
-        lblRectificari.Dock = DockStyle.Fill
-        lblRectificari.Font = New Font("Segoe UI", 10F, FontStyle.Bold)
-        lblRectificari.Location = New Point(0, 147)
-        lblRectificari.Margin = New Padding(0, 12, 0, 0)
-        lblRectificari.Name = "lblRectificari"
-        lblRectificari.Size = New Size(955, 45)
-        lblRectificari.TabIndex = 2
-        lblRectificari.Text = "Rectificări bugetare"
-        lblRectificari.TextAlign = ContentAlignment.MiddleCenter
-        ' 
-        ' tlySubsol
-        ' 
-        tlySubsol.AutoFitToTheme = False
-        tlySubsol.ColumnCount = 3
-        tlySubsol.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlySubsol.ColumnStyles.Add(New ColumnStyle())
-        tlySubsol.ColumnStyles.Add(New ColumnStyle())
-        tlySubsol.Controls.Add(lblStare, 0, 0)
-        tlySubsol.Controls.Add(btnSterge, 1, 0)
-        tlySubsol.Controls.Add(btnSalveaza, 2, 0)
-        tlySubsol.Dock = DockStyle.Fill
-        tlySubsol.Location = New Point(0, 632)
-        tlySubsol.Margin = New Padding(0)
-        tlySubsol.Name = "tlySubsol"
-        tlySubsol.Padding = New Padding(8, 6, 8, 6)
-        tlySubsol.RowCount = 1
-        tlySubsol.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlySubsol.Size = New Size(1599, 78)
-        tlySubsol.TabIndex = 2
-        ' 
-        ' lblStare
-        ' 
-        lblStare.AutoEllipsis = True
-        lblStare.Dock = DockStyle.Fill
-        lblStare.Location = New Point(8, 6)
-        lblStare.Margin = New Padding(0, 0, 12, 0)
-        lblStare.Name = "lblStare"
-        lblStare.Size = New Size(1166, 66)
-        lblStare.TabIndex = 0
-        lblStare.TextAlign = ContentAlignment.MiddleLeft
         ' 
         ' ClasificatiiVenituriView
         ' 
@@ -664,8 +538,6 @@ Partial Class ClasificatiiVenituriView
         pnlCard.ResumeLayout(False)
         tlyBody.ResumeLayout(False)
         tlyRight.ResumeLayout(False)
-        tlySubsol.ResumeLayout(False)
-        tlySubsol.PerformLayout()
         ResumeLayout(False)
     End Sub
 
@@ -675,13 +547,7 @@ Partial Class ClasificatiiVenituriView
     Friend WithEvents tlyBody As KBotTableLayoutPanel
     Friend WithEvents tree As AdvancedTreeControl
     Friend WithEvents tlyRight As KBotTableLayoutPanel
-    Friend WithEvents lblBuget As Label
     Friend WithEvents gridBuget As KBotDataView
-    Friend WithEvents lblRectificari As Label
     Friend WithEvents gridRectificari As KBotDataView
     Friend WithEvents gridTotal As KBotDataView
-    Friend WithEvents tlySubsol As KBotTableLayoutPanel
-    Friend WithEvents lblStare As Label
-    Friend WithEvents btnSalveaza As Button
-    Friend WithEvents btnSterge As Button
 End Class

@@ -36,7 +36,7 @@ Public Enum DdfRevisionState
     SendInterrupted = 2
     ''' <summary>S2a -- sent; «Definitiveaza» / «Deruleaza» still to do, then the final PDF.</summary>
     SentInProgress = 3
-    ''' <summary>S2b -- the final PDF exists (section B inserted into the document signed on A, 0078-06) and waits for the B signature.</summary>
+    ''' <summary>S2b -- the final PDF waits for signatures on the accounting sections.</summary>
     FinalToSign = 4
     ''' <summary>S3 -- A and B signed; waits for the director.</summary>
     SignedAB = 5
@@ -119,6 +119,13 @@ Public NotInheritable Class DdfRevisionStates
         End Select
     End Function
 
+    Public Shared Function Label(revizie As RevizieRow) As String
+        If revizie.Stare = DdfRevisionState.FinalToSign AndAlso Not HasRole(revizie.Semnatura, RoleA) Then
+            Return If(HasRole(revizie.Semnatura, RoleB), "PDF final — de semnat A", "PDF final — de semnat A și B")
+        End If
+        Return Label(revizie.Stare)
+    End Function
+
     ''' <summary>
     ''' Has the revision no final PDF yet? While one revision of an angajament is open, no
     ''' other can be started (plan 0081-04, «one open revision at a time»).
@@ -136,6 +143,17 @@ Public NotInheritable Class DdfRevisionStates
     ''' <summary>Can «Trimite in FOREXE» run? S1, or S1x to resume.</summary>
     Public Shared Function CanSend(state As DdfRevisionState) As Boolean
         Return state = DdfRevisionState.SignedA OrElse state = DdfRevisionState.SendInterrupted
+    End Function
+
+    ''' <summary>Checks both the send stage and the signature policy for a FOREXE operation.</summary>
+    Public Shared Function CanSend(revizie As RevizieRow, permiteFaraSemnatura As Boolean) As Boolean
+        Return revizie IsNot Nothing AndAlso
+               (CanSend(revizie.Stare) OrElse (permiteFaraSemnatura AndAlso revizie.Stare = DdfRevisionState.Draft)) AndAlso
+               CanWriteToForexe(revizie, permiteFaraSemnatura)
+    End Function
+
+    Public Shared Function CanWriteToForexe(revizie As RevizieRow, permiteFaraSemnatura As Boolean) As Boolean
+        Return permiteFaraSemnatura OrElse HasRole(revizie.Semnatura, RoleA)
     End Function
 
     ''' <summary>Has the revision been sent, so Section B belongs on screen and in the PDF?</summary>

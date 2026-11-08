@@ -681,10 +681,13 @@ Partial Class KBotDataView
             If notches = 0 Then Return
 
             ' Shift + rotiță => derulare orizontală (convenție Windows).
-            Dim bar As KBotScrollBar = If((ModifierKeys And Keys.Shift) = Keys.Shift, hScroll, vScroll)
+            Dim k_horizontal As Boolean = (ModifierKeys And Keys.Shift) = Keys.Shift
+            Dim linesPerNotch As Integer = Math.Max(1, SystemInformation.MouseWheelScrollLines)
+            If Not k_horizontal AndAlso _tableTipWindow IsNot Nothing AndAlso
+                _tableTipWindow.ScrollTable(-notches * linesPerNotch) Then Return
+            Dim bar As KBotScrollBar = If(k_horizontal, hScroll, vScroll)
             If bar Is Nothing OrElse Not bar.Visible Then Return
 
-            Dim linesPerNotch As Integer = Math.Max(1, SystemInformation.MouseWheelScrollLines)
             Dim delta As Integer = notches * linesPerNotch * bar.SmallChange
             Dim maxValue As Integer = Math.Max(0, bar.Maximum - bar.LargeChange + 1)
             bar.Value = Math.Max(0, Math.Min(bar.Value - delta, maxValue))

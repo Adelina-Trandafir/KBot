@@ -1,4 +1,6 @@
 import { el, paintTree, CheckBox } from './ui.js';
+import { searchDelay, SEARCH_MIN_CHARS } from './search-settings.js';
+import { searchLength } from '../utils/search-text.js';
 
 const FILTERS = [['receiver', 'Primitori', 'receivers'], ['document', 'Documente', 'documents']];
 
@@ -39,11 +41,11 @@ export function selectionNodes(response) {
 }
 
 export function mountSelection(host, response, checked, onChange, owner, { loadBranch, onDocuments, onBusy, onError } = {}) {
-  const nodes = response.nodes;
+  let nodes = response.nodes, all = new Set(), complete = false;
   const documentDetails = new Map((response.documents || []).map(item => [String(item.id), item]));
-  const chosen = new Set(checked.filter(id => !id.startsWith('supplier:'))), pending = new Map(), checking = new Set();
+  const chosen = new Set(checked.filter(id => !id.startsWith('supplier:'))), pending = new Map();
   const controller = new AbortController();
-  let disposed = false, suppress = true, searchVersion = 0, selectingAll = false;
+  let disposed = false, searchVersion = 0, selecting = false;
   const leaf = id => /^(variant|category-filter|receiver|document|receipt-product|receipt-document-product|outgoing-item|mf-item):/.test(id);
   const prefixOf = node => node.id.startsWith('mf-branch:') ? `mf-item:${node.id.split(':')[1]}:`
     : node.id.startsWith('out-account:') ? `outgoing-item:account:${node.id.split(':')[1]}:`
@@ -75,11 +77,13 @@ export function mountSelection(host, response, checked, onChange, owner, { loadB
   };
   const hasLazy = node => node.lazy || node.children?.some(hasLazy);
   host._vcExpanded = new Set();
-  const tree = paintTree(host, snapshot(nodes), { title: 'Selectare date', collapsed: true,
+  const tree = paintTree(host, [], { title: 'Selectare date', collapsed: true,
     checkable: true, branchChecks: true,
-    onToggle: (id, open) => { if (open) void load(id).catch(failed); },
+    onToggle: (id, open) => {
+      if (open) void load(id).catch(problem => failed(problem, 'Închideți și redeschideți ramura pentru a reîncerca.'));
+    },
     onCheckChange: ids => {
-      if (suppress || disposed) return;
+      if (disposed) return;
       // Selections in branches not loaded yet remain intact.
       for (const id of chosen) if (tree._checkIndex.has(id)) chosen.delete(id);
       ids.filter(leaf).forEach(id => chosen.add(id));
@@ -89,13 +93,17 @@ export function mountSelection(host, response, checked, onChange, owner, { loadB
   }, owner);
   // Node labels are already visible; suppress both native and custom tooltips here.
   tree.treeContainer.setAttribute('data-kbot-tooltip', 'off');
-  const header = selectionHeader(owner, checked => { void selectAll(checked); });
+  const header = selectionHeader(owner, selectAll);
   host.firstElementChild.replaceWith(header.node);
+  const loader = el('div', { className: 'vc-reports__selection-loading', hidden: true, role: 'status' },
+    el('span', { className: 'report-loading-spinner', 'aria-hidden': 'true' }),
+    el('span', { textContent: 'Se încarcă selecția…' }));
+  tree.container.append(loader);
   const hint = el('p', { className: 'vc-hint', textContent: 'Deschideți ramurile pentru încărcare și bifați datele dorite. Fără bife într-o categorie de filtre se folosesc toate datele acesteia.' });
   host.append(hint);
-  const failed = problem => {
+  const failed = (problem, retry = 'Încercați din nou.') => {
     if (disposed || problem.name === 'AbortError') return;
-    onError?.(new Error(`${problem.message} Închideți și redeschideți ramura pentru a reîncerca.`));
+    onError?.(new Error(`${problem.message} ${retry}`));
   };
   const hasCheckbox = tree.hasCheckbox.bind(tree);
   tree.hasCheckbox = node => {
@@ -106,62 +114,78 @@ export function mountSelection(host, response, checked, onChange, owner, { loadB
   };
 
   function updateAll() {
-    const all = leaves(nodes), complete = !nodes.some(hasLazy);
-    const count = [...all].filter(id => chosen.has(id)).length;
-    header.check.checked = complete && all.size > 0 && count === all.size;
+    header.check.checked = complete && all.size > 0 && chosen.size >= all.size && [...all].every(id => chosen.has(id));
     header.check.input.indeterminate = chosen.size > 0 && !header.check.checked;
-    header.check.setEnabled(nodes.length > 0 && !pending.size && !checking.size && !selectingAll);
   }
 
   function busy() {
     if (disposed) return;
-    const loading = pending.size > 0 || checking.size > 0 || selectingAll;
+    const loading = pending.size > 0 || selecting;
     tree.treeElement.setAttribute('aria-busy', String(loading));
-    updateAll(); onBusy?.(loading);
+    tree.treeElement.inert = selecting;
+    loader.hidden = !selecting;
+    header.check.setEnabled(nodes.length > 0 && !loading);
+    onBusy?.(loading);
   }
 
-  async function selectAll(checked) {
-    if (disposed || selectingAll || pending.size || checking.size) return;
-    selectingAll = true; busy();
-    const activeNodes = nodes;
+  async function selectAfterLoad(id, apply) {
+    selecting = true;
+    busy();
     try {
-      if (checked) await Promise.all(nodes.map(node => load(node.id, true)));
-      if (disposed || nodes !== activeNodes) return;
-      chosen.clear();
-      if (checked) for (const id of leaves(nodes)) chosen.add(id);
-      redraw(); onChange([...chosen]);
+      await load(id, true);
+      if (!disposed) apply();
     } catch (problem) { failed(problem); }
-    finally { selectingAll = false; busy(); }
+    finally {
+      selecting = false;
+      if (!disposed) { updateAll(); busy(); }
+    }
+  }
+
+  function selectAll(checked) {
+    if (disposed || selecting || pending.size) return;
+    const apply = () => {
+      chosen.clear();
+      tree.setCheckedLeaves(checked ? all : []);
+    };
+    if (checked && !complete) void selectAfterLoad('root', apply);
+    else apply();
   }
 
   function redraw() {
-    const expanded = new Set(tree.expandedNodes), top = tree.treeContainer.scrollTop;
-    const query = tree.searchInput?.value.trim().toLowerCase() || '';
-    suppress = true;
-    try {
-      tree.setData(snapshot(nodes), { preserveExpanded: true });
-      tree.setCheckedLeaves([...chosen]);
-      tree.expandedNodes = expanded;
-      tree.isTreeRendered = false;
-      if (query.length >= 3) tree.renderTreeWithData(query);
-      else tree.renderTree('');
-      if (tree.searchInput) tree.searchInput.value = query;
-      if (tree.searchClear) tree.searchClear.hidden = !query;
-      tree.treeContainer.scrollTop = top;
-    } finally { suppress = false; updateAll(); }
+    const top = tree.treeContainer.scrollTop, query = tree.localSearchQuery;
+    all = leaves(nodes);
+    complete = !nodes.some(hasLazy);
+    tree.setData(snapshot(nodes), { render: false });
+    tree.setCheckedLeaves(chosen, { refresh: false });
+    if (query) tree.renderTreeWithData(query);
+    else tree.renderTree('');
+    if (!tree.isTreeRendered) tree.renderNoResults();
+    tree.treeContainer.scrollTop = top;
+    updateAll();
   }
 
   function load(id, recursive = false) {
-    const node = find(id);
-    if (disposed || !node || !(recursive ? hasLazy(node) : node.lazy)) return Promise.resolve();
+    if (disposed) return Promise.resolve();
+    if (pending.has('root')) return pending.get('root');
+    const wholeTree = id === 'root', node = wholeTree ? null : find(id);
+    if (wholeTree ? complete : !node || !(recursive ? hasLazy(node) : node.lazy)) return Promise.resolve();
     if (pending.has(id)) return pending.get(id).then(() => load(id, recursive));
+    // A bulk load replaces the tree. Let existing branch loads finish before replacing it.
+    const earlier = wholeTree ? [...pending.values()] : [];
     const task = (async () => {
-      tree.treeElement.setAttribute('aria-busy', 'true');
+      if (earlier.length) await Promise.allSettled(earlier);
+      if (disposed || wholeTree && complete) return;
       const result = await loadBranch(id, recursive, controller.signal);
       if (disposed) return;
-      node.children = result.nodes; delete node.lazy;
-      if (find(id) !== node) return;
+      if (wholeTree) {
+        if (result.nodes.some(hasLazy)) throw new Error('Serverul nu a încărcat toate ramurile selecției.');
+        nodes = result.nodes;
+      } else {
+        if (find(id) !== node) return;
+        node.children = result.nodes; delete node.lazy;
+      }
       if (result.documents) {
+        if (wholeTree) documentDetails.clear();
         result.documents.forEach(item => documentDetails.set(String(item.id), item));
         onDocuments?.([...documentDetails.values()]);
       }
@@ -177,32 +201,28 @@ export function mountSelection(host, response, checked, onChange, owner, { loadB
 
   const toggleCheck = tree.toggleCheckNode.bind(tree);
   tree.toggleCheckNode = id => {
-    if (checking.has(id) || disposed || selectingAll) return;
+    if (disposed || selecting) return;
     const node = find(id);
     if (!node || !hasLazy(node)) { toggleCheck(id); return; }
-    checking.add(id);
-    busy();
-    void load(id, true).then(() => { if (!disposed && find(id) === node) toggleCheck(id); })
-      .catch(failed).finally(() => {
-        checking.delete(id);
-        busy();
-      });
+    void selectAfterLoad(id, () => toggleCheck(id));
   };
   // Searching explicitly loads the remaining branches, then uses the common tree filter.
   tree.handleLocalSearch = event => {
     clearTimeout(tree.localSearchTimeout);
     const query = event.target.value.trim().toLowerCase(), version = ++searchVersion;
+    const enough = searchLength(query) >= SEARCH_MIN_CHARS;   // spaces do not count
     tree.localSearchTimeout = setTimeout(async () => {
       if (disposed || version !== searchVersion) return;
       try {
-        if (query.length >= 3) await Promise.all(nodes.map(node => load(node.id, true)));
+        if (enough) await load('root', true);
         if (disposed || version !== searchVersion) return;
         tree.expandedNodes.clear(); tree.treeContainer.replaceChildren(); tree.isTreeRendered = false;
-        if (query.length >= 3) tree.renderTreeWithData(query);
+        if (enough) tree.renderTreeWithData(query);
         else { tree.clearLocalSearch(false); tree.renderTree(''); }
+        if (!tree.isTreeRendered) tree.renderNoResults();
         if (tree.searchClear) tree.searchClear.hidden = !query;
       } catch (problem) { failed(problem); }
-    }, 300);
+    }, searchDelay());
   };
   const cancelSearch = () => { ++searchVersion; clearTimeout(tree.localSearchTimeout); };
   tree.searchClear?.addEventListener('click', cancelSearch, { capture: true, signal: controller.signal });
@@ -210,15 +230,21 @@ export function mountSelection(host, response, checked, onChange, owner, { loadB
     if (event.key === 'Escape') cancelSearch();
   }, { capture: true, signal: controller.signal });
   redraw();
+  busy();
   owner.own(() => { disposed = true; ++searchVersion; clearTimeout(tree.localSearchTimeout); controller.abort(); });
-  const selectedRoots = nodes.filter(node => [...chosen].some(id => id.startsWith(prefixOf(node))));
-  const ready = Promise.all(selectedRoots.map(node => load(node.id, true))).then(() => {
+  const restored = [...chosen], lazyRoots = nodes.filter(hasLazy);
+  const selectedRoots = lazyRoots.filter(node => {
+    const prefix = prefixOf(node);
+    return restored.some(id => id.startsWith(prefix));
+  });
+  const restore = selectedRoots.length > 1 && selectedRoots.length === lazyRoots.length
+    ? load('root', true) : Promise.all(selectedRoots.map(node => load(node.id, true)));
+  const ready = restore.then(() => {
     if (disposed) return;
     // Accounts share the variant filter: reconcile against their combined leaves.
-    const valid = leaves(nodes);
     let changed = false;
-    for (const id of chosen) if (!valid.has(id)) { chosen.delete(id); changed = true; }
-    if (changed) { redraw(); onChange([...chosen]); }
+    for (const id of chosen) if (!all.has(id)) { chosen.delete(id); changed = true; }
+    if (changed) { updateAll(); onChange([...chosen]); }
   });
   return { getCheckedLeaves: () => [...chosen],
     getFilters: (spec = response.spec) => selectionFilters([...chosen].filter(id => {

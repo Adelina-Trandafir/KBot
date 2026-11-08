@@ -23,6 +23,18 @@ Partial Public Class AdvancedTreeControl
     Private _applyingCollapseExtent As Boolean = False
     Private _footerButtonHover As Boolean = False
 
+    ' Which icon's button the caption belongs to (BAND RULE, 07.11.2026: the label is part of the
+    ' button -- same hover plate, same click). Set while painting, read by the hit tests.
+    Private Enum CaptionOwner
+        None
+        FooterLeft
+        FooterRight
+        HeaderSearch
+        HeaderRight
+    End Enum
+    Private _footerCaptionRect As Rectangle = Rectangle.Empty
+    Private _footerCaptionOwner As CaptionOwner = CaptionOwner.None
+
     ' Nodul plutitor al arborelui strâns. Aceleași piese ca la KBotNavList: un cronometru de
     ' așteptare (cât stă cursorul înainte să iasă) și unul de animație (desfășurarea spre dreapta).
     Private Const FlyoutTickMs As Integer = 15
@@ -96,52 +108,79 @@ Partial Public Class AdvancedTreeControl
             End If
         End If
 
-        ' ── Iconițele de capăt ───────────────────────────────────────────
-        ' Regula e simetrică: butonul de strângere ia latura pe care stă, iar iconița de acolo
-        ' se ignoră. Nu se înghesuie două lucruri în același colț — vezi FooterIconSuppressed*.
-        ' Iconița din stânga e ȘI ea un buton (ridică FooterLeftIconClicked), exact ca sora ei din
-        ' dreapta: dreptunghiul vine din aceeași funcție pură pe care o folosește hit-testul, iar
-        ' plaja de survolare se aprinde la fel — vezi .ButtonHover.
+        ' ── End icons ─────────────────────────────────────────────────
+        ' Symmetric rule: the collapse button takes the side it sits on and the icon there is
+        ' ignored (see ShowFooterLeftIcon / ShowFooterRightIcon). The rectangles come from the same
+        ' pure functions the hit test uses. They are computed FIRST (drawing comes after), because a
+        ' button's hover plate also covers its caption, and the caption sits in the space left
+        ' between the icons.
+        Dim leftR As Rectangle = Rectangle.Empty
+        Dim rightR As Rectangle = Rectangle.Empty
         If ShowFooterLeftIcon() Then
-            Dim l As Rectangle = ComputeFooterLeftIconRect(bandRect)
-            If _footerLeftIconHover Then DrawButtonHover(g, l, FooterLeftIconHoverColor)
-            g.DrawImage(_footerLeftIcon, l)
-            x = l.Right + PaddingIconGapPx
+            leftR = ComputeFooterLeftIconRect(bandRect)
+            x = leftR.Right + PaddingIconGapPx
         End If
-
         If ShowFooterRightIcon() Then
-            Dim r As Rectangle = ComputeFooterRightIconRect(bandRect)
-            If _footerRightIconHover Then DrawButtonHover(g, r, FooterRightIconHoverColor)
-            g.DrawImage(_footerRightIcon, r)
-            rx = r.Left - PaddingIconGapPx
+            rightR = ComputeFooterRightIconRect(bandRect)
+            rx = rightR.Left - PaddingIconGapPx
         End If
 
-        ' ── Caption (text îmbogățit, în spațiul rămas) ───────────────────
+        ' ── Caption (rich text, in the remaining space) ───────────────
+        ' The caption is PART of its icon's button (BAND RULE, 07.11.2026): same hover, same click.
+        ' Its rectangle is kept here for the hit test; empty = not shown.
+        _footerCaptionRect = Rectangle.Empty
+        _footerCaptionOwner = CaptionOwner.None
         Dim availW As Integer = Math.Max(0, rx - x)
-        If Not FooterCaptionShown() OrElse availW <= 0 Then Return
-
+        Dim parts As List(Of RichTextPart) = Nothing
         Dim fmt As StringFormat = StringFormat.GenericTypographic
-        fmt.FormatFlags = fmt.FormatFlags Or StringFormatFlags.MeasureTrailingSpaces
-        Dim parts As List(Of RichTextPart) = ParseRichText(_footerCaption, Me.FooterCaptionFont,
-                                                           Me.FooterCaptionForeColor)
+        Dim cx As Single = 0
+        Dim cy As Single = 0
+        Dim latimeTotala As Single = 0
+        If FooterCaptionShown() AndAlso availW > 0 Then
+            fmt.FormatFlags = fmt.FormatFlags Or StringFormatFlags.MeasureTrailingSpaces
+            parts = ParseRichText(_footerCaption, Me.FooterCaptionFont, Me.FooterCaptionForeColor)
+
+            Dim inaltimeMax As Single = 0
+            For Each part In parts
+                Dim sz As SizeF = g.MeasureString(part.Text, part.Font, PointF.Empty, fmt)
+                latimeTotala += sz.Width
+                inaltimeMax = Math.Max(inaltimeMax, sz.Height)
+            Next
+
+            cx = AlignStartX(_footerTextAlign, x, availW, latimeTotala)
+            ' Whole pixel -- see the note at the header caption (DrawHeader).
+            cy = CSng(bandRect.Top + Math.Floor(AlignStartY(_footerTextAlign, _footerHeight, inaltimeMax)))
+
+            _footerCaptionRect = New Rectangle(CInt(Math.Floor(cx)), CInt(cy),
+                                               CInt(Math.Ceiling(Math.Min(latimeTotala, CSng(availW)))),
+                                               CInt(Math.Ceiling(inaltimeMax)))
+            ' With two icons the caption belongs to the one it is aligned toward; else to the only one.
+            _footerCaptionOwner = If(Not leftR.IsEmpty AndAlso
+                                     (rightR.IsEmpty OrElse IsLeftAligned(_footerTextAlign)),
+                                     CaptionOwner.FooterLeft, CaptionOwner.FooterRight)
+        End If
+
+        ' ── Hover plates + icons (the plate sits UNDER the picture and the text) ───
+        If Not leftR.IsEmpty Then
+            If _footerLeftIconHover Then DrawButtonHover(g, FooterLeftButtonRect, FooterLeftIconHoverColor)
+            g.DrawImage(_footerLeftIcon, leftR)
+        End If
+        If Not rightR.IsEmpty Then
+            If _footerRightIconHover Then DrawButtonHover(g, FooterRightButtonRect, FooterRightIconHoverColor)
+            g.DrawImage(_footerRightIcon, rightR)
+        End If
+
+        If _footerCaptionStandalone AndAlso Not String.IsNullOrEmpty(_footerCaption) AndAlso availW > 0 Then
+            DrawStandaloneFooterCaption(g, New Rectangle(x, bandRect.Top, availW, bandRect.Height))
+        End If
+        If parts Is Nothing Then Return
+
         Dim oldClip As Region = g.Clip.Clone()
         g.SetClip(New Rectangle(x, bandRect.Top, availW, _footerHeight))
 
-        Dim latimeTotala As Single = 0
-        Dim inaltimeMax As Single = 0
-        For Each part In parts
-            Dim sz As SizeF = g.MeasureString(part.Text, part.Font, PointF.Empty, fmt)
-            latimeTotala += sz.Width
-            inaltimeMax = Math.Max(inaltimeMax, sz.Height)
-        Next
-
-        Dim cx As Single = AlignStartX(_footerTextAlign, x, availW, latimeTotala)
-        ' Pixel întreg — vezi nota de la caption-ul de antet (DrawHeader).
-        Dim cy As Single = CSng(bandRect.Top + Math.Floor(AlignStartY(_footerTextAlign, _footerHeight, inaltimeMax)))
-
-        ' Plaja proprie a etichetei (gol = fără): se desenează O DATĂ, sub tot textul.
-        ' Prin PROPRIETATE, nu prin câmp: pe schemă întunecată proprietatea răspunde Empty,
-        ' iar o citire directă a câmpului ar fi strecurat plaja aleasă în designer înapoi.
+        ' The caption's own plate (empty = none): drawn ONCE, under all the text. Through the
+        ' PROPERTY, not the field: on a dark scheme the property answers Empty. The band rule says
+        ' the caption text is transparent, so a designer never sets this.
         Dim captionBackPlate As Color = FooterCaptionBackColor
         If captionBackPlate <> Color.Empty Then
             Using b As New SolidBrush(captionBackPlate)
@@ -163,6 +202,23 @@ Partial Public Class AdvancedTreeControl
             cx += sz.Width
         Next
         g.Clip = oldClip
+    End Sub
+
+    Private Sub DrawStandaloneFooterCaption(g As Graphics, bounds As Rectangle)
+        Dim flags As TextFormatFlags = TextFormatFlags.SingleLine Or TextFormatFlags.EndEllipsis Or
+                                       TextFormatFlags.NoPrefix Or TextFormatFlags.PreserveGraphicsClipping
+        If IsRightAligned(_footerTextAlign) Then
+            flags = flags Or TextFormatFlags.Right
+        ElseIf Not IsLeftAligned(_footerTextAlign) Then
+            flags = flags Or TextFormatFlags.HorizontalCenter
+        End If
+        Select Case _footerTextAlign
+            Case ContentAlignment.MiddleLeft, ContentAlignment.MiddleCenter, ContentAlignment.MiddleRight
+                flags = flags Or TextFormatFlags.VerticalCenter
+            Case ContentAlignment.BottomLeft, ContentAlignment.BottomCenter, ContentAlignment.BottomRight
+                flags = flags Or TextFormatFlags.Bottom
+        End Select
+        TextRenderer.DrawText(g, _footerCaption, FooterCaptionFont, bounds, FooterCaptionForeColor, flags)
     End Sub
 
     ''' <summary>
@@ -235,7 +291,7 @@ Partial Public Class AdvancedTreeControl
     ''' altfel rămâne un text fără buton.
     ''' </summary>
     Private Function FooterCaptionShown() As Boolean
-        If String.IsNullOrEmpty(_footerCaption) Then Return False
+        If _footerCaptionStandalone OrElse String.IsNullOrEmpty(_footerCaption) Then Return False
         Return ShowFooterLeftIcon() OrElse ShowFooterRightIcon()
     End Function
 
@@ -256,6 +312,35 @@ Partial Public Class AdvancedTreeControl
             Return _footerRightIcon IsNot Nothing AndAlso Not ButonPeLatura(En_FooterButtonPosition.Right)
         End Get
     End Property
+
+    ' The area of the RIGHT footer button: its icon plus its caption (when the caption belongs to it).
+    ' Hover and click use this, so the label is as clickable as the icon.
+    Friend ReadOnly Property FooterRightButtonRect As Rectangle
+        Get
+            Dim r As Rectangle = FooterRightIconRect
+            If r.IsEmpty OrElse _footerCaptionOwner <> CaptionOwner.FooterRight OrElse _footerCaptionRect.IsEmpty Then Return r
+            Return Rectangle.Union(r, _footerCaptionRect)
+        End Get
+    End Property
+
+    ' The area of the LEFT footer button: icon plus caption (when it belongs to it).
+    Friend ReadOnly Property FooterLeftButtonRect As Rectangle
+        Get
+            Dim r As Rectangle = FooterLeftIconRect
+            If r.IsEmpty OrElse _footerCaptionOwner <> CaptionOwner.FooterLeft OrElse _footerCaptionRect.IsEmpty Then Return r
+            Return Rectangle.Union(r, _footerCaptionRect)
+        End Get
+    End Property
+
+    Friend Shared Function IsLeftAligned(aliniere As ContentAlignment) As Boolean
+        Return aliniere = ContentAlignment.TopLeft OrElse aliniere = ContentAlignment.MiddleLeft OrElse
+               aliniere = ContentAlignment.BottomLeft
+    End Function
+
+    Friend Shared Function IsRightAligned(aliniere As ContentAlignment) As Boolean
+        Return aliniere = ContentAlignment.TopRight OrElse aliniere = ContentAlignment.MiddleRight OrElse
+               aliniere = ContentAlignment.BottomRight
+    End Function
 
     ' Dreptunghiul iconiței din dreapta. Ca la buton: funcție pură, folosită și de desen și de
     ' hit-test — o a doua formulă ar fi o iconiță care se desenează unde nu se apasă.
@@ -365,21 +450,18 @@ Partial Public Class AdvancedTreeControl
             Return True
         End If
 
-        Dim iconRect As Rectangle = FooterRightIconRect
+        ' The button = icon + its caption: a click on the label is a click on the icon.
+        Dim iconRect As Rectangle = FooterRightButtonRect
         If Not iconRect.IsEmpty AndAlso iconRect.Contains(location) Then
             If Not KBotDesignTime.IsDesignTime(Me) Then RaiseEvent FooterRightIconClicked(e)
             Return True
         End If
 
-        Dim leftRect As Rectangle = FooterLeftIconRect
+        Dim leftRect As Rectangle = FooterLeftButtonRect
         If Not leftRect.IsEmpty AndAlso leftRect.Contains(location) Then
             If Not KBotDesignTime.IsDesignTime(Me) Then RaiseEvent FooterLeftIconClicked(e)
-        ElseIf Not KBotDesignTime.IsDesignTime(Me) AndAlso FooterCaptionShown() Then
-            ' Slice 00EF-33: the rest of the band is the caption's: a host that makes it a button listens to this.
-            ' Hidden caption (its icon is hidden) = no invisible button.
-            RaiseEvent FooterCaptionClicked(e)
         End If
-        Return True                       ' banda e a subsolului, indiferent unde s-a apăsat
+        Return True                       ' the band is the footer's, wherever it was pressed
     End Function
 
     ''' <summary>
@@ -393,11 +475,11 @@ Partial Public Class AdvancedTreeControl
 
         ' Iconița din dreapta subsolului e și ea un buton (ridică FooterRightIconClicked), deci
         ' se aprinde la fel — vezi .ButtonHover.
-        Dim iconRect As Rectangle = If(inFooter, FooterRightIconRect, Rectangle.Empty)
+        Dim iconRect As Rectangle = If(inFooter, FooterRightButtonRect, Rectangle.Empty)
         Dim hoverIcon As Boolean = Not iconRect.IsEmpty AndAlso iconRect.Contains(location)
 
         ' Iconița din stânga e la fel un buton (ridică FooterLeftIconClicked) — se aprinde identic.
-        Dim leftRect As Rectangle = If(inFooter, FooterLeftIconRect, Rectangle.Empty)
+        Dim leftRect As Rectangle = If(inFooter, FooterLeftButtonRect, Rectangle.Empty)
         Dim hoverLeft As Boolean = Not leftRect.IsEmpty AndAlso leftRect.Contains(location)
 
         If hover <> _footerButtonHover OrElse hoverIcon <> _footerRightIconHover OrElse

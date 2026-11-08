@@ -21,6 +21,7 @@ import { bindExtractsIntake } from './extracts-intake.js';
 import { bindWorkingDays } from './working-days.js';
 import { bindChildSearch } from './child-search.js';
 import { bindMonthTax } from './month-tax.js';
+import { otherPaymentNumber, reportOtherPaymentError } from './other-payment.js';
 import { confirmBox, pickBox, reasonBox } from '../utils/confirm-box.js';
 
 const $ = (id) => document.getElementById(id);
@@ -554,7 +555,8 @@ function ledgerSpec(kind) {
     { title: 'Explicație', cls: 'ade-col-explanation', cell: (row) => row.Explicatie, draft: explanationInput },
   ];
   if (kind === 'receipt') return [{ title: 'Număr', cls: 'ade-col-number', cell: (row) => row.Numar }, ...common];
-  if (kind === 'other') return [{ title: 'Număr', cls: 'ade-col-number', cell: (row) => row.NrDoc }, ...common];
+  if (kind === 'other') return [{ title: 'Număr', cls: 'ade-col-number', cell: (row) => row.NrDoc,
+    draft: '<input id="ade-ledger-number" type="text" maxlength="255" required autocomplete="off" aria-label="Numărul documentului">' }, ...common];
   return [{ title: 'Număr', cls: 'ade-col-number', cell: (row) => row.NrDoc }, ...common];
 }
 
@@ -730,7 +732,7 @@ function renderLedger(rows = []) {
     fillSuggestedAmount();
     fillSuggestedExplanation(explanation, () => touched).catch(report);
   });
-  $('ade-ledger-save').addEventListener('click', () => saveLedger().catch(report));
+  $('ade-ledger-save').addEventListener('click', () => saveLedger().catch(kind === 'other' ? reportOtherPaymentError : report));
 }
 
 function escapeHtml(value) {
@@ -770,6 +772,8 @@ async function loadLedger() {
 }
 
 async function saveLedger() {
+  const kind = state.ledger;
+  const number = kind === 'other' ? otherPaymentNumber() : null;
   const date = $('ade-ledger-date').value;
   const raw = $('ade-ledger-value').value.trim().replace(',', '.');
   const amount = Number(raw);
@@ -778,9 +782,8 @@ async function saveLedger() {
   const payers = await api(`/api/adechit/rows/Platitori_sub?IDP=${state.selected.IDP}`);
   const payer = payers.rows.find((row) => row.Activ);
   if (!payer) throw new Error('Copilul nu are un plătitor activ.');
-  const kind = state.ledger;
   const body = { kind, attendance_id: state.selected.IDZ, payer_id: payer.IDS, date, amount, explanation: $('ade-ledger-explanation').value.trim() };
-  if (kind === 'other') Object.assign(body, { number: 'Fără număr' });
+  if (kind === 'other') body.number = number;
   await api('/api/adechit/documents', { method: 'POST', body: JSON.stringify(body) });
   await reloadAfterDocument();
   showMessage($('ade-message'), 'Documentul a fost salvat și situația a fost recalculată.', 'info');

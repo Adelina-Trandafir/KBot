@@ -178,6 +178,24 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
         require(child_id.isdigit(), 'FILTER', 'Filtru de copil invalid.', 400)
         return {'rows': payer_history(repo, int(child_id))}
 
+    @bp.get('/api/adechit/bank-extracts/child-search')
+    @guard('read')
+    def bank_child_search(repo):
+        from .bank_child_search import search
+        response = jsonify(search(repo, request.args.get('q', '')))
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+
+    @bp.get('/api/adechit/bank-extracts/children')
+    @guard('read')
+    def bank_children(repo):
+        from .bank_children import children
+        group_id, month_id = request.args.get('IDG', ''), request.args.get('IDL', '')
+        require(group_id.isdigit() and month_id.isdigit(), 'FILTER', 'Alegeți grupa și luna înregistrării.', 400)
+        response = jsonify(children(repo, int(group_id), int(month_id)))
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+
     @bp.post('/api/adechit/bank-extracts/associate')
     @guard('collect')
     def bank_extract_associate(repo):
@@ -185,6 +203,17 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
         require('catalog' in g.ade_operations, 'FORBIDDEN',
                 'Asocierea necesită drepturile de încasare și de modificare a plătitorilor.', 403)
         return command(repo, 'bank-extract-associate', lambda body: associate(repo, g.portal['db_name'], body, g.portal['email']))
+
+    @bp.get('/api/adechit/bank-extracts/document-number')
+    @guard('read')
+    def bank_document_number(repo):
+        from .bank_numbers import proposal
+        month_id, extract_id = request.args.get('IDL', ''), request.args.get('extract_id', '')
+        require(month_id.isdigit() and (not extract_id or extract_id.isdigit()),
+                'FILTER', 'Alegeți luna și extrasul pentru numerotare.', 400)
+        response = jsonify(proposal(repo, int(month_id), int(extract_id) if extract_id else None))
+        response.headers['Cache-Control'] = 'no-store'
+        return response
 
     @bp.get('/api/adechit/bank-extracts/defaults')
     @guard('read')

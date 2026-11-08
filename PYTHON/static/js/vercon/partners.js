@@ -1,6 +1,7 @@
 // SLICE-VC06-22: the existing nomenclature workspace and shared CUSTOM controls.
 import { confirmBox } from '../utils/confirm-box.js';
 import { el, scope, column, grid, TextBox, statusBar, showMessage, rowMenu, closeMenu } from './ui.js';
+import { debounced, effectiveSearchText } from './search-settings.js';
 
 const endpoint = '/api/vercon/partners';
 const compare = new Intl.Collator('ro', { sensitivity: 'base', numeric: true });
@@ -33,11 +34,14 @@ export function mountPartners(host, opts) {
   }
   const fiscal = controls.get('CodFiscal');
   const search = ui.own(new TextBox(searchHost, { type: 'search', placeholder: 'Caută furnizor / cod fiscal…',
-    ariaLabel: 'Caută furnizor', onInput: () => paintRows() }));
+    ariaLabel: 'Caută furnizor', onInput: () => applySearch() }));
+  // The list is filtered after a pause in typing and once the text has the minimum characters (spaces not counted).
+  const applySearch = debounced(() => { if (!disposed) paintRows(); });
+  ui.own(applySearch.cancel);
   const dirty = () => !!selected && fiscal.text !== String(selected.CodFiscal || '');
   const query = () => new URLSearchParams(Object.entries(opts.sel()).filter(([, value]) => value != null && value !== ''));
   const visible = () => {
-    const text = search.text.trim().toLocaleLowerCase('ro');
+    const text = effectiveSearchText(search.text).toLocaleLowerCase('ro');
     return rows.filter((row) => !text || ['DenumirePartener', 'CodFiscal', 'CodPartener'].some((key) =>
       String(row[key] || '').toLocaleLowerCase('ro').includes(text)))
       .sort((a, b) => compare.compare(a.DenumirePartener, b.DenumirePartener)

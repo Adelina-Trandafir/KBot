@@ -113,6 +113,8 @@ Public NotInheritable Class OrdDraftRec
     ''' <summary>Linia-parinte, cand aceea are deja cheie reala. Legatura merge pe «...P».</summary>
     Public Property Idordtblp As Integer
     Public Property IdPlataFx As Integer
+    ''' <summary>Slice 02EF-11: the reception line (<c>FX_Receptii.IDR</c>) this link covers; 0 = none (a link made from a payment).</summary>
+    Public Property Idrp As Integer
     Public Property Valoare As Double
 End Class
 

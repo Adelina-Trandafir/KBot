@@ -149,6 +149,7 @@ Built and tried on screen in the copy `KBOT_TEST`, brought into `KBOT\src` on 13
 | 0114-26 | Legături greșite, poarta rezervării și tooltip (23.10.2026) | GATA pe cod: build KBot.App 0 avertismente / 0 erori, py_compile curat; server NEDEPLOYAT (fișier nou + 4 modificate, de pus de mână), nimic rulat pe MariaDB, nimic văzut pe ecran, poarta JS nerulată, regula de detectare gândită doar pe AAB2FTFNE46, teste neatinse. | `SLICE-0114-25-repara-rezervari-fereastra-previzualizare.md#slice-0114-26` |
 | 0114-27 | Programul DDF/ORD după SS și repararea antetului (23.10.2026) | Build curat; nerulat, nevăzut. | `SLICE-0114-27-program-ddf-dupa-ss-indicatori.md` |
 | 0114-28 | Rezervări: coloana «Indicator» după «Clasificație» în grilă; grila agregată grupează pe (clasificație, indicator) (04.11.2026) | GATA pe cod: build KBot.App 0 avertismente / 0 erori; nerulat, nevăzut; captura de ajutor neredată | `SLICE-0114-28-rezervari-coloana-indicator.md` |
+| 0114-29 | Poarta rezervărilor fără revizie (0114-26) opțională din Setări › FOREXE (bifă, implicit pornită); scroll vertical în vederea FOREXE (ultimul rând Percent → Absolute 20) (07.11.2026) | GATA pe cod: build KBot.App 0 avertismente / 0 erori; nerulat, nevăzut; cauza lipsei scroll-ului neconfirmată; Check-Help nerulat | `SLICE-0114-29-poarta-rezervari-optionala.md` |
 
 ### Open threads — 0114
 

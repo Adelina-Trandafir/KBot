@@ -15,6 +15,21 @@ etichetă care spune ce face. În dreapta benzii cu file scrie utilizatorul cone
 
 <!-- capture: ribbon-file | caption: Ribbonul, fila «Angajamente», cu butonul «Închide» în dreapta | prepare: Deschideți «Lista angajamentelor» din ribbon (Angajamente › Navigare), ca butonul «Închide» să se vadă. Alegeți fila «Angajamente» și prindeți toată lățimea ribbonului. | redo: 2026-10-17 21:00 | why: 0114-15/16: grupul vederii poate avea mai multe butoane (Rezervari, Receptii); 0114-06/14: ribbonul are in dreapta grupul machetei (langa «Inchide») si grupul vederii; meniul din subsolul listei are doua randuri; E-Factura sta sub Extrase in bara vederilor -->
 
+## Butonul «Istoric»
+<!-- slice: 0097-09 -->
+
+În dreapta, imediat înainte de **«Închide»**, butonul **«Istoric»** deschide [istoricul navigării](topic:contabil.fereastra).
+Rămâne acolo indiferent de fila sau vederea aleasă, inclusiv când grupurile machetei și ale vederii se schimbă.
+Pe pagina «Acasă» rămâne vizibil chiar dacă nu ai o machetă de închis. Când ribbonul este strâns, apare în banda cu file.
+
+Din listă revii la o machetă deschisă sau redeschizi una închisă. Afișarea butonului se schimbă din
+**Setări › Aplicație › Generale › «Arată istoricul în ribbon»**, bifată implicit.
+
+Headerul etichetei butonului este **«Istoricul navigarii (CTRL+TAB)»**. Scurtătura **Ctrl+Tab** deschide selectorul
+cu miniaturile machetelor deschise, în ordinea ultimei utilizări: ții Ctrl apăsat, parcurgi cu Tab (sau Shift+Tab în
+sens invers), apoi eliberezi Ctrl pentru confirmare. Esc anulează. Funcționează și când butonul este ascuns —
+[Istoricul navigării](topic:contabil.fereastra).
+
 ## Filele și butoanele
 <!-- slice: 0114, 0118, 0119, 0114-01, 0114-04, 0114-05, 0000-76, 0000-88, 0000-89, 0114-06, 0114-07, 0114-09, 0114-10, 0114-11, 0000-90, 0123-01, 0000-119, AV01-13 -->
 

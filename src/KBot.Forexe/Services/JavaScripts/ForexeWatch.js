@@ -258,8 +258,74 @@
             done: function () {
                 return !!readCod() && !exists(SEL_FORM_RECEPTIE);
             }
+        },
+        // Slice 0076-02 (operator, 06.11.2026). The trash can of a row on the receptions tab:
+        //   <a href="javascript:;"><i class="glyphicon glyphicon-trash"></i></a>
+        // opens the window «Sterge receptie» / «Confirmati stergere receptie?» (Nu / Da). That
+        // window belongs to the operator ALONE: this script does not touch it and NEVER presses «Da»
+        // for them (checkConfirm excludes it). There is no `finish` click rule - the operator answers.
+        //
+        // PROVISIONAL END - TO BE FINISHED once the page's own success message of a deletion is known
+        // (the operator does not know it yet; probably the kind of message a save gives): until then
+        // the deletion is known by the page having FEWER trash cans than at the click, with no window
+        // open and the page not busy (checkDeletion). It is not reliable; replace it with the message.
+        'receptie-stergere': {
+            label: 'Ștergere recepție',
+            when: 'li.tab1.active',
+            start: [
+                { closest: 'table.table-striped tbody tr a:has(.glyphicon-trash)' },
+                { closest: 'table.table-striped tbody tr .glyphicon-trash' }
+            ],
+            finish: []
         }
     };
+
+    // How many reception rows the page lists right now (each has one trash can).
+    function trashCount() {
+        try { return document.querySelectorAll('table.table-striped tbody tr .glyphicon-trash').length; }
+        catch (e) { return 0; }
+    }
+
+    // Slice 0076-02: READS the page only. Called by a short timer after the trash click and on the
+    // beat. Ends the deletion as finished (row gone), or cancelled (the window was shown and went
+    // away with the row still there = «Nu» / ×; or nothing happened in a minute).
+    var deletionTimer = null;
+    var deletionSawModal = false;
+    var deletionSameSince = 0;
+    function stopDeletionWatch() {
+        if (deletionTimer) { clearInterval(deletionTimer); deletionTimer = null; }
+        deletionSawModal = false;
+        deletionSameSince = 0;
+    }
+    function startDeletionWatch() {
+        stopDeletionWatch();
+        deletionTimer = setInterval(checkDeletion, 500);
+    }
+    function checkDeletion() {
+        if (state.op !== 'receptie-stergere') { stopDeletionWatch(); return; }
+        var since = new Date(state.startedAt).getTime();
+        if (!isNaN(since) && Date.now() - since > 60000) {
+            stopDeletionWatch();
+            cancelOperation('ștergerea nu s-a confirmat în 60 s');
+            return;
+        }
+        if (anyVisible(SEL_MODAL)) { deletionSawModal = true; deletionSameSince = 0; return; }
+        if (wicketBusy()) { return; }
+        if (trashCount() < (state.delCount || 0)) {
+            stopDeletionWatch();
+            finishOperation('rând dispărut din listă');
+            return;
+        }
+        if (deletionSawModal) {
+            // The window was open and is gone, the row is still there: give the page a moment (the
+            // list is redrawn after the answer), then count it as «Nu».
+            if (!deletionSameSince) { deletionSameSince = Date.now(); return; }
+            if (Date.now() - deletionSameSince > 3000) {
+                stopDeletionWatch();
+                cancelOperation('stergerea nu s-a făcut (fereastra s-a închis, rândul e încă în listă)');
+            }
+        }
+    }
 
     // The form each operation edits (slice 0076): once it has been on screen, its going away
     // with no save pending means the operator left without saving (section 12).
@@ -302,6 +368,7 @@
         return {
             op: null, label: '', startedAt: null, codAtStart: '', pendingSince: null,
             formSeen: false, rowDate: '', formDate: '',
+            rowSuma: '', rowPozitie: 0, rowRang: 0, delCount: 0,
             rezBefore: null, rezIndicator: '', rezBuget: null, rezMotiv: '',
             recDates: null, recAck: ''
         };
@@ -489,6 +556,28 @@
         return scrapeTable(table)[idx] || null;
     }
 
+    // Slice 0076-01: WHICH row of the receptions list the element is in, the way K-BOT keeps
+    // it (FX_Receptii_R.NrCrtForexe / RangZi): position in the whole list (1-based) and rank
+    // among the rows with the SAME date, in list order (1-based). Needed to tell two receptions
+    // of one day apart when a date is moved. { pozitie: 0, rang: 0 } when it cannot be read.
+    function rowPlaceOf(el) {
+        var none = { pozitie: 0, rang: 0 };
+        var tr = closestOf(el, 'tr');
+        var table = closestOf(el, 'table');
+        if (!tr || !table) { return none; }
+        var trs = table.querySelectorAll('tbody tr');
+        var idx = Array.prototype.indexOf.call(trs, tr);
+        if (idx < 0) { return none; }
+        var rows = scrapeTable(table);
+        if (!rows[idx]) { return none; }
+        var mine = normDate(rows[idx].Data);
+        var rang = 0;
+        for (var i = 0; i <= idx; i++) {
+            if (normDate(rows[i].Data) === mine) { rang++; }
+        }
+        return { pozitie: idx + 1, rang: rang };
+    }
+
     // Any d/m/yyyy spelling (/ . -) -> dd/MM/yyyy, the way the receptions list writes «Data»
     // (WorkflowCatalog.DataReceptieFormat). '' when it is not a date.
     function normDate(s) {
@@ -554,9 +643,16 @@
         state = fresh;
         // Slice 0076 (section 12): what the start click says about the save to come.
         try {
-            if (opName === 'receptie-modificare' && el) {
+            if ((opName === 'receptie-modificare' || opName === 'receptie-stergere') && el) {
                 var rowR = rowReadOf(el);
                 state.rowDate = normDate(rowR ? rowR.Data : '');
+                // Slice 0076-02: the trash cans BEFORE the deletion (provisional end, see checkDeletion).
+                if (opName === 'receptie-stergere') { state.delCount = trashCount(); }
+                // Slice 0076-01: the row's identity, for a date that moves (see rowPlaceOf).
+                state.rowSuma = rowR && rowR.Suma != null ? String(rowR.Suma) : '';
+                var place = rowPlaceOf(el);
+                state.rowPozitie = place.pozitie;
+                state.rowRang = place.rang;
             } else if (opName === 'rezervare') {
                 state.rezBefore = indicatorCodes(scrapeTable(document.querySelector(SEL_LISTA)));
                 // The eye of an existing row names the indicator; «Adauga» does not - the new
@@ -571,6 +667,7 @@
         saveState();
         emit('started');
         renderStatus();
+        if (opName === 'receptie-stergere') { startDeletionWatch(); }   // slice 0076-02, reads the page only
     }
 
     // el = the save button that was pressed (Nothing when .NET or the menu ends it).
@@ -595,9 +692,17 @@
 
     // Section 12: the "data" of a finished operation, read now that the page is settled.
     function finishedData() {
-        if (state.op === 'receptie' || state.op === 'receptie-modificare') {
+        if (state.op === 'receptie-stergere') {
+            // Slice 0076-02: the row that is gone, as it was when the trash can was pressed.
+            return { rowDate: state.rowDate || '', rowSuma: state.rowSuma || '',
+                     rowPozitie: state.rowPozitie || 0, rowRang: state.rowRang || 0 };
+        }
+        if (state.op === 'receptie'|| state.op === 'receptie-modificare') {
             return { dataReceptie: state.formDate || state.rowDate || '', rowDate: state.rowDate || '',
-                     formDate: state.formDate || '' };
+                     formDate: state.formDate || '',
+                     // Slice 0076-01: the row as it was when the eye was pressed.
+                     rowSuma: state.rowSuma || '', rowPozitie: state.rowPozitie || 0,
+                     rowRang: state.rowRang || 0 };
         }
         if (state.op === 'rezervare') {
             var rows = scrapeTable(document.querySelector(SEL_LISTA));
@@ -1013,6 +1118,10 @@
             if (m._kbotAnswered) { continue; }
             var text = norm(m.innerText);
             if (fold(text).indexOf(CONFIRM_WORD) < 0) { continue; }
+            // NEVER the window of a reception's deletion («Sterge receptie» / «Confirmati stergere
+            // receptie?», slice 0076-02): only the operator may answer it (operator, 06.11.2026,
+            // CRITICAL). It carries no «sigur» today; this line keeps it that way if its text changes.
+            if (fold(text).indexOf('stergere receptie') >= 0) { continue; }
             if (modalHasFields(m)) { continue; }
             var b = confirmButtons(m);
             if (!b.yes || !b.no) { continue; }
@@ -1065,6 +1174,7 @@
     function configFrom(c) {
         return {
             devTools: !!c.devTools, darkMode: !!c.darkMode, menu: c.menu !== false,
+            gate: c.gate !== false,   // the reservation gate (0114-26) is on unless the setting says false
             veil: veilColors(c.veil), rules: Array.isArray(c.rules) ? c.rules : []
         };
     }
@@ -1562,6 +1672,7 @@
 
     function onPoartaClick(e) {
         if (suspended || poartaBypass || poartaBusy) { return; }
+        if (!config.gate) { return; }                   // switched off in Setari -> FOREXE
         if (typeof window._kbotWatchCallback !== 'function') { return; }
         if (state.op) { return; }                       // already inside an operation
         if (!exists('li.tab0.active')) { return; }      // reservations tab only

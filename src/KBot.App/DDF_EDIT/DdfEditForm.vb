@@ -114,6 +114,13 @@ Public Class DdfEditForm
     ''' Rezervari tree's «+» (operator, 26.09.2026).</summary>
     Public Property ProgramDinIndicatori As Boolean
 
+    ''' <summary>
+    ''' Slice 02EF-12 (operator, 07.11.2026): the window was opened from the page «Recepții &lt;&gt; EFactura» to reserve what a reception takes. Each row names an
+    ''' indicator and the amount of the reception on it: the line of that indicator starts with the amount as its current value, and THIS route (and no other) refuses
+    ''' the save while a value cannot make the reception fit (<see cref="MotiveReceptieNeacoperita"/>). Nothing = the ordinary window.
+    ''' </summary>
+    Public Property ValoriDinReceptie As IReadOnlyList(Of KeRezervareRand)
+
     ''' <summary>The angajament's distinct <c>FX_Indicatori.SS</c> («;» / «,» separated, the tree
     ''' node's <c>Surse</c>) -- through <c>DefaProgram</c> the ONLY source of the program.</summary>
     Public Property SurseIndicatori As String = String.Empty
@@ -659,11 +666,28 @@ Public Class DdfEditForm
                 Return
             End If
 
+            ' Slice 02EF-12: opened for a reception, the line of each indicator it touches starts with the reception's amount (the operator may change it).
+            Dim k_precompletate As Integer = 0
+            If ValoriDinReceptie IsNot Nothing Then
+                For Each k_rand As KeRezervareRand In ValoriDinReceptie
+                    If k_rand.SumaReceptie <= 0D Then Continue For
+                    Dim k_linie As DdfDraftLinieA = linii.FirstOrDefault(
+                        Function(k_l) String.Equals(If(k_l.CodIndicator, String.Empty).Trim(), k_rand.CodIndicator.Trim(), StringComparison.OrdinalIgnoreCase))
+                    If k_linie Is Nothing Then Continue For
+                    k_linie.ValCur = CDbl(k_rand.SumaReceptie)
+                    k_linie.ValTot = Math.Round(k_linie.ValCur + k_linie.ValPrec, 2)
+                    k_precompletate += 1
+                Next
+            End If
+
             _draft.LiniiA.AddRange(linii)
             _draft.Revizie.RecalculeazaSectiuneaB()
             ReimprospateazaSectiuneaA()
-            ntfMesaj.Show($"Secțiunea A pornește cu {linii.Count} indicatori ai angajamentului, cu valoarea 0. " &
-                          "Completează valorile; rândurile rămase cu 0 se șterg la salvare.",
+            ntfMesaj.Show(If(k_precompletate > 0,
+                             $"Secțiunea A pornește cu {linii.Count} indicatori ai angajamentului; {k_precompletate} au valoarea recepției. " &
+                             "Poți schimba valorile, dar rezervarea trebuie să încapă recepția; rândurile rămase cu 0 se șterg la salvare.",
+                             $"Secțiunea A pornește cu {linii.Count} indicatori ai angajamentului, cu valoarea 0. " &
+                             "Completează valorile; rândurile rămase cu 0 se șterg la salvare."),
                           NoticeKind.Success)
             ntfMesaj.Visible = True
         Catch ex As Exception
@@ -1188,6 +1212,28 @@ Public Class DdfEditForm
         Return motive
     End Function
 
+    ''' <summary>
+    ''' Slice 02EF-12: the indicators of the reception whose line does not add enough (the value typed, or the line left at 0 / deleted) for the reception to fit:
+    ''' what is free now (reserved - received) plus the value of the line must reach the reception's amount. Empty = fine, or the window is not for a reception.
+    ''' </summary>
+    Private Function MotiveReceptieNeacoperita(deSters As HashSet(Of DdfDraftLinieA)) As List(Of String)
+        Dim k_motive As New List(Of String)()
+        If ValoriDinReceptie Is Nothing Then Return k_motive
+        Dim k_ro As New Globalization.CultureInfo("ro-RO")
+        For Each k_rand As KeRezervareRand In ValoriDinReceptie
+            If k_rand.SumaReceptie <= 0D Then Continue For
+            Dim k_linie As DdfDraftLinieA = _draft.LiniiA.FirstOrDefault(
+                Function(k_l) Not deSters.Contains(k_l) AndAlso
+                              String.Equals(If(k_l.CodIndicator, String.Empty).Trim(), k_rand.CodIndicator.Trim(), StringComparison.OrdinalIgnoreCase))
+            Dim k_adauga As Decimal = If(k_linie Is Nothing, 0D, CDec(k_linie.ValCur))
+            If k_adauga + 0.005D >= k_rand.Necesar Then Continue For
+            k_motive.Add($"{k_rand.Clsf} ({k_rand.CodIndicator}): recepția cere {k_rand.SumaReceptie.ToString("N2", k_ro)}, liber sunt " &
+                         $"{(k_rand.Rezervat - k_rand.Receptionat).ToString("N2", k_ro)}, deci rezervarea trebuie să adauge cel puțin " &
+                         $"{k_rand.Necesar.ToString("N2", k_ro)} (acum: {k_adauga.ToString("N2", k_ro)})")
+        Next
+        Return k_motive
+    End Function
+
     ' ══════════════════════════════════════════════════════════════════════════
     ' Saving
     ' ══════════════════════════════════════════════════════════════════════════
@@ -1228,6 +1274,15 @@ Public Class DdfEditForm
                 Next
                 KBotMessage.Show(Me, mesaj.ToString(), "Salvează documentul",
                                 MessageBoxButtons.OK, MessageBoxIcon.Error)
+                Return
+            End If
+
+            ' Slice 02EF-12: opened for a reception, the reservation has to make it fit -- a blocking error otherwise (this route only).
+            Dim k_neacoperit As List(Of String) = MotiveReceptieNeacoperita(New HashSet(Of DdfDraftLinieA)(deSters))
+            If k_neacoperit.Count > 0 Then
+                KBotMessage.Show(Me, "Rezervarea nu încape recepția, deci nu se salvează:" & vbCrLf & "- " & String.Join(vbCrLf & "- ", k_neacoperit) &
+                                vbCrLf & vbCrLf & "Mărește valoarea curentă pe rândurile de mai sus.",
+                                "Salvează documentul", MessageBoxButtons.OK, MessageBoxIcon.Error)
                 Return
             End If
 

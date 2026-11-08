@@ -79,7 +79,6 @@ Partial Class CertificatePickerForm
         grilaCertificate.Columns.Add(KBotDataColumn4)
         grilaCertificate.Dock = System.Windows.Forms.DockStyle.Fill
         grilaCertificate.FillColumnKey = "nume"
-        grilaCertificate.HeaderHeight = 24
         grilaCertificate.Location = New System.Drawing.Point(0, 106)
         grilaCertificate.Name = "grilaCertificate"
         grilaCertificate.ReadOnlyGrid = True

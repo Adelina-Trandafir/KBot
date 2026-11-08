@@ -79,6 +79,7 @@ from routes.auth.guard import require_session
 from utils.database import get_kbot_connection
 
 from . import forexe_bp, partner_links
+from .prelucrare_helpers import fara_receptii_sterse
 
 logger = logging.getLogger(__name__)
 
@@ -137,9 +138,12 @@ _SQL = (
     "           GROUP BY CodAngajament, CodIndicator) aggRez "
     "       ON aggRez.CodAngajament = I.CodAngajament "
     "      AND aggRez.CodIndicator  = I.CodIndicator "
-    "LEFT JOIN (SELECT CodAngajament, CodIndicator, SUM(DIF) AS TotalReceptii "
-    "           FROM FX_Receptii WHERE CodAngajament = %s "
-    "           GROUP BY CodAngajament, CodIndicator) aggRec "
+    # 07.11.2026: the lines of a DELETED reception (seen in FOREXE / with its deletion row) are not
+    # received any more -- they stay in the base, so the sum leaves them out here.
+    "LEFT JOIN (SELECT FR.CodAngajament, FR.CodIndicator, SUM(FR.DIF) AS TotalReceptii "
+    "           FROM FX_Receptii FR LEFT JOIN FX_Receptii_H H ON H.IDRH = FR.IDRH "
+    "           WHERE FR.CodAngajament = %s AND (H.IDRH IS NULL OR " + fara_receptii_sterse("H") + ") "
+    "           GROUP BY FR.CodAngajament, FR.CodIndicator) aggRec "
     "       ON aggRec.CodAngajament = I.CodAngajament "
     "      AND aggRec.CodIndicator  = I.CodIndicator "
     "LEFT JOIN (SELECT CodAngajament, CodIndicator, SUM(Suma) AS TotalPlati "

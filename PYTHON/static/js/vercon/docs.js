@@ -314,7 +314,7 @@ export function mountDocuments(host, opts) {
     if (name === 'Pret') { line.ef_price_manual = true; return; }
     if (name !== 'Cant' || line.ef_price_manual) return;
     const qty = number(line.Cant), net = number(line.ef_net);
-    if (qty > 0 && net != null && Number.isFinite(net)) { line.Pret = fixed(net / qty, 4); say('Prețul a fost recalculat din valoarea facturii și cantitatea primită. Îl puteți modifica.'); }
+    if (qty > 0 && net != null && Number.isFinite(net)) line.Pret = fixed(net / qty, 4);
   }
   function clearCorrection(line) {
     if (line.calc_mode === 'GROSS' && line.input_price != null) line.Pret = line.input_price;
@@ -514,10 +514,12 @@ export function mountDocuments(host, opts) {
           ? { Data: state.draft.header.Data, DataFc: state.draft.header.DataFc, Numar: state.draft.header.Numar, NumarSub: state.draft.header.NumarSub } : null;
         const previousNumberLock = state.draft.nirNumberLocked;
         const syncNirDate = family === 'nir' && spec.key === 'DataFc' && previous !== value;
+        const syncInvoiceDate = family === 'nir' && spec.key === 'Data' && previous !== value && !inputs.get('DataFc')?.readOnly;
+        const syncedDateKey = syncNirDate ? 'Data' : syncInvoiceDate ? 'DataFc' : null;
         state.draft.header[spec.key] = value; state.dirty = true;
-        if (syncNirDate) {
-          state.draft.header.Data = value;
-          inputs.get('Data')?._picker?.setValue(value ? new Date(value + 'T00:00:00') : null, false);
+        if (syncedDateKey) {
+          state.draft.header[syncedDateKey] = value;
+          inputs.get(syncedDateKey)?._picker?.setValue(value ? new Date(value + 'T00:00:00') : null, false);
         }
         if (receipt && spec.key === 'Numar' && String(previous ?? '') !== String(value ?? '')) state.draft.autoNumber = false;
         if (family === 'nir' && spec.key === 'Valoare') syncInvoiceValue();

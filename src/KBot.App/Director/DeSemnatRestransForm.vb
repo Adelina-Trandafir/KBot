@@ -14,9 +14,8 @@ Imports KBot.Theming
 ''' <summary>
 ''' Slice 0124-06 -- the K-BOT of a «Secretar» or an «Administrator» (operator, 30.10.2026, CRITICAL: they see ONLY the documents addressed
 ''' to their role and NOTHING else). <c>Program</c> opens THIS window instead of the main one for those roles. It shows the list of
-''' documents addressed to the role (<c>GET /api/forexe/ddf/de-semnat</c>) and, for the selected one, generates the document ON THIS PC with section A
-''' only (as the accountant does), shows it in Adobe with a signing session that accepts section A only; the upload is the normal PDF
-''' route, and the server moves the document on to the next signer. Nothing is stored on the server before the signature.
+''' documents addressed to the role (<c>GET /api/forexe/ddf/de-semnat</c>) and opens the server PDF if one exists.
+''' Otherwise it generates section A on this PC. The signing session accepts section A only and the server moves the document on to the next signer.
 '''
 ''' <para><b>The server is the guarantee, not this window.</b> A restricted session reads only the DDF revisions addressed to its role
 ''' (<c>ddf_flux_core.refuza_restrans</c>, <c>filtreaza_ddf</c>); everything else works for it as it always did. This window just has nothing more to show.</para>
@@ -144,39 +143,46 @@ Public Class DeSemnatRestransForm
     ' ── The document ─────────────────────────────────────────────────────────────
 
     ''' <summary>
-    ''' Generates the document of the revision on this PC with section A only (the revision, read through the DDF read that gives a restricted role
-    ''' only the revisions addressed to it) into a NEW file of the work area (Acrobat serves a reused name from memory) and shows it with a
-    ''' signing session. UI boundary (async Sub): logs, tells the operator, never throws.
+    ''' Shows the saved PDF, or generates section A if there is no PDF yet. Uses a new path for Acrobat.
+    ''' UI boundary (async Sub): logs, tells the operator, never throws.
     ''' </summary>
     Private Async Sub DeschideAsync(d As DdfDeSemnat)
         Try
             ReleaseDocument()
             lblDocument.Text = "Se pregătește documentul…"
             lblDocument.Visible = True
-            Dim k_generat As DdfPdfGenerator.Rezultat = Await DdfPdfGenerator.GenereazaAsync(
-                Function() WithReauth(Of DdfInfo)(
-                    Function() _apiClient.GetDdfAsync(d.CodAngajament, CancellationToken.None, pentruGenerare:=True)),
-                Nothing, _session, d.Idrev, DdfPdfMode.OnlyA).ConfigureAwait(True)
-            If IsDisposed Then Return
-            If k_generat Is Nothing Then
-                lblDocument.Text = "Documentul nu a putut fi pregătit."   ' no template (not signed in): the operator was told
-                Return
+            Dim k_pdf As PdfDownloadResult = Await WithReauth(Of PdfDownloadResult)(
+                Function() _apiClient.DownloadDdfPdfAsync(d.Idrev, Nothing, CancellationToken.None)).ConfigureAwait(True)
+            Dim k_generat As DdfPdfGenerator.Rezultat = Nothing
+            If k_pdf.Status = PdfDownloadStatus.NotFound Then
+                k_generat = Await DdfPdfGenerator.GenereazaAsync(
+                    Function() WithReauth(Of DdfInfo)(
+                        Function() _apiClient.GetDdfAsync(d.CodAngajament, CancellationToken.None, pentruGenerare:=True)),
+                    Nothing, _session, d.Idrev, DdfPdfMode.OnlyA).ConfigureAwait(True)
+                If k_generat Is Nothing Then
+                    If Not IsDisposed Then lblDocument.Text = "Documentul nu a putut fi pregătit."
+                    Return
+                End If
             End If
-            _files.Add(k_generat.PdfPath)
-            _files.Add(Path.ChangeExtension(k_generat.PdfPath, ".xml"))
             ' The row picked meanwhile is another one: this answer is dropped.
             Dim k_now As DdfDeSemnat = TryCast(lstDocumente.CurrentRow?.Tag, DdfDeSemnat)
-            If k_now Is Nothing OrElse k_now.Idrev <> d.Idrev Then
-                DeleteLocalAsync(TakeFiles())
+            If IsDisposed OrElse k_now Is Nothing OrElse k_now.Idrev <> d.Idrev Then
+                If k_generat IsNot Nothing Then DeleteLocalAsync(New List(Of String) From {
+                    k_generat.PdfPath, Path.ChangeExtension(k_generat.PdfPath, ".xml")})
                 Return
             End If
 
-            Dim k_path As String = TempPdfStore.PathFor($"DESEMNAT_{d.Idrev}_{DateTime.Now:HHmmss}.pdf")
-            File.Copy(k_generat.PdfPath, k_path, overwrite:=True)
+            Dim k_path As String = TempPdfStore.PathFor($"DESEMNAT_{d.Idrev}_{Guid.NewGuid():N}.pdf")
+            If k_pdf.Status = PdfDownloadStatus.Content Then
+                File.WriteAllBytes(k_path, k_pdf.Bytes)
+            Else
+                _files.Add(k_generat.PdfPath)
+                _files.Add(Path.ChangeExtension(k_generat.PdfPath, ".xml"))
+                File.Copy(k_generat.PdfPath, k_path)
+            End If
             _files.Add(k_path)
 
-            ' The server holds a signed copy only if A was signed before and something went wrong afterwards; d.PdfSha256 is then its sha.
-            _signing = New PdfSigningSession(PdfDocKind.Ddf, d.Idrev, k_path, k_path, d.PdfSha256, _apiClient)
+            _signing = New PdfSigningSession(PdfDocKind.Ddf, d.Idrev, k_path, k_path, k_pdf.Sha256, _apiClient)
             _signing.AllowedNewRoles = RoluriPermise
             AddHandler _signing.Completed, AddressOf OnSigningCompleted
             _signing.Begin()

@@ -262,7 +262,6 @@ Partial Class AvcMigratorForm
         dgvUnitati.Columns.Add(KBotDataColumn10)
         dgvUnitati.Dock = DockStyle.Fill
         dgvUnitati.FillColumnKey = "nume"
-        dgvUnitati.HeaderHeight = 26
         dgvUnitati.Location = New Point(0, 40)
         dgvUnitati.Margin = New Padding(0)
         dgvUnitati.Name = "dgvUnitati"
@@ -579,7 +578,6 @@ Partial Class AvcMigratorForm
         dgvPasi.Columns.Add(KBotDataColumn17)
         dgvPasi.Dock = DockStyle.Fill
         dgvPasi.FillColumnKey = "pas"
-        dgvPasi.HeaderHeight = 26
         dgvPasi.Location = New Point(4, 26)
         dgvPasi.Margin = New Padding(4)
         dgvPasi.Name = "dgvPasi"

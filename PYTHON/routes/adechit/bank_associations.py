@@ -9,7 +9,7 @@ from datetime import date
 from decimal import Decimal, InvalidOperation
 
 from .domain import DomainError, require
-from . import service
+from . import service, bank_numbers
 from .bank_targets import reviewed_target, ensure_payment_row
 
 
@@ -56,9 +56,9 @@ def available(repo, args):
         except (ValueError, TypeError) as error:
             raise DomainError('FILTER', 'Luna extraselor este invalidă.', 400) from error
         following = date(first.year + (first.month == 12), first.month % 12 + 1, 1)
-        clauses.extend(['e.DataDoc>=%s', 'e.DataDoc<%s'])
+        clauses.extend(['f.DataExtras>=%s', 'f.DataExtras<%s'])
         params.extend([first.isoformat(), following.isoformat()])
-    for clause, value in [('e.DataDoc>=%s', start), ('e.DataDoc<=%s', end), ('e.IDFXE<%s', int(cursor) if cursor else None)]:
+    for clause, value in [('f.DataExtras>=%s', start), ('DATE(f.DataExtras)<=%s', end), ('e.IDFXE<%s', int(cursor) if cursor else None)]:
         if value is not None:
             clauses.append(clause)
             params.append(value)
@@ -73,7 +73,9 @@ def available(repo, args):
         clauses.append(f"LOWER({explanation}) LIKE %s ESCAPE '='")
         params.append('%' + search.lower().replace('=', '==').replace('%', '=%').replace('_', '=_') + '%')
     try:
-        rows = repo.query('SELECT ' + SOURCE_SELECT + ' FROM FX_Extrase e '
+        rows = repo.query('SELECT ' + SOURCE_SELECT + ', DATE(f.DataExtras) AS DataExtras FROM FX_Extrase e '
+                          'LEFT JOIN FX_Extrase_H h ON h.IDEXH=e.IDFXH '
+                          'LEFT JOIN FX_Extrase_F f ON f.IDEXF=h.IDEXF '
                           'LEFT JOIN AD_EXTRASE_ASOCIERI a ON a.IDFXE=e.IDFXE WHERE '
                           + ' AND '.join(clauses) + ' ORDER BY e.IDFXE DESC LIMIT 151', tuple(params))
         # AD_07 removed FelDoc; the requested correspondence restores it via manual SQL.
@@ -85,9 +87,11 @@ def available(repo, args):
 
 
 def available_periods(repo):
-    rows = repo.query('SELECT DISTINCT YEAR(DataDoc) AS year, MONTH(DataDoc) AS month FROM FX_Extrase '
-                     'WHERE DataDoc IS NOT NULL AND YEAR(DataDoc)>0 AND MONTH(DataDoc) BETWEEN 1 AND 12 '
-                     'AND suma_credit>0 AND COALESCE(suma_debit,0)=0 '
+    rows = repo.query('SELECT DISTINCT YEAR(f.DataExtras) AS year, MONTH(f.DataExtras) AS month '
+                     'FROM FX_Extrase e JOIN FX_Extrase_H h ON h.IDEXH=e.IDFXH '
+                     'JOIN FX_Extrase_F f ON f.IDEXF=h.IDEXF '
+                     'WHERE f.DataExtras IS NOT NULL AND YEAR(f.DataExtras)>0 AND MONTH(f.DataExtras) BETWEEN 1 AND 12 '
+                     'AND e.suma_credit>0 AND COALESCE(e.suma_debit,0)=0 '
                      'ORDER BY year DESC, month DESC')
     return {'periods': [{'year': int(row['year']), 'month': int(row['month']),
                          'value': f"{row['year']:04d}-{row['month']:02d}"} for row in rows]}
@@ -219,13 +223,14 @@ def associate_allocations(repo, db_name, original, body, email):
     require(len(months) == 1, 'ALLOCATION_MONTH', 'Alegeți aceeași lună pentru întreaga repartizare.', 400)
     require(total == amount_of(original), 'ALLOCATION_TOTAL',
             'Totalul sumelor repartizate trebuie să fie egal cu încasarea din extras.', 400)
+    numbers = bank_numbers.allocation_numbers(repo, allocations, body.get('number_year'))
     saved = []
     # All target versions are checked before payer renewal can update related portal identities.
-    for item, (child, month, previous, attendance) in reviewed:
+    for (item, (child, month, previous, attendance)), number in zip(reviewed, numbers):
         previous = repo.get('Platitori_sub', previous['IDS'])
         require(bool(previous.get('Activ')), 'CONFLICT', 'Plătitorul s-a modificat. Reîncărcați selecția.', 409)
         source = {**original, 'suma_credit': item['amount']}
-        saved.append(write_association(repo, db_name, original, source, item,
+        saved.append(write_association(repo, db_name, original, source, {**item, 'document_number': number},
                                        (child, month, previous, attendance), email))
     return {'extract_id': original['IDFXE'], 'rows': saved, 'count': len(saved)}
 
@@ -240,7 +245,7 @@ def write_association(repo, db_name, original, source, body, target, email):
     explanation = (explanation or '').strip() or default_explanation(repo, month['IDL'])
     require(len(explanation) <= 255, 'EXPLANATION', 'Explicația poate avea maximum 255 de caractere.', 400)
     name = str(source.get('platitor_nume') or '').strip()
-    number = str(source.get('NrDoc') or '').strip()
+    number = str(body.get('document_number') if 'document_number' in body else source.get('NrDoc') or '').strip()
     require(bool(name) and bool(number), 'BANK_DOCUMENT', 'Extrasul trebuie să aibă nume plătitor și număr document.', 400)
     attendance = ensure_payment_row(repo, child, month, attendance)
     # Preserve the selected parent's contacts / portal identity, not a guessed identity from CUI.

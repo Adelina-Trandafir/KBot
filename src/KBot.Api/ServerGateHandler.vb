@@ -34,6 +34,19 @@ Public NotInheritable Class ServerGateHandler
         _timeout = timeout
     End Sub
 
+    ' Slice 0126-05: tells the windows that keep data in memory which kinds this write touched (see DataChangeBus).
+    Private Shared Sub AnnounceChange(k_request As HttpRequestMessage)
+        Try
+            Dim k_uri As Uri = k_request.RequestUri
+            If k_uri Is Nothing Then Return
+            Dim k_idClsf As Integer? = Nothing
+            Dim k_kinds As DataKinds = DataChangeBus.Classify(k_uri.AbsolutePath, k_idClsf)
+            If k_kinds <> DataKinds.None Then DataChangeBus.Raise(k_kinds, k_idClsf)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ServerGateHandler.AnnounceChange", ex)
+        End Try
+    End Sub
+
     Protected Overrides Async Function SendAsync(request As HttpRequestMessage,
                                                  cancellationToken As CancellationToken) As Task(Of HttpResponseMessage)
         Try
@@ -43,12 +56,20 @@ Public NotInheritable Class ServerGateHandler
             ' requests and the update channel: no wait, no count, and the body is left to the caller
             ' (the update zip is streamed).
             If ServerGate.IsRead(request.Method) Then bypass = True
-            If bypass Then Return Await SendTimedAsync(request, bufferBody:=False, cancellationToken).ConfigureAwait(False)
+            If bypass Then
+                Dim k_bypassed As HttpResponseMessage = Await SendTimedAsync(request, bufferBody:=False, cancellationToken).ConfigureAwait(False)
+                ' Slice 0126-05: the robot's own writes (the ingest) change the data the windows keep in memory.
+                If k_bypassed.IsSuccessStatusCode AndAlso Not ServerGate.IsRead(request.Method) Then AnnounceChange(request)
+                Return k_bypassed
+            End If
 
             Await _gate.EnterAsync(cancellationToken).ConfigureAwait(False)
             Try
                 Dim k_answer As HttpResponseMessage = Await SendTimedAsync(request, bufferBody:=True, cancellationToken).ConfigureAwait(False)
-                If k_answer.IsSuccessStatusCode Then RaiseEvent WriteSucceeded(Nothing, EventArgs.Empty)
+                If k_answer.IsSuccessStatusCode Then
+                    RaiseEvent WriteSucceeded(Nothing, EventArgs.Empty)
+                    AnnounceChange(request)
+                End If
                 Return k_answer
             Finally
                 _gate.Leave()

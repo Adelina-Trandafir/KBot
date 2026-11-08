@@ -8,6 +8,7 @@ Title bar for borderless forms (`FormBorderStyle.None`): icon + title on the lef
 - `IconImage: Image` — Empty leaves the title flush left.
 - `ShowClose = True` (slice 0112) — False hides the X completely (the message box does it for questions that must be answered); the other buttons keep their slots.
 - `ShowMinimize = False`, `ShowMaximize = False` (maximize also enables double-click on the drag area). A dialog gets close only.
+- `ShowHistoryButton = False` (0097-09) — optional history shortcut, leftmost in the caption-button group (before options/theme/help). `HistoryButtonClick`, `HistoryButtonHoverChanged`, `HistoryButtonBounds`, `HistoryButtonHot`. The host supplies the history; an `IPopupAnchor` popup opened synchronously from the click keeps this button lit. AVACONT's application settings control it independently of the ribbon history shortcut; the caption shortcut is off by default.
 - `ApplyTheme(scheme)`
 
 ## API — options button (left of the control box)
@@ -38,5 +39,5 @@ Painted drop-downs after the title, addressed by name: `SelectorUnit` (drawn wit
 
 ## Limits
 - Needs a borderless form; on a form with a system frame you get two title bars.
-- No tooltips on its buttons yet (known gap, together with `KBotNavList` items).
-- The control box is min/max/close only — no custom extra buttons beyond the two above.
+- Button tooltips are supplied by the host through hover events (options and history); the other caption buttons have no built-in tooltips.
+- The optional history button uses its own slot; all other caption buttons and the title limit move together.

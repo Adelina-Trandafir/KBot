@@ -102,11 +102,34 @@ Public NotInheritable Class KBotNotice
         Dim sz As Size = TextRenderer.MeasureText(_message, Font, proposed, TextFormatFlags.WordBreak)
         Dim minH As Integer = ThemeShapes.ScaleDpi(Me, 40)
         Dim needed As Integer = sz.Height + ThemeShapes.ScaleDpi(Me, 12)
-        Height = Math.Max(minH, needed)
+        Dim k_height As Integer = Math.Max(minH, needed)
+        If k_height = Height Then Return
+        Height = k_height
+        Parent?.PerformLayout()   ' a docked box moves the others: they are placed again with the new height
+    End Sub
+
+    Private _measuredWidth As Integer
+
+    ' A message shown while the box (or the page that holds it) was not on screen could not be measured then: it is measured when the box really appears, with the width the
+    ' layout gave it, and the others are placed again with its height.
+    Protected Overrides Sub OnVisibleChanged(e As EventArgs)
+        MyBase.OnVisibleChanged(e)
+        If Visible AndAlso Not String.IsNullOrEmpty(_message) Then
+            _measuredWidth = Width
+            MeasureAndResize()
+            Parent?.PerformLayout()
+            ' The page around it is still being laid out in this very pass: once more when it has settled.
+            If IsHandleCreated Then BeginInvoke(New Action(Sub() If Not IsDisposed AndAlso Parent IsNot Nothing Then Parent.PerformLayout()))
+        End If
     End Sub
 
     Protected Overrides Sub OnResize(e As EventArgs)
         MyBase.OnResize(e)
+        ' A new width wraps the message in another number of lines: the height is measured again (Height is only set when it changes, so this settles).
+        If Width <> _measuredWidth AndAlso Visible AndAlso Not String.IsNullOrEmpty(_message) Then
+            _measuredWidth = Width
+            MeasureAndResize()
+        End If
         Invalidate()
     End Sub
 

@@ -17,17 +17,22 @@ Public Class MfImportView
         Public Property Id As Integer
         Public Property Parent As Integer
         Public Property Name As String = String.Empty
+        Public Property SortName As String = String.Empty
     End Class
 
     Private _context As AdminContext
     Private _assets As New List(Of MfAsset)()
     Private ReadOnly _failed As New HashSet(Of MfAsset)()  ' assets the server refused at the last check (by object: the grid can be sorted)
+    Private ReadOnly _warnings As New Dictionary(Of MfAsset, String)() ' SLICE-VC11-01: warnings preserve source values and permit import.
     Private ReadOnly _subunits As New List(Of Pick)()
     Private ReadOnly _gestiuni As New List(Of Pick)()      ' Parent = subunit id
     Private ReadOnly _accounts As New List(Of Pick)()      ' Parent = gestiune id, the subunit is the one chosen
     Private ReadOnly _accountSubunit As New Dictionary(Of Integer, Integer)()
     Private _targetsDb As String = String.Empty
     Private _busy As Boolean
+    Private ReadOnly _names As StringComparer = StringComparer.Create(CultureInfo.GetCultureInfo("ro-RO"), True)
+    Private _setupIdentity As String = String.Empty
+    Private _setupRequestKey As String = String.Empty
 
     Public Sub New()
         InitializeComponent()
@@ -85,6 +90,7 @@ Public Class MfImportView
 
     Private Sub FillGrid()
         _failed.Clear()
+        _warnings.Clear()
         grid.BeginUpdate()
         Try
             grid.ClearRows()
@@ -114,35 +120,7 @@ Public Class MfImportView
                 Return
             End If
             Dim k_db As String = _context.SelectedDb
-            Await RunAsync("MfImportView.BtnTargets_Click",
-                Async Function() As Task
-                    Dim k_result As JsonElement = Await _context.Client.CallRawAsync("vercon-mf-targets", "--db", k_db)
-                    _subunits.Clear()
-                    _gestiuni.Clear()
-                    _accounts.Clear()
-                    _accountSubunit.Clear()
-                    For Each k_item As JsonElement In k_result.GetProperty("subunits").EnumerateArray()
-                        _subunits.Add(New Pick With {.Id = k_item.GetProperty("id").GetInt32(), .Name = k_item.GetProperty("name").GetString()})
-                    Next
-                    For Each k_item As JsonElement In k_result.GetProperty("gestiuni").EnumerateArray()
-                        _gestiuni.Add(New Pick With {.Id = k_item.GetProperty("id").GetInt32(), .Parent = k_item.GetProperty("subunit").GetInt32(),
-                                                     .Name = k_item.GetProperty("name").GetString() & " (" & k_item.GetProperty("state").GetString() & ")"})
-                    Next
-                    For Each k_item As JsonElement In k_result.GetProperty("accounts").EnumerateArray()
-                        Dim k_id As Integer = k_item.GetProperty("id").GetInt32()
-                        _accounts.Add(New Pick With {.Id = k_id, .Parent = k_item.GetProperty("gestiune").GetInt32(), .Name = k_item.GetProperty("name").GetString()})
-                        _accountSubunit(k_id) = k_item.GetProperty("subunit").GetInt32()
-                    Next
-                    _targetsDb = k_result.GetProperty("unit").GetString()
-                    cmbSubunit.Items.Clear()
-                    For Each k_pick As Pick In _subunits
-                        cmbSubunit.Items.Add(k_pick.Name)
-                    Next
-                    FillGestiuni()
-                    lblState.Text = "Unitatea " & _targetsDb & ": " & _subunits.Count.ToString(CultureInfo.InvariantCulture) & " subunități, " &
-                        _gestiuni.Count.ToString(CultureInfo.InvariantCulture) & " gestiuni MF."
-                    _context.Say(lblState.Text)
-                End Function)
+            Await RunAsync("MfImportView.BtnTargets_Click", Function() LoadTargetsAsync(k_db))
         Catch ex As Exception
             GlobalErrorLog.Write("MfImportView.BtnTargets_Click", ex)
         End Try
@@ -153,6 +131,84 @@ Public Class MfImportView
             FillGestiuni()
         Catch ex As Exception
             GlobalErrorLog.Write("MfImportView.CmbSubunit_SelectedIndexChanged", ex)
+        End Try
+    End Sub
+
+    Private Async Function LoadTargetsAsync(k_db As String, Optional k_subunit As Integer = 0, Optional k_gestiune As Integer = 0, Optional k_account As Integer = 0) As Task
+        If k_subunit = 0 AndAlso cmbSubunit.SelectedIndex >= 0 AndAlso cmbSubunit.SelectedIndex < _subunits.Count Then k_subunit = _subunits(cmbSubunit.SelectedIndex).Id
+        Dim k_result = Await _context.Client.CallRawAsync("vercon-mf-targets", "--db", k_db)
+        _subunits.Clear()
+        _gestiuni.Clear()
+        _accounts.Clear()
+        _accountSubunit.Clear()
+        For Each k_item In k_result.GetProperty("subunits").EnumerateArray()
+            _subunits.Add(New Pick With {.Id = k_item.GetProperty("id").GetInt32(), .Name = k_item.GetProperty("name").GetString()})
+        Next
+        For Each k_item In k_result.GetProperty("gestiuni").EnumerateArray()
+            Dim k_name = k_item.GetProperty("name").GetString()
+            _gestiuni.Add(New Pick With {.Id = k_item.GetProperty("id").GetInt32(), .Parent = k_item.GetProperty("subunit").GetInt32(),
+                .SortName = k_name, .Name = k_name & " (" & k_item.GetProperty("state").GetString() & ")"})
+        Next
+        For Each k_item In k_result.GetProperty("accounts").EnumerateArray()
+            Dim k_id = k_item.GetProperty("id").GetInt32()
+            _accounts.Add(New Pick With {.Id = k_id, .Parent = k_item.GetProperty("gestiune").GetInt32(), .Name = k_item.GetProperty("name").GetString()})
+            _accountSubunit(k_id) = k_item.GetProperty("subunit").GetInt32()
+        Next
+        _subunits.Sort(Function(k_a, k_b) _names.Compare(k_a.Name, k_b.Name))
+        _gestiuni.Sort(Function(k_a, k_b) _names.Compare(k_a.SortName, k_b.SortName))
+        _accounts.Sort(Function(k_a, k_b) _names.Compare(k_a.Name, k_b.Name))
+        _targetsDb = k_result.GetProperty("unit").GetString()
+        cmbSubunit.Items.Clear()
+        For Each k_pick In _subunits
+            cmbSubunit.Items.Add(k_pick.Name)
+        Next
+        If _subunits.Count > 0 Then cmbSubunit.SelectedIndex = Math.Max(0, _subunits.FindIndex(Function(k_p) k_p.Id = k_subunit))
+        FillGestiuni()
+        Dim k_gests = ChosenGestiuni()
+        Dim k_gestIndex = k_gests.FindIndex(Function(k_p) k_p.Id = k_gestiune)
+        If k_gestIndex >= 0 Then cmbGestiune.SelectedIndex = k_gestIndex
+        FillAccounts()
+        Dim k_accountIndex = ChosenAccounts().FindIndex(Function(k_p) k_p.Id = k_account)
+        If k_accountIndex >= 0 Then cmbAccount.SelectedIndex = k_accountIndex
+        lblState.Text = "Unitatea " & _targetsDb & ": " & _subunits.Count.ToString(CultureInfo.InvariantCulture) & " subunități, " & _gestiuni.Count.ToString(CultureInfo.InvariantCulture) & " gestiuni MF."
+        _context.Say(lblState.Text)
+    End Function
+
+    Private Async Sub BtnCreate_Click(k_sender As Object, e As EventArgs) Handles btnCreate.Click
+        Try
+            If _busy Then Return
+            If _context.IsAll OrElse String.IsNullOrEmpty(_targetsDb) OrElse Not String.Equals(_targetsDb, _context.SelectedDb, StringComparison.OrdinalIgnoreCase) Then
+                KBotMessage.Show("Alegeți o singură unitate și apăsați «Citește subunitățile».", "Gestiune MF", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            If cmbSubunit.SelectedIndex < 0 OrElse cmbSubunit.SelectedIndex >= _subunits.Count Then
+                KBotMessage.Show("Alegeți subunitatea în care creați gestiunea MF.", "Gestiune MF", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            Dim k_name = txtNewGestiune.Text.Trim()
+            If k_name.Length = 0 Then
+                KBotMessage.Show("Completați numele gestiunii noi.", "Gestiune MF", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            Dim k_db = _targetsDb
+            Dim k_subunit = _subunits(cmbSubunit.SelectedIndex).Id
+            Dim k_year = If(_assets.Count > 0, _assets.Select(Function(k_a) k_a.EntryDate.Year).DefaultIfEmpty(Date.Today.Year).Min(), Date.Today.Year)
+            k_year = Math.Clamp(k_year, 1990, 2100)
+            Dim k_identity = k_db & "|" & k_subunit.ToString(CultureInfo.InvariantCulture) & "|" & k_name & "|" & k_year.ToString(CultureInfo.InvariantCulture)
+            If k_identity <> _setupIdentity Then
+                _setupIdentity = k_identity
+                _setupRequestKey = Guid.NewGuid().ToString("N")
+            End If
+            Await RunAsync("MfImportView.BtnCreate_Click",
+                Async Function() As Task
+                    Dim k_result = Await _context.Client.CallRawAsync("vercon-mf-create", "--db", k_db, "--subunit", k_subunit.ToString(CultureInfo.InvariantCulture),
+                        "--name", k_name, "--year", k_year.ToString(CultureInfo.InvariantCulture), "--request-key", _setupRequestKey)
+                    Await LoadTargetsAsync(k_db, k_result.GetProperty("subunit").GetInt32(), k_result.GetProperty("gestiune").GetInt32(), k_result.GetProperty("account").GetInt32())
+                    lblState.Text = "Gestiunea «" & k_result.GetProperty("name").GetString() & "» este pregătită: conturi MFM/MFF, TVA 0% și 21%, exercițiu multianual din " & k_result.GetProperty("year").GetInt32().ToString(CultureInfo.InvariantCulture) & ". Contul de magazie este selectat pentru import."
+                    _context.Say(lblState.Text)
+                End Function)
+        Catch ex As Exception
+            GlobalErrorLog.Write("MfImportView.BtnCreate_Click", ex)
         End Try
     End Sub
 
@@ -256,6 +312,7 @@ Public Class MfImportView
         k_args.Add(Payload(k_rows))
         Dim k_result As JsonElement = Await _context.Client.CallRawAsync("vercon-mf-check", k_args.ToArray())
         _failed.Clear()
+        _warnings.Clear()
         Dim k_index As Integer = 0
         For Each k_item As JsonElement In k_result.GetProperty("assets").EnumerateArray()
             Dim k_row As Integer = k_rows(k_index)
@@ -265,8 +322,18 @@ Public Class MfImportView
             For Each k_reason As JsonElement In k_item.GetProperty("reasons").EnumerateArray()
                 k_reasons.Add(k_reason.GetString())
             Next
-            grid("verdict", k_row) = If(k_ok, "Se poate importa.", String.Join(" ", k_reasons))
-            If Not k_ok Then _failed.Add(DirectCast(grid.Rows(k_row).Tag, MfAsset))
+            Dim k_asset = DirectCast(grid.Rows(k_row).Tag, MfAsset)
+            Dim k_warningItems As JsonElement
+            If k_item.TryGetProperty("warnings", k_warningItems) AndAlso k_warningItems.ValueKind = JsonValueKind.Array Then
+                Dim k_messages As New List(Of String)()
+                For Each k_message As JsonElement In k_warningItems.EnumerateArray()
+                    k_messages.Add(k_message.GetString())
+                Next
+                If k_messages.Count > 0 Then _warnings(k_asset) = "Avertisment: " & String.Join(" ", k_messages)
+            End If
+            grid("verdict", k_row) = If(k_ok, "Se poate importa.", String.Join(" ", k_reasons)) &
+                If(_warnings.ContainsKey(k_asset), " " & _warnings(k_asset), String.Empty)
+            If Not k_ok Then _failed.Add(k_asset)
         Next
         grid.Invalidate()
         Dim k_warning As String = k_result.GetProperty("warning").GetString()
@@ -308,7 +375,8 @@ Public Class MfImportView
                     Dim k_created As Integer = k_result.GetProperty("created").GetArrayLength()
                     For Each k_row As Integer In k_rows
                         grid("sel", k_row) = False
-                        grid("verdict", k_row) = "Importat."
+                        Dim k_asset = DirectCast(grid.Rows(k_row).Tag, MfAsset)
+                        grid("verdict", k_row) = "Importat." & If(_warnings.ContainsKey(k_asset), " " & _warnings(k_asset), String.Empty)
                     Next
                     lblState.Text = k_created.ToString(CultureInfo.InvariantCulture) & " mijloace fixe importate în gestiune (documente «Stoc inițial»)."
                     _context.Say(lblState.Text)
@@ -322,7 +390,13 @@ Public Class MfImportView
     Private Sub Grid_RowFormatting(k_sender As Object, e As KBotRowFormattingEventArgs) Handles grid.RowFormatting
         Try
             Dim k_asset As MfAsset = TryCast(e.Row.Tag, MfAsset)
-            If k_asset IsNot Nothing AndAlso _failed.Contains(k_asset) Then e.ForeColor = ThemeManager.Current.Palette.ErrorColor
+            If k_asset IsNot Nothing Then
+                If _failed.Contains(k_asset) Then
+                    e.ForeColor = ThemeManager.Current.Palette.ErrorColor
+                ElseIf _warnings.ContainsKey(k_asset) Then
+                    e.ForeColor = ThemeManager.Current.Palette.WarningColor
+                End If
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("MfImportView.Grid_RowFormatting", ex)
         End Try
@@ -331,11 +405,20 @@ Public Class MfImportView
     Private Async Function RunAsync(k_source As String, k_work As Func(Of Task)) As Task
         If _busy Then Return
         _busy = True
+        tlyFile.Enabled = False
+        tlyTarget.Enabled = False
+        tlyCreate.Enabled = False
+        grid.Enabled = False
         Try
             Await UiRun.Guard(k_source, _context, k_work)
         Finally
             _busy = False
+            tlyFile.Enabled = True
+            tlyTarget.Enabled = True
+            tlyCreate.Enabled = True
+            grid.Enabled = True
         End Try
     End Function
 
 End Class
+

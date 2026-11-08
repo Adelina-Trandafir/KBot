@@ -16,7 +16,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.85.0.0</FileVersion>
+    <FileVersion>1.85.0.5</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -107,6 +107,15 @@
     </Compile>
     <Compile Update="CaptionBar\KBotCaptionBar.ThemeButton.vb">
       <DependentUpon>KBotCaptionBar.vb</DependentUpon>
+    </Compile>
+    <Compile Update="CaptionBar\KBotCaptionBar.HistoryButton.vb">
+      <DependentUpon>KBotCaptionBar.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Popup\CustomPopup.RowFont.vb">
+      <DependentUpon>CustomPopup.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Popup\CustomPopup.Previews.vb">
+      <DependentUpon>CustomPopup.vb</DependentUpon>
     </Compile>
     <Compile Update="CaptionBar\KBotCaptionBar.HelpButton.vb">
       <DependentUpon>KBotCaptionBar.vb</DependentUpon>

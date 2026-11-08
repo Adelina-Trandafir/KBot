@@ -80,7 +80,7 @@ from routes.auth.guard import require_session
 from utils.database import get_kbot_connection
 
 from . import forexe_bp
-from .prelucrare_helpers import SNAPSHOT_COUNTS_SQL
+from .prelucrare_helpers import SNAPSHOT_COUNTS_SQL, STERGERE_DATA_SQL
 
 logger = logging.getLogger(__name__)
 
@@ -130,7 +130,12 @@ _SQL_RECEPTII = (
     "  LIMIT 1) AS Denumire, "
     # Same-day tie breaker (sliceless, 30.09.2026): the reception's rank among the
     # receptions of its date in FOREXE. The «which receptions» window skips by it.
-    "R.RangZi AS RangZiR "
+    "R.RangZi AS RangZiR, "
+    # 07.11.2026 (F22): the day a DELETED reception was deleted -- seen in FOREXE (StersObservatLa) or
+    # the date of its «Stergere receptie» row -- NULL for a live one. The client leaves such a reception
+    # out of every total and tooltip (its lines stay in the base).
+    "(SELECT CAST(" + STERGERE_DATA_SQL + " AS CHAR) FROM FX_Receptii_R RX "
+    "  WHERE RX.IDRR = R.IDRR AND COALESCE(RX.Sters, 0) = 1) AS DataStergereR "
     "FROM FX_Receptii_R R "
     "INNER JOIN FX_Receptii_RHR RHR ON R.IDRR = RHR.IDRR "
     "INNER JOIN (SELECT I.CodAI, I.IdClsf, I.IdUnitate, I.NrCrt "
@@ -232,7 +237,7 @@ def get_receptii():
              reconstituit, reconstituit_nesigur, descriere_r,
              idrh, nrcrt_h, data_h, total, difh, sters_h, este_stergere, descriere_h,
              idr, id_clsf, cod_indicator, nrcrt_ind, valoare, dif, clsf,
-             denumire, rang_zi_r) in cursor.fetchall():
+             denumire, rang_zi_r, data_stergere_r) in cursor.fetchall():
             receptii.append({
                 # None = antet neasezat pe nicio receptie (H.IDRR NULL, felia 0062).
                 "idrr": int(idrr) if idrr is not None else None,
@@ -263,6 +268,8 @@ def get_receptii():
                 "dif": _num(dif),
                 # NULL on receptions written before the column (stamped by the next download).
                 "rang_zi_r": _opt_int(rang_zi_r),
+                # 'YYYY-MM-DD' or None (see _SQL_RECEPTII): the reception is deleted from that day on.
+                "data_stergere_r": str(data_stergere_r) if data_stergere_r else None,
             })
 
         cursor.execute(_SQL_PLATI, (cod,))

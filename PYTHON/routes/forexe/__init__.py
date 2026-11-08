@@ -141,6 +141,10 @@ from . import parteneri_anaf_sync  # noqa: E402,F401
 # there (operator, 28.09.2026): PUT /api/forexe/capturi/rezervare/<idrev> and
 # /api/forexe/capturi/receptie/<idrh> -> FX_Rezervarii_IMG / FX_Receptii_IMG.
 from . import capturi  # noqa: E402,F401
+# ord_receptie_plati.py = slice 02EF-13: the payment that comes from the bank statement is attached to the lines of an
+# ordonantare made from a reception (automatic rule + by hand): POST /api/forexe/ord/leaga-plati-automat,
+# GET /api/forexe/ord/plata/<id>/linii-candidate, POST /api/forexe/ord/leaga-plata.
+from . import ord_receptie_plati  # noqa: E402,F401
 # note_cab.py = the «Nota contabila corectie CAB» (F1135) K-BOT makes for the ERRRRRRRRRR
 # operations of «Operatiuni necorectate» (slice 0088); its PDF goes through pdf.py (family _NC).
 from . import note_cab  # noqa: E402,F401
@@ -153,3 +157,8 @@ from . import print_count  # noqa: E402,F401
 # grupe.py = GET/POST /api/forexe/grupe..., POST .../grupe/alias: the groups of angajamente and
 # the alias of an angajament (slice 0008-02, sql/0008_02_alias_grupe.sql).
 from . import grupe  # noqa: E402,F401
+# receptii_observate.py = POST /api/forexe/receptii/data-schimbata: a reception whose date the
+# operator changed in the FOREXE page of K-BOT is moved to the new date BEFORE the download, so
+# step 4b does not create a second reception (slice 0076-01). After prelucrare_pasi (it reuses
+# its candidate SQL).
+from . import receptii_observate  # noqa: E402,F401

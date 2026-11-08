@@ -32,13 +32,17 @@ export const filtering = {
     const existing = this._filters.get(col.key) || createFilter();
     const values = this._distinctDisplayValues(col);
     const checked = new Set(existing.selected ? existing.selected : values);
+    // Applications opt in to selection reset, a minimum query length and debounce.
+    const { minLength = 1, debounceMs = 0, resetSelection = false } = this._opts.filterSearch || {};
+    let shownValues = values;
+    let searchTimer;
 
     const pop = el('div', 'dgv__popup dgv__filter');
     pop.appendChild(el('div', 'dgv__ptitle', `Filtru: ${col.title}`));
 
     const search = el('input', 'dgv__search');
     search.type = 'search';
-    search.placeholder = 'Caută în valori...';
+    search.placeholder = minLength > 1 ? `Caută în valori (min. ${minLength} caractere)...` : 'Caută în valori...';
     pop.appendChild(search);
 
     const all = el('label', 'dgv__chk');
@@ -52,10 +56,7 @@ export const filtering = {
     const note = el('div', 'dgv__note');
     pop.appendChild(note);
 
-    const visibleValues = () => {
-      const q = search.value.trim().toLowerCase();
-      return values.filter((v) => !q || v.toLowerCase().includes(q));
-    };
+    const visibleValues = () => shownValues;
     const paintList = () => {
       const shown = visibleValues();
       list.textContent = '';
@@ -63,6 +64,7 @@ export const filtering = {
         const row = el('label', 'dgv__chk');
         const box = el('input');
         box.type = 'checkbox';
+        box.value = v;
         box.checked = checked.has(v);
         box.addEventListener('change', () => {
           if (box.checked) checked.add(v); else checked.delete(v);
@@ -71,7 +73,10 @@ export const filtering = {
         row.append(box, el('span', '', v === '' ? '(goale)' : v));
         list.appendChild(row);
       });
-      note.textContent = shown.length > FILTER_LIST_LIMIT ? `Se arată primele ${FILTER_LIST_LIMIT} din ${shown.length}. Folosiți căutarea.` : '';
+      const queryLength = search.value.trim().length;
+      note.textContent = queryLength > 0 && queryLength < minLength
+        ? `Introduceți cel puțin ${minLength} caractere pentru căutare.`
+        : shown.length > FILTER_LIST_LIMIT ? `Se arată primele ${FILTER_LIST_LIMIT} din ${shown.length}. Folosiți căutarea.` : '';
       syncAll();
     };
     const syncAll = () => {
@@ -84,7 +89,23 @@ export const filtering = {
       visibleValues().forEach((v) => { if (allBox.checked) checked.add(v); else checked.delete(v); });
       paintList();
     });
-    search.addEventListener('input', paintList);
+    search.addEventListener('input', () => {
+      clearTimeout(searchTimer);
+      const query = search.value.trim().toLowerCase();
+      if (resetSelection) {
+        checked.clear();
+        if (!query) values.forEach((v) => checked.add(v));
+        list.querySelectorAll('input').forEach((box) => { box.checked = checked.has(box.value); });
+        syncAll();
+      }
+      const applySearch = () => {
+        if (this._popup !== pop) return;
+        shownValues = query.length >= minLength ? values.filter((v) => v.toLowerCase().includes(query)) : values;
+        paintList();
+      };
+      if (query.length < minLength || debounceMs === 0) applySearch();
+      else searchTimer = setTimeout(applySearch, debounceMs);
+    });
 
     // condition
     pop.appendChild(el('div', 'dgv__ptitle dgv__ptitle--sub', 'Condiție'));

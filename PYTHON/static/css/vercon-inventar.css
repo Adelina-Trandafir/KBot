@@ -1,0 +1,3 @@
+/* Ordered entry point for the standalone inventory workbench. */
+@import url("vercon-inventar-layout.css");
+@import url("vercon-inventar-controls.css");

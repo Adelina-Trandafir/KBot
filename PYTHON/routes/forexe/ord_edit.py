@@ -94,6 +94,7 @@ from routes.auth.guard import require_session
 from utils.database import get_kbot_connection, COMMON_DB
 
 from . import forexe_bp, partner_links
+from .prelucrare_helpers import fara_receptii_sterse
 
 logger = logging.getLogger(__name__)
 
@@ -300,12 +301,15 @@ _SQL_REC_ANT = (
     " WHERE H.CodAngajament = %s "
     "   AND COALESCE(H.Sters, 0) = 0 "
     "   AND DATE(R.Data) <= %s "
+    # 07.11.2026 (F22): a reception deleted on or before DT no longer counts (the lines of a
+    # deleted reception stay in the base; the deletion row has none to cancel them).
+    "   AND " + fara_receptii_sterse("H", "%s") + " "
     " GROUP BY R.CodIndicator"
 )
 
 
 def incarca_dic_receptii(cursor, cod: str, dt: date) -> dict:
-    cursor.execute(_SQL_REC_ANT, (cod, dt))
+    cursor.execute(_SQL_REC_ANT, (cod, dt, dt))
     return {_txt(r["CodIndicator"]): _num(r["Receptii"]) for r in cursor.fetchall()}
 
 
@@ -722,6 +726,7 @@ def construieste_graf(randuri: list, dic_banci: dict, dic_part_ind: dict,
             "linie_temp_id": linie["temp_id"],
             "idordtblp": 0,
             "id_plata_fx": _int_or_none(r["IdPlataFX"]),
+            "idrp": _int_or_none(r.get("IDRP")),   # slice 02EF-11: set only by an ordonantare made from a reception
             "valoare": valoare,
         })
         urmator_rec -= 1
@@ -800,7 +805,7 @@ def _are_rec_img(cursor, db_name: str) -> bool:
     return prezent
 
 
-def capturi_receptiilor(cursor, cod: str, parteneri: list) -> list:
+def capturi_receptiilor(cursor, cod: str, parteneri: list, idrh=None) -> list:
     """The newest pair of FOREXE captures of this angajament, as PROPOSED attachments.
 
     They carry their bytes inline (`continut`, base64): nothing is written yet, and the
@@ -813,13 +818,17 @@ def capturi_receptiilor(cursor, cod: str, parteneri: list) -> list:
         logger.info("[forexe.receptii.img] %s: tabela lipseste; ordonantarea lui %s fara capturi",
                     db_name, cod)
         return []
+    # Slice 02EF-11: an ordonantare made from ONE reception takes the pictures of THAT snapshot only
+    # (the newest pair of the angajament could belong to another reception).
+    filtru_idrh = "" if idrh is None else " AND I.IDRH = %s "
+    parametri = (cod,) + (() if idrh is None else (int(idrh),)) + (CAPTURI_ORD_MAX,)
     cursor.execute(
         "SELECT I.IDRDC AS id, I.Nume AS nume, I.IMG AS img "
         "  FROM FX_Receptii_IMG I "
         " INNER JOIN FX_Receptii_R R ON R.IDRR = I.IDRR "
-        " WHERE R.CodAngajament = %s AND I.IMG IS NOT NULL AND I.IMG <> '' "
+        " WHERE R.CodAngajament = %s AND I.IMG IS NOT NULL AND I.IMG <> '' " + filtru_idrh +
         " ORDER BY I.IDRDC DESC LIMIT %s",
-        (cod, CAPTURI_ORD_MAX))
+        parametri)
     randuri = list(cursor.fetchall() or [])
     logger.info("[forexe.receptii.img] %s: SELECT pentru %s -> %s captura(i) (IDRDC %s)",
                 db_name, cod, len(randuri), [r.get("id") for r in randuri])
@@ -953,6 +962,206 @@ def post_ord_genereaza():
 
 
 # =========================================================================================
+# SLICE 02EF-11: ORDONANTARE DIN RECEPTIE (cererea operatorului, 07.11.2026)
+# =========================================================================================
+# «Genereaza ordonantare» din pagina «Receptii <> EFactura»: graful se face din RECEPTIE, nu din
+# plati. Beneficiarul vine din Parteneri (denumire, cod fiscal, cont IBAN, banca), gasit dupa
+# codul fiscal al furnizorului facturilor legate de receptie; liniile sunt valorile receptiei pe
+# indicatori, impartite pe furnizori dupa cat ia fiecare factura (EF_PrimiteReceptii); documentul
+# justificativ este factura; atasamentele sunt capturile ACELEI receptii. NIMIC nu se scrie aici:
+# graful merge in acelasi editor ca cel din plati si se salveaza prin /save. Nu exista legatura cu
+# FX_Plati, deci lista `rec` ramane goala (ordonantarea nu acopera nicio plata).
+
+_SQL_REC_LINII = (
+    "SELECT R.CodIndicator, R.IdClsf, SUM(R.DIF) AS Valoare, MIN(R.IDR) AS IDR "
+    "  FROM FX_Receptii R "
+    " WHERE R.IDRH = %s AND R.CodAngajament = %s "
+    " GROUP BY R.CodIndicator, R.IdClsf "
+    "HAVING ABS(SUM(R.DIF)) > 0.004 "
+    " ORDER BY R.CodIndicator"
+)
+
+# What each invoice linked to THIS snapshot takes, per classification.
+_SQL_REC_FACTURI = (
+    "SELECT P.IdPrimita, P.NrFact, P.DataFact, P.CuiNormalizat, P.CUI, P.DenumireP, L.IdClsf, SUM(L.Suma) AS Suma "
+    "  FROM EF_PrimiteReceptii L "
+    "  JOIN EF_Primite P ON P.IdPrimita = L.IdPrimita "
+    " WHERE L.IDRH = %s AND L.CodAngajament = %s "
+    " GROUP BY P.IdPrimita, P.NrFact, P.DataFact, P.CuiNormalizat, P.CUI, P.DenumireP, L.IdClsf "
+    " ORDER BY P.IdPrimita, L.IdClsf"
+)
+
+_SQL_DDF_ANTET = (
+    "SELECT IDDF, CUAL, Comp, PartAng, ObiectDDF, NumePartener "
+    "  FROM FX_DDF WHERE CodAngajament = %s ORDER BY IDDF, CUAL LIMIT 1"
+)
+
+_SQL_INDICATOR_CLSF = (
+    "SELECT I.IdUnitate, "
+    "       (SELECT C.Clsf     FROM Clasificatii C WHERE C.IDClsf = %s LIMIT 1) AS Clsf, "
+    "       (SELECT C.Denumire FROM Clasificatii C WHERE C.IDClsf = %s LIMIT 1) AS Denumire, "
+    "       (SELECT CONCAT(C.SS, C.ClsfSal) FROM Clasificatii C WHERE C.IDClsf = %s LIMIT 1) AS CodSSI "
+    "  FROM FX_Indicatori I WHERE I.CodAI = %s LIMIT 1"
+)
+
+
+def _partener_dupa_cui(cursor, id_unitate, cui_normalizat: str):
+    """Randul din Parteneri al furnizorului (aceeasi unitate, acelasi cod fiscal normalizat); cel cu IBAN primul."""
+    if not cui_normalizat or id_unitate is None:
+        return None
+    cursor.execute(
+        "SELECT DenumirePartener, CodFiscal, ContIBAN, Banca FROM Parteneri "
+        " WHERE IdUnitate = %s AND COALESCE(Ascuns, 0) = 0 AND " + partner_links.fiscal_sql("CodFiscal") + " = %s "
+        " ORDER BY (COALESCE(ContIBAN, '') <> '') DESC, IdPartener LIMIT 1",
+        (id_unitate, cui_normalizat))
+    return cursor.fetchone()
+
+
+@forexe_bp.route("/api/forexe/ord/genereaza-din-receptie", methods=["POST"])
+@require_session
+def post_ord_genereaza_din_receptie():
+    """Graful PROPUS al unei ordonantari noi, din receptia salvata. NIMIC nu se scrie.
+
+    Corp: { "cod": "...", "idrh": 123, "data": "2026-11-07" }  (`data` lipsa = azi)
+    """
+    date_in = request.get_json(silent=True)
+    if not isinstance(date_in, dict):
+        return _json_utf8({"error": "Corp JSON lipsă sau nevalid."}, 400)
+    cod = str(date_in.get("cod") or "").strip()
+    if cod == "":
+        return _json_utf8({"error": "Câmp lipsă: cod"}, 400)
+    idrh = _int_or_none(date_in.get("idrh"))
+    if not idrh:
+        return _json_utf8({"error": "Câmp lipsă: idrh (recepția pe care se bazează ordonanțarea)."}, 400)
+
+    db_name = g.session.db_name
+    conn = None
+    try:
+        dt = _zi_ceruta(date_in.get("data"), "data") or date.today()
+        conn = get_kbot_connection(db_name)
+        cursor = conn.cursor(dictionary=True)
+
+        if not exista_ddf(cursor, cod):
+            return _json_utf8(
+                {"error": f"Angajamentul {cod} nu are niciun document de fundamentare (DDF). "
+                          f"Ordonanțarea nu se poate genera fără un DDF salvat."}, 409)
+
+        cursor.execute(_SQL_REC_LINII, (idrh, cod))
+        linii_rec = cursor.fetchall()
+        if not linii_rec:
+            return _json_utf8(
+                {"error": f"Recepția {idrh} nu are încă rânduri în K-BOT pentru {cod}. Descărcați angajamentul "
+                          f"din FOREXE (recepția trebuie citită în K-BOT), apoi încercați din nou."}, 404)
+
+        cursor.execute(_SQL_REC_FACTURI, (idrh, cod))
+        facturi = cursor.fetchall()
+        if not facturi:
+            return _json_utf8(
+                {"error": f"Recepția {idrh} nu este legată de nicio factură primită, deci nu are furnizor din care să "
+                          f"se facă beneficiarul."}, 404)
+
+        cursor.execute(_SQL_DDF_ANTET, (cod,))
+        ddf = cursor.fetchone() or {}
+
+        avertismente = []
+        dic_banci = incarca_dic_banci(cursor, db_name, avertismente)
+        dic_part_ind = incarca_dic_part_ind(cursor, cod)
+        dic_receptii = incarca_dic_receptii(cursor, cod, dt)
+        dic_plati = incarca_dic_plati(cursor, cod, dt)
+
+        indicator_dupa_clsf = {r["IdClsf"]: r["CodIndicator"] for r in linii_rec}
+        total_rec = {r["CodIndicator"]: _num(r["Valoare"]) for r in linii_rec}
+        idr_dupa_indicator = {r["CodIndicator"]: r["IDR"] for r in linii_rec}
+        clsf_info = {}
+
+        def info_clsf(id_clsf, cod_indicator):
+            cheie = (id_clsf, cod_indicator)
+            if cheie not in clsf_info:
+                cursor.execute(_SQL_INDICATOR_CLSF, (id_clsf, id_clsf, id_clsf, f"{cod}-{cod_indicator}"))
+                clsf_info[cheie] = cursor.fetchone() or {}
+            return clsf_info[cheie]
+
+        randuri = []
+        alocat = {}
+        parteneri_gasiti = {}
+        for f in facturi:
+            cod_indicator = indicator_dupa_clsf.get(f["IdClsf"])
+            if cod_indicator is None:
+                avertismente.append(
+                    f"Factura {f['NrFact']} are o sumă pe o clasificație ({f['IdClsf']}) care nu apare în recepție; "
+                    f"suma ei nu intră în ordonanțare.")
+                continue
+            valoare = _num(f["Suma"])
+            if abs(valoare) <= 0.004:
+                continue
+            cui = partner_links.normalize_cui(f["CuiNormalizat"] or f["CUI"])
+            if cui not in parteneri_gasiti:
+                info_unit = info_clsf(f["IdClsf"], cod_indicator)
+                parteneri_gasiti[cui] = _partener_dupa_cui(cursor, info_unit.get("IdUnitate"), cui)
+                if parteneri_gasiti[cui] is None:
+                    avertismente.append(
+                        f"Furnizorul «{_txt(f['DenumireP'])}» (CUI {cui}) nu este în Parteneri: numele și codul fiscal vin din "
+                        f"factură, iar contul IBAN lipsește. Completați-l în ordonanțare sau adăugați partenerul.")
+            partener = parteneri_gasiti[cui]
+            iban = _txt(partener["ContIBAN"]) if partener else ""
+            if partener and iban == "":
+                avertismente.append(f"Partenerul «{_txt(partener['DenumirePartener'])}» nu are cont IBAN în Parteneri.")
+            info = info_clsf(f["IdClsf"], cod_indicator)
+            data_fact = f["DataFact"].strftime("%d.%m.%Y") if f["DataFact"] else ""
+            randuri.append({
+                "IDDF": ddf.get("IDDF"), "CUAL": ddf.get("CUAL"), "Comp": ddf.get("Comp"), "PartAng": ddf.get("PartAng"),
+                "ObiectDDF": ddf.get("ObiectDDF"), "NumePartener": ddf.get("NumePartener"),
+                "Beneficiar": _txt(partener["DenumirePartener"]) if partener else _txt(f["DenumireP"]),
+                "Beneficiar_CUI": _txt(partener["CodFiscal"]) if partener and _txt(partener["CodFiscal"]) else cui,
+                "Beneficiar_IBAN": iban,
+                "Valoare": valoare, "IdPlataFX": None, "IdClsf": f["IdClsf"], "CodAngajament": cod,
+                "CodIndicator": cod_indicator, "IdUnitate": info.get("IdUnitate"),
+                "Clsf": info.get("Clsf"), "Denumire": info.get("Denumire"), "CodSSI": info.get("CodSSI"),
+                "Descriere": f"Factura {_txt(f['NrFact'])} din {data_fact}".strip(), "NrDoc": "",
+                "IDRP": idr_dupa_indicator.get(cod_indicator),
+            })
+            alocat[cod_indicator] = alocat.get(cod_indicator, 0.0) + valoare
+
+        if not randuri:
+            return _json_utf8({"error": "Facturile legate de recepție nu pun nicio sumă pe indicatorii ei."}, 404)
+
+        # Value of the reception above what the invoices take (KE20-01 «Surplus»): it stays on the first line of
+        # that indicator, and the operator is told.
+        for cod_indicator, total in total_rec.items():
+            diferenta = round(total - alocat.get(cod_indicator, 0.0), 2)
+            if abs(diferenta) > 0.004:
+                prima = next((r for r in randuri if r["CodIndicator"] == cod_indicator), None)
+                if prima is not None:
+                    prima["Valoare"] = round(prima["Valoare"] + diferenta, 2)
+                    avertismente.append(
+                        f"Recepția are pe indicatorul {cod_indicator} cu {diferenta:.2f} mai mult decât facturile legate; "
+                        f"diferența a rămas pe prima linie.")
+
+        graf = construieste_graf(randuri, dic_banci, dic_part_ind, dic_receptii, dic_plati, {}, cod, dt, avertismente)
+        # Nothing paid yet: no link to FX_Plati (IdPlataFX stays empty); each line keeps the reception line it covers (IDRP).
+        # The payment that comes from the bank statement is attached to these rows later.
+        graf["cod"] = cod
+        graf["atasamente"] = capturi_receptiilor(cursor, cod, graf["parteneri"], idrh=idrh)
+        if not graf["atasamente"]:
+            avertismente.append(
+                "Recepția nu are capturile de ecran (recepțiile și informațiile complete). Lipiți-le în ordonanțare sau "
+                "repetați recepția.")
+        graf["avertismente"] = avertismente
+
+        logger.info("[forexe.ord_edit] %s: genereaza-din-receptie cod=%s idrh=%s -> parteneri=%s linii=%s",
+                    db_name, cod, idrh, len(graf["parteneri"]), len(graf["linii"]))
+        return _json_utf8(graf, 200)
+    except DateInvalide as e:
+        return _json_utf8({"error": str(e)}, 400)
+    except Exception as e:
+        logger.error(f"[forexe.ord_edit] genereaza-din-receptie: {e}", exc_info=True)
+        return _json_utf8({"error": f"Eroare la generarea ordonanțării din recepție: {e}"}, 500)
+    finally:
+        if conn is not None:
+            conn.close()
+
+
+# =========================================================================================
 # CITIREA UNEI ORDONANTARI EXISTENTE, IN FORMA EDITORULUI
 # =========================================================================================
 # De ce nu se refoloseste `GET /api/forexe/ord`: acea ruta e a VEDERII 0033 si isi alege
@@ -999,7 +1208,7 @@ _SQL_DRAFT_TBL = (
 )
 
 _SQL_DRAFT_REC = (
-    "SELECT R.IDORDRECP, R.IDORDTBLP, R.IdPlataFX, R.Valoare "
+    "SELECT R.IDORDRECP, R.IDORDTBLP, R.IdPlataFX, R.IDRP, R.Valoare "
     "  FROM FX_ORD_TBL_REC R "
     " WHERE R.IDORDTBLP IN (SELECT IDORDTBLP FROM FX_ORD_TBL WHERE IDORDP = %s) "
     " ORDER BY R.IDORDRECP"
@@ -1126,6 +1335,7 @@ def get_ord_draft(idordp):
             "linie_temp_id": 0,
             "idordtblp": _int_or_none(r["IDORDTBLP"]) or 0,
             "id_plata_fx": _int_or_none(r["IdPlataFX"]),
+            "idrp": _int_or_none(r["IDRP"]),
             "valoare": _num(r["Valoare"]),
         } for r in cursor.fetchall()]
 
@@ -1414,8 +1624,8 @@ _UPDATE_TBL = (
 )
 
 _INSERT_REC = (
-    "INSERT INTO FX_ORD_TBL_REC (IDORDTBLP, IDORDREC, IdPlataFX, Valoare) "
-    "VALUES (%s, NULL, %s, %s)"
+    "INSERT INTO FX_ORD_TBL_REC (IDORDTBLP, IDORDREC, IdPlataFX, IDRP, Valoare) "
+    "VALUES (%s, NULL, %s, %s, %s)"
 )
 
 _INSERT_DOC = (
@@ -1687,8 +1897,9 @@ def _scrie_graf(cursor, sarcina: dict) -> dict:
     for r in rec:
         idordtblp = _cheie_parinte(r, "idordtblp", "linie_temp_id", harta_linii,
                                    "Legătură cu plata")
+        # Slice 02EF-11: a line made from a RECEPTION keeps the reception line it covers (IDRP = FX_Receptii.IDR); one made from a payment keeps IdPlataFX.
         cursor.execute(_INSERT_REC, (idordtblp, _int_or_none(r.get("id_plata_fx")),
-                                     _num(r.get("valoare"))))
+                                     _int_or_none(r.get("idrp")), _num(r.get("valoare"))))
         real = int(cursor.lastrowid or 0)
         temp = _int_or_none(r.get("temp_id"))
         if temp is not None and temp < 0 and real:

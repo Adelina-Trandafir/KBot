@@ -1,5 +1,6 @@
 import { ComboTree } from '../components/combotree/combotree.js';
 import { el } from './ui.js';
+import { searchOptions } from './search-settings.js';
 import { numberText } from './receipt-number.js';
 import { format } from './fields.js';
 import { decimalText } from './decimal-text.js';
@@ -19,7 +20,7 @@ export function stornoSourceField(owner, sources, value, fallback, editable, onC
     if (!suppliers.has(id)) suppliers.set(id, { id: `supplier:${id}`, label: doc.party_cf ? doc.party || doc.party_cf : 'Fără cod fiscal', children: [] });
     suppliers.get(id).children.push({ id: String(doc.id), label: sourceLabel(doc) });
   }
-  const combo = owner.own(new ComboTree(host, { nodes: [...suppliers.values()], placeholder: 'Alegeți NIR-ul…',
+  const combo = owner.own(new ComboTree(host, { ...searchOptions(), nodes: [...suppliers.values()], placeholder: 'Alegeți NIR-ul…',
     minWidth: 480, selectParents: false, onTab,
     onSelect: selection => {
       input.value = String(selection.id);

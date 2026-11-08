@@ -52,9 +52,9 @@ See the [shared initial validation checkpoint](SLICE-KE01-modelul-legaturii-si-c
 ## SLICE-00EF-39 - Received invoices: the classifications of the lines move into «Leaga de receptie» (17.10.2026) <a id="slice-00EF-39"></a>
 
 ### What changed and why
-Operator request: KeLegaForm «Leaga de receptie…» absorbs KeClasificariForm «Clasificatii pe linii», removing the old window/button from shared PrimiteView: both PrimiteForm «Cumparare» and KbotMain E-Factura hosts.
+Operator request: the former reception window «Leaga de receptie…» absorbs KeClasificariForm «Clasificatii pe linii», removing the old window/button from shared PrimiteView: both PrimiteForm «Cumparare» and KbotMain E-Factura hosts.
 
-`KeLegaForm` now has, under the angajament row, a grid of the invoice lines (Nr, Denumire, Valoare cu TVA, **Clasificatie** as a combo). Everything the old window did is there:
+the former reception window now has, under the angajament row, a grid of the invoice lines (Nr, Denumire, Valoare cu TVA, **Clasificatie** as a combo). Everything the old window did is there:
 - Choices: chosen angajament INDICATORS. A preexisting non-indicator classification remains visible as «nu e indicator al angajamentului»; switching angajament resets choices from the previous list to «(nealeasa)». Cells accept list values only; Ca la prima linie copies the first choice to all. Before opening any angajament, existing line classifications remain.
 - NEW local De alocat calculation replaces the server answer from saved classifications: per chosen classification, sum VAT-inclusive line values minus existing EFacturaKeStare.Legaturi allocations. Recomputed on each classification change, shared by existing/new/modified reception modes.
 - OK returns Clasificari (all choices)/ClasificariSchimbate, without writing. PrimiteView.LinkAsync saves changes via SetKeClasificatiiAsync, ApplyKe applies returned state, then the link check/flow runs against saved classifications.
@@ -63,7 +63,7 @@ Operator request: KeLegaForm «Leaga de receptie…» absorbs KeClasificariForm 
 Classification save occurs on Leaga/Creeaza/Modifica in the link window, replacing separate Salveaza. A later link refusal leaves those choices saved; Cancel saves nothing.
 
 ### Files touched
-`src/KBot.EFactura/Forms/KeLegaForm.vb`, `KeLegaForm.Designer.vb` (grid `gridLinii`, `btnToate`, `lblSep2`; the window is 120 px taller), `src/KBot.EFactura/Views/Primite/PrimiteView.Receptii.vb`, `PrimiteReceptiiPage.vb`, `PrimiteReceptiiPage.Designer.vb`, `src/KBot.EFactura/KBot.EFactura.vbproj` (FileVersion 1.2.0.0 -> 1.3.0.0). Deleted: `Forms/KeClasificariForm.vb`, `Forms/KeClasificariForm.Designer.vb`. Help: see SLICE-0000-95.
+the former reception window (grid `gridLinii`, `btnToate`, `lblSep2`; the window is 120 px taller), `src/KBot.EFactura/Views/Primite/PrimiteView.Receptii.vb`, `PrimiteReceptiiPage.vb`, `PrimiteReceptiiPage.Designer.vb`, `src/KBot.EFactura/KBot.EFactura.vbproj` (FileVersion 1.2.0.0 -> 1.3.0.0). Deleted: `Forms/KeClasificariForm.vb`, `Forms/KeClasificariForm.Designer.vb`. Help: see SLICE-0000-95.
 
 ### Test results
 `dotnet build src/KBot.EFactura` and `dotnet build src/KBot.App`: 0 warnings, 0 errors. Nothing run, nothing seen on screen; no test (operator's rule).

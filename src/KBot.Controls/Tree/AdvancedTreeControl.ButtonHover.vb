@@ -262,9 +262,9 @@ Partial Public Class AdvancedTreeControl
     ''' </summary>
     Friend Sub UpdateHeaderButtonHover(location As Point)
         Dim peCautare As Boolean = _headerVisible AndAlso _headerSearchIcon IsNot Nothing AndAlso
-                                   _headerSearchIconRect.Contains(location)
+                                   HeaderSearchButtonRect.Contains(location)
         Dim peDreapta As Boolean = _headerVisible AndAlso _headerRightIcon IsNot Nothing AndAlso
-                                   _headerRightIconRect.Contains(location)
+                                   HeaderRightButtonRect.Contains(location)
         If peCautare = _headerSearchIconHover AndAlso peDreapta = _headerRightIconHover Then Return
         _headerSearchIconHover = peCautare
         _headerRightIconHover = peDreapta

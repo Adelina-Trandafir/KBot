@@ -72,13 +72,24 @@ def read(source, spec, node_id, *, recursive=False):
             nodes.append(node)
         return sorted(nodes, key=lambda node: (fiscal_suppliers.name_key(node['label']), node['id']))
 
-    # Supplier roots need no product metadata or loaded descendants.
-    if node_id == 'root':
-        suppliers = {}
-        for row in rows:
+    def supplier_nodes(items, expand):
+        groups = {}
+        for row in items:
             supplier = key(row.get('supplier'))
-            suppliers.setdefault(supplier, branch(f'{supplier_prefix}:{supplier}', row.get('party') or supplier if row.get('supplier') else 'Fără cod fiscal'))
-        return {'nodes': sorted(suppliers.values(), key=lambda node: (fiscal_suppliers.name_key(node['label']), node['id'])), 'documents': []}
+            groups.setdefault(supplier, []).append(row)
+        nodes = []
+        for supplier, lines in groups.items():
+            row = lines[0]
+            node = branch(f'{supplier_prefix}:{supplier}', row.get('party') or supplier if row.get('supplier') else 'Fără cod fiscal')
+            if expand:
+                node.pop('lazy')
+                node['children'] = children(lines, supplier, True)
+            nodes.append(node)
+        return {'nodes': sorted(nodes, key=lambda node: (fiscal_suppliers.name_key(node['label']), node['id'])), 'documents': []}
+
+    # The initial supplier roots need no product metadata.
+    if node_id == 'root' and not recursive:
+        return supplier_nodes(rows, False)
     if nir and parts[0] == supplier_prefix and not recursive:
         return {'nodes': children(rows, parts[1], False)}
     metadata = source.metadata()
@@ -88,6 +99,8 @@ def read(source, spec, node_id, *, recursive=False):
         if info is None:
             raise NomError('REPORT_SOURCE', 'Linia de intrare nu are o variantă în contextul raportului.', 409)
         joined.append({**info, **row})
+    if node_id == 'root':
+        return supplier_nodes(joined, True)
     supplier = parts[1]
     if parts[0] == 'receipt-account':
         return {'nodes': products([row for row in joined if key(row['category']) == parts[2]], supplier, category=parts[2])}

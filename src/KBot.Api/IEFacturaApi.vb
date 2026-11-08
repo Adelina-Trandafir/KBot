@@ -188,6 +188,10 @@ Public Interface IEFacturaApi
     ''' <summary>GET /api/efactura/ke/angajament/{cod}/receptii -- the indicators and the receptions of an angajament, with what invoices already cover.</summary>
     Function GetKeReceptiiAsync(k_cod As String, ct As CancellationToken) As Task(Of EFacturaKeReceptiiAngajament)
 
+    ''' <summary>GET /api/efactura/ke/angajament/{cod}/receptii?data= -- the receptions as they stood ON <paramref name="k_zi"/> (the date of an invoice): those dated up to it, each with the value
+    ''' it had then, and the links of invoices dated up to it (slice KE20-02).</summary>
+    Function GetKeReceptiiLaDataAsync(k_cod As String, k_zi As Date, ct As CancellationToken) As Task(Of EFacturaKeReceptiiAngajament)
+
     ''' <summary>GET /api/efactura/ke/angajament/{cod}/disponibil?data= -- the budget of each indicator on that day and the receptions before it (slice KE12-03).</summary>
     Function GetKeDisponibilAsync(k_cod As String, k_zi As Date, ct As CancellationToken) As Task(Of EFacturaKeDisponibilZi)
 

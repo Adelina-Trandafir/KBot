@@ -131,6 +131,12 @@ Partial Class KBotDataView
     Private _borderPinned As Color = Color.Empty
     Private _borderWidth As Integer = DefaultCellSeparatorWidth
 
+    ''' <summary>The standard header and footer font family, in every grid.</summary>
+    Friend Const BandFontName As String = "Calibri"
+
+    ''' <summary>Size (pt) of the standard band font.</summary>
+    Friend Const BandFontSizePt As Single = 9.0F
+
     ''' <summary>Lățimea logică implicită a liniei dintre benzi (px la 96 dpi).</summary>
     Friend Const DefaultBandSeparatorWidth As Integer = 2
 
@@ -178,6 +184,18 @@ Partial Class KBotDataView
             _cFooterText = p.TextColor
             _cFooterSep = p.BorderColor
             _cFooterBaseline = p.AccentColor
+
+            ' BAND RULE (operator, 07.11.2026): the band back colour and the separator line are the
+            ' SAME in every grid and are dictated by the theme, never by a designer.
+            ' Classic = Control + Gainsboro; any other scheme (Modern, ...) = the values derived
+            ' above. A new grid sets none of these in its designer.
+            If String.Equals(scheme.Name, BuiltInSchemes.ClassicName, StringComparison.OrdinalIgnoreCase) Then
+                _cHeaderBack = SystemColors.Control
+                _cFooterBack = SystemColors.Control
+                _cHeaderBaseline = Color.Gainsboro
+                _cFooterBaseline = Color.Gainsboro
+                _cHeaderGradientEnd = _cHeaderBack
+            End If
             _cFooterGradientEnd = Blend(_cFooterBack, p.SurfaceColor, 0.55)
 
             ' Benzile de grup (slice 0029). Antetul de grup e spălat mai TARE spre accent decât
@@ -229,6 +247,8 @@ Partial Class KBotDataView
             editText.ForeColor = p.InputTextColor
             editCombo.BackColor = p.InputBackColor
             editCombo.ForeColor = p.InputTextColor
+            groupText.BackColor = p.InputBackColor
+            groupText.ForeColor = p.InputTextColor
 
             BackColor = _cRowBack
             ' The bars are KBotScrollBar (palette-coloured, like the tree's): hand them the scheme directly.
@@ -259,12 +279,13 @@ Partial Class KBotDataView
         _cHeaderBack = SystemColors.Control
         _cHeaderText = SystemColors.ControlText
         _cHeaderSep = SystemColors.ControlDark
-        _cHeaderBaseline = SystemColors.Highlight
-        _cHeaderGradientEnd = Blend(SystemColors.Control, SystemColors.Window, 0.65)
-        _cFooterBack = Blend(SystemColors.Control, SystemColors.Highlight, 0.1)
+        ' Pre-theme = the Classic look (see the band rule in ApplyTheme).
+        _cHeaderBaseline = Color.Gainsboro
+        _cHeaderGradientEnd = SystemColors.Control
+        _cFooterBack = SystemColors.Control
         _cFooterText = SystemColors.ControlText
         _cFooterSep = SystemColors.ControlDark
-        _cFooterBaseline = SystemColors.Highlight
+        _cFooterBaseline = Color.Gainsboro
         _cFooterGradientEnd = Blend(_cFooterBack, SystemColors.Window, 0.55)
         _cGroupHeaderBack = Blend(SystemColors.Control, SystemColors.Highlight, 0.28)
         _cGroupHeaderText = SystemColors.ControlText
@@ -440,6 +461,11 @@ Partial Class KBotDataView
     ''' necunoscută, ci cade tăcut pe alta — adică exact felul de eșec pe care nu-l vezi.
     ''' </summary>
     Private Function BuildBandFont() As Font
+        ' BAND RULE (operator, 07.11.2026): header and footer use Calibri 9pt Bold in EVERY grid,
+        ' whatever the scheme. The code below it is only the safety net (Calibri not installed).
+        If FamilyExists(BandFontName) Then
+            Return New Font(BandFontName, BandFontSizePt * AppScaling.TextFactorFor(Me), FontStyle.Bold)
+        End If
         Dim numeBaza As String = If(String.IsNullOrWhiteSpace(_schemeFontName), Font.Name, _schemeFontName)
         ' Mărimea SCHEMEI trece prin mărirea cerută de operator; cea ambientală e mărită deja
         ' (Control.Font a fost rescris de AppScaling), deci ea se ia ca atare.

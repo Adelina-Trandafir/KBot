@@ -71,3 +71,44 @@ Public NotInheritable Class KeReceptieSalvata
     ''' <summary>What the operator reads: the reason for a failure, or a line that says what was done.</summary>
     Public Property Mesaj As String = String.Empty
 End Class
+
+' Slice 02EF-12 -- what the page «Recepții <> EFactura» hands the shell when the operator asks for a reservation that covers a reception: the window
+' «Adaugă rezervare» (the DDF editor) opens with the values filled in from the reception.
+
+''' <summary>One indicator of the reservation to create: what the reception takes from it and what the angajament holds on it now.</summary>
+Public NotInheritable Class KeRezervareRand
+
+    ''' <summary>The indicator of the angajament (the key of the line in section A).</summary>
+    Public Property CodIndicator As String = String.Empty
+
+    ''' <summary>The classification as the operator reads it (for messages).</summary>
+    Public Property Clsf As String = String.Empty
+
+    ''' <summary>What the reception takes on this indicator (WITH VAT): the amount the reservation must cover.</summary>
+    Public Property SumaReceptie As Decimal
+
+    ''' <summary>Reserved on the indicator now (SUM of the reservations of the angajament).</summary>
+    Public Property Rezervat As Decimal
+
+    ''' <summary>Received on the indicator before the day of the reception (SUM of the receptions of the angajament).</summary>
+    Public Property Receptionat As Decimal
+
+    ''' <summary>What the new reservation must add so that the reception fits: the reception minus what is still free (never below 0).</summary>
+    Public ReadOnly Property Necesar As Decimal
+        Get
+            Return Math.Max(0D, SumaReceptie - (Rezervat - Receptionat))
+        End Get
+    End Property
+End Class
+
+''' <summary>A reservation to create for a reception: the angajament and the indicators the reception touches.</summary>
+Public NotInheritable Class KeRezervareDeCreat
+    Public Property CodAngajament As String = String.Empty
+    Public ReadOnly Property Randuri As New List(Of KeRezervareRand)()
+End Class
+
+''' <summary>What came of the window: the reservation was saved, or the operator closed it (nothing was written).</summary>
+Public NotInheritable Class KeRezervareCreata
+    Public Property Salvata As Boolean
+    Public Property Mesaj As String = String.Empty
+End Class

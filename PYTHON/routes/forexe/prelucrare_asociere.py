@@ -560,6 +560,14 @@ _R_CANDIDATI_AUTO_SQL = (
     "SELECT IDRR, SumaAntet, DataR FROM FX_Receptii_R "
     "WHERE CodAngajament = %s AND Sters = 0 ORDER BY DataR DESC, IDRR DESC"
 )
+# Slice 0076-02: receptions K-BOT saw deleted in the FOREXE page and whose deletion row has not been
+# placed on them yet (see `pas4c_automat`).
+_R_STERSE_OBSERVATE_FARA_RAND_SQL = (
+    "SELECT R.IDRR, R.SumaAntet FROM FX_Receptii_R R "
+    "WHERE R.CodAngajament = %s AND R.Sters = 1 AND R.StersObservatLa IS NOT NULL "
+    "  AND NOT EXISTS (SELECT 1 FROM FX_Receptii_H H WHERE H.IDRR = R.IDRR AND H.EsteStergere = 1) "
+    "ORDER BY R.IDRR"
+)
 
 
 def _zi_din(valoare) -> Optional[date]:
@@ -619,6 +627,34 @@ def pas4c_automat(cursor, cod: str, instantanee: List[dict]) -> Dict[int, int]:
 
     folosite: Set[int] = set()
     sugestii: Dict[int, int] = {}
+
+    # Slice 0076-02 -- THE DELETION K-BOT ALREADY SAW. A reception deleted in the FOREXE page of
+    # K-BOT is marked (Sters = 1 + StersObservatLa) before its history row «Stergere receptie»
+    # arrives, and `dic_r` above holds live receptions only. So the deletion snapshot goes to the
+    # reception that was marked, by SUM, when the pairing is unambiguous: exactly one marked
+    # reception without a deletion snapshot, and exactly one waiting deletion snapshot, with that
+    # sum. Exempt from the one-month threshold (F37): a deletion can come months after `DataR`,
+    # and the link comes from the observation, not from the nearness of two dates. Anything less
+    # clear is left to the operator, as before.
+    cursor.execute(_R_STERSE_OBSERVATE_FARA_RAND_SQL, (cod,))
+    marcate: Dict[str, List[int]] = {}
+    for r in cursor.fetchall():
+        marcate.setdefault(_cheie_suma(r["SumaAntet"]), []).append(int(r["IDRR"]))
+    stergeri: Dict[str, List[dict]] = {}
+    for inst in instantanee:
+        if inst.get("stergere"):
+            stergeri.setdefault(_cheie_suma(inst["total"]), []).append(inst)
+    for cheie, idrr_uri in marcate.items():
+        asteapta = stergeri.get(cheie, [])
+        if len(idrr_uri) == 1 and len(asteapta) == 1:
+            sugestii[asteapta[0]["idrh"]] = idrr_uri[0]
+            folosite.add(idrr_uri[0])
+            journal.line("ștergere văzută în FOREXE: IDRH %s (%s) -> recepția %s (marcată ștearsă)",
+                         asteapta[0]["idrh"], cheie, idrr_uri[0])
+        elif idrr_uri:
+            journal.line("recepții marcate șterse cu suma %s: %s, rânduri de ștergere în așteptare: %d "
+                         "-- nu se potrivesc 1 la 1, rămân operatorului",
+                         cheie, idrr_uri, len(asteapta))
 
     def _incearca(lista: List[dict], tura: int) -> None:
         for inst in lista:
@@ -1542,6 +1578,9 @@ _H_IGNORA_SCRIS_SQL = (
 )
 _R_DEMARCHEAZA_SQL = (
     "UPDATE FX_Receptii_R SET Sters = 0 WHERE IDRR = %s "
+    # Slice 0076-02: a deletion SEEN in the FOREXE page (StersObservatLa) is proven by FOREXE, not
+    # by a placement: no window of the association can take it back.
+    "  AND StersObservatLa IS NULL "
     "  AND NOT EXISTS (SELECT 1 FROM (SELECT IDRH FROM FX_Receptii_H "
     "                                 WHERE IDRR = %s AND EsteStergere = 1) X)"
 )

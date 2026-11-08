@@ -134,9 +134,15 @@ Partial Public Class AdvancedTreeControl
 
         ' ── Header area clicks ───────────────────────────────────────────────
         If _headerVisible AndAlso e.Y < _headerHeight Then
-            If _headerSearchIconRect.Contains(e.Location) AndAlso _headerSearchIcon IsNot Nothing Then
-                If _isSearchMode Then CloseSearchMode() Else OpenSearchMode()
-            ElseIf _headerRightIconRect.Contains(e.Location) AndAlso _headerRightIcon IsNot Nothing Then
+            If HeaderSearchButtonRect.Contains(e.Location) AndAlso _headerSearchIcon IsNot Nothing Then
+                If _isSearchMode Then
+                    CloseSearchMode()
+                Else
+                    ' The operator opened the band to type: the caret goes straight into the box.
+                    OpenSearchMode(focusTree:=False)
+                    FocusSearchBox()
+                End If
+            ElseIf HeaderRightButtonRect.Contains(e.Location) AndAlso _headerRightIcon IsNot Nothing Then
                 RaiseEvent HeaderRightIconClicked(e)
             End If
             Return

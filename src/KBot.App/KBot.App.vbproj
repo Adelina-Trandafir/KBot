@@ -30,7 +30,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.1.5.2</FileVersion>
+    <FileVersion>1.1.5.5</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -64,6 +64,13 @@
       <LastGenOutput>Resources.Designer.vb</LastGenOutput>
       <SubType>Designer</SubType>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- SLICE-0086-07: acest .resx gol apartine unui partial al KbotForm, nu unui formular
+       separat. Compilarea lui ar dubla resursa KBot.App.KbotForm (MSB3577). -->
+  <ItemGroup>
+    <EmbeddedResource Remove="KBotForm\Documents\KbotForm.Receptii.resx" />
+    <None Include="KBotForm\Documents\KbotForm.Receptii.resx" />
   </ItemGroup>
 
   <!-- Two harness forms own a .resx; with their whole class inside #If DEBUG, MSBuild cannot find the class
@@ -167,116 +174,38 @@
   <!-- Slice 0086: every partial file of a form / control nests under its main file in Solution
        Explorer (DependentUpon). A new partial «Name.Part.vb» gets its own entry here. -->
   <ItemGroup>
-    <Compile Update="KbotForm.Browser.vb">
+    <Compile Update="KBotForm\KbotForm.Chrome.vb">
       <DependentUpon>KbotForm.vb</DependentUpon>
     </Compile>
-    <Compile Update="KbotForm.Chrome.vb">
+    <Compile Update="KBotForm\KbotForm.Host.vb">
       <DependentUpon>KbotForm.vb</DependentUpon>
     </Compile>
-    <Compile Update="KbotForm.Console.vb">
+    <Compile Update="KBotForm\KbotForm.MessageCatalog.vb">
       <DependentUpon>KbotForm.vb</DependentUpon>
     </Compile>
-    <Compile Update="KbotForm.Ddf.vb">
+    <Compile Update="KBotForm\KbotForm.Pagini.vb">
       <DependentUpon>KbotForm.vb</DependentUpon>
     </Compile>
-    <Compile Update="KbotForm.DdfDelete.vb">
+    <Compile Update="KBotForm\KbotForm.Periods.vb">
       <DependentUpon>KbotForm.vb</DependentUpon>
     </Compile>
-    <Compile Update="KbotForm.DdfSend.vb">
+    <Compile Update="KBotForm\KbotForm.Subunit.vb">
       <DependentUpon>KbotForm.vb</DependentUpon>
     </Compile>
-    <Compile Update="KbotForm.DdfSendHelpers.vb">
+    <Compile Update="KBotForm\KbotForm.Units.vb">
       <DependentUpon>KbotForm.vb</DependentUpon>
     </Compile>
-    <Compile Update="KbotForm.DdfSendMenu.vb">
-      <DependentUpon>KbotForm.vb</DependentUpon>
-    </Compile>
-    <Compile Update="KbotForm.Download.vb">
-      <DependentUpon>KbotForm.vb</DependentUpon>
-    </Compile>
-    <Compile Update="KbotForm.Extrase.vb">
-      <DependentUpon>KbotForm.vb</DependentUpon>
-    </Compile>
-    <Compile Update="KbotForm.ForexeWatch.vb">
-      <DependentUpon>KbotForm.vb</DependentUpon>
-    </Compile>
-    <Compile Update="KbotForm.Ingest.vb">
-      <DependentUpon>KbotForm.vb</DependentUpon>
-    </Compile>
-    <Compile Update="KbotForm.Ord.vb">
-      <DependentUpon>KbotForm.vb</DependentUpon>
-    </Compile>
-    <Compile Update="KbotForm.Periods.vb">
-      <DependentUpon>KbotForm.vb</DependentUpon>
-    </Compile>
-    <Compile Update="KbotForm.Receptii.vb">
-      <DependentUpon>KbotForm.vb</DependentUpon>
-    </Compile>
-    <Compile Update="KbotForm.Tree.vb">
-      <DependentUpon>KbotForm.vb</DependentUpon>
-    </Compile>
-    <Compile Update="KbotForm.TreeOptions.vb">
-      <DependentUpon>KbotForm.vb</DependentUpon>
-    </Compile>
-    <Compile Update="KbotForm.UncorrectedOperations.vb">
-      <DependentUpon>KbotForm.vb</DependentUpon>
-    </Compile>
-    <Compile Update="KbotForm.Views.vb">
-      <DependentUpon>KbotForm.vb</DependentUpon>
-    </Compile>
-    <Compile Update="KbotForm.HelpCapture.vb">
-      <DependentUpon>KbotForm.vb</DependentUpon>
-    </Compile>
-    <Compile Update="KbotForm.Nomenclatoare.vb">
-      <DependentUpon>KbotForm.vb</DependentUpon>
-    </Compile>
-	  <Compile Update="KbotForm.AsociereGuard.vb">
-		  <DependentUpon>KbotForm.vb</DependentUpon>
-	  </Compile>
-	  <Compile Update="KbotForm.CabNotes.vb">
-		  <DependentUpon>KbotForm.vb</DependentUpon>
-	  </Compile>
-	  <Compile Update="KbotForm.RobotQueue.vb">
-		  <DependentUpon>KbotForm.vb</DependentUpon>
-	  </Compile>
-	  <Compile Update="KbotForm.Units.vb">
-		  <DependentUpon>KbotForm.vb</DependentUpon>
-	  </Compile>
-	  <Compile Update="KbotForm.HelpReveal.vb">
-		  <DependentUpon>KbotForm.vb</DependentUpon>
-	  </Compile>
-	  <Compile Update="KbotForm.Parallel.vb">
-		  <DependentUpon>KbotForm.vb</DependentUpon>
-	  </Compile>
-	  <Compile Update="KbotForm.EFactura.vb">
-		  <DependentUpon>KbotForm.vb</DependentUpon>
-	  </Compile>
-	  <Compile Update="KbotForm.Grupe.vb">
-		  <DependentUpon>KbotForm.vb</DependentUpon>
-	  </Compile>
-	  <Compile Update="KbotForm.Host.vb">
-		  <DependentUpon>KbotForm.vb</DependentUpon>
-	  </Compile>
-	  <Compile Update="KbotForm.KeRobot.vb">
-		  <DependentUpon>KbotForm.vb</DependentUpon>
-	  </Compile>
-	  <Compile Update="KbotForm.Machete.vb">
-		  <DependentUpon>KbotForm.vb</DependentUpon>
-	  </Compile>
-	  <Compile Update="KbotForm.MessageCatalog.vb">
-		  <DependentUpon>KbotForm.vb</DependentUpon>
-	  </Compile>
-	  <Compile Update="KbotForm.Pagini.vb">
-		  <DependentUpon>KbotForm.vb</DependentUpon>
-	  </Compile>
-	  <Compile Update="KbotForm.Tutorial.vb">
-		  <DependentUpon>KbotForm.vb</DependentUpon>
-	  </Compile>
 
-	  <Compile Update="AvacontMain.Sidebar.vb">
+	  <Compile Update="Avacont\AvacontMain.Sidebar.vb">
 		  <DependentUpon>AvacontMain.vb</DependentUpon>
 	  </Compile>
-	  <Compile Update="AvacontMain.Tutorial.vb">
+      <Compile Update="Avacont\AvacontMain.Navigation.vb">
+        <DependentUpon>AvacontMain.vb</DependentUpon>
+      </Compile>
+      <Compile Update="Avacont\AvacontMain.Switcher.vb">
+        <DependentUpon>AvacontMain.vb</DependentUpon>
+      </Compile>
+	  <Compile Update="Avacont\AvacontMain.Tutorial.vb">
 		  <DependentUpon>AvacontMain.vb</DependentUpon>
 	  </Compile>
   </ItemGroup>

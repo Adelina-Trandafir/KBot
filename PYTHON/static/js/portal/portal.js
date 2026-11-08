@@ -20,15 +20,15 @@ const PORTAL_URL = '/portal';
 
 // slice AD10-01: /portal?next=/adechit -- a page that needs the sign-in sends the user here and takes
 // them back once a unit is open. Only these pages are allowed, never a free address.
-const NEXT_PAGES = ['/adechit', '/vercon'];
+const NEXT_PAGES = ['/adechit', '/vercon', '/vercon-inventar'];
 const TRUST_KEY = 'kbot-portal-trust'; // the code typed in this browser: password alone is enough for the rest of the hour
 const nextPage = (() => {
   const wanted = new URLSearchParams(window.location.search).get('next') || '';
   return NEXT_PAGES.includes(wanted) ? wanted : '';
 })();
 // Explicit application destinations share the sign-in; otherwise choose after authentication.
-let chosenApp = nextPage === '/adechit' ? 'adechit' : nextPage === '/vercon' ? 'vercon' : 'kbot';
-const chosenPage = () => (chosenApp === 'adechit' ? '/adechit' : chosenApp === 'vercon' ? '/vercon' : '');
+let chosenApp = nextPage === '/adechit' ? 'adechit' : ['/vercon', '/vercon-inventar'].includes(nextPage) ? 'vercon' : 'kbot';
+const chosenPage = () => (chosenApp === 'adechit' ? '/adechit' : chosenApp === 'vercon' ? (nextPage === '/vercon-inventar' ? nextPage : '/vercon') : '');
 function goNext() {
   if (chosenPage()) window.location.replace(chosenPage());
 }

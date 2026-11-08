@@ -1,0 +1,32 @@
+.vi-page { margin: 0; height: 100vh; overflow: hidden; display: flex; flex-direction: column; }
+.vi-page > .vc-header { flex-shrink: 0; }
+#vi-app { min-height: 0; flex: 1; display: grid; grid-template-rows: auto auto minmax(340px, 1fr); gap: 12px; padding: 16px 20px; }
+.vi-tables { --vi-work-min: 200px; --vi-assigned-min: 120px; min-height: 0; display: grid;
+  grid-template-rows: minmax(var(--vi-work-min), 1fr) 10px minmax(var(--vi-assigned-min), var(--vi-assigned-height, .35fr)); row-gap: 5px; }
+.vi-splitter { position: relative; cursor: row-resize; touch-action: none; user-select: none; border-radius: 4px; }
+.vi-splitter::after { content: ''; position: absolute; width: 64px; height: 4px; border-radius: 3px; left: 50%; top: 50%;
+  transform: translate(-50%, -50%); background: var(--border, #aeb8c5); }
+.vi-splitter:hover, .vi-splitter:focus-visible, .vi-splitter.is-dragging { background: rgb(49 133 202 / .15); outline: 1px solid #3185ca; }
+.vi-splitter[aria-disabled="true"] { cursor: default; opacity: .4; }
+.vi-associate label { display: grid; gap: 5px; font-size: 13px; min-width: 0; }
+.vi-file { display: grid; grid-template-columns: minmax(140px, 1fr) auto minmax(150px, .5fr) auto auto; gap: 10px; align-items: center; }
+.vi-status { margin: 0; min-height: 20px; font-size: 13px; }
+.vi-work { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) 220px; gap: 14px; min-height: 0; }
+.vi-pane, .vi-assigned { display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid var(--border, #cbd5e1); border-radius: 6px; overflow: hidden; }
+.vi-pane h2, .vi-assigned h2 { margin: 0; padding: 10px 12px; font-size: 15px; }
+.vi-pane h2 span, .vi-assigned h2 span { opacity: .65; font-weight: normal; }
+.vi-grid { min-height: 0; flex: 1; }
+.vi-associate { display: flex; flex-direction: column; gap: 12px; min-height: 0; overflow: auto; padding: 0 2px; }
+.vi-associate h2 { font-size: 15px; margin: 10px 0 0; }
+.vi-detail { margin: 0; font-size: 12px; line-height: 1.5; white-space: pre-line; }
+.vi-assigned-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding-right: 10px; }
+@media (max-width: 1050px) {
+  .vi-page { overflow: auto; height: auto; min-height: 100vh; }
+  #vi-app { display: flex; flex-direction: column; }
+  .vi-tables { --vi-work-min: 450px; height: 760px; flex: none; }
+  .vi-file { grid-template-columns: 1fr auto; }
+  .vi-work { min-height: 450px; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .vi-associate { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, 1fr); }
+  .vi-associate h2, .vi-detail { grid-column: 1 / -1; }
+  .vi-assigned { height: auto; }
+}

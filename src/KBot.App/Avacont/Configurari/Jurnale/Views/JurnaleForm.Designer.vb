@@ -120,7 +120,6 @@ Partial Class JurnaleForm
         ' gridJurnale
         '
         gridJurnale.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridJurnale.BackColor = SystemColors.Window
         gridJurnale.ColumnFillMode = KBotFillMode.SpecificColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing
@@ -171,14 +170,9 @@ Partial Class JurnaleForm
         gridJurnale.Dock = DockStyle.Fill
         gridJurnale.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
         gridJurnale.FillColumnKey = "denumire"
-        gridJurnale.FooterBackColor = SystemColors.Control
-        gridJurnale.FooterHeight = 24
         gridJurnale.FooterRightIcon = My.Resources.Resources.plus_green
         gridJurnale.FooterRightIconTooltip = "Adaugă un jurnal" & vbLf & "Rândul nou se completează direct în tabel."
-        gridJurnale.FooterSeparatorColor = SystemColors.ActiveBorder
         gridJurnale.FooterVisible = True
-        gridJurnale.HeaderHeight = 24
-        gridJurnale.HeaderSeparatorColor = SystemColors.ActiveBorder
         gridJurnale.Location = New Point(0, 49)
         gridJurnale.Margin = New Padding(0)
         gridJurnale.Name = "gridJurnale"

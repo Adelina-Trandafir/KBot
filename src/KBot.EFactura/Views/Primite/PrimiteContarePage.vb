@@ -536,7 +536,7 @@ Public Class PrimiteContarePage
         Try
             If k_scheme Is Nothing Then Return
             BackColor = k_scheme.Palette.SurfaceAltColor
-            For Each k_header As System.Windows.Forms.Label In New System.Windows.Forms.Label() {lblClsf, lblCodClient, lblIban, lblFelOp}
+            For Each k_header As KBotLabel In New KBotLabel() {lblClsf, lblCodClient, lblIban, lblFelOp}
                 k_header.BackColor = k_scheme.Palette.ButtonBackColor
                 k_header.ForeColor = k_scheme.Palette.ButtonTextColor
             Next

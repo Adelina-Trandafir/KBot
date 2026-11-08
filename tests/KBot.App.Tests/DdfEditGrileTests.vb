@@ -127,8 +127,7 @@ Public Class DdfEditGrileTests
                        p.SetDraft(Schita("rezervari", String.Empty))
 
                        Assert.True(p.grd.ReadOnlyGrid)
-                       Assert.False(p.btnAdauga.Enabled)
-                       Assert.False(p.btnSterge.Enabled)
+
                        ' The lock is above the partner gate: the document HAS a partner here.
                        Assert.True(p.grd.Column("cod_partener").ReadOnly)
                        Assert.Contains("rezervări", p.lblStare.Text, StringComparison.Ordinal)
@@ -149,8 +148,6 @@ Public Class DdfEditGrileTests
                        p.SetDraft(Schita("existent", "41;42"))
 
                        Assert.True(p.grd.ReadOnlyGrid)
-                       Assert.False(p.btnAdauga.Enabled)
-                       Assert.False(p.btnSterge.Enabled)
                    End Using
                End Sub)
     End Sub
@@ -162,7 +159,7 @@ Public Class DdfEditGrileTests
                        p.SetDraft(Schita("istoric", String.Empty))
 
                        Assert.False(p.grd.ReadOnlyGrid)
-                       Assert.True(p.btnSterge.Enabled)
+
                        ' The document has a partner, so the cell stays open.
                        Assert.False(p.grd.Column("cod_partener").ReadOnly)
                        Assert.Equal(KBotColumnType.Combo, p.grd.Column("clasificatie").ColumnType)

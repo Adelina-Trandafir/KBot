@@ -70,8 +70,6 @@ target: ClasificatiiBugetView.gridTotal
 Rândul acesta adună <b>ultimul buget</b> și <b>toate rectificările</b>, pe trimestre, ca să vezi efectul rectificării. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
 ## Salvează
-<!-- slice: 000T-10 -->
-target: ClasificatiiBugetView.btnSalveaza
-wait: click
-guard: yes
-Apasă <b>«Salvează»</b>. Se scriu în baza de date rectificările și versiunile de buget ale clasificației alese.
+<!-- slice: 000T-10, 0126-03 -->
+anchor: ribbon.clasificatii_salveaza
+Când ai terminat, apeși <b>«Salvează»</b>, din ribbon: se scriu în baza de date rectificările și versiunile de buget ale clasificației alese. Aici nu salvăm nimic; apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).

@@ -448,6 +448,24 @@ Friend NotInheritable Class AdobeNativeMethods
                                       SMTO_ABORTIFHUNG, 2000UI, result) <> IntPtr.Zero
     End Function
 
+    Public Const EM_SETSEL As UInteger = &HB1UI
+    Public Const WM_CHAR As UInteger = &H102UI
+
+    ''' <summary>
+    ''' Types <paramref name="k_text"/> into an Edit the way a keyboard would: the whole content selected, then one WM_CHAR per
+    ''' character (slice 0088-08). WM_SETTEXT changes only the control; some Save As dialogs take the name from what was TYPED
+    ''' (05.11.2026, GR23: the box read back the right path and Adobe saved under its own name on the Desktop all the same).
+    ''' True when every message was processed. Never throws.
+    ''' </summary>
+    Public Shared Function TypeText(hWnd As IntPtr, k_text As String) As Boolean
+        If hWnd = IntPtr.Zero OrElse String.IsNullOrEmpty(k_text) Then Return False
+        Dim k_all As Boolean = SendWithTimeout(hWnd, EM_SETSEL, IntPtr.Zero, New IntPtr(-1))
+        For Each k_char As Char In k_text
+            k_all = SendWithTimeout(hWnd, WM_CHAR, New IntPtr(AscW(k_char)), IntPtr.Zero) AndAlso k_all
+        Next
+        Return k_all
+    End Function
+
     ''' <summary>Every descendant of <paramref name="hWnd"/> (EnumChildWindows walks the whole tree).</summary>
     Public Shared Function Descendants(hWnd As IntPtr) As List(Of IntPtr)
         Dim all As New List(Of IntPtr)()

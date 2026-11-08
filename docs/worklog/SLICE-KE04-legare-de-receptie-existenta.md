@@ -12,11 +12,11 @@ Etapele inițiale păstrează separat cele trei moduri ale ferestrei și extinde
 ### What changed and why
 Operator request (16.10.2026): link the received e-invoices to receptions and, later, to payments; plan in `docs/KE_PLAN.md`.
 
-- Window `KeLegaForm` (one window, three modes). Mode "existenta": the receptions of the angajament with their value, their rest and an editable "De alocat" per classification; the proposed amount is the smaller of the invoice rest and the reception rest (sign aware), which the accountant may lower for a partial payment.
+- The former reception window (one window, three modes). Mode "existenta": the receptions of the angajament with their value, their rest and an editable "De alocat" per classification; the proposed amount is the smaller of the invoice rest and the reception rest (sign aware), which the accountant may lower for a partial payment.
 - Server: `receptii_angajament` (indicators + receptions, value per classification from the last counting snapshot, what invoices already cover, rest), `verifica` (the indicator exists, the sum fits the rest of the invoice on that classification, same sign; a warning when the receptions would pass the legal commitment) and `leaga` (an existing reception must have the rest, else 409 `REST_RECEPTIE` with the advice to modify or make a new one). Nothing changes in FOREXE.
 
 ### Files touched
-`src/KBot.EFactura/Forms/KeLegaForm.vb` + designer, `PYTHON/routes/efactura/primite_ke.py` (`receptii_angajament`, `verifica`, `leaga`), `PrimiteView.Receptii.vb` (`LinkAsync`).
+the former reception window, `PYTHON/routes/efactura/primite_ke.py` (`receptii_angajament`, `verifica`, `leaga`), `PrimiteView.Receptii.vb` (`LinkAsync`).
 
 ### Test results
 See the [shared initial validation checkpoint](SLICE-KE01-modelul-legaturii-si-calculele.md#checkpoint-16-10) for KE01…KE07 (16.10.2026).
@@ -29,13 +29,13 @@ See the [shared initial validation checkpoint](SLICE-KE01-modelul-legaturii-si-c
 ## SLICE-KE06 - "Receptie noua" from an invoice (16.10.2026) <a id="slice-KE06"></a>
 
 ### What changed and why
-- The flow of the button: the window (`KeLegaForm`, mode "noua": type Avans / Partial / Final, default "Final" like the site; date, default the invoice date; description, default "plata factura nr/data"; the value of each classification, default the rest of the invoice) > the server check (`verifica`: indicator exists, amounts fit; warnings asked as a question) > a K-BOT marker `(IDRH: n; IDR: m)` is reserved through the existing route and written at the end of the description > the robot adds the reception > ONLY when it is saved the links are written with those numbers (`EF_PrimiteReceptii.IDRH/IDR`), so the download that follows knows whose reception it is.
+- The flow of the button: the window (the former reception window, mode "noua": type Avans / Partial / Final, default "Final" like the site; date, default the invoice date; description, default "plata factura nr/data"; the value of each classification, default the rest of the invoice) > the server check (`verifica`: indicator exists, amounts fit; warnings asked as a question) > a K-BOT marker `(IDRH: n; IDR: m)` is reserved through the existing route and written at the end of the description > the robot adds the reception > ONLY when it is saved the links are written with those numbers (`EF_PrimiteReceptii.IDRH/IDR`), so the download that follows knows whose reception it is.
 - If the save cannot be confirmed (no success element and the read-back does not find the marker) nothing is linked and the accountant is told to look in FOREXE before trying again.
 
-- **Optional one-reception-per-day (operator, 16.10.2026).** `AppSettings.KeBlockSameDayReception`, default OFF, «Setari > Aplicatie» (`chkKeZi`): `KeLegaForm` mode "noua" refuses a date already holding an angajament reception, advising modification or another date. Default OFF because `(IDRH; IDR)` identifies K-BOT receptions independently of day. Client preference, no server rule; checks only downloaded receptions, missing later site additions.
+- **Optional one-reception-per-day (operator, 16.10.2026).** `AppSettings.KeBlockSameDayReception`, default OFF, «Setari > Aplicatie» (`chkKeZi`): the former reception window mode "noua" refuses a date already holding an angajament reception, advising modification or another date. Default OFF because `(IDRH; IDR)` identifies K-BOT receptions independently of day. Client preference, no server rule; checks only downloaded receptions, missing later site additions.
 
 ### Files touched
-`src/KBot.EFactura/Views/Primite/PrimiteView.Receptii.vb` (`NewReceptionAsync`, `ReserveMarkerAsync`), `Forms/KeLegaForm.vb`, `src/KBot.Common/AppSettings.vb`, `src/KBot.App/Setari/SetariAplicatieView(.Designer).vb`; help `contabil/efactura/index.md` (tag KE06).
+`src/KBot.EFactura/Views/Primite/PrimiteView.Receptii.vb` (`NewReceptionAsync`, `ReserveMarkerAsync`), the former reception window, `src/KBot.Common/AppSettings.vb`, `src/KBot.App/Setari/SetariAplicatieView(.Designer).vb`; help `contabil/efactura/index.md` (tag KE06).
 
 ### Test results
 See the [shared initial validation checkpoint](SLICE-KE01-modelul-legaturii-si-calculele.md#checkpoint-16-10) for KE01…KE07 (16.10.2026).
@@ -53,7 +53,7 @@ See the [shared initial validation checkpoint](SLICE-KE01-modelul-legaturii-si-c
 - Server: `receptii_angajament` also answers `Idrhs` (the snapshot numbers of each reception); `verifica` for `modificata` gives the old and the new value of each row; `leaga` records the links on the reception (`IDRR`).
 
 ### Files touched
-`src/KBot.Forexe/Workflows/Creare/adlop - Receptie Modificata.wfl`, `PYTHON/routes/efactura/primite_ke.py`, `PrimiteView.Receptii.vb` (`ChangeReceptionAsync`, `MarkerRegex`), `KeLegaForm.vb`, `ApiClient.EFactura.Ke.vb`.
+`src/KBot.Forexe/Workflows/Creare/adlop - Receptie Modificata.wfl`, `PYTHON/routes/efactura/primite_ke.py`, `PrimiteView.Receptii.vb` (`ChangeReceptionAsync`, `MarkerRegex`), the former reception window, `ApiClient.EFactura.Ke.vb`.
 
 ### Test results
 See the [shared initial validation checkpoint](SLICE-KE01-modelul-legaturii-si-calculele.md#checkpoint-16-10) for KE01…KE07 (16.10.2026).
@@ -68,14 +68,14 @@ See the [shared initial validation checkpoint](SLICE-KE01-modelul-legaturii-si-c
 
 ### What changed and why
 Operator request: link several invoices to one new reception. In the list shown by the root «Toate facturile» (ticks) a new button **«Recepție nouă»** (left of «Listează») works on the ticked invoices:
-1. one `KeLegaForm` per invoice (the first asks angajament, type, date, description; the next ones are tied to them with `KeLegaForm.FixeazaReceptiaNoua` and ask only classifications and amounts);
+1. one reception window per invoice (the first asks angajament, type, date, description; the next ones are tied to them with the former reception window and ask only classifications and amounts);
 2. each invoice's classifications are saved if changed and the server checks it (`verifica`); any problem stops everything, before FOREXE;
 3. the rows of all the checks are added up per indicator (`SumRows`) and the robot saves ONE reception with ONE marker `(IDRH; IDR)`;
 4. every invoice gets its link with the same IDRH/IDR (`AddKeLegaturiAsync`); a link that fails is reported, the others go on; the list is read again.
 The server is unchanged (no unique key on `EF_PrimiteReceptii.IDRH`; `leaga` is per invoice).
 
 ### Files touched
-`KBot.EFactura/Views/Primite/PrimiteView.ReceptieMultipla.vb` (new), `PrimiteListaPage.vb`, `PrimiteListaPage.Designer.vb`, `KBot.EFactura/Forms/KeLegaForm.vb`; help: `HelpContent/contabil/efactura/index.md` (tag `KE10`, `0000-99`).
+`KBot.EFactura/Views/Primite/PrimiteView.ReceptieMultipla.vb` (new), `PrimiteListaPage.vb`, `PrimiteListaPage.Designer.vb`, `the former reception window`; help: `HelpContent/contabil/efactura/index.md` (tag `KE10`, `0000-99`).
 
 ### Test results
 `dotnet build src\KBot.App\KBot.App.vbproj`: 0 warnings, 0 errors. Not run, not seen on screen.

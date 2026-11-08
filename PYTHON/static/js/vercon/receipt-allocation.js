@@ -1,5 +1,6 @@
 import { ComboTree } from '../components/combotree/combotree.js';
 import { el } from './ui.js';
+import { searchOptions } from './search-settings.js';
 
 // The UI calls stock destinations "subunități" (Alimente, Materiale, OI, MF).
 // Each root carries the complete existing SubunitId/GestiuneId context; accounts never create a new root.
@@ -35,7 +36,7 @@ export function receiptAllocation({ api, selection, draft, mode }) {
       children: choices.filter(a => a.destination === root.id).map(a => ({ id: String(a.id), label: a.label })) }))
       .filter(root => root.children.length || root.id === `destination:${current()}`);
     let loading = true;
-    const combo = owner.own(new ComboTree(host, { nodes: treeNodes, checkable: true, branchChecks: false, onTab,
+    const combo = owner.own(new ComboTree(host, { ...searchOptions(), nodes: treeNodes, checkable: true, branchChecks: false, onTab,
       expanded: [`destination:${current()}`], placeholder: 'Bifați conturile…',
       formatCheckSummary: count => count ? `${count} conturi selectate` : 'Bifați conturile…',
       onCheckChange: ids => {

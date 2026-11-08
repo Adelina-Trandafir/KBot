@@ -35,6 +35,18 @@ Public Interface INomenclatoareApi
                                              ct As CancellationToken) As Task(Of IReadOnlyList(Of ClasificatieAngajament))
 
     ''' <summary>
+    ''' Slice 0126-05: the budget versions and the corrections of EVERY classification that has any, for the year, in one answer (the window
+    ''' reads them once when it opens and keeps them in memory). A classification not in the answer has none.
+    ''' </summary>
+    Function GetAllBudgetsAsync(an As Integer, ct As CancellationToken) As Task(Of IReadOnlyDictionary(Of Integer, BugetClasificatie))
+
+    ''' <summary>
+    ''' Slice 0126-05: the same rows for EVERY classification at once (each row says which one it is on), read once when the window
+    ''' opens so a click on the tree needs no round trip.
+    ''' </summary>
+    Function GetAllClasificatiiAngajamenteAsync(ct As CancellationToken) As Task(Of IReadOnlyList(Of ClasificatieAngajament))
+
+    ''' <summary>
     ''' Saves the budget versions and the corrections of one classification in one transaction and
     ''' returns them as read back from the database. <paramref name="deletedBudgetIds"/> and
     ''' <paramref name="deletedIds"/> are the versions and the corrections removed in the window.

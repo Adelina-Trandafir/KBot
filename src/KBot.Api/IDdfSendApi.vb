@@ -20,8 +20,10 @@ Public Interface IDdfSendApi
 
     ''' <summary>0081-04: the send begins -- the stage becomes «interrupted» (1) BEFORE forexecab is
     ''' touched, so a crash halfway leaves S1x behind, never a revision that looks unsent.
-    ''' Refused unless the revision is S1 (A signed) or already S1x (a resume).</summary>
-    Function IncepeTrimitereaDdfAsync(idrev As Integer, ct As CancellationToken) As Task
+    ''' A first send or a resume requires section A, unless unsigned operations were enabled in settings.</summary>
+    Function IncepeTrimitereaDdfAsync(idrev As Integer, ct As CancellationToken,
+                                     Optional permiteFaraSemnatura As Boolean = False,
+                                     Optional reluare As Boolean? = Nothing) As Task
 
     ''' <summary>0081-04: what forexecab assigned, written as soon as it is known: the real angajament
     ''' code (replaces the «!» code everywhere the document carries it; empty = no change) and the

@@ -80,7 +80,7 @@ def _zero_vat(cursor, subunit, gestiune):
 
 
 def _assess(cursor, subunit, gestiune, assets):
-    """One verdict per asset: the cleaned values and the list of reasons it cannot be imported."""
+    """One verdict per asset, with blocking reasons and separate legacy-data warnings (SLICE-VC11-01)."""
     from routes.vercon import documents as d, protocol
     from routes.vercon.nomenclatoare import NomError
     from routes.vercon.receipt_products import duration_message
@@ -89,7 +89,7 @@ def _assess(cursor, subunit, gestiune, assets):
     seen, out = set(), []
     for index, raw in enumerate(assets):
         raw = raw if isinstance(raw, dict) else {}
-        reasons = []
+        reasons, warnings = [], []
         code = str(raw.get('code') or '').strip()
         name = str(raw.get('name') or '').strip()
         value = d._dec(raw.get('value'))
@@ -123,15 +123,16 @@ def _assess(cursor, subunit, gestiune, assets):
         elif classification['DNF_MIN'] is None or classification['DNF_MAX'] is None:
             reasons.append('Clasificarea %s nu are limite de durată.' % classification['Cod'])
         elif dnf is not None and not classification['DNF_MIN'] * 12 <= dnf <= classification['DNF_MAX'] * 12:
-            reasons.append(duration_message(classification['Cod'], classification['DNF_MIN'], classification['DNF_MAX']))
+            warnings.append(duration_message(classification['Cod'], classification['DNF_MIN'], classification['DNF_MAX']) +
+                            ' Se păstrează durata din Access: %s luni; avertismentul nu blochează importul.' % dnf)
         out.append({'index': index, 'code': code, 'name': name, 'entry': entry, 'value': value, 'dnf': dnf, 'df': df,
-                    'cc': classification['Cod'] if classification else wanted, 'reasons': reasons})
+                    'cc': classification['Cod'] if classification else wanted, 'reasons': reasons, 'warnings': warnings})
     return out
 
 
 def _report(assessed):
     return [{'index': a['index'], 'code': a['code'], 'name': a['name'], 'cc': a['cc'], 'ok': not a['reasons'],
-             'reasons': a['reasons']} for a in assessed]
+             'reasons': a['reasons'], 'warnings': a['warnings']} for a in assessed]
 
 
 def check(args):
@@ -183,7 +184,7 @@ def run(args):
             exercise = protocol.exercise_of(cursor, args.subunit, args.gestiune, 'MF', None)
             ctx = {'unit': name, 'subunit': args.subunit, 'gestiune': args.gestiune, 'exercitiu': exercise['id'], 'email': _actor(),
                    'type': 'MF', 'zec': int(gest['Zec']), 'scale': int(gest['Scara']), 'year': exercise['an'], 'an': exercise['an'],
-                   'closed': exercise['closed']}
+                   'closed': exercise['closed'], 'preserve_legacy_mf_duration': True}
             repo = ScopedRepository(cursor, args.subunit, args.gestiune, exercise['id'])
             key = 'mfimport-' + uuid.uuid4().hex[:16]
             for position, a in enumerate(assessed, 1):
@@ -195,7 +196,9 @@ def run(args):
                 result = receipts.create_nir(cursor, repo, ctx, exercise, body, key, key)
                 created.append({'code': a['code'], 'name': a['name'], 'document': result['id'], 'number': result['number']})
             protocol.audit(cursor, ctx, 'mf.import', 'VC_NIR', created[0]['document'], None,
-                           {'source': 'mf.mdb', 'assets': [c['code'] for c in created]}, key, key)
+                           {'source': 'mf.mdb', 'assets': [c['code'] for c in created],
+                            'warnings': [{'code': a['code'], 'dnf': a['dnf'], 'messages': a['warnings']}
+                                         for a in assessed if a['warnings']]}, key, key)
             conn.commit()
         except NomError as error:
             conn.rollback()
@@ -208,6 +211,8 @@ def run(args):
 
 
 def register(sub):
+    from . import vercon_mf_setup
+    vercon_mf_setup.register(sub)
     for verb, fn in (('vercon-mf-targets', targets), ('vercon-mf-check', check), ('vercon-mf-import', run)):
         p = sub.add_parser(verb)
         p.add_argument('--db', required=True)

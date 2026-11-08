@@ -7,7 +7,10 @@ Partial Class PrimitePdfPage
     <System.Diagnostics.DebuggerNonUserCode()>
     Protected Overrides Sub Dispose(disposing As Boolean)
         Try
-            If disposing AndAlso components IsNot Nothing Then components.Dispose()
+            If disposing Then
+                picAtas?.BackgroundImage?.Dispose()
+                components?.Dispose()
+            End If
         Finally
             MyBase.Dispose(disposing)
         End Try
@@ -22,9 +25,8 @@ Partial Class PrimitePdfPage
         Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
         pgViewer = New VanzarePdfPage()
-        picAtas = New System.Windows.Forms.PictureBox()
+        picAtas = New System.Windows.Forms.Panel()
         navDoc = New KBotNavList()
-        CType(picAtas, System.ComponentModel.ISupportInitialize).BeginInit()
         CType(navDoc, System.ComponentModel.ISupportInitialize).BeginInit()
         SuspendLayout()
         '
@@ -44,7 +46,7 @@ Partial Class PrimitePdfPage
         picAtas.Margin = New System.Windows.Forms.Padding(0)
         picAtas.Name = "picAtas"
         picAtas.Size = New System.Drawing.Size(757, 490)
-        picAtas.SizeMode = System.Windows.Forms.PictureBoxSizeMode.Zoom
+        picAtas.BackgroundImageLayout = System.Windows.Forms.ImageLayout.Zoom
         picAtas.TabIndex = 2
         picAtas.TabStop = False
         picAtas.Visible = False
@@ -87,12 +89,11 @@ Partial Class PrimitePdfPage
         Controls.Add(navDoc)
         Name = "PrimitePdfPage"
         Size = New System.Drawing.Size(757, 526)
-        CType(picAtas, System.ComponentModel.ISupportInitialize).EndInit()
         CType(navDoc, System.ComponentModel.ISupportInitialize).EndInit()
         ResumeLayout(False)
     End Sub
 
     Friend WithEvents pgViewer As VanzarePdfPage
-    Friend WithEvents picAtas As System.Windows.Forms.PictureBox
+    Friend WithEvents picAtas As System.Windows.Forms.Panel
     Friend WithEvents navDoc As KBotNavList
 End Class

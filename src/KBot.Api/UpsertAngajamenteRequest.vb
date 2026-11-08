@@ -234,6 +234,8 @@ Public NotInheritable Class GetReceptieRow
     ' Rank among the receptions of the same date in FOREXE (sliceless, 30.09.2026). Null
     ' until the first download after the column was added.
     Public Property rang_zi_r As Integer?
+    ' The day the reception was deleted (seen in FOREXE, or its «Stergere receptie» row); null = live.
+    Public Property data_stergere_r As Date?
 End Class
 
 Public NotInheritable Class GetReceptiePlata

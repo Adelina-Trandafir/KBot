@@ -28,6 +28,20 @@ versiuni»**, în același grup al ribbonului — [Jurnal activitate](topic:cont
 
 Setările se salvează pe măsură ce le schimbi.
 
+## Istoricul navigării: cele două butoane
+<!-- slice: 0097-09 -->
+
+În **Aplicație › Generale › Fereastra principală** sunt două bife independente:
+
+- **«Arată istoricul în CAPBAR»** — implicit debifată; arată un buton cu ceas primul din stânga în grupul butoanelor
+  barei de titlu.
+- **«Arată istoricul în ribbon»** — implicit bifată; arată **«Istoric»** înainte de **«Închide»**, pe orice filă.
+
+Ambele deschid același [istoric al navigării](topic:contabil.fereastra), legat de **«Machete deschise»** din panoul lateral.
+Se pot bifa amândouă, una singură sau niciuna. Alegerea se salvează imediat, se aplică fără repornire și se păstrează
+la următoarea pornire. Nu schimbă afișarea panoului lateral. **Ctrl+Tab** rămâne disponibil și când ambele bife sunt
+debifate: selectorul cu miniaturi comută între machetele deschise, în ordinea ultimei utilizări.
+
 ## Pagina «Aplicație»: cum e grupată fila «Generale»
 <!-- slice: 0100, 0100-02, 0114, 0114-24, 0000-100, 0115-02, 0000-106 -->
 
@@ -70,6 +84,23 @@ Din grupul **Fereastra principală**:
 la început.** Debifată, micul meniu K-BOT din colțul paginii FOREXE nu se mai vede; K-BOT urmărește
 în continuare ce salvezi în pagină. Se aplică imediat —
 [Vederea «Browser FOREXE»](topic:contabil.forexe.browser).
+
+## Pagina «FOREXE»: rezervări fără revizie
+<!-- slice: 0114-29 -->
+
+**«Oprește rezervarea nouă dacă angajamentul are rezervări fără revizie de fundamentare»** —
+**bifată la început.** Bifată, în pagina FOREXE nu poți începe o rezervare nouă cât timp angajamentul
+are rezervări fără revizie; K-BOT arată mesajul «Rezervarea nu a început». Debifată, rezervarea
+începe fără nicio verificare și mesajul nu mai apare. Se aplică imediat —
+[Vederea «Browser FOREXE»](topic:contabil.forexe.browser).
+
+## Pagina «FOREXE»: operațiuni înainte de semnare
+<!-- slice: 0081-14 -->
+
+**«Permite salvarea operațiunilor în FOREXE înainte de semnarea DDF»** este debifată la început.
+Cu bifa pusă, poți trimite o ciornă DDF, relua o trimitere întreruptă și definitiva sau derula un
+angajament nou înainte de semnarea Secțiunii A. Bifa se salvează pe acest calculator și se aplică
+la următoarea operațiune. [Trimiterea în FOREXE](topic:contabil.ddf.trimitere)
 
 ## Pagina «FOREXE»: certificatul memorat
 <!-- slice: 0072, 0097 -->

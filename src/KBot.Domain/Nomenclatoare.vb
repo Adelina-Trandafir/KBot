@@ -132,6 +132,8 @@ End Class
 ''' reservations, receptions and payments.
 ''' </summary>
 Public NotInheritable Class ClasificatieAngajament
+    ''' <summary>Slice 0126-05: the classification the indicator is on (the window binds the rows it read once to a classification from memory).</summary>
+    Public Property IdClsf As Integer
     Public Property CodAngajament As String = String.Empty
     Public Property Descriere As String = String.Empty
     Public Property CodIndicator As String = String.Empty

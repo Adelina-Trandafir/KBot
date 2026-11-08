@@ -1,6 +1,9 @@
+import { searchLength } from '../../utils/search-text.js';
+
 export const treeViewSearchMixin = {
   async performSearch(query) {
-    if (query.length < this.options.minSearchLength && query !== '') {
+    const typed = this.options.minSearchIgnoreSpaces === true ? searchLength(query) : query.length;
+    if (typed < this.options.minSearchLength && query !== '') {
       this.hide();
       return;
     }
@@ -54,8 +57,11 @@ export const treeViewSearchMixin = {
       clearTimeout(this.localSearchTimeout);
     }
 
+    // Pages that opt in (minSearchIgnoreSpaces) use their own delay and minimum; the others keep 300 ms / 3 characters.
+    const policy = this.options.minSearchIgnoreSpaces === true;
+    const minimum = policy ? this.options.minSearchLength : 3;
     this.localSearchTimeout = setTimeout(() => {
-      if (e.target.value.length < 3) {
+      if ((policy ? searchLength(e.target.value) : e.target.value.length) < minimum) {
         this.clearLocalSearch(false);
         return;
       }
@@ -116,10 +122,10 @@ export const treeViewSearchMixin = {
           });
         }
       }, 100);
-    }, 300);
+    }, policy ? this.options.searchDelay : 300);
   },
 
-  updateResults(results, query, { preserveExpanded = false } = {}) {
+  updateResults(results, query, { preserveExpanded = false, render = true } = {}) {
     const expanded = preserveExpanded ? new Set(this.expandedNodes) : null;
     const normalizeNodes = (nodes) => {
       return nodes.map((node) => {
@@ -139,7 +145,7 @@ export const treeViewSearchMixin = {
     this.results = normalizeNodes(results || []);
     this.highlightedIndex = -1;
 
-    if (!this.isVisible) return;
+    if (!render || !this.isVisible) return;
 
     if (query && this.options.expandOnSearch) {
       this.expandAllNodes(this.results);

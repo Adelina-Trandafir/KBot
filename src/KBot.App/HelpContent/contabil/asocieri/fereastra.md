@@ -12,7 +12,7 @@ keywords: fereastra asocieri, receptii si lanturile lor, instantanee neasezate, 
 
 
 ## Stânga — «RECEPȚII ȘI LANȚURILE LOR»
-<!-- slice: 0048-04, 0056, 0056-02, 0059, 0062, 0065, 0101, 0111, 0122-12 -->
+<!-- slice: 0048-04, 0056, 0056-02, 0059, 0062, 0065, 0076-04, 0101, 0111, 0122-12 -->
 
 Câte un rând pe **recepție**: data recepției, valoarea de azi și, în paranteză, câte instantanee are
 lanțul ei. Sub fiecare recepție, **lanțul**: instantaneele ei, în ordinea orei.
@@ -21,7 +21,7 @@ Semnele de pe rândul recepției:
 
 | Semn | Înseamnă |
 |------|----------|
-| **[ștearsă]** (și fond stins) | recepția a fost ștearsă pe site; rămâne o recepție întreagă pentru plățile de dinaintea ștergerii |
+| **[ștearsă]** (și fond roșiatic) | recepția a fost ștearsă pe site; nu se mai socotește în sume (arborele Recepții, etichete, ordonanțări) de la ștergere încolo — rămâne în socoteală doar pentru plățile de dinaintea ștergerii |
 | **[reconstituită]** | recepția n-a mai existat în FOREXE la prima descărcare și a fost refăcută din instantaneele ei |
 | **[nouă]** / **[nouă, ștearsă]** | recepție pornită de tine chiar acum, din coș, încă nescrisă |
 

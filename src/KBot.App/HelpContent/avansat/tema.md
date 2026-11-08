@@ -15,10 +15,11 @@ ecranele cu scalare (125 %, 150 %...).
 <!-- capture: avansat-tema | caption: Setări › Temă | goto: setari:tema -->
 
 ## Schema
-<!-- slice: 0028-07, 0036 -->
+<!-- slice: 0028-07, 0036, 0129-01, 0000-166 -->
 
 - **Schemă** — schema editată. Alegerea ei schimbă și tema aplicației, ca să vezi pe loc, pe
-  ferestrele din spate, ce editezi.
+  ferestrele din spate, ce editezi. Fundalul ferestrelor, al grilelor și al arborilor și
+  chenarele lor urmează schema aleasă.
 - **Salvează** — păstrează schema modificată (și după repornire).
 - **Restaurează implicit** — renunță la personalizare și pune la loc schema din program.
 

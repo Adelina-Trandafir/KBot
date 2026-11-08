@@ -11,7 +11,7 @@ Public NotInheritable Class KBotGroupHeaderValueEventArgs
     ''' <summary>The column whose combo was used.</summary>
     Public ReadOnly Property ColumnKey As String
 
-    ''' <summary>The item picked from the column's <c>ComboItems</c>.</summary>
+    ''' <summary>The item picked from the column's <c>ComboItems</c>; for <c>GroupHeaderValueEdited</c> (slice 02EF-02) the text the operator typed.</summary>
     Public ReadOnly Property Value As Object
 
     ''' <summary>The model indexes (<c>Rows(i)</c>) of every row of the group, sub-groups included.</summary>

@@ -85,6 +85,82 @@ Public Class PrimiteForm
         Await primite.TrimiteInAccessAsync().ConfigureAwait(True)
     End Function
 
+    ''' <summary>
+    ''' The button of the reception work («Leagă» / «Creează recepția» / «Modifică recepția») stands in the ribbon's view group while the view «Recepții» is on screen:
+    ''' the shell asks these four and hears <see cref="ReceptiiActionChanged"/> (sender = this window) when any answer changes.
+    ''' </summary>
+    Public Event ReceptiiActionChanged As EventHandler
+
+    Public ReadOnly Property ReceptiiActionVisible As Boolean
+        Get
+            Return primite.ReceptiiActionVisible
+        End Get
+    End Property
+
+    Public ReadOnly Property ReceptiiActionEnabled As Boolean
+        Get
+            Return primite.ReceptiiActionEnabled
+        End Get
+    End Property
+
+    Public ReadOnly Property ReceptiiActionText As String
+        Get
+            Return primite.ReceptiiActionText
+        End Get
+    End Property
+
+    Public Sub RunReceptiiAction()
+        primite.RunReceptiiAction()
+    End Sub
+
+    ''' <summary>Slice 02EF-11 / KE21: the ribbon button «Genereaza ordonantare» is offered (a reception was saved by the view «Recepții» and nothing was changed since).</summary>
+    Public ReadOnly Property OrdDisponibil As Boolean
+        Get
+            Return primite.OrdDisponibil
+        End Get
+    End Property
+
+    ''' <summary>The angajament of the reception saved last.</summary>
+    Public ReadOnly Property OrdCod As String
+        Get
+            Return primite.OrdCod
+        End Get
+    End Property
+
+    ''' <summary>The snapshot (IDRH) of the reception saved last.</summary>
+    Public ReadOnly Property OrdIdrh As Integer
+        Get
+            Return primite.OrdIdrh
+        End Get
+    End Property
+
+    ''' <summary>Slice 02EF-12 / KE21: the ribbon button «Creeaza rezervare» is offered.</summary>
+    Public ReadOnly Property RezervareAvailable As Boolean
+        Get
+            Return primite.RezervareAvailable
+        End Get
+    End Property
+
+    ''' <summary>The ribbon button «Creeaza rezervare» can be pressed.</summary>
+    Public ReadOnly Property RezervareEnabled As Boolean
+        Get
+            Return primite.RezervareEnabled
+        End Get
+    End Property
+
+    ''' <summary>The ribbon button «Creeaza rezervare» was pressed. UI boundary (the view logs and swallows).</summary>
+    Public Sub RunRezervare()
+        primite.RunRezervare()
+    End Sub
+
+    Private Sub Primite_ReceptiiActionChanged(sender As Object, e As EventArgs) Handles primite.ReceptiiActionChanged
+        Try
+            RaiseEvent ReceptiiActionChanged(Me, EventArgs.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("PrimiteForm.Primite_ReceptiiActionChanged", ex)
+        End Try
+    End Sub
+
     ''' <summary>Slice 0113-01: put away -- the control moves to a view without a PDF and lets the document go.</summary>
     Public Sub PutAway() Implements IPutAway.PutAway
         primite.PutAway()

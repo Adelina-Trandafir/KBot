@@ -78,7 +78,6 @@ Partial Class MessageCatalogForm
         ' 
         ' grd
         ' 
-        grd.BackColor = SystemColors.Window
         grd.ColumnFillMode = KBotFillMode.LastColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing

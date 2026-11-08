@@ -34,13 +34,17 @@ def read(source, spec, node_id, *, recursive=False, mode='accounts'):
             and (not summary or row['family'] == spec['family'])
             and row['date'] is not None and source.params['start'] <= stock.day_of(row['date']) <= source.params['end']]
 
-    def metadata(items):
+    def metadata(items, *, account=None, document=None):
         catalog = source.metadata()
         result = []
         for row in items:
             info = catalog.get(row['variant'])
             if info is None:
                 raise NomError('REPORT_SOURCE', 'Linia de bon nu are o variantă în contextul raportului.', 409)
+            if document is not None and str(row['document']) != document:
+                continue
+            if account is not None and key(row.get('category', info['category'])) != account:
+                continue
             result.append({**info, **row})
         return result
 
@@ -71,26 +75,31 @@ def read(source, spec, node_id, *, recursive=False, mode='accounts'):
             nodes.append(node)
         return {'nodes': nodes, 'documents': details}
 
+    def roots(items, scope, field, label, fallback):
+        groups = {}
+        for row in items:
+            groups.setdefault(key(row.get(field)), []).append(row)
+        nodes, details = [], {}
+        for group_id, lines in groups.items():
+            node = branch(f'out-{scope}:{group_id}', lines[0].get(label) or fallback)
+            if recursive:
+                result = documents(lines, scope, group_id, True)
+                node.pop('lazy')
+                node['children'] = result['nodes']
+                details.update((item['id'], item) for item in result['documents'])
+            nodes.append(node)
+        return {'nodes': sorted(nodes, key=lambda node: (node['label'].casefold(), node['id'])), 'documents': list(details.values())}
+
     if node_id == 'root' and mode == 'documents':
-        return documents(rows, 'all', 'none', False)
+        return documents(metadata(rows) if recursive else rows, 'all', 'none', recursive)
     if node_id == 'root' and mode == 'receivers':
-        receivers = {}
-        for row in rows:
-            receiver = key(row.get('receiver'))
-            receivers.setdefault(receiver, branch('out-receiver:' + receiver, row.get('party') or 'Fără primitor'))
-        return {'nodes': sorted(receivers.values(), key=lambda node: (node['label'].casefold(), node['id'])), 'documents': []}
+        return roots(rows, 'receiver', 'receiver', 'party', 'Fără primitor')
     if parts[0] == 'out-receiver':
         return documents([row for row in rows if key(row.get('receiver')) == parts[1]], 'receiver', parts[1], False)
-    rows = metadata(rows)
     if node_id == 'root':
-        accounts = {}
-        for row in rows:
-            category = key(row.get('category'))
-            accounts.setdefault(category, branch('out-account:' + category, row.get('account') or 'Fără încadrare'))
-        return {'nodes': sorted(accounts.values(), key=lambda node: (node['label'].casefold(), node['id'])), 'documents': []}
+        return roots(metadata(rows), 'account', 'category', 'account', 'Fără încadrare')
     if parts[0] == 'out-account':
-        return documents([row for row in rows if key(row.get('category')) == parts[1]], 'account', parts[1], recursive)
+        return documents(metadata(rows, account=parts[1]), 'account', parts[1], recursive)
     scope, scope_id, document = parts[1:]
-    rows = [row for row in rows if str(row['document']) == document
-            and (scope == 'all' or key(row.get('category')) == scope_id)]
-    return {'nodes': products(rows, scope, scope_id, document)}
+    selected = metadata(rows, account=scope_id if scope == 'account' else None, document=document)
+    return {'nodes': products(selected, scope, scope_id, document)}

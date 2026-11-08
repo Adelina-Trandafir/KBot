@@ -75,35 +75,23 @@ Partial Class VerconForm
         '
         ' tree: the received invoices (month > supplier > invoice, or supplier > invoice); a tick on every row; the options button of the header switches the grouping
         '
-        tree.BorderColor = Drawing.SystemColors.ActiveBorder
         tree.CheckBoxes = True
         tree.Dock = System.Windows.Forms.DockStyle.Fill
         tree.ExpanderSize = 10
         tree.Font = New System.Drawing.Font("Calibri", 9.0!, Drawing.FontStyle.Regular, Drawing.GraphicsUnit.Point, CByte(0))
-        tree.FooterBackColor = Drawing.SystemColors.Control
         tree.FooterCaption = "TOTAL"
-        tree.FooterCaptionBackColor = Drawing.SystemColors.Control
-        tree.FooterCaptionFont = New System.Drawing.Font("Calibri", 9.0!, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
         tree.FooterCaptionForeColor = Drawing.SystemColors.ActiveCaptionText
-        tree.FooterHeight = 30
-        tree.FooterSeparatorColor = Drawing.Color.Gainsboro
-        tree.FooterSeparatorWidth = 2
         tree.FooterTextAlign = Drawing.ContentAlignment.MiddleRight
         tree.FooterVisible = True
         tree.HasNodeIcons = False
-        tree.HeaderBackColor = Drawing.SystemColors.Control
         tree.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " FACTURI PRIMITE"
-        tree.HeaderFont = New System.Drawing.Font("Calibri", 9.0!, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
         tree.HeaderForeColor = Drawing.Color.Black
-        tree.HeaderHeight = 30
         tree.HeaderIconSize = New System.Drawing.Size(18, 18)
         tree.HeaderRightIcon = My.Resources.Resources.settings
         tree.HeaderRightIconTooltip = "Opțiunile arborelui: grupare după lună sau după furnizor."
         tree.HeaderSearchIcon = My.Resources.Resources.search
         tree.HeaderSearchIconTooltip = "Deschide banda de căutare peste arbore." & vbLf & "ESC golește căutarea și o închide."
-        tree.HeaderSeparatorColor = Drawing.Color.Gainsboro
-        tree.HeaderSeparatorWidth = 2
         tree.HeaderVisible = True
         tree.Indent = 8
         tree.ItemHeight = 24

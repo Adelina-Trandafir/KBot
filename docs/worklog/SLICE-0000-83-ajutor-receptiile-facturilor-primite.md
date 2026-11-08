@@ -9,7 +9,7 @@ Istoricul urmărește aceeași secțiune din `src/KBot.App/HelpContent/contabil/
 ### What changed and why
 Operator request (16.10.2026): link the received e-invoices to receptions and, later, to payments; plan in `docs/KE_PLAN.md`.
 
-- Topic `contabil.efactura` (`HelpContent/contabil/efactura/index.md`): new section "Receptiile unei facturi primite" (what the view shows, who may write, the amounts with VAT, the classifications of the lines, the three kinds of link, the check before anything starts, what happens after the save, "Scoate legatura"); the bullet of the "Continut" view mentions the new columns; `screens:` names `KeLegaForm`, `KeAngajamentForm`, `KeClasificariForm`; new search words in `keywords:`; slice tags KE01..KE07 and 0000-83.
+- Topic `contabil.efactura` (`HelpContent/contabil/efactura/index.md`): new section "Receptiile unei facturi primite" (what the view shows, who may write, the amounts with VAT, the classifications of the lines, the three kinds of link, the check before anything starts, what happens after the save, "Scoate legatura"); the bullet of the "Continut" view mentions the new columns; `screens:` names the former reception window, `KeAngajamentForm`, `KeClasificariForm`; new search words in `keywords:`; slice tags KE01..KE07 and 0000-83.
 - `tools/HelpCheck/Check-Help.ps1` accepts the slice ids `KE` / `KEnn` (a worklog or an index row), like `00EF`.
 - Watermark: `help-version.txt` = 2026-10-16.
 

@@ -20,7 +20,7 @@ Imports KBot.Theming
 '''
 ''' The budget belongs to a UNIT: the sector+source of the title bar and the working year name it (the server finds the row of <c>Unitati</c>). With the title
 ''' bar on «Toate» (or on a source that has no unit) the tree is shown but the grids stay empty and say why. A change of the year or of the source in the title
-''' bar settles what is typed first (the question of unsaved changes) and reads the budget of the new unit. «+» in the tree footer opens
+''' bar settles what is typed first (the question of unsaved changes) and reads the budget of the new unit. «Adaugă» in the ribbon opens
 ''' <see cref="ClasificatiiVenituriAddForm"/> (a code of the nomenclator <c>DefaClsfV</c>).
 ''' </summary>
 Public Class ClasificatiiVenituriView
@@ -38,7 +38,6 @@ Public Class ClasificatiiVenituriView
     Private Const ColId As String = "id"
     Private Const ColClsf As String = "clsf"
     Private Const DeleteCaption As String = "✕"
-    Private Const NoSourceText As String = "Alegeți o sursă (nu «Toate») în bara de titlu: bugetul de venituri este al unei unități."
     Private Shared ReadOnly QuarterColumns As String() = {ColTrim1, ColTrim2, ColTrim3, ColTrim4}
     Private Shared ReadOnly DateFormats As String() = {
         "d.M.yyyy", "dd.MM.yyyy", "d/M/yyyy", "dd/MM/yyyy", "d-M-yyyy", "yyyy-MM-dd", "ddMMyyyy"}
@@ -150,7 +149,7 @@ Public Class ClasificatiiVenituriView
             Dim k_ss As String = CurrentSs()
             If k_ss Is Nothing Then
                 ShowNoSelection()
-                SetStatus(NoSourceText)
+                SetStatus(String.Empty)
                 Return
             End If
             Dim k_an As Integer = _session.An
@@ -165,7 +164,7 @@ Public Class ClasificatiiVenituriView
             _scopeOk = True
             _childNote = If(k_data.Child Is Nothing, String.Empty, k_data.Child.NoteFor(k_ss))
             SetStatus(If(_catalog IsNot Nothing AndAlso _catalog.Items.Count = 0,
-                         $"Sursa {k_ss} nu are clasificații de venituri. Le adăugați cu «+» de sub arbore.", String.Empty))
+                         $"Nicio clasificație ({k_ss}). Folosiți «Adaugă» din ribbon.", String.Empty))
             Await ReapplySelectionAsync().ConfigureAwait(True)
         Catch ex As ApiException
             GlobalErrorLog.Write("ClasificatiiVenituriView.LoadScopeAsync", ex)
@@ -324,8 +323,8 @@ Public Class ClasificatiiVenituriView
         End Try
     End Sub
 
-    ' UI boundary: «+» of the tree footer -> the window that adds a classification from the nomenclator, then the tree is read again with the new one selected.
-    Private Async Sub Tree_FooterRightIconClicked(e As MouseEventArgs) Handles tree.FooterRightIconClicked
+    ' Slice 0126-07: the ribbon opens the nomenclator dialog, then reloads the tree with the new classification selected.
+    Private Async Sub RunAdd()
         Try
             If _busy OrElse _api Is Nothing Then Return
             If Not Await CommitAsync().ConfigureAwait(True) Then Return
@@ -341,7 +340,7 @@ Public Class ClasificatiiVenituriView
                 LoadAll(k_form.AddedId)
             End Using
         Catch ex As Exception
-            GlobalErrorLog.Write("ClasificatiiVenituriView.Tree_FooterRightIconClicked", ex)
+            GlobalErrorLog.Write("ClasificatiiVenituriView.RunAdd", ex)
             KBotMessage.Show(Me, "Fereastra de adăugare nu a putut fi deschisă. Detalii în jurnalul de erori.",
                              "Clasificații venituri", MessageBoxButtons.OK, MessageBoxIcon.Error)
         End Try
@@ -441,10 +440,10 @@ Public Class ClasificatiiVenituriView
         UpdateTotalRow()
         Dim k_parts As String() = k_node.Key.Split("|"c)
         Dim k_code As String = String.Join(".", k_parts.Skip(1))   ' capitol[.sub]
-        lblBuget.Text = $"Buget {_scopeAn.ToString(CultureInfo.InvariantCulture)} — {k_code} ({_scopeSs}): {k_leaves.Count} clasificații"
-        lblRectificari.Text = $"Rectificări bugetare {_scopeAn.ToString(CultureInfo.InvariantCulture)} — total pe clasificație"
         Dim k_split As Integer = If(k_node.Caption, String.Empty).IndexOf("~~~", StringComparison.Ordinal)
-        tips.SetToolTipText(lblBuget, If(k_split >= 0, k_node.Caption.Substring(k_split + 3), k_code))
+        SetTitle(gridBuget, ColClsf, $"Buget {_scopeAn.ToString(CultureInfo.InvariantCulture)} — {k_code} ({_scopeSs}): {k_leaves.Count} clasificații",
+                 If(k_split >= 0, k_node.Caption.Substring(k_split + 3), k_code))
+        SetCorrectionsTitle($"Rectificări bugetare {_scopeAn.ToString(CultureInfo.InvariantCulture)} — total pe clasificație")
         SetDirty(False)
     End Sub
 
@@ -468,6 +467,23 @@ Public Class ClasificatiiVenituriView
         gridRectificari.FillColumnKey = If(k_summary, ColClsf, ColDocument)
         gridBuget.FooterCaption = If(k_summary, "Ultimul buget al fiecărei clasificații", _budgetCaption)
         gridRectificari.FooterCaption = If(k_summary, "Rectificările anului, pe clasificație", _correctionsCaption)
+    End Sub
+
+    ' Slice 0126-06: the title of a grid is the header of its first column (it stood in a label above the grid); k_tip is the tooltip of that
+    ' header (Nothing = leave it).
+    Private Shared Sub SetTitle(k_grid As KBotDataView, k_key As String, k_text As String, k_tip As String)
+        Dim k_column As KBotDataColumn = k_grid.Columns.First(Function(k_c) String.Equals(k_c.Key, k_key, StringComparison.Ordinal))
+        k_column.HeaderText = k_text
+        If k_tip IsNot Nothing Then k_column.HeaderTooltip = k_tip
+    End Sub
+
+    ' The corrections grid: on a classification its first visible column is «Nr. doc.» (the title goes with its name); on a node it is «Clsf».
+    Private Sub SetCorrectionsTitle(k_text As String)
+        If _summaryMode Then
+            SetTitle(gridRectificari, ColClsf, k_text, Nothing)
+        Else
+            SetTitle(gridRectificari, ColDocument, k_text & " — Nr. doc.", Nothing)
+        End If
     End Sub
 
     ' The footer sums belong to ONE classification's corrections; with a node (or nothing) chosen there is no leaf, and summing the corrections of every
@@ -590,9 +606,8 @@ Public Class ClasificatiiVenituriView
         gridRectificari.Enabled = True
         gridTotal.Enabled = True
         UpdateTotalRow()
-        lblBuget.Text = $"Buget {_scopeAn.ToString(CultureInfo.InvariantCulture)} — {_current.Cod} ({_scopeSs})"
-        lblRectificari.Text = $"Rectificări bugetare {_scopeAn.ToString(CultureInfo.InvariantCulture)}"
-        tips.SetToolTipText(lblBuget, _current.Denumire)
+        SetTitle(gridBuget, ColClsf, $"Buget {_scopeAn.ToString(CultureInfo.InvariantCulture)} — {_current.Cod} ({_scopeSs})", _current.Denumire)
+        SetCorrectionsTitle($"Rectificări bugetare {_scopeAn.ToString(CultureInfo.InvariantCulture)}")
         SetDirty(False)
     End Sub
 
@@ -608,8 +623,8 @@ Public Class ClasificatiiVenituriView
         gridTotal.Enabled = False
         _deletedIds.Clear()
         _deletedBudgetIds.Clear()
-        lblBuget.Text = If(_scopeOk OrElse CurrentSs() IsNot Nothing, "Buget — alegeți o clasificație din arbore", "Buget — alegeți o sursă în bara de titlu")
-        lblRectificari.Text = "Rectificări bugetare"
+        SetTitle(gridBuget, ColClsf, If(_scopeOk OrElse CurrentSs() IsNot Nothing, "Buget — alegeți o clasificație din arbore", "Buget — alegeți o sursă în bara de titlu"), String.Empty)
+        SetCorrectionsTitle("Rectificări bugetare")
         SetDirty(False)
     End Sub
 
@@ -773,11 +788,13 @@ Public Class ClasificatiiVenituriView
 
     ' ── Save / pending ──────────────────────────────────────────────────────────
 
-    Private Async Sub BtnSalveaza_Click(sender As Object, e As EventArgs) Handles btnSalveaza.Click
+    ' Slice 0126-03: «Salveaza» of the ribbon. UI boundary: logs and swallows (SaveAsync tells the operator what failed).
+    Private Async Sub RunSave()
         Try
+            If Not SaveEnabled Then Return
             Await SaveAsync().ConfigureAwait(True)
         Catch ex As Exception
-            GlobalErrorLog.Write("ClasificatiiVenituriView.BtnSalveaza_Click", ex)
+            GlobalErrorLog.Write("ClasificatiiVenituriView.RunSave", ex)
         End Try
     End Sub
 
@@ -790,12 +807,13 @@ Public Class ClasificatiiVenituriView
     End Function
 
     Private Sub UpdateDeleteButton()
-        btnSterge.Enabled = _api IsNot Nothing AndAlso SelectedLeaf() IsNot Nothing AndAlso Not _dirty AndAlso Not _busy
+        RaiseEvent RibbonStateChanged(Me, EventArgs.Empty)
     End Sub
 
     ' UI boundary: asks, deletes, reads the tree again. A classification that is used (budget, corrections, bank statements) is refused by the server,
     ' which names where; the message is shown as it comes.
-    Private Async Sub BtnSterge_Click(sender As Object, e As EventArgs) Handles btnSterge.Click
+    ' Slice 0126-03: «Sterge clasificatia» of the ribbon.
+    Private Async Sub RunDelete()
         Try
             Dim k_leaf As ClasificatieVenit = SelectedLeaf()
             If k_leaf Is Nothing OrElse _busy OrElse _dirty OrElse _api Is Nothing Then Return
@@ -993,38 +1011,81 @@ Public Class ClasificatiiVenituriView
 
     Private Sub SetDirty(k_value As Boolean)
         _dirty = k_value
-        btnSalveaza.Enabled = k_value AndAlso Not _busy AndAlso _current IsNot Nothing AndAlso _scopeOk
         UpdateDeleteButton()
     End Sub
 
     Private Sub SetBusy(k_busy As Boolean, k_status As String)
         _busy = k_busy
         UseWaitCursor = k_busy
-        btnSalveaza.Enabled = _dirty AndAlso Not k_busy AndAlso _current IsNot Nothing AndAlso _scopeOk
         UpdateDeleteButton()
         If k_status IsNot Nothing Then SetStatus(k_status)
     End Sub
 
-    ' An empty text shows the note about child subunits when there is one (it stays on while nothing else is said).
-    Private Sub SetStatus(k_text As String)
-        lblStare.Text = If(String.IsNullOrEmpty(k_text), _childNote, k_text)
+    ' ── Ribbon: the buttons of the view group (slices 0126-03 / 0126-07) ─────────
+
+    ''' <summary>Raised when what <see cref="RibbonButtonState"/> answers has changed (the window passes it on to the ribbon).</summary>
+    Public Event RibbonStateChanged As EventHandler
+
+    ''' <summary>The keys of the ribbon buttons that belong to this page.</summary>
+    Public Shared ReadOnly Property RibbonKeys As IReadOnlyList(Of String)
+        Get
+            Return {ClasificatiiBugetView.KeyAdd, ClasificatiiBugetView.KeySave, KeyDelete}
+        End Get
+    End Property
+
+    Public Const KeyDelete As String = "clasificatii_sterge"
+
+    Private ReadOnly Property SaveEnabled As Boolean
+        Get
+            Return _dirty AndAlso Not _busy AndAlso _current IsNot Nothing AndAlso _scopeOk
+        End Get
+    End Property
+
+    ''' <summary>How the ribbon button with this key looks now.</summary>
+    Public Function RibbonButtonState(k_key As String) As ViewButtonState
+        If String.Equals(k_key, ClasificatiiBugetView.KeyAdd, StringComparison.Ordinal) Then
+            Return If(_busy OrElse _api Is Nothing, ViewButtonState.Dimmed, ViewButtonState.Enabled)
+        ElseIf String.Equals(k_key, ClasificatiiBugetView.KeySave, StringComparison.Ordinal) Then
+            Return If(SaveEnabled, ViewButtonState.Enabled, ViewButtonState.Dimmed)
+        ElseIf String.Equals(k_key, KeyDelete, StringComparison.Ordinal) Then
+            Return If(_api IsNot Nothing AndAlso SelectedLeaf() IsNot Nothing AndAlso Not _dirty AndAlso Not _busy, ViewButtonState.Enabled, ViewButtonState.Dimmed)
+        End If
+        Return ViewButtonState.Hidden
+    End Function
+
+    ''' <summary>The operator pressed the ribbon button with this key. UI boundary: the work logs and tells the operator what it must.</summary>
+    Public Sub RunRibbonButton(k_key As String)
+        If String.Equals(k_key, ClasificatiiBugetView.KeyAdd, StringComparison.Ordinal) Then
+            RunAdd()
+        ElseIf String.Equals(k_key, ClasificatiiBugetView.KeySave, StringComparison.Ordinal) Then
+            RunSave()
+        ElseIf String.Equals(k_key, KeyDelete, StringComparison.Ordinal) Then
+            RunDelete()
+        End If
     End Sub
+
+    Private Sub SetStatus(k_text As String)
+        tree.FooterCaption = If(String.IsNullOrEmpty(k_text), DefaultFooterCaption(), k_text)
+    End Sub
+
+    Private Function DefaultFooterCaption() As String
+        If Not String.IsNullOrEmpty(_childNote) Then Return _childNote
+        If _catalog Is Nothing Then Return String.Empty
+        Dim k_count As Integer = _catalog.Items.Count
+        Dim k_label As String = If(k_count = 1, "clasificație", "clasificații")
+        If _treeSs Is Nothing Then Return $"{k_count} {k_label}. Alegeți sursa pentru buget."
+        Return $"{k_count} {k_label} ({_treeSs})."
+    End Function
 
     Public Sub ApplyTheme(k_scheme As ThemeScheme) Implements IThemedControl.ApplyTheme
         Try
             If k_scheme Is Nothing Then Return
             Dim k_p As ThemePalette = k_scheme.Palette
             BackColor = k_p.SurfaceAltColor
-            For Each k_c As Control In {tlyMain, pnlCard, tlyBody, tlyRight, tlySubsol}
+            For Each k_c As Control In {tlyMain, pnlCard, tlyBody, tlyRight}
                 k_c.BackColor = k_p.SurfaceAltColor
             Next
-            lblBuget.BackColor = k_p.SurfaceAltColor
-            lblBuget.ForeColor = k_p.TextColor
-            lblRectificari.BackColor = k_p.SurfaceAltColor
-            lblRectificari.ForeColor = k_p.TextColor
-            lblStare.ForeColor = k_p.TextDimColor
-            ButtonStyles.ApplyPrimary(btnSalveaza, k_scheme)
-            ButtonStyles.ApplySecondary(btnSterge, k_scheme)
+            ClasificatiiTreeStyle.ApplyFrame(tree, k_scheme)   ' slice 0126-04
         Catch ex As Exception
             GlobalErrorLog.Write("ClasificatiiVenituriView.ApplyTheme", ex)
         End Try

@@ -744,6 +744,12 @@ def importa_extrase(cursor, extrase, sari_continut_cunoscut=False):
         rezultate.append({"fisier": pdf_fisier, "stare": "importat", "randuri": randuri_fisier,
                           "mesaj": f"{randuri_fisier} operațiuni noi.", "idexf": idexf})
 
+    # Slice 02EF-13: payments that were waiting for their statement row may now be attached to ordonantari made from a reception.
+    # Additive and protected: a failure is a warning, never a stop of the import.
+    if randuri_scrise:
+        from .ord_receptie_plati import leaga_automat_protejat  # lazy: the package must be fully loaded first
+        leaga_automat_protejat(cursor, None, avertismente)
+
     return {
         "primite": len(extrase),
         "importate": importate,

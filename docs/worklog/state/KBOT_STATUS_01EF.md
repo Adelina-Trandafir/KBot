@@ -16,6 +16,7 @@ Family 01EF (operator, 31.10.2026): numbering `01EF-01`, `01EF-02`, ... Worklogs
 | 01EF-07 | «Contari»: pagina refacuta ca formularul Access (liste de sabloane, coloana NC, ordin de plata activ doar cu sablon de plata, bara lungimii explicatiei 1..75, fara diacritice si virgule), pornita din meniul facturii «Adauga operatii contabile»; bife doar la facturile aceluiasi furnizor, minim una bifata | GATA pe cod (builds curate, py_compile); **nimic rulat, nevazut, server nedeployat** | `SLICE-01EF-07-contari-macheta-access.md` | Help 0000-149. **Numarul OP nu se poate completa singur** (nu exista tabela OP, vine cu AV02-02); Cod Client scris de operator; coloana FX neportata. |
 
 ## Open threads
+
 - **DDL de rulat de operator:** `sql/01EF_01_efactura_arhiva.sql` pe `AVACONT_SURSA`, apoi sincronizarea schemei.
 - AV02-01 tables RUN by the operator (02.11.2026). The AVC.Migrator step «Operatii» (existing operations; no invoice) is written, builds clean, never run: see `src/AVC.Migrator/README.md`.
 - Posting tables designed in AV02-01 (`TZ_NoteC`, `TZ_Documente`, `TZ_Oper`, `TZ_Debit`, `TZ_Credit`): **DDL `sql/AVACONT/IntroducereDate/Operatii/AV02_01_operatii.sql` to be run by the operator**, then 01EF-04 (save of the evidence) can be written. 01EF-05 (payment) also waits for AV02-02 (`OPuri`, `PlatiFacturi`).

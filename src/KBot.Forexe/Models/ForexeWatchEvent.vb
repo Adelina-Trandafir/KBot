@@ -18,6 +18,11 @@ Public Enum ForexeOperationKind
     ReceptieModificare = 4
     ''' <summary>The operator pressed Start / Gata in the floating menu themselves.</summary>
     Manual = 5
+    ''' <summary>
+    ''' A reception DELETED (slice 0076-02): the trash can of its row on tab1. FOREXE's confirmation window is
+    ''' answered by the page script itself; the operation ends when the row is gone.
+    ''' </summary>
+    ReceptieStergere = 6
 End Enum
 
 ''' <summary>What happened: the operation started, finished (saved), was cancelled, or a note.</summary>
@@ -84,6 +89,7 @@ Public Class ForexeWatchEvent
             Case "rezervare" : Return ForexeOperationKind.Rezervare
             Case "receptie" : Return ForexeOperationKind.Receptie
             Case "receptie-modificare" : Return ForexeOperationKind.ReceptieModificare
+            Case "receptie-stergere" : Return ForexeOperationKind.ReceptieStergere
             Case "manual" : Return ForexeOperationKind.Manual
             Case Else : Return ForexeOperationKind.Unknown
         End Select

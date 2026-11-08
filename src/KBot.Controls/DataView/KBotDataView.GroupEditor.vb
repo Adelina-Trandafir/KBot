@@ -49,6 +49,8 @@ Partial Class KBotDataView
     ' The text the rows of the group share in the column, else empty.
     Private Function GroupHeaderComboText(k_node As KBotGroupNode, k_col As KBotDataColumn) As String
         Dim k_text As String = Nothing
+        ' Slice KE20-04: the choice of the first row stands for the group.
+        If k_col.GroupHeaderComboFirstRow Then Return FormatValue(_rows(ModelIndexAt(k_node.FirstViewPos))(k_col.Key), k_col)
         For k_pos As Integer = k_node.FirstViewPos To k_node.LastViewPos
             Dim k_one As String = FormatValue(_rows(ModelIndexAt(k_pos))(k_col.Key), k_col)
             If k_text Is Nothing Then

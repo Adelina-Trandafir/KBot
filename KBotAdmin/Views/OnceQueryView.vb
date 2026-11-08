@@ -5,7 +5,7 @@ Imports System.Text
 
 ''' <summary>
 ''' The one-time queries of AvacontPush, inside KBotAdmin (slice ME01): ONE query text run once on AVACONT_SURSA
-''' and on every database ticked in the main tree on the left (<see cref="AdminContext.CheckedDatabases"/>), remembered in the ledger table of each database so it never runs twice. The
+''' and on the database chosen in the main tree on the left (<see cref="AdminContext.SelectedDb"/>) or, with «TOATE BAZELE» chosen, on every database, remembered in the ledger table of each database so it never runs twice. The
 ''' runner (<c>routes/one_time/runner.py</c>) lives on the server; this page only builds its command line.
 ''' </summary>
 Public Class OnceQueryView
@@ -29,13 +29,19 @@ Public Class OnceQueryView
     End Function
 
     Public Sub SelectionChanged() Implements IAdminView.SelectionChanged
-        ' The databases to run on are the ticks of the main tree, read when the query runs; the row chosen in the tree does not matter here.
+        ' The databases to run on are read from the main tree when the query runs; nothing to redraw here.
     End Sub
 
-    ''' <summary>The unit databases ticked in the main tree, in the order of the database list; a tick that is not a database of the server is left out.</summary>
-    Private Function TickedDatabases() As List(Of String)
-        Dim k_ticked As IReadOnlyList(Of String) = _context.CheckedDatabases
-        Return _context.Databases.Where(Function(k_db) k_ticked.Contains(k_db.Db, StringComparer.OrdinalIgnoreCase)).Select(Function(k_db) k_db.Db).ToList()
+    ''' <summary>
+    ''' The databases to run on: the database chosen in the main tree; every database of the server when «TOATE BAZELE» is chosen;
+    ''' none when a user (no database) is chosen, so a run never covers more than the operator pointed at.
+    ''' </summary>
+    Private Function TargetDatabases() As List(Of String)
+        If _context.SelectedDb <> String.Empty Then
+            Return _context.Databases.Where(Function(k_db) String.Equals(k_db.Db, _context.SelectedDb, StringComparison.OrdinalIgnoreCase)).Select(Function(k_db) k_db.Db).ToList()
+        End If
+        If _context.SelectedAccount = String.Empty Then Return _context.Databases.Select(Function(k_db) k_db.Db).ToList()
+        Return New List(Of String)()
     End Function
 
     Private Sub BtnFile_Click(k_sender As Object, e As EventArgs) Handles btnFile.Click
@@ -71,10 +77,10 @@ Public Class OnceQueryView
     Private Async Function RunOnce(k_view As Boolean) As Task
         If _running Then Return
         Dim k_name As String = txtName.Text.Trim()
-        Dim k_units As List(Of String) = TickedDatabases()
+        Dim k_units As List(Of String) = TargetDatabases()
         Dim k_problem As String = OnceQuery.CheckName(k_name)
         If k_problem = String.Empty Then k_problem = OnceQuery.CheckSize(txtSql.Text)
-        If k_problem = String.Empty AndAlso k_units.Count = 0 Then k_problem = "Bifați în arborele din stânga cel puțin o bază."
+        If k_problem = String.Empty AndAlso k_units.Count = 0 Then k_problem = "Alegeți în arborele din stânga o bază de date sau «TOATE BAZELE»."
         If k_problem <> String.Empty Then
             KBotMessage.Show(k_problem, "Interogare unică", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return

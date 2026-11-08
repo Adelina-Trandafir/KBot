@@ -83,6 +83,8 @@ Public NotInheritable Class OrdDraftRecDto
     Public Property linie_temp_id As Integer
     Public Property idordtblp As Integer
     Public Property id_plata_fx As Integer?
+    ' Slice 02EF-11: the reception line (FX_Receptii.IDR) an ordonantare made from a reception covers; empty for a payment.
+    Public Property idrp As Integer?
     Public Property valoare As Double
 End Class
 
@@ -141,6 +143,44 @@ Public NotInheritable Class GenereazaOrdRequest
     Public Property cod As String
     Public Property data As String
     Public Property id_plata_fx As Integer?
+End Class
+
+' Slice 02EF-13: GET /ord/plata/{id}/linii-candidate.
+Public NotInheritable Class OrdPlataCandidataDto
+    Public Property id_plata_fx As Integer
+    Public Property suma As Double
+    Public Property cod As String
+    Public Property indicator As String
+    Public Property platitor As String
+    Public Property cui As String
+    Public Property data As Date?
+End Class
+
+Public NotInheritable Class OrdLinieCandidataDto
+    Public Property idordrecp As Integer
+    Public Property idordtblp As Integer
+    Public Property nr_ord As Integer?
+    Public Property data_ord As Date?
+    Public Property beneficiar As String
+    Public Property cod_fiscal As String
+    Public Property liber As Double
+End Class
+
+Public NotInheritable Class OrdLiniiCandidateResponse
+    Public Property plata As OrdPlataCandidataDto
+    Public Property candidate As New List(Of OrdLinieCandidataDto)()
+End Class
+
+Public NotInheritable Class LeagaPlataRequest
+    Public Property id_plata_fx As Integer
+    Public Property idordrecp As Integer
+End Class
+
+' Slice 02EF-11: request body of POST /genereaza-din-receptie. `idrh` = the reception snapshot the ordonantare is based on.
+Public NotInheritable Class GenereazaOrdDinReceptieRequest
+    Public Property cod As String
+    Public Property idrh As Integer
+    Public Property data As String
 End Class
 
 ' The temp-id -> real-key maps returned by /save, one per table. The dictionary keys arrive

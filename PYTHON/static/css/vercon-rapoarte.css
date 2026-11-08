@@ -13,6 +13,20 @@
 .vc-reports__options { margin-top: 20px; border-top: 1px solid var(--line); }
 .vc-reports__check { display: flex; gap: 8px; align-items: center; padding: 4px; font-size: .9em; }
 .vc-reports .vc-tree-body { flex: 1 1 0; height: auto; min-height: 0; }
+.vc-reports__selection-loading {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 8px;
+  background: var(--card);
+  background: color-mix(in srgb, var(--card) 90%, transparent);
+  color: var(--ink);
+  cursor: progress;
+}
+.vc-reports__selection-loading[hidden] { display: none; }
 .vc-reports__selection > .vc-hint { margin: 0; padding: 10px 12px; border-top: 1px solid var(--line); }
 .vc-reports__actions { grid-column: 1 / -1; justify-content: flex-end; margin-top: 0; padding-top: 10px; padding-bottom: 10px; border-top: 1px solid var(--line); }
 .vc-reports > .vc-reports__output { grid-column: 1 / -1; min-width: 0; }

@@ -99,6 +99,7 @@ export class TreeView {
       exclusiveRoots: options.exclusiveRoots || false, // true: un singur nod rădăcină deschis odată (deschiderea unuia îl închide pe cel vechi)
       showLoader: options.showLoader !== false,
       minSearchLength: options.minSearchLength || 0,
+      minSearchIgnoreSpaces: options.minSearchIgnoreSpaces === true,   // spaces do not count toward minSearchLength (local search box too)
       maxResults: options.maxResults || 100,
       highlightMatches: options.highlightMatches !== false,
       expandOnSearch: options.expandOnSearch !== false,

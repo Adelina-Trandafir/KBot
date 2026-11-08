@@ -1,5 +1,6 @@
 import { el, scope, field, paintTree, refreshTree, showMessage } from './ui.js';
 import { ModalFrame } from '../components/modal-frame/modal-frame.js';
+import { effectiveSearchText, searchDelay } from './search-settings.js';
 
 // Same lazy branch pattern as the NIR tree; external search is performed on the server.
 export function mountCpvPicker(host, opts) {
@@ -90,7 +91,8 @@ export function mountCpvPicker(host, opts) {
   }
   async function update(token) {
     treeHost.inert = true; say('Se încarcă…');
-    const query = { name: name.input.value.trim(), code: code.input.value.trim() };
+    // a box with fewer than the minimum characters (spaces not counted) does not search
+    const query = { name: effectiveSearchText(name.input.value), code: effectiveSearchText(code.input.value) };
     const searching = !!(query.name || query.code);
     try {
       const answer = !searching && roots ? { items: roots, mode: 'tree' } : await read(query);
@@ -105,7 +107,7 @@ export function mountCpvPicker(host, opts) {
   function schedule() {
     const token = ++sequence; clearTimeout(timer);
     treeHost.inert = true;
-    timer = setTimeout(() => { void update(token); }, 300);
+    timer = setTimeout(() => { void update(token); }, searchDelay());
   }
   function close() {
     if (disposed) return;

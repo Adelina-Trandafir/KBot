@@ -4,6 +4,17 @@ from decimal import Decimal, ROUND_CEILING, localcontext
 from . import bon_number, report_model, report_voucher
 
 
+def inventory_by_receiver(spec):
+    return spec['id'] in ('OI_LISTA_INVENTAR', 'MF_LISTA_INVENTAR')
+
+
+def display_layout(spec, layout):
+    if not inventory_by_receiver(spec):
+        return layout
+    # Apply to saved layouts too, keeping each holder's accounts together.
+    return {**layout, 'groups': ['party'] + [key for key in layout.get('groups', []) if key != 'party']}
+
+
 def date(value):
     text = str(value or '')[:10]
     return '.'.join(reversed(text.split('-'))) if len(text) == 10 else text
@@ -99,6 +110,7 @@ def statement_table(layout, rows, zec):
 
 def build(spec, layout, rows, ctx, unit, committees=None, *, page_break_accounts=False, gestiune_name=''):
     zec, blocks = ctx['zec'], []
+    receiver_inventory = inventory_by_receiver(spec)
     outer_group_count = 0
     rows = [{**row, 'ordinal': index + 1} for index, row in enumerate(rows)]
     groups = layout.get('groups', [])
@@ -123,6 +135,8 @@ def build(spec, layout, rows, ctx, unit, committees=None, *, page_break_accounts
             outer_group_count = len(buckets)
         for index, ((_, value), children) in enumerate(buckets.items()):
             row = children[0]
+            if receiver_inventory and key == 'party' and index:
+                blocks.append({'t': 'break', 'space_after': 0})
             if key == 'account' and page_break_accounts and index:
                 blocks.append({'t': 'break', 'space_after': 0})
             if key == 'document' and spec['kind'] == 'documents':
@@ -155,6 +169,8 @@ def build(spec, layout, rows, ctx, unit, committees=None, *, page_break_accounts
                 standard_reception = spec['family'] in ('nir', 'storno') and layout['signatures'][0] == 'CERTIFICARE COMISIA DE RECEPȚIE'
                 signature = reception_signatures(row, committees or {}) if standard_reception else {'t': 'sign', 'heads': layout['signatures']}
                 blocks.extend([{'t': 'spacer'}, signature])
+            if receiver_inventory and key == 'party' and layout.get('signatures'):
+                blocks.extend([{'t': 'spacer'}, {'t': 'sign', 'heads': layout['signatures']}])
     walk(rows, 0)
     if rows and outer_group_count > 1 and spec['kind'] not in ('statement', 'custody_statement', 'documents') and layout.get('totals'):
         overall = table(layout, rows, zec)
@@ -162,9 +178,13 @@ def build(spec, layout, rows, ctx, unit, committees=None, *, page_break_accounts
         if summary.get('cls') == 'total':
             summary['cells'][0] = 'TOTAL GENERAL'
             summary['cls'] = 'grand'
-            # Grand totals continue the existing columns without a separate band or header.
-            last_table = next(block for block in reversed(blocks) if block['t'] == 'table')
-            last_table['rows'].append(summary)
+            if receiver_inventory:
+                # The report total follows the signed lists, outside the last holder's table.
+                blocks.append({**overall, 'rows': [summary], 'raw': [], 'show_column_header': False, 'headers': []})
+            else:
+                # Grand totals continue the existing columns without a separate band or header.
+                last_table = next(block for block in reversed(blocks) if block['t'] == 'table')
+                last_table['rows'].append(summary)
     if not rows:
         blocks.append(text('Nu există înregistrări pentru selecția curentă.'))
     if spec['kind'] == 'purchases' and spec['id'].startswith('Referat_'):
@@ -177,7 +197,7 @@ def build(spec, layout, rows, ctx, unit, committees=None, *, page_break_accounts
                 context.prec = 60
                 estimated = Decimal(estimated).quantize(Decimal('1E1'), rounding=ROUND_CEILING)
         blocks.append(text('VALOARE ESTIMATĂ: ' + report_model.number(estimated, 0) + ' LEI CU TVA INCLUS.'))
-    if spec['kind'] != 'documents' and layout.get('signatures'):
+    if spec['kind'] != 'documents' and not receiver_inventory and layout.get('signatures'):
         blocks += [{'t': 'spacer'}, {'t': 'sign', 'heads': layout['signatures']}]
     if spec['id'] == 'BUConsum_F':
         from copy import deepcopy

@@ -150,3 +150,56 @@ Not verified: how the lines look on screen at any DPI, frozen columns with horiz
 - Existing Button columns (HelpCaptureForm, RobotQueueForm, ClasificatiiForm, ParteneriForm, harness forms) were not touched; with the defaults they should paint as before, except the click now ignoring the 4/3 px margin. Not verified on screen.
 - No hover / pressed look and no hand cursor over the button (never existed; not requested).
 - Help: no change — no existing window uses the new properties, so the operator sees nothing new.
+
+---
+
+## SLICE-0085-04 — KBotDataView: one header/footer look in every grid <a id="slice-0085-04"></a>
+
+Operator request, 07.11.2026: over ALL DGVs of the solution (KBot.App and KBot.EFactura) the same header/footer height (30 px), the same header/footer font (Calibri 9pt Bold), separator colours tied to the theme (Classic = Gainsboro, Modern = default) and band back colours tied to the theme (Classic = Control, Modern = default); and this must become a RULE for every future DGV.
+
+Slice number: **assumed** 0085-04 — 0085 is the latest slice dedicated to the standalone grid; 0085-01 is the base 0085 pass, 0085-02 and 0085-03 are taken (03 only in code comments / pass 4 above).
+
+### What changed and why
+
+- `KBotDataView.Theming.vb`: `ApplyTheme` — for the scheme named Classic the header/footer back is `SystemColors.Control` and the lines under the header / above the footer are `Color.Gainsboro`; every other scheme keeps the derived values (Modern = the blue-ish wash). `SetDefaultColors` (pre-theme / design time) matches Classic. `BuildBandFont` returns Calibri 9pt Bold (scaled by the text-size factor) in every scheme; the old scheme-font logic stays only as the safety net when Calibri is missing.
+- Height: `HeaderHeight` already defaulted to 30 and `FooterHeight` follows it — nothing to change in the control; the overrides were the problem.
+- Designers: a node script removed 294 lines from 119 `.Designer.vb` files (App, EFactura, Migrator, AVC.Migrator) that set, on a `KBotDataView`, `HeaderHeight`, `FooterHeight`, `HeaderFont`, `FooterFont`, `HeaderBackColor`, `FooterBackColor`, `HeaderSeparatorColor`, `FooterSeparatorColor`, and the `HeaderFont` of a `KBotDataColumn`. Trees (AdvancedTreeControl, same property names) and the Controls / DevHarness folders were not touched.
+- The rule is written in `CLAUDE.md` (House rules) and in memory, so a new grid sets none of these.
+
+### Files touched
+
+- `src/KBot.Controls/DataView/KBotDataView.Theming.vb`
+- 119 `.Designer.vb` files (list: re-run `git status`; many are untracked/new so `git diff` does not show them)
+- `CLAUDE.md`
+
+### Test results
+
+Build `KBot.sln`: 0 errors, 0 warnings. No tests run (not asked).
+
+### Unverified / deferred
+
+- Not seen on screen: Classic vs Modern look of the bands, 30 px in grids that were 24/26/40, `XfaXmlPreview` header now Calibri instead of Consolas.
+- Dark and Colorful keep their derived colours (the request named only Classic and Modern).
+- `AutoSizeHeaderHeight` is unchanged: a header with multi-line titles still grows above 30 px.
+- The properties still exist on the control; the rule is enforced by convention, not by code.
+- Help: no section was edited; grid screenshots may differ slightly (see Open threads «Ajutor de actualizat»).
+
+### Pass 2 (operator follow-up, 07.11.2026): AdvancedTreeControl gets the same bands
+
+The tree's header and footer bands must look exactly like the DGV's: font, colours, height, separators.
+
+- `AdvancedTreeControl.Properties.vb`: `HeaderHeight` 32 -> 30 and `FooterHeight` 28 -> 30 (`BAND_HEIGHT`); `HeaderSeparatorWidth` / `FooterSeparatorWidth` default 1 -> 2 (`BAND_SEPARATOR_WIDTH`, same as the DGV); `HeaderFont` / `FooterCaptionFont` unset = Calibri 9pt Bold (shared base font, scaled by `AppScaling.ScaledFont`) instead of the tree font; `HeaderSeparatorColor` / `FooterSeparatorColor` unset = theme colour (before: the text colour at alpha 60).
+- `AdvancedTreeControl.Theming.vb`: Classic = Control back + Gainsboro lines; other schemes = DGV defaults (header back = surface-alt, footer back = surface-alt washed 10% toward the accent, both lines = accent). Pre-theme fields match Classic.
+- Designers: 162 lines removed from the `AdvancedTreeControl` designers (HeaderHeight, FooterHeight, HeaderFont, FooterCaptionFont, HeaderBackColor, FooterBackColor, HeaderSeparatorColor, FooterSeparatorColor, HeaderSeparatorWidth, FooterSeparatorWidth). Only the header and footer BANDS; the TreeListView column-title band (24 px, `ColumnHeader*`) and the search bar were not touched.
+- Build `KBot.sln`: 0 errors, 0 warnings. Not run, not seen on screen. Dark/Colorful take the same non-Classic colours.
+- CLAUDE.md rule extended to trees.
+
+### Pass 3 (operator follow-up, 07.11.2026): the tree caption is part of its icon's button
+
+Operator request: the text in the tree footer must have a transparent back colour (a light box showed behind «Actualizeaza»), and the text tied to a button must be part of that button -- clickable like the icon and lit by the same hover colour -- in the footer and in the header.
+
+- Transparent: the three designers that pinned `FooterCaptionBackColor = Control` (KbotForm, the former reception window, VerconForm) lost that line. The property stays (empty = none); CLAUDE.md says a tree never sets it.
+- Footer (`AdvancedTreeControl.Footer.vb`): the caption belongs to the right icon (to the left one when only it exists, or when both exist and the text is left-aligned). Button area = icon + caption rectangle (`FooterRightButtonRect` / `FooterLeftButtonRect`), used for hover and click; the hover plate is drawn under both. `DrawFooter` now computes icon and caption rectangles first, then paints plates, icons, text.
+- Header (`AdvancedTreeControl.Header.vb`): a caption is a label only when it is aligned to the RIGHT, next to the icons (nearest icon: search, else right icon); left/centre captions stay titles and are not clickable. Same union rectangles (`HeaderSearchButtonRect` / `HeaderRightButtonRect`) for hover and click.
+- Removed the `FooterCaptionClicked` event (it fired for any band click outside the icons) and its two host handlers (`KbotForm.Download.vb`, `PrimiteView.vb`): they did the same as `FooterRightIconClicked`, which now also fires on the caption, so keeping both would double-fire.
+- Build `KBot.sln`: 0 errors, 0 warnings. Not run, not seen on screen; the caption rectangle comes from the last paint, so hit testing before the first paint finds no label.

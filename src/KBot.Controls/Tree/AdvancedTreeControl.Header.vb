@@ -1,6 +1,28 @@
 ﻿Imports System.Drawing.Drawing2D
 
 Partial Public Class AdvancedTreeControl
+    ' The header caption area and which button (if any) it is the label of. Set while painting.
+    Private _headerCaptionRect As Rectangle = Rectangle.Empty
+    Private _headerCaptionOwner As CaptionOwner = CaptionOwner.None
+
+    ''' <summary>Area of the header right-icon button: icon plus its caption when the caption belongs to it.</summary>
+    Friend ReadOnly Property HeaderRightButtonRect As Rectangle
+        Get
+            If _headerRightIconRect.IsEmpty OrElse _headerCaptionOwner <> CaptionOwner.HeaderRight OrElse
+               _headerCaptionRect.IsEmpty Then Return _headerRightIconRect
+            Return Rectangle.Union(_headerRightIconRect, _headerCaptionRect)
+        End Get
+    End Property
+
+    ''' <summary>Area of the header search-icon button: icon plus its caption when the caption belongs to it.</summary>
+    Friend ReadOnly Property HeaderSearchButtonRect As Rectangle
+        Get
+            If _headerSearchIconRect.IsEmpty OrElse _headerCaptionOwner <> CaptionOwner.HeaderSearch OrElse
+               _headerCaptionRect.IsEmpty Then Return _headerSearchIconRect
+            Return Rectangle.Union(_headerSearchIconRect, _headerCaptionRect)
+        End Get
+    End Property
+
     ' ══════════════════════════════════════════════════════════════════
     ' HEADER — DRAWING
     ' ══════════════════════════════════════════════════════════════════
@@ -24,11 +46,15 @@ Partial Public Class AdvancedTreeControl
 
         Dim midY As Integer = _headerHeight \ 2
 
+        ' ── Geometry first (drawing comes after) ─────────────────────────
+        ' A button's hover plate also covers its caption, and the caption sits in the space left
+        ' between the icons, so every rectangle is known before anything is painted.
         ' ── Left icon ────────────────────────────────────────────────
         Dim x As Integer = PaddingHeaderLeftPx
+        Dim leftIconR As Rectangle = Rectangle.Empty
         If _headerLeftIcon IsNot Nothing Then
             Dim iy = midY - (_headerIconSize.Height \ 2)
-            g.DrawImage(_headerLeftIcon, x, iy, _headerIconSize.Width, _headerIconSize.Height)
+            leftIconR = New Rectangle(x, iy, _headerIconSize.Width, _headerIconSize.Height)
             x += _headerIconSize.Width + PaddingIconGapPx
         End If
 
@@ -42,10 +68,6 @@ Partial Public Class AdvancedTreeControl
             rx -= _headerIconSize.Width
             Dim iy = midY - (_headerIconSize.Height \ 2)
             _headerRightIconRect = New Rectangle(rx, iy, _headerIconSize.Width, _headerIconSize.Height)
-            If _headerRightIconHover Then
-                DrawButtonHover(g, _headerRightIconRect, HeaderRightIconHoverColor)
-            End If
-            g.DrawImage(_headerRightIcon, _headerRightIconRect)
             rx -= PaddingIconGapPx
         End If
 
@@ -54,26 +76,24 @@ Partial Public Class AdvancedTreeControl
             rx -= _headerIconSize.Width
             Dim iy = midY - (_headerIconSize.Height \ 2)
             _headerSearchIconRect = New Rectangle(rx, iy, _headerIconSize.Width, _headerIconSize.Height)
-            If _headerSearchIconHover Then
-                DrawButtonHover(g, _headerSearchIconRect, HeaderSearchIconHoverColor)
-            End If
-            g.DrawImage(_headerSearchIcon, _headerSearchIconRect)
             rx -= PaddingIconGapPx
         End If
 
-        ' ── Caption (rich text, in remaining space) ───────────────────
-        Dim captionRight As Integer = rx
-        Dim availW As Integer = Math.Max(0, captionRight - x)
+        ' ── Caption layout (rich text, in the remaining space) ───────────
+        Dim availW As Integer = Math.Max(0, rx - x)
+        _headerCaptionRect = Rectangle.Empty
+        _headerCaptionOwner = CaptionOwner.None
+        Dim fmt = StringFormat.GenericTypographic
+        fmt.FormatFlags = fmt.FormatFlags Or StringFormatFlags.MeasureTrailingSpaces
+        Dim parts As List(Of RichTextPart) = Nothing
+        Dim cx As Single = 0
+        Dim cy As Single = 0
         If Not String.IsNullOrEmpty(_headerCaption) AndAlso availW > 0 Then
-            Dim fmt = StringFormat.GenericTypographic
-            fmt.FormatFlags = fmt.FormatFlags Or StringFormatFlags.MeasureTrailingSpaces
-            Dim parts = ParseRichText(_headerCaption, Me.HeaderFont, HeaderForeColor)
-            Dim oldClip = g.Clip.Clone()
-            g.SetClip(New Rectangle(x, 0, availW, _headerHeight))
+            parts = ParseRichText(_headerCaption, Me.HeaderFont, HeaderForeColor)
 
-            ' HeaderTextAlign se aplică pe TOT șirul de fragmente (mini-html-ul rămâne
-            ' desenat bucată cu bucată): măsurăm întâi lățimea/înălțimea totală, apoi
-            ' calculăm punctul de plecare în spațiul rămas între iconițe.
+            ' HeaderTextAlign applies to the WHOLE string of fragments (the mini-html is still drawn
+            ' piece by piece): measure the total width/height first, then work out the start point in
+            ' the space left between the icons.
             Dim latimeTotala As Single = 0
             Dim inaltimeMax As Single = 0
             For Each part In parts
@@ -82,12 +102,41 @@ Partial Public Class AdvancedTreeControl
                 inaltimeMax = Math.Max(inaltimeMax, sz.Height)
             Next
 
-            Dim cx As Single = AlignStartX(_headerTextAlign, x, availW, latimeTotala)
-            ' Rotunjit în jos la pixel întreg: AlignStartY întoarce un Single (o jumătate de pixel
-            ' când banda și textul diferă cu impar), iar ClearType desenat între două rânduri de
-            ' pixeli iese moale. Rotunjirea e AICI, nu în AlignStartY — aceea e o funcție pură,
-            ' folosită și de teste, și n-are treabă cu felul în care se pictează.
-            Dim cy As Single = CSng(Math.Floor(AlignStartY(_headerTextAlign, _headerHeight, inaltimeMax)))
+            cx = AlignStartX(_headerTextAlign, x, availW, latimeTotala)
+            ' Rounded down to a whole pixel: AlignStartY returns a Single (half a pixel when band and
+            ' text differ by an odd number), and ClearType drawn between two pixel rows comes out
+            ' soft. The rounding is HERE, not in AlignStartY -- that is a pure function used by tests.
+            cy = CSng(Math.Floor(AlignStartY(_headerTextAlign, _headerHeight, inaltimeMax)))
+
+            _headerCaptionRect = New Rectangle(CInt(Math.Floor(cx)), CInt(cy),
+                                               CInt(Math.Ceiling(Math.Min(latimeTotala, CSng(availW)))),
+                                               CInt(Math.Ceiling(inaltimeMax)))
+            ' A title is not a button label. Only a caption aligned to the RIGHT, next to the icons,
+            ' is read as the label of the nearest one (BAND RULE, 07.11.2026).
+            If IsRightAligned(_headerTextAlign) Then
+                If Not _headerSearchIconRect.IsEmpty Then
+                    _headerCaptionOwner = CaptionOwner.HeaderSearch
+                ElseIf Not _headerRightIconRect.IsEmpty Then
+                    _headerCaptionOwner = CaptionOwner.HeaderRight
+                End If
+            End If
+        End If
+
+        ' ── Hover plates + icons (the plate sits UNDER the picture and the text) ──
+        If Not leftIconR.IsEmpty Then g.DrawImage(_headerLeftIcon, leftIconR)
+        If Not _headerRightIconRect.IsEmpty Then
+            If _headerRightIconHover Then DrawButtonHover(g, HeaderRightButtonRect, HeaderRightIconHoverColor)
+            g.DrawImage(_headerRightIcon, _headerRightIconRect)
+        End If
+        If Not _headerSearchIconRect.IsEmpty Then
+            If _headerSearchIconHover Then DrawButtonHover(g, HeaderSearchButtonRect, HeaderSearchIconHoverColor)
+            g.DrawImage(_headerSearchIcon, _headerSearchIconRect)
+        End If
+
+        ' ── Caption text ─────────────────────────────────────────────────
+        If parts IsNot Nothing Then
+            Dim oldClip = g.Clip.Clone()
+            g.SetClip(New Rectangle(x, 0, availW, _headerHeight))
 
             For Each part In parts
                 Dim sz = g.MeasureString(part.Text, part.Font, PointF.Empty, fmt)

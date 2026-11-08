@@ -62,7 +62,6 @@ $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
 
 # The update box is a message box: a long text pushes its buttons off the screen.
-$MaxBullets      = 12
 $MaxBulletLength = 160
 $MaxCommits      = 40
 
@@ -275,9 +274,6 @@ function Show-Notes {
     $bullets = @($Section.Bullets)
     Write-NotesOk "Notes for $($Section.Version) ($($bullets.Count) line(s)):"
     foreach ($b in $bullets) { Write-Host "    - $b" }
-    if ($bullets.Count -gt $MaxBullets) {
-        Write-NotesWarn "$($bullets.Count) lines; the update box is comfortable up to $MaxBullets."
-    }
     $long = @($bullets | Where-Object { $_.Length -gt $MaxBulletLength })
     if ($long.Count -gt 0) {
         Write-NotesWarn "$($long.Count) line(s) longer than $MaxBulletLength characters."
@@ -436,9 +432,6 @@ function Get-NotesText {
     $out = New-Object System.Collections.Generic.List[string]
     foreach ($s in $picked) {
         foreach ($b in $s.Bullets) { $out.Add("$BulletMark $b") }
-    }
-    if ($out.Count -gt 2 * $MaxBullets) {
-        Write-NotesWarn "$($out.Count) lines for the update box (several versions at once) -- consider shortening NOUTATI.md."
     }
     return ($out.ToArray() -join "`r`n")
 }

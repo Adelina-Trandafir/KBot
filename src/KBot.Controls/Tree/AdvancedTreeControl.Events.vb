@@ -10,8 +10,6 @@
     Public Event FooterRightIconClicked(e As MouseEventArgs)
     Public Event FooterLeftIconClicked(e As MouseEventArgs)
 
-    ''' <summary>Slice 00EF-33: a click in the footer band, outside the collapse button and the two icons (on the caption).</summary>
-    Public Event FooterCaptionClicked(e As MouseEventArgs)
     Public Event SearchFinished(matchingItems As List(Of TreeItem), searchText As String)
 
     ''' <summary>

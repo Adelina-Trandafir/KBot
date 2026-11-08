@@ -242,7 +242,16 @@ Public Class VerconForm
     End Function
 
     ' Builds the tree again from the invoices read; the ids in k_keep stay ticked (a tick on a leaf is set with the tree's own propagation, so the months and suppliers above follow).
-    Private Sub BuildTree(k_keep As ICollection(Of Integer))
+    ' k_keepView: after a sending the tree is rebuilt where it was -- the folded-open months and suppliers, the selected row and the scroll position are put back (keys are the same, the sent invoices stay in the tree).
+    Private Sub BuildTree(k_keep As ICollection(Of Integer), Optional k_keepView As Boolean = False)
+        Dim k_openKeys As New HashSet(Of String)(StringComparer.Ordinal)
+        Dim k_selectedKey As String = Nothing
+        Dim k_scroll As Integer = 0
+        If k_keepView Then
+            CollectOpenKeys(tree.Items, k_openKeys)
+            If tree.SelectedNode IsNot Nothing Then k_selectedKey = tree.SelectedNode.Key
+            k_scroll = tree.ScrollOffsetY
+        End If
         tree.Clear()
         _nodes.Clear()
         _order.Clear()
@@ -273,9 +282,42 @@ Public Class VerconForm
             If k_keepSet.Contains(k_id) AndAlso Not k_leaf.CheckLocked Then tree.SetItemCheckState(k_leaf, AdvancedTreeControl.TreeCheckState.Checked)
         Next
         tree.FooterCaption = "TOTAL  " & _invoices.Sum(Function(k_x) k_x.Total).ToString("N2", _ro) & "  "
+        If k_keepView Then
+            ReopenKeys(tree.Items, k_openKeys)
+            If k_selectedKey IsNot Nothing Then
+                Dim k_found As AdvancedTreeControl.TreeItem = FindNodeByKey(tree.Items, k_selectedKey)
+                If k_found IsNot Nothing Then tree.SelectedNode = k_found
+            End If
+            tree.ScrollOffsetY = k_scroll
+        End If
         tree.Invalidate()
         UpdateStatus()
     End Sub
+
+    ' The keys of the nodes that are open (have children and are expanded), the whole tree.
+    Private Shared Sub CollectOpenKeys(k_nodes As IEnumerable(Of AdvancedTreeControl.TreeItem), k_into As HashSet(Of String))
+        For Each k_node As AdvancedTreeControl.TreeItem In k_nodes
+            If k_node.Children.Count > 0 AndAlso k_node.Expanded Then k_into.Add(k_node.Key)
+            CollectOpenKeys(k_node.Children, k_into)
+        Next
+    End Sub
+
+    ' Opens again the nodes whose key was open before the rebuild (a node already open stays open).
+    Private Shared Sub ReopenKeys(k_nodes As IEnumerable(Of AdvancedTreeControl.TreeItem), k_open As HashSet(Of String))
+        For Each k_node As AdvancedTreeControl.TreeItem In k_nodes
+            If k_node.Children.Count > 0 AndAlso k_open.Contains(k_node.Key) Then k_node.Expanded = True
+            ReopenKeys(k_node.Children, k_open)
+        Next
+    End Sub
+
+    Private Shared Function FindNodeByKey(k_nodes As IEnumerable(Of AdvancedTreeControl.TreeItem), k_key As String) As AdvancedTreeControl.TreeItem
+        For Each k_node As AdvancedTreeControl.TreeItem In k_nodes
+            If String.Equals(k_node.Key, k_key, StringComparison.Ordinal) Then Return k_node
+            Dim k_inner As AdvancedTreeControl.TreeItem = FindNodeByKey(k_node.Children, k_key)
+            If k_inner IsNot Nothing Then Return k_inner
+        Next
+        Return Nothing
+    End Function
 
     ' A supplier row and its invoices (newest first). k_top: the supplier is the root of the tree (bold), not under a month.
     Private Sub AddSupplierNode(k_group As IEnumerable(Of EFacturaPrimita), k_key As String, k_parent As AdvancedTreeControl.TreeItem,
@@ -749,7 +791,7 @@ Public Class VerconForm
         Next
         Await ReadVerconAsync().ConfigureAwait(True)
         If IsDisposed Then Return
-        BuildTree(TickedIds())
+        BuildTree(TickedIds(), True)
         FillGrid()
     End Function
 

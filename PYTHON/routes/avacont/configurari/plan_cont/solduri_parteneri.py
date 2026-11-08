@@ -6,14 +6,15 @@ The balances of the account itself (IdPartener NULL) are in solduri.py. Here one
 account of the chart of ANY subunit of the unit (the partner window lists them all). The window edits the whole list of a partner at once.
 
     GET  /api/avacont/parteneri/conturi
-        -> 200 { "conturi": [ { "idcont", "simbol", "denumire", "capitol", "subunitate" } ] }
-        The ACTIVE accounts of every subunit, for the account list of the partner's balances grid.
+        -> 200 { "conturi": [ { "idcont", "simbol", "denumire", "capitol", "subunitate", "denumire_sintetic" } ] }
+        The active accounts and the names of the synthetic groups for the partner's balances grid.
 
     GET  /api/avacont/parteneri/cu-solduri?an=<year>
         -> 200 { "parteneri": [ idpartener, ... ] }   the partners that have at least one balance row in that year (the list of the partner window offers them).
 
     GET  /api/avacont/parteneri/solduri?partener=<id>&an=<year>
-        -> 200 { "solduri": [ { "idcont", "simbol", "denumire", "capitol", "sold_debitor", "sold_creditor", "rulaj_debitor", "rulaj_creditor" } ] }
+        -> 200 { "solduri": [ { "idcont", "simbol", "denumire", "capitol", "denumire_sintetic",
+                               "sold_debitor", "sold_creditor", "rulaj_debitor", "rulaj_creditor" } ] }
         The partner's rows of that year (inactive accounts too: a stored balance is never hidden).
 
     POST /api/avacont/parteneri/solduri
@@ -35,21 +36,30 @@ from .solduri import _CAMPURI, _suma
 
 logger = logging.getLogger(__name__)
 
+# The same three-character prefix groups both new choices and saved balances in the selector.
+_SINTETIC_JOIN = (
+    " LEFT JOIN AVACONT_COMUN.DefaSintetic D ON D.CONT = "
+    " CASE WHEN LEFT(TRIM(P.SimbolCont), 3) REGEXP '^[0-9]{3}$' "
+    " THEN CAST(LEFT(TRIM(P.SimbolCont), 3) AS UNSIGNED) END "
+)
+
 
 @avacont_bp.route("/api/avacont/parteneri/conturi", methods=["GET"])
 @require_session
 def get_conturi_parteneri():
-    """The active accounts of every subunit."""
+    """The active accounts of every subunit and the common synthetic names."""
     db_name = g.session.db_name
     conn = None
     try:
         conn = get_kbot_connection(db_name)
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT P.IdCont, P.SimbolCont, P.Denumire, U.Capitol, U.IdSubunitate "
+            "SELECT P.IdCont, P.SimbolCont, P.Denumire, U.Capitol, U.IdSubunitate, D.DENUMIRE "
             "  FROM TZ_PlanCont P JOIN TZ_Subunitati U ON U.IdSubunitate = P.IdSubunitate "
-            " WHERE P.Activ = 1 ORDER BY U.Capitol, P.SimbolCont")
-        lista = [{"idcont": int(r[0]), "simbol": r[1], "denumire": r[2] or "", "capitol": r[3], "subunitate": int(r[4])}
+            + _SINTETIC_JOIN
+            + " WHERE P.Activ = 1 ORDER BY U.Capitol, P.SimbolCont")
+        lista = [{"idcont": int(r[0]), "simbol": r[1], "denumire": r[2] or "", "capitol": r[3], "subunitate": int(r[4]),
+                  "denumire_sintetic": (r[5] or "").strip()}
                  for r in cursor.fetchall()]
         logger.info("[avacont.solduri_parteneri] %s: %s conturi", db_name, len(lista))
         return json_utf8({"conturi": lista}, 200)
@@ -99,13 +109,16 @@ def get_solduri_partener():
         conn = get_kbot_connection(db_name)
         cursor = conn.cursor()
         cursor.execute(
-            "SELECT S.IdCont, P.SimbolCont, P.Denumire, U.Capitol, S.SoldDebitor, S.SoldCreditor, S.RulajDebitor, S.RulajCreditor "
+            "SELECT S.IdCont, P.SimbolCont, P.Denumire, U.Capitol, "
+            "       S.SoldDebitor, S.SoldCreditor, S.RulajDebitor, S.RulajCreditor, D.DENUMIRE "
             "  FROM TZ_SoldInitial S JOIN TZ_PlanCont P ON P.IdCont = S.IdCont "
             "  JOIN TZ_Subunitati U ON U.IdSubunitate = P.IdSubunitate "
-            " WHERE S.IdPartener = %s AND S.An = %s ORDER BY U.Capitol, P.SimbolCont", (partener, an))
+            + _SINTETIC_JOIN
+            + " WHERE S.IdPartener = %s AND S.An = %s ORDER BY U.Capitol, P.SimbolCont", (partener, an))
         lista = [{"idcont": int(r[0]), "simbol": r[1], "denumire": r[2] or "", "capitol": r[3],
                   "sold_debitor": float(r[4]), "sold_creditor": float(r[5]),
-                  "rulaj_debitor": float(r[6]), "rulaj_creditor": float(r[7])} for r in cursor.fetchall()]
+                  "rulaj_debitor": float(r[6]), "rulaj_creditor": float(r[7]), "denumire_sintetic": (r[8] or "").strip()}
+                 for r in cursor.fetchall()]
         logger.info("[avacont.solduri_parteneri] %s: partenerul %s, %s, %s randuri", db_name, partener, an, len(lista))
         return json_utf8({"solduri": lista}, 200)
     except Exception as e:

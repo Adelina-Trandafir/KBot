@@ -16,8 +16,6 @@ Imports KBot.Theming
 ' («Renunță» takes all off). Every change of the ticks, of the classification, of the templates or of a value to pay asks the server to calculate again and the page shows the answer.
 Partial Public Class PrimiteView
 
-    Private Const ViewContare As String = "contare"
-
     Private Const ContareGoala As String = "Clic dreapta pe o factură și alegeți «Adaugă operații contabile»."
     Private Const ContareUnaMacar As String = "Trebuie să rămână bifată cel puțin o factură. Pentru a renunța la tot, folosiți «Renunță»."
 
@@ -101,7 +99,7 @@ Partial Public Class PrimiteView
     Private Sub ApplyContareBoxes()
         For Each k_pair As KeyValuePair(Of Integer, AdvancedTreeControl.TreeItem) In _nodes
             Dim k_p As EFacturaPrimita = TryCast(k_pair.Value.Tag, EFacturaPrimita)
-            k_pair.Value.HasCheckBox = k_p IsNot Nothing AndAlso ContareBox(k_p)
+            k_pair.Value.HasCheckBox = k_p IsNot Nothing AndAlso (ContareBox(k_p) OrElse _receptiiWide)
         Next
         tree.Invalidate()
     End Sub
@@ -117,8 +115,8 @@ Partial Public Class PrimiteView
             _contareSupplier = SupplierKey(k_p)
             If Not _contare Then
                 ' The page comes on screen: the tree is rebuilt with the boxes and the tick, and the page asks for the calculation (SetContareMode).
-                navDetaliu.SelectedKey = ViewContare
-                ShowPage(ViewContare)
+                detalii.navDetaliu.SelectedKey = PrimiteDetaliiView.ViewContare
+                ShowPage(PrimiteDetaliiView.ViewContare)
                 Return
             End If
             ApplyContareBoxes()
@@ -140,7 +138,7 @@ Partial Public Class PrimiteView
         _tickedIds.Clear()
         _contareSupplier = String.Empty
         ResetContareChoices()
-        pgContare.ShowEmpty(ContareGoala)
+        detalii.pgContare.ShowEmpty(ContareGoala)
         ApplyContareBoxes()
     End Sub
 
@@ -165,7 +163,12 @@ Partial Public Class PrimiteView
     ' UI boundary (async Sub): a tick changed (an invoice of the supplier being booked was ticked or unticked): the evidence grid gets (or loses) its row.
     Private Async Sub Tree_NodeChecked(k_node As AdvancedTreeControl.TreeItem) Handles tree.NodeChecked
         Try
-            If _treeLoading OrElse Not _contare Then Return
+            If _treeLoading Then Return
+            If _receptiiWide Then
+                ReceptiiTickChanged()   ' slice KE21: several invoices on one reception
+                Return
+            End If
+            If Not _contare Then Return
             Dim k_ticked As List(Of Integer) = TickedNow()
             If k_ticked.Count = 0 Then
                 ' At least one invoice stays ticked: the tick that was just taken off is put back.
@@ -198,7 +201,7 @@ Partial Public Class PrimiteView
                 _contareSeq += 1
                 _contareSupplier = String.Empty
                 ResetContareChoices()
-                pgContare.ShowEmpty(ContareGoala)
+                detalii.pgContare.ShowEmpty(ContareGoala)
                 ApplyContareBoxes()
                 Return
             End If
@@ -233,16 +236,16 @@ Partial Public Class PrimiteView
                 If _contarePlatit.ContainsKey(k_row.IdPrimita) Then _contarePlatit(k_row.IdPrimita) = k_row.Platit
             Next
             _contareUltim = k_answer
-            pgContare.ShowResult(k_answer)
+            detalii.pgContare.ShowResult(k_answer)
         Catch ex As OperationCanceledException
             ' The host was closed.
         Catch ex As ApiException
             GlobalErrorLog.Write("PrimiteView.RefreshContareAsync", ex)
-            pgContare.ShowEmpty(ex.Message)
+            detalii.pgContare.ShowEmpty(ex.Message)
             ShowProblem(ex.Message)
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteView.RefreshContareAsync", ex)
-            pgContare.ShowEmpty("Calculul contării nu a putut fi făcut. Detalii în jurnalul de erori.")
+            detalii.pgContare.ShowEmpty("Calculul contării nu a putut fi făcut. Detalii în jurnalul de erori.")
             ShowProblem("Calculul contării nu a putut fi făcut. Detalii în jurnalul de erori.")
         End Try
     End Function
@@ -258,7 +261,7 @@ Partial Public Class PrimiteView
 
     ' ── The page's events ───────────────────────────────────────────────────────
 
-    Private Async Sub PgContare_ClasificatieAleasa(k_idClsf As Integer) Handles pgContare.ClasificatieAleasa
+    Private Async Sub PgContare_ClasificatieAleasa(k_idClsf As Integer)
         Try
             _contareClsf = k_idClsf
             _contareE = Nothing
@@ -269,7 +272,7 @@ Partial Public Class PrimiteView
         End Try
     End Sub
 
-    Private Async Sub PgContare_SablonAles(k_fel As String, k_idSablon As Integer) Handles pgContare.SablonAles
+    Private Async Sub PgContare_SablonAles(k_fel As String, k_idSablon As Integer)
         Try
             If String.Equals(k_fel, "E", StringComparison.Ordinal) Then
                 _contareE = k_idSablon
@@ -282,7 +285,7 @@ Partial Public Class PrimiteView
         End Try
     End Sub
 
-    Private Async Sub PgContare_PlatitSchimbat(k_idPrimita As Integer, k_valoare As Decimal) Handles pgContare.PlatitSchimbat
+    Private Async Sub PgContare_PlatitSchimbat(k_idPrimita As Integer, k_valoare As Decimal)
         Try
             _contarePlatit(k_idPrimita) = k_valoare
             Await RefreshContareAsync().ConfigureAwait(True)
@@ -291,7 +294,7 @@ Partial Public Class PrimiteView
         End Try
     End Sub
 
-    Private Sub PgContare_RenuntaCerut() Handles pgContare.RenuntaCerut
+    Private Sub PgContare_RenuntaCerut()
         Try
             ClearTicks()
         Catch ex As Exception
@@ -315,7 +318,7 @@ Partial Public Class PrimiteView
 
     ' «Salvează evidențierea» (slice 01EF-04). The warnings that need a confirmation are shown together and, when the operator agrees, their codes go with the request
     ' (the server checks them again). UI boundary (async Sub): logs and swallows; a failure becomes a line in the notice.
-    Private Async Sub PgContare_SalveazaCerut() Handles pgContare.SalveazaCerut
+    Private Async Sub PgContare_SalveazaCerut()
         Try
             If _contareSalveaza OrElse _contareUltim Is Nothing Then Return
             _contareSalveaza = True
@@ -327,12 +330,12 @@ Partial Public Class PrimiteView
                                        Environment.NewLine & Environment.NewLine & "Continuați cu salvarea?"
                 If KBotMessage.Show(FindForm(), k_text, "Contări", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then Return
             End If
-            If pgContare.PlataActiva Then
+            If detalii.pgContare.PlataActiva Then
                 If KBotMessage.Show(FindForm(), "Plata nu se înregistrează încă: se salvează doar evidențierea facturilor. Continuați?", "Contări",
                                     MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
             End If
             Dim k_noteValid As Boolean
-            Dim k_note As Integer? = pgContare.NotaAleasa(k_noteValid)
+            Dim k_note As Integer? = detalii.pgContare.NotaAleasa(k_noteValid)
             If Not k_noteValid Then
                 KBotMessage.Show(FindForm(), "Numărul notei contabile trebuie să fie un număr întreg pozitiv.", "Contări", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return

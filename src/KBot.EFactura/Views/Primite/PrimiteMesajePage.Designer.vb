@@ -25,7 +25,7 @@ Partial Class PrimiteMesajePage
         pnlTrimite = New System.Windows.Forms.Panel()
         txtMesaj = New KBotTextBox()
         btnTrimite = New KBotButton()
-        lblTrimite = New System.Windows.Forms.Label()
+        lblTrimite = New Global.KBot.Controls.KBotLabel()
         CType(gridMesaje, System.ComponentModel.ISupportInitialize).BeginInit()
         pnlTrimite.SuspendLayout()
         SuspendLayout()
@@ -101,6 +101,7 @@ Partial Class PrimiteMesajePage
         '
         ' lblTrimite
         '
+        lblTrimite.BorderWidth = 0
         lblTrimite.Dock = System.Windows.Forms.DockStyle.Top
         lblTrimite.Location = New System.Drawing.Point(0, 0)
         lblTrimite.Margin = New System.Windows.Forms.Padding(0)
@@ -129,5 +130,5 @@ Partial Class PrimiteMesajePage
     Friend WithEvents pnlTrimite As System.Windows.Forms.Panel
     Friend WithEvents txtMesaj As KBotTextBox
     Friend WithEvents btnTrimite As KBotButton
-    Friend WithEvents lblTrimite As System.Windows.Forms.Label
+    Friend WithEvents lblTrimite As Global.KBot.Controls.KBotLabel
 End Class

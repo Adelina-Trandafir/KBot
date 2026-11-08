@@ -1039,6 +1039,24 @@ Public NotInheritable Class KBotDataColumn
     Public Property GroupHeaderCombo As Boolean = False
 
     ''' <summary>
+    ''' Slice KE20-04. With <see cref="GroupHeaderCombo"/>: the combo of the header band shows the value of the FIRST row of the group, not the value all the rows share.
+    ''' For a group whose first row holds the choice and whose last row is an empty one to fill in, the header still shows the choice.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Combo din banda de antet a grupului: arata valoarea primului rand al grupului, nu valoarea comuna a tuturor randurilor.")>
+    <DefaultValue(False)>
+    Public Property GroupHeaderComboFirstRow As Boolean = False
+
+    ''' <summary>
+    ''' Slice 02EF-02. Columns with an aggregate, grid GROUPED: the aggregate shown in the header band of every group can be typed over. A click on it opens a number box over
+    ''' the aggregate; Enter (or leaving the box) raises <c>GroupHeaderValueEdited</c> with the typed text, so the host can spread it on the rows of the group. The grid writes nothing.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Coloana cu agregat, grila grupata: valoarea agregata din banda de antet a grupului se poate rescrie; textul tastat se da gazdei, care il imparte pe randurile grupului.")>
+    <DefaultValue(False)>
+    Public Property GroupHeaderEdit As Boolean = False
+
+    ''' <summary>
     ''' English (slice 0016): set by the auto-hide pass when THIS column was hidden for lack of
     ''' room (never by the caller). Recomputed from scratch every layout, so a widened grid
     ''' brings the column back. Friend — the caller toggles <see cref="AutoHide"/>, not this.

@@ -54,7 +54,6 @@ Partial Class KePropuneriForm
         ' gridFact
         ' 
         gridFact.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
-        gridFact.BackColor = Drawing.SystemColors.Window
         gridFact.CheckBoxes = KBot.Controls.KBotCheckBoxMode.RowsOnly
         gridFact.ColumnFillMode = KBot.Controls.KBotFillMode.SpecificColumn
         KBotDataColumn1.AggregateFormatString = Nothing
@@ -152,7 +151,6 @@ Partial Class KePropuneriForm
         ' gridCand
         ' 
         gridCand.AutoSizeColumnsMode = KBot.Controls.KBotAutoSizeMode.None
-        gridCand.BackColor = Drawing.SystemColors.Window
         gridCand.ColumnFillMode = KBot.Controls.KBotFillMode.SpecificColumn
         KBotDataColumn7.AggregateFormatString = Nothing
         KBotDataColumn7.FormatString = Nothing

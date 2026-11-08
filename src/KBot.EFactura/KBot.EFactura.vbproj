@@ -18,7 +18,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.14.1.0</FileVersion>
+    <FileVersion>1.14.2.6</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -58,4 +58,59 @@
 	    <LastGenOutput>Resources.Designer.vb</LastGenOutput>
 	  </EmbeddedResource>
 	</ItemGroup>
+
+  <ItemGroup>
+    <Compile Update="Views\Primite\PrimiteDetaliiView.vb;Views\Primite\PrimiteReceptiiEditorView.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Views\Primite\PrimiteDetaliiView.Designer.vb">
+      <DependentUpon>PrimiteDetaliiView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Views\Primite\PrimiteReceptiiEditorView.Designer.vb">
+      <DependentUpon>PrimiteReceptiiEditorView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Views\Primite\PrimiteReceptieNouaView.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Views\Primite\PrimiteReceptieNouaView.Designer.vb">
+      <DependentUpon>PrimiteReceptieNouaView.vb</DependentUpon>
+    </Compile>
+    <EmbeddedResource Update="Views\Primite\PrimiteReceptieNouaView.resx">
+      <DependentUpon>PrimiteReceptieNouaView.vb</DependentUpon>
+    </EmbeddedResource>
+    <Compile Update="Views\Primite\PrimiteReceptiiExistenteView.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Views\Primite\PrimiteReceptiiExistenteView.Designer.vb">
+      <DependentUpon>PrimiteReceptiiExistenteView.vb</DependentUpon>
+    </Compile>
+    <EmbeddedResource Update="Views\Primite\PrimiteReceptiiExistenteView.resx">
+      <DependentUpon>PrimiteReceptiiExistenteView.vb</DependentUpon>
+    </EmbeddedResource>
+    <Compile Update="Views\Primite\PrimiteReceptiiAsociateView.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Views\Primite\PrimiteReceptiiAsociateView.Designer.vb">
+      <DependentUpon>PrimiteReceptiiAsociateView.vb</DependentUpon>
+    </Compile>
+    <EmbeddedResource Update="Views\Primite\PrimiteReceptiiAsociateView.resx">
+      <DependentUpon>PrimiteReceptiiAsociateView.vb</DependentUpon>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- Slice KE21: the view of the reception and the table of angajamente, one folder, the code split by responsibility (the partial files hang under the view's file). -->
+  <ItemGroup>
+    <Compile Update="Views\Receptii\KeReceptiiView.vb;Views\Receptii\KeAngajamenteView.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Views\Receptii\KeReceptiiView.Designer.vb;Views\Receptii\KeReceptiiView.Amounts.vb;Views\Receptii\KeReceptiiView.Angajamente.vb;Views\Receptii\KeReceptiiView.Commit.vb;Views\Receptii\KeReceptiiView.Invoices.vb;Views\Receptii\KeReceptiiView.Lines.vb;Views\Receptii\KeReceptiiView.Receptii.vb;Views\Receptii\KeReceptiiView.Ribbon.vb;Views\Receptii\KeReceptiiView.Viewing.vb">
+      <DependentUpon>KeReceptiiView.vb</DependentUpon>
+    </Compile>
+    <EmbeddedResource Update="Views\Receptii\KeReceptiiView.resx">
+      <DependentUpon>KeReceptiiView.vb</DependentUpon>
+    </EmbeddedResource>
+    <Compile Update="Views\Receptii\KeAngajamenteView.Designer.vb;Views\Receptii\KeAngajamenteView.Fill.vb;Views\Receptii\KeAngajamenteView.Grid.vb;Views\Receptii\KeAngajamenteView.Link.vb;Views\Receptii\KeAngajamenteView.Load.vb">
+      <DependentUpon>KeAngajamenteView.vb</DependentUpon>
+    </Compile>
+  </ItemGroup>
 </Project>

@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="ro">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex"><title>Inventar OI Excel · VERCON</title>
+  <script src="/static/js/portal/theme-init.js"></script>
+  <link rel="stylesheet" href="/static/css/typography.css">
+  <link rel="stylesheet" href="/static/css/menu.css">
+  <link rel="stylesheet" href="/static/site/site.css">
+  <link rel="stylesheet" href="/static/css/variables.css">
+  <link rel="stylesheet" href="/static/css/portal.css">
+  <link rel="stylesheet" href="/static/css/combobox.css">
+  <link rel="stylesheet" href="/static/css/textbox.css">
+  <link rel="stylesheet" href="/static/css/checkbox.css">
+  <link rel="stylesheet" href="/static/css/modal-frame.css">
+  <link rel="stylesheet" href="/static/css/app-menu.css">
+  <link rel="stylesheet" href="/static/js/components/action-add-button/action-add-button.css">
+  <link rel="stylesheet" href="/static/css/vercon.css">
+  <link rel="stylesheet" href="/static/css/dgv.css">
+  <link rel="stylesheet" href="/static/css/treeview/treeview.css">
+  <link rel="stylesheet" href="/static/css/datepicker.css">
+  <link rel="stylesheet" href="/static/css/confirm-box.css">
+  <link rel="stylesheet" href="/static/css/pdfview.css">
+  <link rel="stylesheet" href="/static/vendor/pdfjs/pdf_viewer.min.css">
+  <link rel="stylesheet" href="/static/css/vercon-inventar.css">
+  <script src="/static/js/utils/css.js"></script>
+  <script src="/static/js/utils/z-max.js"></script>
+  <script type="module" src="/static/js/vercon-inventar/app.js"></script>
+</head>
+<body class="portal vc-page vi-page">
+  <header class="header vc-header">
+    <button class="brand vc-brand" id="vc-apps" type="button" aria-haspopup="menu" aria-expanded="false" aria-label="Aplicații"><svg class="vc-brand__icon" viewBox="0 0 32 32" width="30" height="30" aria-hidden="true"><rect width="32" height="32" rx="7" fill="#309eff"/><text x="16" y="24" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="23" font-weight="800" fill="#fff">V</text></svg><span class="vc-brand__name">VERCON</span></button>
+    <section class="vc-selectors" aria-label="Contextul de lucru">
+      <div id="vc-subunit-combo" class="vc-picker"></div>
+      <div id="vc-gestiune-combo" class="vc-picker" hidden></div>
+      <div id="vi-account" class="vc-picker" hidden></div>
+    </section>
+    <span id="vc-session-timer" class="vc-session-timer" role="timer" hidden>⏱ <b>15:00</b></span>
+    <div class="vc-header__right"><span id="vc-context" class="vc-header__context"></span><button class="btn vc-menu-btn vc-help-btn" id="vc-help" type="button" aria-label="Ajutor" title="Ajutor"><b>?</b></button><button class="btn vc-menu-btn" id="vc-theme" type="button" aria-label="Schimbă tema" title="Schimbă tema">☀</button></div>
+  </header>
+  <main id="vi-app" aria-busy="true">
+    <section class="vi-file" aria-label="Fișierul Excel">
+      <div id="vi-file-name"></div><input id="vi-file" type="file" accept=".xlsx" hidden>
+      <button id="vi-browse" class="btn" type="button">Alege Excel…</button>
+      <div id="vi-sheet"></div><button id="vi-load" class="btn" type="button">Citește și compară</button>
+      <button id="vi-send" class="btn vi-primary" type="button" disabled>Trimite în VERCON</button>
+    </section>
+    <p id="vi-status" class="vi-status" role="status" aria-live="polite">Se verifică sesiunea…</p>
+    <section id="vi-tables" class="vi-tables" aria-label="Grilele inventarului">
+    <section id="vi-work" class="vi-work" aria-label="Asocierea inventarului">
+      <section class="vi-pane"><h2>Din Excel <span id="vi-excel-count"></span></h2><div id="vi-excel-grid" class="vi-grid"></div></section>
+      <section class="vi-pane"><h2>Candidați VERCON <span id="vi-candidate-count"></span></h2><div id="vi-candidate-grid" class="vi-grid"></div></section>
+      <aside class="vi-associate" aria-label="Asocierea curentă">
+        <h2>Asociere</h2>
+        <label>Cantitate asociată<div id="vi-quantity"></div></label>
+        <label>Preț Excel<div id="vi-excel-price"></div></label>
+        <label>Preț VERCON<div id="vi-vercon-price"></div></label>
+        <button id="vi-associate" class="btn vi-primary" type="button" disabled>Asociază</button>
+        <p id="vi-match-info" class="vi-detail">Selectați un rând Excel, apoi un candidat.</p>
+      </aside>
+    </section>
+    <div id="vi-splitter" class="vi-splitter" role="separator" tabindex="0" aria-orientation="horizontal"
+      aria-label="Înălțimea listei de asocieri" aria-controls="vi-work vi-assigned"
+      title="Trageți în sus sau în jos pentru a redimensiona lista de asocieri. Dublu clic pentru înălțimea inițială."></div>
+    <section id="vi-assigned" class="vi-assigned"><div class="vi-assigned-header"><h2>Asocieri curente <span id="vi-assigned-count"></span></h2>
+      <button id="vi-undo" class="btn" type="button" disabled>Anulează asocierea selectată</button></div>
+      <div id="vi-assigned-grid" class="vi-grid"></div>
+    </section>
+    </section>
+  </main>
+  <dialog id="vc-help-dialog" class="vc-help ade-help" aria-labelledby="vc-help-title">
+    <header class="vc-help__header"><h2 id="vc-help-title">Ajutor VERCON</h2><div class="ade-help-actions"><button id="vc-help-print" class="btn" type="button" title="Imprimă ajutorul">🖨️ Imprimă</button><button id="vc-help-pdf" class="btn" type="button" title="Salvează ajutorul ca PDF">📄 Export PDF</button><button id="vc-help-close" class="btn" type="button" aria-label="Închide ajutorul" title="Închide">✕</button></div></header>
+    <div class="ade-help-body"><nav id="vc-help-toc" class="ade-help-toc" aria-label="Cuprins"></nav><article id="vc-help-content" class="ade-help-content" tabindex="0"></article></div>
+  </dialog>
+</body></html>

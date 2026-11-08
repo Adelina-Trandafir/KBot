@@ -70,14 +70,12 @@ Partial Class OrdDocumentePage
         ' grdBene
         ' 
         grdBene.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        grdBene.BackColor = SystemColors.Window
         grdBene.ColumnFillMode = KBotFillMode.FirstColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn1.CellPadding = New Padding(4, 0, 4, 0)
         KBotDataColumn1.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
-        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.HeaderText = "Beneficiari"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn1.Key = "eticheta"
@@ -88,8 +86,6 @@ Partial Class OrdDocumentePage
         grdBene.Columns.Add(KBotDataColumn1)
         grdBene.Dock = DockStyle.Fill
         grdBene.FillColumnKey = "eticheta"
-        grdBene.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        grdBene.HeaderSeparatorColor = SystemColors.ActiveBorder
         grdBene.Location = New Point(10, 0)
         grdBene.Margin = New Padding(0)
         grdBene.Name = "grdBene"
@@ -214,14 +210,12 @@ Partial Class OrdDocumentePage
         ' grdText
         ' 
         grdText.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        grdText.BackColor = SystemColors.Window
         grdText.ColumnFillMode = KBotFillMode.FirstColumn
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn2.CellPadding = New Padding(4, 0, 4, 0)
         KBotDataColumn2.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.HeaderText = "Document justificativ"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn2.Key = "doc_just"
@@ -232,8 +226,6 @@ Partial Class OrdDocumentePage
         tlyText.SetColumnSpan(grdText, 2)
         grdText.Dock = DockStyle.Fill
         grdText.FillColumnKey = "doc_just"
-        grdText.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        grdText.HeaderSeparatorColor = SystemColors.ActiveBorder
         grdText.Location = New Point(0, 0)
         grdText.Margin = New Padding(0)
         grdText.Name = "grdText"
@@ -275,14 +267,12 @@ Partial Class OrdDocumentePage
         ' grdFisiere
         ' 
         grdFisiere.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        grdFisiere.BackColor = SystemColors.Window
         grdFisiere.ColumnFillMode = KBotFillMode.FirstColumn
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn3.CellPadding = New Padding(4, 0, 4, 0)
         KBotDataColumn3.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.FormatString = Nothing
-        KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.HeaderText = "Nume fișier"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn3.Key = "nume_doc"
@@ -295,7 +285,6 @@ Partial Class OrdDocumentePage
         KBotDataColumn4.CellPadding = New Padding(4, 0, 4, 0)
         KBotDataColumn4.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn4.FormatString = Nothing
-        KBotDataColumn4.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn4.HeaderText = "Tip"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "tip_doc"
@@ -308,8 +297,6 @@ Partial Class OrdDocumentePage
         tlyFisiere.SetColumnSpan(grdFisiere, 2)
         grdFisiere.Dock = DockStyle.Fill
         grdFisiere.FillColumnKey = "nume_doc"
-        grdFisiere.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        grdFisiere.HeaderSeparatorColor = SystemColors.ActiveBorder
         grdFisiere.Location = New Point(0, 0)
         grdFisiere.Margin = New Padding(0)
         grdFisiere.Name = "grdFisiere"

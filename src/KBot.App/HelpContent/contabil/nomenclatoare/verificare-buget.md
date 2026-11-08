@@ -7,15 +7,15 @@ parent: contabil.nomenclatoare.clasificatii
 screens: BudgetCheckForm
 keywords: verificare buget, verifica bugetul, credit bugetar, diferenta, forexe, buget k-bot, clasificatii cu diferente
 ---
-<!-- slice: 0103-04, 0105, 0108, 0107, 0000-47, AV01-13 -->
+<!-- slice: 0103-04, 0105, 0108, 0107, 0000-47, AV01-13, 0126-03 -->
 Fereastra **«Verificare buget FOREXE»** pune față în față, pentru fiecare clasificație, bugetul din K-BOT și creditul bugetar raportat de FOREXE, ca să vezi unde nu se potrivesc. Ea doar arată; nu modifică nimic.
 
 <!-- capture: verificare-buget | caption: Fereastra «Verificare buget FOREXE» | prepare: Din «Clasificații cheltuieli» apăsați «Verifică bugetul». Fereastra trebuie să arate cel puțin un rând cu diferență. -->
 
 ## Cum se deschide
-<!-- slice: 0103-04, 0000-47, AV01-13 -->
+<!-- slice: 0103-04, 0000-47, AV01-13, 0126-03 -->
 
-- Din fereastra [Clasificații cheltuieli](topic:contabil.nomenclatoare.clasificatii), cu butonul **«Verifică bugetul»** din josul ei. Se deschide întotdeauna, chiar dacă totul se potrivește (atunci scrie asta în josul ferestrei).
+- Din fereastra [Clasificații cheltuieli](topic:contabil.nomenclatoare.clasificatii), cu butonul **«Verifică bugetul»** din ribbon (grupul **Clasificații**, în dreapta). Se deschide întotdeauna, chiar dacă totul se potrivește (atunci scrie asta în josul ferestrei).
 - Numai așa: o descărcare din FOREXE nu o deschide singură.
 
 ## Ce arată

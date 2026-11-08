@@ -216,6 +216,10 @@ Public NotInheritable Class AppSettings
     ''' <summary>Slice 0114-24: the ribbon of AvacontMain with smaller icons, smaller text and tighter rows (for low resolutions). Off by default.</summary>
     Public Property RibbonCompact As Boolean = False
 
+    ''' <summary>Slice 0097-09: independent history shortcuts; only the ribbon one is shown by default.</summary>
+    Public Property ShowNavigationHistoryCaption As Boolean = False
+    Public Property ShowNavigationHistoryRibbon As Boolean = True
+
     ''' <summary>
     ''' The side panel of AvacontMain is behind the machete: while a macheta (a page, or the list of angajamente) is on screen it
     ''' is hidden and the macheta takes the whole width; with no macheta on screen (the opening page) it is shown. On by default.
@@ -258,6 +262,16 @@ Public NotInheritable Class AppSettings
     ''' off, the page keeps everything else K-BOT does in it and only the menu is not drawn.
     ''' </summary>
     Public Property ForexeShowPageMenu As Boolean = True
+
+    ''' <summary>
+    ''' Slice 0114-26 gate: no reservation is started in the FOREXE page while the angajament has reservations
+    ''' without a revision. On by default (the rule as it was); off (operator, 07.11.2026), the page never asks
+    ''' the server and the reservation begins at once, without the «Rezervarea nu a început» message.
+    ''' </summary>
+    Public Property ForexeReservationGate As Boolean = True
+
+    ''' <summary>Allows KBOT to save FOREXE operations from DDF revisions before section A is signed.</summary>
+    Public Property ForexeAllowUnsignedOperations As Boolean = False
 
     ''' <summary>
     ''' The operator's CSS rules for the FOREXE page, written into every load and refresh.
@@ -708,6 +722,8 @@ Public NotInheritable Class AppSettings
             .ShowAdobeAdvice = ShowAdobeAdvice,
             .StartMaximized = StartMaximized,
             .RibbonCollapsed = RibbonCollapsed,
+            .ShowNavigationHistoryCaption = ShowNavigationHistoryCaption,
+            .ShowNavigationHistoryRibbon = ShowNavigationHistoryRibbon,
             .RibbonCompact = RibbonCompact,
             .SidebarBehindPages = SidebarBehindPages,
             .HomeSidebarCollapsed = HomeSidebarCollapsed,
@@ -715,6 +731,8 @@ Public NotInheritable Class AppSettings
             .HomeNewsCollapsed = HomeNewsCollapsed,
             .NewsSeenVersion = NewsSeenVersion,
             .ForexeShowPageMenu = ForexeShowPageMenu,
+            .ForexeReservationGate = ForexeReservationGate,
+            .ForexeAllowUnsignedOperations = ForexeAllowUnsignedOperations,
             .ForexeDevToolsAllowed = ForexeDevToolsAllowed,
             .ForexePageStyles = ForexePageStyles?.Select(Function(r) New PageStyleRuleDto With {
                 .Enabled = r.Enabled, .Selector = r.Selector, .Css = r.Css, .Note = r.Note, .Page = r.Page}).ToList(),
@@ -785,6 +803,8 @@ Public NotInheritable Class AppSettings
         If dto.ShowAdobeAdvice.HasValue Then s.ShowAdobeAdvice = dto.ShowAdobeAdvice.Value
         If dto.StartMaximized.HasValue Then s.StartMaximized = dto.StartMaximized.Value
         If dto.RibbonCollapsed.HasValue Then s.RibbonCollapsed = dto.RibbonCollapsed.Value
+        If dto.ShowNavigationHistoryCaption.HasValue Then s.ShowNavigationHistoryCaption = dto.ShowNavigationHistoryCaption.Value
+        If dto.ShowNavigationHistoryRibbon.HasValue Then s.ShowNavigationHistoryRibbon = dto.ShowNavigationHistoryRibbon.Value
         If dto.RibbonCompact.HasValue Then s.RibbonCompact = dto.RibbonCompact.Value
         If dto.SidebarBehindPages.HasValue Then s.SidebarBehindPages = dto.SidebarBehindPages.Value
         If dto.HomeSidebarCollapsed.HasValue Then s.HomeSidebarCollapsed = dto.HomeSidebarCollapsed.Value
@@ -792,6 +812,8 @@ Public NotInheritable Class AppSettings
         If dto.HomeNewsCollapsed.HasValue Then s.HomeNewsCollapsed = dto.HomeNewsCollapsed.Value
         If dto.NewsSeenVersion IsNot Nothing Then s.NewsSeenVersion = dto.NewsSeenVersion
         If dto.ForexeShowPageMenu.HasValue Then s.ForexeShowPageMenu = dto.ForexeShowPageMenu.Value
+        If dto.ForexeReservationGate.HasValue Then s.ForexeReservationGate = dto.ForexeReservationGate.Value
+        If dto.ForexeAllowUnsignedOperations.HasValue Then s.ForexeAllowUnsignedOperations = dto.ForexeAllowUnsignedOperations.Value
         If dto.ForexeDevToolsAllowed.HasValue Then s.ForexeDevToolsAllowed = dto.ForexeDevToolsAllowed.Value
         If dto.ForexeCapturaPaginaOriginala.HasValue Then s.ForexeCapturaPaginaOriginala = dto.ForexeCapturaPaginaOriginala.Value
         ' A multiplier out of range in the file (hand-edited) keeps the default.
@@ -875,6 +897,8 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ShowAdobeAdvice As Boolean?
     Public Property StartMaximized As Boolean?
     Public Property RibbonCollapsed As Boolean?
+    Public Property ShowNavigationHistoryCaption As Boolean?
+    Public Property ShowNavigationHistoryRibbon As Boolean?
     Public Property RibbonCompact As Boolean?
     Public Property SidebarBehindPages As Boolean?
     Public Property HomeSidebarCollapsed As Boolean?
@@ -882,6 +906,8 @@ Friend NotInheritable Class AppSettingsDto
     Public Property HomeNewsCollapsed As Boolean?
     Public Property NewsSeenVersion As String
     Public Property ForexeShowPageMenu As Boolean?
+    Public Property ForexeReservationGate As Boolean?
+    Public Property ForexeAllowUnsignedOperations As Boolean?
     Public Property ForexeDevToolsAllowed As Boolean?
     Public Property ForexePageStyles As List(Of PageStyleRuleDto)
     Public Property ForexeCapturaPaginaOriginala As Boolean?

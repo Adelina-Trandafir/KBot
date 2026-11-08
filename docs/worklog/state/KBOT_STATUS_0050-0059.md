@@ -13,6 +13,7 @@ each slice is; this file holds everything recorded about it: its registry row, i
 | Slice | Name | Status | Worklog(s) | Notes |
 |------:|------|--------|-----------|-------|
 | 0050 | **Calendarul tematizat** — familia nouă `KBot.Controls/Calendar/`: `KBotCalendar` (zile/luni/ani, desenat de noi) și `KBotDatePicker` (câmpul de dată **cu înălțime liberă**) | ÎN LUCRU (cod verde: `KBot.Controls` build **0 erori / 0 avertismente**; `dotnet build KBot.sln` **0 erori / 6 avertismente**, toate `MSB3825` PREEXISTENTE pe `.resx`-urile din `KBot.App`) / **NIMIC NU S-A VĂZUT PE ECRAN**, nedeschis nici în designerul VS; **zero teste scrise și zero suite rulate** (cerut explicit); **fără git** | [0050](../SLICE-0050-calendar-tematizat.md) | Familia, înălțimea liberă, cultura, paddingurile, culoarea și ora: în jurnal, cu prima etapă și runda corectivă separate. OrdEditForm folosește noul control; OrdZiuaForm rămâne pe DateTimePicker nativ. Contrastul este argumentat aritmetic, fără randare. |
+| 0050-02 | Calendarul se aliniază la marginea DREAPTĂ a câmpului când câmpul e mai lat decât el (`KBotCalendarPopup.ShowBelow`); `KBot.Controls` 1.85.0.5 | GATA pe cod (`KBot.Controls` build 0 erori / 0 avertismente) / **NEVĂZUT pe ecran**; zero teste | [0050-02](../SLICE-0050-02-calendar-aliniat-la-dreapta.md) | Se aplică și editorului de dată din celulele `KBotDataView`. |
 
 ---
 

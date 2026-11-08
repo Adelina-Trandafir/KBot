@@ -1,7 +1,7 @@
 ﻿Imports System.Drawing.Drawing2D
 
 Partial Public Class AdvancedTreeControl
-    Partial Private Class TooltipPopup
+    Partial Friend Class TooltipPopup
 
         ' Fundal rotunjit + bordură. Comun ambelor moduri (tabel / RichText).
         ' (extras 1:1 din OnPaint)

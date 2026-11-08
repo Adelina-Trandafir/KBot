@@ -20,7 +20,7 @@ Public NotInheritable Class ForexeWatchConfig
     ''' The JSON the page expects: <c>{devTools, menu, darkMode, veil, rules:[{enabled, selector, css, note, page}]}</c>.
     ''' <c>darkMode</c> is not a setting of its own: it follows K-BOT's theme (a dark scheme
     ''' darkens the page too - operator, 21.09.2026). <c>menu</c> (slice 0097-02) = the floating
-    ''' K-BOT menu is drawn in the page.
+    ''' K-BOT menu is drawn in the page. <c>gate</c> = the reservation gate of slice 0114-26 is active.
     ''' </summary>
     Public Shared Function JsonFromSettings(settings As AppSettings) As String
         Try
@@ -40,6 +40,7 @@ Public NotInheritable Class ForexeWatchConfig
             Dim root As New JObject(
                 New JProperty("devTools", s.ForexeDevToolsAllowed),
                 New JProperty("menu", s.ForexeShowPageMenu),
+                New JProperty("gate", s.ForexeReservationGate),
                 New JProperty("darkMode", DarkModeNow()),
                 New JProperty("veil", VeilColorsNow()),
                 New JProperty("rules", rules))

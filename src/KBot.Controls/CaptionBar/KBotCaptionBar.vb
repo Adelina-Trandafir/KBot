@@ -221,14 +221,9 @@ Partial Public NotInheritable Class KBotCaptionBar
     End Property
 
     ''' <summary>
-    ''' Bara are ACUM două butoane care desfășoară meniuri (opțiuni și temă), iar interfața nu
-    ''' spune care s-a desfășurat — <see cref="IPopupAnchor"/> primește un singur bit, fiindcă
-    ''' popup-ul nu are de unde ști ce buton l-a deschis.
-    '''
-    ''' Diferența o face bara: meniul de temă îl deschide EA, deci ridică <c>_themeMenuOpening</c>
-    ''' chiar înainte de <c>ShowBelow</c> (vezi <c>ShowThemeMenu</c>); orice altă deschidere vine de
-    ''' la gazdă, prin butonul de opțiuni. Steagul se consumă aici, la prima aprindere, ca o
-    ''' deschidere ratată să nu-l lase ridicat pentru următoarea.
+    ''' Routes the shared popup-anchor signal to the button that opened it. Theme, selector and
+    ''' history clicks identify themselves while opening; other popups belong to options.
+    ''' Opening flags are consumed here so a failed opening cannot affect the next menu.
     ''' </summary>
     Private Sub SetPopupOpen(open As Boolean) Implements IPopupAnchor.SetPopupOpen
         If open Then
@@ -240,6 +235,9 @@ Partial Public NotInheritable Class KBotCaptionBar
                 Dim opened As TitleSelector = _menuSelector
                 If opened Is Nothing OrElse opened.Active Then Return
                 opened.Active = True
+            ElseIf _historyMenuOpening Then
+                _historyMenuOpening = False
+                _historyButtonActive = True
             ElseIf eTema Then
                 If _themeButtonActive Then Return
                 _themeButtonActive = True
@@ -250,9 +248,10 @@ Partial Public NotInheritable Class KBotCaptionBar
         Else
             ' Închiderea stinge amândouă: sinkul e comun, iar un buton rămas aprins ar arăta un
             ' meniu care nu mai există.
-            If Not _optionButtonActive AndAlso Not _themeButtonActive AndAlso Not AnySelectorActive() Then Return
+            If Not _optionButtonActive AndAlso Not _themeButtonActive AndAlso Not _historyButtonActive AndAlso Not AnySelectorActive() Then Return
             _optionButtonActive = False
             _themeButtonActive = False
+            _historyButtonActive = False
             For Each s As TitleSelector In _selectors
                 s.Active = False
             Next
@@ -358,7 +357,7 @@ Partial Public NotInheritable Class KBotCaptionBar
 
     ' ── Metrici butoane (calculate din înălțime/DPI) ──────────────────────────
     ' Pozițiile se derivă dintr-un singur loc (SlotRect): slotul 0 e lipit de dreapta,
-    ' următoarele merg spre stânga. Ordinea dreapta→stânga: close, maximize, minimize.
+    ' Next slots go left: close, optional history, maximize, minimize.
     Private Function BtnWidth() As Integer
         Return ThemeShapes.ScaleDpi(Me, 46)
     End Function
@@ -382,11 +381,8 @@ Partial Public NotInheritable Class KBotCaptionBar
         Return SlotRect(If(_showMaximize, 2, 1))
     End Function
 
-    ' Button order, right to left: close, maximize, minimize, HELP (0000-01), theme, options.
-    ' Ordinea butoanelor pe bară, dreapta → stânga: închidere, maximizare, minimizare, TEMĂ,
-    ' opțiuni. Butonul de temă stă imediat după cutia de control (min/max, iar în lipsa lor după
-    ' închidere), deci slotul lui e primul liber după ea; butonul de opțiuni vine la stânga lui.
-    ' Toate se derivă din aceeași numărătoare — nimic nu rămâne în urmă când se stinge un buton.
+    ' Button order, right to left: close, maximize, minimize, help, theme, options, history (0097-09).
+    ' All rectangles share the same slot count, including the title's right limit.
     ' Slice 0000-01: the help button («?», KBotCaptionBar.HelpButton.vb) takes the first slot
     ' after the control box when it is shown, so the theme button moves one slot left.
     Private Function ThemeButtonSlot() As Integer
@@ -405,6 +401,7 @@ Partial Public NotInheritable Class KBotCaptionBar
     ' Butoanele de opțiuni și de temă intră și ele în socoteală: fără asta titlul curge PE SUB
     ' ele, iar un titlu lung le acoperă.
     Private Function TitleRightLimit() As Integer
+        If _showHistoryButton Then Return HistoryButtonRect().Left
         If _showOptionsButton Then Return OptionButtonRect().Left
         If _showThemeButton Then Return ThemeButtonRect().Left
         If HelpButtonVisible() Then Return HelpButtonRect().Left
@@ -483,6 +480,7 @@ Partial Public NotInheritable Class KBotCaptionBar
 
             ' Help button (slice 0000-01).
             If HelpButtonVisible() Then DrawHelpButton(g)
+            If _showHistoryButton Then DrawHistoryButton(g)
 
             ' Buton minimizare (opțional).
             If _showMinimize Then
@@ -628,6 +626,7 @@ Partial Public NotInheritable Class KBotCaptionBar
     ' True dacă punctul e pe oricare dintre butoanele vizibile.
     Private Function IsOnButton(location As Point) As Boolean
         If CloseRect().Contains(location) Then Return True
+        If _showHistoryButton AndAlso HistoryButtonRect().Contains(location) Then Return True
         If _showMaximize AndAlso MaxRect().Contains(location) Then Return True
         If _showMinimize AndAlso MinRect().Contains(location) Then Return True
         If _showOptionsButton AndAlso OptionButtonRect().Contains(location) Then Return True
@@ -646,12 +645,15 @@ Partial Public NotInheritable Class KBotCaptionBar
             Dim overOpt As Boolean = _showOptionsButton AndAlso _optionButtonEnabled AndAlso OptionButtonRect().Contains(e.Location)
             Dim overTema As Boolean = _showThemeButton AndAlso ThemeButtonRect().Contains(e.Location)
             Dim overHelp As Boolean = HelpButtonVisible() AndAlso HelpButtonRect().Contains(e.Location)
+            Dim overHistory As Boolean = _showHistoryButton AndAlso HistoryButtonRect().Contains(e.Location)
             Dim selChanged As Boolean = UpdateSelectorHover(HitSelector(e.Location))
             Dim optChanged As Boolean = overOpt <> _optionButtonHover
+            Dim historyChanged As Boolean = overHistory <> _historyButtonHover
 
             If overClose <> _hoverClose OrElse overMin <> _hoverMin OrElse overMax <> _hoverMax OrElse
                overOpt <> _optionButtonHover OrElse overTema <> _themeButtonHover OrElse overHelp <> _helpButtonHover OrElse
-               selChanged Then
+               historyChanged OrElse selChanged Then
+                _historyButtonHover = overHistory
                 _helpButtonHover = overHelp
                 _hoverClose = overClose
                 _hoverMin = overMin
@@ -660,6 +662,7 @@ Partial Public NotInheritable Class KBotCaptionBar
                 _themeButtonHover = overTema
                 Invalidate()
                 If optChanged Then RaiseEvent OptionButtonHoverChanged(Me, EventArgs.Empty)
+                If historyChanged Then RaiseEvent HistoryButtonHoverChanged(Me, EventArgs.Empty)
             End If
         Catch ex As Exception
             If Not KBotDesignTime.IsDesignTime(Me) Then GlobalErrorLog.Write("KBotCaptionBar.OnMouseMove", ex)
@@ -670,8 +673,10 @@ Partial Public NotInheritable Class KBotCaptionBar
         MyBase.OnMouseLeave(e)
         Dim selChanged As Boolean = UpdateSelectorHover(Nothing)
         Dim optWasHot As Boolean = _optionButtonHover
+        Dim historyWasHot As Boolean = _historyButtonHover
         If _hoverClose OrElse _hoverMin OrElse _hoverMax OrElse _optionButtonHover OrElse _themeButtonHover OrElse _helpButtonHover OrElse
-           selChanged Then
+           historyWasHot OrElse selChanged Then
+            _historyButtonHover = False
             _helpButtonHover = False
             _hoverClose = False
             _hoverMin = False
@@ -680,6 +685,7 @@ Partial Public NotInheritable Class KBotCaptionBar
             _themeButtonHover = False
             Invalidate()
             If optWasHot Then RaiseEvent OptionButtonHoverChanged(Me, EventArgs.Empty)
+            If historyWasHot Then RaiseEvent HistoryButtonHoverChanged(Me, EventArgs.Empty)
         End If
     End Sub
 
@@ -713,6 +719,13 @@ Partial Public NotInheritable Class KBotCaptionBar
                 Else
                     f.Close()
                 End If
+            ElseIf _showHistoryButton AndAlso HistoryButtonRect().Contains(e.Location) Then
+                _historyMenuOpening = True
+                Try
+                    RaiseEvent HistoryButtonClick(Me, EventArgs.Empty)
+                Finally
+                    _historyMenuOpening = False
+                End Try
             ElseIf _showMaximize AndAlso MaxRect().Contains(e.Location) Then
                 ToggleMaximize()
             ElseIf _showMinimize AndAlso MinRect().Contains(e.Location) Then

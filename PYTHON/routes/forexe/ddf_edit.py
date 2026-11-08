@@ -117,6 +117,7 @@ from .budget_on_day import BudgetByDay
 from .ddf_flux_core import rol_pentru_revizie_noua
 from .ddf_parteneri import ParteneriInvalizi, citeste_parteneri, sincronizeaza_parteneri
 from .ddf_program import program_pentru_angajament
+from .ddf_stare import STAGE_NOT_SENT, are_stare_trimitere
 from .marcaj import LOCK_IDREV, consuma_lacatul, id_marcaj_utilizabil, idrev_tinut
 from .marcaj_motiv import LUNGIME_DESC_SCURTA, propune_motiv
 from .rezervari_legaturi import cheie_rezervare
@@ -1920,6 +1921,16 @@ def _consuma_lacatul(cursor, id_lock: int, tip: str, dc: str, cod: str,
     cursor.execute("DELETE FROM FX_NumberLock WHERE IdLock = %s", (id_lock,))
 
 
+def _refuza_revizii_in_trimitere(cursor, filtru: str, parametri: tuple):
+    """Locks the affected revisions against /start until the current write commits."""
+    if not are_stare_trimitere(cursor, g.session.db_name):
+        return
+    cursor.execute(f"SELECT StareTrimitere FROM FX_DDF_REV WHERE {filtru} FOR UPDATE", parametri)
+    if any(int(r["StareTrimitere"] or 0) != STAGE_NOT_SENT for r in cursor.fetchall()):
+        raise DateInvalide("Revizia este în curs de trimitere sau a fost deja trimisă în FOREXE. "
+                           "Orice schimbare de valori cere o revizie nouă.")
+
+
 def _scrie_graf(cursor, sarcina: dict, token: str) -> dict:
     """The heart of the save transaction. Raises `DateInvalide` or propagates the DB error.
 
@@ -1949,6 +1960,9 @@ def _scrie_graf(cursor, sarcina: dict, token: str) -> dict:
     rev_noua = bool(revizie.get("noua")) or idrev <= 0
     manual = bool(antet.get("manual"))
     obiect = _txt(antet.get("obiect_ddf"))
+
+    if not rev_noua:
+        _refuza_revizii_in_trimitere(cursor, "IDREV = %s", (idrev,))
 
     clasificatii = _rezolva_clasificatii(cursor, linii_a, linii_b)
 
@@ -2398,6 +2412,7 @@ def _numara_copiii(cursor, coloana: str, valoare: int) -> dict:
 
 def _sterge_revizie(cursor, idrev: int) -> dict:
     """The port of `FX_Stergere_Revizie`. The SalariiH reset is not ported (decision D14)."""
+    _refuza_revizii_in_trimitere(cursor, "IDREV = %s", (idrev,))
     cursor.execute("SELECT IDREV, IDDF, CodAngajament, NumarRev FROM FX_DDF_REV "
                    " WHERE IDREV = %s", (idrev,))
     rev = cursor.fetchone()
@@ -2435,6 +2450,7 @@ def _sterge_document(cursor, iddf: int) -> dict:
     EVERY `CUAL` row of that `IDDF`. That is what the Access code did too, and it is right --
     but it does not look like it at a glance.
     """
+    _refuza_revizii_in_trimitere(cursor, "IDDF = %s", (iddf,))
     cursor.execute("SELECT IDDF, CodAngajament FROM FX_DDF WHERE IDDF = %s LIMIT 1", (iddf,))
     cap = cursor.fetchone()
     if cap is None:

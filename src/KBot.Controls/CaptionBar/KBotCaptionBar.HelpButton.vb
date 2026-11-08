@@ -49,7 +49,7 @@ Partial Public NotInheritable Class KBotCaptionBar
         Return _showHelpButton AndAlso KBotHelp.IsAvailable
     End Function
 
-    ' First free slot after the control box (close, maximize, minimize).
+    ' First free slot after close, maximize and minimize.
     Private Function ControlBoxSlots() As Integer
         Dim slotIndex As Integer = 1 ' close is always slot 0
         If _showMinimize Then slotIndex += 1

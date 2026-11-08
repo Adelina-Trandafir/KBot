@@ -31,12 +31,12 @@ See the [shared initial validation checkpoint](SLICE-KE01-modelul-legaturii-si-c
 
 ### What changed and why
 Operator request after a failed «Receptie noua» (log `Log_20261018_124414.txt`, 13:07): FOREXE answered the save with the red box `CAB-0031 - Datele introduse nu sunt valide`, the robot waited 8 s for the green box, then K-BOT went on to read back and timed out.
-- **Amount.** The log shows the value typed as `302.50`. `DdfSendInputs` built its number format with `New CultureInfo("ro-RO")`, which honours the operator's Windows overrides (a «.» decimal separator). It now uses `DdfSendInputs.CulturaSite`, a ro-RO culture with `useUserOverride = False` and the separators set by hand («,» decimal, «.» thousands). `FormatSuma` / `ParseSuma` and the number reading of `KeLegaForm` use it.
+- **Amount.** The log shows the value typed as `302.50`. `DdfSendInputs` built its number format with `New CultureInfo("ro-RO")`, which honours the operator's Windows overrides (a «.» decimal separator). It now uses `DdfSendInputs.CulturaSite`, a ro-RO culture with `useUserOverride = False` and the separators set by hand («,» decimal, «.» thousands). `FormatSuma` / `ParseSuma` and the number reading of the former reception window use it.
 - **Date.** The date typed in the reception form is now `zz.ll.aaaa`, written with quoted literal dots (`WorkflowCatalog.DataReceptieFormularFormat` = `dd'.'MM'.'yyyy`, invariant). The old `DataReceptieFormat` (`dd/MM/yyyy`) stays for MATCHING the site's list («Data» cell) and the history.
 - **Error box.** `Receptie Noua.wfl` and `Receptie Modificata.wfl` wait for either `.alert.alert-success` or `.alert.alert-error`; the error text (`.alert.alert-error strong`) goes to `MesajEroare` (`WorkflowCatalog.VarMesajEroare`). `KbotForm.KeRobot.vb` returns it to the operator as «FOREXE a respins recepția și nu s-a salvat nimic: ...» and does NOT read back or link anything.
 
 ### Files touched
-`KBot.Domain/DdfSendInputs.vb`, `KBot.Forexe/WorkflowCatalog.vb`, `KBot.Forexe/JobBuilder.vb`, `KBot.Forexe/Workflows/Creare/adlop - Receptie Noua.wfl`, `.../adlop - Receptie Modificata.wfl`, `KBot.App/KbotForm.KeRobot.vb`, `KBot.EFactura/Forms/KeLegaForm.vb`.
+`KBot.Domain/DdfSendInputs.vb`, `KBot.Forexe/WorkflowCatalog.vb`, `KBot.Forexe/JobBuilder.vb`, `KBot.Forexe/Workflows/Creare/adlop - Receptie Noua.wfl`, `.../adlop - Receptie Modificata.wfl`, `KBot.App/KbotForm.KeRobot.vb`, `KBot.EFactura/Forms/the former reception window`.
 
 ### Flow analysis against the logs (what is right, what was not)
 - Recorded manual flow (`Rez+Rec_energetic_1_indicator.wfl`) = reservation (value `176408,35`, reason, «Continua») then reception (type Final, date by picker, description, value `6949,89`, save). Both automatic flows follow the same steps; the manual one types the value WITHOUT thousand separators.

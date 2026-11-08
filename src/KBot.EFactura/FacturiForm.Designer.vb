@@ -246,22 +246,16 @@ Partial Class FacturiForm
         ' 
         ' tree
         ' 
-        tree.BorderColor = Drawing.SystemColors.ActiveBorder
         tree.CollapseButtonTooltip = "Strânge arborele la o bandă îngustă." & vbLf & "Rândurile se citesc atunci prin eticheta care iese la survolare."
         tree.Dock = System.Windows.Forms.DockStyle.Fill
         tree.DynamicColumns = False
         tree.ExpandButtonTooltip = "Desfă arborele la loc, pe toată lățimea lui."
         tree.ExpanderSize = 10
         tree.Font = New System.Drawing.Font("Calibri", 9F, Drawing.FontStyle.Regular, Drawing.GraphicsUnit.Point, CByte(0))
-        tree.HeaderBackColor = Drawing.SystemColors.Control
         tree.HeaderBackStyle = AdvancedTreeControl.En_HeaderBackStyle.GradientHorizontal
         tree.HeaderCaption = " FACTURI EMISE, PE CLIENȚI"
-        tree.HeaderFont = New System.Drawing.Font("Calibri", 9F, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
         tree.HeaderForeColor = Drawing.Color.Black
-        tree.HeaderHeight = 30
         tree.HeaderIconSize = New System.Drawing.Size(18, 18)
-        tree.HeaderSeparatorColor = Drawing.Color.Gainsboro
-        tree.HeaderSeparatorWidth = 2
         tree.HeaderVisible = True
         tree.Indent = 8
         tree.ItemHeight = 24

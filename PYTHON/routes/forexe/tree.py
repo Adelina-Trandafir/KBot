@@ -33,7 +33,7 @@ from routes.auth.guard import require_session    # bearer opac (Felia 1 auth)
 from utils.database import get_kbot_connection   # serverul K-BOT (DB_CONFIG_NEW)
 
 from . import forexe_bp
-from .prelucrare_helpers import SNAPSHOT_COUNTS_SQL
+from .prelucrare_helpers import SNAPSHOT_COUNTS_SQL, fara_receptii_sterse
 from .rezervari_legaturi import gaseste_legaturi_gresite, sir_pentru_arbore
 from .ddf_program import gaseste_programe_gresite, sir_pentru_arbore as sir_program_pentru_arbore
 from .receptii_cumulat import gaseste_receptii_nepotrivite, sir_pentru_arbore as sir_receptii_pentru_arbore
@@ -57,6 +57,8 @@ _LANT_NEINCHIS = (
     " FROM FX_Receptii_R lr JOIN FX_Receptii_H lh ON lh.IDRR = lr.IDRR "
     " WHERE lr.CodAngajament = a.CodAngajament "
     "   AND COALESCE(lh.EsteStergere, 0) = 0 "
+    # 07.11.2026: a deleted reception (seen in FOREXE or with its deletion row) has no chain to close.
+    "   AND " + fara_receptii_sterse("lh") + " "
     "   AND EXISTS (SELECT 1 FROM FX_Receptii ll WHERE ll.IDRH = lh.IDRH) "
     "   AND NOT EXISTS (SELECT 1 FROM FX_Receptii_H lh2 WHERE lh2.IDRR = lh.IDRR "
     "         AND (COALESCE(lh2.DataH, '1900-01-01') > COALESCE(lh.DataH, '1900-01-01') "

@@ -154,13 +154,10 @@ Partial Class DdfEditFisierePage
         ' grd
         ' 
         grd.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        grd.BackColor = SystemColors.Window
-        grd.BorderColor = SystemColors.ActiveBorder
         grd.ColumnFillMode = KBotFillMode.SpecificColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn1.FormatString = Nothing
-        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn1.HeaderText = "Nume fișier"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "nume_fisier"
@@ -170,7 +167,6 @@ Partial Class DdfEditFisierePage
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn2.HeaderText = "Dimensiune"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "dimensiune"
@@ -181,7 +177,6 @@ Partial Class DdfEditFisierePage
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn3.FormatString = Nothing
-        KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn3.HeaderText = "Sursă"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "sursa"
@@ -191,7 +186,6 @@ Partial Class DdfEditFisierePage
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn4.FormatString = Nothing
-        KBotDataColumn4.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn4.HeaderText = "Cale"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "cale_fisier"
@@ -205,8 +199,6 @@ Partial Class DdfEditFisierePage
         grd.Columns.Add(KBotDataColumn4)
         grd.Dock = DockStyle.Fill
         grd.FillColumnKey = "cale_fisier"
-        grd.HeaderBackColor = SystemColors.Control
-        grd.HeaderSeparatorColor = SystemColors.ActiveBorder
         grd.Location = New Point(6, 7)
         grd.Margin = New Padding(6, 7, 6, 7)
         grd.Name = "grd"

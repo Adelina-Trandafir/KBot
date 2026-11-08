@@ -34,13 +34,6 @@ Imports KBot.Theming
 Public Class PrimiteView
     Implements IThemedContainer, IPutAway
 
-    ' The views of the horizontal bar (the keys of navDetaliu's items, written in the designer).
-    Private Const ViewLinii As String = "linii"
-    Private Const ViewPdf As String = "pdf"
-    Private Const ViewMesaje As String = "mesaje"
-    ' The view «XML Factura» (aligned right in the bar): the XML of the invoice, in the XmlViz control (slice 00EF-36).
-    Private Const ViewXml As String = "xml"
-
     Private Const MenuZip As String = "zip"
     Private Const MenuXml As String = "xml"
     Private Const MenuLega As String = "lega"
@@ -90,6 +83,7 @@ Public Class PrimiteView
     ''' <summary>Designer only.</summary>
     Public Sub New()
         InitializeComponent()
+        InitializeView()
     End Sub
 
     ''' <param name="k_api">The received-invoice routes; the shell passes its API client.</param>
@@ -98,7 +92,23 @@ Public Class PrimiteView
     ''' <param name="k_year">Only the invoices dated in this year are listed when no DDF is given (0 = all years).</param>
     Public Sub New(k_api As IEFacturaApi, k_gate As ReauthGate, k_viewerFactory As Func(Of IFacturaPdfViewer), k_year As Integer)
         InitializeComponent()
+        InitializeView()
         Initialize(k_api, k_gate, k_viewerFactory, k_year)
+    End Sub
+
+    Private Sub InitializeView()
+        ' Slice KE21: the table of angajamente stands in the joker place of the view «Recepții».
+        receptii.JokerPane.Controls.Add(angajamente)
+        angajamente.Dock = DockStyle.Fill
+        AddHandler detalii.navDetaliu.SelectionChanged, AddressOf NavDetaliu_SelectionChanged
+        AddHandler detalii.pgPdf.ModeChanged, AddressOf PgPdf_ModeChanged
+        AddHandler detalii.pgPdf.AttachmentChosen, AddressOf PgPdf_AttachmentChosen
+        AddHandler detalii.pgMesaje.SendRequested, AddressOf PgMesaje_SendRequested
+        AddHandler detalii.pgContare.ClasificatieAleasa, AddressOf PgContare_ClasificatieAleasa
+        AddHandler detalii.pgContare.SablonAles, AddressOf PgContare_SablonAles
+        AddHandler detalii.pgContare.PlatitSchimbat, AddressOf PgContare_PlatitSchimbat
+        AddHandler detalii.pgContare.RenuntaCerut, AddressOf PgContare_RenuntaCerut
+        AddHandler detalii.pgContare.SalveazaCerut, AddressOf PgContare_SalveazaCerut
     End Sub
 
     ''' <summary>
@@ -112,7 +122,11 @@ Public Class PrimiteView
         _api = k_api
         _gate = k_gate
         _year = k_year
-        pgPdf.ViewerFactory = k_viewerFactory
+        detalii.pgPdf.ViewerFactory = k_viewerFactory
+        receptii.Initialize(k_api, k_gate, k_year)
+        receptii.AttachAngajamente(angajamente)
+        AddHandler receptii.Committed, AddressOf KeForm_Committed
+        AddHandler receptii.ActionStateChanged, AddressOf KeForm_ActionStateChanged
         ' While a document is still opening in Adobe no other row may be clicked (the same gate the other trees use).
         AdobeOpenGate.LockWhileOpening(tree)
     End Sub
@@ -139,7 +153,7 @@ Public Class PrimiteView
             If _angajamentView = k_value Then Return
             _angajamentView = k_value
             ' Slice 01EF-02: «Contari» is only in the window with all the invoices.
-            navDetaliu.SetItemVisible(ViewContare, Not k_value)
+            detalii.navDetaliu.SetItemVisible(PrimiteDetaliiView.ViewContare, Not k_value)
             ' The designer sets the icon of the header before it sets this property: keep it, to give it back.
             If k_value AndAlso tree.HeaderRightIcon IsNot Nothing Then _filterIcon = tree.HeaderRightIcon
             tree.HeaderRightIcon = If(k_value, Nothing, _filterIcon)
@@ -174,7 +188,7 @@ Public Class PrimiteView
 
     ''' <summary>Lets go of the PDF on screen (the view is put away).</summary>
     Public Sub ReleaseDocument()
-        pgPdf.ReleaseDocument()
+        detalii.pgPdf.ReleaseDocument()
     End Sub
 
     ''' <summary>
@@ -183,8 +197,8 @@ Public Class PrimiteView
     ''' </summary>
     Public Sub PutAway() Implements IPutAway.PutAway
         Try
-            If String.Equals(navDetaliu.SelectedKey, ViewPdf, StringComparison.Ordinal) Then navDetaliu.SelectedKey = ViewLinii
-            pgPdf.ReleaseDocument()
+            If String.Equals(detalii.navDetaliu.SelectedKey, PrimiteDetaliiView.ViewPdf, StringComparison.Ordinal) Then detalii.navDetaliu.SelectedKey = PrimiteDetaliiView.ViewLinii
+            detalii.pgPdf.ReleaseDocument()
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteView.PutAway", ex)
             Throw
@@ -194,8 +208,8 @@ Public Class PrimiteView
     Private Sub PrimiteView_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Try
             If _api Is Nothing Then Return
-            navDetaliu.SelectedKey = ViewLinii
-            ShowPage(ViewLinii)
+            detalii.navDetaliu.SelectedKey = PrimiteDetaliiView.ViewLinii
+            ShowPage(PrimiteDetaliiView.ViewLinii)
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteView.PrimiteView_Load", ex)
         End Try
@@ -280,6 +294,11 @@ Public Class PrimiteView
     End Function
 
     Private Sub ShowProblem(k_text As String)
+        ' While the view «Recepții» is on screen the detail (and its notice) is hidden: the line goes in the view's own.
+        If _receptiiWide Then
+            DirectCast(receptii, IKeAngajamenteHost).ShowNotice(k_text, NoticeKind.Error)
+            Return
+        End If
         ntfMesaj.Show(k_text, NoticeKind.Error)
         ntfMesaj.Visible = True
     End Sub
@@ -293,6 +312,7 @@ Public Class PrimiteView
         If Not _angajamentView Then k_list = k_list.Where(Function(k_x) _archived.ContainsKey(k_x.IdPrimita) = _showArchived)
         If _onlyWithoutOperations Then k_list = k_list.Where(Function(k_x) k_x.NrOperatii = 0)
         If _onlyNew Then k_list = k_list.Where(Function(k_x) _newIds.Contains(k_x.IdPrimita))
+        If _receptiiWide Then k_list = k_list.Where(Function(k_x) ReceptiiListed(k_x))   ' slice KE21: the view «Recepții» lists by its own filter
         Return k_list.ToList()
     End Function
 
@@ -399,6 +419,7 @@ Public Class PrimiteView
             k_invoices = k_supGroup.OrderByDescending(Function(k_x) k_x.DataFact).ThenByDescending(Function(k_x) k_x.IdPrimita)
         End If
         AddInvoiceNodes(k_invoices, k_supplier, k_palette)
+        If _receptiiWide Then StyleReceptiiSupplier(k_supplier)
     End Sub
 
     ' The invoice rows (leaves) under a parent: a supplier, or in the view of an angajament a month.
@@ -412,7 +433,8 @@ Public Class PrimiteView
                 pLeftIconClosed:=k_dot, pLeftIconOpen:=k_dot)
             k_leaf.Tag = k_p
             k_leaf.Tooltip = TooltipOf(k_p)
-            k_leaf.HasCheckBox = ContareBox(k_p)
+            k_leaf.HasCheckBox = ContareBox(k_p) OrElse _receptiiWide
+            If _receptiiWide Then StyleReceptiiLeaf(k_leaf, k_p)
             _nodes(k_p.IdPrimita) = k_leaf
         Next
     End Sub
@@ -482,23 +504,23 @@ Public Class PrimiteView
         _shownId = 0
         _detail = Nothing
         gridLinii().ClearRows()
-        pgLinii.ClearSupplier()
+        detalii.pgLinii.ClearSupplier()
         gridMesaje().ClearRows()
-        navDetaliu.SetItemVisible(ViewMesaje, False)
-        navDetaliu.SetItemVisible(ViewXml, False)
+        detalii.navDetaliu.SetItemVisible(PrimiteDetaliiView.ViewMesaje, False)
+        detalii.navDetaliu.SetItemVisible(PrimiteDetaliiView.ViewXml, False)
         ClearKe()   ' slice KE03: the links with receptions
         _xmlShownId = 0
-        pgXml.Clear()
-        pgPdf.SetAttachments(Nothing)
-        pgPdf.ReleaseDocument()
+        detalii.pgXml.Clear()
+        detalii.pgPdf.SetAttachments(Nothing)
+        detalii.pgPdf.ReleaseDocument()
     End Sub
 
     Private Function gridLinii() As KBotDataView
-        Return pgLinii.gridLinii
+        Return detalii.pgLinii.gridLinii
     End Function
 
     Private Function gridMesaje() As KBotDataView
-        Return pgMesaje.gridMesaje
+        Return detalii.pgMesaje.gridMesaje
     End Function
 
     ' ── Choosing an invoice ─────────────────────────────────────────────────────
@@ -539,17 +561,17 @@ Public Class PrimiteView
             If IsDisposed OrElse k_mySeq <> _seq OrElse k_id <> _shownId Then Return
             _detail = k_detail
             FillLines(k_detail)
-            pgPdf.SetAttachments(k_detail.Atasamente)
+            detalii.pgPdf.SetAttachments(k_detail.Atasamente)
             FillMessages(k_detail)
             ' «Mesaje» is always there: it is where a message to the supplier is written.
-            navDetaliu.SetItemVisible(ViewMesaje, True)
-            navDetaliu.SetItemVisible(ViewXml, True)
-            If navDetaliu.SelectedKey = ViewXml Then RefreshXml()
+            detalii.navDetaliu.SetItemVisible(PrimiteDetaliiView.ViewMesaje, True)
+            detalii.navDetaliu.SetItemVisible(PrimiteDetaliiView.ViewXml, True)
+            If detalii.navDetaliu.SelectedKey = PrimiteDetaliiView.ViewXml Then RefreshXml()
             ' Slice KE03: the links with receptions (and the value with VAT of every line) come from the server in their own call.
             Await LoadKeAsync(k_id).ConfigureAwait(True)
             ' The attached files and the notes of the XML have no view of their own any more (operator, 15.10.2026): the files
             ' are in the popup of «Factura PDF», the notes are above the lines of «Continut».
-            If navDetaliu.SelectedKey = ViewPdf Then RefreshPdf()
+            If detalii.navDetaliu.SelectedKey = PrimiteDetaliiView.ViewPdf Then RefreshPdf()
         Catch ex As OperationCanceledException
             ' The host was closed.
         Catch ex As ApiException
@@ -580,7 +602,7 @@ Public Class PrimiteView
         Finally
             k_lines.EndUpdate()
         End Try
-        pgLinii.ShowSupplier(k_detail)
+        detalii.pgLinii.ShowSupplier(k_detail)
     End Sub
 
     ' «Mesaje»: only the messages of the E-Factura system about the invoice (the notes of the XML are above the lines of «Continut»).
@@ -607,29 +629,29 @@ Public Class PrimiteView
         Try
             Dim k_d As EFacturaPrimitaDetaliu = _detail
             If k_d Is Nothing OrElse _shownId = 0 Then
-                pgXml.Clear()
+                detalii.pgXml.Clear()
                 Return
             End If
             Dim k_id As Integer = k_d.Factura.IdPrimita
             If _xmlShownId = k_id Then Return
             Dim k_mySeq As Integer = Interlocked.Increment(_xmlSeq)
-            pgXml.ShowNotice("Se aduce XML-ul facturii…")
+            detalii.pgXml.ShowNotice("Se aduce XML-ul facturii…")
             Dim k_bytes As Byte() = Await _gate.RunAsync(Function() _api.GetPrimitaXmlAsync(k_id, _cts.Token)).ConfigureAwait(True)
             If IsDisposed OrElse k_mySeq <> _xmlSeq Then Return
-            pgXml.ShowXml(System.Text.Encoding.UTF8.GetString(k_bytes).TrimStart(ChrW(&HFEFF)))
+            detalii.pgXml.ShowXml(System.Text.Encoding.UTF8.GetString(k_bytes).TrimStart(ChrW(&HFEFF)))
             _xmlShownId = k_id
         Catch ex As OperationCanceledException
             ' The host was closed.
         Catch ex As ApiException
             GlobalErrorLog.Write("PrimiteView.RefreshXml", ex)
-            If Not IsDisposed Then pgXml.ShowNotice(ex.Message)
+            If Not IsDisposed Then detalii.pgXml.ShowNotice(ex.Message)
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteView.RefreshXml", ex)
-            If Not IsDisposed Then pgXml.ShowNotice("XML-ul facturii nu a putut fi citit. Detalii în jurnalul de erori.")
+            If Not IsDisposed Then detalii.pgXml.ShowNotice("XML-ul facturii nu a putut fi citit. Detalii în jurnalul de erori.")
         End Try
     End Sub
 
-    Private Sub NavDetaliu_SelectionChanged(k_key As String) Handles navDetaliu.SelectionChanged
+    Private Sub NavDetaliu_SelectionChanged(k_key As String)
         Try
             ShowPage(k_key)
         Catch ex As Exception
@@ -638,15 +660,12 @@ Public Class PrimiteView
     End Sub
 
     Private Sub ShowPage(k_key As String)
-        pgLinii.Visible = String.Equals(k_key, ViewLinii, StringComparison.Ordinal)
-        pgPdf.Visible = String.Equals(k_key, ViewPdf, StringComparison.Ordinal)
-        pgMesaje.Visible = String.Equals(k_key, ViewMesaje, StringComparison.Ordinal)
-        pgReceptii.Visible = String.Equals(k_key, ViewReceptii, StringComparison.Ordinal)
-        pgContare.Visible = String.Equals(k_key, ViewContare, StringComparison.Ordinal)
-        SetContareMode(pgContare.Visible)
-        pgXml.Visible = String.Equals(k_key, ViewXml, StringComparison.Ordinal)
-        If pgXml.Visible Then RefreshXml()
-        If pgPdf.Visible Then RefreshPdf()
+        detalii.ShowPage(k_key)
+        SetContareMode(detalii.pgContare.Visible)
+        ApplyReceptiiShape(String.Equals(k_key, PrimiteDetaliiView.ViewReceptii, StringComparison.Ordinal))   ' by the key: Visible reads False while the whole view is hidden
+        If detalii.pgXml.Visible Then RefreshXml()
+        If detalii.pgPdf.Visible Then RefreshPdf()
+        RaiseEvent ReceptiiActionChanged(Me, EventArgs.Empty)   ' the ribbon button of «Recepții» shows only while that view is on screen
     End Sub
 
     ''' <summary>
@@ -658,19 +677,19 @@ Public Class PrimiteView
         Try
             Dim k_d As EFacturaPrimitaDetaliu = _detail
             If k_d Is Nothing OrElse _shownId = 0 Then
-                pgPdf.ShowNotice("Alegeți o factură din arbore.")
+                detalii.pgPdf.ShowNotice("Alegeți o factură din arbore.")
                 Return
             End If
-            Dim k_mode As String = pgPdf.Mode
+            Dim k_mode As String = detalii.pgPdf.Mode
             If String.Equals(k_mode, PrimitePdfPage.ModeAttachments, StringComparison.Ordinal) Then Return
             Dim k_id As Integer = k_d.Factura.IdPrimita
             Dim k_stamp As String = $"{k_id}|{k_mode}"
-            If String.Equals(k_stamp, pgPdf.Stamp, StringComparison.Ordinal) Then Return
+            If String.Equals(k_stamp, detalii.pgPdf.Stamp, StringComparison.Ordinal) Then Return
             Dim k_mySeq As Integer = Interlocked.Increment(_pdfSeq)
             Dim k_label As String = Regex.Replace(k_d.Factura.NrFact, "[^A-Za-z0-9_.-]", "_")
             Dim k_path As String
             If String.Equals(k_mode, PrimitePdfPage.ModeAnaf, StringComparison.Ordinal) Then
-                pgPdf.ShowNotice("Se aduce factura de la ANAF…")
+                detalii.pgPdf.ShowNotice("Se aduce factura de la ANAF…")
                 Dim k_bytes As Byte() = Await _gate.RunAsync(Function() _api.GetPrimitaPdfAsync(k_id, _cts.Token)).ConfigureAwait(True)
                 If IsDisposed OrElse k_mySeq <> _pdfSeq Then Return
                 TempPdfStore.EnsureRoot()
@@ -681,23 +700,23 @@ Public Class PrimiteView
                 k_path = TempPdfStore.PathFor($"primita_{k_label}_{DateTime.Now:HHmmssfff}.pdf")
                 FacturaPrimitaPdf.Write(k_path, k_d)
             End If
-            pgPdf.ShowDocument(k_path)
-            pgPdf.Stamp = k_stamp
+            detalii.pgPdf.ShowDocument(k_path)
+            detalii.pgPdf.Stamp = k_stamp
         Catch ex As OperationCanceledException
             ' The host was closed.
         Catch ex As ApiException
             GlobalErrorLog.Write("PrimiteView.RefreshPdf", ex)
-            If Not IsDisposed Then pgPdf.ShowNotice(ex.Message)
+            If Not IsDisposed Then detalii.pgPdf.ShowNotice(ex.Message)
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteView.RefreshPdf", ex)
-            If Not IsDisposed Then pgPdf.ShowNotice("Documentul nu a putut fi pregătit. Detalii în jurnalul de erori.")
+            If Not IsDisposed Then detalii.pgPdf.ShowNotice("Documentul nu a putut fi pregătit. Detalii în jurnalul de erori.")
         End Try
     End Sub
 
     ' The bar of the «Factură PDF» view moved to «Factură clasică» / «Factură ANAF». UI boundary: logs and swallows.
-    Private Sub PgPdf_ModeChanged(k_mode As String) Handles pgPdf.ModeChanged
+    Private Sub PgPdf_ModeChanged(k_mode As String)
         Try
-            If pgPdf.Visible Then RefreshPdf()
+            If detalii.pgPdf.Visible Then RefreshPdf()
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteView.PgPdf_ModeChanged", ex)
         End Try
@@ -707,7 +726,7 @@ Public Class PrimiteView
     ''' The operator chose an attachment in the popup: it opens in the same document area (a PDF in the viewer, an image in the
     ''' picture box; any other kind is only named, the «Atașamente» view saves it). UI boundary (async Sub): logs and swallows.
     ''' </summary>
-    Private Async Sub PgPdf_AttachmentChosen(k_index As Integer) Handles pgPdf.AttachmentChosen
+    Private Async Sub PgPdf_AttachmentChosen(k_index As Integer)
         Try
             Dim k_d As EFacturaPrimitaDetaliu = _detail
             If k_d Is Nothing Then Return
@@ -715,17 +734,17 @@ Public Class PrimiteView
             If k_file Is Nothing Then Return
             Dim k_id As Integer = k_d.Factura.IdPrimita
             Dim k_stamp As String = $"{k_id}|atas{k_index.ToString(CultureInfo.InvariantCulture)}"
-            If String.Equals(k_stamp, pgPdf.Stamp, StringComparison.Ordinal) Then Return
+            If String.Equals(k_stamp, detalii.pgPdf.Stamp, StringComparison.Ordinal) Then Return
             Dim k_mySeq As Integer = Interlocked.Increment(_pdfSeq)
             Dim k_ext As String = Path.GetExtension(k_file.Nume).ToLowerInvariant()
             Dim k_isPdf As Boolean = k_file.Mime.Contains("pdf", StringComparison.OrdinalIgnoreCase) OrElse k_ext = ".pdf"
             Dim k_isImage As Boolean = k_file.Mime.StartsWith("image/", StringComparison.OrdinalIgnoreCase) OrElse
                                        {".png", ".jpg", ".jpeg", ".gif", ".bmp", ".tif", ".tiff"}.Contains(k_ext)
             If Not k_isPdf AndAlso Not k_isImage Then
-                pgPdf.ShowNotice($"«{k_file.Nume}» nu se poate afișa aici.")
+                detalii.pgPdf.ShowNotice($"«{k_file.Nume}» nu se poate afișa aici.")
                 Return
             End If
-            pgPdf.ShowNotice("Se deschide atașamentul…")
+            detalii.pgPdf.ShowNotice("Se deschide atașamentul…")
             Dim k_bytes As Byte() = Await _gate.RunAsync(
                 Function() _api.GetPrimitaAtasamentAsync(k_id, k_index, _cts.Token)).ConfigureAwait(True)
             If IsDisposed OrElse k_mySeq <> _pdfSeq Then Return
@@ -734,19 +753,19 @@ Public Class PrimiteView
                 TempPdfStore.EnsureRoot()
                 Dim k_path As String = TempPdfStore.PathFor($"primita_atas_{k_label}_{k_index.ToString(CultureInfo.InvariantCulture)}_{DateTime.Now:HHmmssfff}.pdf")
                 File.WriteAllBytes(k_path, k_bytes)
-                pgPdf.ShowDocument(k_path)
+                detalii.pgPdf.ShowDocument(k_path)
             Else
-                pgPdf.ShowImage(k_bytes)
+                detalii.pgPdf.ShowImage(k_bytes)
             End If
-            pgPdf.Stamp = k_stamp
+            detalii.pgPdf.Stamp = k_stamp
         Catch ex As OperationCanceledException
             ' The host was closed.
         Catch ex As ApiException
             GlobalErrorLog.Write("PrimiteView.PgPdf_AttachmentChosen", ex)
-            If Not IsDisposed Then pgPdf.ShowNotice(ex.Message)
+            If Not IsDisposed Then detalii.pgPdf.ShowNotice(ex.Message)
         Catch ex As Exception
             GlobalErrorLog.Write("PrimiteView.PgPdf_AttachmentChosen", ex)
-            If Not IsDisposed Then pgPdf.ShowNotice("Atașamentul nu a putut fi deschis. Detalii în jurnalul de erori.")
+            If Not IsDisposed Then detalii.pgPdf.ShowNotice("Atașamentul nu a putut fi deschis. Detalii în jurnalul de erori.")
         End Try
     End Sub
 
@@ -754,20 +773,20 @@ Public Class PrimiteView
     ''' The operator wrote a message for the supplier and pressed «Trimite»: after a confirmation it goes through ANAF, the invoice is read
     ''' again and the new message shows in the list. A failure becomes a line in the notice. UI boundary (async Sub): logs and swallows.
     ''' </summary>
-    Private Async Sub PgMesaje_SendRequested(k_text As String) Handles pgMesaje.SendRequested
+    Private Async Sub PgMesaje_SendRequested(k_text As String)
         Try
             Dim k_id As Integer = _shownId
             If k_id = 0 Then Return
             If KBotMessage.Show(FindForm(), "Trimiteți mesajul furnizorului, prin ANAF? Mesajul nu mai poate fi retras.", "Mesaj către furnizor",
                                 MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
             ntfMesaj.Visible = False
-            pgMesaje.SetBusy(True)
+            detalii.pgMesaje.SetBusy(True)
             Try
                 Await _gate.RunAsync(Function() _api.SendPrimitaMesajAsync(k_id, k_text, _cts.Token)).ConfigureAwait(True)
                 If IsDisposed Then Return
-                pgMesaje.ClearInput()
+                detalii.pgMesaje.ClearInput()
             Finally
-                If Not IsDisposed Then pgMesaje.SetBusy(False)
+                If Not IsDisposed Then detalii.pgMesaje.SetBusy(False)
             End Try
             If _shownId = k_id Then Await ShowInvoiceAsync(k_id).ConfigureAwait(True)
         Catch ex As OperationCanceledException
@@ -820,6 +839,7 @@ Public Class PrimiteView
             Else
                 k_items.Add(New CustomPopupItem(OptPeFurnizor, "Grupare după furnizor"))
             End If
+            If _receptiiWide Then k_items.InsertRange(0, ReceptiiFilterItems())   ' slice KE21: the filter of the view «Recepții»
             Dim k_menu As New CustomPopup(k_items)
             AddHandler k_menu.ItemClicked, Sub(k_sender As Object, k_args As CustomPopupItemEventArgs) OptionChosen(k_args.Item.Key)
             k_menu.ShowBelow(tree, k_anchor)
@@ -831,6 +851,7 @@ Public Class PrimiteView
     ' A row of the options menu: the option changes and the tree is built again with the shown invoice kept. UI boundary: logs and swallows.
     Private Sub OptionChosen(k_key As String)
         Try
+            If ChooseReceptiiFilter(k_key) Then Return
             Select Case k_key
                 Case OptFaraOperatii
                     _onlyWithoutOperations = Not _onlyWithoutOperations
@@ -868,10 +889,6 @@ Public Class PrimiteView
     Public Event SyncStatus(k_text As String)
 
     Private Sub Tree_FooterRightIconClicked(e As MouseEventArgs) Handles tree.FooterRightIconClicked
-        OpenSyncPopup()
-    End Sub
-
-    Private Sub Tree_FooterCaptionClicked(e As MouseEventArgs) Handles tree.FooterCaptionClicked
         OpenSyncPopup()
     End Sub
 

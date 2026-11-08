@@ -174,6 +174,8 @@ Partial Class KBotDataView
         If banda.Kind = KBotGroupBandKind.GroupHeader AndAlso TryToggleGroupCheck(bi, location) Then Return True
         ' Slice KE11: a header cell with a combo opens the combo instead of folding the group.
         If banda.Kind = KBotGroupBandKind.GroupHeader AndAlso TryOpenGroupHeaderCombo(bi, location.X) Then Return True
+        ' Slice 02EF-02: a header cell whose aggregate can be typed over opens the number box instead of folding the group.
+        If banda.Kind = KBotGroupBandKind.GroupHeader AndAlso TryOpenGroupHeaderEdit(bi, location.X) Then Return True
         If banda.Kind = KBotGroupBandKind.GroupHeader AndAlso Not KBotDesignTime.IsDesignTime(Me) Then
             ToggleBandCollapse(bi)
         End If

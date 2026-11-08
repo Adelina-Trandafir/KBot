@@ -140,6 +140,8 @@ Public NotInheritable Class AdobeSaveTrap
     Private _pending As IntPtr = IntPtr.Zero
     Private _pendingSince As DateTime
     Private _confirmed As Boolean
+    ' Size + last write of the target file at the moment «Salvare» was pressed (slice 0088-08): compared when the dialog is gone.
+    Private _stampBefore As String
     ' When the pressed dialog was last seen hidden (Nothing = visible), and how often it was pressed.
     Private _hiddenSince As DateTime?
     Private _presses As Integer
@@ -800,7 +802,17 @@ Public NotInheritable Class AdobeSaveTrap
             Return
         End If
         Dim wrote As Boolean = AdobeNativeMethods.WriteText(edit, target)
+        ' Slice 0088-08: then the same text TYPED (selection + one WM_CHAR per character). On GR23 the box held the right path
+        ' after WM_SETTEXT and Adobe still saved under its own name; typing is what the dialog's own name handling sees.
+        ' If typing leaves another text (an auto-complete tail), the plain write is put back.
+        Dim typed As Boolean = AdobeNativeMethods.TypeText(edit, target)
         Dim readBack As String = AdobeNativeMethods.ReadText(edit)
+        Dim k_typingNote As String = $"tastat={typed}"
+        If Not AdobeSaveDialogFilter.SamePath(readBack, target) Then
+            k_typingNote = $"tastarea a lăsat «{readBack}» (tastat={typed}), scrierea simplă a fost pusă la loc"
+            wrote = AdobeNativeMethods.WriteText(edit, target)
+            readBack = AdobeNativeMethods.ReadText(edit)
+        End If
         Tr($"HandleSaveAs {AcroPdfTraceLog.Hex(hwnd)}: WriteText -> {wrote}, read back «{readBack}», " &
            $"same path={AdobeSaveDialogFilter.SamePath(readBack, target)}")
         If Not AdobeSaveDialogFilter.SamePath(readBack, target) Then
@@ -814,10 +826,15 @@ Public NotInheritable Class AdobeSaveTrap
         _pendingSince = DateTime.UtcNow
         _hiddenSince = Nothing
         _confirmed = False
+        _stampBefore = TargetStamp(target)
         Dim posted As Boolean = AdobeNativeMethods.PostMessage(hwnd, AdobeNativeMethods.WM_COMMAND,
                                                                New IntPtr(AdobeNativeMethods.IDOK), IntPtr.Zero)
         Tr($"HandleSaveAs {AcroPdfTraceLog.Hex(hwnd)}: PostMessage(WM_COMMAND, IDOK) -> {posted}; " & StateText())
-        Report($"«Salvare» apăsat pe {target}.")
+        ' Slice 0088-08: always written (not only in the trace) - which box was written into and what it held, for a PC
+        ' where the signed file lands in another folder (GR23, 05.11.2026).
+        Report($"«Salvare» apăsat pe {target}. Caseta de nume 0x{edit.ToInt64():X} (id {AdobeNativeMethods.GetDlgCtrlID(edit)}, " &
+               $"părinte «{AdobeNativeMethods.GetClass(AdobeNativeMethods.GetParent(edit))}»), text citit înapoi «{readBack}» ({k_typingNote}); " &
+               $"fișierul țintă înainte: {_stampBefore}.")
     End Sub
 
     ' Slice 00EF-31: the Save As of Adobe is parked off screen and the operator's chooser is shown from a posted callback
@@ -974,6 +991,10 @@ Public NotInheritable Class AdobeSaveTrap
             _pending = IntPtr.Zero
             _hiddenSince = Nothing
             Report($"«Salvare ca» încheiat ({If(_confirmed, "cu", "fără")} confirmare de suprascriere): {path}")
+            ' Slice 0088-08: the target's state at the moment the box is gone. Information only: Adobe writes the file AFTER the box
+            ' closes (GR23, 11:30:26 «unchanged», 11:30:27 the signature was on disk), so «unchanged» here is NOT a verdict -
+            ' the verdict is the «Verificare după salvare» line.
+            Report($"Fișierul țintă la închiderea dialogului «Salvare ca»: {TargetStamp(path)} (înainte: {_stampBefore}; Adobe poate scrie fișierul încă o clipă după închidere).")
             ' Paused while the save ran: now that it is done, the timer stops too.
             If _paused Then HaltWatching()
             ' A save made because the document was being closed is not a signature: nobody is
@@ -1247,6 +1268,19 @@ Public NotInheritable Class AdobeSaveTrap
         Dim cls As String = AdobeNativeMethods.GetClass(h)
         If Not cls.StartsWith("ComboBox", StringComparison.OrdinalIgnoreCase) Then Return False
         Return AdobeSaveDialogFilter.FileNameComboIds.Contains(AdobeNativeMethods.GetDlgCtrlID(h))
+    End Function
+
+    ' «size bytes, last write HH:mm:ss.fff» of a file, or «lipsește» / «nu s-a putut citi». Never throws (a diagnostic line
+    ' must not break the save); UI timer boundary: log + swallow.
+    Private Shared Function TargetStamp(k_path As String) As String
+        Try
+            Dim k_info As New FileInfo(k_path)
+            If Not k_info.Exists Then Return "lipsește"
+            Return $"{k_info.Length} octeți, scris {k_info.LastWriteTime:HH:mm:ss.fff}"
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdobeSaveTrap.TargetStamp", ex)
+            Return "nu s-a putut citi"
+        End Try
     End Function
 
     Private Sub Report(line As String)

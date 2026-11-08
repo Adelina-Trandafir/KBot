@@ -193,7 +193,12 @@ Public Module ThemeManager
         If ctrl Is Nothing Then Return
         ctrl.SuspendLayout()
         Try
+            Dim backgrounds As New List(Of Control)()
+            CollectBackgroundSurfaces(ctrl, backgrounds)
             Traverse(ctrl)
+            For Each surface As Control In backgrounds
+                ApplyBackgroundRole(surface)
+            Next
         Finally
             ctrl.ResumeLayout(True)
         End Try
@@ -214,6 +219,34 @@ Public Module ThemeManager
         ' restaurat fonturile autorite — amândouă ar fi șters mărirea dacă ar fi rulat DUPĂ ea.
         ' Aici, orice ar fi scris tema devine baza din care se înmulțește (vezi FontBaseline).
         AppScaling.ApplyTextScale(ctrl)
+    End Sub
+
+    ' Capture authored colors before a themed container can paint its children. Apply roles after
+    ' normal theming, so the surfaces keep their chosen role even when a container styles itself.
+    Private Sub CollectBackgroundSurfaces(ctrl As Control, backgrounds As List(Of Control))
+        If KBotBackgroundRoles.RoleFor(ctrl) <> ThemeBackgroundRole.Automatic Then
+            DesignerBaseline.Capture(ctrl)
+            backgrounds.Add(ctrl)
+        End If
+        For Each child As Control In ctrl.Controls
+            CollectBackgroundSurfaces(child, backgrounds)
+        Next
+    End Sub
+
+    Private Sub ApplyBackgroundRole(ctrl As Control)
+        Dim role As ThemeBackgroundRole = KBotBackgroundRoles.RoleFor(ctrl)
+        If role = ThemeBackgroundRole.Inherit OrElse _current.Style.PreserveDesignerColors Then
+            Dim authored As Color
+            If DesignerBaseline.TryGetAuthoredBackColor(ctrl, authored) Then
+                ctrl.BackColor = authored
+            Else
+                ctrl.ResetBackColor()
+            End If
+        ElseIf role = ThemeBackgroundRole.Surface Then
+            ctrl.BackColor = If(_current.Style.UseSystemColors, SystemColors.Control, _current.Palette.SurfaceColor)
+        ElseIf role = ThemeBackgroundRole.SurfaceAlt Then
+            ctrl.BackColor = If(_current.Style.UseSystemColors, Color.White, _current.Palette.SurfaceAltColor)
+        End If
     End Sub
 
     ''' <summary>Setează schema activă, o persistă, o difuzează și ridică ThemeChanged.</summary>

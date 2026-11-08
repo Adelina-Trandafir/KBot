@@ -122,6 +122,8 @@ def register(bp, guard, scoped, open_db):
 
     stock_routes.register(bp, guard, scoped, session, build)
     report_routes.register(bp, guard, scoped, session, build)
+    from . import inventory_routes
+    inventory_routes.register(bp, guard, scoped, open_db, build)
 
     # ---- reads -----------------------------------------------------------------------------------------------------
     @bp.get('/api/vercon/doc/<family>/list')

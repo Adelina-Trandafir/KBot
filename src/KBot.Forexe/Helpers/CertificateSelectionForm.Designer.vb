@@ -50,7 +50,6 @@ Partial Class CertificateSelectionForm
         ' 
         ' pnlBottom
         ' 
-        pnlBottom.BackColor = Drawing.Color.WhiteSmoke
         pnlBottom.Controls.Add(btnResendOnly)
         pnlBottom.Controls.Add(btnSelect)
         pnlBottom.Dock = DockStyle.Bottom
@@ -91,7 +90,6 @@ Partial Class CertificateSelectionForm
         ' 
         ' lblTitle
         ' 
-        lblTitle.BackColor = Drawing.Color.WhiteSmoke
         lblTitle.Dock = DockStyle.Fill
         lblTitle.Font = New System.Drawing.Font("Calibri", 12.0F, Drawing.FontStyle.Bold, Drawing.GraphicsUnit.Point, CByte(0))
         lblTitle.ForeColor = Drawing.SystemColors.ActiveCaptionText
@@ -117,7 +115,6 @@ Partial Class CertificateSelectionForm
         ' 
         ' btnClose
         ' 
-        btnClose.BackColor = Drawing.Color.WhiteSmoke
         btnClose.BackgroundImageLayout = ImageLayout.Center
         btnClose.Dock = DockStyle.Right
         btnClose.FlatAppearance.BorderSize = 0
@@ -133,7 +130,6 @@ Partial Class CertificateSelectionForm
         ' 
         ' btnRefresh
         ' 
-        btnRefresh.BackColor = Drawing.Color.WhiteSmoke
         btnRefresh.Dock = DockStyle.Left
         btnRefresh.FlatAppearance.BorderSize = 0
         btnRefresh.FlatAppearance.MouseDownBackColor = Drawing.Color.FromArgb(CByte(192), CByte(255), CByte(192))

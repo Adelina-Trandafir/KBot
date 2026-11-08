@@ -128,18 +128,14 @@ Partial Class DirectorForm
         '
         lstDocumente.AlternatingRows = False
         lstDocumente.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        lstDocumente.BackColor = SystemColors.Window
-        lstDocumente.BorderColor = SystemColors.ActiveBorder
         lstDocumente.ColumnFillMode = KBotFillMode.SpecificColumn
         KBotDataColumn1.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.HeaderText = "Angajament"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "cod"
         KBotDataColumn1.ReadOnly = True
         KBotDataColumn1.Width = 110
         KBotDataColumn2.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.HeaderText = "Obiect"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "obiect"
@@ -147,7 +143,6 @@ Partial Class DirectorForm
         KBotDataColumn2.ReadOnly = True
         KBotDataColumn2.Width = 180
         KBotDataColumn3.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.HeaderText = "Rev."
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "rev"
@@ -155,7 +150,6 @@ Partial Class DirectorForm
         KBotDataColumn3.TextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Width = 50
         KBotDataColumn4.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn4.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn4.HeaderText = "Data"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "data"
@@ -163,7 +157,6 @@ Partial Class DirectorForm
         KBotDataColumn4.TextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Width = 90
         KBotDataColumn5.AutoSizeMode = KBotAutoSizeMode.None
-        KBotDataColumn5.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn5.HeaderText = "Total"
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "total"
@@ -178,11 +171,8 @@ Partial Class DirectorForm
         lstDocumente.Dock = DockStyle.Fill
         lstDocumente.EnableGrouping = False
         lstDocumente.FillColumnKey = "obiect"
-        lstDocumente.HeaderBackColor = SystemColors.Control
         lstDocumente.HeaderColumnSeparatorColor = Color.Gainsboro
-        lstDocumente.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         lstDocumente.HeaderForeColor = SystemColors.ActiveCaptionText
-        lstDocumente.HeaderSeparatorColor = Color.Gainsboro
         lstDocumente.Location = New Point(8, 0)
         lstDocumente.Margin = New Padding(0)
         lstDocumente.Name = "lstDocumente"

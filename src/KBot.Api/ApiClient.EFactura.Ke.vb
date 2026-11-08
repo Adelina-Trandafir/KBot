@@ -119,6 +119,11 @@ Partial Public Class ApiClient
         Public Property CodIndicator As String
         Public Property Buget As Decimal?
         Public Property Receptii As Decimal
+
+        ' Slice 02EF-02: this angajament's own figures (a server that does not send them leaves both empty).
+        Public Property RezervariAng As Decimal?
+        Public Property ReceptiiAng As Decimal?
+        Public Property Detalii As EFacturaKeDetaliiDisponibil
     End Class
 
     Private NotInheritable Class KeDisponibilWire
@@ -134,6 +139,9 @@ Partial Public Class ApiClient
         Public Property ClsfSal As String
         Public Property SS As String
         Public Property Suma As Decimal
+
+        ' Slice KE20-01: a server that does not send it leaves 0.
+        Public Property Surplus As Decimal
         Public Property ValoareVeche As Decimal?
         Public Property ValoareNoua As Decimal?
     End Class
@@ -205,12 +213,23 @@ Partial Public Class ApiClient
         End Try
     End Function
 
-    Public Async Function GetKeReceptiiAsync(k_cod As String, ct As CancellationToken) _
+    Public Function GetKeReceptiiAsync(k_cod As String, ct As CancellationToken) _
         As Task(Of EFacturaKeReceptiiAngajament) Implements IEFacturaApi.GetKeReceptiiAsync
+        Return ReadKeReceptiiAsync(k_cod, Nothing, ct)
+    End Function
+
+    ' Slice KE20-02: the receptions as they stood on the day of an invoice.
+    Public Function GetKeReceptiiLaDataAsync(k_cod As String, k_zi As Date, ct As CancellationToken) _
+        As Task(Of EFacturaKeReceptiiAngajament) Implements IEFacturaApi.GetKeReceptiiLaDataAsync
+        Return ReadKeReceptiiAsync(k_cod, k_zi, ct)
+    End Function
+
+    Private Async Function ReadKeReceptiiAsync(k_cod As String, k_zi As Date?, ct As CancellationToken) As Task(Of EFacturaKeReceptiiAngajament)
         Try
             ArgumentException.ThrowIfNullOrWhiteSpace(k_cod)
-            Dim k_text As String = Await SendEFacturaAsync(HttpMethod.Get,
-                "/api/efactura/ke/angajament/" & Uri.EscapeDataString(k_cod.Trim()) & "/receptii", Nothing,
+            Dim k_path As String = "/api/efactura/ke/angajament/" & Uri.EscapeDataString(k_cod.Trim()) & "/receptii" &
+                If(k_zi.HasValue, "?data=" & k_zi.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), String.Empty)
+            Dim k_text As String = Await SendEFacturaAsync(HttpMethod.Get, k_path, Nothing,
                 "citirea recepțiilor angajamentului", ct).ConfigureAwait(False)
             Dim wire As KeReceptiiWire = JsonSerializer.Deserialize(Of KeReceptiiWire)(k_text, _json)
             Dim k_result As New EFacturaKeReceptiiAngajament()
@@ -252,7 +271,7 @@ Partial Public Class ApiClient
         Try
             ArgumentException.ThrowIfNullOrWhiteSpace(k_cod)
             Dim k_text As String = Await SendEFacturaAsync(HttpMethod.Get,
-                "/api/efactura/ke/angajament/" & Uri.EscapeDataString(k_cod.Trim()) & "/disponibil?data=" & k_zi.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture), Nothing,
+                "/api/efactura/ke/angajament/" & Uri.EscapeDataString(k_cod.Trim()) & "/disponibil?data=" & k_zi.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture) & "&detalii=1", Nothing,
                 "citirea bugetului și a recepțiilor pe indicatori", ct).ConfigureAwait(False)
             Dim wire As KeDisponibilWire = JsonSerializer.Deserialize(Of KeDisponibilWire)(k_text, _json)
             Dim k_result As New EFacturaKeDisponibilZi()
@@ -260,7 +279,8 @@ Partial Public Class ApiClient
             If wire.indicatori IsNot Nothing Then
                 For Each w As KeDisponibilIndWire In wire.indicatori
                     k_result.Indicatori.Add(New EFacturaKeDisponibil() With {
-                        .IdClsf = w.IdClsf, .CodIndicator = If(w.CodIndicator, String.Empty), .Buget = w.Buget, .Receptii = w.Receptii})
+                        .IdClsf = w.IdClsf, .CodIndicator = If(w.CodIndicator, String.Empty), .Buget = w.Buget, .Receptii = w.Receptii,
+                        .RezervariAng = w.RezervariAng, .ReceptiiAng = w.ReceptiiAng, .Detalii = w.Detalii})
                 Next
             End If
             If wire.avertismente IsNot Nothing Then k_result.Avertismente.AddRange(wire.avertismente)
@@ -280,6 +300,14 @@ Partial Public Class ApiClient
             Dim k_body As New Dictionary(Of String, Object) From {
                 {"CodAngajament", k_cerere.CodAngajament}, {"Tip", k_cerere.Tip}, {"alocari", AlocariOf(k_cerere)}}
             If k_cerere.Idrr.HasValue Then k_body("IDRR") = k_cerere.Idrr.Value
+            ' Slice KE20-01: sent only when there is one, so a server that does not know the key still answers the old requests.
+            If k_cerere.Surplus.Count > 0 Then
+                Dim k_surplus As New List(Of Dictionary(Of String, Object))()
+                For Each k_s As EFacturaKeAlocare In k_cerere.Surplus
+                    k_surplus.Add(New Dictionary(Of String, Object) From {{"IdClsf", k_s.IdClsf}, {"Suma", k_s.Suma}})
+                Next
+                k_body("surplus") = k_surplus
+            End If
             Dim k_text As String = Await SendEFacturaAsync(HttpMethod.Post, PrimitaPath(k_idPrimita, "ke/verifica"),
                                                            JsonSerializer.Serialize(k_body, _json),
                                                            "verificarea alocării pe recepție", ct).ConfigureAwait(False)
@@ -293,7 +321,7 @@ Partial Public Class ApiClient
                     k_result.Randuri.Add(New EFacturaKeRand() With {
                         .IdClsf = w.IdClsf, .CodAi = If(w.CodAI, String.Empty), .CodIndicator = If(w.CodIndicator, String.Empty),
                         .Clsf = If(w.Clsf, String.Empty), .ClsfSal = If(w.ClsfSal, String.Empty), .Ss = If(w.SS, String.Empty),
-                        .Suma = w.Suma, .ValoareVeche = w.ValoareVeche, .ValoareNoua = w.ValoareNoua})
+                        .Suma = w.Suma, .Surplus = w.Surplus, .ValoareVeche = w.ValoareVeche, .ValoareNoua = w.ValoareNoua})
                 Next
             End If
             Return k_result
@@ -314,6 +342,8 @@ Partial Public Class ApiClient
             If k_cerere.Idrr.HasValue Then k_body("IDRR") = k_cerere.Idrr.Value
             If k_cerere.Idrh.HasValue Then k_body("IDRH") = k_cerere.Idrh.Value
             If k_cerere.Idr.HasValue Then k_body("IDR") = k_cerere.Idr.Value
+            ' Slice KE20-02: only for a link to an existing reception, and only when the screen measured its rest on a day.
+            If k_cerere.LaData.HasValue Then k_body("la_data") = k_cerere.LaData.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
             Dim k_text As String = Await SendEFacturaAsync(HttpMethod.Post, PrimitaPath(k_idPrimita, "ke/legaturi"),
                                                            JsonSerializer.Serialize(k_body, _json),
                                                            "legarea facturii de recepție", ct).ConfigureAwait(False)

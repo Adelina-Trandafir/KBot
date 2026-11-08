@@ -273,6 +273,28 @@ Partial Public Class AdvancedTreeControl
         If focusTree AndAlso Me.IsHandleCreated Then Me.Focus()
     End Sub
 
+    ''' <summary>
+    ''' Puts the keyboard focus in the search box so the operator can type at once. Right after the
+    ''' band is shown the box may not have its window yet, so a failed attempt is repeated once
+    ''' when the message queue is idle.
+    ''' </summary>
+    Private Sub FocusSearchBox()
+        Try
+            If _searchTextBox Is Nothing OrElse Not Me.IsHandleCreated Then Return
+            If _searchTextBox.Focus() Then Return
+            Me.BeginInvoke(New Action(
+                Sub()
+                    Try
+                        If _isSearchMode AndAlso _searchTextBox IsNot Nothing AndAlso _searchTextBox.IsHandleCreated Then _searchTextBox.Focus()
+                    Catch k_ex As Exception
+                        GlobalErrorLog.Write("AdvancedTreeControl.FocusSearchBox.Deferred", k_ex)
+                    End Try
+                End Sub))
+        Catch ex As Exception
+            GlobalErrorLog.Write("AdvancedTreeControl.FocusSearchBox", ex)
+        End Try
+    End Sub
+
     Private Sub OnSearchBoxHostClick(sender As Object, e As EventArgs)
         Try
             If _searchTextBox IsNot Nothing AndAlso _searchTextBox.IsHandleCreated Then _searchTextBox.Focus()

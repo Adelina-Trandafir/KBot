@@ -1,3 +1,5 @@
+import { searchLength } from '../../utils/search-text.js';
+
 /**
  * COMBOBOX SEARCH MIXIN
  * Gestionează logica de căutare (statică și dinamică)
@@ -14,12 +16,14 @@ export const comboboxSearchMixin = {
   /**
    * Execută căutarea
    */
-  async performSearch(query) {
+  // `force`: the list was asked for explicitly (arrow, focus), so the minimum text length does not apply.
+  async performSearch(query, force = false) {
     this.cancelSearch();
     if (this.disabled) return;
     const sequence = this.searchSequence;
     // Pentru readonly, acceptă și query gol
-    if (!this.options.readonly && query.length < this.options.minSearchLength) {
+    const typed = this.options.minSearchIgnoreSpaces ? searchLength(query) : query.length;
+    if (!force && !this.options.readonly && typed < this.options.minSearchLength) {
       this.hide();
       return;
     }

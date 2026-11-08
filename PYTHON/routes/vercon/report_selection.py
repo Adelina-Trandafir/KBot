@@ -85,13 +85,13 @@ def product_nodes(source, node_id, recursive):
     return nodes
 
 
-def document_suppliers(source, node_id):
+def document_suppliers(source, node_id, recursive=False):
     supplier_key = None
     if node_id.startswith('document-supplier:'):
         supplier_key = node_id.split(':', 1)[1]
         if supplier_key != 'none' and (suppliers.code(supplier_key) != supplier_key or not 0 < len(supplier_key) <= 50):
             raise NomError('REPORT_BRANCH', 'Furnizor invalid.', 422)
-    groups, documents, ordering = {}, {}, {}
+    groups, documents = {}, {}
     for row in source.rows('receipts'):
         day = row['date']
         if row['annulled'] or day is None or not source.params['start'] <= stock.day_of(day) <= source.params['end']:
@@ -99,14 +99,22 @@ def document_suppliers(source, node_id):
         supplier = str(row['supplier']) if row.get('supplier') is not None else 'none'
         if supplier_key is not None and supplier != supplier_key:
             continue
-        groups.setdefault(supplier, branch('document-supplier:' + supplier, row.get('party') or supplier if row.get('supplier') else 'Fără cod fiscal'))
-        if supplier_key is not None:
-            documents[row['document']] = f"{row['family'].upper()} {row['number']} / {day} / {row.get('party') or ''}"
-            ordering[f"document:{row['document']}"] = document_order(day, row['number'], row['document'])
+        group = groups.setdefault(supplier, branch('document-supplier:' + supplier, row.get('party') or supplier if row.get('supplier') else 'Fără cod fiscal'))
+        if (supplier_key is not None or recursive) and row['document'] is not None:
+            document = row['document']
+            label = f"{row['family'].upper()} {row['number']} / {day} / {row.get('party') or ''}"
+            group.setdefault('documents', {})[document] = {
+                'id': f'document:{document}', 'label': label, **document_order(day, row['number'], document)}
+            documents[document] = {'id': document, 'label': label}
     if supplier_key is None:
-        return {'nodes': sorted(groups.values(), key=lambda group: (suppliers.name_key(group['label']), group['id'])), 'documents': []}
-    return {'nodes': [{**node, **ordering[node['id']]} for node in options(documents, 'document')],
-            'documents': [{'id': item, 'label': label} for item, label in documents.items() if item is not None]}
+        nodes = sorted(groups.values(), key=lambda group: (suppliers.name_key(group['label']), group['id']))
+        if recursive:
+            for node in nodes:
+                node.pop('lazy')
+                node['children'] = list(node.pop('documents', {}).values())
+    else:
+        nodes = list(groups.get(supplier_key, {}).get('documents', {}).values())
+    return {'nodes': nodes, 'documents': list(documents.values())}
 
 
 def selection_branch(source, spec, node_id, *, recursive=False, documents=False, receivers=False):
@@ -124,19 +132,24 @@ def selection_branch(source, spec, node_id, *, recursive=False, documents=False,
         if documents:
             if not spec.get('document_options'):
                 raise NomError('REPORT_BRANCH', 'Modul documente nu este disponibil pentru acest raport.', 422)
-            return {'spec': spec, **document_suppliers(source, 'selection:document')}
+            return {'spec': spec, **document_suppliers(source, 'selection:document', recursive)}
         if spec.get('incoming_selection'):
-            return {'spec': spec, **report_incoming_selection.read(source, spec, node_id)}
-        # Accounts are visible immediately; their products and variants stay lazy.
-        nodes = []
+            return {'spec': spec, **report_incoming_selection.read(source, spec, node_id, recursive=recursive)}
+        # Accounts are visible immediately. Expand descendants only on a bulk request.
+        nodes, details = [], []
         for node in roots(spec):
             if node['id'] == 'selection:document' and spec.get('document_options'):
                 continue
             if node['id'] == 'selection:products':
-                nodes.extend(product_nodes(source, node['id'], False))
+                nodes.extend(product_nodes(source, node['id'], recursive))
             else:
+                if recursive:
+                    result = selection_branch(source, spec, node['id'], recursive=True)
+                    node.pop('lazy')
+                    node['children'] = result['nodes']
+                    details.extend(result.get('documents', []))
                 nodes.append(node)
-        return {'spec': spec, 'nodes': nodes, 'documents': []}
+        return {'spec': spec, 'nodes': nodes, 'documents': details}
     if node_id.startswith(('receipt-supplier:', 'nir-supplier:', 'receipt-account:', 'receipt-document:')):
         if not spec.get('incoming_selection'):
             raise NomError('REPORT_BRANCH', 'Ramura nu este disponibilă pentru acest raport.', 422)

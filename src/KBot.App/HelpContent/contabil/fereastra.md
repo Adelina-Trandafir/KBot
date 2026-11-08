@@ -27,6 +27,45 @@ K-BOT lucrează într-o singură **fereastră principală**:
 | **Dreapta** | vederea aleasă, pentru angajamentul selectat |
 | **Jos** | banda **FOREXE**: conectarea, progresul și ultimul mesaj al robotului |
 
+## Istoricul navigării
+<!-- slice: 0097-09 -->
+
+Butonul **«Istoric»**, din dreapta ribbonului, înainte de **«Închide»**, deschide lista machetelor folosite în sesiunea
+curentă. Este disponibil pe orice filă și când panoul lateral este ascuns; pe pagina «Acasă» rămâne disponibil chiar
+dacă «Închide» nu se vede. Când ribbonul este strâns, istoricul se vede în banda cu file.
+
+- Sus sunt machetele **deschise**, iar sub separator sunt cele **închise**, scrise înclinat. În fiecare grup, numele
+  sunt ordonate alfabetic. Fiecare rând are iconița comenzii sale din ribbon, pe banda colorată a meniului.
+- Un clic aduce în față o machetă deschisă sau redeschide una închisă. Este aceeași listă ca **«Machete deschise»** din
+  [panoul lateral](topic:contabil.panou), cu aceleași date ale sesiunii.
+- Ținând mouse-ul pe o machetă deschisă vezi previzualizarea ei. Dacă numele nu încape în meniul îngust, eticheta îl
+  arată întreg. Lista se derulează cu rotița; poți alege și cu săgețile și Enter. **Esc** sau un clic în afară închide meniul.
+
+În **[Setări › Aplicație › Generale](topic:contabil.setari)** alegi separat **«Arată istoricul în CAPBAR»** și
+**«Arată istoricul în ribbon»**. Implicit este bifat doar cel din ribbon. Cel din CAPBAR apare primul din stânga în
+grupul butoanelor barei de titlu. Poți afișa ambele butoane, unul singur sau niciunul; setările se aplică imediat și
+se păstrează la repornire. Lista din panoul lateral rămâne accesibilă independent de aceste două bife.
+
+### Ctrl+Tab: alegerea dintre machetele deschise
+<!-- slice: 0097-09 -->
+
+**Ctrl+Tab** deschide în mijlocul ferestrei un selector cu **miniaturile machetelor deschise**, iconițele și numele lor,
+asemănător alegerii ferestrelor cu Alt+Tab în Windows. Sunt aceleași imagini păstrate de sistemul «Machete deschise»:
+poze ale machetelor așa cum au rămas, nu imagini în mișcare. Macheta curentă este capturată înainte de afișarea
+selectorului; unde încă nu există o imagine, apare iconița cu titlul.
+
+- Ține **Ctrl** apăsat și apasă **Tab** pentru a trece la următoarea machetă. **Ctrl+Shift+Tab** merge invers.
+- La prima apăsare este aleasă macheta folosită anterior. **Eliberarea lui Ctrl** activează alegerea evidențiată.
+  Două apăsări rapide, separate, de Ctrl+Tab alternează între ultimele două machete folosite.
+- Ordinea este cea a **ultimei utilizări**, fixată la începutul alegerii; parcurgerea miniaturilor nu schimbă ordinea
+  și nu schimbă macheta de dedesubt până la confirmare.
+- **Esc** sau un clic în afara selectorului anulează alegerea și păstrează macheta inițială.
+- Apar numai machetele încă deschise, inclusiv Lista angajamentelor cât este deschisă. Paginile închise și vederile
+  interne Sumar/Rezervări/Istoric nu sunt alegeri separate aici. O singură machetă deja pe ecran rămâne pe loc.
+
+Scurtătura funcționează și când ambele butoane de istoric sunt ascunse. Este navigarea ferestrei principale;
+ferestrele modale care cer un răspuns își păstrează tratarea tastelor.
+
 ## Pagini și ferestre
 <!-- slice: 0113, 0114, 0113-01, 0114-20, 0000-92, AV01-13 -->
 

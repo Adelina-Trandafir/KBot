@@ -16,6 +16,7 @@ Partial Public Class ApiClient
         Public Property idcont As Integer
         Public Property simbol As String
         Public Property denumire As String
+        Public Property denumire_sintetic As String
         Public Property capitol As String
     End Class
 
@@ -27,6 +28,7 @@ Partial Public Class ApiClient
         Public Property idcont As Integer
         Public Property simbol As String
         Public Property denumire As String
+        Public Property denumire_sintetic As String
         Public Property capitol As String
         Public Property sold_debitor As Double
         Public Property sold_creditor As Double
@@ -66,7 +68,8 @@ Partial Public Class ApiClient
             Return k_payload.conturi.Select(
                 Function(k_c) New ContDisponibil() With {
                     .IdCont = k_c.idcont, .Simbol = If(k_c.simbol, String.Empty),
-                    .Denumire = If(k_c.denumire, String.Empty), .Capitol = If(k_c.capitol, String.Empty)}).ToList()
+                    .Denumire = If(k_c.denumire, String.Empty), .Capitol = If(k_c.capitol, String.Empty),
+                    .DenumireSintetic = If(k_c.denumire_sintetic, String.Empty)}).ToList()
         Catch ex As ApiException
             Throw
         Catch ex As Exception
@@ -104,7 +107,7 @@ Partial Public Class ApiClient
             Return k_payload.solduri.Select(
                 Function(k_s) New SoldPartener() With {
                     .IdCont = k_s.idcont, .Simbol = If(k_s.simbol, String.Empty), .Denumire = If(k_s.denumire, String.Empty),
-                    .Capitol = If(k_s.capitol, String.Empty),
+                    .Capitol = If(k_s.capitol, String.Empty), .DenumireSintetic = If(k_s.denumire_sintetic, String.Empty),
                     .SoldDebitor = CDec(k_s.sold_debitor), .SoldCreditor = CDec(k_s.sold_creditor),
                     .RulajDebitor = CDec(k_s.rulaj_debitor), .RulajCreditor = CDec(k_s.rulaj_creditor)}).ToList()
         Catch ex As ApiException

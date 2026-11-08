@@ -1,5 +1,6 @@
 import { ComboTree } from '../components/combotree/combotree.js';
 import { el } from './ui.js';
+import { searchOptions } from './search-settings.js';
 
 const MONTHS = ['Ianuarie', 'Februarie', 'Martie', 'Aprilie', 'Mai', 'Iunie', 'Iulie', 'August', 'Septembrie', 'Octombrie', 'Noiembrie', 'Decembrie'];
 const monthEnd = (year, month) => new Date(Date.UTC(year, month + 1, 0)).toISOString().slice(0, 10);
@@ -9,6 +10,7 @@ export function reportPeriod(owner, onChange) {
   const node = el('label', { className: 'vc-field' }, el('span', { textContent: 'Perioada' }), host);
   let ranges = new Map();
   const combo = owner.own(new ComboTree(host, {
+    ...searchOptions(),
     selectParents: true,
     minWidth: 0,
     placeholder: 'Se încarcă perioadele…', searchPlaceholder: 'Tastează anul sau luna…',

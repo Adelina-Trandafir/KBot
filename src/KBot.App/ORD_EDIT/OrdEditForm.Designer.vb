@@ -70,7 +70,6 @@ Partial Class OrdEditForm
         ' 
         ' dtpData
         ' 
-        dtpData.BackColor = SystemColors.Window
         dtpData.ButtonPadding = New Padding(1)
         dtpData.ButtonWidth = 18
         dtpData.Dock = DockStyle.Fill

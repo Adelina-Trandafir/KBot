@@ -157,6 +157,26 @@ Public NotInheritable Class EFacturaKeDisponibil
     Public Property Buget As Decimal?
 
     Public Property Receptii As Decimal
+
+    ''' <summary>Slice 02EF-02: the reservations of THIS angajament on the indicator (SUM(FX_Rezervari.R_Valoare), as the Sumar view). Nothing = the server did not say.</summary>
+    Public Property RezervariAng As Decimal?
+
+    ''' <summary>Slice 02EF-02: the receptions of THIS angajament on the indicator taken BEFORE the day (SUM(FX_Receptii.DIF)). Nothing = the server did not say.</summary>
+    Public Property ReceptiiAng As Decimal?
+    Public Property Detalii As EFacturaKeDetaliiDisponibil
+End Class
+
+''' <summary>SLICE-KE20-07: breakdown of the availability totals for one indicator.</summary>
+Public NotInheritable Class EFacturaKeDetaliiDisponibil
+    Public Property ReceptiiPeAngajamente As New List(Of EFacturaKeContributieDisponibil)()
+    Public Property Rezervari As New List(Of EFacturaKeContributieDisponibil)()
+    Public Property Receptii As New List(Of EFacturaKeContributieDisponibil)()
+End Class
+
+Public NotInheritable Class EFacturaKeContributieDisponibil
+    Public Property Data As Date?
+    Public Property Eticheta As String = String.Empty
+    Public Property Suma As Decimal
 End Class
 
 ''' <summary>The answer of <c>GetKeDisponibilAsync</c>.</summary>
@@ -215,7 +235,15 @@ Public NotInheritable Class EFacturaKeCerere
     Public Property Idrh As Integer?
 
     Public Property Idr As Integer?
+
+    ''' <summary>Slice KE20-02: for a link to an EXISTING reception, the day its rest was measured on (the date of the invoice the screen used); the server measures it the same way.</summary>
+    Public Property LaData As Date?
+
     Public ReadOnly Property Alocari As New List(Of EFacturaKeAlocare)()
+
+    ''' <summary>Slice KE20-01: what a NEW / MODIFIED reception takes on a classification ABOVE the invoices (each sum above 0). It belongs to the reception, not to
+    ''' an invoice: put on ONE request of the reception, sent only to the check (never written as a link).</summary>
+    Public ReadOnly Property Surplus As New List(Of EFacturaKeAlocare)()
 End Class
 
 ''' <summary>A row the robot needs: where on the site a classification is, and what to write on it.</summary>
@@ -229,7 +257,11 @@ Public NotInheritable Class EFacturaKeRand
     Public Property ClsfSal As String = String.Empty
 
     Public Property Ss As String = String.Empty
+    ''' <summary>The amount of the invoice this reception covers on the classification (the link); 0 on a row that only carries a <see cref="Surplus"/>.</summary>
     Public Property Suma As Decimal
+
+    ''' <summary>Slice KE20-01: the value the reception takes on this classification above the invoices (0 = none).</summary>
+    Public Property Surplus As Decimal
 
     ''' <summary>For a modified reception: its value on this classification now and after the change.</summary>
     Public Property ValoareVeche As Decimal?

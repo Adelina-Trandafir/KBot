@@ -28,7 +28,7 @@ Partial Public Class CustomPopup
                 End Using
                 ' Slice 00EF-34: the icon bar, inside the rounded frame; the outline is drawn over its edge.
                 g.SetClip(path)
-                DrawIconBar(g)
+                If PreviewColumns = 0 Then DrawIconBar(g)
                 g.ResetClip()
                 ' Conturul e ce desprinde meniul de fereastra de dedesubt — fundalul singur l-ar
                 ' face să pară o pată de aceeași culoare cu formularul.
@@ -51,7 +51,9 @@ Partial Public Class CustomPopup
                 ' vizor nu se mai desenează deloc.
                 If r.Bottom <= vizor.Top OrElse r.Top >= vizor.Bottom Then Continue For
 
-                If Items(i).IsSeparator Then
+                If PreviewColumns > 0 Then
+                    DrawPreviewTile(g, i, r)
+                ElseIf Items(i).IsSeparator Then
                     DrawSeparator(g, r, padX)
                 ElseIf Items(i).IsSlider Then
                     DrawSliderRow(g, i, r, padX, gutter)
@@ -109,7 +111,7 @@ Partial Public Class CustomPopup
         ' Slice 00EF-34: with the icon bar on the right the text is right-aligned.
         Dim flags As TextFormatFlags = MeasureFlags() Or TextFormatFlags.EndEllipsis
         If BarOnRight() Then flags = flags Or TextFormatFlags.Right
-        TextRenderer.DrawText(g, If(it.Text, String.Empty), Font, tr, fore, flags)
+        TextRenderer.DrawText(g, If(it.Text, String.Empty), RowFont(it.Italic), tr, fore, flags)
     End Sub
 
     ' Slice 0777: the check mark of a Checked row, right-aligned inside the padding, in the

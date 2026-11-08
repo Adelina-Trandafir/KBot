@@ -724,7 +724,8 @@ Public Class ApiClient
                                 .NrCrtInd = r.nrcrt_ind,
                                 .Valoare = r.valoare,
                                 .Dif = r.dif,
-                                .RangZiR = r.rang_zi_r
+                                .RangZiR = r.rang_zi_r,
+                                .DataStergereR = r.data_stergere_r
                             })
                         Next
                     End If
@@ -1963,6 +1964,7 @@ Public Class ApiClient
                     .TempId = r.temp_id, .Idordrecp = r.idordrecp,
                     .LinieTempId = r.linie_temp_id, .Idordtblp = r.idordtblp,
                     .IdPlataFx = If(r.id_plata_fx.HasValue, r.id_plata_fx.Value, 0),
+                    .Idrp = If(r.idrp.HasValue, r.idrp.Value, 0),
                     .Valoare = r.valoare})
             Next
         End If
@@ -2058,6 +2060,7 @@ Public Class ApiClient
                 .linie_temp_id = r.LinieTempId, .idordtblp = r.Idordtblp,
                 .valoare = r.Valoare}
             If r.IdPlataFx > 0 Then rdto.id_plata_fx = r.IdPlataFx
+            If r.Idrp > 0 Then rdto.idrp = r.Idrp
             dto.rec.Add(rdto)
         Next
 

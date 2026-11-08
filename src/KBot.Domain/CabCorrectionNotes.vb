@@ -539,9 +539,14 @@ Public NotInheritable Class CabCorrectionNoteRules
         Return value.ToString("dd.MM.yyyy", CultureInfo.InvariantCulture)
     End Function
 
-    ''' <summary>«-111,00»: two decimals, comma, no thousands separator (the datasets' shape).</summary>
+    ''' <summary>
+    ''' «-111,00», «8.000,00»: two decimals, comma, thousands grouped with a dot. The amount fields bind
+    ''' with the picture num{zzz,zzz,zzz,zz9.99} (ro_RO: «.» groups, «,» decimals), so an amount of
+    ''' 1000 or more written WITHOUT the dot does not match it, stays a string in the form and
+    ''' «0 + "-8000,00"» concatenates (totalSumaCredit.toFixed is not a function).
+    ''' </summary>
     Public Shared Function FormAmount(value As Decimal) As String
-        Return value.ToString("0.00", RoCulture)
+        Return value.ToString("#,##0.00", RoCulture)
     End Function
 
     ''' <summary>How JavaScript prints a number: «0», «-111», «111.5».</summary>

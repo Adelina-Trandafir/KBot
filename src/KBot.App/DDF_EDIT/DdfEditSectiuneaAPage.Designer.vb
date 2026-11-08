@@ -102,15 +102,12 @@ Partial Class DdfEditSectiuneaAPage
         ' grd
         ' 
         grd.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        grd.BackColor = SystemColors.Window
-        grd.BorderColor = SystemColors.ActiveBorder
         grd.ColumnFillMode = KBotFillMode.SpecificColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn1.ColumnType = KBotColumnType.Combo
         KBotDataColumn1.CommitOnSelect = True
         KBotDataColumn1.FormatString = Nothing
-        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn1.HeaderText = "Clasificație"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "clasificatie"
@@ -119,7 +116,6 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn2.AggregateFormatString = Nothing
         KBotDataColumn2.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn2.HeaderText = "Clsf"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "clsf"
@@ -130,7 +126,6 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn3.AggregateFormatString = Nothing
         KBotDataColumn3.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn3.FormatString = Nothing
-        KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn3.HeaderText = "Element fundamentare"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "element_fund"
@@ -139,7 +134,6 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn4.AggregateFormatString = Nothing
         KBotDataColumn4.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn4.FormatString = Nothing
-        KBotDataColumn4.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn4.HeaderText = "Parametrii"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "parametrii_fund"
@@ -148,7 +142,6 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn5.AggregateFormatString = Nothing
         KBotDataColumn5.ColumnFont = New Font("Calibri", 9F)
         KBotDataColumn5.FormatString = Nothing
-        KBotDataColumn5.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn5.HeaderText = "Partener"
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "cod_partener"
@@ -161,7 +154,6 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn6.DecimalPlaces = 2
         KBotDataColumn6.Format = KBotFormat.Standard
         KBotDataColumn6.FormatString = Nothing
-        KBotDataColumn6.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn6.HeaderText = "Buget"
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn6.Key = "buget"
@@ -176,7 +168,6 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn7.DecimalPlaces = 2
         KBotDataColumn7.Format = KBotFormat.Standard
         KBotDataColumn7.FormatString = Nothing
-        KBotDataColumn7.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn7.HeaderText = "Val. recepții"
         KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn7.Key = "val_rec"
@@ -191,7 +182,6 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn8.DecimalPlaces = 2
         KBotDataColumn8.Format = KBotFormat.Standard
         KBotDataColumn8.FormatString = Nothing
-        KBotDataColumn8.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn8.HeaderText = "Disponibil"
         KBotDataColumn8.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn8.Key = "disponibil"
@@ -206,7 +196,6 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn9.DecimalPlaces = 2
         KBotDataColumn9.Format = KBotFormat.Standard
         KBotDataColumn9.FormatString = Nothing
-        KBotDataColumn9.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn9.HeaderText = "Val. precedentă"
         KBotDataColumn9.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn9.Key = "val_prec"
@@ -221,7 +210,6 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn10.DecimalPlaces = 2
         KBotDataColumn10.Format = KBotFormat.Standard
         KBotDataColumn10.FormatString = Nothing
-        KBotDataColumn10.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn10.HeaderText = "Val. curentă"
         KBotDataColumn10.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn10.Key = "val_cur"
@@ -235,7 +223,6 @@ Partial Class DdfEditSectiuneaAPage
         KBotDataColumn11.DecimalPlaces = 2
         KBotDataColumn11.Format = KBotFormat.Standard
         KBotDataColumn11.FormatString = Nothing
-        KBotDataColumn11.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold)
         KBotDataColumn11.HeaderText = "Val. rămasă"
         KBotDataColumn11.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn11.Key = "val_ramasa"
@@ -270,8 +257,6 @@ Partial Class DdfEditSectiuneaAPage
         grd.Dock = DockStyle.Fill
         grd.FillColumnKey = "element_fund"
         grd.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
-        grd.HeaderBackColor = SystemColors.Control
-        grd.HeaderSeparatorColor = SystemColors.ActiveBorder
         grd.Location = New Point(6, 7)
         grd.Margin = New Padding(6, 7, 6, 7)
         grd.Name = "grd"

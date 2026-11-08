@@ -113,7 +113,6 @@ Partial Class HistoryForm
         '
         ' rtbLog
         '
-        rtbLog.BackColor = Drawing.Color.White
         rtbLog.Dock = System.Windows.Forms.DockStyle.Fill
         rtbLog.Font = New System.Drawing.Font("Consolas", 9.0F, Drawing.FontStyle.Regular, Drawing.GraphicsUnit.Point, CByte(0))
         rtbLog.Location = New System.Drawing.Point(4, 5)
@@ -138,7 +137,6 @@ Partial Class HistoryForm
         '
         ' rtbInput
         '
-        rtbInput.BackColor = Drawing.Color.WhiteSmoke
         rtbInput.Dock = System.Windows.Forms.DockStyle.Fill
         rtbInput.Font = New System.Drawing.Font("Consolas", 9.0F, Drawing.FontStyle.Regular, Drawing.GraphicsUnit.Point, CByte(0))
         rtbInput.Location = New System.Drawing.Point(4, 5)

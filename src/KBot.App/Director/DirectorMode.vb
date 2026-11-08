@@ -23,7 +23,7 @@ Friend NotInheritable Class DirectorMode
     ''' The ribbon buttons a director keeps. A tab with none of them goes out of sight with everything else; the pinned
     ''' «Inchide» stays so a page can be closed.
     ''' </summary>
-    Friend Shared ReadOnly RibbonKeys As String() = {"pagina_angajamente", RibbonKeyToSign, "pagina_inchide", "setari", "istoric_versiuni"}
+    Friend Shared ReadOnly RibbonKeys As String() = {"pagina_angajamente", RibbonKeyToSign, "pagina_inchide", "navigare_istoric", "setari", "istoric_versiuni"}
 
     ''' <summary>The director-only ribbon button that opens the list of documents waiting for the signature (slice 0081-06).</summary>
     Friend Const RibbonKeyToSign As String = "director_de_semnat"

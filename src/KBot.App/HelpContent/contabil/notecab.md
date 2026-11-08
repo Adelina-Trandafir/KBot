@@ -26,14 +26,15 @@ la fiecare conectare și te ajută să faci **nota contabilă de corecție CAB**
 <!-- capture: operatiuni-necorelate | caption: Fereastra de corectare a operațiunilor necorelate | goto: menu:operatiuni_necorelate | prepare: E nevoie de cel puțin o operațiune necorelată în baza unității. Deschideți-o din ribbon, Angajamente › Verificări › «Operațiuni necorelate». | redo: 2026-10-16 12:00 | why: 0113-01: fereastra e o fereastră cu bara ei de titlu, mai mică decât spațiul de lucru, nu o pagină a ferestrei principale -->
 
 ## Cum faci nota
-<!-- slice: 0088, 0113, 0088-06 -->
+<!-- slice: 0088, 0113, 0088-06, 0088-09, 0000-167 -->
 
 1. Pentru **fiecare** operațiune alegi **angajamentul** și **indicatorul** căruia îi aparține.
    Un rând complet primește o bifă.
 2. **Salvează tot** se aprinde doar când toate rândurile rămase în notă sunt bifate. Salvează o singură notă
    cu toate corecțiile.
-3. K-BOT face PDF-ul notei și te întreabă **«Vrei să încarci NOTA DE CORECȚIE în CAB?»**. La «Da»,
-   robotul o încarcă în FOREXE, la transmiterea documentelor electronice.
+3. K-BOT face PDF-ul notei și închide fereastra. Nota **nu se încarcă în CAB la salvare**: nu are încă
+   semnăturile. O semnezi în vederea **«Note corecție»**, apoi o trimiți de acolo cu **«Trimite în CAB»**
+   (mai jos).
 
 ### Un rând care nu se corectează de aici
 <!-- slice: 0088-06 -->

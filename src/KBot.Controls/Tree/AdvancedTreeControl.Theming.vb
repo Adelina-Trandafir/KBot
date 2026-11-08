@@ -26,9 +26,12 @@ Partial Public Class AdvancedTreeControl
     Implements IThemedControl
 
     ' ── Culorile «auto» (fallback pentru orice proprietate lăsată Empty) ──────────
-    Private _autoHeaderBack As Color = Color.FromArgb(222, 222, 222)
+    ' Pre-theme = the Classic look, as in KBotDataView (band rule, see ApplyTheme).
+    Private _autoHeaderBack As Color = SystemColors.Control
     Private _autoHeaderFore As Color = Color.FromArgb(50, 50, 60)
-    Private _autoFooterBack As Color = Color.FromArgb(222, 222, 222)
+    Private _autoHeaderSep As Color = Color.Gainsboro
+    Private _autoFooterSep As Color = Color.Gainsboro
+    Private _autoFooterBack As Color = SystemColors.Control
     Private _autoFooterFore As Color = Color.FromArgb(50, 50, 60)
     Private _autoSearchBack As Color = Color.FromArgb(222, 222, 222)
     Private _autoSearchBoxBack As Color = Color.Empty      ' Empty ⇒ cade pe Me.BackColor
@@ -248,8 +251,20 @@ Partial Public Class AdvancedTreeControl
 
             _autoHeaderBack = p.SurfaceAltColor
             _autoHeaderFore = p.TextColor
-            _autoFooterBack = p.SurfaceAltColor
             _autoFooterFore = p.TextColor
+            ' BAND RULE (operator, 07.11.2026): same colours as KBotDataView. Classic = Control back
+            ' + Gainsboro line; any other scheme = the DGV defaults (footer washed toward the accent,
+            ' line = accent).
+            If String.Equals(scheme.Name, BuiltInSchemes.ClassicName, StringComparison.OrdinalIgnoreCase) Then
+                _autoHeaderBack = SystemColors.Control
+                _autoFooterBack = SystemColors.Control
+                _autoHeaderSep = Color.Gainsboro
+                _autoFooterSep = Color.Gainsboro
+            Else
+                _autoFooterBack = Blend(p.SurfaceAltColor, p.AccentColor, 0.1F)
+                _autoHeaderSep = p.AccentColor
+                _autoFooterSep = p.AccentColor
+            End If
             _autoSearchBack = p.SurfaceAltColor
             _autoSearchBoxBack = p.InputBackColor
             _autoHoverBack = p.ButtonHoverColor

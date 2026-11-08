@@ -274,7 +274,6 @@ Partial Class DataViewPlaygroundForm
         ' 
         ' grid
         ' 
-        grid.BackColor = SystemColors.Window
         grid.Dock = DockStyle.Fill
         grid.EnableGrouping = True
         grid.Location = New Point(343, 53)

@@ -210,6 +210,8 @@ Partial Public Class CustomPopup
     Protected Overrides Sub OnMouseMove(e As MouseEventArgs)
         MyBase.OnMouseMove(e)
         Try
+            ' Opening a keyboard selector under a stationary pointer must not replace its MRU selection.
+            If PreviewColumns > 0 AndAlso Not AcceptPreviewHover() Then Return
             ' Cât se trage un cursor, mouse-ul e AL LUI: mișcarea nu mai mută evidențierea, nici
             ' dacă degetul iese din rând. Altfel o tragere lungă ar «scăpa» pe rândul vecin și
             ' valoarea ar rămâne în urmă la jumătatea drumului.

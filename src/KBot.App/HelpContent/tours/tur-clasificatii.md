@@ -22,11 +22,10 @@ target: ClasificatiiBugetView.tree
 part: header.search
 Caută o clasificație. Esc golește căutarea și închide banda.
 
-## Arbore › Adaugă clasificații
-<!-- slice: 0087, 0000-23 -->
-target: ClasificatiiBugetView.tree
-part: footer.right
-Semnul + deschide fereastra de adăugare: alegi sursa, clasificațiile funcționale și pe cele economice, ca la înregistrarea unității.
+## Ribbon › Adaugă clasificații
+<!-- slice: 0087, 0000-23, 0126-07 -->
+anchor: ribbon.clasificatii_adauga
+Butonul «Adaugă» din grupul «Clasificații» deschide fereastra în care alegi sursa, clasificațiile funcționale și pe cele economice.
 
 ## Bugetul
 <!-- slice: 0087, 0000-20, 0102, 0000-40, 0107-02, 0107 -->
@@ -60,6 +59,6 @@ target: ClasificatiiBugetView.gridTotal
 Ultimul buget (cel cu data de început cea mai nouă) plus toate rectificările, pe trimestre. La un nod mai sus de alineat adună toate clasificațiile de sub el.
 
 ## Salvează
-<!-- slice: 0087, 0000-20, 0102, 0000-40 -->
-target: ClasificatiiBugetView.btnSalveaza
+<!-- slice: 0087, 0000-20, 0102, 0000-40, 0126-03 -->
+anchor: ribbon.clasificatii_salveaza
 Scrie versiunile de buget și rectificările. Dacă treci pe alt nod sau închizi fereastra cu modificări nesalvate, K-BOT te întreabă ce faci cu ele.

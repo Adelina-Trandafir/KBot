@@ -131,12 +131,8 @@ Partial Class SablonSalariiView
         '
         ' tree
         '
-        tree.BackColor = SystemColors.Window
-        tree.BorderColor = SystemColors.ActiveBorder
         tree.Dock = DockStyle.Fill
-        tree.HeaderBackColor = SystemColors.Control
         tree.HeaderCaption = " ARTICOLE DE SALARII"
-        tree.HeaderHeight = 24
         tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
         tree.HeaderVisible = True
@@ -214,7 +210,6 @@ Partial Class SablonSalariiView
         ' gridAng
         '
         gridAng.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridAng.BackColor = SystemColors.Window
         gridAng.ColumnFillMode = KBotFillMode.SpecificColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.FormatString = Nothing
@@ -287,8 +282,6 @@ Partial Class SablonSalariiView
         gridAng.Dock = DockStyle.Fill
         gridAng.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
         gridAng.FillColumnKey = "expl"
-        gridAng.HeaderHeight = 31
-        gridAng.HeaderSeparatorColor = SystemColors.ActiveBorder
         gridAng.Margin = New Padding(0)
         gridAng.Name = "gridAng"
         gridAng.RowHeight = 31
@@ -297,7 +290,6 @@ Partial Class SablonSalariiView
         ' gridRet
         '
         gridRet.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridRet.BackColor = SystemColors.Window
         gridRet.ColumnFillMode = KBotFillMode.SpecificColumn
         KBotDataColumn8.AggregateFormatString = Nothing
         KBotDataColumn8.ColumnType = KBotColumnType.CheckBox
@@ -394,8 +386,6 @@ Partial Class SablonSalariiView
         gridRet.Dock = DockStyle.Fill
         gridRet.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
         gridRet.FillColumnKey = "expl"
-        gridRet.HeaderHeight = 24
-        gridRet.HeaderSeparatorColor = SystemColors.ActiveBorder
         gridRet.Margin = New Padding(0)
         gridRet.Name = "gridRet"
         gridRet.RowHeight = 24
@@ -405,7 +395,6 @@ Partial Class SablonSalariiView
         ' gridVir
         '
         gridVir.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridVir.BackColor = SystemColors.Window
         gridVir.ColumnFillMode = KBotFillMode.SpecificColumn
         KBotDataColumn17.AggregateFormatString = Nothing
         KBotDataColumn17.ColumnType = KBotColumnType.CheckBox
@@ -502,8 +491,6 @@ Partial Class SablonSalariiView
         gridVir.Dock = DockStyle.Fill
         gridVir.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
         gridVir.FillColumnKey = "expl"
-        gridVir.HeaderHeight = 24
-        gridVir.HeaderSeparatorColor = SystemColors.ActiveBorder
         gridVir.Margin = New Padding(0)
         gridVir.Name = "gridVir"
         gridVir.RowHeight = 24
@@ -513,7 +500,6 @@ Partial Class SablonSalariiView
         ' gridNum
         '
         gridNum.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridNum.BackColor = SystemColors.Window
         gridNum.ColumnFillMode = KBotFillMode.SpecificColumn
         KBotDataColumn26.AggregateFormatString = Nothing
         KBotDataColumn26.FormatString = Nothing
@@ -599,8 +585,6 @@ Partial Class SablonSalariiView
         gridNum.Dock = DockStyle.Fill
         gridNum.EnterKeyMode = KBotEnterKeyMode.NextEditableCell
         gridNum.FillColumnKey = "expl"
-        gridNum.HeaderHeight = 24
-        gridNum.HeaderSeparatorColor = SystemColors.ActiveBorder
         gridNum.Margin = New Padding(0)
         gridNum.Name = "gridNum"
         gridNum.RowHeight = 24

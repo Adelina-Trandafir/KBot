@@ -3,7 +3,7 @@ Imports System.Collections.Generic
 Imports KBot.Domain
 
 ''' <summary>
-''' Slice KE11 -- what one ticked invoice asks of the reception, as <see cref="KeLegaForm"/> hands it back: the request to the server
+''' Slice KE11 -- what one ticked invoice asks of the reception, as the reception view hands it back: the request to the server
 ''' (angajament, kind, reception, the amounts per classification), the classification of every line as chosen in the window, and whether any
 ''' choice differs from what the line had. Plain data, no logic.
 ''' </summary>

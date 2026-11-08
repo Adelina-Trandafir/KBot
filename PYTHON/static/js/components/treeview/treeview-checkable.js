@@ -34,9 +34,9 @@ export const treeViewCheckableMixin = {
       Math.max(window.getClassNumericProperty('treeview-check', 'margin-right'), 0);
   },
 
-  /** Replaces the tree. Checks on codes that no longer exist are dropped. */
-  setData(nodes, { preserveExpanded = false } = {}) {
-    this.updateResults(nodes || [], '', { preserveExpanded });
+  /** Replaces the tree and drops missing checks. Use render: false to paint after restoring checks. */
+  setData(nodes, { preserveExpanded = false, render = true } = {}) {
+    this.updateResults(nodes || [], '', { preserveExpanded, render });
     this.isTreeRendered = false;
     this._buildCheckIndex();
     for (const id of [...this.checkedLeaves]) {
@@ -56,7 +56,8 @@ export const treeViewCheckableMixin = {
     return out;
   },
 
-  setCheckedLeaves(ids) {
+  /** Set refresh: false when the caller is about to render and only needs to restore state. */
+  setCheckedLeaves(ids, { refresh = true } = {}) {
     this._buildCheckIndex();
     this.checkedLeaves = new Set();
     for (const raw of ids || []) {
@@ -64,7 +65,8 @@ export const treeViewCheckableMixin = {
       const node = this._checkIndex.get(id);
       if (node && this._isLeaf(node)) this.checkedLeaves.add(id);
     }
-    this._afterCheckChange();
+    if (refresh) this._afterCheckChange();
+    else this.updateCheckSummary();
   },
 
   clearChecks() {

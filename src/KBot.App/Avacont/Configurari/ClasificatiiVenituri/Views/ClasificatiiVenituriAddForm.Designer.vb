@@ -93,13 +93,9 @@ Partial Class ClasificatiiVenituriAddForm
         '
         ' tree
         '
-        tree.BackColor = SystemColors.Window
-        tree.BorderColor = SystemColors.ActiveBorder
         tree.ClickOnKeyNavigation = True
         tree.Dock = DockStyle.Fill
-        tree.HeaderBackColor = SystemColors.Control
         tree.HeaderCaption = " NOMENCLATOR VENITURI"
-        tree.HeaderHeight = 24
         tree.HeaderIconSize = New Size(18, 18)
         tree.HeaderLeftIcon = My.Resources.Resources.folder_open
         tree.HeaderVisible = True

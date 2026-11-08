@@ -30,7 +30,9 @@ export function bindExtractsIntake({ api, context, onAssociate }) {
   function buildGrid() {
     grid?.destroy();
     grid = new DataGrid($('ade-intake-grid'), { rows: [], columns: [
-      text('Cand', 'Încărcat', 110), text('Sursa', 'Sursa', 70), text('FISIER', 'Fișier', 330), text('Stare', 'Stare', 110),
+      { ...text('INCARCAT_LA', 'Încărcat', 150), valueType: ValueType.DateTime, formatter: when },
+      { ...text('DataExtras', 'Data extras', 110), valueType: ValueType.DateTime },
+      text('Sursa', 'Sursa', 70), text('FISIER', 'Fișier', 330), text('Stare', 'Stare', 110),
       { ...text('RANDURI', 'Operațiuni noi', 100), valueType: ValueType.Number, align: 'right' },
       text('MESAJ', 'Detalii', 300), text('EMAIL_DE', 'Expeditor e-mail', 180), text('INCARCAT_DE', 'Utilizator', 170)],
     rowKey: 'ID', autoSize: false, headerHeight: 32, mobileRowScale: 1.2, footer: true, footerCaption: '{0} înregistrări',
@@ -38,7 +40,7 @@ export function bindExtractsIntake({ api, context, onAssociate }) {
   }
   async function loadHistory() {
     const result = await api('/api/adechit/extracts/history');
-    grid.setRows(result.rows.map((row) => ({ ...row, Cand: when(row.INCARCAT_LA), Sursa: SOURCES[row.SURSA] || row.SURSA,
+    grid.setRows(result.rows.map((row) => ({ ...row, Sursa: SOURCES[row.SURSA] || row.SURSA,
       Stare: STATES[row.STARE] || row.STARE })));
   }
 

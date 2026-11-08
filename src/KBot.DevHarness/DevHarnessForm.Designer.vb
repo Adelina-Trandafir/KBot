@@ -180,7 +180,6 @@ Partial Class DevHarnessForm
         '
         'rtbResults
         '
-        Me.rtbResults.BackColor = System.Drawing.Color.White
         Me.rtbResults.Dock = System.Windows.Forms.DockStyle.Fill
         Me.rtbResults.Font = New System.Drawing.Font("Consolas", 9.0F)
         Me.rtbResults.Name = "rtbResults"

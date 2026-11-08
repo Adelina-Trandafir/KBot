@@ -39,20 +39,21 @@ Alege <b>«Clasificații cheltuieli»</b>.
 target: ClasificatiiBugetView.tree
 Clasificațiile sunt într-un arbore: <b>Capitol › Subcapitol › Titlu › Articol › Alineat</b>. Codul e în prima coloană, denumirea în a doua. Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
-## Bifele de sub arbore
-<!-- slice: 000T-10, 000T-13 -->
-target: ClasificatiiBugetView.tlyBife
+## Filtrele arborelui
+<!-- slice: 000T-10, 000T-13, 0126-04 -->
+target: ClasificatiiBugetView.tree
+part: header.right
 optional: yes
-why: Bifele sunt doar filtre ale arborelui; nu schimbă nimic în date.
+why: Filtrele sunt doar vederi ale arborelui; nu schimbă nimic în date.
+Iconița din dreapta capului arborelui deschide cele două filtre.<BR>
 <b>«Arată toate clasificațiile»</b> bifat: arborele arată toate clasificațiile configurate; debifat: doar cele cu mișcare în an (un trimestru de buget sau de rectificare diferit de zero).<BR>
 <mark>«Arată DOAR clasificațiile folosite în FOREXE» are prioritate: arată numai clasificațiile pentru care FOREXE a raportat un credit bugetar.</mark> Apasă «Înainte» (săgeata verde cu bară, jos în dreapta, ⇥).
 
-## Iconița «+» din subsolul arborelui
-<!-- slice: 000T-10 -->
-target: ClasificatiiBugetView.tree
-part: footer.right
+## Adaugă din ribbon
+<!-- slice: 000T-10, 0126-07 -->
+anchor: ribbon.clasificatii_adauga
 wait: opens:ClasificatiiAddForm
-Apasă <b>«+»</b> din subsolul arborelui, cel de lângă «Adaugă clasificații». Se deschide fereastra de adăugare.
+Apasă <b>«Adaugă»</b> (plusul verde) în grupul «Clasificații» din dreapta ribbonului. Se deschide fereastra de adăugare.
 
 ## 1. Sursa și sectorul
 <!-- slice: 000T-10, 000T-13 -->

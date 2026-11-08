@@ -105,7 +105,6 @@ Partial Class OrdBeneficiariPage
         ' 
         grdLinii.AutoSizeColumnsMode = KBotAutoSizeMode.None
         grdLinii.AutoSizeHeaderHeight = False
-        grdLinii.BackColor = SystemColors.Window
         grdLinii.ColumnFillMode = KBotFillMode.SpecificColumn
         KBotDataColumn1.AggregateFormatString = Nothing
         KBotDataColumn1.AutoSizeMode = KBotAutoSizeMode.None
@@ -113,7 +112,6 @@ Partial Class OrdBeneficiariPage
         KBotDataColumn1.ColumnFilterIcon = My.Resources.Resources.Everaldo_Crystal_Clear_App_xmag_search_48
         KBotDataColumn1.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.FormatString = Nothing
-        KBotDataColumn1.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn1.HeaderText = "Clasificație"
         KBotDataColumn1.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn1.Key = "clsf"
@@ -127,7 +125,6 @@ Partial Class OrdBeneficiariPage
         KBotDataColumn2.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn2.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.FormatString = Nothing
-        KBotDataColumn2.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn2.HeaderText = "Cod SSI"
         KBotDataColumn2.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn2.Key = "ssi_iban"
@@ -140,7 +137,6 @@ Partial Class OrdBeneficiariPage
         KBotDataColumn3.CellPadding = New Padding(2, 0, 2, 0)
         KBotDataColumn3.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.FormatString = Nothing
-        KBotDataColumn3.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn3.HeaderText = "Explicație"
         KBotDataColumn3.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn3.Key = "explicatie"
@@ -153,7 +149,6 @@ Partial Class OrdBeneficiariPage
         KBotDataColumn4.DecimalPlaces = 2
         KBotDataColumn4.Format = KBotFormat.Standard
         KBotDataColumn4.FormatString = Nothing
-        KBotDataColumn4.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn4.HeaderText = "Recepții"
         KBotDataColumn4.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn4.Key = "total_receptii"
@@ -169,7 +164,6 @@ Partial Class OrdBeneficiariPage
         KBotDataColumn5.DecimalPlaces = 2
         KBotDataColumn5.Format = KBotFormat.Standard
         KBotDataColumn5.FormatString = Nothing
-        KBotDataColumn5.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn5.HeaderText = "Plăți ant."
         KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn5.Key = "plati_ant"
@@ -186,7 +180,6 @@ Partial Class OrdBeneficiariPage
         KBotDataColumn6.DecimalPlaces = 2
         KBotDataColumn6.Format = KBotFormat.Standard
         KBotDataColumn6.FormatString = Nothing
-        KBotDataColumn6.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn6.HeaderText = "Valoare"
         KBotDataColumn6.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn6.Key = "valoare"
@@ -201,7 +194,6 @@ Partial Class OrdBeneficiariPage
         KBotDataColumn7.DecimalPlaces = 2
         KBotDataColumn7.Format = KBotFormat.Standard
         KBotDataColumn7.FormatString = Nothing
-        KBotDataColumn7.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn7.HeaderText = "Rămas"
         KBotDataColumn7.HeaderTextAlign = ContentAlignment.MiddleCenter
         KBotDataColumn7.Key = "ramas"
@@ -220,15 +212,9 @@ Partial Class OrdBeneficiariPage
         grdLinii.Dock = DockStyle.Fill
         grdLinii.EnableGrouping = True
         grdLinii.FillColumnKey = "explicatie"
-        grdLinii.FooterBackColor = SystemColors.Control
         grdLinii.FooterCaption = "TOTAL"
-        grdLinii.FooterFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        grdLinii.FooterHeight = 30
-        grdLinii.FooterSeparatorColor = SystemColors.ActiveBorder
         grdLinii.FooterVisible = True
         grdLinii.FrozenColumnCount = 1
-        grdLinii.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        grdLinii.HeaderSeparatorColor = SystemColors.ActiveBorder
         grdLinii.Location = New Point(4, 165)
         grdLinii.Margin = New Padding(4, 6, 4, 6)
         grdLinii.Name = "grdLinii"
@@ -278,14 +264,12 @@ Partial Class OrdBeneficiariPage
         ' grdStanga
         ' 
         grdStanga.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        grdStanga.BackColor = SystemColors.Window
         grdStanga.ColumnFillMode = KBotFillMode.FirstColumn
         KBotDataColumn8.AggregateFormatString = Nothing
         KBotDataColumn8.AutoSizeMode = KBotAutoSizeMode.None
         KBotDataColumn8.CellPadding = New Padding(4, 0, 4, 0)
         KBotDataColumn8.ColumnFont = New Font("Calibri", 9F, FontStyle.Regular, GraphicsUnit.Point, CByte(0))
         KBotDataColumn8.FormatString = Nothing
-        KBotDataColumn8.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
         KBotDataColumn8.HeaderText = "Beneficiari"
         KBotDataColumn8.HeaderTextAlign = ContentAlignment.MiddleLeft
         KBotDataColumn8.Key = "eticheta"
@@ -296,8 +280,6 @@ Partial Class OrdBeneficiariPage
         grdStanga.Columns.Add(KBotDataColumn8)
         grdStanga.Dock = DockStyle.Fill
         grdStanga.EnableGrouping = True
-        grdStanga.HeaderFont = New Font("Calibri", 9F, FontStyle.Bold, GraphicsUnit.Point, CByte(0))
-        grdStanga.HeaderSeparatorColor = SystemColors.ActiveBorder
         grdStanga.Location = New Point(0, 57)
         grdStanga.Margin = New Padding(0)
         grdStanga.Name = "grdStanga"
