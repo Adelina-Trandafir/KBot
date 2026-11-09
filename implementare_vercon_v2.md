@@ -1,5 +1,15 @@
 # Implementare VERCON v2
 
+### [2026-11-09 — SLICE-VC14-03 — Macheta și meniul BU](docs/worklog/SLICE-VC14-03-macheta-si-meniu-bu.md)
+
+### [2026-11-09 — SLICE-VC14-02 — Documente și evidență BU](docs/worklog/SLICE-VC14-02-documente-si-evidenta-bu.md)
+
+### [2026-11-09 — SLICE-VC14-01 — Retragerea fluxului anterior](docs/worklog/SLICE-VC14-01-retragere-flux-intre-subunitati.md)
+
+### [2026-11-09 — SLICE-VC13-01 — Validare comună pentru stocul de magazie](docs/worklog/SLICE-VC13-01-validare-comuna-stoc-magazie.md)
+
+### [2026-11-09 — SLICE-VC04-06 — Mesaj pentru sesiunea de lucru a gestiunii](docs/worklog/SLICE-VC04-06-mesaj-sesiune-gestiune.md)
+
 ## Actualizare 07.11.2026 — Bifarea arborelui din Rapoarte Online (SLICE-VC08-23)
 
 [Worklog SLICE-VC08-23](docs/worklog/SLICE-VC08-23-rapoarte-bifare-arbore.md).
@@ -965,3 +975,9 @@ La salvare, daca valoarea din antet difera de totalul liniilor cu cel mult 1 leu
 ### [2026-11-06 — SLICE-VC12-09: Antet standard și context comun VERCON/inventar, cont OIM implicit](docs/worklog/SLICE-VC12-09-inventar-antet-context-vercon.md)
 
 ### [2026-11-06 — SLICE-VC08-22: Căutare în casete cu pauză editabilă și minimum 2 caractere](docs/worklog/SLICE-VC08-22-cautare-casete-debounce-minim-2.md)
+
+### [2026-11-09 — SLICE-VC09-18: Mișcările produsului din rapoartele OI și MF](docs/worklog/SLICE-VC09-18-miscari-produs-din-rapoarte-oi-mf.md)
+
+### [2026-11-09 — SLICE-VC06-41: Filtrul de afișare în NIR din eFactura](docs/worklog/SLICE-VC06-41-filtru-nir-din-efactura.md)
+
+### [2026-11-09 — SLICE-VC06-42: Înlocuirea și eliminarea asocierilor NIR–eFactura](docs/worklog/SLICE-VC06-42-inlocuire-eliminare-asociere-nir-efactura.md)

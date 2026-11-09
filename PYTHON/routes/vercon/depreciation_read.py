@@ -1,5 +1,5 @@
 """VC08-02: reproducible read contract, exact text amounts and per-asset diagnostics."""
-from . import depreciation, depreciation_source
+from . import bu_mf, depreciation, depreciation_source
 from .stock import quantity_text
 
 AMOUNTS = ('value', 'monthly', 'accumulated', 'remaining', 'month_depreciation',
@@ -8,12 +8,20 @@ AMOUNTS = ('value', 'monthly', 'accumulated', 'remaining', 'month_depreciation',
 
 def read(cursor, ctx, on_date, variant=None):
     assets, events = depreciation_source.load(cursor, ctx, variant)
+    transfers = bu_mf.by_variant(cursor, ctx)
     rows = []
     totals = {field: 0 for field in AMOUNTS}
     incomplete = []
     excluded = []
     for key, asset in assets.items():
-        result = depreciation.calculate(asset, events.get(key, []), on_date, ctx['scale'], ctx['zec'])
+        movements, zec = events.get(key, []), ctx['zec']
+        if key in transfers:
+            if not bu_mf.owns(ctx, key, transfers[key], on_date):
+                if variant is not None:
+                    raise NomError('MF_OUTSIDE', 'Activul nu aparține gestiunii la data aleasă.', 404)
+                continue
+            movements, zec = bu_mf.acquisition(cursor, ctx, key, transfers[key], movements)
+        result = depreciation.calculate(asset, movements, on_date, ctx['scale'], zec)
         if result['status'] == 'invalid':
             incomplete.append(asset['IdProdus'])
         elif result['status'] in ('not_entered', 'not_in_use'):

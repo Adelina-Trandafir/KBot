@@ -11,8 +11,9 @@ ZEC; the used duration cannot pass the normal one; nothing of a closed year is t
 that is always open). The identity of an asset never changes: editing its register never re-creates the variant.
 """
 from decimal import Decimal
+from utils.clock import bucharest_today
 
-from . import numeric, protocol
+from . import bu_mf, numeric, protocol
 from .documents import _all, _fail, _int, _money, _one, _iso, _scope
 from .nomenclatoare import NomError
 
@@ -21,6 +22,7 @@ def assets(cursor, ctx):
     s, g, e = _scope(ctx)
     scale = ctx['scale']
     rows = _all(cursor, 'SELECT m.RowId, m.IdProdus, m.DataIntrare, m.DNF, m.DF, m.ValoareLuna, m.Version, pp.COD, pr.DenumireP, pr.UM, '
+                        'pp.PUTVA AS TransferValue, '
                         '(SELECT COALESCE(SUM(i.ValoareCUTVA),0) FROM VC_Intrari i JOIN VC_NIR n ON n.SubunitId=i.SubunitId AND n.GestiuneId=i.GestiuneId AND n.ExercitiuId=i.ExercitiuId AND n.IdIntrare=i.IdIntrare '
                         ' WHERE i.SubunitId=m.SubunitId AND i.GestiuneId=m.GestiuneId AND i.IdProdus=m.IdProdus AND n.Anulat=0 AND COALESCE(n.Storno,0)=0) AS Valoare, '
                         '(SELECT COALESCE(SUM(c.Cant),0) FROM VC_OI_Casare c WHERE c.SubunitId=m.SubunitId AND c.GestiuneId=m.GestiuneId AND c.IdProdus=m.IdProdus AND c.Anulat=0) AS Casat '
@@ -32,7 +34,14 @@ def assets(cursor, ctx):
                   'WHERE o.SubunitId=%s AND o.GestiuneId=%s GROUP BY o.IdProdus, o.IDC_PTC, c.Denumire HAVING SUM(o.Cant)<>0', (s, g)):
         holders.setdefault(r['IdProdus'], []).append({'holder': r['Denumire'] or '', 'qty': _money(Decimal(r['q']), scale)})
     out = []
+    transfers = bu_mf.by_variant(cursor, ctx)
+    today = bucharest_today()
     for r in rows:
+        variant = r['IdProdus']
+        if variant in transfers:
+            if not bu_mf.owns(ctx, variant, transfers[variant], today):
+                continue
+            r['Valoare'] = r['TransferValue']
         out.append({'id': r['IdProdus'], 'version': r['Version'], 'name': r['DenumireP'], 'um': r['UM'], 'code': r['COD'], 'entry_date': _iso(r['DataIntrare']), 'DNF': r['DNF'], 'DF': r['DF'],
                     'value': _money(Decimal(r['Valoare'] or 0), scale), 'monthly': _money(r['ValoareLuna'], scale), 'written_off': _money(Decimal(r['Casat'] or 0), scale),
                     'holders': holders.get(r['IdProdus'], [])})
@@ -44,6 +53,9 @@ def update(cursor, repo, ctx, variant, body, request_id):
     if not rows:
         raise NomError('NOT_FOUND', 'Mijlocul fix nu mai există.', 404)
     before = rows[0]
+    transfers = bu_mf.by_variant(cursor, ctx)
+    if variant in transfers and not bu_mf.owns(ctx, variant, transfers[variant], bucharest_today()):
+        raise NomError('MF_OUTSIDE', 'Activul aparține altei gestiuni.', 409)
     version = _int(body.get('version'))
     if version is None or before['Version'] != version:
         raise NomError('CONFLICT', 'Evidența a fost modificată de altcineva. Reîncărcați lista.', 409, {'version': before['Version']})
@@ -59,8 +71,11 @@ def update(cursor, repo, ctx, variant, body, request_id):
     _fail(errors)
     cost = _one(cursor, 'SELECT COALESCE(SUM(i.ValoareCUTVA),0) AS v FROM VC_Intrari i JOIN VC_NIR n ON n.SubunitId=i.SubunitId AND n.GestiuneId=i.GestiuneId AND n.ExercitiuId=i.ExercitiuId AND n.IdIntrare=i.IdIntrare '
                          'WHERE i.SubunitId=%s AND i.GestiuneId=%s AND i.IdProdus=%s AND n.Anulat=0 AND COALESCE(n.Storno,0)=0', (ctx['subunit'], ctx['gestiune'], variant))
+    if variant in transfers:
+        cost = _one(cursor, 'SELECT PUTVA AS v FROM VC_ProduseP WHERE SubunitId=%s AND GestiuneId=%s AND IdProdus=%s',
+                    (ctx['subunit'], ctx['gestiune'], variant))
     monthly = before['ValoareLuna']
-    if cost and Decimal(cost['v']):
+    if cost and cost['v'] is not None and Decimal(cost['v']):
         monthly = numeric.to_stored(numeric.calc_round(numeric.from_stored(Decimal(cost['v']), ctx['scale']) / Decimal(dnf), ctx['zec']), ctx['scale'])
     if repo.update('VC_ProduseM', {'DataIntrare': entry, 'DNF': dnf, 'DF': df, 'ValoareLuna': monthly}, {'IdProdus': variant, 'Version': version}, bump_version=True) != 1:
         raise NomError('CONFLICT', 'Evidența a fost modificată de altcineva. Reîncărcați lista.', 409)

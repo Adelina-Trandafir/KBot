@@ -39,8 +39,23 @@ Public NotInheritable Class DeploymentPublisher
         End Try
     End Function
 
+    ''' <summary>
+    ''' Removes from the server's debugging evidence the files that exist neither locally nor on the server.
+    ''' The server re-checks that each file is really gone; returns the paths it forgot.
+    ''' </summary>
+    Public Shared Function ForgetMissing(k_settings As AdminSettings, k_paths As IReadOnlyList(Of String),
+                                         k_onLine As Action(Of String)) As List(Of String)
+        Try
+            Dim k_data As JsonElement = Execute(k_settings, Nothing, "forget_debug", k_onLine, k_paths)
+            Return JsonSerializer.Deserialize(Of List(Of String))(k_data.GetProperty("forgotten").GetRawText())
+        Catch ex As Exception
+            GlobalErrorLog.Write("DeploymentPublisher.ForgetMissing", ex)
+            Throw
+        End Try
+    End Function
+
     Private Shared Function Execute(k_settings As AdminSettings, k_plan As DeploymentPlan, k_action As String,
-                                    k_onLine As Action(Of String)) As JsonElement
+                                    k_onLine As Action(Of String), Optional k_paths As IReadOnlyList(Of String) = Nothing) As JsonElement
         Dim k_stage As String = String.Empty
         Try
             Using k_ssh As New SshSession(k_settings)
@@ -67,6 +82,7 @@ Public NotInheritable Class DeploymentPublisher
                         Next
                     End If
                     Dim k_manifest As New With {.action = k_action, .files = k_manifestFiles,
+                        .paths = If(k_paths, New List(Of String)),
                         .message = If(k_plan Is Nothing, String.Empty, k_plan.Message), .preserve_mtime = k_settings.PreserveMTime}
                     k_sftp.UploadBytes(JsonSerializer.SerializeToUtf8Bytes(k_manifest), k_stage & "/manifest.json")
                     Using k_stream As Stream = GetType(DeploymentPublisher).Assembly.GetManifestResourceStream("publish.server.py")

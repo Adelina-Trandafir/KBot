@@ -1,4 +1,9 @@
 /* PTC shares the BC new-row grid and action bar; BP keeps its saved tree. */
+.vc-bu.vc-nom { display: flex; flex-direction: column; gap: 8px; }
+.vc-bu__editor { min-height: 0; flex: 1 1 auto; display: flex; flex-direction: column; }
+.vc-bu__lines { min-height: 10rem; flex: 1 1 auto; }
+.vc-bu__add { display: flex; align-items: end; gap: 8px; }
+.vc-bu .vc-doc__header:empty { display: none; }
 .vc-doc:is(.vc-doc--bp, .vc-doc--bt, .vc-doc--bs) .vc-doc__header--oi {
   grid-template-columns: repeat(3, minmax(0, 280px));
   align-content: start;

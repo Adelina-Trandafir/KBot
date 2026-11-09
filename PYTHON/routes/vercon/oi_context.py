@@ -4,7 +4,7 @@ from decimal import Decimal
 
 from flask import request
 
-from . import bon_number, oi, protocol
+from . import bon_number, bu_links, oi, protocol
 from .documents import _all, _int, _iso, _money, _one, _scope
 from .nomenclatoare import NomError
 
@@ -51,10 +51,12 @@ def statement(cursor, ctx, on, holder=None, variant=None):
         ).format(key=spec['key'], number=spec['num'], date=spec['date'], table=spec['table'],
                  giver=giver, receiver=receiver, parties=parties, where=where), params)
         for row in rows:
-            sign = -1 if holder is not None and row['giver_id'] == holder else 1
-            entries.append({'id': row['id'], 'kind': family.upper(), 'number': bon_number.display(family, row['number']),
-                            'date': _iso(row['day']), 'giver': row['giver'] or ('Magazie' if family == 'bp' else ''),
-                            'receiver': row['receiver'] or ('Casare' if family == 'bs' else ''),
+            external = family == 'bt' and bu_links.is_bu(row['number'])
+            sign = -1 if external or holder is not None and row['giver_id'] == holder else 1
+            entries.append({'id': row['id'], 'kind': 'BU' if external else family.upper(), 'number': bon_number.display(family, row['number']),
+                            'date': _iso(row['day']), 'giver': row['giver'] or ('Magazie' if family == 'bp' or external else ''),
+                            'receiver': ('Transferat în afara subunității' if external else
+                                         row['receiver'] or ('Casare' if family == 'bs' else '')),
                             'quantity': _money(sign * Decimal(row['quantity'] or 0), ctx['scale']),
                             'value': _money(sign * Decimal(row['value'] or 0), ctx['scale'])})
     entries.sort(key=lambda row: (row['date'] or '', row['id'], row['kind']), reverse=True)

@@ -9,7 +9,7 @@ from decimal import Decimal, ROUND_HALF_UP
 
 from utils.clock import utc_now
 from routes.admin_cli.inventory_similarity import number
-from . import numeric, nomenclatoare as nom, protocol, oi, receipt_number, receipt_products
+from . import consumption_timeline, numeric, nomenclatoare as nom, protocol, oi, receipt_number, receipt_products
 from .inventory_source import ON
 
 
@@ -176,7 +176,8 @@ def apply(cursor, repo, ctx, exercise, workspace, body, request_id):
         protocol.audit(cursor, ctx, 'inventory.custody.in', 'VC_OI_Predare', document, None, line, key, request_id)
         documents.append({'family': 'bp', 'id': document, 'number': doc_number})
     touched = set(changed_quantities) | new_ids
-    protocol.check_timeline(cursor, ctx, touched)
+    month_start = consumption_timeline.work_month_start(cursor, ctx, ON)
+    consumption_timeline.require_nonnegative(cursor, ctx, touched, month_start)
     from . import oi_custody
     oi_custody.check_timeline(cursor, ctx, touched)
     from . import inventory_source

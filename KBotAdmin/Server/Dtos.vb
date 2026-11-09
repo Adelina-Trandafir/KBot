@@ -105,6 +105,8 @@ Public Class CommandBlock
     Public Property Note As String = String.Empty
     ''' <summary>True: print each row as one untruncated line instead of an aligned column table.</summary>
     Public Property Raw As Boolean
+    Public Property ConfirmationToken As String = String.Empty
+    Public Property ConfirmationLabel As String = String.Empty
 End Class
 
 Public Class CommandResult

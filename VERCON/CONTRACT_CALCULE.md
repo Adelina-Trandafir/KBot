@@ -108,7 +108,9 @@ Fara `Forms!`/`TempVars`/`Eval`: toti parametrii sunt explicit (`DC, SubunitId, 
 
 **Sursa (QBC)**: `Cant = Round((CIN + CR) - COUT - CT - CS, Zec)`, filtrat `> 0`. `CIN` = `Intrari` cu `NIR.DataFc <= data`; `COUT` = `Iesiri` cu `Iesiri_H.DataBC <= data` si bonul curent exclus; `CR` = `IesiriRetur` cu `DataBC <= data`; `CT` = liniile draft `tmpFactV`; `CS` = `IntrariStorno` **fara filtru de data** (defect N08).
 
-**Contract**: `disponibil(data) = intrari(DataFc<=data) + retururi(DataBC<=data) - iesiri(DataBC<=data, document!=curent) - draft - storno(data NIR storno <= data)`. Fiecare ramura filtrata pe context (subunitate+gestiune) si pe data. Un storno posterior nu modifica disponibilul unei date anterioare. Validarea la salvare foloseste `ZEC`-ul gestiunii (nu 2): la `ZEC=4`, disponibil 1,0000 si cerere 1,0040 se **refuza**. Stocul negativ este **interzis** (Q10). Disponibilul afisat este informativ pana la verificarea sub acces exclusiv, in tranzactie.
+**Disponibilul afișat** însumează mișcările semnate până la data cerută inclusiv, pentru aceeași subunitate, gestiune, exercițiu și variantă de preț. Intrările și stornările folosesc data NIR, iar consumurile și retururile folosesc data bonului. La editare, calculul poate exclude documentul salvat și poate include mișcările din ciornă.
+
+**Validarea cronologică a magaziei** folosește același validator Python pentru ciorne și salvări. Luna în lucru este ultima lună cu BC sau, la Alimente, cu BC ori liste de alimente din exercițiu. În lipsa acestor documente, se ia luna documentului, iar la mutarea datei se alege luna mai veche dintre cele două. Mișcările anterioare se însumează în soldul de pornire. Un sold de pornire negativ sau un sold zilnic negativ din luna în lucru ori ulterior refuză operațiunea. Intrările preced ieșirile din aceeași zi. Se folosesc cantitățile `DECIMAL` la precizia stocată. [SLICE-VC13-01](../docs/worklog/SLICE-VC13-01-validare-comuna-stoc-magazie.md)
 
 ### 3.2 Balanta / fisa (Balanta22, QSFP_BL)
 

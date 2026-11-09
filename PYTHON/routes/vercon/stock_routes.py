@@ -38,6 +38,11 @@ def register(bp, guard, scoped, session, build):
         filters = {name: optional_id(name) for name in ('product', 'variant', 'category', 'supplier', 'holder')}
         with session(False) as cursor:
             ctx, _ = build(cursor, vctx, None, False)
+            if request.args.get('report_card') == '1' and ctx['type'] in ('OI', 'MF'):
+                if filters['variant'] is None:
+                    raise NomError('INVALID', 'Alegeți produsul din raport.', 422)
+                from . import product_movements
+                return product_movements.report_history(cursor, ctx, filters['variant'], start, end, vctx['gestiune']['name'])
             return stock.read(cursor, ctx, start, end, ledger=request.args.get('ledger', 'warehouse'),
                               group=request.args.get('group', 'variant'), **filters)
 

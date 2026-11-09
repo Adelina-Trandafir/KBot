@@ -1,16 +1,51 @@
-// SLICE-VC09-11: a compact warehouse card over the PDF, using its frozen context.
+// Product details over the PDF, using the frozen report context.
 import { el, modal, grid, column } from './ui.js';
 import { decimalText } from './decimal-text.js';
 
 const kinds = { nir: 'NIR', storno: 'Storno', bc: 'Bon de consum', br: 'Bon de retur' };
+const movementKinds = { ...kinds, bp: 'Predare', bt: 'Transfer', bs: 'Casare' };
 const dateText = value => String(value).slice(0, 10).split('-').reverse().join('.');
 const negate = value => /^[-+]?0(?:\.0*)?$/.test(String(value)) ? '0'
   : String(value).startsWith('-') ? String(value).slice(1) : '-' + String(value);
+
+function productFacts(model, context, row, number, codeFallback = '') {
+  const facts = el('dl', { className: 'vc-stock-card__facts' });
+  for (const [label, value] of [
+    ['Gestiune', model.gestiune_name], ['Perioada', `${dateText(context.start)} — ${dateText(context.end)}`],
+    ['Cod', row.code || codeFallback], ['UM', row.um || ''], ['Preț cu TVA', number(row.price)],
+  ]) facts.append(el('dt', { textContent: label }), el('dd', { textContent: String(value || '') }));
+  return facts;
+}
+
+function renderMovements(view, status, data, model, context) {
+  const number = value => decimalText(value, data.zec);
+  status.remove();
+  view.body.append(productFacts(model, context, data.product, number));
+  if (!data.movements.length) {
+    view.body.append(el('p', { textContent: 'Nu există mișcări în perioada selectată.' }));
+    return;
+  }
+  const host = el('div', { className: 'vc-stock-card__grid' });
+  view.body.append(host);
+  const rows = data.movements.map((row, id) => ({ ...row, id, kind: movementKinds[row.kind] || row.kind }));
+  const columns = [
+    column({ key: 'date', label: 'Data', type: 'date' }, { width: 96 }),
+    column({ key: 'kind', label: 'Tip' }, { width: 115 }),
+    column({ key: 'number', label: 'Document' }, { width: 112 }),
+    column({ key: 'from', label: 'De la' }, { width: 145 }),
+    column({ key: 'to', label: 'Către' }, { width: 145 }),
+    column({ key: 'account', label: 'Cont de folosință' }, { width: 125 }),
+    column({ key: 'quantity', label: 'Cantitate', type: 'decimal' }, { width: 92, formatter: number }),
+  ].map(item => ({ ...item, editable: false, sortable: false, filter: false }));
+  grid(host, { rows, columns, rowKey: 'id', footer: false, defaultSort: false, proportionalWidths: true }, view.scope);
+}
 
 export function stockCardLinks(api, model, isCurrent = () => true) {
   const card = model.stock_card;
   if (!card || !Object.keys(card.variants || {}).length) return undefined;
   const context = Object.fromEntries(Object.entries(card.context).map(([key, value]) => [key, String(value)]));
+  const history = ['OI', 'MF'].includes(model.context?.type) || context.ledger === 'movements';
+  const title = history ? 'Mișcări produs' : 'Fișă de magazie';
   let popup = null;
   return (href, report) => {
     const url = new URL(href, window.location.href);
@@ -22,8 +57,9 @@ export function stockCardLinks(api, model, isCurrent = () => true) {
       && [...url.searchParams.keys()].every(key => key === 'variant' || Object.hasOwn(context, key));
     if (!valid || !isCurrent() || report.closed) return true;
     if (popup && !popup.closed) { popup.dialog.focus(); return true; }
-    popup = modal('Fișă de magazie • ' + card.variants[variant].name, report.scope);
+    popup = modal(title + ' • ' + card.variants[variant].name, report.scope);
     popup.dialog.classList.add('vc-stock-card');
+    popup.dialog.classList.toggle('vc-stock-card--movements', history);
     const view = popup, abort = new AbortController();
     view.scope.own(() => abort.abort());
     const outside = event => {
@@ -47,14 +83,14 @@ export function stockCardLinks(api, model, isCurrent = () => true) {
       try {
         const data = await api(url.pathname + url.search, { signal: abort.signal });
         if (!alive()) return;
+        if (history) {
+          renderMovements(view, status, data, model, context);
+          return;
+        }
         const row = data.rows.find(item => String(item.variant) === variant);
         if (!row) throw new Error('Produsul nu mai are o poziție de stoc disponibilă în gestiunea și perioada raportului.');
         const number = value => decimalText(value, data.zec);
-        const facts = el('dl', { className: 'vc-stock-card__facts' });
-        for (const [label, value] of [
-          ['Gestiune', model.gestiune_name], ['Perioada', `${dateText(context.start)} — ${dateText(context.end)}`],
-          ['Cod', row.code || variant], ['UM', row.um || ''], ['Preț cu TVA', number(row.price)],
-        ]) facts.append(el('dt', { textContent: label }), el('dd', { textContent: String(value || '') }));
+        const facts = productFacts(model, context, row, number, variant);
         const summary = el('dl', { className: 'vc-stock-card__summary' });
         for (const [label, quantity, value] of [
           ['Sold inițial', row.quantities.opening, row.values.opening],
@@ -85,7 +121,7 @@ export function stockCardLinks(api, model, isCurrent = () => true) {
       } catch (error) {
         if (alive() && error.name !== 'AbortError') {
           if (!status.isConnected) view.body.append(status);
-          status.textContent = error.message || 'Fișa de magazie nu a putut fi încărcată.';
+          status.textContent = error.message || (history ? 'Mișcările produsului nu au putut fi încărcate.' : 'Fișa de magazie nu a putut fi încărcată.');
           status.setAttribute('role', 'alert');
         }
       } finally {

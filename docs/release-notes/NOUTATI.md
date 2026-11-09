@@ -6,8 +6,8 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 
 <!-- Sectiunile sunt adaugate la fiecare `publish-release.ps1` / `push-update.ps1`, conform regulilor din [README.md](README.md). Nu stergeti marcajele ascunse `<!\-\- release: ... \-\->` si `<!\-\- felii: ... \-\->`: ele stabilesc punctul de la care sunt urmarite schimbarile pentru versiunea urmatoare.-->
 
-## 1.1.5.3 (06.11.2026)
-<!-- felii: KE20-01, KE20-02, KE20-03, KE20-04, 0000-157, 0000-158, 0000-163, 02EF-01, 02EF-02, 0000-153, 0000-155, 02EF-10, 02EF-11, 02EF-12, 02EF-13, 0000-168, 0000-169, 0097-09 -->
+## 1.1.5.5 (09.11.2026)
+<!-- felii: -->
 
 - «Receptii»: la o receptie noua sau modificata, «Valoare» a unei clasificatii poate depasi facturile bifate.
 - «Receptii»: tabelul clasificatiilor arata toti indicatorii angajamentului; valoarea nu poate fi sub facturile bifate.
@@ -28,6 +28,10 @@ Aici gasiti schimbarile din fiecare versiune, incepand cu cea mai noua.
 - Tineti Ctrl apasat pentru alegere; Shift inverseaza sensul, eliberarea lui Ctrl confirma, Esc anuleaza.
 - Setari > Aplicatie: doua bife pentru istoricul din bara de titlu si ribbon; implicit apare doar in ribbon.
 - Ajutor: «Pagina Receptii», «Plati» si istoricul navigarii (cu «Machete deschise») completate.
+
+## 1.1.5.3 (06.11.2026)
+<!-- felii: KE20-01, KE20-02, KE20-03, KE20-04, 0000-157, 0000-158, 0000-163, 02EF-01, 02EF-02, 0000-153, 0000-155, 02EF-10, 02EF-11, 02EF-12, 02EF-13, 0000-168, 0000-169, 0097-09 -->
+
 
 ## 1.1.5.2 (04.11.2026)
 <!-- release: utc=2026-11-04T10:44:05Z -->

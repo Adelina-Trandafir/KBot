@@ -45,6 +45,9 @@ Public Class CommandsView
     Private Const WipeCommandName As String = "vercon_golire"
     ' The same wipe for the accounting data of Avacont (TZ_ + the links of the invoices to their operations): the typed value must be the database name.
     Private Const AvacontWipeCommandName As String = "avacont_golire"
+    Private Const DeleteBcName As String = "vercon_bc_sterge"
+    Private Const PreviewDeleteBcName As String = "vercon_bc_analiza_stergerii"
+    Private Const DeletedBcTitle As String = "Bon de consum șters"
 
     ' Deleting ONE angajament with everything the FX_ tables hold (EF_ untouched); the typed value is the code.
     ' The analysis (read only) finds what would go; «Șterge angajamentul» deletes it for that code (the delete command only exists behind the button).
@@ -54,7 +57,7 @@ Public Class CommandsView
     Private Const AngAnalysisCountColumn As String = "randuri de sters"
 
     ' Commands that only exist behind a button, never in the list.
-    Private Shared ReadOnly HiddenCommands As New HashSet(Of String)(StringComparer.Ordinal) From {DdfExplainName, DdfRepairName, LanturiRepairName, ClsfDupRepairName, DeleteAngName}
+    Private Shared ReadOnly HiddenCommands As New HashSet(Of String)(StringComparer.Ordinal) From {DdfExplainName, DdfRepairName, LanturiRepairName, ClsfDupRepairName, DeleteAngName, PreviewDeleteBcName}
 
     ' The roots of the command list, in the order they are shown. A command is listed under the application it works for; the server
     ' does not say which, so the table below does (a command it does not name goes under NoAppRoot).
@@ -63,6 +66,7 @@ Public Class CommandsView
     Private Shared ReadOnly CommandApps As New Dictionary(Of String, String)(StringComparer.Ordinal) From {
         {"profil_produs", "VERCON"},
         {WipeCommandName, "VERCON"},
+        {DeleteBcName, "VERCON"},
         {AvacontWipeCommandName, "AVACONT"},
         {SignCheckName, "VERCON"},
         {SignRepairName, "VERCON"},
@@ -132,6 +136,7 @@ Public Class CommandsView
     ' What to expect from each command, by the name the server gives it (verb «commands»). A command the server adds later and this list
     ' does not know falls back to the generic sentence below.
     Private Shared ReadOnly Expectations As New Dictionary(Of String, String)(StringComparer.Ordinal) From {
+        {DeleteBcName, "Alegeți o bază și scrieți numărul bonului (de exemplu BC 123) sau ID-ul afișat în rezultat. «Rulează» identifică mai întâi bonul și vă arată data, gestiunea și câte poziții are. Dacă numărul se repetă, alegeți bonul folosind identificatorul afișat. După confirmare, antetul și pozițiile se șterg definitiv, într-o singură tranzacție, cu înregistrare în Jurnal. Bonul poate fi activ sau anulat. Dacă are retur, este asociat unei liste de alimente, provine dintr-un bon de predare sau exercițiul este închis, ștergerea este oprită."},
         {LanturiCheckName, "Caută în baza aleasă recepțiile al căror ultim instantaneu nu are valoarea recepției (aceleași cazuri pe care le oprește garda din fereastra de asociere) și le desparte pe cauze: instantaneu așezat pe altă recepție (numele lui e numele altei recepții a angajamentului), recepție rescrisă de gemena ei din aceeași zi (are valorile gemenei, iar lanțul ei, neatins, spune altceva) și alte cazuri, care doar se listează. Rezultatul: un sumar cu câte cazuri sunt din fiecare fel și câte sunt reparabile automat, apoi o listă cu fiecare caz și cu ce s-ar face. Dacă există cazuri reparabile apar caseta pentru codul angajamentului și butonul «Repară recepțiile»: scrieți un cod din listă și apăsați-l. Repararea mută instantaneele pe recepția lor sau pune recepția la valorile din lanțul ei, recalculează diferențele și mută cifrele salvate (total recepții, rămas) ale ordonanțărilor afectate, ca ele să se listeze din nou, nu să se genereze din nou; într-o singură tranzacție, cu Jurnal. Verificarea doar citește și cere o singură bază."},
         {DdfCheckName, "Caută în baza aleasă documentele de fundamentare care par greșite: coduri cu mai multe antete FX_DDF (editorul refuză atunci să salveze reviziile), angajamente care arată spre un document care nu e al lor, numere de revizie folosite de două ori în același document și revizii care poartă alt cod decât documentul lor. Rezultatul: un sumar cu câte cazuri sunt din fiecare fel și o listă cu fiecare caz. Sumar cu zero peste tot înseamnă că nu e nimic de semnalat. Dacă apar cazuri, apar caseta pentru codul angajamentului și butonul «Explică»: scrieți un cod din listă și vedeți ce are baza pentru el și ce ar strica ștergerea fiecărui antet (reviziile, rezervările și celelalte rânduri care ar dispărea odată cu el). Verificarea doar citește și cere o singură bază."},
         {StornoCheckName, "Verifică prețurile cu TVA ale tuturor liniilor storno și bonurilor de retur din baza selectată, în toate gestiunile și exercițiile. Arată sumarul pe gestiune și tip, apoi fiecare diferență cu produsul, documentul, prețul actual și cel propus. Sunt reparabile liniile migrate, nemodificate și active, la care prețul întreg corespunde rotunjirii Access a prețului variantei din aceeași gestiune. Celelalte diferențe rămân pentru analiză. Dacă există cazuri reparabile, apare butonul «Repară», care le corectează pe toate în baza selectată. Verificarea doar citește și cere o singură bază."},
@@ -212,6 +217,10 @@ Public Class CommandsView
                     Return
                 End If
             End If
+            If k_command.Name = DeleteBcName Then
+                Await DeleteBcAsync(k_command, _context.SelectedDb, k_param)
+                Return
+            End If
             Dim k_target As String = If(_context.IsAll, "TOATE bazele", "baza " & _context.SelectedDb)
             If k_command.Name = WipeCommandName Then
                 ' the typed name must be the selected database, and the confirmation says plainly that nothing can be undone
@@ -261,6 +270,34 @@ Public Class CommandsView
             GlobalErrorLog.Write("CommandsView.BtnRun_Click", ex)
         End Try
     End Sub
+
+    Private Async Function DeleteBcAsync(k_command As CommandInfo, k_db As String, k_param As String) As Task
+        btnRun.Enabled = False
+        Try
+            Await UiRun.Guard("CommandsView.DeleteBcAsync", _context,
+                Async Function()
+                    _context.Say("Se caută bonul de consum…")
+                    txtOutput.Text = String.Empty
+                    Dim k_preview As CommandResult = Await _context.Client.CallAsync(Of CommandResult)("command", "--name", PreviewDeleteBcName, "--db", k_db, "--param=" & k_param)
+                    If CurrentCommand() IsNot k_command OrElse _context.SelectedDb <> k_db OrElse txtParam.Text.Trim() <> k_param Then Return
+                    txtOutput.Text = RenderResult(k_preview)
+                    lblState.Text = "Analiză ștergere bon de consum"
+                    _context.Say(lblState.Text)
+                    Dim k_match As CommandBlock = k_preview.Blocks.SingleOrDefault()
+                    If k_match Is Nothing OrElse String.IsNullOrEmpty(k_match.ConfirmationToken) OrElse
+                        Not String.Equals(k_match.Db, k_db, StringComparison.OrdinalIgnoreCase) Then Return
+                    If Not UiRun.Confirm("Se șterge definitiv bonul din baza " & k_db & "." & vbLf &
+                                         k_match.ConfirmationLabel & vbLf & vbLf &
+                                         "Operația este ireversibilă. Continuați?", k_command.Title) Then Return
+                    Dim k_result As CommandResult = Await _context.Client.CallAsync(Of CommandResult)("command", "--name", DeleteBcName, "--db", k_db, "--param", k_match.ConfirmationToken)
+                    txtOutput.Text = RenderResult(k_result)
+                    lblState.Text = If(k_result.Blocks.Any(Function(k_block) k_block.Title = DeletedBcTitle), DeletedBcTitle, "Ștergerea nu a fost confirmată de server.")
+                    _context.Say(lblState.Text)
+                End Function)
+        Finally
+            btnRun.Enabled = True
+        End Try
+    End Function
 
     Private Sub HideLanturi()
         btnLanturi.Visible = False

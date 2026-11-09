@@ -153,4 +153,6 @@ class LockService:
         """A write / report / job needs the CURRENT holder's token. Missing, old, expired or another user's token is refused."""
         held = self.store.holder(sub, gest)
         if not token or held is None or held['expired'] or held['token'] != token or held['email'] != email:
-            raise LockLost('Nu detineti ocuparea acestei gestiuni.')
+            if held is not None and not held['expired'] and held['email'] != email:
+                raise LockLost('Nu poti lucra in gestiunea curenta. Altcineva are acces exclusiv!')
+            raise LockLost('Sesiunea de lucru pentru gestiunea curentă s-a încheiat. Deschide din nou formularul ca să continui.')

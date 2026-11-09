@@ -31,9 +31,11 @@ MIN_REASON = 3
 _PARTNER_CUI = association.fiscal_sql('p.CodFiscal')
 
 # A sending waits when it is TRIMISA, or PRELUATA with no NIR left that exists and is not cancelled (the rule of K-BOT's primite_vercon.stare_efectiva).
+ACTIVE_LEGACY_NIRS = ("SELECT 1 FROM EF_PrimiteVerconNir n JOIN VC_NIR v ON v.SubunitId = n.SubunitId AND v.GestiuneId = n.GestiuneId "
+                      "AND v.ExercitiuId = n.ExercitiuId AND v.IdIntrare = n.IdIntrare "
+                      "WHERE n.IdTrimitere = %s AND COALESCE(v.Anulat, 0) = 0")
 _PENDING = ("(t.Stare = 'TRIMISA' OR (t.Stare = 'PRELUATA' AND NOT EXISTS ("
-            "SELECT 1 FROM EF_PrimiteVerconNir n JOIN VC_NIR v ON v.SubunitId = n.SubunitId AND v.GestiuneId = n.GestiuneId "
-            "AND v.ExercitiuId = n.ExercitiuId AND v.IdIntrare = n.IdIntrare WHERE n.IdTrimitere = t.IdTrimitere AND COALESCE(v.Anulat, 0) = 0)))")
+            + ACTIVE_LEGACY_NIRS.replace('%s', 't.IdTrimitere') + ')))')
 
 
 def available(cursor):
@@ -108,7 +110,7 @@ def listing(cursor, summary=False, ctx=None):
     for row in rows:
         if row['IdTrimitere'] in states:
             row['effective'] = states[row['IdTrimitere']]
-            row['manual_links'] = True
+            row['manual_links'] = row['effective'] != 'TRIMISA'
         else:
             row['effective'] = 'TRIMISA' if row['PendingLegacy'] else 'PRELUATA'
             row['manual_links'] = False
@@ -154,7 +156,8 @@ def detail(cursor, sending_id):
     if not available(cursor):
         raise NomError('NOT_AVAILABLE', 'Facturile din e-Factura nu sunt disponibile în această bază de date.', 503)
     sending = _pending(cursor, sending_id)
-    if association.progress(cursor, sending_id) is not None:
+    progress = association.progress(cursor, sending_id)
+    if progress and progress['used']:
         raise NomError('EF_PARTIAL_LINKS', 'Factura folosește asocierea pe poziții. Introduceți NIR-ul manual, apoi folosiți «Asociază eFactura…» din NIR-ul salvat pentru cantitățile rămase.', 409)
     invoice = _one(cursor, 'SELECT * FROM EF_Primite WHERE IdPrimita = %s', (sending['IdPrimita'],))
     if not invoice:
@@ -210,8 +213,13 @@ def close(cursor, anchor, sending_id, receipts, request_id=None):
     if not available(cursor):
         raise NomError('NOT_AVAILABLE', 'Facturile din e-Factura nu sunt disponibile în această bază de date.', 503)
     sending = _pending(cursor, sending_id, lock=True)
-    if association.progress(cursor, sending_id) is not None:
+    progress = association.progress(cursor, sending_id)
+    if progress and progress['used']:
         raise NomError('EF_PARTIAL_LINKS', 'Asociați NIR-ul salvat pe poziții; factura folosește asocierea parțială.', 409)
+    if progress is not None:
+        # Remove expired bridge rows before changing mode so they cannot be read as integral links.
+        cursor.execute('DELETE FROM EF_PrimiteVerconNir WHERE IdTrimitere=%s', (sending_id,))
+        cursor.execute('DELETE FROM EF_VERCON_ASOCIERI WHERE ID_TRIMITERE=%s', (sending_id,))
     cursor.execute("UPDATE EF_PrimiteVercon SET Stare = 'PRELUATA', UnPreluat = %s, DataPreluat = NOW() WHERE IdTrimitere = %s", (anchor['email'], sending_id))
     for item in receipts:
         cursor.execute('INSERT IGNORE INTO EF_PrimiteVerconNir (IdTrimitere, SubunitId, GestiuneId, ExercitiuId, IdIntrare) VALUES (%s,%s,%s,%s,%s)',

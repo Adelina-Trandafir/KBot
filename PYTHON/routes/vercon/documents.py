@@ -7,8 +7,8 @@ are committed together or not at all. Rules shared by the four families:
     gestiune's ZEC (CONTRACT_CALCULE section 2.2) and stored directly as DECIMAL(20,4); nothing the page computed is trusted;
   * a NIR's declared total must equal the lines exactly (receipt_rules); other document families retain their
     existing header-total rules. Historical unchanged values are preserved;
-  * a price is never negative and a quantity is always positive; stock validation uses protocol.check_timeline,
-    except BC edits, which start from the closing stock of the month before the active month;
+  * a price is never negative and a quantity is always positive. Warehouse validation starts from the closing stock
+    of the month before the active month;
   * a saved document is edited only while its period is open, with the revision the page saw, and is never deleted: it is
     cancelled with a reason and stays visible as cancelled;
   * a document another one depends on (a receipt with a storno, a bon with a return, an asset already in
@@ -21,7 +21,7 @@ from utils.clock import utc_now
 from utils import vercon_suppliers as suppliers
 from decimal import Decimal, InvalidOperation
 
-from . import bon_number, consumption_numbering, consumption_period, document_order, numeric, protocol, receipt_choices
+from . import bon_number, consumption_numbering, consumption_period, consumption_timeline, document_order, numeric, protocol, receipt_choices
 from .nomenclatoare import NomError
 
 FAMILIES = ('nir', 'storno', 'bc', 'br')
@@ -359,6 +359,9 @@ def _load_for_write(repo, ctx, family, doc_id, base_version):
     is_variant = bool(row.get('Storno') or 0) if family in ('nir', 'storno') else bool(row.get('Retur') or 0)
     if is_variant != (family in ('storno', 'br')):
         raise NomError('NOT_FOUND', 'Documentul nu mai există.', 404)
+    if family == 'nir' and ctx['type'] in ('OI', 'MF'):
+        from .bu_links import require_independent
+        require_independent(repo.cursor, ctx, family, doc_id, row)
     if row['Anulat']:
         raise NomError('CANCELLED', 'Documentul este anulat și nu mai poate fi modificat.', 409)
     version = _int(base_version)
@@ -379,7 +382,7 @@ def _guard_dependents(cursor, ctx, family, doc_id, action):
         if _one(cursor, 'SELECT 1 FROM VC_NIR WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND IdStorno=%s AND Anulat=0 LIMIT 1', (s, g, e, doc_id)):
             raise NomError('HAS_STORNO', 'Recepția are storno: anulați mai întâi storno-ul, apoi puteți modifica sau anula recepția.', 409)
         # Edits protect issued MF rows in _clean_nir and retain stock for all exits
-        # through simulate/check_timeline. Registry use alone cannot block a free unit.
+        # through shared warehouse validation. Registry use alone cannot block a free unit.
         if action != 'edit' and _one(cursor, 'SELECT 1 FROM VC_Intrari i JOIN VC_ProduseP p ON p.SubunitId=i.SubunitId AND p.GestiuneId=i.GestiuneId AND p.IdProdus=i.IdProdus '
                         'WHERE i.SubunitId=%s AND i.GestiuneId=%s AND i.ExercitiuId=%s AND i.IdIntrare=%s AND (EXISTS (SELECT 1 FROM VC_OI_Predare x WHERE x.SubunitId=p.SubunitId AND x.GestiuneId=p.GestiuneId AND x.IdProdus=p.IdProdus AND x.Anulat=0) '
                         'OR EXISTS (SELECT 1 FROM VC_OI_Transfer x WHERE x.SubunitId=p.SubunitId AND x.GestiuneId=p.GestiuneId AND x.IdProdus=p.IdProdus AND x.Anulat=0) '
@@ -420,12 +423,14 @@ def cancel_document(cursor, repo, ctx, family, doc_id, body, request_id):
         invoices.load(cursor, link['FACTURA_ID'], lock=True)
     table, pk, before = _load_for_write(repo, ctx, family, doc_id, body.get('version'))
     _guard_dependents(cursor, ctx, family, doc_id, 'cancel')
+    document_day = before['Data'] if family in ('nir', 'storno') else before['DataBC']
+    month_start = consumption_timeline.work_month_start(cursor, ctx, document_day)
     _mark_cancelled(cursor, ctx, table, pk, doc_id, reason, before['Version'])
     if family == 'storno':
         cursor.execute('UPDATE VC_IntrariStorno SET Anulat=1, MotivAnulare=%s, AnulatDe=%s, AnulatLa=NOW(), Version=Version+1 '
                        'WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND IdIntrare=%s', (reason, ctx['email'], *_scope(ctx), doc_id))
     products = _document_variants(cursor, ctx, family, doc_id)
-    protocol.check_timeline(cursor, ctx, products)
+    consumption_timeline.require_nonnegative(cursor, ctx, products, month_start)
     if link:
         invoices.refresh_state(cursor, link['FACTURA_ID'])
     protocol.audit(cursor, ctx, family + '.cancel', table, doc_id, {'Anulat': 0}, {'Anulat': 1, 'Motiv': reason}, None, request_id)
@@ -518,7 +523,8 @@ def create_storno(cursor, repo, ctx, exercise, body, request_key, request_id):
     now = utc_now()
     for line in lines:
         repo.insert('VC_IntrariStorno', {'IdIntrare': doc_id, 'IdProdus': line['variant'], 'Cant': line['Cant'], 'PUTVA': line['PUTVA'], 'DataSalvare': now})
-    protocol.check_timeline(cursor, ctx, {l['variant'] for l in lines})
+    month_start = consumption_timeline.work_month_start(cursor, ctx, cols['Data'])
+    consumption_timeline.require_nonnegative(cursor, ctx, {l['variant'] for l in lines}, month_start)
     protocol.freeze(cursor, ctx)
     protocol.audit(cursor, ctx, 'storno.create', 'VC_NIR', doc_id, None, {'header': cols, 'total': total, 'lines': len(lines)}, request_key, request_id)
     return {'id': doc_id, 'number': number}
@@ -554,13 +560,15 @@ def edit_storno(cursor, repo, ctx, exercise, doc_id, body, request_id):
     if _has_numarsub(cursor):
         cols['NumarSub'] = sub
     cols['Valoare'] = numeric.to_stored(total_of(lines, ctx['scale']), ctx['scale'])
+    variants = _document_variants(cursor, ctx, 'storno', doc_id) | {line['variant'] for line in lines}
     repo.delete('VC_IntrariStorno', {'IdIntrare': doc_id})
     now = utc_now()
     for line in lines:
         repo.insert('VC_IntrariStorno', {'IdIntrare': doc_id, 'IdProdus': line['variant'], 'Cant': line['Cant'], 'PUTVA': line['PUTVA'], 'DataSalvare': now})
     if repo.update('VC_NIR', cols, {'IdIntrare': doc_id, 'Version': before['Version']}, bump_version=True) != 1:
         raise NomError('CONFLICT', 'Documentul a fost modificat de altcineva. Reîncărcați documentul.', 409)
-    protocol.check_timeline(cursor, ctx, {l['variant'] for l in lines})
+    month_start = consumption_timeline.work_month_start(cursor, ctx, cols['Data'], old_day)
+    consumption_timeline.require_nonnegative(cursor, ctx, variants, month_start)
     protocol.audit(cursor, ctx, 'storno.update', 'VC_NIR', doc_id, {'Numar': before['Numar'], 'Valoare': before['Valoare']}, {'header': cols, 'lines': len(lines)}, None, request_id)
     return {'id': doc_id, 'number': number}
 
@@ -608,7 +616,8 @@ def create_bc(cursor, repo, ctx, exercise, body, request_key, request_id):
     now = utc_now()
     for line in lines:
         repo.insert('VC_Iesiri', {'IdBonConsum': doc_id, 'IdProdus': line['variant'], 'Cant': line['Cant'], 'PUTVA': line['PUTVA'], 'ValoareCUTVA': line['ValoareCUTVA'], 'DataSalvare': now})
-    protocol.check_timeline(cursor, ctx, {l['variant'] for l in lines})
+    month_start = consumption_timeline.work_month_start(cursor, ctx, cols['DataBC'])
+    consumption_timeline.require_nonnegative(cursor, ctx, {l['variant'] for l in lines}, month_start)
     protocol.freeze(cursor, ctx)
     protocol.audit(cursor, ctx, 'bc.create', 'VC_Iesiri_H', doc_id, None, {'header': cols, 'number': text, 'total': total, 'lines': len(lines)}, request_key, request_id)
     return {'id': doc_id, 'number': text}
@@ -645,7 +654,7 @@ def _clean_bon_lines(repo, ctx, raw_lines, errors, account=None):
 
 
 def edit_bc(cursor, repo, ctx, exercise, doc_id, body, request_id):
-    from . import consumption_timeline, recalculation_audit
+    from . import recalculation_audit
 
     table, pk, before = _load_for_write(repo, ctx, 'bc', doc_id, body.get('version'))
     _guard_dependents(cursor, ctx, 'bc', doc_id, 'edit')
@@ -683,7 +692,8 @@ def edit_bc(cursor, repo, ctx, exercise, doc_id, body, request_id):
     total = numeric.to_stored(total_of(total_lines, ctx['scale']), ctx['scale'])
     if repo.update('VC_Iesiri_H', {**cols, 'NumarBC': text, 'ValoareBC': total, 'DataSalvare': now}, {'IdBonConsum': doc_id, 'Version': before['Version']}, bump_version=True) != 1:
         raise NomError('CONFLICT', 'Documentul a fost modificat de altcineva. Reîncărcați documentul.', 409)
-    consumption_timeline.require_month(cursor, ctx, variants, cols['DataBC'].replace(day=1))
+    month_start = consumption_timeline.work_month_start(cursor, ctx, cols['DataBC'])
+    consumption_timeline.require_nonnegative(cursor, ctx, variants, month_start)
     from .food_list_recalculation import refresh_for_bon
     recalculated = refresh_for_bon(cursor, repo, ctx, doc_id, request_id)
     origin = recalculation_audit.cause('bc', doc_id, text, cols['DataBC'], before['Version'] + 1)
@@ -787,6 +797,7 @@ def edit_br(cursor, repo, ctx, exercise, doc_id, body, request_id):
     if manual not in (None, '') and _int(manual) != bon_number.parse('br', text):
         _, text = _assign_number(cursor, ctx, 'br', manual, errors, exclude=doc_id)
     _fail(errors)
+    variants = _document_variants(cursor, ctx, 'br', doc_id) | {line['variant'] for line in lines}
     repo.delete('VC_IesiriRetur', {'IdBonConsum': doc_id})
     now = utc_now()
     for line in lines:
@@ -794,7 +805,8 @@ def edit_br(cursor, repo, ctx, exercise, doc_id, body, request_id):
     total = numeric.to_stored(total_of(lines, ctx['scale']), ctx['scale'])
     if repo.update('VC_Iesiri_H', {**cols, 'NumarBC': text, 'ValoareBC': total, 'DataSalvare': now}, {'IdBonConsum': doc_id, 'Version': before['Version']}, bump_version=True) != 1:
         raise NomError('CONFLICT', 'Documentul a fost modificat de altcineva. Reîncărcați documentul.', 409)
-    protocol.check_timeline(cursor, ctx, {l['variant'] for l in lines})
+    month_start = consumption_timeline.work_month_start(cursor, ctx, cols['DataBC'], before['DataBC'])
+    consumption_timeline.require_nonnegative(cursor, ctx, variants, month_start)
     protocol.audit(cursor, ctx, 'br.update', 'VC_Iesiri_H', doc_id, {'NumarBC': before['NumarBC'], 'ValoareBC': before['ValoareBC']}, {'header': cols, 'total': total, 'lines': len(lines)}, None, request_id)
     return {'id': doc_id, 'number': text}
 

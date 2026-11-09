@@ -7,7 +7,7 @@ from collections import defaultdict
 from utils.clock import utc_now
 from decimal import Decimal
 
-from . import documents as docs, protocol
+from . import consumption_timeline, documents as docs, protocol
 from .nomenclatoare import NomError
 
 
@@ -119,7 +119,8 @@ def link_storno(cursor, repo, ctx, line_id, body, request_id):
     # additional line before replacing its lines with an edited draft.
     if repo.update('VC_NIR', {}, {'IdIntrare': target_id, 'Version': target['Version']}, bump_version=True) != 1:
         reject('Factura storno a fost modificată de altcineva. Reîncărcați lista.', 'CONFLICT', 409)
-    protocol.check_timeline(cursor, ctx, {before['IdProdus']})
+    month_start = consumption_timeline.work_month_start(cursor, ctx, on)
+    consumption_timeline.require_nonnegative(cursor, ctx, {before['IdProdus']}, month_start)
     after = {'IdIntrare': target_id, 'line': line_id, 'Version': before['Version'] + 1, 'target_version': target['Version'] + 1}
     protocol.audit(cursor, ctx, 'storno.link', 'VC_IntrariStorno', line_id, {'IdIntrare': None, 'Version': before['Version']}, after, None, request_id)
     protocol.audit(cursor, ctx, 'storno.link', 'VC_NIR', target_id, {'Version': target['Version']}, after, None, request_id)

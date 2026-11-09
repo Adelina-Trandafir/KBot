@@ -75,7 +75,7 @@ def available(movements, on_date, draft=None):
     """Informative availability after excluding the edited document and its draft.
 
     Draft quantities are direct decimals aggregated per variant, never rounded to 2.
-    The write protocol still checks the complete timeline inside its transaction.
+    The write transaction validates stock from the opening of the work month.
     """
     result = {}
     for movement in movements:

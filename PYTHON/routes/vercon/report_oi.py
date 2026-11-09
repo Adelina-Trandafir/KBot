@@ -1,6 +1,6 @@
 """OI reports: use accounts belong to movements, warehouse accounts to products."""
 from decimal import Decimal
-from . import stock, stock_valuation
+from . import bu_links, stock, stock_valuation
 from .report_data import exact, selected, accepted, aggregate
 from .nomenclatoare import NomError
 
@@ -16,6 +16,9 @@ def documents(source, spec, *, in_branch=None):
         if info is None:
             raise NomError('REPORT_SOURCE', 'O linie OI nu are produsul în nomenclatorul contextului.', 409)
         row = {**info, **raw, 'account': accounts.get(raw['category']) or 'Fără cont'}
+        if raw['family'] == 'bt' and bu_links.is_bu(raw['number']):
+            row['giver_name'] = raw['giver_name'] or 'Magazie'
+            row['party'] = 'Transferat în afara subunității'
         if not accepted(row, params) or in_branch is not None and not in_branch(row):
             continue
         rows.append({**row, 'date': stock.day_of(row['date']).isoformat(),
@@ -32,7 +35,8 @@ def balances(source, spec, *, in_branch=None):
     accounts = {row['category']: row['account'] for row in source.rows('oi_accounts')}
     holders = {row['receiver']: row['party'] for row in source.rows('oi_holders')}
     movements = [row for row in source.rows('custody_ledger')
-                 if (not product_balance or row['kind'] in ('bp', 'bs'))
+                 if (not product_balance or row['kind'] in ('bp', 'bs')
+                     or row['kind'] == 'bt_out' and bu_links.is_bu(row['number']))
                  and selected(row['p'], params, 'variant') and selected(row['category'], params, 'category')
                  and selected(row['holder'], params, 'receiver')]
     for row in movements:
@@ -61,7 +65,8 @@ def balances(source, spec, *, in_branch=None):
         info = identity(key)
         amounts = {**quantities,
                    'incoming': quantities['entries'] if product_balance else sum(quantities[b] for b in stock.POSITIVE),
-                   'outgoing': quantities['scrapping'] if product_balance else sum(quantities[b] for b in stock.NEGATIVE)}
+                   'outgoing': quantities['scrapping'] + quantities['transfers_out'] if product_balance
+                   else sum(quantities[b] for b in stock.NEGATIVE)}
         rows.append({**info, **{k: exact(v, scale) for k, v in amounts.items()},
                      **{k + '_value': stock.value_text(v, metadata[key[-1]]['price'], scale) for k, v in amounts.items()}})
     if spec['kind'] in ('final_total', 'inventory_total'):
@@ -77,7 +82,8 @@ def balances(source, spec, *, in_branch=None):
         for movement in statements:
             info = identity(movement['key'])
             quantity = Decimal(movement['q'])
-            details.append({**info, 'date': movement['d'], 'number': movement['kind'].upper() + ' ' + str(movement['number'] or ''),
+            number = movement['number'] if bu_links.is_bu(movement['number']) else movement['kind'].upper() + ' ' + str(movement['number'] or '')
+            details.append({**info, 'date': movement['d'], 'number': number,
                             'incoming': exact(quantity, scale) if movement['kind'] in ('bp', 'bt_in') else '',
                             'outgoing': exact(-quantity, scale) if movement['kind'] in ('bt_out', 'bs') else '',
                             'closing': exact(movement['balance'], scale),

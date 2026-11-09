@@ -163,6 +163,8 @@ def create_blueprint(authenticate=None, rights=None, preview=False, provider=Non
             held = locks.store.holder(sub, gest['id'])
             mine = bool(held and not held['expired'] and held['email'] == g.portal['email'])
             menu = capabilities.menu_for(gest['type'], ops, occupied)
+            if len(ctx['options']['subunits']) < 2:
+                menu = [item for item in menu if item['key'] != 'bu']
         return {'section': SECTION, 'unit': g.portal['db_name'], 'operations': sorted(ops), 'lock_mine': mine,
                 'ready': bool(ctx['options']['subunits']), 'menu': menu,
                 'type_locked': bool(gest and gest.get('populated')), **ctx}

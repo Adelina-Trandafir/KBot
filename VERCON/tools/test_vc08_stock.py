@@ -15,6 +15,7 @@ sys.modules[PACKAGE] = module
 stock = importlib.import_module(PACKAGE + '.stock')
 source = importlib.import_module(PACKAGE + '.stock_source')
 protocol = importlib.import_module(PACKAGE + '.protocol')
+timeline = importlib.import_module(PACKAGE + '.consumption_timeline')
 
 START, END = date(2026, 10, 1), date(2026, 10, 31)
 CTX = {'subunit': 4, 'gestiune': 8, 'exercitiu': 12, 'scale': 2, 'zec': 2, 'type': 'MATERIALE'}
@@ -117,13 +118,21 @@ class StockCases(unittest.TestCase):
         self.assertEqual(source.warehouse(cursor, CTX, []), [])
         self.assertEqual(cursor.calls, [])
 
-    def test_protocol_keeps_existing_quantity_api_and_negative_timeline(self):
-        cursor = Cursor([movement(200), movement(-300, doc=2)])
-        self.assertEqual(protocol.available(cursor, CTX, END), {1: -100})
-        with patch.object(protocol, '_label', return_value='A'):
+    def test_available_quantity_and_negative_timeline(self):
+        cursor = Cursor()
+        rows = [movement(2, date(2026, 5, 22)), movement(-9, date(2026, 5, 25), doc=2),
+                movement(12, date(2026, 5, 27), doc=3), movement(10, END, doc=4)]
+        with patch.object(source, 'warehouse', return_value=rows), patch.object(protocol, '_label', return_value='A'):
+            self.assertEqual(protocol.available(cursor, CTX, END), {1: 15})
+            timeline.require_nonnegative(cursor, CTX, [1], START)
             with self.assertRaises(stock.NomError) as caught:
-                protocol.check_timeline(cursor, CTX, [1])
+                timeline.require_nonnegative(cursor, CTX, [1], START, draft=[(1, START, -6)])
+            rows.append(movement(-6, START, doc=5))
+            with self.assertRaises(stock.NomError) as saved:
+                timeline.require_nonnegative(cursor, CTX, [1], START)
         self.assertEqual(caught.exception.reason, 'STOCK_NEGATIVE')
+        self.assertEqual(caught.exception.fields['date'], START.isoformat())
+        self.assertEqual(caught.exception.fields, saved.exception.fields)
 
 
 if __name__ == '__main__':

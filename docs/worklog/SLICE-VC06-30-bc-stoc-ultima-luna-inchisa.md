@@ -2,6 +2,8 @@
 
 Data: 03.11.2026.
 
+La 09.11.2026, [SLICE-VC13-01](SLICE-VC13-01-validare-comuna-stoc-magazie.md) extinde regula acestui slice la toate validările cronologice de magazie.
+
 ## Cerere și regulă confirmată
 
 Utilizatorul raportează din nou `STOCK_NEGATIVE`, APA 19L, −4 la 19.05.2026, în jurnalul din 03.11.2026, cererile `14e7d2cfba764ba59f26e7d9fa3606de` și `3b0191701657495c8efcfe0e3f35a88e`. VC06-29 a corectat data efectivă de stoc, dar nu a modificat regula editării BC care controla întregul istoric.

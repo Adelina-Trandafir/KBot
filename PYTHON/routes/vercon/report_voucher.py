@@ -1,4 +1,5 @@
 """Common P/T/C and consumption header, following the supplied form reference."""
+from .bu_links import is_bu
 
 FAMILIES = {'bp': ('BP', 'BON DE PREDARE'), 'bt': ('BT', 'BON DE TRANSFER'),
             'bs': ('BS', 'BON DE CASARE'), 'bc': ('BC', 'BON DE CONSUM'),
@@ -14,6 +15,9 @@ def applies(spec):
 def header(spec, row, ctx, gestiune_name=''):
     family = spec['family']
     prefix, title = FAMILIES[family]
+    number = f"{prefix} {row.get('number') or ''}".strip()
+    if family == 'bt' and is_bu(row.get('number')):
+        number, title = row['number'], 'BON DE TRANSFER ÎNTRE SUBUNITĂȚI'
     parts = str(row.get('date') or '')[:10].split('-')
     year, month, day = parts if len(parts) == 3 else ('', '', '')
     if family in ('bt', 'bs'):
@@ -34,7 +38,7 @@ def header(spec, row, ctx, gestiune_name=''):
     cell(4, 1, TYPES.get(ctx['type'], ctx['type']), colspan=3, bold=True, size=9)
     for index, label in enumerate(('Ziua', 'Luna', 'Anul', 'Predător', 'Primitor', 'Nr. comandă'), 1):
         cell(index, 2, label, bold=True)
-    for index, value in enumerate((f"{prefix} {row.get('number') or ''}".strip(), day, month, year,
+    for index, value in enumerate((number, day, month, year,
                                    giver, receiver, row.get('order') or '')):
         cell(index, 3, value)
     return {'t': 'form_grid', 'widths': [125, 74, 73, 74, 177, 174, 117, 262],

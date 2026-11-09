@@ -28,6 +28,8 @@ Stare: ALINIAT la plan, 12.10.2026 (runda 3 + corecțiile vizuale ale utilizator
 | Surse (12.10.2026) | folderul sursa se citeste dintr-o data: **tz_aaaa** (cate un exercitiu Materiale/Alimente), **tz_2100** = baza speciala OI/MF (**2100 nu este un an**; tipul il spun steagurile OBINV/MF), atat `.accdb` cat si `.mdb` (ambele se listeaza); **`tz.mdb` / `tz.accdb` nu se iau niciodata**; operatorul bifeaza anii doriti intr-un tabel |
 | D01 | atribuirea fisier → subunitate/gestiune/tip/DC o face operatorul in migrator, la import |
 
+**Decizie 09.11.2026.** Toate rutele care validează cronologic stocul de magazie folosesc același validator, cu soldul de la sfârșitul lunii calendaristice imediat anterioare lunii în lucru. Verificarea pe zile începe în luna în lucru. [SLICE-VC13-01](../docs/worklog/SLICE-VC13-01-validare-comuna-stoc-magazie.md)
+
 ### Corecții UI decise — 12.10.2026
 
 Sursa: [imaginile adnotate](MOCKUPURI/Corectii_mockup-uri_01/). Contract complet: [FLUXURI_UI](FLUXURI_UI.md).

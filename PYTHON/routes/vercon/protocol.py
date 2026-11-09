@@ -1,12 +1,11 @@
-"""SLICE-VC06-02..05: what every document write shares -- the exercise of the context, the period rule, the numbering,
-the RequestKey, the audit line and the stock timeline that keeps the stock from ever going negative.
+"""SLICE-VC06-02..05: shared exercise, period, numbering, RequestKey, audit and stock reads for document writes.
 
 Everything here runs INSIDE the transaction the route opened (one cursor, committed or rolled back by the route), with
 ids taken from the context the server verified. Nothing here opens a connection or commits.
 """
 import hashlib
 import json
-from datetime import date, datetime
+from datetime import datetime
 
 from .context import HISTORY_TYPES
 from .nomenclatoare import NomError
@@ -131,45 +130,11 @@ def movements(cursor, ctx, products=None, exclude=None):
 
 
 def available(cursor, ctx, on_date, products=None, exclude=None):
-    """{variant: stock on that date} -- informative; the binding check is `check_timeline`."""
+    """Informative stock by variant. Writes use the shared warehouse validation."""
     out = {}
     for product, day, quantity in movements(cursor, ctx, products, exclude):
         if day is not None and day <= on_date:
             out[product] = out.get(product, 0) + quantity
-    return out
-
-
-def check_timeline(cursor, ctx, products):
-    """Raises STOCK_NEGATIVE when, for any of the variants, the running stock drops below zero on any day (additions of a
-    day are counted before the removals of the same day). Cheap: only the variants a write touched."""
-    products = {int(p) for p in products if p is not None}
-    if not products:
-        return
-    per = {}
-    for product, day, quantity in movements(cursor, ctx, products):
-        per.setdefault(product, []).append((day or date.min, quantity))
-    for product, items in per.items():
-        balance = 0
-        for day, group in _by_day(items):
-            balance += group
-            if balance < 0:
-                raise NomError('STOCK_NEGATIVE', 'Stoc negativ interzis: produsul %s ar ajunge la %s la data %s.' % (
-                    _label(cursor, ctx, product), _plain(balance, ctx['scale']), day.strftime('%d.%m.%Y')), 409,
-                    {'product': product, 'date': day.isoformat()})
-
-
-def _by_day(items):
-    """[(day, net)] with the additions of a day before its removals, so a day never fails on its own ordering."""
-    days = {}
-    for day, quantity in items:
-        entry = days.setdefault(day, [0, 0])
-        entry[0 if quantity > 0 else 1] += quantity
-    out = []
-    running_names = sorted(days)
-    for day in running_names:
-        adds, removes = days[day]
-        out.append((day, adds))        # additions first ...
-        out.append((day, removes))     # ... then removals
     return out
 
 

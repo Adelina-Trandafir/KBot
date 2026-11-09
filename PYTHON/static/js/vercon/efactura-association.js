@@ -6,12 +6,19 @@ import { associationGrid } from './efactura-association-grid.js';
 import { sourceGrids } from './efactura-source-grids.js';
 import { tryAutoAssociate } from './efactura-auto-association.js';
 
-export async function associateEfactura({ api, sel, doc }) {
-  const saved = await tryAutoAssociate({ api, sel, doc });   // certain first association: saved without the window
-  if (saved) return saved;
+export async function associateEfactura({ api, sel, doc, replace = null, signal }) {
+  if (signal?.aborted) return null;
+  if (!replace) {
+    const saved = await tryAutoAssociate({ api, sel, doc });
+    if (saved || signal?.aborted) return saved;
+  }
+  const replacement = replace ? { replace: replace.sending } : {};
+  const linkedInvoices = new Set((doc.efactura || []).map(item => item.sending));
   const query = extra => new URLSearchParams({ ...sel(), ...extra });
   const read = (path, extra = {}) => api(`/api/vercon/doc/nir/efactura${path}?${query(extra)}`);
-  const dialog = el('dialog', { className: 'vc-efi vc-efi--association', 'aria-label': 'Asociere NIR cu eFactura' });
+  const title = replace ? `Înlocuire eFactura ${replace.number} pentru NIR ${doc.number}` : `Asociere NIR ${doc.number} cu eFactura`;
+  const saveLabel = replace ? 'Salvează înlocuirea' : 'Salvează asocierile';
+  const dialog = el('dialog', { className: 'vc-efi vc-efi--association', 'aria-label': title });
   const status = el('p', { className: 'vc-efi__status vc-save-status', role: 'status' });
   const invoiceHost = el('div', { className: 'vc-efi__invoice' });
   const filterButton = el('button', { type: 'button', textContent: 'Afișare: Active', disabled: true });
@@ -20,12 +27,12 @@ export async function associateEfactura({ api, sel, doc }) {
     onChange: value => { void changeInactive(value); } });
   const panels = el('div', { className: 'vc-efi__panels' }), matches = el('div', { className: 'vc-efi__matches' });
   const otherReceipts = el('div', { className: 'vc-efi__other-receipts' });
-  const saveButton = el('button', { type: 'button', className: 'is-primary', textContent: 'Salvează asocierile', disabled: true });
+  const saveButton = el('button', { type: 'button', className: 'is-primary', textContent: saveLabel, disabled: true });
   const pairButton = el('button', { type: 'button', textContent: '🔗 Asociaza', title: 'Asociază rândurile selectate', disabled: true });
   const proposeButton = el('button', { type: 'button', textContent: '💡 Propune', title: 'Propune potriviri', disabled: true });
   const closeButton = el('button', { type: 'button', textContent: 'Închide' });
   const work = el('fieldset', { className: 'vc-efi__work', disabled: true }, otherReceipts, panels, matches);
-  dialog.append(el('header', {}, el('h2', { textContent: `Asociere NIR ${doc.number} cu eFactura` })),
+  dialog.append(el('header', {}, el('h2', { textContent: title })),
     el('div', { className: 'vc-efi__body' },
       el('div', { className: 'vc-efi__actions' }, invoiceHost, pairButton, proposeButton, filterButton, inactiveHost), work),
     statusBar(el('footer'), { start: [closeButton], status, end: [saveButton] }));
@@ -48,14 +55,20 @@ export async function associateEfactura({ api, sel, doc }) {
     inactive.setEnabled(!busy && !pending && visibilityAvailable && selectedInvoice != null);
     inactiveHost.title = visibilityAvailable ? 'Ascunde factura pentru toți gestionarii unității. Debifați pentru restaurare.'
       : 'Marcajul Inactiv necesită instalarea manuală a sql/EV_03_vercon_facturi_inactive.sql.';
-    saveButton.disabled = busy || !data; closeButton.disabled = busy || !!pending;
+    saveButton.disabled = busy || !data || (!!replace && !links.length); closeButton.disabled = busy || !!pending;
     proposeButton.disabled = busy || !!pending || !data;
     pairButton.disabled = busy || !!pending || !selectedNir || !selectedEf;
-    saveButton.textContent = pending ? 'Reia aceeași salvare' : 'Salvează asocierile';
+    saveButton.textContent = pending ? 'Reia aceeași salvare' : saveLabel;
     matchesGrid?.setBusy(busy || !!pending || !data);
     products?.setBusy(busy || !!pending || !data);
   };
-  const close = value => { if (busy || pending) return; closed = true; invoice.destroy(); inactive.destroy(); matchesGrid?.destroy(); products?.destroy(); matchesGrid = products = null; dialog.close(); dialog.remove(); resolve(value); };
+  const close = (value, force = false) => {
+    if (closed || (!force && (busy || pending))) return;
+    closed = true; signal?.removeEventListener('abort', abortDialog);
+    invoice.destroy(); inactive.destroy(); matchesGrid?.destroy(); products?.destroy();
+    dialog.close(); dialog.remove(); resolve(value);
+  };
+  const abortDialog = () => close(null, true);
   const available = (line, side) => (units(line.left) ?? 0n) - links.filter(l => l[side] === line.id)
     .reduce((sum, l) => sum + (units(l[side === 'line' ? 'qty' : 'nir_qty']) ?? 0n), 0n);
   matchesGrid = associationGrid(matches, {
@@ -105,7 +118,9 @@ export async function associateEfactura({ api, sel, doc }) {
     data = null; links = []; products.resetSelection(); products.refresh(); matchesGrid.refresh(); otherReceipts.replaceChildren();
     controls(); say('Se citesc pozițiile și asocierile existente…');
     try {
-      data = await read(`/${id}/association`, { nir: doc.id });
+      const result = await read(`/${id}/association`, { nir: doc.id, ...replacement });
+      if (closed) return;
+      data = result;
       selectedEf = selectedNir = null;
       const valid = data.allocations.filter(l => l.valid && data.lines.some(e => e.id === l.line) && data.nir_lines.some(n => n.id === l.nir_line));
       const stale = data.allocations.length - valid.length;
@@ -117,13 +132,14 @@ export async function associateEfactura({ api, sel, doc }) {
   }
 
   async function save() {
-    if (busy || !data || !await matchesGrid.commit()) return;
+    if (busy || !data || !await matchesGrid.commit() || closed) return;
     if (!pending) {
+      if (replace && !links.length) return;
       if (links.some(l => !(units(l.qty) > 0n) || !(units(l.nir_qty) > 0n))
           || data.lines.some(l => available(l, 'line') < 0n) || data.nir_lines.some(l => available(l, 'nir_line') < 0n)) {
         say('Completați cantități pozitive, cu cel mult 4 zecimale, în limita restului fiecărui rând.', true); return;
       }
-      pending = { ...sel(), nir: doc.id, version: data.version, request_key: crypto.randomUUID(),
+      pending = { ...sel(), nir: doc.id, version: data.version, request_key: crypto.randomUUID(), ...replacement,
         allocations: links.map(({ line, nir_line, qty, nir_qty, learn }) => ({ line, nir_line, qty, nir_qty, learn: learn === true })) };
     }
     busy = true; controls(); say('Se salvează asocierile…');
@@ -150,17 +166,20 @@ export async function associateEfactura({ api, sel, doc }) {
     controls(); say('Se încarcă facturile trimise de contabil…');
     try {
       const result = await read('', { include_completed: 1, visibility, nir: doc.id });
+      if (closed) return;
       visibilityAvailable = !!result.visibility_available;
-      const candidates = (result.items || []).filter(i => i.state !== 'PRELUATA' || i.manual_links)
+      const candidates = (result.items || []).filter(i => replace ? i.state !== 'PRELUATA' && !linkedInvoices.has(i.id)
+        : i.state !== 'PRELUATA' || i.manual_links)
         .sort((a, b) => compareTyped(a.supplier, b.supplier, 'text') || compareTyped(a.date, b.date, 'date') || compareTyped(a.number, b.number, 'text'));
       invoiceOptions = candidates.map(i => ({ value: i.id, inactive: i.inactive,
         label: `${i.supplier} / ${i.number} / ${i.date} — ${i.state === 'PARTIALA' ? 'asociată parțial' : i.state === 'PRELUATA' ? 'asociată integral' : 'neasociată'}${i.inactive ? ' · Inactiv' : ''}`,
         sortType: 'text', sortValue: i.supplier, sortThen: [{ type: 'date', value: i.date }, { type: 'text', value: i.number }] }));
       invoice.options.staticData = invoiceOptions;
-      say(candidates.length ? '' : 'Nu există facturi în filtrul ales cu data și furnizorul facturii din NIR.');
+      say(!candidates.length ? 'Nu există facturi disponibile în filtrul ales cu data și furnizorul facturii din NIR.'
+        : replace ? 'Alegeți factura nouă și asociați pozițiile. Legătura curentă se schimbă la salvare.' : '');
     } catch (error) { say(error.message || 'Facturile nu au putut fi citite.', true); }
     finally { busy = false; controls(); }
-    const target = invoiceOptions.find(item => item.value === preferred) || invoiceOptions[0];
+    const target = invoiceOptions.find(item => item.value === preferred) || (replace ? null : invoiceOptions[0]);
     if (target && !closed) await load(target.value);
   }
 
@@ -191,6 +210,7 @@ export async function associateEfactura({ api, sel, doc }) {
   closeButton.addEventListener('click', () => void discard());
   dialog.addEventListener('cancel', e => { e.preventDefault(); void discard(); });
   saveButton.addEventListener('click', () => void save());
+  signal?.addEventListener('abort', abortDialog, { once: true });
   await reloadInvoices();
   return done;
 }

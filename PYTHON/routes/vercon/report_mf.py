@@ -1,7 +1,7 @@
 """Shared OI/MF selection identities and MF asset/holder catalogue. Read-only."""
 from collections import defaultdict
 from decimal import Decimal
-from . import stock
+from . import bu_mf, stock
 from .nomenclatoare import NomError
 
 
@@ -87,8 +87,11 @@ def depreciation_options(source):
         if quantity > 0:
             memberships[variant].append(holder)
     metadata = source.metadata()
+    transfers = bu_mf.by_variant(source.cursor, source.ctx)
     rows = []
     for variant, classification in classifications.items():
+        if variant in transfers and not bu_mf.owns(source.ctx, variant, transfers[variant], source.params['end']):
+            continue
         info = metadata.get(variant)
         if info is None:
             raise NomError('REPORT_SOURCE', 'Mijlocul fix nu are metadate în gestiunea curentă.', 409)

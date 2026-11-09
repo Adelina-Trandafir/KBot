@@ -34,6 +34,8 @@ La editarea recepțiilor create de acest editor, liniile interne ale facturii de
 
 Cronologia numerelor și subnumerelor rămâne obligatorie la schimbarea datei; NIR-ul existent nu este mutat în altă serie anuală. Documentele anulate își păstrează poziția. Modificarea, scoaterea liniilor și anularea respectă dependențele și stocul. Valorile istorice neschimbate sunt păstrate exact.
 
+Simularea și salvarea NIR folosesc aceeași selecție a variantei de preț și același validator de magazie. La reducerea cantității disponibile, verificarea pornește de la soldul ultimei luni închise. Simularea înlocuiește mișcările NIR-ului salvat cu cele ale ciornei, iar salvarea validează mișcările scrise provizoriu în tranzacție. [SLICE-VC13-01](../docs/worklog/SLICE-VC13-01-validare-comuna-stoc-magazie.md)
+
 ## Migrare și schemă
 
 Importul Access nu se schimbă pentru noul selector: sursa are un NIR cu un singur cont local, iar remaparea produs/preț/document este suficientă. Nu se copiază artificial contul în linii și nu se regrupează automat istoricul.

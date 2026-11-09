@@ -6,21 +6,24 @@ are repeated at save time; annotations are only hints for the document editor.
 from .nomenclatoare import NomError
 
 
-def active_month(cursor, ctx):
+def active_month(cursor, ctx, *, in_exercise=False):
     # The active month is the latest month with consumption data, never the
     # calendar month. Compare both sources: an older food list must not hide BCs.
-    # Search all exercises so selecting an old year cannot reopen its month.
+    # Edit permissions search all exercises. Warehouse validation reads one exercise.
     scope = (ctx['subunit'], ctx['gestiune'])
+    exercise = ' AND ExercitiuId=%s' if in_exercise else ''
+    if in_exercise:
+        scope += (ctx['exercitiu'],)
     days = []
     if ctx['type'] == 'ALIMENTE':
         cursor.execute('SELECT MAX(DATE(DATALA)) AS day FROM VC_LABC '
-                       'WHERE SubunitId=%s AND GestiuneId=%s AND Anulat=0',
+                       'WHERE SubunitId=%s AND GestiuneId=%s AND Anulat=0' + exercise,
                        scope)
         row = cursor.fetchone()
         if row and row['day']:
             days.append(row['day'])
     cursor.execute('SELECT MAX(DATE(DataBC)) AS day FROM VC_Iesiri_H '
-                   'WHERE SubunitId=%s AND GestiuneId=%s AND Anulat=0 AND COALESCE(Retur,0)=0',
+                   'WHERE SubunitId=%s AND GestiuneId=%s AND Anulat=0 AND COALESCE(Retur,0)=0' + exercise,
                    scope)
     row = cursor.fetchone()
     if row and row['day']:

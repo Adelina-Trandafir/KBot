@@ -44,28 +44,55 @@ Partial Public Class WorkflowExecutor
             Await _page.GotoAsync(ElectronicDocumentsUrl, New PageGotoOptions With {
                 .WaitUntil = WaitUntilState.Load, .Timeout = FormWaitSeconds * 1000})
 
-            Dim frame As IFrame = Await FindFrameWithAsync(LinkDocSelector, FormWaitSeconds)
-            If frame Is Nothing Then
-                Throw New TimeoutException("Pagina «Transmitere documente electronice» nu a arătat câmpul de alegere a fișierului.")
-            End If
+            ' SLICE-0088-10: the portal's frame can still be reloading when it first shows the form (the page's
+            ' Load fires before the frame settles): a query that lands in that moment fails with
+            ' «Execution context was destroyed». Nothing has been sent yet, so just look again.
+            Dim frame As IFrame = Nothing
+            Dim send As ILocator = Nothing
+            For k_attempt As Integer = 1 To 3
+                frame = Await FindFrameWithAsync(LinkDocSelector, FormWaitSeconds)
+                If frame Is Nothing Then
+                    Throw New TimeoutException("Pagina «Transmitere documente electronice» nu a arătat câmpul de alegere a fișierului.")
+                End If
+                Try
+                    Await frame.WaitForLoadStateAsync(LoadState.Load,
+                        New FrameWaitForLoadStateOptions With {.Timeout = FormWaitSeconds * 1000})
+                    Await frame.Locator(LinkDocSelector).First.SetInputFilesAsync(pdfPath)
+                    send = frame.Locator(SendButtonSelector).First
+                    If Await send.CountAsync() = 0 Then Throw New InvalidOperationException("Butonul «Trimite» nu există în pagină.")
+                    Exit For
+                Catch ex As PlaywrightException When IsNavigationRace(ex) AndAlso k_attempt < 3
+                    GlobalErrorLog.Write("WorkflowExecutor.UploadElectronicDocumentAsync.FormReloaded", ex)
+                End Try
+            Next
 
-            Await frame.Locator(LinkDocSelector).First.SetInputFilesAsync(pdfPath)
-            Dim send As ILocator = frame.Locator(SendButtonSelector).First
-            If Await send.CountAsync() = 0 Then Throw New InvalidOperationException("Butonul «Trimite» nu există în pagină.")
+            ' A mark on the form's document: once it is gone the frame holds FOREXE's answer.
+            Await frame.EvaluateAsync(Of Boolean)("() => { window.__kbotFormMark = true; return true; }")
 
             _logger?.LogOperator("Apăs «Trimite».")
             ' The button posts the form and the frame navigates to FOREXE's answer: wait for that
-            ' POST's response, then for the answer page to finish loading.
-            Await _page.RunAndWaitForResponseAsync(
-                Function() send.ClickAsync(),
-                Function(r As IResponse) r.Request.IsNavigationRequest AndAlso
-                                         String.Equals(r.Request.Method, "POST", StringComparison.OrdinalIgnoreCase),
-                New PageRunAndWaitForResponseOptions With {.Timeout = AnswerWaitSeconds * 1000})
-            Await frame.WaitForLoadStateAsync(LoadState.Load,
-                New FrameWaitForLoadStateOptions With {.Timeout = AnswerWaitSeconds * 1000})
-
-            Dim answer As String = Await frame.EvaluateAsync(Of String)(
-                "() => (document.body ? document.body.innerText : '').replace(/\s+\n/g, '\n').trim()")
+            ' POST's response, then read the answer once the new document has loaded.
+            ' From the click on, the document may already be in FOREXE: any failure below must say so,
+            ' otherwise the operator is told «failed» and sends it a second time.
+            Dim answer As String
+            Try
+                Try
+                    Await _page.RunAndWaitForResponseAsync(
+                        Function() send.ClickAsync(),
+                        Function(r As IResponse) r.Request.IsNavigationRequest AndAlso
+                                                 String.Equals(r.Request.Method, "POST", StringComparison.OrdinalIgnoreCase),
+                        New PageRunAndWaitForResponseOptions With {.Timeout = AnswerWaitSeconds * 1000})
+                Catch ex As PlaywrightException When IsNavigationRace(ex)
+                    ' The click itself ran into the frame navigating = the form was posted.
+                    GlobalErrorLog.Write("WorkflowExecutor.UploadElectronicDocumentAsync.ClickNavigation", ex)
+                End Try
+                answer = Await ReadAnswerAsync(frame)
+            Catch ex As Exception
+                GlobalErrorLog.Write("WorkflowExecutor.UploadElectronicDocumentAsync.AfterSend", ex)
+                Throw New InvalidOperationException(
+                    "Documentul a fost probabil trimis în FOREXE, dar răspunsul nu a putut fi citit (" & ex.Message &
+                    "). Verifică în FOREXE înainte să-l trimiți din nou.", ex)
+            End Try
             answer = If(answer, String.Empty).Trim()
             If answer.Length > MaxAnswerLength Then answer = answer.Substring(0, MaxAnswerLength)
             _logger?.LogOperator("Răspunsul FOREXE: " & If(answer.Length > 200, answer.Substring(0, 200) & "…", answer))
@@ -94,11 +121,61 @@ Partial Public Class WorkflowExecutor
             For Each f As IFrame In _page.Frames
                 ' A frame the portal already threw away cannot be asked.
                 If f.IsDetached Then Continue For
-                If Await f.Locator(selector).CountAsync() > 0 Then Return f
+                Try
+                    If Await f.Locator(selector).CountAsync() > 0 Then Return f
+                Catch ex As PlaywrightException When IsNavigationRace(ex)
+                    ' The frame is navigating right now: ask again on the next round.
+                End Try
             Next
             If DateTime.UtcNow > deadline Then Return Nothing
             Await Task.Delay(500)
         Loop
+    End Function
+
+    ' The text of the document that replaced the form in the frame (FOREXE's answer). Polled:
+    ' the POST's response arrives before the frame commits the new document, so reading at once
+    ' would hit the old document, which is then destroyed under the read.
+    Private Async Function ReadAnswerAsync(k_formFrame As IFrame) As Task(Of String)
+        Dim k_deadline As DateTime = DateTime.UtcNow.AddSeconds(AnswerWaitSeconds)
+        Do
+            ' The form's frame, or - when the portal threw it away and built the answer in a new
+            ' frame (or in the page itself) - the live frames, child frames first.
+            Dim k_candidates As New List(Of IFrame)
+            If Not k_formFrame.IsDetached Then
+                k_candidates.Add(k_formFrame)
+            Else
+                For Each k_f As IFrame In _page.Frames
+                    If k_f.IsDetached OrElse k_f Is _page.MainFrame Then Continue For
+                    k_candidates.Add(k_f)
+                Next
+                k_candidates.Add(_page.MainFrame)
+            End If
+            For Each k_target As IFrame In k_candidates
+                Try
+                    Dim k_text As String = Await k_target.EvaluateAsync(Of String)(
+                        "() => (document.readyState !== 'complete' || window.__kbotFormMark) ? null : " &
+                        "(document.body ? document.body.innerText : '').replace(/\s+\n/g, '\n').trim()")
+                    If k_text IsNot Nothing Then Return k_text
+                Catch ex As PlaywrightException When IsNavigationRace(ex)
+                    ' Still navigating: look again on the next round.
+                End Try
+            Next
+            If DateTime.UtcNow > k_deadline Then
+                Throw New TimeoutException("FOREXE nu a răspuns la încărcarea documentului în timp util (pagina: " &
+                                           _page.Url & ", cadrul formularului " &
+                                           If(k_formFrame.IsDetached, "a fost înlocuit", "este încă formularul") & ").")
+            End If
+            Await Task.Delay(300)
+        Loop
+    End Function
+
+    ' Playwright's errors for «the page moved under the query» (as opposed to a real failure).
+    Private Shared Function IsNavigationRace(k_ex As Exception) As Boolean
+        If k_ex Is Nothing Then Return False
+        Dim k_message As String = k_ex.Message
+        Return k_message.IndexOf("Execution context was destroyed", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+               k_message.IndexOf("Frame was detached", StringComparison.OrdinalIgnoreCase) >= 0 OrElse
+               k_message.IndexOf("Cannot find context with specified id", StringComparison.OrdinalIgnoreCase) >= 0
     End Function
 
 End Class

@@ -85,6 +85,7 @@ def custody(cursor, ctx):
     cursor.execute(' UNION ALL '.join(parts),
                    {'s': ctx['subunit'], 'g': ctx['gestiune'], 'e': ctx['exercitiu']})
     rows = [{**row, 'q': Decimal(row['q'] or 0)} for row in cursor.fetchall()]
+    rows = oi_accounts.custody_only(rows)
     return oi_accounts.apply_lines(rows, oi_accounts.line_accounts(cursor, ctx)) if rows else []
 
 

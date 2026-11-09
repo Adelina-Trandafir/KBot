@@ -3,7 +3,7 @@ from copy import deepcopy
 from datetime import date
 from decimal import Decimal
 
-from . import numeric, protocol
+from . import consumption_timeline, numeric, receipt_choices
 from .nomenclatoare import NomError
 
 ACCEPTED_DIFFERENCE = Decimal(1)
@@ -119,26 +119,29 @@ def exact_total(parsed):
         raise NomError('INVALID', str(error), 422, {'h.Valoare': str(error)}) from None
 
 
-def simulate(cursor, repo, ctx, parsed, exclude=None):
+def simulate(cursor, repo, ctx, parsed, exclude=None, *, month_start=None):
     """Check stock-reducing variants only; return their identities for the save check.
 
     A positive addition cannot cause a shortage, including in an imperfect imported
     history. No writes, including price variants: new ones get synthetic identities.
     """
     from .documents import _all, _scope
-    old = _all(cursor, 'SELECT i.IdProdus, i.Cant, DATE(n.Data) AS day '
+    old = _all(cursor, 'SELECT i.ID, i.IdProdus, i.Cant, DATE(n.Data) AS day '
                'FROM VC_Intrari i JOIN VC_NIR n ON n.SubunitId=i.SubunitId AND n.GestiuneId=i.GestiuneId '
                'AND n.ExercitiuId=i.ExercitiuId AND n.IdIntrare=i.IdIntrare '
                'WHERE i.SubunitId=%s AND i.GestiuneId=%s AND i.ExercitiuId=%s AND i.IdIntrare=%s',
                (*_scope(ctx), exclude)) if exclude else []
+    old_variants = {row['ID']: row['IdProdus'] for row in old}
     drafts, synthetic = [], {}
     on = parsed['cols']['Data']
     for line in parsed['lines']:
         variant = line.get('variant')
-        if ctx['type'] != 'MF' and not line.get('preserve'):
-            matches = repo.select('VC_ProduseP', {'ID': line.get('product'), 'PUTVA': line['v']['PUTVA'], 'Activ': 1}, columns=('IdProdus',))
-            ids = {r['IdProdus'] for r in matches}
-            variant = variant if variant in ids else min(ids) if ids else None
+        if not line.get('preserve'):
+            existing = old_variants.get(line.get('id'))
+            if ctx['type'] == 'MF':
+                variant = existing
+            elif line.get('product') is not None:
+                variant = receipt_choices.find_price_variant(repo, line['product'], line['v']['PUTVA'], existing)
         if variant is None:
             identity = (line.get('product'), line['v']['PUTVA'], line['key'] if ctx['type'] == 'MF' else None)
             variant = synthetic.setdefault(identity, -len(synthetic) - 1)
@@ -151,27 +154,18 @@ def simulate(cursor, repo, ctx, parsed, exclude=None):
     products = set()
     for variant, items in changes.items():
         difference = Decimal(0)
-        for day, amount in protocol._by_day(items):
+        for _, amount in consumption_timeline.by_day(items):
             difference += amount
             if difference < 0:
                 products.add(variant)
                 break
     if not products:
         return products
-    existing = protocol.movements(cursor, ctx, {p for p in products if p > 0}, ('nir', exclude) if exclude else None) if any(p > 0 for p in products) else []
-    per = {}
-    for variant, day, quantity in existing + drafts:
-        if variant in products:
-            per.setdefault(variant, []).append((day or date.min, quantity))
-    for variant, items in per.items():
-        balance = Decimal(0)
-        for day, amount in protocol._by_day(items):
-            balance += amount
-            if balance < 0:
-                label = protocol._label(cursor, ctx, variant) if variant > 0 else 'produsul din ciornă'
-                raise NomError('STOCK_NEGATIVE', '%s: la %s ar lipsi %s. Modificarea nu poate fi aplicată.' % (
-                    label, day.strftime('%d.%m.%Y'), format(-balance, 'f')), 409,
-                    {'product': variant, 'date': day.isoformat(), 'missing': format(-balance, 'f')})
+    if month_start is None:
+        previous_day = old[0]['day'] if old else None
+        month_start = consumption_timeline.work_month_start(cursor, ctx, on, previous_day)
+    consumption_timeline.require_nonnegative(cursor, ctx, products, month_start,
+                                             exclude=('nir', exclude) if exclude else None, draft=drafts)
     return products
 
 

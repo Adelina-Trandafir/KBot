@@ -1,4 +1,4 @@
-"""SLICE-VC09-11: product-name links to a read-only warehouse card in the app.
+"""Product links to warehouse cards or OI/MF movements in the app.
 
 Only rows identifying exactly one price variant get a link. URLs freeze the
 report context and period; the existing stock endpoint rechecks access rights.
@@ -31,9 +31,11 @@ def without_links(model):
 
 
 def attach(model, ctx, params):
-    context = {'subunit': ctx['subunit'], 'gestiune': ctx['gestiune'], 'year': ctx['an'],
+    history = ctx['type'] in ('OI', 'MF')
+    year = (ctx.get('year') or ctx['an']) if history else ctx['an']
+    context = {'subunit': ctx['subunit'], 'gestiune': ctx['gestiune'], 'year': year,
                'start': params['start'].isoformat(), 'end': params['end'].isoformat(),
-               'ledger': 'warehouse', 'report_card': '1'}
+               'ledger': 'movements' if history else 'warehouse', 'report_card': '1'}
     variants = {}
 
     def link(row):

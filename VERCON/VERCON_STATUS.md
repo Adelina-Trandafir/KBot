@@ -1,5 +1,37 @@
 # VERCON — status (registru separat, ca ADECHIT_STATUS)
 
+## SLICE-VC14-03 — Macheta și meniul BU — 09.11.2026
+
+**IMPLEMENTAT LOCAL.** Meniul BU apare la cel puțin două subunități active. Operatorul alege în arbore magazia sau un primitor. Contul de magazie se alege când sunt mai multe conturi active. [Worklog VC14-03](../docs/worklog/SLICE-VC14-03-macheta-si-meniu-bu.md).
+
+## SLICE-VC14-02 — Documente și evidență BU — 09.11.2026
+
+**IMPLEMENTAT LOCAL.** BU înregistrează ieșirea în sursă și creează în destinație NIR-ul, plus BP și BC când este ales un primitor. Evidența urmărește transferul în rapoartele OI/MF. DDL pregătit pentru aplicare manuală. [Worklog VC14-02](../docs/worklog/SLICE-VC14-02-documente-si-evidenta-bu.md).
+
+## SLICE-VC14-01 — Retragerea fluxului anterior — 09.11.2026
+
+**IMPLEMENTAT LOCAL.** Intrările și rapoartele de magazie au fost restabilite. BP și BT obișnuite lucrează în gestiunea curentă. [Worklog VC14-01](../docs/worklog/SLICE-VC14-01-retragere-flux-intre-subunitati.md).
+
+## SLICE-VC13-01 — Validare comună pentru stocul de magazie — 09.11.2026
+
+**IMPLEMENTAT LOCAL.** Validările cronologice de magazie, inclusiv simularea NIR, folosesc același validator, cu soldul de la sfârșitul lunii anterioare lunii în lucru. Proba și publicarea sunt în așteptare. [Worklog VC13-01](../docs/worklog/SLICE-VC13-01-validare-comuna-stoc-magazie.md).
+
+## SLICE-VC06-42 — Înlocuirea și eliminarea asocierilor NIR–eFactura — 09.11.2026
+
+**CONFIRMAT DE ADELINA PRIN `$cm`.** Meniul NIR grupează comenzile eFactura. Pentru un NIR asociat, înlocuirea se salvează într-o singură tranzacție, iar eliminarea redeschide cantitățile eliberate. Facturile cu toate legăturile expirate reintră în lista de preluare. [Worklog VC06-42](../docs/worklog/SLICE-VC06-42-inlocuire-eliminare-asociere-nir-efactura.md).
+
+## SLICE-VC06-41 — Filtrul de afișare în NIR din eFactura — 09.11.2026
+
+**CONFIRMAT DE ADELINA PRIN `$cm`.** Butonul „Afișare: Active” deschide opțiunile Active, Inactive și Toate și când grila nu are o celulă în editare. [Worklog VC06-41](../docs/worklog/SLICE-VC06-41-filtru-nir-din-efactura.md).
+
+## SLICE-VC09-18 — Mișcările produsului din rapoartele OI și MF — 09.11.2026
+
+**IMPLEMENTAT LOCAL.** Clickul pe produs în raport deschide mișcările variantei la OI/MF și fișa de magazie la Materiale/Alimente. Fără probe sau teste executate. [Worklog VC09-18](../docs/worklog/SLICE-VC09-18-miscari-produs-din-rapoarte-oi-mf.md).
+
+## SLICE-VC04-06 — Mesaj pentru sesiunea de lucru a gestiunii — 09.11.2026
+
+**IMPLEMENTAT LOCAL.** Mesajul afișat la refuzul operațiunii distinge accesul exclusiv activ al altui utilizator de o sesiune de lucru expirată sau invalidă. [Worklog VC04-06](../docs/worklog/SLICE-VC04-06-mesaj-sesiune-gestiune.md).
+
 ## SLICE-VC08-23 — Bifarea arborelui din Rapoarte Online — 07.11.2026
 
 **VERIFICAT DE ADELINA LA 07.11.2026.** Prima bifare cu „Selectează TOATE” încarcă arborele printr-o singură cerere. La bifarea unei ramuri OI/MF, calculele de selecție se restrâng la ramura vizată. Animația existentă din Rapoarte acoperă arborele în timpul încărcării. Adelina a confirmat explicit înregistrarea celor 12 fișiere proprii, inclusiv documentația. [Worklog VC08-23](../docs/worklog/SLICE-VC08-23-rapoarte-bifare-arbore.md).
@@ -97,6 +129,8 @@ Actualizare metadate 03.11.2026: pentru cele 10 fișiere de aplicație rămase n
 **IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT, NEÎNREGISTRAT PENTRU GIT.** NIR-ul nou cu numerotare automată recalculează numărul/subnumărul când se schimbă Data NIR, folosind aceeași regulă de inserare ca FCS. Validarea și salvarea, inclusiv pentru mai multe destinații, folosesc aceeași poziție în serie. Numerele manuale și cele salvate se păstrează; cronologia și protecția stocului rămân active. [Worklog VC06-31](../docs/worklog/SLICE-VC06-31-inserare-nir-numar-dupa-data.md), cu fișierele și motivul pregătite. Fără teste, compilare, verificări automate, browser, SQL, SSH, publicare sau înregistrare. Modificările ulterioare înregistrării VC06-28/29/30 necesită o nouă confirmare explicită.
 
 ## SLICE-VC06-30 — Editare BC: stocul ultimei luni închise — 03.11.2026
+
+Regula a fost extinsă la toate validările cronologice de magazie în [VC13-01](../docs/worklog/SLICE-VC13-01-validare-comuna-stoc-magazie.md).
 
 **IMPLEMENTAT_LOCAL, NERULAT, NEPUBLICAT ÎN ACEST TASK; ÎNREGISTRAT LA CERERE EXPLICITĂ.** Conform clarificării utilizatorului, ultima lună închisă este luna calendaristică anterioară lunii active. Editarea BC pornește de la soldul de la sfârșitul ei și verifică luna activă și mișcările ulterioare, fără revalidarea deficitelor temporare din lunile vechi. Soldul inițial negativ este semnalat explicit. Numai `edit_bc` folosește noul control; celelalte operații rămân neschimbate. [Worklog VC06-30](../docs/worklog/SLICE-VC06-30-bc-stoc-ultima-luna-inchisa.md). La 03.11.2026 au fost înregistrate numai fișierele proprii care ajung pe server, conform cererii: 4 pentru VC06-30, 23 pentru VC06-29 și 1 pentru VC06-28 (25 distincte, cu motive separate pentru fișierele comune). Fără teste, compilare, verificări automate, SQL, SSH, publicare, restart sau Git în etapa de înregistrare.
 

@@ -89,7 +89,8 @@ export async function pickEfactura({ read, post }) {
     catch (error) { busy = false; controls(); say(error.message || 'Returnarea nu a putut fi făcută.', true); }
   }
   filter.addEventListener('click', async () => {
-    if (busy || !await invoices.commitEdit()) return;
+    if (busy) return;
+    if (invoices.hasEdit && !await invoices.commitEdit()) return;
     const selected = await pickBox('Afișează facturile', [
       { value: 'active', label: 'Active' }, { value: 'inactive', label: 'Inactive' }, { value: 'all', label: 'Toate' }]);
     if (!selected || closed || busy) return;

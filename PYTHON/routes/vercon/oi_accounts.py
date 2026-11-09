@@ -99,6 +99,7 @@ def _unresolved(cursor, ctx, family, row, lots, accounts):
 
 def line_accounts(cursor, ctx):
     """Associate saved document lines with their inherited account, without a multiplying join."""
+    from .bu_links import is_bu
     from .oi_custody import register_rows
     received = defaultdict(set)
     # One bon line can be split in the register into several rows, one per source lot it took from (a BS line of 5
@@ -121,7 +122,7 @@ def line_accounts(cursor, ctx):
         ('bt', 'VC_OI_Transfer', 'IDBT', 'IDC_BT', 'NRBT', 'DATABT'),
         ('bs', 'VC_OI_Casare', 'IDBC', 'IDC_BC', 'NRBC', 'DATABC'),
     ):
-        cursor.execute('SELECT ID,{document} AS document,{holder} AS holder,IdProdus,PUTVA,Cant,{number} AS number,{date} AS day '
+        cursor.execute('SELECT ID,{document} AS document,{holder} AS holder,IdProdus,IdMasina,PUTVA,Cant,{number} AS number,{date} AS day '
                        'FROM {table} WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND Anulat=0'.format(
                            document=document, holder=holder, table=table, number=number, date=date),
                        (ctx['subunit'], ctx['gestiune'], ctx['exercitiu']))
@@ -130,6 +131,9 @@ def line_accounts(cursor, ctx):
         for row in rows:
             line_quantity[(family, row['document'], row['holder'], row['IdProdus'], row['PUTVA'])] += abs(Decimal(row['Cant'] or 0))
         for row in rows:
+            if family == 'bt' and is_bu(row['number']):
+                result[(family, row['ID'])] = row['IdMasina']
+                continue
             batch = (family, row['document'], row['holder'], row['IdProdus'], row['PUTVA'])
             accounts = received.get(batch + (abs(Decimal(row['Cant'] or 0)),), set())
             if not accounts and batch_quantity.get(batch) == line_quantity[batch]:
@@ -153,3 +157,10 @@ def apply_lines(rows, accounts, document_rows=False):
             raise NomError('OI_ACCOUNT_ORIGIN', 'Linia %s %s nu are un cont de proveniență rezolvat.' % key, 409)
         result.append({**raw, 'category': accounts[key]})
     return result
+
+
+def custody_only(rows):
+    """A BU never receives in the source; a BU from the warehouse has no custody side."""
+    from .bu_links import is_bu
+    return [row for row in rows if not (is_bu(row['number']) and
+            (row['kind'] == 'bt_in' or row['kind'] == 'bt_out' and not row['holder']))]

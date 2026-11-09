@@ -4,7 +4,7 @@ from decimal import Decimal, InvalidOperation
 from flask import request
 
 from utils import vercon_efactura as shared
-from . import efactura_queue as queue, efactura_product_cpv, protocol
+from . import efactura_queue as queue, efactura_product_cpv, efactura_receipts, protocol
 from .documents import _one, _all, _int, _scope
 from .nomenclatoare import NomError
 
@@ -14,23 +14,50 @@ def require(cursor):
         raise NomError('EF_ASSOC_SCHEMA_REQUIRED', 'Asocierea necesită aplicarea manuală a sql/EV_02_vercon_asocieri_partiale.sql și sincronizarea structurii în DC.', 503)
 
 
-def receipt(cursor, ctx, identity, lock=False):
+def receipt(cursor, ctx, identity, lock=False, *, allow_initial=False):
     supplier = shared.receipt_supplier_sql(cursor)
     row = _one(cursor, 'SELECT n.*,' + supplier + ' AS EF_CUI FROM VC_NIR n '
                'WHERE n.SubunitId=%s AND n.GestiuneId=%s AND n.ExercitiuId=%s AND n.IdIntrare=%s'
                + (' FOR UPDATE' if lock else ''), (*_scope(ctx), identity))
-    if not row or row['Anulat'] or row.get('Storno') or row.get('TipDoc') == 'STOC_INITIAL':
+    if not row or row['Anulat'] or row.get('Storno') or (not allow_initial and row.get('TipDoc') == 'STOC_INITIAL'):
         raise NomError('INVALID', 'Alegeți un NIR salvat, neanulat, de cumpărare.', 422)
     return row
 
 
 def invoice(cursor, sending_id, lock=False):
-    row = _one(cursor, 'SELECT p.* FROM EF_Primite p JOIN EF_PrimiteVercon t ON t.IdPrimita=p.IdPrimita WHERE t.IdTrimitere=%s'
+    row = _one(cursor, 'SELECT * FROM EF_Primite WHERE IdPrimita=(SELECT IdPrimita FROM EF_PrimiteVercon WHERE IdTrimitere=%s)'
                + (' FOR UPDATE' if lock else ''), (sending_id,))
     sending = _one(cursor, 'SELECT * FROM EF_PrimiteVercon WHERE IdTrimitere=%s' + (' FOR UPDATE' if lock else ''), (sending_id,))
     if not row or not sending or sending['Stare'] not in ('TRIMISA', 'PRELUATA'):
         raise NomError('CONFLICT', 'Factura a fost retrasă sau returnată contabilului.', 409)
     return row
+
+
+def lock_replacement(cursor, sending_id, old_id):
+    # Every replacement locks the invoice/dispatch pairs in the same order, including opposite swaps.
+    pairs = _all(cursor, 'SELECT IdTrimitere FROM EF_PrimiteVercon WHERE IdTrimitere IN (%s,%s) ORDER BY IdPrimita,IdTrimitere',
+                 (sending_id, old_id))
+    if len(pairs) != 2:
+        raise NomError('CONFLICT', 'Una dintre facturile alese nu mai este disponibilă.', 409)
+    locked = {row['IdTrimitere']: invoice(cursor, row['IdTrimitere'], True) for row in pairs}
+    return locked[sending_id]
+
+
+def check_link(cursor, ctx, nir_id, old_id, new_id=None):
+    linked = {item['sending'] for item in efactura_receipts.linked(cursor, ctx, [nir_id]).get(nir_id, [])}
+    if old_id not in linked:
+        raise NomError('CONFLICT', 'Asocierea aleasă nu mai există. Redeschideți NIR-ul.', 409)
+    if new_id in linked:
+        raise NomError('CONFLICT', 'Alegeți o altă eFactură, care nu este deja asociată acestui NIR.', 409)
+
+
+def replacement_id(raw):
+    if raw is None:
+        return None
+    identity = _int(raw)
+    if identity is None or identity <= 0:
+        raise NomError('INVALID', 'Alegeți asocierea care trebuie înlocuită.', 422)
+    return identity
 
 
 def compatible(cursor, nir, ef):
@@ -62,11 +89,11 @@ def same_nir(link, ctx, nir_id):
     return (link['SUBUNIT_ID'], link['GESTIUNE_ID'], link['EXERCITIU_ID'], link['NIR_ID']) == (*_scope(ctx), nir_id)
 
 
-def budgets(cursor, ctx, sending_id, nir_id):
+def budgets(cursor, ctx, sending_id, nir_id, old_id=None):
     used_ef, used_nir = {}, {}
     links = shared.allocations(cursor)
     for link in links:
-        if not link['VALID'] or (link['ID_TRIMITERE'] == sending_id and same_nir(link, ctx, nir_id)):
+        if not link['VALID'] or (link['ID_TRIMITERE'] in (sending_id, old_id) and same_nir(link, ctx, nir_id)):
             continue
         if link['ID_TRIMITERE'] == sending_id:
             used_ef[link['ID_LINIE']] = used_ef.get(link['ID_LINIE'], Decimal(0)) + link['CANT_FACTURA']
@@ -75,23 +102,25 @@ def budgets(cursor, ctx, sending_id, nir_id):
     return links, used_ef, used_nir
 
 
-def legacy_guard(cursor, ctx, sending_id, nir_id):
+def legacy_guard(cursor, ctx, sending_id, nir_id, old_id=None):
     # Integral links predate the line budgets and cannot safely be guessed or silently converted.
     row = _one(cursor, 'SELECT 1 FROM EF_PrimiteVerconNir a JOIN VC_NIR n ON n.SubunitId=a.SubunitId '
                'AND n.GestiuneId=a.GestiuneId AND n.ExercitiuId=a.ExercitiuId AND n.IdIntrare=a.IdIntrare '
                'WHERE COALESCE(n.Anulat,0)=0 AND NOT EXISTS (SELECT 1 FROM EF_VERCON_ASOCIERI m WHERE m.ID_TRIMITERE=a.IdTrimitere) '
-               'AND (a.IdTrimitere=%s OR (a.SubunitId=%s AND a.GestiuneId=%s AND a.ExercitiuId=%s AND a.IdIntrare=%s)) LIMIT 1',
-               (sending_id, *_scope(ctx), nir_id))
+               'AND (a.IdTrimitere=%s OR (a.SubunitId=%s AND a.GestiuneId=%s AND a.ExercitiuId=%s AND a.IdIntrare=%s '
+               'AND a.IdTrimitere<>%s)) LIMIT 1', (sending_id, *_scope(ctx), nir_id, old_id or 0))
     if row:
-        raise NomError('EF_LEGACY_LINK', 'Factura sau NIR-ul are deja o asociere integrală din fluxul anterior. Aceasta nu poate fi înlocuită prin asociere parțială.', 409)
+        raise NomError('EF_LEGACY_LINK', 'Factura aleasă sau NIR-ul are o asociere integrală care ocupă cantitățile disponibile.', 409)
 
 
-def detail(cursor, ctx, sending_id, nir_id):
+def detail(cursor, ctx, sending_id, nir_id, old_id=None):
     require(cursor)
     nir, ef = receipt(cursor, ctx, nir_id), invoice(cursor, sending_id)
     compatible(cursor, nir, ef)
-    legacy_guard(cursor, ctx, sending_id, nir_id)
-    links, used_ef, used_nir = budgets(cursor, ctx, sending_id, nir_id)
+    if old_id is not None:
+        check_link(cursor, ctx, nir_id, old_id, sending_id)
+    legacy_guard(cursor, ctx, sending_id, nir_id, old_id)
+    links, used_ef, used_nir = budgets(cursor, ctx, sending_id, nir_id, old_id)
     source = _all(cursor, 'SELECT l.IdLinie,l.Denumire,l.Unit,l.Cpv,l.Cant FROM EF_PrimiteLinii l WHERE l.IdPrimita=%s AND ' + shared.sent_line_sql('%s', 'l.IdLinie'),
                   (ef['IdPrimita'], sending_id))
     target = nir_lines(cursor, ctx, nir_id)
@@ -133,15 +162,59 @@ def quantity(value):
     raise NomError('INVALID', 'Cantitățile asociate trebuie să fie pozitive, cu maximum 4 zecimale.', 422)
 
 
-def save(cursor, ctx, sending_id, nir_id, data):
-    require(cursor)
-    nir = receipt(cursor, ctx, nir_id, True)
-    ef = invoice(cursor, sending_id, True)
-    compatible(cursor, nir, ef)
+def locked_receipt(cursor, ctx, nir_id, data, *, allow_initial=False):
+    nir = receipt(cursor, ctx, nir_id, True, allow_initial=allow_initial)
     if _int(data.get('version')) != nir['Version']:
         raise NomError('CONFLICT', 'NIR-ul s-a modificat. Redeschideți asocierea.', 409)
-    legacy_guard(cursor, ctx, sending_id, nir_id)
-    _, used_ef, used_nir = budgets(cursor, ctx, sending_id, nir_id)
+    return nir
+
+
+def drop_links(cursor, ctx, sending_id, nir_id, *, manual):
+    identity = (sending_id, *_scope(ctx), nir_id)
+    if manual:
+        cursor.execute('DELETE FROM EF_VERCON_ALOCARI WHERE ID_TRIMITERE=%s AND SUBUNIT_ID=%s AND GESTIUNE_ID=%s '
+                       'AND EXERCITIU_ID=%s AND NIR_ID=%s', identity)
+    cursor.execute('DELETE FROM EF_PrimiteVerconNir WHERE IdTrimitere=%s AND SubunitId=%s AND GestiuneId=%s '
+                   'AND ExercitiuId=%s AND IdIntrare=%s', identity)
+
+
+def refresh_sending(cursor, sending_id, received_by=None):
+    progress = shared.progress(cursor, sending_id)
+    state = progress['state'] if progress is not None else (
+        'PRELUATA' if _one(cursor, queue.ACTIVE_LEGACY_NIRS + ' LIMIT 1', (sending_id,)) else 'TRIMISA')
+    if state == 'TRIMISA':
+        cursor.execute("UPDATE EF_PrimiteVercon SET Stare='TRIMISA',UnPreluat=NULL,DataPreluat=NULL WHERE IdTrimitere=%s", (sending_id,))
+    elif received_by:
+        cursor.execute("UPDATE EF_PrimiteVercon SET Stare='PRELUATA',UnPreluat=%s,DataPreluat=NOW() WHERE IdTrimitere=%s",
+                       (received_by, sending_id))
+    else:
+        cursor.execute("UPDATE EF_PrimiteVercon SET Stare='PRELUATA' WHERE IdTrimitere=%s", (sending_id,))
+    return state
+
+
+def unlink(cursor, ctx, sending_id, nir_id, data):
+    locked_receipt(cursor, ctx, nir_id, data, allow_initial=True)
+    check_link(cursor, ctx, nir_id, sending_id)
+    invoice(cursor, sending_id, True)
+    drop_links(cursor, ctx, sending_id, nir_id, manual=shared.ready(cursor))
+    state = refresh_sending(cursor, sending_id)
+    protocol.audit(cursor, ctx, 'efactura.unlink', 'EF_PrimiteVercon', sending_id, {'nir': nir_id}, {'state': state},
+                   data['request_key'], request.headers.get('X-Request-Id'))
+    return {'id': sending_id, 'state': state, 'linked': 0}
+
+
+def save(cursor, ctx, sending_id, nir_id, data):
+    require(cursor)
+    nir = locked_receipt(cursor, ctx, nir_id, data)
+    old_id = replacement_id(data.get('replace'))
+    if old_id == sending_id:
+        raise NomError('INVALID', 'Alegeți o altă eFactură.', 422)
+    ef = invoice(cursor, sending_id, True) if old_id is None else lock_replacement(cursor, sending_id, old_id)
+    if old_id is not None:
+        check_link(cursor, ctx, nir_id, old_id, sending_id)
+    compatible(cursor, nir, ef)
+    legacy_guard(cursor, ctx, sending_id, nir_id, old_id)
+    _, used_ef, used_nir = budgets(cursor, ctx, sending_id, nir_id, old_id)
     source = {l['IdLinie']: l for l in _all(cursor, 'SELECT l.IdLinie,l.Denumire,l.Cpv,l.Cant FROM EF_PrimiteLinii l WHERE l.IdPrimita=%s AND ' + shared.sent_line_sql('%s', 'l.IdLinie'),
                                             (ef['IdPrimita'], sending_id))}
     target = {l['ID']: l for l in nir_lines(cursor, ctx, nir_id)}
@@ -164,11 +237,19 @@ def save(cursor, ctx, sending_id, nir_id, data):
         clean.append((lid, nid, qty, nqty))
         if item.get('learn') is True:
             learned.add((lid, nid))
-    cpv_updated = efactura_product_cpv.apply(cursor, ctx, sending_id, nir_id, source, target, clean,
-                                           data.get('request_key'), request.headers.get('X-Request-Id'))
-    cursor.execute('INSERT IGNORE INTO EF_VERCON_ASOCIERI (ID_TRIMITERE) VALUES (%s)', (sending_id,))
-    cursor.execute('DELETE FROM EF_VERCON_ALOCARI WHERE ID_TRIMITERE=%s AND SUBUNIT_ID=%s AND GESTIUNE_ID=%s AND EXERCITIU_ID=%s AND NIR_ID=%s',
-                   (sending_id, *_scope(ctx), nir_id))
+    if old_id is not None and not clean:
+        raise NomError('INVALID', 'Asociați cel puțin o poziție din factura nouă înainte de salvare.', 422)
+    request_id = request.headers.get('X-Request-Id')
+    cpv_updated = efactura_product_cpv.apply(cursor, ctx, sending_id, nir_id, source, target, clean, data['request_key'], request_id)
+    replaced = {}
+    if old_id is not None:
+        drop_links(cursor, ctx, old_id, nir_id, manual=True)
+        replaced = {'replaced_sending': old_id, 'replaced_state': refresh_sending(cursor, old_id)}
+    drop_links(cursor, ctx, sending_id, nir_id, manual=True)
+    if clean:
+        cursor.execute('INSERT IGNORE INTO EF_VERCON_ASOCIERI (ID_TRIMITERE) VALUES (%s)', (sending_id,))
+        cursor.execute('INSERT IGNORE INTO EF_PrimiteVerconNir (IdTrimitere,SubunitId,GestiuneId,ExercitiuId,IdIntrare) VALUES (%s,%s,%s,%s,%s)',
+                       (sending_id, *_scope(ctx), nir_id))
     for lid, nid, qty, nqty in clean:
         line = target[nid]
         cursor.execute('INSERT INTO EF_VERCON_ALOCARI (ID_TRIMITERE,ID_LINIE,SUBUNIT_ID,GESTIUNE_ID,EXERCITIU_ID,NIR_ID,NIR_VERSION,INTRARE_ID,'
@@ -180,14 +261,10 @@ def save(cursor, ctx, sending_id, nir_id, data):
                            'CONFIRMAT_DE=VALUES(CONFIRMAT_DE),CONFIRMAT_LA=NOW()',
                            (ef['CuiNormalizat'], shared.name_hash(source[lid]['Denumire']), source[lid]['Denumire'], ctx['subunit'], ctx['gestiune'],
                             line['PRODUCT_ID'], line['DenumireP'], ctx['email']))
-    cursor.execute('INSERT IGNORE INTO EF_PrimiteVerconNir (IdTrimitere,SubunitId,GestiuneId,ExercitiuId,IdIntrare) VALUES (%s,%s,%s,%s,%s)',
-                   (sending_id, *_scope(ctx), nir_id))
-    state = shared.progress(cursor, sending_id)['state']
-    cursor.execute('UPDATE EF_PrimiteVercon SET Stare=%s,UnPreluat=%s,DataPreluat=NOW() WHERE IdTrimitere=%s',
-                   ('TRIMISA' if state == 'TRIMISA' else 'PRELUATA', ctx['email'], sending_id))
-    protocol.audit(cursor, ctx, 'efactura.associate', 'EF_PrimiteVercon', sending_id, None,
-                   {'nir': nir_id, 'allocations': clean, 'state': state, 'learned': sorted(learned), 'cpv_updated': cpv_updated},
-                   data.get('request_key'), request.headers.get('X-Request-Id'))
+    state = refresh_sending(cursor, sending_id, ctx['email'] if clean else None)
+    protocol.audit(cursor, ctx, 'efactura.replace' if replaced else 'efactura.associate', 'EF_PrimiteVercon', sending_id, None,
+                   {'nir': nir_id, 'allocations': clean, 'state': state, 'learned': sorted(learned), 'cpv_updated': cpv_updated, **replaced},
+                   data['request_key'], request_id)
     return {'id': sending_id, 'state': state, 'linked': len(clean), 'cpv_updated': cpv_updated}
 
 
@@ -199,11 +276,9 @@ def register(bp, guard, scoped, session, build, need):
         verified = scoped('read')
         with session(False) as cursor:
             ctx, _ = build(cursor, verified, 'nir', False)
-            return detail(cursor, ctx, sending_id, _int(request.args.get('nir')))
+            return detail(cursor, ctx, sending_id, _int(request.args.get('nir')), replacement_id(request.args.get('replace')))
 
-    @bp.post('/api/vercon/doc/nir/efactura/<int:sending_id>/association')
-    @guard('receptie')
-    def post_association(sending_id):
+    def write(sending_id, operation, apply):
         need('nir')
         data = request.get_json(silent=True)
         if not isinstance(data, dict) or not isinstance(data.get('request_key'), str) or not 1 <= len(data['request_key']) <= 64:
@@ -211,10 +286,20 @@ def register(bp, guard, scoped, session, build, need):
         verified = scoped('receptie', data)
         with session(True) as cursor:
             ctx, _ = build(cursor, verified, 'nir', True)
-            fp = protocol.fingerprint('efactura.association', sending_id, data)
+            fp = protocol.fingerprint(operation, sending_id, data)
             replay = protocol.replayed(cursor, ctx, data['request_key'], fp)
             if replay is not None:
                 return replay
-            result = save(cursor, ctx, sending_id, _int(data.get('nir')), data)
+            result = apply(cursor, ctx, sending_id, _int(data.get('nir')), data)
             protocol.remember(cursor, ctx, data['request_key'], fp, result)
             return result
+
+    @bp.post('/api/vercon/doc/nir/efactura/<int:sending_id>/association')
+    @guard('receptie')
+    def post_association(sending_id):
+        return write(sending_id, 'efactura.association', save)
+
+    @bp.post('/api/vercon/doc/nir/efactura/<int:sending_id>/unlink')
+    @guard('receptie')
+    def post_unlink(sending_id):
+        return write(sending_id, 'efactura.unlink', unlink)

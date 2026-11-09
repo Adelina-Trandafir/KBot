@@ -32,7 +32,7 @@ import { orphanStorno } from './orphan-storno.js'; import { repairRegister } fro
 import { receiptProductEntry, mfColumns, mfMonthly } from './receipt-product-entry.js';
 import { efacturaIntake } from './efactura-intake.js';
 import { efacturaLineDialog } from './efactura-line-dialog.js';
-import { associateEfactura } from './efactura-association.js';
+import { efacturaMenu, receiptEfacturaChanges } from './efactura-actions.js';
 import { showReceiptEfactura } from './efactura-view.js';
 import { headerFit } from './header-fit.js';
 
@@ -833,10 +833,12 @@ export function mountDocuments(host, opts) {
     savedTree = paintTree(treeHost, treeNodes(), { title: family === 'bc' ? 'Bonuri salvate' : family === 'storno' ? 'FCS salvate' : 'Documente salvate', showSearchBox: false, collapsed: true, selected: state.doc?.id, onToggle: lazy ? opened : undefined, onSelect: (id) => open(Number(id)).catch(report), onAction: (id, anchor) => {
       if (id.startsWith('party:')) { openMenu(anchor, [{ icon: 'ℹ', label: 'Afișează info furnizor', run: () => showSupplierInfo({ api: opts.api, sel: opts.sel, cf: decodeURIComponent(id.slice(6)) }).catch(report) }]); return; }
       const doc = lazy ? receipts.find(id) : state.docs.find((item) => String(item.id) === id); if (!doc) return; const run = async (action) => { if (state.doc?.id !== doc.id) await open(doc.id); if (state.doc?.id === doc.id) await action(); };
+      const efactura = family === 'nir' ? efacturaMenu(doc, { busy: state.busy, blocked: efacturaBlocked(doc),
+        view: () => run(() => showReceiptEfactura({ api: opts.api, selection: opts.sel(), doc: state.doc, owner: dialogs })).catch(report),
+        change: mode => run(() => changeSavedEfactura(mode)).catch(report) }) : [];
       openMenu(anchor, [...(doc.source_missing ? [{ icon: '↔', label: 'Asociază cu un bon de consum', disabled: !state.canWrite || doc.annulled, run: () => run(edit).catch(report) }] : []),
-        ...(family === 'nir' && doc.has_efactura ? [{ icon: '📄', label: 'Afișează eFactura', disabled: state.busy, run: () => run(() => showReceiptEfactura({ api: opts.api, selection: opts.sel(), doc: state.doc, owner: dialogs })).catch(report) }] : []),
-        ...(family === 'nir' && doc.doc_type !== 'STOC_INITIAL' ? [{ icon: '↔', label: 'Asociază eFactura…', disabled: !state.canWrite || state.busy || editing() || doc.annulled || !!state.pendingBody || !!pendingCancel || !!pendingLink, run: () => run(associateSavedEfactura).catch(report) }] : []),
-        { icon: '✎', label: 'Modifică', disabled: !state.canWrite || doc.annulled, run: () => run(edit).catch(report) }, { icon: '◉', label: 'Previzualizează', run: () => run(preview).catch(report) }, { icon: '◷', label: 'Istoric', run: () => run(history).catch(report) }, { icon: '×', label: 'Anulează', rule: true, disabled: !state.canWrite || doc.annulled || doc.order_locked, run: () => run(cancel).catch(report) }], { align: 'right' });
+        ...efactura,
+        { icon: '✎', label: 'Modifică', rule: efactura.length > 0, disabled: !state.canWrite || doc.annulled, run: () => run(edit).catch(report) }, { icon: '◉', label: 'Previzualizează', run: () => run(preview).catch(report) }, { icon: '◷', label: 'Istoric', run: () => run(history).catch(report) }, { icon: '×', label: 'Anulează', rule: true, disabled: !state.canWrite || doc.annulled || doc.order_locked, run: () => run(cancel).catch(report) }], { align: 'right' });
     } }, treeUi);
     paintTreeAdd();
   }
@@ -853,11 +855,33 @@ export function mountDocuments(host, opts) {
     }
     treeAddButton.setEnabled(state.canWrite && !(custody && editing()));
   }
-  async function associateSavedEfactura() {
-    if (family !== 'nir' || editing() || !state.canWrite || state.busy || !state.doc || state.doc.annulled || state.doc.doc_type === 'STOC_INITIAL' || state.pendingBody || pendingCancel || pendingLink) return;
-    const result = await associateEfactura({ api: opts.api, sel: opts.sel, doc: state.doc });
-    if (result) { await open(state.doc.id); await refresh(); paint(); }
-    if (result) say(result.state === 'PARTIALA' ? 'Asociere parțială salvată. Restul facturii poate fi asociat altor NIR-uri, inclusiv din alte subunități.' : result.state === 'PRELUATA' ? '' : 'Asocierile acestui NIR au fost eliminate.');
+  function efacturaBlocked(doc) {
+    return !state.canWrite || state.busy || editing() || doc.annulled || !!state.pendingBody || !!pendingCancel || !!pendingLink;
+  }
+  async function changeSavedEfactura(mode) {
+    const doc = state.doc;
+    if (!doc || efacturaBlocked(doc) || (mode !== 'unlink' && doc.doc_type === 'STOC_INITIAL')) return;
+    const signal = anySignal([abort.signal, contextAbort.signal]);
+    const release = () => { state.busy = false; root.inert = false; };
+    signal.addEventListener('abort', release, { once: true });
+    openSequence++;
+    state.busy = true; root.inert = true;
+    let result;
+    try {
+      result = await changeEfactura({ doc, mode, selection: opts.sel(), signal });
+      if (!result || signal.aborted) return;
+      const updated = await opts.api(url(`/${doc.id}`));
+      if (signal.aborted) return;
+      state.doc = updated;
+      await refresh();
+    } finally {
+      signal.removeEventListener('abort', release);
+      if (!signal.aborted) release();
+    }
+    if (signal.aborted) return;
+    paint();
+    say(!result.linked ? 'Asocierea cu eFactura a fost eliminată.' : mode === 'replace' ? 'Asocierea a fost înlocuită.'
+      : result.state === 'PARTIALA' ? 'Asociere parțială salvată. Restul facturii poate fi asociat altor NIR-uri, inclusiv din alte subunități.' : '');
   }
   function paintBar() {
     const button = (text, action, attrs = {}) => { const node = el('button', { type: 'button', textContent: text, ...attrs }); node.addEventListener('click', () => Promise.resolve(action()).catch(report), { signal: abort.signal }); return node; };

@@ -15,6 +15,7 @@ import { createApi, portalToken, toPortal } from "./api.js";
 import { createDraft } from "./draft.js";
 import { mountEditor } from "./editor.js";
 import { mountDocuments } from "./docs.js";
+import { mountBu } from "./bu.js";
 import { mountLista } from "./lista.js";
 import { mountMf } from "./mf.js";
 import { mountStock } from "./stock.js";
@@ -523,6 +524,11 @@ async function openForm(k_key, { reload = false } = {}) {
     if (!IS_PREVIEW && k_key === "mf_registru") {
       // the fixed-asset register (VC07-04)
       state.editor = mountMf(k_work, { api, sel: () => state.ctx.selection, signal: lifetime.signal });
+      return;
+    }
+    if (!IS_PREVIEW && k_key === "bu") {
+      state.editor = mountBu(k_work, { api, sel: () => state.ctx.selection });
+      await state.editor.ready;
       return;
     }
     if (!IS_PREVIEW && ["nir", "storno", "bc", "br", "bp", "bt", "bs"].includes(k_key)) {

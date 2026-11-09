@@ -41,6 +41,8 @@ class Source:
                     raise NomError('REPORT_SOURCE', 'Sursa SQL ' + key + ' nu întoarce câmpurile obligatorii: ' + ', '.join(sorted(missing)) + '.', 422)
             if key == 'receipts':
                 self.cache[cache_key] = report_receipt_dates.rows(self.cursor, self.ctx, self.cache[cache_key])
+            if key == 'custody_ledger':
+                self.cache[cache_key] = oi_accounts.custody_only(self.cache[cache_key])
             if key in ('custody_ledger', 'oi_documents') and self.cache[cache_key]:
                 if '_oi_line_accounts' not in self.cache:
                     self.cache['_oi_line_accounts'] = oi_accounts.line_accounts(self.cursor, self.ctx)

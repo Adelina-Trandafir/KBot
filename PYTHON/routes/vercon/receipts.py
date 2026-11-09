@@ -3,7 +3,7 @@ from utils.clock import utc_now
 from decimal import Decimal
 from utils import vercon_suppliers as suppliers
 
-from . import numeric, protocol, receipt_choices, receipt_rules, receipt_number, nir_number, receipt_auto, receipt_products
+from . import consumption_timeline, numeric, protocol, receipt_choices, receipt_rules, receipt_number, nir_number, receipt_auto, receipt_products
 from .nomenclatoare import NomError
 from .documents import (_int, _dec, _text, _one, _all, _fail, _exists, _scope,
                         _line_key, _account_of_product, _account_of_variant,
@@ -307,7 +307,9 @@ def _write_receipt_line(cursor, repo, ctx, nir_id, line, now, existing=None):
     if line.get('preserve') and existing:
         return existing['ID']
     variant = line.get('variant')
-    if ctx['type'] == 'MF':
+    if line.get('prepared_mf_variant') is not None and existing is None:
+        variant = line['prepared_mf_variant']
+    elif ctx['type'] == 'MF':
         line['ValoareLuna'] = receipt_products.monthly(line)
         if existing is None:
             variant = repo.insert('VC_ProduseP', {'ID': line['product'], 'PUTVA': v['PUTVA'], 'COD': line['COD'], 'DataSalvare': now})
@@ -371,7 +373,8 @@ def edit_nir(cursor, repo, ctx, exercise, doc_id, body, request_id):
     invoice_id, current = invoices.prepare_receipt(cursor, ctx, doc_id, header)
     stock_reductions = set()
     if economic or changed_day:
-        stock_reductions = receipt_rules.simulate(cursor, repo, ctx, parsed, doc_id)
+        month_start = consumption_timeline.work_month_start(cursor, ctx, parsed['cols']['Data'], old_day)
+        stock_reductions = receipt_rules.simulate(cursor, repo, ctx, parsed, doc_id, month_start=month_start)
     invoices.clear_allocations(cursor, ctx, doc_id)
     stored = _all(cursor, 'SELECT ID, IdProdus FROM VC_Intrari WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND IdIntrare=%s', (*_scope(ctx), doc_id))
     by_id = {r['ID']: r for r in stored}
@@ -402,8 +405,8 @@ def edit_nir(cursor, repo, ctx, exercise, doc_id, body, request_id):
         values['NumarSub'] = sub
     if repo.update('VC_NIR', values, {'IdIntrare': doc_id, 'Version': before['Version']}, bump_version=True) != 1:
         raise NomError('CONFLICT', 'Documentul a fost modificat de altcineva. Reîncărcați documentul.', 409)
-    if economic or changed_day:
-        protocol.check_timeline(cursor, ctx, touched & stock_reductions)
+    if stock_reductions:
+        consumption_timeline.require_nonnegative(cursor, ctx, touched & stock_reductions, month_start)
     invoices.receipt_saved(cursor, ctx, doc_id, parsed, invoice_id, current, request_id)
     protocol.audit(cursor, ctx, 'nir.update', 'VC_NIR', doc_id, {'Numar': before['Numar'], 'NumarSub': before_sub, 'Valoare': before['Valoare'], 'NrFact': before['NrFact']},
                    {'header': parsed['cols'], 'Numar': number, 'NumarSub': sub, 'total': total_int, 'lines': len(parsed['lines'])}, None, request_id)

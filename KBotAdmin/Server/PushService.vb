@@ -190,6 +190,27 @@ Public NotInheritable Class PushService
 
             ' A server debugging version can be finalized even if the local file is gone or excluded now.
             Dim k_scanned As New HashSet(Of String)(k_result.Files.Select(Function(k_file) k_file.RelativePath), StringComparer.Ordinal)
+            ' Evidence for a file that is gone locally AND on the server can never be finalized: clean it from the server file.
+            Dim k_gone As New List(Of String)
+            For Each k_debugEntry As DebugDeployment In k_debug.Values
+                If k_scanned.Contains(k_debugEntry.path) Then Continue For
+                If k_debugEntry.current_sha256 = String.Empty AndAlso Not File.Exists(Path.Combine(k_localRoot, k_debugEntry.path)) Then
+                    k_gone.Add(k_debugEntry.path)
+                End If
+            Next
+            If k_gone.Count > 0 Then
+                Try
+                    Dim k_forgotten As List(Of String) = DeploymentPublisher.ForgetMissing(k_settings, k_gone, k_onLine)
+                    For Each k_path As String In k_forgotten
+                        k_debug.Remove(k_path)
+                    Next
+                    k_onLine?.Invoke("Evidență debugging curățată (fișier inexistent local și pe server): " & k_forgotten.Count.ToString(Globalization.CultureInfo.InvariantCulture))
+                Catch ex As Exception
+                    ' The rows stay visible so the operator still sees them; the failure is in the error log.
+                    GlobalErrorLog.Write("PushService.Scan.ForgetMissing", ex)
+                    k_onLine?.Invoke("Curățarea evidenței debugging a eșuat: " & ex.Message)
+                End Try
+            End If
             For Each k_debugEntry As DebugDeployment In k_debug.Values
                 If k_scanned.Contains(k_debugEntry.path) Then Continue For
                 Dim k_remoteEntry As RemoteEntry = Nothing

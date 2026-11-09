@@ -53,13 +53,15 @@ def publish(root, stage, manifest):
         raise RuntimeError("Rădăcina de publicare nu este un director real.")
     root = root.resolve(strict=True)
     action = manifest["action"]
-    if action not in ("publish", "commit_debug", "list_debug"):
+    if action not in ("publish", "commit_debug", "list_debug", "forget_debug"):
         raise RuntimeError("Acțiune de publicare necunoscută.")
     state_dir = root / ".kbotadmin-deployment"
     if state_dir.is_symlink():
         raise RuntimeError("Directorul evidenței debugging nu poate fi o legătură simbolică.")
     if action == "list_debug" and not state_dir.exists():
         return {"ok": True, "debug_files": []}
+    if action == "forget_debug" and not state_dir.exists():
+        return {"ok": True, "forgotten": [], "action": "forget_debug"}
     state_dir.mkdir(mode=0o700, exist_ok=True)
     descriptor = os.open(state_dir / "publish.lock", os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     # The same lock protects uploads without Git and Git-only finalization.
@@ -80,6 +82,16 @@ def publish(root, stage, manifest):
                 debug_files.append({"path": relative, **entry,
                                     "current_sha256": digest(target) if target.is_file() else ""})
             return {"ok": True, "debug_files": debug_files}
+        if action == "forget_debug":
+            # Drops evidence only for files that no longer exist on the server; a file still there is never touched.
+            forgotten = []
+            for relative in manifest.get("paths", []):
+                if relative in state and not target_path(root, relative).exists():
+                    del state[relative]
+                    forgotten.append(relative)
+            if forgotten:
+                save_debug(state_path, state)
+            return {"ok": True, "forgotten": forgotten, "action": "forget_debug"}
         return publish_locked(root, stage, manifest, state_path, state)
 
 

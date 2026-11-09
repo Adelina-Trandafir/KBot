@@ -90,6 +90,7 @@ from routes.schema_sync.schema_common import (COMMON_DB, FORBIDDEN_TARGETS, SOUR
                                               list_unit_databases)
 
 from routes.admin_cli.admin_backup import BACKUP_DIR      # the dump verbs live in admin_backup.py (ME02-02)
+from routes.admin_cli import vercon_bc_delete
 JOURNAL_ACTOR_DEFAULT = "scavatarsoft@gmail.com"
 
 from routes.admin_cli.admin_common import (
@@ -543,6 +544,7 @@ COMMANDS = {
                             "nu se ating, cu o exceptie: legaturile factura-DDF alese de mana pleaca odata cu DDF-ul si raman in Jurnal. "
                             "SCRIE, intr-o singura tranzactie, si NU se poate anula. Se porneste din butonul «Sterge angajamentul» de dupa analiza.",
                             True, _c_angajament_stergere),
+    **vercon_bc_delete.commands(_block),
 }
 
 # Commands that need one typed value besides the database: name -> label of that value. They run on ONE database only.
@@ -556,11 +558,14 @@ COMMAND_PARAMS = {
     "avacont_golire": "Numele bazei (confirmare)",
     "angajament_analiza": "Cod angajament",
     "angajament_stergere": "Cod angajament",
+    vercon_bc_delete.DELETE: "Numărul bonului de consum sau ID",
+    vercon_bc_delete.PREVIEW: "Numărul bonului de consum sau ID",
 }
 
 # Commands restricted to one selected database (including database-wide VERCON checks).
 SINGLE_DB_COMMANDS = {"oi_semne_repara", "storno_preturi", "storno_preturi_repara", "ddf_antete", "ddf_antete_explica", "ddf_antete_repara",
-                     "receptii_lanturi", "receptii_lanturi_repara", "vercon_golire", "avacont_golire", "clasificatii_dubluri_repara", "angajament_analiza", "angajament_stergere"}
+                     "receptii_lanturi", "receptii_lanturi_repara", "vercon_golire", "avacont_golire", "clasificatii_dubluri_repara", "angajament_analiza", "angajament_stergere",
+                     vercon_bc_delete.PREVIEW, vercon_bc_delete.DELETE}
 
 
 def cmd_commands(args):

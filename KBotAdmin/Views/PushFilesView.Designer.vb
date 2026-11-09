@@ -246,8 +246,8 @@ Partial Class PushFilesView
         '
         tlyMid.AutoFitToTheme = False
         tlyMid.ColumnCount = 2
-        tlyMid.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 68F))
-        tlyMid.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 32F))
+        tlyMid.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 74.4F))
+        tlyMid.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 25.6F))
         tlyMid.Controls.Add(gridFiles, 0, 0)
         tlyMid.Controls.Add(tlySide, 1, 0)
         tlyMid.Dock = DockStyle.Fill
@@ -262,7 +262,8 @@ Partial Class PushFilesView
         ' gridFiles
         '
         gridFiles.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridFiles.ColumnFillMode = KBotFillMode.SpecificColumn
+        gridFiles.ColumnFillMode = KBotFillMode.None
+        gridFiles.ShrinkColumnsToFit = False
         gridFilesCol1.AggregateFormatString = Nothing
         gridFilesCol1.ColumnType = KBotColumnType.CheckBox
         gridFilesCol1.FormatString = Nothing
@@ -281,7 +282,7 @@ Partial Class PushFilesView
         gridFilesCol2.MinWidth = 120
         gridFilesCol2.OptionGroup = Nothing
         gridFilesCol2.ReadOnly = True
-        gridFilesCol2.Width = 320
+        gridFilesCol2.Width = 380
         gridFilesCol3.AggregateFormatString = Nothing
         gridFilesCol3.FormatString = Nothing
         gridFilesCol3.HeaderText = "Stare"
@@ -311,7 +312,7 @@ Partial Class PushFilesView
         gridFilesCol5.OptionGroup = Nothing
         gridFilesCol5.ReadOnly = True
         gridFilesCol5.TextAlign = ContentAlignment.MiddleRight
-        gridFilesCol5.Width = 96
+        gridFilesCol5.Width = 120
         gridFilesCol6.AggregateFormatString = Nothing
         gridFilesCol6.FormatString = Nothing
         gridFilesCol6.HeaderText = "Mărime server (B)"
@@ -323,7 +324,7 @@ Partial Class PushFilesView
         gridFilesCol6.OptionGroup = Nothing
         gridFilesCol6.ReadOnly = True
         gridFilesCol6.TextAlign = ContentAlignment.MiddleRight
-        gridFilesCol6.Width = 96
+        gridFilesCol6.Width = 120
         gridFilesCol7.AggregateFormatString = Nothing
         gridFilesCol7.FormatString = Nothing
         gridFilesCol7.HeaderText = "Local (UTC)"
@@ -372,7 +373,6 @@ Partial Class PushFilesView
         gridFiles.Columns.Add(gridFilesCol7)
         gridFiles.Columns.Add(gridFilesCol8)
         gridFiles.Dock = DockStyle.Fill
-        gridFiles.FillColumnKey = "path"
         gridFiles.Location = New Point(0, 0)
         gridFiles.Margin = New Padding(0)
         gridFiles.Name = "gridFiles"
@@ -384,19 +384,19 @@ Partial Class PushFilesView
         tlySide.AutoFitToTheme = False
         tlySide.ColumnCount = 1
         tlySide.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
-        tlySide.Controls.Add(tlyExtBar, 0, 0)
-        tlySide.Controls.Add(gridExt, 0, 1)
-        tlySide.Controls.Add(tlyPatBar, 0, 2)
-        tlySide.Controls.Add(gridPat, 0, 3)
+        tlySide.Controls.Add(gridExt, 0, 0)
+        tlySide.Controls.Add(tlyExtBar, 0, 1)
+        tlySide.Controls.Add(gridPat, 0, 2)
+        tlySide.Controls.Add(tlyPatBar, 0, 3)
         tlySide.Dock = DockStyle.Fill
         tlySide.Location = New Point(0, 0)
         tlySide.Margin = New Padding(0)
         tlySide.Name = "tlySide"
         tlySide.RowCount = 4
-        tlySide.RowStyles.Add(New RowStyle(SizeType.Absolute, 36F))
         tlySide.RowStyles.Add(New RowStyle(SizeType.Percent, 55F))
         tlySide.RowStyles.Add(New RowStyle(SizeType.Absolute, 36F))
         tlySide.RowStyles.Add(New RowStyle(SizeType.Percent, 45F))
+        tlySide.RowStyles.Add(New RowStyle(SizeType.Absolute, 36F))
         tlySide.Size = New Size(900, 560)
         tlySide.TabIndex = 11
         '
@@ -415,13 +415,13 @@ Partial Class PushFilesView
         tlyExtBar.RowCount = 1
         tlyExtBar.RowStyles.Add(New RowStyle(SizeType.Absolute, 36F))
         tlyExtBar.Size = New Size(900, 560)
-        tlyExtBar.TabIndex = 12
+        tlyExtBar.TabIndex = 15
         '
         ' btnExtAdd
         '
         btnExtAdd.Dock = DockStyle.Fill
         btnExtAdd.Location = New Point(0, 0)
-        btnExtAdd.Margin = New Padding(0, 2, 6, 6)
+        btnExtAdd.Margin = New Padding(0, 6, 6, 2)
         btnExtAdd.Name = "btnExtAdd"
         btnExtAdd.Size = New Size(110, 36)
         btnExtAdd.TabIndex = 13
@@ -433,7 +433,7 @@ Partial Class PushFilesView
         '
         btnExtDel.Dock = DockStyle.Fill
         btnExtDel.Location = New Point(0, 0)
-        btnExtDel.Margin = New Padding(0, 2, 6, 6)
+        btnExtDel.Margin = New Padding(0, 6, 6, 2)
         btnExtDel.Name = "btnExtDel"
         btnExtDel.Size = New Size(110, 36)
         btnExtDel.TabIndex = 14
@@ -495,7 +495,7 @@ Partial Class PushFilesView
         gridExt.Margin = New Padding(0)
         gridExt.Name = "gridExt"
         gridExt.Size = New Size(600, 300)
-        gridExt.TabIndex = 15
+        gridExt.TabIndex = 12
         '
         ' tlyPatBar
         '
@@ -512,13 +512,13 @@ Partial Class PushFilesView
         tlyPatBar.RowCount = 1
         tlyPatBar.RowStyles.Add(New RowStyle(SizeType.Absolute, 36F))
         tlyPatBar.Size = New Size(900, 560)
-        tlyPatBar.TabIndex = 16
+        tlyPatBar.TabIndex = 19
         '
         ' btnPatAdd
         '
         btnPatAdd.Dock = DockStyle.Fill
         btnPatAdd.Location = New Point(0, 0)
-        btnPatAdd.Margin = New Padding(0, 2, 6, 6)
+        btnPatAdd.Margin = New Padding(0, 6, 6, 2)
         btnPatAdd.Name = "btnPatAdd"
         btnPatAdd.Size = New Size(110, 36)
         btnPatAdd.TabIndex = 17
@@ -530,7 +530,7 @@ Partial Class PushFilesView
         '
         btnPatDel.Dock = DockStyle.Fill
         btnPatDel.Location = New Point(0, 0)
-        btnPatDel.Margin = New Padding(0, 2, 6, 6)
+        btnPatDel.Margin = New Padding(0, 6, 6, 2)
         btnPatDel.Name = "btnPatDel"
         btnPatDel.Size = New Size(110, 36)
         btnPatDel.TabIndex = 18
@@ -569,7 +569,7 @@ Partial Class PushFilesView
         gridPat.Margin = New Padding(0)
         gridPat.Name = "gridPat"
         gridPat.Size = New Size(600, 300)
-        gridPat.TabIndex = 19
+        gridPat.TabIndex = 16
         '
         ' logBox
         '

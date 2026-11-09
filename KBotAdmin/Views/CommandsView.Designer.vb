@@ -160,7 +160,7 @@ Partial Class CommandsView
         txtParam.TextAlign = HorizontalAlignment.Center
         txtParam.TextPadding = New Padding(0)
         tips.SetToolTipHeader(txtParam, "Valoarea comenzii")
-        tips.SetToolTipText(txtParam, "Codul angajamentului. Apare doar la comenzile care au nevoie de el și dispare când alegi altă comandă." & vbLf & "Comanda cere o bază anume aleasă în arbore, nu <TOATE BAZELE>.")
+        tips.SetToolTipText(txtParam, "Valoarea cerută de comanda aleasă, conform textului din casetă." & vbLf & "Comanda cere o singură bază aleasă în arbore.")
         txtParam.VerticalScrollBarPadding = New Padding(0)
         txtParam.Visible = False
         ' 
