@@ -15,7 +15,7 @@ Imports KBot.Domain
 ' (every subunit with «Toate»). The pick moves the selector at once; a page that cannot follow (an edit it could not save) moves it back with <see cref="SetSubunitKey"/>.
 Partial Public Class KbotForm
 
-    Public Event SubunitPicked As Action(Of String) Implements IPlanContHost.SubunitPicked, Global.KBot.EFactura.ISubunitHost.SubunitPicked
+    Public Event SubunitPicked As Action(Of String) Implements IPlanContHost.SubunitPicked, ISubunitHost.SubunitPicked
 
     Private _subunitati As IReadOnlyList(Of SubunitateInfo)
     Private _subunitatiDb As String = String.Empty
@@ -23,7 +23,7 @@ Partial Public Class KbotForm
     Private _subunitLoading As Boolean
 
     ''' <summary>The subunit in force (the one shown in the title bar, or the only one of the source); Nothing = the unit has no subunit for this source.</summary>
-    Public ReadOnly Property CurrentSubunitId As Integer? Implements IPlanContHost.CurrentSubunitId, Global.KBot.EFactura.ISubunitHost.CurrentSubunitId
+    Public ReadOnly Property CurrentSubunitId As Integer? Implements IPlanContHost.CurrentSubunitId, ISubunitHost.CurrentSubunitId
         Get
             Return _subunitCurent
         End Get
@@ -39,7 +39,7 @@ Partial Public Class KbotForm
     End Property
 
     ''' <summary>Moves the selector to a key without raising <see cref="SubunitPicked"/> (a page that could not follow a pick puts it back).</summary>
-    Public Sub SetSubunitKey(k_key As String) Implements IPlanContHost.SetSubunitKey, Global.KBot.EFactura.ISubunitHost.SetSubunitKey
+    Public Sub SetSubunitKey(k_key As String) Implements IPlanContHost.SetSubunitKey, ISubunitHost.SetSubunitKey
         Dim k_id As Integer
         _subunitCurent = If(Integer.TryParse(k_key, NumberStyles.Integer, CultureInfo.InvariantCulture, k_id), CType(k_id, Integer?), Nothing)
         capBar.SetSelectorKey(KBotCaptionBar.SelectorSubunit, k_key)

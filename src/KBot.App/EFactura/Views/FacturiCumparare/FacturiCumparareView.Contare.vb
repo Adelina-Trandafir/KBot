@@ -466,7 +466,7 @@ Partial Public Class FacturiCumparareView
     End Sub
 
     ' ── The buttons of the ribbon (slice 03EF-02..05): the view group of the window shows them while «Contari» is on screen ──
-    ' KBot.EFactura cannot see the ribbon (it lives in the shell): the window asks these functions and hears ReceptiiActionChanged when an answer changes.
+    ' The ribbon belongs to the shell, not to this view: the window asks these functions and hears ReceptiiActionChanged when an answer changes.
 
     Public Const RibbonContareAdauga As String = "ef_contare_adauga"
     Public Const RibbonContareSalveaza As String = "ef_contare_salveaza"

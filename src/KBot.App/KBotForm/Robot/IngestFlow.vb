@@ -6,7 +6,6 @@ Imports System.Windows.Forms
 Imports KBot.Api
 Imports KBot.Common
 Imports KBot.Domain
-Imports KBot.EFactura
 Imports KBot.Forexe
 Imports KBot.Theming
 

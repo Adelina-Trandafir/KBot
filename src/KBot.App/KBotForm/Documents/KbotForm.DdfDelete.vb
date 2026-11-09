@@ -2,7 +2,6 @@ Imports System.Threading
 Imports KBot.Api
 Imports KBot.Common
 Imports KBot.Domain
-Imports KBot.EFactura
 
 ''' <summary>
 ''' THE DDF EDITOR -- the three deletes (revision, document, month) and what is refreshed after

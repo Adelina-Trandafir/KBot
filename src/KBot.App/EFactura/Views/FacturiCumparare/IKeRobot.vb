@@ -4,8 +4,8 @@ Imports System.Threading.Tasks
 Imports KBot.Domain
 
 ''' <summary>
-''' Slices KE05..KE07 -- the FOREXE robot, seen from the e-invoice views. KBot.EFactura cannot reach the shell's robot (it lives in KBot.App),
-''' so the shell hands it over through <see cref="KeRobot.Current"/> when it starts. Nothing there = the views say the robot is not available.
+''' Slices KE05..KE07 -- the FOREXE robot, seen from the e-invoice views. The robot belongs to the shell (<c>KbotForm</c>) and the views know only
+''' this contract; the shell hands the robot over through <see cref="KeRobot.Current"/> when it starts. Nothing there = the views say the robot is not available.
 ''' </summary>
 Public Interface IKeRobot
 

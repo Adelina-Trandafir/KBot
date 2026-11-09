@@ -4,10 +4,9 @@ Imports System.Threading.Tasks
 Imports KBot.Api
 Imports KBot.Common
 Imports KBot.Domain
-Imports KBot.EFactura
 Imports KBot.Theming
 
-' Slice 00EF-05 / 00EF-08 -- E-Factura (KBot.EFactura), used directly by the shell, in the same process: the open
+' Slice 00EF-05 / 00EF-08 / 00EF-67 -- E-Factura (the windows in KBot.App\EFactura\), opened by the shell: the open
 ' unit and the re-login net are handed over as plain arguments, nothing is copied. Since the opening page it is a tab
 ' of the ribbon with three machete / groups of commands:
 '   - «E-Factura Vanzare»  (key efactura_vanzare): the invoices the unit issues (FacturiForm);

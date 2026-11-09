@@ -7,7 +7,6 @@ Imports System.Threading.Tasks
 Imports KBot.Api
 Imports KBot.Common
 Imports KBot.Domain
-Imports KBot.EFactura
 Imports KBot.Forexe
 
 ''' <summary>

@@ -3,9 +3,9 @@ Imports System.Windows.Forms
 
 ''' <summary>
 ''' Slice 00EF-09 -- what the invoice window asks of a PDF viewer. The viewer itself (the embedded Adobe surface of the DDF
-''' «Document» page, <c>ReaderHostPreview</c>) lives in KBot.App, which this project cannot reference, so the shell hands the
-''' window a factory and the window only talks to this contract. A window made without a factory shows a plain note where the
-''' viewer would be.
+''' «Document» page, <c>ReaderHostPreview</c>) is <c>FacturaPdfViewer</c>; the shell hands the window a factory of it and the window only
+''' talks to this contract, so Adobe is started only when a PDF view is first opened. A window made without a factory shows a plain
+''' note where the viewer would be.
 ''' </summary>
 Public Interface IFacturaPdfViewer
 

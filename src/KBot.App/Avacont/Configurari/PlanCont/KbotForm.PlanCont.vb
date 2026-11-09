@@ -8,7 +8,7 @@ Imports KBot.Theming
 ' main window, one at a time; asking again brings the open one to the front. Same shape as «Parteneri»
 ' (KbotForm.Nomenclatoare.vb).
 Partial Public Class KbotForm
-    Implements IPlanContHost, Global.KBot.EFactura.ISubunitHost
+    Implements IPlanContHost, ISubunitHost
 
     Private _planContForm As PlanContForm
 

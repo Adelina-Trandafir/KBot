@@ -92,8 +92,7 @@
     <ProjectReference Include="..\KBot.Theming\KBot.Theming.vbproj" />
     <ProjectReference Include="..\KBot.Controls\KBot.Controls.vbproj" />
     <ProjectReference Include="..\KBot.Xfa\KBot.Xfa.vbproj" />
-    <!-- Slice 00EF-05: ferestrele E-Factura (tokenul ANAF, apoi facturile). Referinta merge doar App -> EFactura. -->
-    <ProjectReference Include="..\KBot.EFactura\KBot.EFactura.vbproj" />
+    <!-- Slice 00EF-67: E-Factura nu mai e proiect separat; codul lui e in EFactura\ (vezi mai jos). -->
   </ItemGroup>
 
   <ItemGroup>
@@ -108,6 +107,9 @@
     <!-- Slice 0000-01: the help topics are Markdown; Markdig turns them into the help window's
          pages and into the exported manual. -->
     <PackageReference Include="Markdig" Version="0.45.0" />
+    <!-- Slice 00EF-67: the PDF of the classic invoice and of the ANAF error (EFactura\...\FacturaPdf) uses iTextSharp directly;
+         same version as KBot.Xfa. -->
+    <PackageReference Include="iTextSharp" Version="5.5.13.3" NoWarn="NU1701" />
     <!-- Slice 0103-06's OLE DB package (writing the budget into the unit's Access file) moved with the
          Access code into KBot.Access (slice 0104): this project no longer talks to Access itself. -->
   </ItemGroup>
@@ -208,5 +210,239 @@
 	  <Compile Update="Avacont\AvacontMain.Tutorial.vb">
 		  <DependentUpon>AvacontMain.vb</DependentUpon>
 	  </Compile>
+  </ItemGroup>
+
+  <!-- Slice 00EF-67: the E-Factura code (it was the project KBot.EFactura) lives here, in EFactura\ (Authorization, Certificates, Forms, Views).
+       Same rules as everywhere in this project: a partial file is plain code and nests under its main file (DependentUpon + SubType Code); the user controls say so. -->
+  <ItemGroup>
+    <Compile Update="EFactura\Forms\AlegeDdfForm.Designer.vb">
+      <DependentUpon>AlegeDdfForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Forms\AlegePartenerForm.Designer.vb">
+      <DependentUpon>AlegePartenerForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Forms\CertificatePickerForm.Designer.vb">
+      <DependentUpon>CertificatePickerForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Forms\ConturiForm.Designer.vb">
+      <DependentUpon>ConturiForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Forms\CorectieForm.Designer.vb">
+      <DependentUpon>CorectieForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Forms\DateUnitateForm.Designer.vb">
+      <DependentUpon>DateUnitateForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Forms\FacturiCumparareForm.Designer.vb">
+      <DependentUpon>FacturiCumparareForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Forms\FacturiVanzareForm.Arbore.vb">
+      <DependentUpon>FacturiVanzareForm.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Forms\FacturiVanzareForm.Client.vb">
+      <DependentUpon>FacturiVanzareForm.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Forms\FacturiVanzareForm.Designer.vb">
+      <DependentUpon>FacturiVanzareForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Forms\FacturiVanzareForm.Furnizor.vb">
+      <DependentUpon>FacturiVanzareForm.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Forms\FacturiVanzareForm.Linii.vb">
+      <DependentUpon>FacturiVanzareForm.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Forms\FacturiVanzareForm.Pagini.vb">
+      <DependentUpon>FacturiVanzareForm.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Forms\FacturiVanzareForm.Pdf.vb">
+      <DependentUpon>FacturiVanzareForm.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Forms\FacturiVanzareForm.Trimitere.vb">
+      <DependentUpon>FacturiVanzareForm.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Forms\KeAngajamentForm.Designer.vb">
+      <DependentUpon>KeAngajamentForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Forms\KePropuneriForm.Designer.vb">
+      <DependentUpon>KePropuneriForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Forms\SincronizareFacturiCumparareForm.Designer.vb">
+      <DependentUpon>SincronizareFacturiCumparareForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Forms\SincronizareNoiForm.Designer.vb">
+      <DependentUpon>SincronizareNoiForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Forms\TokenForm.Designer.vb">
+      <DependentUpon>TokenForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Forms\VerconForm.Designer.vb">
+      <DependentUpon>VerconForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Forms\VerconForm.Tutorial.vb">
+      <DependentUpon>VerconForm.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareAtasamentePage.Designer.vb">
+      <DependentUpon>FacturiCumparareAtasamentePage.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareContarePage.Designer.vb">
+      <DependentUpon>FacturiCumparareContarePage.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareDetaliiView.Designer.vb">
+      <DependentUpon>FacturiCumparareDetaliiView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareDetaliiView.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareLiniiPage.Designer.vb">
+      <DependentUpon>FacturiCumparareLiniiPage.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareListaPage.Designer.vb">
+      <DependentUpon>FacturiCumparareListaPage.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareMesajePage.Designer.vb">
+      <DependentUpon>FacturiCumparareMesajePage.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareObservatiiPage.Designer.vb">
+      <DependentUpon>FacturiCumparareObservatiiPage.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumpararePdfPage.Designer.vb">
+      <DependentUpon>FacturiCumpararePdfPage.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareReceptieNouaView.Designer.vb">
+      <DependentUpon>FacturiCumparareReceptieNouaView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareReceptieNouaView.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareReceptiiAsociateView.Designer.vb">
+      <DependentUpon>FacturiCumparareReceptiiAsociateView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareReceptiiAsociateView.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareReceptiiEditorView.Designer.vb">
+      <DependentUpon>FacturiCumparareReceptiiEditorView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareReceptiiEditorView.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareReceptiiExistenteView.Designer.vb">
+      <DependentUpon>FacturiCumparareReceptiiExistenteView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareReceptiiExistenteView.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareView.Access.vb">
+      <DependentUpon>FacturiCumparareView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareView.Contare.vb">
+      <DependentUpon>FacturiCumparareView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareView.Designer.vb">
+      <DependentUpon>FacturiCumparareView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareView.Lista.vb">
+      <DependentUpon>FacturiCumparareView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareView.RecepArbore.vb">
+      <DependentUpon>FacturiCumparareView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareView.Receptii.vb">
+      <DependentUpon>FacturiCumparareView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeAngajamenteView.Designer.vb">
+      <DependentUpon>KeAngajamenteView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeAngajamenteView.Fill.vb">
+      <DependentUpon>KeAngajamenteView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeAngajamenteView.Grid.vb">
+      <DependentUpon>KeAngajamenteView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeAngajamenteView.Link.vb">
+      <DependentUpon>KeAngajamenteView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeAngajamenteView.Load.vb">
+      <DependentUpon>KeAngajamenteView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeAngajamenteView.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeReceptiiView.Amounts.vb">
+      <DependentUpon>KeReceptiiView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeReceptiiView.Angajamente.vb">
+      <DependentUpon>KeReceptiiView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeReceptiiView.Commit.vb">
+      <DependentUpon>KeReceptiiView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeReceptiiView.Designer.vb">
+      <DependentUpon>KeReceptiiView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeReceptiiView.Invoices.vb">
+      <DependentUpon>KeReceptiiView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeReceptiiView.Lines.vb">
+      <DependentUpon>KeReceptiiView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeReceptiiView.Receptii.vb">
+      <DependentUpon>KeReceptiiView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeReceptiiView.Ribbon.vb">
+      <DependentUpon>KeReceptiiView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeReceptiiView.Viewing.vb">
+      <DependentUpon>KeReceptiiView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\Receptii\KeReceptiiView.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="EFactura\Views\Vanzare\VanzareContinutPage.Designer.vb">
+      <DependentUpon>VanzareContinutPage.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\Vanzare\VanzareCumparatorPage.Designer.vb">
+      <DependentUpon>VanzareCumparatorPage.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\Vanzare\VanzareEroareAnafPage.Designer.vb">
+      <DependentUpon>VanzareEroareAnafPage.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\Vanzare\VanzareFacturaAnafPage.Designer.vb">
+      <DependentUpon>VanzareFacturaAnafPage.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\Vanzare\VanzareFacturaPdfPage.Designer.vb">
+      <DependentUpon>VanzareFacturaPdfPage.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\Vanzare\VanzareGeneralePage.Designer.vb">
+      <DependentUpon>VanzareGeneralePage.vb</DependentUpon>
+    </Compile>
+    <Compile Update="EFactura\Views\Vanzare\VanzarePdfPage.Designer.vb">
+      <DependentUpon>VanzarePdfPage.vb</DependentUpon>
+    </Compile>
   </ItemGroup>
 </Project>

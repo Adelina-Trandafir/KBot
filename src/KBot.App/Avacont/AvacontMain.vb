@@ -2,7 +2,6 @@ Imports System.Globalization
 Imports KBot.Common
 Imports KBot.Controls
 Imports KBot.Domain
-Imports KBot.EFactura
 Imports KBot.Theming
 
 ''' <summary>
@@ -537,7 +536,7 @@ Public Class AvacontMain
     ' them it wants, in what state, and what each one does. More buttons for the same or another view go into the same group the same way.
 
     Private Const KeySumarParteneri As String = "sumar_parteneri"
-    ' The button of the view «Recepții» of the received invoices window (KBot.EFactura cannot implement IViewRibbon: that lives here).
+    ' The button of the view «Recepții» of the received invoices window (the ribbon belongs to the shell: the view tells it what to show through IViewRibbon).
     Friend Const KeyReceptieActiune As String = "ef_receptie_actiune"
     ' Slice 02EF-12: the page Receptii <> EFactura opens the reservation window with the values of the reception.
     Friend Const KeyReceptieRezervare As String = "ef_receptie_rezervare"

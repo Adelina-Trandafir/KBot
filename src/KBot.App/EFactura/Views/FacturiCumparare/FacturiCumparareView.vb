@@ -29,7 +29,7 @@ Imports KBot.Theming
 ''' invoice is linked to a DDF from the window with all the received invoices).</para>
 '''
 ''' <para>The control holds no rules: what is linked to what, the amounts and the files come from the server (slice 00EF-17).
-''' The embedded PDF viewer lives in KBot.App; the host passes a factory (as for the issued invoices).</para>
+''' The embedded PDF viewer is <c>FacturaPdfViewer</c>; the host passes a factory of it (as for the issued invoices).</para>
 ''' </summary>
 Public Class FacturiCumparareView
     Implements IThemedContainer, IPutAway

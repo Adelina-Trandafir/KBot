@@ -4,6 +4,8 @@ Slice number **00EF** (operator, 06.10.2026). Sub-slices are `00EF-01`, `00EF-02
 
 ## Decisions locked by the operator (06.10.2026)
 
+> **Superseded 09.11.2026 (slice 00EF-67, operator request): `KBot.EFactura` is no longer a separate project; its code lives in `src/KBot.App/EFactura/`.** The rest of this plan still names the project and its rule «references go App -> EFactura, never back»; read both as «the folder `EFactura` of `KBot.App`». Controls still go to `KBot.Controls`.
+
 1. **`KBot.EFactura` is a project of the K-BOT solution, used directly by `KBot.App`** (third pass: it is NOT a standalone exe). Same process, same session, same theme, same logging: `KBot.App` references it, like it references `KBot.Xfa` and `KBot.Forexe`. Its windows open from the main app's menu, new entry **«E-FACTURA»**. No session hand-off, no second instance, no copied files. The operator typed `KBOT.EFACTURA`; the repo convention is `KBot.<Name>`, so the project is `src/KBot.EFactura` (assumption).
 2. **It uses every K-BOT system** (theme, logger, custom controls, messages, tooltips, scaling, API client): see the table below.
 3. **Start with `EFACTURA_ADD`** = issued invoices. Received invoices (`EFACTURA_2025`) come later, in their own sub-slices.

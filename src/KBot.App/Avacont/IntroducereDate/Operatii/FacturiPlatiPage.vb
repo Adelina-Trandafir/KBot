@@ -8,7 +8,6 @@ Imports KBot.Api
 Imports KBot.Common
 Imports KBot.Controls
 Imports KBot.Domain
-Imports KBot.EFactura
 Imports KBot.Theming
 
 ''' <summary>
