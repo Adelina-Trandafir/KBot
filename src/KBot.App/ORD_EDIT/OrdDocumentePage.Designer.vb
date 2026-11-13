@@ -39,6 +39,7 @@ Partial Class OrdDocumentePage
         Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn4 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn5 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         grdBene = New KBotDataView()
         btnAdaugaText = New Button()
@@ -47,7 +48,6 @@ Partial Class OrdDocumentePage
         split = New SplitContainer()
         splitDreapta = New SplitContainer()
         tlyText = New Global.KBot.Controls.KBotTableLayoutPanel()
-        btnStergeText = New Button()
         grdText = New KBotDataView()
         tlyFisiere = New Global.KBot.Controls.KBotTableLayoutPanel()
         btnStergeFisier = New Button()
@@ -181,7 +181,6 @@ Partial Class OrdDocumentePage
         tlyText.ColumnCount = 2
         tlyText.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
         tlyText.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
-        tlyText.Controls.Add(btnStergeText, 1, 1)
         tlyText.Controls.Add(grdText, 0, 0)
         tlyText.Controls.Add(btnAdaugaText, 0, 1)
         tlyText.Dock = DockStyle.Fill
@@ -193,20 +192,7 @@ Partial Class OrdDocumentePage
         tlyText.RowStyles.Add(New RowStyle(SizeType.Absolute, 50F))
         tlyText.Size = New Size(483, 566)
         tlyText.TabIndex = 0
-        ' 
-        ' btnStergeText
-        ' 
-        btnStergeText.AutoSize = True
-        btnStergeText.Dock = DockStyle.Right
-        btnStergeText.Location = New Point(330, 516)
-        btnStergeText.Margin = New Padding(0)
-        btnStergeText.Name = "btnStergeText"
-        btnStergeText.Padding = New Padding(11, 3, 11, 3)
-        btnStergeText.Size = New Size(153, 50)
-        btnStergeText.TabIndex = 2
-        btnStergeText.Text = "Șterge rândul"
-        btnStergeText.UseVisualStyleBackColor = True
-        ' 
+        '
         ' grdText
         ' 
         grdText.AutoSizeColumnsMode = KBotAutoSizeMode.None
@@ -222,7 +208,19 @@ Partial Class OrdDocumentePage
         KBotDataColumn2.MinWidth = 120
         KBotDataColumn2.OptionGroup = Nothing
         KBotDataColumn2.Width = 300
+        KBotDataColumn5.AggregateFormatString = Nothing
+        KBotDataColumn5.ColumnType = KBotColumnType.Button
+        KBotDataColumn5.ButtonKind = KBotButtonKind.Delete
+        KBotDataColumn5.FormatString = Nothing
+        KBotDataColumn5.HeaderText = ""
+        KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn5.Key = "sterge"
+        KBotDataColumn5.MinWidth = 34
+        KBotDataColumn5.OptionGroup = Nothing
+        KBotDataColumn5.Resizable = False
+        KBotDataColumn5.Width = 34
         grdText.Columns.Add(KBotDataColumn2)
+        grdText.Columns.Add(KBotDataColumn5)
         tlyText.SetColumnSpan(grdText, 2)
         grdText.Dock = DockStyle.Fill
         grdText.FillColumnKey = "doc_just"
@@ -250,9 +248,9 @@ Partial Class OrdDocumentePage
         tlyFisiere.RowStyles.Add(New RowStyle(SizeType.Absolute, 50F))
         tlyFisiere.Size = New Size(332, 566)
         tlyFisiere.TabIndex = 0
-        ' 
+        '
         ' btnStergeFisier
-        ' 
+        '
         btnStergeFisier.AutoSize = True
         btnStergeFisier.Dock = DockStyle.Right
         btnStergeFisier.Location = New Point(179, 516)
@@ -263,9 +261,9 @@ Partial Class OrdDocumentePage
         btnStergeFisier.TabIndex = 2
         btnStergeFisier.Text = "Șterge fișierul"
         btnStergeFisier.UseVisualStyleBackColor = True
-        ' 
+        '
         ' grdFisiere
-        ' 
+        '
         grdFisiere.AutoSizeColumnsMode = KBotAutoSizeMode.None
         grdFisiere.ColumnFillMode = KBotFillMode.FirstColumn
         KBotDataColumn3.AggregateFormatString = Nothing
@@ -342,6 +340,5 @@ Partial Class OrdDocumentePage
     Friend WithEvents tlyFisiere As Global.KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents grdFisiere As Global.KBot.Controls.KBotDataView
     Friend WithEvents btnAdaugaFisier As Button
-    Friend WithEvents btnStergeText As Button
     Friend WithEvents btnStergeFisier As Button
 End Class

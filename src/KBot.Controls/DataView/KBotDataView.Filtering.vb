@@ -387,6 +387,14 @@ Partial Class KBotDataView
     End Property
 
     ''' <summary>Filtrul așezat pe o coloană, sau <c>Nothing</c> dacă nu e niciunul.</summary>
+    ''' <summary>
+    ''' Slice AV02-05: the rows the operator sees, in the order they are shown (filters and sort applied), e.g. for an export
+    ''' of «the list as on screen». A copy: changing the grid afterwards does not change it.
+    ''' </summary>
+    Public Function VisibleRows() As IReadOnlyList(Of KBotDataRow)
+        Return ViewRows().ToList()
+    End Function
+
     Public Function ColumnFilter(colKey As String) As KBotColumnFilter
         Dim f As KBotColumnFilter = Nothing
         If colKey IsNot Nothing AndAlso _filters.TryGetValue(colKey, f) Then Return f

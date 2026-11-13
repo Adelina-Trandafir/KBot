@@ -1,11 +1,13 @@
 <#
 .SYNOPSIS
-  LOCAL ONLY (developer's PC): publish, start and stop KBot.Tray (the notification-area application) for tests.
+  LOCAL ONLY (developer's PC): publish, start and stop KBot.Tray (the signer edition, notification area) for tests.
 
 .DESCRIPTION
-  The tray runs only as a published single file (it copies itself to %LOCALAPPDATA% at start), so F5 from Visual Studio
-  does not work for it. Run from a build folder (...\bin\Debug\...) it never writes the Windows Run key.
-  Nothing here is part of the release: publish-release.ps1 builds KBot.Tray.exe for the package on its own (step 4c3).
+  Slice TRAY-02: the tray is a program of its own. Its folder holds KBot.Tray.exe and the KBot.App.dll files it opens the signing
+  windows from, and it replaces its own files when it updates, so it is tested from a published folder (F5 from Visual Studio does
+  not do that). The default folder is under src\KBot.Tray\bin\<Configuration>\..., so the tray treats it as a developer's build:
+  it never writes the Windows Run key and never updates itself.
+  Nothing here is part of any release: push-tray.ps1 builds and publishes the package.
 
   -Action Run      stop a running tray, publish, start it            (default)
   -Action Publish  stop a running tray, publish only
@@ -16,8 +18,7 @@
   Debug (default) or Release.
 
 .PARAMETER OutputDir
-  Where KBot.Tray.exe lands / is started from. Default: the build folder of KBot.App for the chosen configuration, so the
-  tray finds KBot.App.exe beside it (a click on a document starts K-BOT from there).
+  Where the tray folder lands / is started from. Default: src\KBot.Tray\bin\<Configuration>\net8.0-windows\local.
 
 .EXAMPLE
   .\publish-tray.ps1              # publish + start
@@ -37,12 +38,12 @@ $SolutionRoot = $PSScriptRoot
 $Rid = 'win-x64'
 
 if (-not $OutputDir) {
-    $OutputDir = Join-Path $SolutionRoot "src\KBot.App\bin\$Configuration\net8.0-windows"
+    $OutputDir = Join-Path $SolutionRoot "src\KBot.Tray\bin\$Configuration\net8.0-windows\local"
 }
 $TrayExe = Join-Path $OutputDir 'KBot.Tray.exe'
 
 function Stop-Tray {
-    # A running tray holds its copy in %LOCALAPPDATA%; a new launcher would find it and exit without doing anything.
+    # A running tray holds its own files; a new one would find the single-instance lock taken and exit without doing anything.
     $running = @(Get-Process -Name 'KBot.Tray' -ErrorAction SilentlyContinue)
     if ($running.Count -eq 0) {
         Write-Host 'No tray is running.' -ForegroundColor DarkGray
@@ -57,15 +58,11 @@ function Stop-Tray {
 function Publish-Tray {
     $proj = Join-Path $SolutionRoot 'src\KBot.Tray\KBot.Tray.vbproj'
     if (-not (Test-Path -LiteralPath $proj)) { throw "Project not found: $proj" }
-    if (-not (Test-Path -LiteralPath $OutputDir)) {
-        throw "Folder not found: $OutputDir. Build KBot.App ($Configuration) first, or pass -OutputDir."
-    }
-    Write-Host "Publish KBot.Tray ($Configuration, single-file) -> $OutputDir" -ForegroundColor Cyan
+    Write-Host "Publish KBot.Tray ($Configuration, framework-dependent folder) -> $OutputDir" -ForegroundColor Cyan
     & dotnet publish $proj `
         -c $Configuration `
         -r $Rid `
         --self-contained false `
-        -p:PublishSingleFile=true `
         -o $OutputDir
     if ($LASTEXITCODE -ne 0) { throw "dotnet publish KBot.Tray failed (ExitCode=$LASTEXITCODE)." }
     if (-not (Test-Path -LiteralPath $TrayExe)) { throw "KBot.Tray.exe missing from $OutputDir after publish." }

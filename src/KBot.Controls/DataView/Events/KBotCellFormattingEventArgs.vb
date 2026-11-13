@@ -83,6 +83,15 @@ Public NotInheritable Class KBotCellFormattingEventArgs
     ''' </summary>
     Public Property Borders As KBotBorderSides
 
+    ''' <summary>
+    ''' Slice AV02-05: a picture drawn INSTEAD of the text of a Text cell (placed by <see cref="Alignment"/>,
+    ''' centred vertically, never larger than the cell). Default Nothing. Only the painting changes:
+    ''' sorting, the column filter and the tooltip keep working on the cell's value and text, so a
+    ''' state column can show icons and still be filtered by the words behind them.
+    ''' The handler must not dispose the picture (the grid does not keep it after painting).
+    ''' </summary>
+    Public Property CellImage As Image
+
     ''' <summary>Re-inițializează instanța refolosită înaintea unei noi ridicări.</summary>
     Friend Sub Reset(column As KBotDataColumn, row As KBotDataRow, rowIndex As Integer,
                      value As Object, text As String, back As Color, fore As Color,
@@ -103,6 +112,7 @@ Public NotInheritable Class KBotCellFormattingEventArgs
         Me.ReadOnlyCell = False
         Me.HideButton = False
         Me.HideGlyph = False
+        Me.CellImage = Nothing
     End Sub
 
 End Class

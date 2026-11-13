@@ -182,6 +182,10 @@ Public Class AvacontMain
                     ' Slice AV01-06: a button of the group of the PAGE on screen (the «Plan de conturi» window), not of a shell view.
                     ' Slice 0126-03: the same for the «Clasificatii» window (Salveaza / Verifica bugetul / Trimite in Access).
                     TryCast(CurrentPage, IViewRibbon)?.RunRibbonButton(e.Key)
+                Case ModificareOperatiiForm.KeyReincarca, ModificareOperatiiForm.KeyInfo, ModificareOperatiiForm.KeyOrdonare, ModificareOperatiiForm.KeyCurata,
+                     ModificareOperatiiForm.KeyExcel, ModificareOperatiiForm.KeyExcelTot, ModificareOperatiiForm.KeyStergeOperatie, ModificareOperatiiForm.KeyStergeDocument
+                    ' Slice AV02-05: the buttons of the «Modificare operatii» page.
+                    TryCast(CurrentPage, IViewRibbon)?.RunRibbonButton(e.Key)
                 Case ParteneriForm.RibbonSterge, ParteneriForm.RibbonRenunta, ParteneriForm.RibbonAdauga, ParteneriForm.RibbonSalveaza
                     TryCast(CurrentPage, ParteneriForm)?.RunRibbonButton(e.Key)
                 Case KeyReceptieActiune
@@ -218,6 +222,9 @@ Public Class AvacontMain
                 Case "sabloane"
                     ' Slice AV01-14 / AV01-16: the operation and salary templates, a modal window (KbotForm.Sabloane.vb).
                     _kbot.DeschideSabloane()
+                Case KbotForm.MachetaModificareOperatii
+                    ' Slice AV02-05: the list of the posted operations, a page (KbotForm.ModificareOperatii.vb). Tab «Introducere date», group «Modificare Date».
+                    _kbot.OpenRegistered(KbotForm.MachetaModificareOperatii, AddressOf _kbot.DeschideModificareOperatii)
                 Case "operatii_sabloane"
                     ' Slices AV02-03 / AV02-04: the posting window (operatii diverse, facturi si plati), a modal window (KbotForm.Operatii.vb).
                     _kbot.DeschideOperatiiSabloane()
@@ -549,7 +556,9 @@ Public Class AvacontMain
         "notecab_trimite", "plan_cont_solduri", "plan_cont_excel", KeyReceptieActiune, KeyReceptieRezervare, KeyReceptieOrd,
         KeyContareAdauga, KeyContareSalveaza, KeyContareRenunta, KeyContareSalveazaCa, KeyContareAscunde, KeyContareStergePlata,
         "plati_leaga_ord", ClasificatiiBugetView.KeyAdd, "clasificatii_salveaza", "clasificatii_verifica", "clasificatii_access", "clasificatii_sterge",
-        ParteneriForm.RibbonSterge, ParteneriForm.RibbonRenunta, ParteneriForm.RibbonAdauga, ParteneriForm.RibbonSalveaza}
+        ParteneriForm.RibbonSterge, ParteneriForm.RibbonRenunta, ParteneriForm.RibbonAdauga, ParteneriForm.RibbonSalveaza,
+        ModificareOperatiiForm.KeyReincarca, ModificareOperatiiForm.KeyInfo, ModificareOperatiiForm.KeyOrdonare, ModificareOperatiiForm.KeyCurata,
+        ModificareOperatiiForm.KeyExcel, ModificareOperatiiForm.KeyExcelTot, ModificareOperatiiForm.KeyStergeOperatie, ModificareOperatiiForm.KeyStergeDocument}
 
     Private Shared Function IsContareKey(k_key As String) As Boolean
         Return String.Equals(k_key, KeyContareAdauga, StringComparison.Ordinal) OrElse String.Equals(k_key, KeyContareSalveaza, StringComparison.Ordinal) OrElse

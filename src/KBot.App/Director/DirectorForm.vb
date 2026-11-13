@@ -150,14 +150,14 @@ Public Class DirectorForm
     End Sub
 
     ''' <summary>The revision to pick as soon as the list is read (the tray's click on a document); 0 = none.</summary>
-    Friend Property IdrevInitial As Integer
+    Public Property IdrevInitial As Integer
 
     ''' <summary>
     ''' Picks the revision in the list, which opens its document. With 0 it picks <see cref="IdrevInitial"/> (once, when the
     ''' list has just been read). A revision that is not in the list (signed meanwhile, or the list is older than the tray's)
     ''' makes the list be read again first; if it is still not there, nothing is picked.
     ''' </summary>
-    Friend Sub SelecteazaRevizia(k_idrev As Integer)
+    Public Sub SelecteazaRevizia(k_idrev As Integer)
         Try
             Dim k_wanted As Integer = If(k_idrev > 0, k_idrev, IdrevInitial)
             If k_wanted <= 0 Then Return

@@ -11,7 +11,8 @@ Imports KBot.Theming
 ''' <summary>
 ''' The life of the tray application: the icon in the notification area, its menu (a right click; «Închide» is the last
 ''' item), the timer that asks <see cref="TrayChecker"/> whether there are documents to sign, and the message above the clock
-''' (<see cref="DocumentsToast"/>) with the list.
+''' (<see cref="DocumentsToast"/>) with the list. A click on a row opens the signing window itself (<see cref="SignerWindows"/>); the
+''' tray updates itself (<see cref="TrayUpdater"/>). Slice TRAY-02: the signer edition has no K-BOT next to it.
 '''
 ''' <para>The icon and the menu are built here, in code: this is not a form, so there is no designer file to declare them in
 ''' (KBotAdmin declares its own on its main form).</para>
@@ -31,13 +32,16 @@ Friend NotInheritable Class TrayContext
     Private ReadOnly _checker As New TrayChecker()
     Private ReadOnly _notify As New NotifyIcon()
     Private ReadOnly _menu As New ContextMenuStrip()
-    Private ReadOnly _itemOpen As New ToolStripMenuItem("Deschide K-BOT")
+    Private ReadOnly _itemOpen As New ToolStripMenuItem("Documente de semnat")
     Private ReadOnly _itemCheck As New ToolStripMenuItem("Verifică acum")
+    Private ReadOnly _itemProbe As New ToolStripMenuItem("Probă: deschide fereastra de semnare")
     Private ReadOnly _itemSignIn As New ToolStripMenuItem("Autentificare...")
     Private ReadOnly _itemAutostart As New ToolStripMenuItem("Pornește cu Windows")
     Private ReadOnly _itemExit As New ToolStripMenuItem("Închide")
     Private ReadOnly _timer As New System.Windows.Forms.Timer()
     Private ReadOnly _toast As New DocumentsToast()
+    Private ReadOnly _signer As SignerWindows
+    Private ReadOnly _updater As TrayUpdater
 
     Private _icon As Icon
     Private _busy As Boolean
@@ -53,10 +57,11 @@ Friend NotInheritable Class TrayContext
     Friend Sub New(k_appDir As String)
         _appDir = k_appDir
 
-        _menu.Items.AddRange(New ToolStripItem() {_itemOpen, _itemCheck, _itemSignIn, New ToolStripSeparator(), _itemAutostart, New ToolStripSeparator(), _itemExit})
+        _menu.Items.AddRange(New ToolStripItem() {_itemOpen, _itemCheck, _itemSignIn, _itemProbe, New ToolStripSeparator(), _itemAutostart, New ToolStripSeparator(), _itemExit})
         _itemAutostart.CheckOnClick = False
         AddHandler _itemOpen.Click, AddressOf ItemOpen_Click
         AddHandler _itemCheck.Click, AddressOf ItemCheck_Click
+        AddHandler _itemProbe.Click, AddressOf ItemProbe_Click
         AddHandler _itemSignIn.Click, AddressOf ItemSignIn_Click
         AddHandler _itemAutostart.Click, AddressOf ItemAutostart_Click
         AddHandler _itemExit.Click, AddressOf ItemExit_Click
@@ -71,6 +76,10 @@ Friend NotInheritable Class TrayContext
 
         AddHandler _toast.DocumentChosen, AddressOf Toast_DocumentChosen
         AddHandler _toast.ListChosen, AddressOf Toast_ListChosen
+
+        _signer = New SignerWindows(_checker)
+        _updater = New TrayUpdater(k_appDir)
+        _updater.CleanUp()
 
         Autostart.EnsureOnFirstRun(k_appDir)
         WatchExitEvent()
@@ -88,10 +97,18 @@ Friend NotInheritable Class TrayContext
 
     ' UI boundary (timer / menu): started without await, logs and swallows.
     Private Async Sub CheckNow()
-        If _busy OrElse _closing Then Return
+        If _busy OrElse _closing OrElse _signer.IsOpen Then Return
         _busy = True
         Try
             _timer.Stop()
+            ' Slice TRAY-02: a newer tray on the server replaces this one (at most every six hours); the new one starts itself.
+            If Await _updater.TryUpdateAsync(CancellationToken.None) Then
+                _updater.Restart()
+                _closing = True
+                _notify.Visible = False
+                ExitThread()
+                Return
+            End If
             _resultFromPrompt = _submittedFromPrompt
             _submittedFromPrompt = False
             Dim k_result As TrayCheckResult = Await _checker.CheckAsync(CancellationToken.None)
@@ -113,6 +130,7 @@ Friend NotInheritable Class TrayContext
     End Sub
 
     Private Sub Apply(k_result As TrayCheckResult)
+        TrayLog.Write("check", $"result: {k_result.Status}, documents={k_result.Documents.Count}, units not read={k_result.UnreadUnits.Count}")
         Select Case k_result.Status
             Case TrayStatus.Listed
                 If k_result.Documents.Count = 0 Then
@@ -125,7 +143,7 @@ Friend NotInheritable Class TrayContext
             Case TrayStatus.NoList
                 SetTip("Nu aveți documente de semnat pentru rolul dvs.")
             Case TrayStatus.NoCredentials
-                SetTip("Faceți clic pe iconiță ca să vă autentificați, sau conectați-vă în K-BOT cu «Ține minte parola».")
+                SetTip("Faceți clic pe iconiță ca să vă autentificați.")
                 ' Asked once on its own (at the start of Windows there is nothing else to go by); after a Cancel only the icon or the menu ask.
                 If Not _promptedOnce Then PromptSignIn(String.Empty)
             Case TrayStatus.Rejected
@@ -133,7 +151,7 @@ Friend NotInheritable Class TrayContext
                 ' Only a pair typed here is answered with the window again; a stale pair of K-BOT's is just left aside.
                 If _resultFromPrompt Then PromptSignIn(k_result.Message)
             Case TrayStatus.PasswordChangeRequired
-                SetTip("Parola trebuie schimbată. Deschideți K-BOT.")
+                SetTip("Parola trebuie schimbată înainte de autentificare. Contactați administratorul.")
             Case Else
                 SetTip("Verificarea documentelor de semnat nu a reușit. Reîncerc.")
         End Select
@@ -148,24 +166,25 @@ Friend NotInheritable Class TrayContext
     ' ── Opening K-BOT ────────────────────────────────────────────────────────────
 
     Private Sub Toast_DocumentChosen(k_document As DdfDeSemnat)
-        OpenKBot(Sub() KBotLauncher.OpenToSign(_appDir, k_document.DbName, k_document.Idrev))
+        OpenSigning(k_document.Idrev)
     End Sub
 
     Private Sub Toast_ListChosen()
-        OpenKBot(Sub() KBotLauncher.OpenToSign(_appDir, String.Empty, 0))
+        OpenSigning(0)
     End Sub
 
     ''' <summary>
-    ''' What the user means by «Deschide K-BOT»: the list of documents of a director; for everybody else (the accountant
-    ''' signs in the main window, and the roles with no list yet) just the main window.
+    ''' Opens the signing window (the list of documents, with the revision picked when <paramref name="k_idrev"/> is not 0). It is modal:
+    ''' the tray reads nothing and signs nothing out underneath it; when it closes the list is read again at once, because the user
+    ''' has probably signed something. UI boundary: logs and swallows.
     ''' </summary>
-    Private Sub OpenKBot(k_action As Action)
+    Private Sub OpenSigning(k_idrev As Integer)
         Try
-            k_action()
+            _toast.Hide()
+            _signer.Open(k_idrev)
+            If Not _closing Then CheckNow()
         Catch ex As Exception
-            GlobalErrorLog.Write("TrayContext.OpenKBot", ex)
-            KBotMessage.Show("K-BOT nu a putut fi pornit. Detalii în jurnalul de erori.", "K-BOT — documente de semnat",
-                            MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            GlobalErrorLog.Write("TrayContext.OpenSigning", ex)
         End Try
     End Sub
 
@@ -178,7 +197,7 @@ Friend NotInheritable Class TrayContext
             ElseIf _last.Status = TrayStatus.Listed Then
                 _toast.ShowDocuments(_last.Documents, _last.UnreadUnits.Count)
             Else
-                OpenKBot(Sub() KBotLauncher.OpenMain(_appDir))
+                CheckNow()
             End If
         Catch ex As Exception
             GlobalErrorLog.Write("TrayContext.Notify_MouseUp", ex)
@@ -190,14 +209,18 @@ Friend NotInheritable Class TrayContext
     Private Sub Menu_Opening(k_sender As Object, e As System.ComponentModel.CancelEventArgs)
         ' A tray started from a build folder never touches the Windows Run key (see Autostart.IsDevelopmentFolder).
         _itemAutostart.Enabled = Not Autostart.IsDevelopmentFolder(_appDir)
+        ' The probe is only for the developer's build folder: it opens the signing window even when there is nothing to sign.
+        _itemProbe.Visible = Autostart.IsDevelopmentFolder(_appDir)
         _itemAutostart.Checked = Autostart.IsOn()
     End Sub
 
     Private Sub ItemOpen_Click(k_sender As Object, e As EventArgs)
         If _last.Status = TrayStatus.Listed Then
-            OpenKBot(Sub() KBotLauncher.OpenToSign(_appDir, String.Empty, 0))
+            OpenSigning(0)
+        ElseIf _last.Status = TrayStatus.NoCredentials OrElse _last.Status = TrayStatus.Rejected Then
+            PromptSignIn(String.Empty)
         Else
-            OpenKBot(Sub() KBotLauncher.OpenMain(_appDir))
+            CheckNow()
         End If
     End Sub
 
@@ -217,7 +240,7 @@ Friend NotInheritable Class TrayContext
             _toast.Hide()
             Dim k_user As String = Nothing, k_pass As String = Nothing
             If Not SessionCredentials.TryLoadForWindowsSession(k_user, k_pass) Then k_user = LastLoginStore.Load().Username
-            Using k_form As New TrayLoginForm(k_user, k_error)
+            Using k_form As New TrayLoginForm(k_user, k_error, _checker.Auth)
                 If k_form.ShowDialog() <> DialogResult.OK Then Return
                 SessionCredentials.Remember(k_form.UserName, k_form.Password, interactive:=True)
             End Using
@@ -228,6 +251,11 @@ Friend NotInheritable Class TrayContext
         Finally
             _prompting = False
         End Try
+    End Sub
+
+    Private Sub ItemProbe_Click(k_sender As Object, e As EventArgs)
+        TrayLog.Write("probe", "the signing window was asked for from the menu (developer's build)")
+        OpenSigning(0)
     End Sub
 
     Private Sub ItemCheck_Click(k_sender As Object, e As EventArgs)
@@ -292,6 +320,7 @@ Friend NotInheritable Class TrayContext
             _notify.Dispose()
             _menu.Dispose()
             _checker.Dispose()
+            _updater.Dispose()
             _icon?.Dispose()
         End If
         MyBase.Dispose(k_disposing)

@@ -14,6 +14,7 @@ Partial Class ReleaseNotesView
         gridNotes = New AdminDataView()
         cmbTarget = New KBotComboBox()
         btnMove = New KBotButton()
+        btnCreate = New KBotButton()
         lblStatus = New Label()
 
         SuspendLayout()
@@ -22,7 +23,7 @@ Partial Class ReleaseNotesView
 
         lblHelp.Dock = DockStyle.Fill
         lblHelp.TextAlign = ContentAlignment.MiddleLeft
-        lblHelp.Text = "Deschideți o versiune și scrieți pe rândul gol. Apăsați Enter pentru a adăuga noutatea."
+        lblHelp.Text = "Deschideți o versiune și scrieți pe rândul gol, apoi Enter. Versiune nouă: scrieți numărul ei în caseta de jos și apăsați «Creează versiunea»."
 
         colVersion.Visible = KBotColumnVisibility.Hidden
         colOrder.Visible = KBotColumnVisibility.Hidden
@@ -48,22 +49,28 @@ Partial Class ReleaseNotesView
         lblTarget.TextAlign = ContentAlignment.MiddleLeft
         lblTarget.Text = "Mută în versiunea"
         cmbTarget.Dock = DockStyle.Fill
-        cmbTarget.Editable = False
-        cmbTarget.PlaceholderText = "Alegeți versiunea"
+        cmbTarget.Editable = True
+        cmbTarget.LimitToList = False   ' a version number typed by hand (1.2.3.4) creates a new version
+        cmbTarget.PlaceholderText = "Alegeți sau scrieți versiunea"
         cmbTarget.AccessibleName = "Versiunea de destinație"
         cmbTarget.TabIndex = 0
         btnMove.Dock = DockStyle.Fill
         btnMove.Enabled = False
         btnMove.Text = "Mută noutățile bifate"
         btnMove.TabIndex = 1
+        btnCreate.Dock = DockStyle.Fill
+        btnCreate.Enabled = False
+        btnCreate.Text = "Creează versiunea"
+        btnCreate.TabIndex = 2
 
         tlyMove.Dock = DockStyle.Fill
         tlyMove.Margin = New Padding(0)
         tlyMove.AutoFitToTheme = False
-        tlyMove.ColumnCount = 4
+        tlyMove.ColumnCount = 5
         tlyMove.RowCount = 1
         tlyMove.ColumnStyles.Add(New ColumnStyle(SizeType.AutoSize))
         tlyMove.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 155))
+        tlyMove.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 190))
         tlyMove.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 190))
         tlyMove.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100))
         tlyMove.RowStyles.Add(New RowStyle(SizeType.Percent, 100))
@@ -71,6 +78,7 @@ Partial Class ReleaseNotesView
         tlyMove.Controls.Add(lblTarget, 0, 0)
         tlyMove.Controls.Add(cmbTarget, 1, 0)
         tlyMove.Controls.Add(btnMove, 2, 0)
+        tlyMove.Controls.Add(btnCreate, 3, 0)
         tlyMove.TabIndex = 1
 
         lblStatus.Dock = DockStyle.Fill
@@ -105,5 +113,6 @@ Partial Class ReleaseNotesView
     Friend WithEvents gridNotes As AdminDataView
     Friend WithEvents cmbTarget As KBotComboBox
     Friend WithEvents btnMove As KBotButton
+    Friend WithEvents btnCreate As KBotButton
     Friend lblStatus As Label
 End Class

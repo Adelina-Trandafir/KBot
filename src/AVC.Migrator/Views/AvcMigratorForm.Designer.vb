@@ -94,6 +94,9 @@ Partial Class AvcMigratorForm
         lblStare = New Label()
         tipAvc = New KBot.Controls.KBotToolTip(components)
         BtnRaportHTML = New Button()
+        lblEfPrimite = New Label()
+        txtEfPrimite = New KBot.Controls.KBotTextField()
+        btnRasfoireEf = New Button()
         tlpRoot.SuspendLayout()
         grpUnitate.SuspendLayout()
         pnlUnitateSus.SuspendLayout()
@@ -123,7 +126,7 @@ Partial Class AvcMigratorForm
         tlpRoot.Name = "tlpRoot"
         tlpRoot.Padding = New Padding(8)
         tlpRoot.RowCount = 6
-        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 300F))
+        tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 340F))
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 50F))
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlpRoot.RowStyles.Add(New RowStyle(SizeType.Absolute, 250F))
@@ -163,7 +166,7 @@ Partial Class AvcMigratorForm
         KBotTableLayoutPanel1.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         KBotTableLayoutPanel1.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 20F))
         KBotTableLayoutPanel1.Dock = DockStyle.Top
-        KBotTableLayoutPanel1.Location = New Point(0, 40)
+        KBotTableLayoutPanel1.Location = New Point(0, 80)
         KBotTableLayoutPanel1.Name = "KBotTableLayoutPanel1"
         KBotTableLayoutPanel1.RowCount = 1
         KBotTableLayoutPanel1.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
@@ -262,7 +265,7 @@ Partial Class AvcMigratorForm
         dgvUnitati.Columns.Add(KBotDataColumn10)
         dgvUnitati.Dock = DockStyle.Fill
         dgvUnitati.FillColumnKey = "nume"
-        dgvUnitati.Location = New Point(0, 40)
+        dgvUnitati.Location = New Point(0, 80)
         dgvUnitati.Margin = New Padding(0)
         dgvUnitati.Name = "dgvUnitati"
         dgvUnitati.RowHeight = 24
@@ -290,16 +293,59 @@ Partial Class AvcMigratorForm
         tlpUnitateSus.Controls.Add(cboDc, 5, 0)
         tlpUnitateSus.Controls.Add(lblCodFiscal, 6, 0)
         tlpUnitateSus.Controls.Add(txtCodFiscal, 7, 0)
+        tlpUnitateSus.Controls.Add(lblEfPrimite, 0, 1)
+        tlpUnitateSus.Controls.Add(txtEfPrimite, 1, 1)
+        tlpUnitateSus.Controls.Add(btnRasfoireEf, 2, 1)
         tlpUnitateSus.Dock = DockStyle.Top
         tlpUnitateSus.Location = New Point(0, 0)
         tlpUnitateSus.Margin = New Padding(0)
         tlpUnitateSus.Name = "tlpUnitateSus"
         tlpUnitateSus.Padding = New Padding(0, 0, 0, 10)
-        tlpUnitateSus.RowCount = 1
+        tlpUnitateSus.RowCount = 2
         tlpUnitateSus.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
-        tlpUnitateSus.Size = New Size(1573, 40)
+        tlpUnitateSus.RowStyles.Add(New RowStyle(SizeType.Absolute, 40F))
+        tlpUnitateSus.Size = New Size(1573, 80)
         tlpUnitateSus.TabIndex = 4
-        ' 
+        '
+        ' lblEfPrimite
+        '
+        lblEfPrimite.AutoSize = True
+        lblEfPrimite.Dock = DockStyle.Fill
+        lblEfPrimite.Location = New Point(0, 40)
+        lblEfPrimite.Margin = New Padding(0)
+        lblEfPrimite.Name = "lblEfPrimite"
+        lblEfPrimite.Size = New Size(130, 40)
+        lblEfPrimite.TabIndex = 11
+        lblEfPrimite.Text = "E-Factura primite"
+        lblEfPrimite.TextAlign = ContentAlignment.MiddleLeft
+        '
+        ' txtEfPrimite
+        '
+        txtEfPrimite.BackColor = Color.Transparent
+        txtEfPrimite.Dock = DockStyle.Fill
+        txtEfPrimite.Location = New Point(130, 40)
+        txtEfPrimite.Margin = New Padding(0)
+        txtEfPrimite.Name = "txtEfPrimite"
+        txtEfPrimite.PlaceholderText = "implicit: EFACTURA\ef_2026.accdb"
+        txtEfPrimite.Size = New Size(250, 40)
+        txtEfPrimite.TabIndex = 12
+        txtEfPrimite.TextPadding = New Padding(12, 0, 12, 0)
+        tipAvc.SetToolTipHeader(txtEfPrimite, "Facturi primite (E-Factura)")
+        tipAvc.SetToolTipText(txtEfPrimite, "Fișierul «ef_2026.accdb» cu facturile primite. Lăsat gol, se caută în dosarul EFACTURA de lângă «cale.accdb». Se memorează între porniri.")
+        '
+        ' btnRasfoireEf
+        '
+        btnRasfoireEf.Dock = DockStyle.Fill
+        btnRasfoireEf.Location = New Point(384, 40)
+        btnRasfoireEf.Margin = New Padding(4, 0, 4, 0)
+        btnRasfoireEf.Name = "btnRasfoireEf"
+        btnRasfoireEf.Size = New Size(46, 40)
+        btnRasfoireEf.TabIndex = 13
+        btnRasfoireEf.Text = "..."
+        tipAvc.SetToolTipHeader(btnRasfoireEf, "Alegeți fișierul")
+        tipAvc.SetToolTipText(btnRasfoireEf, "Caută fișierul cu facturile primite (ef_2026.accdb).")
+        btnRasfoireEf.UseVisualStyleBackColor = True
+        '
         ' BtnCitesteRegistru
         ' 
         BtnCitesteRegistru.Dock = DockStyle.Fill
@@ -675,7 +721,7 @@ Partial Class AvcMigratorForm
         ClientSize = New Size(1617, 966)
         Controls.Add(tlpRoot)
         Margin = New Padding(4)
-        MinimumSize = New Size(1639, 1022)
+        MinimumSize = New Size(1639, 1062)
         Name = "AvcMigratorForm"
         StartPosition = FormStartPosition.CenterScreen
         Text = "AVC.Migrator — Access Avacont ▸ MariaDB"
@@ -697,5 +743,8 @@ Partial Class AvcMigratorForm
     Friend WithEvents KBotTableLayoutPanel1 As KBot.Controls.KBotTableLayoutPanel
     Friend WithEvents BtnCitesteRegistru As Button
     Friend WithEvents BtnRaportHTML As Button
+    Friend WithEvents lblEfPrimite As Label
+    Friend WithEvents txtEfPrimite As KBot.Controls.KBotTextField
+    Friend WithEvents btnRasfoireEf As Button
 
 End Class

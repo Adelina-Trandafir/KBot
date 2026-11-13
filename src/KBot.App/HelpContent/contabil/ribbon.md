@@ -31,13 +31,15 @@ sens invers), apoi eliberezi Ctrl pentru confirmare. Esc anulează. Funcționeaz
 [Istoricul navigării](topic:contabil.fereastra).
 
 ## Filele și butoanele
-<!-- slice: 0114, 0118, 0119, 0114-01, 0114-04, 0114-05, 0000-76, 0000-88, 0000-89, 0114-06, 0114-07, 0114-09, 0114-10, 0114-11, 0000-90, 0123-01, 0000-119, AV01-13 -->
+<!-- slice: 0114, 0118, 0119, 0114-01, 0114-04, 0114-05, 0000-76, 0000-88, 0000-89, 0114-06, 0114-07, 0114-09, 0114-10, 0114-11, 0000-90, 0123-01, 0000-119, AV01-13, AV02-05, 0000-177 -->
 
 | Fila | Grupul | Butoanele |
 |------|--------|-----------|
 | **Configurări** | Date | **Clasificații**, **Parteneri**, **Plan de conturi** — [Nomenclatoare](topic:contabil.nomenclatoare) |
 | | Configurare | **Jurnal activitate** — **apare doar cât e pornit în Setări › Aplicație** — [Jurnal activitate](topic:contabil.jurnal); **Configurare K-BOT** — [Setări și aspect](topic:contabil.setari); **Istoric versiuni** — [Actualizarea K-BOT](topic:contabil.actualizare) |
 | | Unitate | **Conturi Unitate** — [Conturile unității emitente](topic:contabil.efactura.conturi); **Date Unitate** — datele unității ca emitent de facturi |
+| **Introducere date** | Introducere Date | **Operații** — operații diverse, facturi și plăți — [Operații contabile](topic:contabil.nomenclatoare.operatii) |
+| | Modificare Date | **Modificare operații** — lista operațiilor contabile, cu filtre și ștergere — [Modificare operații](topic:contabil.nomenclatoare.modificare-operatii) |
 | **Angajamente** | Navigare | **Lista angajamentelor** — arborele de angajamente cu vederile lor — [Fereastra principală](topic:contabil.fereastra) |
 | | Adăugare | **Angajament nou** — [Angajament nou](topic:contabil.ddf.nou); **Creează în FOREXE** — [Vederea «Browser FOREXE»](topic:contabil.forexe.browser) |
 | | Verificări | **Operațiuni necorelate** — **apare doar când ai operațiuni necorelate de rezolvat** — [Operațiuni necorelate](topic:contabil.notecab) |

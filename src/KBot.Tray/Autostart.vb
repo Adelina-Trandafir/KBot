@@ -5,8 +5,8 @@ Imports Microsoft.Win32
 
 ''' <summary>
 ''' «Pornește cu Windows»: the tray starts with the user's Windows session through the standard
-''' <c>HKCU\Software\Microsoft\Windows\CurrentVersion\Run</c> key -- the launcher in the installation folder, never the copy
-''' (see <see cref="ShadowCopy"/>), so a new version of K-BOT is the one that starts next time.
+''' <c>HKCU\Software\Microsoft\Windows\CurrentVersion\Run</c> key -- the exe of the folder the tray runs from (the signer
+''' edition runs in place and updates itself, slice TRAY-02).
 '''
 ''' <para>The first run switches it on by itself. When the user switches it off from the tray menu that is remembered
 ''' (<c>HKCU\Software\AVACONT\KBot\Tray</c>, <c>AutostartOff</c>) and the first-run rule leaves it alone from then on.</para>
@@ -20,6 +20,7 @@ Friend NotInheritable Class Autostart
     Private Const RunValueName As String = "KBotTray"
     Private Const StateKeyPath As String = "Software\AVACONT\KBot\Tray"
     Private Const StateValueOff As String = "AutostartOff"
+    Private Const ExeName As String = "KBot.Tray.exe"
 
     ''' <summary>Is the Run entry in place?</summary>
     Friend Shared Function IsOn() As Boolean
@@ -61,7 +62,7 @@ Friend NotInheritable Class Autostart
             If IsDevelopmentFolder(k_appDir) Then Return
             Using k_run As RegistryKey = Registry.CurrentUser.CreateSubKey(RunKeyPath, writable:=True)
                 If k_on Then
-                    Dim k_exe As String = Path.Combine(k_appDir, ShadowCopy.ExeName)
+                    Dim k_exe As String = Path.Combine(k_appDir, ExeName)
                     k_run.SetValue(RunValueName, """" & k_exe & """", RegistryValueKind.String)
                 Else
                     k_run.DeleteValue(RunValueName, throwOnMissingValue:=False)

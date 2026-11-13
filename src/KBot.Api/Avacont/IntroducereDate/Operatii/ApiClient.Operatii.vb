@@ -39,6 +39,7 @@ Partial Public Class ApiClient
         Public Property cod As String
         Public Property denumire As String
         Public Property cui As String
+        Public Property codclient As String
         Public Property iban As String
     End Class
 
@@ -122,6 +123,7 @@ Partial Public Class ApiClient
         Public Property data As String
         Public Property suma As Decimal
         Public Property fel As String
+        Public Property numarnc As Integer
         Public Property platit As Decimal
     End Class
 
@@ -160,6 +162,7 @@ Partial Public Class ApiClient
     Private NotInheritable Class FpSalveazaResponse
         Public Property idnota As Integer
         Public Property numarnc As Integer
+        Public Property note As List(Of Integer)
         Public Property an As Integer
         Public Property evidente As List(Of FpEvidentaWire)
         Public Property plata As FpPlataSalvataWire
@@ -252,7 +255,7 @@ Partial Public Class ApiClient
             k_ctx.Parteneri = If(k_payload.parteneri, New List(Of FpPartenerWire)()).Select(
                 Function(k_p) New FacturiPlatiPartener() With {
                     .IdPartener = k_p.idpartener, .Cod = If(k_p.cod, String.Empty), .Denumire = If(k_p.denumire, String.Empty),
-                    .Cui = If(k_p.cui, String.Empty), .Iban = If(k_p.iban, String.Empty)}).ToList()
+                    .Cui = If(k_p.cui, String.Empty), .CodClient = If(k_p.codclient, String.Empty), .Iban = If(k_p.iban, String.Empty)}).ToList()
             k_ctx.Clasificatii = If(k_payload.clasificatii, New List(Of FpClasificatieWire)()).Select(
                 Function(k_c) New FacturiPlatiClasificatie() With {
                     .IdClsf = k_c.idclsf, .Clsf = If(k_c.clsf, String.Empty), .Denumire = If(k_c.denumire, String.Empty), .Forma = If(k_c.forma, String.Empty),
@@ -300,7 +303,7 @@ Partial Public Class ApiClient
                 .idsablonp = If(k_cerere.IdSablonP > 0, CType(k_cerere.IdSablonP, Integer?), Nothing),
                 .numarnc = k_cerere.NumarNC, .dataop = k_cerere.DataOP.ToString(OpIso, CultureInfo.InvariantCulture), .explicatieop = k_cerere.ExplicatieOP,
                 .noi = k_cerere.Noi.Select(Function(k_f) New FpNouaRequest() With {
-                    .numar = k_f.Numar, .data = k_f.Data.ToString(OpIso, CultureInfo.InvariantCulture), .suma = k_f.Suma, .fel = k_f.Fel, .platit = k_f.Platit}).ToList(),
+                    .numar = k_f.Numar, .data = k_f.Data.ToString(OpIso, CultureInfo.InvariantCulture), .suma = k_f.Suma, .fel = k_f.Fel, .numarnc = k_f.NumarNC, .platit = k_f.Platit}).ToList(),
                 .existente = k_cerere.Existente.Select(Function(k_f) New FpExistentaRequest() With {.idoper = k_f.IdOper, .platit = k_f.Platit}).ToList()}
             Dim k_resp As String = Await SendNomenclatoareAsync(
                 HttpMethod.Post, $"{AvacontRoot}/facturi-plati/salveaza", k_body, "salvarea facturilor și plăților", ct).ConfigureAwait(False)
@@ -308,6 +311,7 @@ Partial Public Class ApiClient
             Dim k_result As New FacturiPlatiRezultat()
             If k_payload Is Nothing Then Return k_result
             k_result.NumarNC = k_payload.numarnc
+            If k_payload.note IsNot Nothing Then k_result.Note.AddRange(k_payload.note)
             k_result.An = k_payload.an
             k_result.Facturi = If(k_payload.evidente Is Nothing, 0, k_payload.evidente.Count)
             If k_payload.plata IsNot Nothing Then

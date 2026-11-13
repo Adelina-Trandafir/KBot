@@ -43,6 +43,11 @@ from .configurari.sablon_operatii import sablon_operatii  # noqa: E402,F401
 #   facturi_plati.py -> GET /api/avacont/facturi-plati/context, GET .../deschise, POST .../salveaza, DELETE .../plata/<id>  (the Access form OPuri2017)
 from .introducere_date.operatii import op9  # noqa: E402,F401
 from .introducere_date.operatii import facturi_plati  # noqa: E402,F401
+# modificare_date/operatii/  (slice AV02-05, the Access form ModificareNC1280; no DDL)
+#   lista.py    -> GET /api/avacont/modificare-operatii/lista, GET .../info/<idoper>
+#   stergere.py -> GET .../operatie/<id>/verifica, GET .../document/<id>/verifica, DELETE .../operatie/<id>, DELETE .../document/<id>
+from .modificare_date.operatii import lista as modificare_operatii_lista  # noqa: E402,F401
+from .modificare_date.operatii import stergere as modificare_operatii_stergere  # noqa: E402,F401
 # configurari/sablon_salarii/  (slice AV01-15; sql/AVACONT/Configurari/SablonSalarii/AV01_15_sablon_salarii.sql)
 #   sablon_salarii.py -> GET/POST /api/avacont/sabloane-salarii                           (TZ_SablonSalarii, TZ_SablonSalariiLinie)
 from .configurari.sablon_salarii import sablon_salarii  # noqa: E402,F401

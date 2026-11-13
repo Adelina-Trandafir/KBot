@@ -47,10 +47,11 @@ Public NotInheritable Class LoginForm
     ''' director's window asks for a login on the unit of the document to sign. Nothing = as before.</summary>
     Public Property PreferredDc As String
 
+    ''' <param name="updates">The update service of the full K-BOT; <c>Nothing</c> (the signer edition, slice TRAY-02) = the
+    ''' window only signs in: no access-kind question, no K-BOT update check.</param>
     Public Sub New(authApi As IAuthApi, session As SessionContext, updates As AppUpdateService)
         ArgumentNullException.ThrowIfNull(authApi)
         ArgumentNullException.ThrowIfNull(session)
-        ArgumentNullException.ThrowIfNull(updates)
         _authApi = authApi
         _session = session
         _updates = updates
@@ -302,6 +303,7 @@ Public NotInheritable Class LoginForm
     ' does not answer leaves the kind unknown and the operator logs in as usual.
     Private Async Function ResolveKindAsync(email As String) As Task
         Try
+            If _updates Is Nothing Then Return
             If Not Await _updates.ResolveAccessAsync(email, CancellationToken.None) Then Return
             ' The box moved on while the server was answering: the answer is for an e-mail no longer there.
             If Not ClientProfile.IsResolvedFor(txtUser.Text) Then Return

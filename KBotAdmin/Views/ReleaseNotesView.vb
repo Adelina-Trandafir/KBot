@@ -14,6 +14,7 @@ Public Class ReleaseNotesView
     Private Shared ReadOnly RomanianOrder As StringComparer = StringComparer.Create(CultureInfo.GetCultureInfo("ro-RO"), True)
     Private _file As ReleaseNotesFile
     Private _versions As Version() = Array.Empty(Of Version)()
+    Private ReadOnly _created As New HashSet(Of Version)()
 
     Public Sub New()
         InitializeComponent()
@@ -34,16 +35,12 @@ Public Class ReleaseNotesView
             Dim k_root As String = ScriptCatalog.FindRepoRoot()
             If k_root.Length = 0 Then Throw New DirectoryNotFoundException("Nu găsesc folderul proiectului K-BOT.")
             _file = New ReleaseNotesFile(k_root)
-            _versions = _file.Versions.Append(ReleasePreview.CurrentVersion(k_root)).Distinct().
+            ' versions created here but still without a note are not in the file yet: they stay until the first note is written
+            _versions = _file.Versions.Append(ReleasePreview.CurrentVersion(k_root)).Concat(_created).Distinct().
                 OrderByDescending(Function(k_version) k_version).ToArray()
             FillGrid()
-            Dim k_previous As Version = TryCast(cmbTarget.SelectedItem, Version)
-            cmbTarget.Items.Clear()
-            For Each k_version As Version In _versions
-                cmbTarget.Items.Add(k_version)
-            Next
-            If _versions.Contains(k_previous) Then cmbTarget.SelectedItem = k_previous
-            cmbTarget.Enabled = _versions.Length > 1
+            RefillCombo(TargetVersion())
+            cmbTarget.Enabled = True
             lblStatus.Text = String.Empty
         Catch ex As Exception
             _file = Nothing
@@ -164,19 +161,69 @@ Public Class ReleaseNotesView
         UpdateMoveButton()
     End Sub
 
+    Private Sub CmbTarget_TextChanged(k_sender As Object, e As EventArgs) Handles cmbTarget.TextChanged
+        UpdateMoveButton()
+    End Sub
+
+    ''' <summary>The version in the combo: the picked one, or the number typed by hand (1.2 / 1.2.3 / 1.2.3.4, a missing part is 0). Nothing when it is not a version.</summary>
+    Private Function TargetVersion() As Version
+        Dim k_picked As Version = TryCast(cmbTarget.SelectedItem, Version)
+        If k_picked IsNot Nothing Then Return k_picked
+        Dim k_text As String = cmbTarget.Text.Trim()
+        Dim k_typed As Version = Nothing
+        If Regex.IsMatch(k_text, "^\d+(\.\d+){1,3}$") AndAlso Version.TryParse(k_text, k_typed) Then Return ReleasePreview.Normalize(k_typed)
+        Return Nothing
+    End Function
+
+    ''' <summary>Puts the versions in the combo again and selects <paramref name="k_select"/> when it is one of them.</summary>
+    Private Sub RefillCombo(k_select As Version)
+        cmbTarget.Items.Clear()
+        For Each k_version As Version In _versions
+            cmbTarget.Items.Add(k_version)
+        Next
+        If k_select IsNot Nothing AndAlso _versions.Contains(k_select) Then cmbTarget.SelectedItem = k_select
+    End Sub
+
     Private Sub UpdateMoveButton()
-        Dim k_target As Version = TryCast(cmbTarget.SelectedItem, Version)
-        btnMove.Enabled = k_target IsNot Nothing AndAlso CheckedNotes().Any(Function(k_note) k_note.ReleaseVersion <> k_target)
+        Dim k_target As Version = TargetVersion()
+        btnMove.Enabled = _file IsNot Nothing AndAlso k_target IsNot Nothing AndAlso CheckedNotes().Any(Function(k_note) k_note.ReleaseVersion <> k_target)
+        btnCreate.Enabled = _file IsNot Nothing AndAlso k_target IsNot Nothing AndAlso Not _versions.Contains(k_target)
+    End Sub
+
+    ''' <summary>Adds a version that has no section in the file yet; the section is written with its first note.</summary>
+    Private Sub AddVersion(k_version As Version)
+        _created.Add(k_version)
+        _versions = _versions.Append(k_version).Distinct().OrderByDescending(Function(k_item) k_item).ToArray()
+        FillGrid()
+        RefillCombo(k_version)
+    End Sub
+
+    Private Sub BtnCreate_Click(k_sender As Object, e As EventArgs) Handles btnCreate.Click
+        Try
+            If _file Is Nothing OrElse Not gridNotes.CommitPendingEdit() Then Return
+            Dim k_version As Version = TargetVersion()
+            If k_version Is Nothing OrElse _versions.Contains(k_version) Then Return
+            AddVersion(k_version)
+            UpdateMoveButton()
+            lblStatus.Text = $"Versiunea {k_version} a fost creată. Deschideți-o în listă și scrieți prima noutate pe rândul gol; secțiunea se scrie în fișier odată cu ea."
+        Catch ex As Exception
+            ShowError("Versiunea nu a putut fi creată", ex)
+        End Try
     End Sub
 
     Private Sub BtnMove_Click(k_sender As Object, e As EventArgs) Handles btnMove.Click
         If _file Is Nothing OrElse Not gridNotes.CommitPendingEdit() Then Return
-        Dim k_target As Version = TryCast(cmbTarget.SelectedItem, Version)
+        Dim k_target As Version = TargetVersion()
         If k_target Is Nothing Then Return
         Try
             Dim k_count As Integer = _file.Move(CheckedNotes(), k_target)
             If k_count = 0 Then Return
-            FillGrid()
+            ' a version typed by hand gets its section from the move itself
+            If _versions.Contains(k_target) Then
+                FillGrid()
+            Else
+                AddVersion(k_target)
+            End If
             UpdateMoveButton()
             lblStatus.Text = If(k_count = 1, "O noutate mutată", $"Noutăți mutate ({k_count})") & $" în versiunea {k_target}."
         Catch ex As Exception

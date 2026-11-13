@@ -1,8 +1,12 @@
 # VERCON — status (registru separat, ca ADECHIT_STATUS)
 
-## SLICE-VC14-03 — Macheta și meniul BU — 09.11.2026
+## SLICE-VC15-01 — Reparat «changeEfactura is not defined» — 10.11.2026
 
-**IMPLEMENTAT LOCAL.** Meniul BU apare la cel puțin două subunități active. Operatorul alege în arbore magazia sau un primitor. Contul de magazie se alege când sunt mai multe conturi active. [Worklog VC14-03](../docs/worklog/SLICE-VC14-03-macheta-si-meniu-bu.md).
+**IMPLEMENTAT LOCAL.** Meniul NIR (Asociază eFactura…, înlocuire, eliminare) nu mai dă eroarea: `docs.js` construiește acum `changeEfactura`. Verificat doar sintaxa; nerulat în aplicație, nepublicat. [Worklog VC15-01](../docs/worklog/SLICE-VC15-01-changeefactura-nedefinit.md).
+
+## SLICE-VC14-03 — Macheta și meniul BU — 11.11.2026
+
+**IMPLEMENTAT LOCAL.** Intrarea BU apare în Fluxuri la cel puțin două subunități active. Macheta este pagina Bon Transfer, cu în plus unitatea (și gestiunea) de destinație și primitorul opțional. Verificat doar sintaxa; nerulat în aplicație, nepublicat. [Worklog VC14-03](../docs/worklog/SLICE-VC14-03-macheta-si-meniu-bu.md).
 
 ## SLICE-VC14-02 — Documente și evidență BU — 09.11.2026
 

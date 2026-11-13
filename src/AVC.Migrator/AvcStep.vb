@@ -30,6 +30,8 @@ Friend NotInheritable Class AvcKinds
     Public Const JURNAL_INVALID As String = "JURNAL_INVALID"
     ''' <summary>Operation templates the target would refuse, or that need a look (they are left out, never half written).</summary>
     Public Const SABLON_INVALID As String = "SABLON_INVALID"
+    ''' <summary>The client codes of <c>Parteneri</c> (step «Cod client pe parteneri»): joined codes, kept codes, codes too long, units without the Access column.</summary>
+    Public Const COD_CLIENT As String = "COD_CLIENT"
     ''' <summary>A finding of the E-Factura import (its own severities, mapped to the grid's).</summary>
     Public Const EFACTURA As String = "EFACTURA"
 End Class

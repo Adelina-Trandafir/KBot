@@ -62,6 +62,7 @@ Public Class AvcMigratorForm
     Private Sub AvcMigratorForm_Load(sender As Object, e As EventArgs) Handles MyBase.Load
         Try
             txtRegistru.Text = _settings.RegistryPath
+            txtEfPrimite.Text = _settings.EfReceivedFile
             FillSteps()
             RefreshMigrateButton()
         Catch ex As Exception
@@ -193,6 +194,21 @@ Public Class AvcMigratorForm
             End Using
         Catch ex As Exception
             ShowOperationError("AvcMigratorForm.BrowseRegistry", "Alegerea fișierului a eșuat.", ex)
+        End Try
+    End Sub
+
+    Private Sub BtnRasfoireEf_Click(sender As Object, e As EventArgs) Handles btnRasfoireEf.Click
+        Try
+            Using k_dialog As New OpenFileDialog With {
+                .Title = "Alegeți magazinul de facturi primite (ef_2026.accdb)",
+                .Filter = "Baze Access (*.accdb;*.mdb)|*.accdb;*.mdb|Toate fișierele (*.*)|*.*",
+                .CheckFileExists = True}
+                Dim k_current = ResolveEfReceivedFile()
+                If File.Exists(k_current) Then k_dialog.FileName = k_current
+                If k_dialog.ShowDialog(Me) = DialogResult.OK Then txtEfPrimite.Text = k_dialog.FileName
+            End Using
+        Catch ex As Exception
+            ShowOperationError("AvcMigratorForm.BrowseEfReceived", "Alegerea fișierului a eșuat.", ex)
         End Try
     End Sub
 
@@ -449,10 +465,24 @@ Public Class AvcMigratorForm
         _context.DcUnits = CaiRegistry.UnitsOf(_units, _context.Dc)
         _context.SubunitDrafts = BuildSubunitDrafts()
         _context.CodFiscal = txtCodFiscal.Text.Trim()
-        _context.EfReceivedFile = If(_settings.EfReceivedFile.Trim().Length > 0, _settings.EfReceivedFile.Trim(),
-                                     Path.Combine(If(Path.GetDirectoryName(txtRegistru.Text.Trim()), String.Empty), "EFACTURA", $"ef_{AvcContext.TransferYear.ToString(CultureInfo.InvariantCulture)}.accdb"))
+        _context.EfReceivedFile = ResolveEfReceivedFile()
         _context.JournalRoot = Path.Combine(AppContext.BaseDirectory, "Jurnale", "AVC")
     End Sub
+
+    ''' <summary>
+    ''' The received-invoices store: the path in the settings file, else <c>&lt;folder of cale.accdb&gt;\EFACTURA\ef_&lt;year&gt;.accdb</c>.
+    ''' Needed already at «Citește» (the E-Factura step checks the file then), not only at «Verifică».
+    ''' </summary>
+    Private Function ResolveEfReceivedFile() As String
+        Dim k_set = txtEfPrimite.Text.Trim()
+        If Not String.Equals(k_set, _settings.EfReceivedFile, StringComparison.Ordinal) Then
+            _settings.EfReceivedFile = k_set
+            SavePreferences()
+        End If
+        If k_set.Length > 0 Then Return k_set
+        Dim k_folder = If(Path.GetDirectoryName(txtRegistru.Text.Trim()), String.Empty)
+        Return Path.Combine(k_folder, "EFACTURA", $"ef_{AvcContext.TransferYear.ToString(CultureInfo.InvariantCulture)}.accdb")
+    End Function
 
     ' ---- reading the unit files ----------------------------------------------------------------------------------
 
@@ -476,6 +506,7 @@ Public Class AvcMigratorForm
                 _report = Nothing
                 _steps = AvcCatalog.Create()
                 _context = New AvcContext(k_dc, k_ticked)
+                _context.EfReceivedFile = ResolveEfReceivedFile()
                 Dim k_contextNow = _context
                 Dim k_stepsNow = _steps
                 Dim k_reporter = NewReporter()

@@ -86,6 +86,9 @@ _LABELS = {
     ("POST", "/api/efactura/facturi"): "Creată o factură E-Factura",
     ("PUT", "/api/efactura/facturi/<int:id_factura>"): "Modificată o factură E-Factura",
     ("DELETE", "/api/efactura/facturi/<int:id_factura>"): "Ștearsă o factură E-Factura",
+    # Avacont, «Modificare operatii» (slice AV02-05)
+    ("DELETE", "/api/avacont/modificare-operatii/operatie/<int:id_oper>"): "Ștearsă o operație contabilă",
+    ("DELETE", "/api/avacont/modificare-operatii/document/<int:id_document>"): "Șters un document contabil, cu operațiile lui",
     ("POST", "/api/efactura/facturi/<int:id_factura>/storno"): "Stornată o factură E-Factura",
     ("POST", "/api/efactura/facturi/<int:id_factura>/trimite"): "Trimisă o factură la ANAF",
     ("POST", "/api/efactura/primite/sincronizeaza"): "Sincronizate facturile primite de la ANAF",

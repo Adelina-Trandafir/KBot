@@ -166,6 +166,19 @@ def are_receptie(cursor, id_primita):
     return cursor.fetchone() is not None
 
 
+def primite_cu_receptie(cursor, ids_primita, bucata=500):
+    """The set of the invoices (among ids_primita) that have a reception: the same rule as are_receptie, read for many invoices at once (slice AV02-05)."""
+    ids = sorted({int(i) for i in ids_primita if i is not None})
+    out = set()
+    for start in range(0, len(ids), bucata):
+        parte = ids[start:start + bucata]
+        cursor.execute(
+            "SELECT DISTINCT l.IdPrimita FROM EF_PrimiteReceptii l JOIN FX_Receptii_R R ON R.IDRR = COALESCE(l.IDRR, (SELECT H.IDRR FROM FX_Receptii_H H WHERE H.IDRH = l.IDRH LIMIT 1)) "
+            "WHERE l.IdPrimita IN (" + _marks(len(parte)) + ") AND COALESCE(R.Sters, 0) = 0", tuple(parte))
+        out.update(int(r["IdPrimita"]) for r in cursor.fetchall())
+    return out
+
+
 # ---------------------------------------------------------------------------------------------
 # writing: the OP and the allocations
 # ---------------------------------------------------------------------------------------------

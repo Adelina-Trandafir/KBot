@@ -6,7 +6,7 @@ document + one evidence operation (the template of type M, kind E, of the classi
 the allocation on each invoice in TZ_PlatiFacturi (IdEvidentiere = the evidence operation; IdPrimita stays NULL because nothing here comes from EF_Primite).
 
     GET    /api/avacont/facturi-plati/context?idsubunitate=<n>&an=<yyyy>
-           -> { subunitate, note, urmatoare, inchidere, parteneri: [{idpartener, cod, denumire, cui, iban}],
+           -> { subunitate, note, urmatoare, inchidere, parteneri: [{idpartener, cod, denumire, cui, codclient, iban}],
                 clasificatii: [{idclsf, clsf, denumire, forma, sabloane_e: [{idsablon, explicatie}], sabloane_p: [{idsablon, explicatie, felop}]}] }
     GET    /api/avacont/facturi-plati/deschise?idsubunitate=<n>&an=<yyyy>&idpartener=<n>&idclsf=<n>
            -> { curent: [invoice], anterior: [invoice], plati: [{idop, nrop, dataop, valoare, explicatie, documente, blocat, motiv}], numarop: n, coduri: {...}, contiban }
@@ -14,8 +14,10 @@ the allocation on each invoice in TZ_PlatiFacturi (IdEvidentiere = the evidence 
               database holds (the previous year before the port is not in it: see the worklog).
     POST   /api/avacont/facturi-plati/salveaza
            { idsubunitate, an, idpartener, idclsf, idsablone | null, idsablonp | null, numarnc, dataop, explicatieop,
-             noi: [{numar, data, suma, fel, platit}], existente: [{idoper, platit}] }
-           -> { idnota, numarnc, an, evidente: [{numar, idoper}], plata: {idoper, idop, nrop, valoare, dataop} | null }
+             noi: [{numar, data, suma, fel, numarnc, platit}], existente: [{idoper, platit}] }
+              numarnc of a new invoice = its accounting note (MANDATORY, positive; a number that does not exist yet opens a new note);
+              numarnc of the request = the note of the PAYMENT (mandatory only when idsablonp is given).
+           -> { numarnc, note: [every note used, ascending], an, evidente: [{numar, idoper}], plata: {idoper, idop, nrop, valoare, dataop} | null }
     DELETE /api/avacont/facturi-plati/plata/<idop>   -> { idop, nrop }; refused when the order is in an OPME or confirmed by a bank statement.
 
 The number of the order shown BEFORE the save is provisional («numarop»); the save returns the real one in «plata.nrop».
@@ -90,10 +92,13 @@ def get_facturi_plati_context():
         cursor = conn.cursor(dictionary=True)
         sub = postare.subunitate_pentru(cursor, None, sid)
         note, urmatoare = postare.note_ale_subunitatii(cursor, sid, an)
-        cursor.execute("SELECT IdPartener, CodPartener, DenumirePartener, CodFiscal, ContIBAN FROM Parteneri WHERE COALESCE(Ascuns, 0) = 0 "
+        # Parteneri.CodClient comes with sql/AVACONT/IntroducereDate/Operatii/AV02_04_parteneri_cod_client.sql; until it is run the code stays empty.
+        cursor.execute("SHOW COLUMNS FROM Parteneri LIKE 'CodClient'")
+        coloana_cod_client = ", CodClient" if cursor.fetchone() else ""
+        cursor.execute("SELECT IdPartener, CodPartener, DenumirePartener, CodFiscal, ContIBAN" + coloana_cod_client + " FROM Parteneri WHERE COALESCE(Ascuns, 0) = 0 "
                        "ORDER BY DenumirePartener, IdPartener")
         parteneri = [{"idpartener": r["IdPartener"], "cod": r["CodPartener"] or "", "denumire": r["DenumirePartener"] or "", "cui": r["CodFiscal"] or "",
-                      "iban": r["ContIBAN"] or ""} for r in cursor.fetchall()]
+                      "codclient": r.get("CodClient") or "", "iban": r["ContIBAN"] or ""} for r in cursor.fetchall()]
         return json_utf8({
             "subunitate": {"idsubunitate": sub["IdSubunitate"], "denumire": sub["Denumire"], "sursasector": sub["SursaSector"]},
             "note": [{"numarnc": n["NumarNC"], "datanc": _iso(n["DataNc"]), "documente": int(n["Documente"])} for n in note], "urmatoare": urmatoare,
@@ -179,8 +184,9 @@ def _citeste_cerere(corp):
     cerere = {"sid": _intreg(corp.get("idsubunitate"), "idsubunitate"), "an": _intreg(corp.get("an"), "an"),
               "id_partener": _intreg(corp.get("idpartener"), "idpartener"), "id_clsf": _intreg(corp.get("idclsf"), "idclsf"),
               "id_e": _intreg(corp.get("idsablone"), "idsablone", obligatoriu=False), "id_p": _intreg(corp.get("idsablonp"), "idsablonp", obligatoriu=False),
-              "numar_nc": _intreg(corp.get("numarnc"), "numarnc"), "noi": [], "existente": {}}
-    if cerere["numar_nc"] <= 0:
+              "numar_nc": _intreg(corp.get("numarnc"), "numarnc", obligatoriu=False) or 0, "noi": [], "existente": {}}
+    # numarnc of the request = the note of the PAYMENT (checked when there is one); every typed invoice carries its own note
+    if cerere["numar_nc"] < 0:
         raise OpEroare("Numărul notei contabile trebuie să fie pozitiv.")
     cerere["data_op"] = _data(corp.get("dataop"), "dataop") if corp.get("dataop") else datetime.now().date()
     cerere["explicatie_op"] = str(corp.get("explicatieop") or "")
@@ -197,7 +203,10 @@ def _citeste_cerere(corp):
         if not _in_limita(platit, suma):
             raise OpEroare("Suma plătită a facturii %s nu poate depăși valoarea ei (%s)." % (numar, suma))
         fel = str(f.get("fel") or "Factură").strip()[:100] or "Factură"
-        cerere["noi"].append({"numar": numar, "data": _data(f.get("data"), "data facturii " + numar), "suma": suma, "platit": platit, "fel": fel})
+        numar_nc = _intreg(f.get("numarnc"), "numarnc al facturii " + numar, obligatoriu=False) or 0
+        if numar_nc <= 0:
+            raise OpEroare("Factura %s nu are numărul notei contabile (obligatoriu)." % numar)
+        cerere["noi"].append({"numar": numar, "data": _data(f.get("data"), "data facturii " + numar), "suma": suma, "platit": platit, "fel": fel, "numar_nc": numar_nc})
     for f in _lista(corp, "existente"):
         if not isinstance(f, dict):
             raise OpEroare("O factură nu este validă.")
@@ -225,6 +234,8 @@ def post_facturi_plati_salveaza():
             raise OpEroare("Alegeți șablonul de evidențiere pentru facturile noi.")
         if cu_plata and total <= 0:
             raise OpEroare("Suma de plată trebuie să fie pozitivă.", 409)
+        if cu_plata and c["numar_nc"] <= 0:
+            raise OpEroare("Plata nu are numărul notei contabile (obligatoriu).")
         if not cu_plata and total != 0:
             raise OpEroare("Alegeți șablonul de plată: sunt sume de plată pe facturi.")
         conn = get_kbot_connection(db_name)
@@ -266,10 +277,18 @@ def post_facturi_plati_salveaza():
                     raise OpEroare("Suma de plată a facturii %s depășește restul de plată (%s)." % (existente[id_oper]["NumarDocument"], rest[id_oper]), 409)
         # note
         inchidere = postare.data_ultimei_inchideri(cursor, sid, an)
-        id_nota = postare.nota_existenta(cursor, sid, an, c["numar_nc"])
-        if id_nota is None:
-            id_nota, _ = postare.creeaza_nota(cursor, sid, an, user, c["numar_nc"])
-        # evidence of the typed invoices
+        note = {}
+
+        def id_nota_pentru(numar_nc):
+            """The note of that number: the one in the books, else a new one (opened once per request)."""
+            if numar_nc not in note:
+                id_n = postare.nota_existenta(cursor, sid, an, numar_nc)
+                if id_n is None:
+                    id_n, _ = postare.creeaza_nota(cursor, sid, an, user, numar_nc)
+                note[numar_nc] = id_n
+            return note[numar_nc]
+
+        # evidence of the typed invoices (each in its own note)
         evidente, alocari = [], []
         if c["noi"]:
             cursor.execute("SELECT IdJurnal, Explicatie, Compartiment FROM TZ_SablonOperatii WHERE IdSablon = %s", (c["id_e"],))
@@ -285,7 +304,7 @@ def post_facturi_plati_salveaza():
                 data, _m = postare.ajusteaza_data(data, inchidere, None)
                 if data.year != an:
                     raise OpEroare("Data facturii %s iese din anul de lucru (%d)." % (f["numar"], an), 409)
-                id_doc = postare.creeaza_document(cursor, id_nota, C.numar_document(f["numar"]), data, f["fel"], "E", True, user)
+                id_doc = postare.creeaza_document(cursor, id_nota_pentru(f["numar_nc"]), C.numar_document(f["numar"]), data, f["fel"], "E", True, user)
                 antet = {"IdJurnal": sablon_e["IdJurnal"], "IdClsf": clsf["IdClsf"], "IdSablon": c["id_e"], "DataOperatie": data, "Explicatie": sablon_e["Explicatie"],
                          "Tip": "E", "Compartiment": sablon_e["Compartiment"], "Angajament": linie_e["PA"], "Propunere": linie_e["PA"],
                          "Ordonantare": linie_e["Ordonantare"], "Chelt": linie_e["Chelt"], "Auto": True}
@@ -322,7 +341,7 @@ def post_facturi_plati_salveaza():
                 raise OpEroare("Explicația ordinului de plată trebuie să aibă între %d și %d caractere." % (C.MIN_EXPLICATIE_OP, C.MAX_EXPLICATIE_OP))
             den_unit, cf_unit, program = primite_plata._date_unitate(cursor, db_name, clsf["SS"], an)
             id_oper, id_op, numar, _doc = plati.posteaza_ordin(cursor, {
-                "sid": sid, "an_nota": an, "id_nota": id_nota, "data_op": data_op, "id_p": c["id_p"], "sablon": sablon_p, "linie": linii_p[0], "clsf": clsf,
+                "sid": sid, "an_nota": an, "id_nota": id_nota_pentru(c["numar_nc"]), "data_op": data_op, "id_p": c["id_p"], "sablon": sablon_p, "linie": linii_p[0], "clsf": clsf,
                 "id_partener": c["id_partener"], "total": total, "user": user,
                 "header": {"Explicatie": explicatie, "Documente": ";".join(documente), "DenPartener": partener["DenumirePartener"], "CFPartener": partener["CodFiscal"],
                            "ContBeneficiar": iban, "DenUnitate": den_unit, "CFUnitate": cf_unit, "pBIC": TREZORERIE_BIC,
@@ -330,8 +349,10 @@ def post_facturi_plati_salveaza():
             plati.aloca_pe_operatii(cursor, id_oper, id_op, alocari, data_op, total, user)
             plata = {"idoper": id_oper, "idop": id_op, "nrop": numar, "valoare": float(total), "dataop": _iso(data_op)}
         conn.commit()
-        logger.info("[avacont.facturi_plati] %s: nota %s, %s facturi noi, plata %s", db_name, c["numar_nc"], len(evidente), plata["nrop"] if plata else "-")
-        return json_utf8({"idnota": id_nota, "numarnc": c["numar_nc"], "an": an, "evidente": evidente, "plata": plata}, 200)
+        numere_note = sorted(note)
+        logger.info("[avacont.facturi_plati] %s: note %s, %s facturi noi, plata %s", db_name, numere_note, len(evidente), plata["nrop"] if plata else "-")
+        return json_utf8({"numarnc": c["numar_nc"] if cu_plata else (numere_note[0] if numere_note else 0), "note": numere_note, "an": an,
+                          "evidente": evidente, "plata": plata}, 200)
     except (OpEroare, postare.PostareEroare, plati.PlatiEroare) as err:
         rollback(conn)
         return json_utf8({"error": str(err)}, err.status)

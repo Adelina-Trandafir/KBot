@@ -96,6 +96,18 @@ Partial Class AvacontMain
         Dim KBotRibbonButton52 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton53 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton54 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim KBotRibbonTab7 As KBot.Controls.KBotRibbonTab = New Controls.KBotRibbonTab()
+        Dim KBotRibbonGroup13 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
+        Dim KBotRibbonGroup14 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
+        Dim KBotRibbonButton55 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim btnModOpReincarca As New Controls.KBotRibbonButton()
+        Dim btnModOpInfo As New Controls.KBotRibbonButton()
+        Dim btnModOpOrdonare As New Controls.KBotRibbonButton()
+        Dim btnModOpCurata As New Controls.KBotRibbonButton()
+        Dim btnModOpExcel As New Controls.KBotRibbonButton()
+        Dim btnModOpExcelTot As New Controls.KBotRibbonButton()
+        Dim btnModOpSterge As New Controls.KBotRibbonButton()
+        Dim btnModOpStergeDoc As New Controls.KBotRibbonButton()
         Dim btnClasificatiiAdauga As New Controls.KBotRibbonButton()
         Dim btnParteneriSterge As New Controls.KBotRibbonButton()
         Dim btnParteneriRenunta As New Controls.KBotRibbonButton()
@@ -401,7 +413,63 @@ Partial Class AvacontMain
         btnContareStergePlata.ToolTipText = "Șterge plata aleasă în tabel împreună cu ordinul ei de plată. Nu merge dacă ordinul este într-un OPME sau este confirmat printr-un extras de cont."
         btnContareStergePlata.Visible = False
         ribbon.RightGroup.Buttons.Add(btnContareStergePlata)
-        ribbon.SelectedTabIndex = 1
+        btnModOpReincarca.Image = My.Resources.Resources.FX_REFRESH_32
+        btnModOpReincarca.Key = "modificare_operatii_reincarca"
+        btnModOpReincarca.Text = "Reîncarcă"
+        btnModOpReincarca.ToolTipHeader = "Reîncarcă lista"
+        btnModOpReincarca.ToolTipText = "Citește din nou operațiile subunității și ale anului din bara de titlu. Filtrele și ordonarea rămân."
+        btnModOpReincarca.Visible = False
+        ribbon.RightGroup.Buttons.Add(btnModOpReincarca)
+        btnModOpInfo.Image = My.Resources.Resources.Wefunction_Woofunction_Window_app_list_info_32
+        btnModOpInfo.Key = "modificare_operatii_info"
+        btnModOpInfo.Text = "Arată informațiile"
+        btnModOpInfo.ToolTipHeader = "Informații suplimentare"
+        btnModOpInfo.ToolTipText = "Arată sau ascunde, sub listă, detaliile operației alese: tipul, factura plătită, ordinul de plată, facturile plătite și soldul partenerului."
+        btnModOpInfo.Visible = False
+        ribbon.RightGroup.Buttons.Add(btnModOpInfo)
+        btnModOpOrdonare.Image = My.Resources.Resources.cells
+        btnModOpOrdonare.Key = "modificare_operatii_ordonare"
+        btnModOpOrdonare.Text = "Ordonare implicită"
+        btnModOpOrdonare.ToolTipHeader = "Ordonare implicită"
+        btnModOpOrdonare.ToolTipText = "Pune lista înapoi în ordinea notei contabile, a datei și a documentului."
+        btnModOpOrdonare.Visible = False
+        ribbon.RightGroup.Buttons.Add(btnModOpOrdonare)
+        btnModOpCurata.Image = My.Resources.Resources.Everaldo_Crystal_Clear_Action_cancel_128_resized
+        btnModOpCurata.Key = "modificare_operatii_curata"
+        btnModOpCurata.Text = "Curăță filtrele"
+        btnModOpCurata.ToolTipHeader = "Curăță filtrele"
+        btnModOpCurata.ToolTipText = "Scoate toate filtrele de pe coloane și ordonarea aleasă."
+        btnModOpCurata.Visible = False
+        ribbon.RightGroup.Buttons.Add(btnModOpCurata)
+        btnModOpExcel.Image = My.Resources.Resources.export
+        btnModOpExcel.Key = "modificare_operatii_excel"
+        btnModOpExcel.Text = "Excel (listă)"
+        btnModOpExcel.ToolTipHeader = "Export în Excel"
+        btnModOpExcel.ToolTipText = "Salvează în Excel operațiile așa cum se văd acum în listă: cu filtrele și ordonarea alese."
+        btnModOpExcel.Visible = False
+        ribbon.RightGroup.Buttons.Add(btnModOpExcel)
+        btnModOpExcelTot.Image = My.Resources.Resources.export
+        btnModOpExcelTot.Key = "modificare_operatii_excel_tot"
+        btnModOpExcelTot.Text = "Excel (tot anul)"
+        btnModOpExcelTot.ToolTipHeader = "Export în Excel"
+        btnModOpExcelTot.ToolTipText = "Salvează în Excel toate operațiile anului, fără filtre, în ordinea notei contabile."
+        btnModOpExcelTot.Visible = False
+        ribbon.RightGroup.Buttons.Add(btnModOpExcelTot)
+        btnModOpSterge.Image = My.Resources.Resources.minus_red
+        btnModOpSterge.Key = "modificare_operatii_sterge"
+        btnModOpSterge.Text = "Șterge operația"
+        btnModOpSterge.ToolTipHeader = "Șterge operația"
+        btnModOpSterge.ToolTipText = "Șterge operația aleasă în listă. Nu merge pentru o operație dintr-o lună închisă, una plătită, una cu ordonanțare sau cu ordinul de plată într-un OPME ori confirmat prin extras."
+        btnModOpSterge.Visible = False
+        ribbon.RightGroup.Buttons.Add(btnModOpSterge)
+        btnModOpStergeDoc.Image = My.Resources.Resources.minus_red
+        btnModOpStergeDoc.Key = "modificare_operatii_sterge_doc"
+        btnModOpStergeDoc.Text = "Șterge documentul"
+        btnModOpStergeDoc.ToolTipHeader = "Șterge documentul"
+        btnModOpStergeDoc.ToolTipText = "Șterge documentul operației alese, cu toate operațiile lui. Merge doar dacă fiecare operație a documentului se poate șterge."
+        btnModOpStergeDoc.Visible = False
+        ribbon.RightGroup.Buttons.Add(btnModOpStergeDoc)
+        ribbon.SelectedTabIndex = 2
         ribbon.Size = New Size(1920, 184)
         ribbon.TabIndex = 1
         KBotRibbonButton13.Image = My.Resources.Resources.cells
@@ -439,7 +507,6 @@ Partial Class AvacontMain
         KBotRibbonButton54.ToolTipText = "Introducerea operațiilor contabile: operații diverse (din șabloane) și facturi și plăți cu ordine de plată."
         KBotRibbonGroup1.Buttons.Add(KBotRibbonButton39)
         KBotRibbonGroup1.Buttons.Add(KBotRibbonButton40)
-        KBotRibbonGroup1.Buttons.Add(KBotRibbonButton54)
         KBotRibbonGroup1.Text = "Date"
         KBotRibbonButton15.Image = My.Resources.Resources.Folder_blue_24
         KBotRibbonButton15.Key = "jurnal"
@@ -497,6 +564,18 @@ Partial Class AvacontMain
         KBotRibbonTab1.Groups.Add(KBotRibbonGroup3)
         KBotRibbonTab1.Groups.Add(KBotRibbonGroup4)
         KBotRibbonTab1.Text = "Configurări"
+        KBotRibbonGroup13.Buttons.Add(KBotRibbonButton54)
+        KBotRibbonGroup13.Text = "Introducere Date"
+        KBotRibbonButton55.Image = My.Resources.Resources.cells
+        KBotRibbonButton55.Key = "modificare_operatii"
+        KBotRibbonButton55.Text = "Modificare operații"
+        KBotRibbonButton55.ToolTipHeader = "Modificare operații"
+        KBotRibbonButton55.ToolTipText = "Lista tuturor operațiilor contabile ale anului, cu filtre pe coloane, informații despre fiecare operație și ștergerea unei operații sau a unui document."
+        KBotRibbonGroup14.Buttons.Add(KBotRibbonButton55)
+        KBotRibbonGroup14.Text = "Modificare Date"
+        KBotRibbonTab7.Groups.Add(KBotRibbonGroup13)
+        KBotRibbonTab7.Groups.Add(KBotRibbonGroup14)
+        KBotRibbonTab7.Text = "Introducere date"
         KBotRibbonButton23.Image = My.Resources.Resources.kbot_logo
         KBotRibbonButton23.Key = "pagina_angajamente"
         KBotRibbonButton23.Text = "Lista angajamentelor"
@@ -603,6 +682,7 @@ Partial Class AvacontMain
         KBotRibbonTab6.Text = "ADECHIT"
         KBotRibbonTab6.Visible = False
         ribbon.Tabs.Add(KBotRibbonTab1)
+        ribbon.Tabs.Add(KBotRibbonTab7)
         ribbon.Tabs.Add(KBotRibbonTab2)
         ribbon.Tabs.Add(KBotRibbonTab3)
         ribbon.Tabs.Add(KBotRibbonTab4)

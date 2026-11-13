@@ -181,6 +181,7 @@ const MENU_ICONS = {
   mf_registru: "📒",
   bp: "🤝",
   bt: "🚚",
+  bu: "🔁",
   bs: "🗑️",
   rapoarte: "📊",
   produse: "📦",
@@ -232,6 +233,7 @@ function paintMenu(k_ctx) {
           ? [
               { key: "bp", label: "Bon Predare" },
               { key: "bt", label: "Bon Transfer" },
+              { key: "bu", label: "Transferă între subunități" },
               { key: "bs", label: "Bon Casare" },
               { key: "mf_registru", label: "Registru MF", rule: true },
             ]

@@ -30,7 +30,7 @@
        AssemblyVersion: ține-l STABIL. Incrementează doar la o schimbare de interfață care
        rupe compatibilitatea și, când o faci, livrează setul COMPLET, niciodată parțial. -->
   <PropertyGroup>
-    <FileVersion>1.1.5.5</FileVersion>
+    <FileVersion>1.1.5.6</FileVersion>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
@@ -238,6 +238,26 @@
     </Compile>
     <Compile Update="EFactura\Forms\FacturiVanzareForm.Arbore.vb">
       <DependentUpon>FacturiVanzareForm.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <!-- Slice AV02-05: «Modificare operatii»; the partials are plain code (no designer, no .resx). -->
+    <Compile Update="Avacont\ModificareDate\Operatii\Views\ModificareOperatiiForm.Designer.vb">
+      <DependentUpon>ModificareOperatiiForm.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Avacont\ModificareDate\Operatii\Views\ModificareOperatiiForm.Lista.vb">
+      <DependentUpon>ModificareOperatiiForm.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Avacont\ModificareDate\Operatii\Views\ModificareOperatiiForm.Info.vb">
+      <DependentUpon>ModificareOperatiiForm.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Avacont\ModificareDate\Operatii\Views\ModificareOperatiiForm.Stergere.vb">
+      <DependentUpon>ModificareOperatiiForm.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Avacont\ModificareDate\Operatii\Views\ModificareOperatiiForm.Ribbon.vb">
+      <DependentUpon>ModificareOperatiiForm.vb</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="EFactura\Forms\FacturiVanzareForm.Client.vb">

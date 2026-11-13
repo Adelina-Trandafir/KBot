@@ -8,7 +8,7 @@ screens: SetariPaginaView, RegulaPaginaForm
 keywords: pagina forexe, css, stil, reguli, selector, meniu lateral, latime pagina, implicite
 open: setari:pagina
 ---
-<!-- slice: 0073-01 -->
+<!-- slice: 0073-01, 0000-179 -->
 K-BOT poate schimba felul în care arată pagina FOREXE din browserul lui: ascunde meniul lateral
 cât e deschis un angajament, lărgește pagina, readuce textul la mărimea normală. Aceste schimbări
 sunt **reguli de stil (CSS)** și se țin în pagina **Pagina FOREXE** din Setări.
@@ -16,7 +16,7 @@ sunt **reguli de stil (CSS)** și se țin în pagina **Pagina FOREXE** din Setă
 <!-- capture: avansat-pagina | caption: Setări › Pagina FOREXE | goto: setari:pagina -->
 
 ## Lista regulilor
-<!-- slice: 0073-01 -->
+<!-- slice: 0073-01, 0000-179 -->
 
 Fiecare rând e o regulă:
 
@@ -28,7 +28,7 @@ Fiecare rând e o regulă:
 | **Pagina** | gol = orice pagină; altfel doar pagina cu adresa scrisă (întreagă, doar calea sau doar ultimul cuvânt, de exemplu `contract`) |
 | **Stil** | ce se schimbă, de exemplu `display: none` sau `max-width: 90%` |
 
-Rândul ales se editează în dreapta. **Nimic nu se aplică până la «Salvează și aplică»**, care
+Cu **✕** de la capătul unui rând scoți regula din listă. Rândul ales se editează în dreapta. **Nimic nu se aplică până la «Salvează și aplică»**, care
 scrie regulile și le trimite în pagina FOREXE deschisă.
 
 ## Butoanele
@@ -37,7 +37,6 @@ scrie regulile și le trimite în pagina FOREXE deschisă.
 - **Regulă nouă...** — deschide arborele elementelor paginii FOREXE deschise. Un clic pe un element
   îi pune selectorul și stilul în câmpuri și îl **încadrează în pagina FOREXE**, ca să vezi ce ai
   ales; dublu clic îl adaugă. Fără browser pornit, regula se scrie de mână.
-- **Șterge** — scoate rândul selectat.
 - **Implicite** — înlocuiește lista cu regulile K-BOT de la început (meniul lateral ascuns cât e
   un angajament deschis, conținutul pe toată lățimea, pagina la 90 %, textul la 100 %, butonul
   «Înapoi» din bara de file ascuns pe pagina angajamentului).

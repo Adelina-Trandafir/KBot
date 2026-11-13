@@ -139,6 +139,16 @@ Public NotInheritable Class EfImportOptions
     Public Property IssuedFile As String = String.Empty
     ''' <summary>The e-invoice store <c>ef_&lt;year&gt;.accdb</c>: EF, EFT, EFS, EFT_C, EFT_M.</summary>
     Public Property ReceivedFile As String = String.Empty
+    ''' <summary>
+    ''' Slice ME01-34: the unit files (IdUnitate, <c>baza&lt;year&gt;.accdb</c>) whose Access <c>Clasificatii</c> are read to know what an Access classification id is (its code),
+    ''' so an EFT_O row without a unit can still be tied to the MariaDB row with the same <c>Clsf</c>. Empty = only <see cref="IssuedFile"/> is read.
+    ''' </summary>
+    Public ReadOnly Property ClassificationFiles As New List(Of (IdUnitate As Integer, FilePath As String))()
+    ''' <summary>
+    ''' Slice ME01-34: the ticked units by their source (<c>cale.accdb</c> column Sursa: 01A, 02A, 02E, ...). An EFT_O row without <c>IdUnitate</c> gets the unit whose source is the
+    ''' row's own <c>Sursa</c> when exactly ONE ticked unit has it. Empty = no unit is deduced.
+    ''' </summary>
+    Public ReadOnly Property UnitBySursa As New Dictionary(Of String, List(Of Integer))(StringComparer.OrdinalIgnoreCase)
     ''' <summary>The unit's tax code. Selects the received messages that belong to this unit.</summary>
     Public Property UnitCui As String = String.Empty
 

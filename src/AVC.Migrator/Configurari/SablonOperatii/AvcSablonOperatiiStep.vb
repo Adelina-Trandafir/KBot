@@ -335,7 +335,9 @@ Friend NotInheritable Class AvcSablonOperatiiStep
                 Return k_findings
             End If
 
+            _ensure = Nothing
             Dim k_resolved As List(Of Resolved) = Resolve(k_context, k_cn, Nothing)
+            _ensure.AddFindings(k_findings, k_context, "TZ_SablonOperatii", AddressOf WrittenOwner)
             Dim k_clean As List(Of Resolved) = k_resolved.Where(Function(k_r) k_r.Problems.Count = 0).ToList()
             Dim k_left As List(Of Resolved) = k_resolved.Where(Function(k_r) k_r.Problems.Count > 0).ToList()
             If k_left.Count > 0 Then
@@ -388,10 +390,18 @@ Friend NotInheritable Class AvcSablonOperatiiStep
             Where(Function(k_u) Not k_map.ContainsKey(k_u) AndAlso Not k_context.PlannedSubunits.ContainsKey(k_u)).OrderBy(Function(k_u) k_u).ToList()
     End Function
 
+    ' Slice ME01-36: the partners that the templates name and the target lacks (created at the write, NOT suppliers)
+    Private _ensure As AvcPartnerEnsure
+
+    Private Shared Function WrittenOwner(k_owner As Object) As Boolean
+        Return DirectCast(k_owner, Resolved).Problems.Count = 0
+    End Function
+
     ' Puts the target values on every template, or the reasons it cannot be written. Server I/O: logs and rethrows.
     Private Function Resolve(k_context As AvcContext, k_cn As MySqlConnection, k_transaction As MySqlTransaction) As List(Of Resolved)
         Try
             Dim k_result As New List(Of Resolved)()
+            If _ensure Is Nothing Then _ensure = New AvcPartnerEnsure(AvcOperatiiReader.ReadAllPartners(k_context))
             Dim k_map = AvcSubunitStore.UnitMap(k_cn, k_transaction)
             Dim k_accounts As HashSet(Of Integer) = LoadAccounts(k_context, k_cn, k_transaction)
             Dim k_journals As Dictionary(Of String, Long) = LoadJournals(k_cn, k_transaction)
@@ -569,7 +579,7 @@ Friend NotInheritable Class AvcSablonOperatiiStep
     End Function
 
     ' XXX = the partner of the operation, a code = a fixed partner (it must exist), empty = none.
-    Private Shared Sub ResolvePartner(k_row As AvcSablonRow, k_mark As String, k_side As String, k_partners As Dictionary(Of String, Long?),
+    Private Sub ResolvePartner(k_row As AvcSablonRow, k_mark As String, k_side As String, k_partners As Dictionary(Of String, Long?),
                                       k_cmd As MySqlCommand, k_item As Resolved, ByRef k_mode As String, ByRef k_id As Long?)
         Dim k_text As String = k_mark.Trim()
         k_mode = "NIMIC"
@@ -589,6 +599,8 @@ Friend NotInheritable Class AvcSablonOperatiiStep
         End If
         If k_id.HasValue Then
             k_mode = "FIX"
+        ElseIf _ensure.Ensure(k_row.IdUnitate, k_text, k_side, k_item, k_id) Then
+            k_mode = "FIX"   ' missing from Parteneri: created at the write (not a supplier); until then it only counts as known
         Else
             k_item.Problems.Add($"partenerul «{k_text}» de la {k_side} nu este în «Parteneri» (rulați întâi KBot.Migrator, pasul Parteneri)")
         End If
@@ -658,6 +670,10 @@ Friend NotInheritable Class AvcSablonOperatiiStep
                 Throw New InvalidOperationException("Unele unități cu șabloane nu au subunitate: bifați pasul «Subunități».")
             End If
             ' The journals step wrote its journals inside this transaction: they are found now.
+            _ensure = Nothing
+            Resolve(k_context, k_cn, k_transaction)   ' first pass: collects the missing partners (nothing is written)
+            _ensure.CreateNeeded(k_cn, k_transaction, AddressOf WrittenOwner, k_cancel)
+            _ensure.ReportCreated(k_context, k_dump, k_progress)
             Dim k_resolved As List(Of Resolved) = Resolve(k_context, k_cn, k_transaction)
             For Each k_noSub In k_resolved.Where(Function(k_r) k_r.Problems.Count = 0 AndAlso Not k_r.IdSubunitate.HasValue)
                 k_noSub.Problems.Add("unitatea nu are subunitate în țintă (bifați pasul «Subunități»)")
@@ -745,7 +761,7 @@ Friend NotInheritable Class AvcSablonOperatiiStep
             k_dump.FlushAll()
             If k_skipped > 0 Then k_progress.Report($"«TZ_SablonOperatii»: {k_skipped} șabloane existau deja și au rămas neschimbate.")
             k_progress.Report($"«TZ_SablonOperatii»: {k_written} șabloane, {k_lines} linii (confirmate la COMMIT).")
-            Return New List(Of AvcWritten) From {New AvcWritten("TZ_SablonOperatii", k_written), New AvcWritten("TZ_SablonOperatiiLinie", k_lines)}
+            Return _ensure.AppendWritten(New List(Of AvcWritten) From {New AvcWritten("TZ_SablonOperatii", k_written), New AvcWritten("TZ_SablonOperatiiLinie", k_lines)})
         Catch ex As OperationCanceledException
             Throw
         Catch ex As Exception

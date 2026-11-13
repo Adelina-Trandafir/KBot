@@ -110,12 +110,18 @@ Friend NotInheritable Class AvcPlatiStep
         End Using
     End Sub
 
-    Private Shared Function LoadLookups(k_cn As MySqlConnection, k_transaction As MySqlTransaction, Optional k_withTargets As Boolean = True) As Lookups
+    ''' <param name="k_preview">Verification only: the subunits the ticked «Subunități» step will create count as present (placeholder id 0), as in the Operatii step. The write reads the real ones, the subunits step having run before it.</param>
+    Private Shared Function LoadLookups(k_cn As MySqlConnection, k_transaction As MySqlTransaction, Optional k_withTargets As Boolean = True, Optional k_preview As AvcContext = Nothing) As Lookups
         Try
             Dim k_result As New Lookups()
             For Each k_pair In AvcSubunitStore.UnitMap(k_cn, k_transaction)
                 k_result.Subunits(k_pair.Key) = k_pair.Value.IdSubunitate
             Next
+            If k_preview IsNot Nothing Then
+                For Each k_pair In k_preview.PlannedSubunits
+                    k_result.Subunits.TryAdd(k_pair.Key, 0)
+                Next
+            End If
             ReadPairs(k_cn, k_transaction, "SELECT o.`IdOper`, o.`IdOperatieAccess`, s.`IdUnitateAccess` FROM `TZ_Oper` o JOIN `TZ_Documente` d ON d.`IdDocument` = o.`IdDocument` " &
                       "JOIN `TZ_NoteC` n ON n.`IdNota` = d.`IdNota` JOIN `TZ_Subunitati` s ON s.`IdSubunitate` = n.`IdSubunitate` WHERE o.`IdOperatieAccess` IS NOT NULL AND s.`IdUnitateAccess` IS NOT NULL",
                       Sub(k_r) k_result.Opers(K2(k_r.GetInt32(2), k_r.GetInt32(1))) = k_r.GetInt32(0))
@@ -319,7 +325,7 @@ Friend NotInheritable Class AvcPlatiStep
             Next
             If k_findings.Any(Function(f) f.IsBlocking) Then Return k_findings
 
-            Dim k_look = LoadLookups(k_cn, Nothing)
+            Dim k_look = LoadLookups(k_cn, Nothing, k_preview:=k_context)
             Dim k_plan = BuildPlan(k_look, k_context)
             If k_look.Opers.Count = 0 Then
                 k_findings.Add(New Finding(AvcKinds.PAS_DEPENDENT, FindingClass.Atentie, "TZ_Oper", String.Empty,

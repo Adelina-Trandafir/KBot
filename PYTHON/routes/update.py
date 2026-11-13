@@ -44,6 +44,17 @@ It is NOT inside the app packages: latest.json may carry ONE shared top-level `d
 GET /api/update/latest adds it as `driver` to the answer; GET /api/update/driver downloads it.
 A client downloads it only when the version it has installed differs.
 
+Slice TRAY-02 -- the signer edition (KBot.Tray as a program of its own, for the people who only
+sign) has its OWN channel, apart from latest.json: a push of the tray must never touch the
+K-BOT blocks, and push-update.ps1 rewrites latest.json whole. push-tray.ps1 uploads the package
+and, last, `tray.json` (same folder):
+
+    { "version": "1.0.1.0", "file": "KBot_Tray_1.0.1.0.zip", "size": 1, "sha256": "...",
+      "published_utc": "2026-11-10T10:00:00Z", "notes": "free text" }
+
+    GET /api/update/tray/latest -> that block (200) or 404 when the tray was never published.
+    GET /api/update/tray        -> the package it names, as a file.
+
 The OLD shape -- the block itself at the top level, written before slice 0104 -- is still
 read, as the "access" block: the first push after this slice rewrites the file in the
 new shape and keeps that block under "access".
@@ -69,6 +80,7 @@ logger = logging.getLogger(__name__)
 update_bp = Blueprint("update", __name__)
 
 LATEST_NAME = "latest.json"
+TRAY_NAME = "tray.json"
 
 # The package name is written by the push script and read back here. Anything
 # that is not a plain file name (a path, an empty string) is refused before it
@@ -178,6 +190,37 @@ def read_driver(update_dir=None):
     except (OSError, ValueError) as e:
         raise LatestInvalid(f"{LATEST_NAME}: {e}") from e
     return _validate_driver(data)
+
+
+def read_tray(update_dir=None):
+    """
+    The block of tray.json (the signer edition, slice TRAY-02), or None when the tray was never
+    published. Raises LatestInvalid when the file is unreadable or the block cannot be trusted.
+    """
+    update_dir = update_dir or get_update_dir()
+    path = os.path.join(update_dir, TRAY_NAME)
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError) as e:
+        raise LatestInvalid(f"{TRAY_NAME}: {e}") from e
+    if not isinstance(data, dict):
+        raise LatestInvalid(f"{TRAY_NAME}: not an object")
+    where = TRAY_NAME
+    for key in ("version", "file", "size", "sha256"):
+        if key not in data:
+            raise LatestInvalid(f"{where}: missing key '{key}'")
+    if not isinstance(data["version"], str) or not _VERSION_RE.match(data["version"]):
+        raise LatestInvalid(f"{where}: 'version' is not a version: {data['version']!r}")
+    if not isinstance(data["file"], str) or not _SAFE_FILE_RE.match(data["file"]):
+        raise LatestInvalid(f"{where}: 'file' is not a plain file name: {data['file']!r}")
+    if not isinstance(data["size"], int) or data["size"] < 0:
+        raise LatestInvalid(f"{where}: 'size' is not a non-negative integer")
+    if not isinstance(data["sha256"], str) or len(data["sha256"]) != 64:
+        raise LatestInvalid(f"{where}: 'sha256' is not a 64-char hex digest")
+    return data
 
 
 def read_latest(update_dir=None, access=True):
@@ -313,6 +356,52 @@ def driver():
     except Exception as e:
         logger.error("driver package could not be sent: %s", e, exc_info=True)
         return _error("Pachetul driver nu a putut fi trimis.", "PACKAGE_SEND_FAILED", 500)
+
+
+@update_bp.route("/api/update/tray/latest", methods=["GET"])
+def tray_latest():
+    """The published signer edition (tray.json), or 404 when it was never published."""
+    try:
+        block = read_tray()
+    except LatestInvalid as e:
+        logger.error("tray.json invalid: %s", e)
+        return _error("Descrierea actualizării tray de pe server este invalidă.", "TRAY_INVALID", 500)
+    if not block:
+        return _error("Nu există nicio versiune tray publicată.", "NO_TRAY_PUBLISHED", 404)
+    return jsonify({
+        "version": block["version"],
+        "file": block["file"],
+        "size": block["size"],
+        "sha256": block["sha256"],
+        "published_utc": block.get("published_utc"),
+        "notes": block.get("notes") or "",
+    }), 200
+
+
+@update_bp.route("/api/update/tray", methods=["GET"])
+def tray_download():
+    """The signer edition package tray.json names, streamed as a file (Range supported)."""
+    try:
+        block = read_tray()
+    except LatestInvalid as e:
+        logger.error("tray.json invalid: %s", e)
+        return _error("Descrierea actualizării tray de pe server este invalidă.", "TRAY_INVALID", 500)
+    if not block:
+        return _error("Nu există nicio versiune tray publicată.", "NO_TRAY_PUBLISHED", 404)
+    path = os.path.join(get_update_dir(), block["file"])
+    if not os.path.isfile(path):
+        logger.error("tray package listed in tray.json is missing on disk: %s", path)
+        return _error("Pachetul tray lipsește de pe server.", "PACKAGE_MISSING", 500)
+    try:
+        response = send_file(path, mimetype="application/zip", as_attachment=True,
+                             download_name=block["file"], conditional=True)
+        response.headers["X-KBot-Version"] = block["version"]
+        response.headers["X-KBot-Sha256"] = block["sha256"]
+        logger.info("tray package sent: %s (v%s)", block["file"], block["version"])
+        return response
+    except Exception as e:
+        logger.error("tray package could not be sent: %s", e, exc_info=True)
+        return _error("Pachetul tray nu a putut fi trimis.", "PACKAGE_SEND_FAILED", 500)
 
 
 # The first install of a NEW user (no Access): the Inno Setup .exe, not the update zip.

@@ -86,6 +86,17 @@ Public NotInheritable Class AppSettings
     ''' </summary>
     Public Property ContariProtectiePlati As Boolean = False
 
+    ' ── «Modificare operatii» (slice AV02-05): what the operator chose last, per user ──
+
+    ''' <summary>Slice AV02-05: the column the list of «Modificare operatii» was last sorted by; empty = the default order (note, date, document).</summary>
+    Public Property ModificareOperatiiSortKey As String = String.Empty
+
+    ''' <summary>Slice AV02-05: the last sort of «Modificare operatii» was descending.</summary>
+    Public Property ModificareOperatiiSortDesc As Boolean = False
+
+    ''' <summary>Slice AV02-05: the info panel of «Modificare operatii» is shown when the page opens (the Access setting MNC_C6).</summary>
+    Public Property ModificareOperatiiInfo As Boolean = False
+
     ' ── Multi-thread downloads (slice 0100) ──────────────────────────────
 
     ''' <summary>Fewest FOREXE tabs a multi-thread download can use.</summary>

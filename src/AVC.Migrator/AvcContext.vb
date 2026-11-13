@@ -108,9 +108,6 @@ Friend NotInheritable Class AvcContext
         End Get
     End Property
 
-    ''' <summary>SHA-256 of each ticked unit file as it was read, by path; the run refuses to start when one changed since.</summary>
-    Public ReadOnly Property FileHashes As New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
-
     ''' <summary>Where the SQL journal folders are written.</summary>
     Public Property JournalRoot As String = String.Empty
 

@@ -21,6 +21,22 @@
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
   </PropertyGroup>
 
+  <!-- publish-avc-migrator.ps1 passes -p:AvcSingleFile=true: ONE small AVC.Migrator.exe (framework-dependent, .NET 8 Desktop
+       Runtime on the user's PC) to copy by hand. The RID/single-file settings live HERE, not on the command line, because a
+       command-line -r would also turn the referenced KBot.Migrator into a self-contained exe (NETSDK1151).
+       -p:AvcSelfContained=true adds the runtime into the exe (compressed, big) for a PC without the .NET Desktop Runtime. -->
+  <PropertyGroup Condition="'$(AvcSingleFile)' == 'true'">
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>false</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(AvcSingleFile)' == 'true' And '$(AvcSelfContained)' == 'true'">
+    <SelfContained>true</SelfContained>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+  </PropertyGroup>
+
   <ItemGroup>
     <Import Include="System.Drawing" />
     <Import Include="System.Windows.Forms" />

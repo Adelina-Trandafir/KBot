@@ -86,6 +86,7 @@ Public NotInheritable Class ScriptCatalog
     Public Const FlagNoNotes As String = "nonotes"
     Public Const FlagKBotMigrator As String = "kbotmigrator"
     Public Const FlagAvcMigrator As String = "avcmigrator"
+    Public Const FlagNoInstaller As String = "noinstaller"
 
     Private Shared ReadOnly FlagHelp As New Dictionary(Of String, String)(StringComparer.Ordinal) From {
         {FlagMandatory, "Toți clienții de acest fel sub versiunea trimisă sunt obligați să se actualizeze (fără «Mai târziu»)."},
@@ -110,7 +111,8 @@ Public NotInheritable Class ScriptCatalog
         {FlagBumpRevision, "Crește ultima parte a versiunii (Revision; după 9 trece în Build). Doar una dintre cele patru se poate bifa."},
         {FlagNoNotes, "Acceptă o versiune fără NOUTATI: nu cere și nu așteaptă textul, deci nu mai întreabă. Ce e deja scris în NOUTATI.md se trimite oricum."},
         {FlagKBotMigrator, "Pune KBot.Migrator în pachet (în Migrare\). Nebifat, nu intră, nici în pachetul cu Access. Cere pachetul cu Access."},
-        {FlagAvcMigrator, "Pune AVC.Migrator în pachet (în AvcMigrator\). Nebifat, nu intră. Cere pachetul cu Access."}}
+        {FlagAvcMigrator, "Pune AVC.Migrator în pachet (în AvcMigrator\). Nebifat, nu intră. Cere pachetul cu Access."},
+        {FlagNoInstaller, "Nu construiește programul de instalare al tray-ului (KBot_Tray_Setup_*.exe) pentru semnatarii noi; nebifat, îl construiește (cu semnare: încă 2 confirmări)."}}
 
     ''' <summary>Groups where ticking one clears the others (the values of one parameter, or opposites): at most one of a group is ticked.</summary>
     Public Shared ReadOnly Exclusive As String()() = {
@@ -174,6 +176,11 @@ Public NotInheritable Class ScriptCatalog
             Script(GroupPush, "rollback-update.ps1", "rollback-update.ps1",
                    "Readuce o versiune mai veche ca actualizare pe server (clienții care s-au actualizat deja rămân pe versiunea nouă).",
                    Flags(FlagForce, {"-Force"}, FlagSkipUpload, {"-SkipUpload"}, FlagAccess, k_audience, FlagNoAccess, k_noAudience), True),
+            Script(GroupPush, "push-tray.ps1", "push-tray.ps1",
+                   "Doar tray-ul (ediția pentru cei care doar semnează): îl construiește, semnează DOAR KBot.Tray.exe și îl pune pe server ca pachet propriu, cu versiune proprie (FileVersion din KBot.Tray.vbproj). Nu atinge actualizarea K-BOT și nu pune în pachet niciun alt program. Construiește și programul de instalare pentru semnatarii noi (artifacts\KBot_Tray_Setup_*.exe, care NU se urcă pe server). Versiunea nu se mărește decât dacă bifați o parte; semnarea, dacă nu o bifați, scriptul întreabă (la fel parola sftp). Textul din casetă se păstrează în tray.json.",
+                   Flags(FlagForce, {"-Force"},
+                         FlagBumpMajor, {"-Bump", "Major"}, FlagBumpMinor, {"-Bump", "Minor"}, FlagBumpBuild, {"-Bump", "Build"}, FlagBumpRevision, {"-Bump", "Revision"},
+                         FlagSign, {"-Sign", "Yes"}, FlagNoSign, {"-Sign", "No"}, FlagNoInstaller, {"-Installer", "No"}), True),
             Script(GroupPush, "Push-Changed.ps1 (PYTHON)", "tools\Push-Changed.ps1",
                    "Blocat în KBOTADMIN: folosiți pagina Publicare, care gestionează modul debugging fără Git, evidența fișierelor și finalizarea Git pe server.",
                    Flags(FlagDryRun, {"-DryRun"}, FlagBaseline, {"-Baseline"}, FlagRestart, {"-Restart"}, FlagNoRestart, {"-NoRestart"}, FlagForget, {"-Forget"}), False),
@@ -193,8 +200,8 @@ Public NotInheritable Class ScriptCatalog
                    "Publică VRC.Migrator și ADE.Migrator în folderul _VrcMigrator (Release; «Debug» schimbă configurația, «Clean» golește folderul întâi).",
                    Flags(FlagDebug, {"-Configuration", "Debug"}, FlagClean, {"-Clean"}), False),
             Script(GroupPublish, "publish-avc-migrator.ps1", "publish-avc-migrator.ps1",
-                   "Publică DOAR AVC.Migrator în folderul _AvcMigrator (Release; «-Configuration Debug» schimbă configurația, «-Clean» golește întâi). Setările și jurnalele din folder se păstrează.",
-                   Flags(FlagDebug, {"-Configuration", "Debug"}, FlagClean, {"-Clean"}), False),
+                   "Publică DOAR AVC.Migrator ca UN singur AVC.Migrator.exe mic în folderul _AvcMigrator, de copiat și instalat de mână pe calculatorul utilizatorului (Release; «-Configuration Debug» schimbă configurația, «-Clean» golește întâi). Setările și jurnalele din folder se păstrează. Semnarea, dacă nu o bifați, scriptul întreabă.",
+                   Flags(FlagDebug, {"-Configuration", "Debug"}, FlagClean, {"-Clean"}, FlagSign, {"-Sign", "Yes"}, FlagNoSign, {"-Sign", "No"}), False),
             New ScriptDef(GroupPublish, "publish-admin.ps1", "publish-admin.ps1", Array.Empty(Of String)(),
                           "Publică KBotAdmin în _Admin. Fiind chiar acest program, el se închide, scriptul pornește după aceea, iar la final KBotAdmin pornește singur din nou din _Admin\KBotAdmin.exe.",
                           Flags(), False, True)}

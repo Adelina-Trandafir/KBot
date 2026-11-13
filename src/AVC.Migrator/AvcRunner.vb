@@ -1,6 +1,5 @@
 Imports System.Globalization
 Imports System.IO
-Imports System.Security.Cryptography
 Imports System.Threading
 Imports KBot.Common
 Imports KBot.Migrator
@@ -8,35 +7,22 @@ Imports MySqlConnector
 
 ''' <summary>
 ''' The three operations over the steps: read the Access file, verify against the unit database, write. Verify-then-write:
-''' the writer only runs on a verification without a blocking finding, and re-checks that the Access file is the one that
-''' was read.
+''' the writer only runs on a verification without a blocking finding. (The check that the Access files had not changed since
+''' they were read was removed in slice ME01-37: the file never changes between «Verifică» and «Migrează».)
 ''' </summary>
 Friend NotInheritable Class AvcRunner
 
     Private Sub New()
     End Sub
 
-    ''' <summary>SHA-256 of the file, lowercase hex. I/O: logs and rethrows.</summary>
-    Public Shared Function HashOf(k_path As String) As String
-        Try
-            Using k_file As New FileStream(k_path, FileMode.Open, FileAccess.Read, FileShare.ReadWrite)
-                Return Convert.ToHexString(SHA256.HashData(k_file)).ToLowerInvariant()
-            End Using
-        Catch ex As Exception
-            GlobalErrorLog.Write("AvcRunner.HashOf", ex)
-            Throw
-        End Try
-    End Function
-
     ''' <summary>
-    ''' Reads the Access table of every step (ticked or not, so the grid shows all the counts) and records the file hash.
+    ''' Reads the Access table of every step (ticked or not, so the grid shows all the counts).
     ''' A step that cannot be read does not stop the others: its error comes back as a blocking finding.
     ''' </summary>
     Public Shared Function ReadAll(k_context As AvcContext, k_steps As IEnumerable(Of AvcStep), Optional k_report As IProgress(Of AvcProgressInfo) = Nothing) As List(Of Finding)
         Try
             If k_context.Units.Count = 0 Then Throw New InvalidOperationException("Bifați cel puțin o unitate.")
             Dim k_errors As New List(Of Finding)()
-            k_context.FileHashes.Clear()
             For Each k_unit In k_context.Units
                 If Not k_unit.HasUnitFile Then
                     k_errors.Add(New Finding(AvcKinds.SURSA_LIPSA, FindingClass.Blocant, String.Empty, String.Empty,
@@ -65,12 +51,7 @@ Friend NotInheritable Class AvcRunner
                                              $"«{k_step.Title}» nu a putut fi citit din Access: {ex.Message}"))
                 End Try
             Next
-            ' Hashed AFTER the reads: the Access driver rewrites bytes of the file header when it opens and closes it, so a hash
-            ' taken before the first open never matches again. From here on only an outside change alters the hash.
-            k_report?.Report(New AvcProgressInfo("Citire", k_all.Count, k_all.Count, String.Empty, "amprentele fișierelor", 1.0))
-            For Each k_unit In k_context.Units
-                k_context.FileHashes(k_unit.UnitFilePath) = HashOf(k_unit.UnitFilePath)
-            Next
+            k_report?.Report(New AvcProgressInfo("Citire", k_all.Count, k_all.Count, String.Empty, "citire încheiată", 1.0))
             Return k_errors
         Catch ex As Exception
             GlobalErrorLog.Write("AvcRunner.ReadAll", ex)
@@ -154,11 +135,6 @@ Friend NotInheritable Class AvcRunner
             RequireTarget(k_context)
             Dim k_selected = k_steps.Where(Function(s) s.Selected).ToList()
             If k_selected.Count = 0 Then Throw New InvalidOperationException("Nu este bifat niciun pas de migrat.")
-            For Each k_entry In k_context.FileHashes
-                If Not File.Exists(k_entry.Key) OrElse Not String.Equals(HashOf(k_entry.Key), k_entry.Value, StringComparison.OrdinalIgnoreCase) Then
-                    Throw New InvalidOperationException($"Fișierul Access «{k_entry.Key}» s-a modificat după citire. Citiți din nou și verificați.")
-                End If
-            Next
             If k_cancel.IsCancellationRequested Then Return Nothing
 
             Dim k_written As New List(Of AvcWritten)()
@@ -170,7 +146,6 @@ Friend NotInheritable Class AvcRunner
                     "Cod fiscal: " & If(k_context.CodFiscal.Length = 0, "(necompletat)", k_context.CodFiscal),
                     "Server: " & k_context.Server.Describe(),
                     "Unități: " & String.Join(", ", k_context.Units.Select(Function(u) $"{u.IdUnitate} {AvcContext.LabelOf(u, u.IdUnitate)}")),
-                    "Fișiere Access (SHA-256): " & String.Join("; ", k_context.FileHashes.Select(Function(h) $"{Path.GetFileName(h.Key)} {h.Value}")),
                     "An: " & k_context.Year.ToString(CultureInfo.InvariantCulture),
                     "Pași: " & String.Join(", ", k_selected.Select(Function(s) s.Key))})
 

@@ -75,13 +75,28 @@ Friend NotInheritable Class AvcEFacturaStep
     End Function
 
     Private Function BuildOptions(k_context As AvcContext) As EfImportOptions
-        Return New EfImportOptions(k_context.Server, k_context.TargetDatabase, k_context.CommonDatabase) With {
+        Dim k_options As New EfImportOptions(k_context.Server, k_context.TargetDatabase, k_context.CommonDatabase) With {
             .AccessPassword = k_context.AccessPassword,
             .IssuedFile = _issuedFile,
             .ReceivedFile = k_context.EfReceivedFile,
             .UnitCui = k_context.CodFiscal,
             .DoFurnizor = True, .DoClienti = True, .DoEmise = True, .DoPrimite = True
         }
+        ' every ticked unit with a file: the Access ids of the classifications belong to the unit file they are read from (slice ME01-34)
+        For Each k_unit In k_context.Units.Where(Function(k_u) k_u.HasUnitFile)
+            k_options.ClassificationFiles.Add((k_unit.IdUnitate, k_unit.UnitFilePath))
+        Next
+        ' the source of a unit (cale.accdb, column Sursa) tells the unit of an EFT_O row that has none (EFT_O.Sursa)
+        For Each k_unit In k_context.Units.Where(Function(k_u) k_u.Sursa IsNot Nothing AndAlso k_u.Sursa.Trim().Length > 0)
+            Dim k_list As List(Of Integer) = Nothing
+            Dim k_sursa As String = k_unit.Sursa.Trim()
+            If Not k_options.UnitBySursa.TryGetValue(k_sursa, k_list) Then
+                k_list = New List(Of Integer)()
+                k_options.UnitBySursa(k_sursa) = k_list
+            End If
+            If Not k_list.Contains(k_unit.IdUnitate) Then k_list.Add(k_unit.IdUnitate)
+        Next
+        Return k_options
     End Function
 
     ' ── read ────────────────────────────────────────────────────────────────────

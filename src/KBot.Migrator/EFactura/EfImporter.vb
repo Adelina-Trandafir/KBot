@@ -43,6 +43,19 @@ Public NotInheritable Class EfImporter
     ' Clasificatii of the target: (IdClsfAcc, IdUnitate) -> IDClsf values; and the EFT_O pairs that did not resolve to exactly one
     Private _classificationPairs As Dictionary(Of (Integer, Integer), List(Of Integer))
     Private _classificationProblems As Dictionary(Of (Integer, Integer), (Matches As Integer, Rows As Integer))
+    ' Slice ME01-34: the target's Clasificatii by their code (Clsf), to propose the right row for an Access id that did not resolve
+    Private _classificationsByCode As Dictionary(Of String, List(Of ClsfCandidate))
+    ' ... the Access classifications by id (one entry per unit file), how many files were read, and the (Access id, unit) -> IDClsf ties made by code
+    Private _accessClassifications As Dictionary(Of Integer, List(Of AccessClsf))
+    Private _classificationFilesRead As Integer
+    Private _classificationsByCodeUsed As Dictionary(Of (Integer, Integer), (IdClsf As Integer, Rows As Integer))
+    ' ... classifications that Clasificatii lacks and Access holds: created (write pass) / to be created (verification), and why one could not be
+    Private _classificationsCreated As Dictionary(Of (Integer, Integer), (IdClsf As Integer, Unit As Integer, Code As String, Denumire As String, Rows As Integer))
+    Private _classificationsPlanned As Dictionary(Of (Integer, Integer), (Unit As Integer, Code As String, Denumire As String, Rows As Integer))
+    Private _classificationNotCreated As Dictionary(Of (Integer, Integer), String)
+    ' ... the EFT_O rows behind each unresolved (Access id, unit), first 10 each, and how many EFT_O rows got their unit from their Sursa
+    Private _classificationProblemRows As Dictionary(Of (Integer, Integer), List(Of String))
+    Private _unitsFromSursa As Dictionary(Of String, Integer)
     Private _umKnown As HashSet(Of String)
     Private _umUsed As Dictionary(Of String, Integer)
     ' Slice 00EF-38: received invoices read in this pass, and the ones already in the target before it (those are never linked here)
@@ -140,6 +153,8 @@ Public NotInheritable Class EfImporter
 
             If _options.DoPrimite Then
                 _classificationPairs = LoadClassificationPairs(cnUnit, txUnit)
+                _classificationsByCode = LoadClassificationCodes(cnUnit, txUnit)
+                _accessClassifications = LoadAccessClassifications(k_report)
                 If TableExists(cnUnit, "EF_Primite", txUnit) Then _receivedBefore = LoadTargetIntKeys(cnUnit, txUnit, "EF_Primite", "IdPrimita")
             End If
 
@@ -150,6 +165,7 @@ Public NotInheritable Class EfImporter
                 If source Is Nothing Then Continue For
                 Dim isLinks As Boolean = String.Equals(spec.TargetTable, "EF_PrimiteOperatii", StringComparison.Ordinal)
                 If isLinks Then ReportLinkRewrite(k_write, k_report, cnUnit, txUnit)
+                If isLinks Then PrepareClassifications(source, k_write, k_report, cnUnit, txUnit)
                 CopyTable(spec, source, k_write, k_report, cnUnit, txUnit, plans, totalSteps, k_token)
                 If isLinks AndAlso k_write AndAlso Not k_report.HasBlocking Then PointLinksAtOperations(cnUnit, txUnit)
             Next
@@ -205,6 +221,15 @@ Public NotInheritable Class EfImporter
         _receivedIds = New HashSet(Of Integer)()
         _classificationPairs = New Dictionary(Of (Integer, Integer), List(Of Integer))()
         _classificationProblems = New Dictionary(Of (Integer, Integer), (Matches As Integer, Rows As Integer))()
+        _classificationsByCode = New Dictionary(Of String, List(Of ClsfCandidate))(StringComparer.Ordinal)
+        _accessClassifications = New Dictionary(Of Integer, List(Of AccessClsf))()
+        _classificationFilesRead = 0
+        _classificationsByCodeUsed = New Dictionary(Of (Integer, Integer), (IdClsf As Integer, Rows As Integer))()
+        _classificationsCreated = New Dictionary(Of (Integer, Integer), (IdClsf As Integer, Unit As Integer, Code As String, Denumire As String, Rows As Integer))()
+        _classificationsPlanned = New Dictionary(Of (Integer, Integer), (Unit As Integer, Code As String, Denumire As String, Rows As Integer))()
+        _classificationNotCreated = New Dictionary(Of (Integer, Integer), String)()
+        _classificationProblemRows = New Dictionary(Of (Integer, Integer), List(Of String))()
+        _unitsFromSursa = New Dictionary(Of String, Integer)(StringComparer.OrdinalIgnoreCase)
         _umKnown = New HashSet(Of String)(StringComparer.OrdinalIgnoreCase)
         _umUsed = New Dictionary(Of String, Integer)(StringComparer.OrdinalIgnoreCase)
         _linkInvoices = New List(Of EfLinkInvoice)()
@@ -674,6 +699,7 @@ Public NotInheritable Class EfImporter
     Private Function ReceivedOperationSpec() As EfTableSpec
         Dim s = ReceivedChild("EFT_O", "EF_PrimiteOperatii", "IdOperatiePrimita", "IDEFTO")
         s.ExtraSourceColumns.Add("IdClsf")
+        s.ExtraSourceColumns.Add("IdUnitate")
         s.Columns.Add(Col("IdOperatiePrimita", "IDEFTO", EfKind.Whole, k_required:=True))
         s.Columns.Add(Col("IdPrimita", "IDEFT", EfKind.Whole, k_required:=True))
         ' sql/00EF_66: IdOperatie is the key of the operation (TZ_Oper.IdOper), set after the copy; the number Access held goes to IdOperatieAccess.
@@ -683,14 +709,47 @@ Public NotInheritable Class EfImporter
         s.Columns.Add(Col("IdOperatieAccess", "IdOperatie", EfKind.Whole, k_default:=0))
         s.Columns.Add(New EfColumn("IdClsf", Nothing, EfKind.Whole) With {
             .Compute = Function(r As AccessTableReader) As Object
-                           Dim k_resolved = ResolveClassification(ToInt(r.ValueOrMissing("IdClsf")), ToInt(r.ValueOrMissing("IdUnitate")))
+                           Dim k_resolved = ResolveClassification(ToInt(r.ValueOrMissing("IdClsf")), RowUnit(r, False), DescribeRow(r))
                            Return If(k_resolved.HasValue, CType(k_resolved.Value, Object), CType(DBNull.Value, Object))
                        End Function})
-        s.Columns.Add(Col("IdUnitate", "IdUnitate", EfKind.Whole))
+        ' slice ME01-34: an EFT_O row without a unit gets the unit of its source (EFT_O.Sursa = cale.accdb Sursa of exactly one ticked unit)
+        s.Columns.Add(New EfColumn("IdUnitate", Nothing, EfKind.Whole) With {
+            .Compute = Function(r As AccessTableReader) As Object
+                           Dim k_unit = RowUnit(r, True)
+                           Return If(k_unit.HasValue, CType(k_unit.Value, Object), CType(DBNull.Value, Object))
+                       End Function})
         s.Columns.Add(Col("Sursa", "Sursa", EfKind.Text, 255))
         s.Columns.Add(Col("Suma", "Suma", EfKind.Amount, k_scale:=4, k_default:=0D))
         s.Columns.Add(Col("DataAdaugare", "DTQ", EfKind.DateAndTime))
         Return s
+    End Function
+
+    ''' <summary>
+    ''' Slice ME01-34: the unit of an EFT_O row. Its own <c>IdUnitate</c> when it has one; otherwise the unit whose source (<c>cale.accdb</c> Sursa) equals the row's <c>Sursa</c>, when
+    ''' exactly ONE ticked unit has that source (counted in <c>_unitsFromSursa</c> so the report says it). Otherwise Nothing: the row stays without a unit.
+    ''' </summary>
+    Private Function RowUnit(k_row As AccessTableReader, k_count As Boolean) As Integer?
+        Dim k_own = ToInt(k_row.ValueOrMissing("IdUnitate"))
+        If k_own.HasValue AndAlso k_own.Value <> 0 Then Return k_own
+        Return UnitFromSursa(AccessText(k_row.ValueOrMissing("Sursa")), k_count)
+    End Function
+
+    Private Function UnitFromSursa(k_sursa As String, k_count As Boolean) As Integer?
+        If k_sursa.Length = 0 Then Return Nothing
+        Dim k_units As List(Of Integer) = Nothing
+        If Not _options.UnitBySursa.TryGetValue(k_sursa, k_units) OrElse k_units.Count <> 1 Then Return Nothing
+        If k_count Then
+            Dim k_rows As Integer = 0
+            _unitsFromSursa.TryGetValue(k_sursa, k_rows)
+            _unitsFromSursa(k_sursa) = k_rows + 1
+        End If
+        Return k_units(0)
+    End Function
+
+    ''' <summary>Slice ME01-34: which EFT_O row is meant, in the words of the Access file: its key IDEFTO, its invoice IDEFT, the operation, the source and the amount.</summary>
+    Private Shared Function DescribeRow(k_row As AccessTableReader) As String
+        Return $"IDEFTO {AccessText(k_row.ValueOrMissing("IDEFTO"))} (factura IDEFT {AccessText(k_row.ValueOrMissing("IDEFT"))}, operația Access {AccessText(k_row.ValueOrMissing("IdOperatie"))}, " &
+               $"Sursa «{AccessText(k_row.ValueOrMissing("Sursa"))}», suma {AccessText(k_row.ValueOrMissing("Suma"))})"
     End Function
 
     ''' <summary>The target's Clasificatii as (IdClsfAcc, IdUnitate) ▸ every IDClsf with that pair (more than one is a problem).</summary>
@@ -718,14 +777,35 @@ Public NotInheritable Class EfImporter
     ''' The <c>Clasificatii.IDClsf</c> of an Access classification id on a unit; Nothing for 0 / NULL (no classification) and for a
     ''' pair that does not resolve to exactly one row (recorded in <c>_classificationProblems</c>; the run is then stopped).
     ''' </summary>
-    Private Function ResolveClassification(k_accessId As Integer?, k_unit As Integer?) As Integer?
+    Private Function ResolveClassification(k_accessId As Integer?, k_unit As Integer?, k_where As String) As Integer?
         If Not k_accessId.HasValue OrElse k_accessId.Value = 0 Then Return Nothing
         Dim k_found As List(Of Integer) = Nothing
         Dim k_matches As Integer = 0
         If k_unit.HasValue AndAlso k_unit.Value <> 0 AndAlso
            _classificationPairs.TryGetValue((k_accessId.Value, k_unit.Value), k_found) Then k_matches = k_found.Count
         If k_matches = 1 Then Return k_found(0)
-        Dim k_problemKey = (k_accessId.Value, If(k_unit.HasValue, k_unit.Value, 0))
+        ' Slice ME01-34: no pair of (IdClsfAcc, IdUnitate) -- usually because the EFT_O row has no unit -- but the code of the Access classification (Clsf) names exactly one row
+        Dim k_unitValue As Integer = If(k_unit.HasValue, k_unit.Value, 0)
+        Dim k_viaCode As Integer? = ResolveByCode(k_accessId.Value, k_unitValue)
+        If k_viaCode.HasValue Then
+            Dim k_used As (IdClsf As Integer, Rows As Integer) = (k_viaCode.Value, 0)
+            _classificationsByCodeUsed.TryGetValue((k_accessId.Value, k_unitValue), k_used)
+            _classificationsByCodeUsed((k_accessId.Value, k_unitValue)) = (k_viaCode.Value, k_used.Rows + 1)
+            Return k_viaCode
+        End If
+        If _classificationsPlanned.ContainsKey((k_accessId.Value, k_unitValue)) Then
+            ' verification only: the classification will be created by the write pass, so the row is not a problem (its key is not needed to verify)
+            Dim k_plan = _classificationsPlanned((k_accessId.Value, k_unitValue))
+            _classificationsPlanned((k_accessId.Value, k_unitValue)) = (k_plan.Unit, k_plan.Code, k_plan.Denumire, k_plan.Rows + 1)
+            Return Nothing
+        End If
+        Dim k_problemKey = (k_accessId.Value, k_unitValue)
+        Dim k_rowsOf As List(Of String) = Nothing
+        If Not _classificationProblemRows.TryGetValue(k_problemKey, k_rowsOf) Then
+            k_rowsOf = New List(Of String)()
+            _classificationProblemRows(k_problemKey) = k_rowsOf
+        End If
+        If k_rowsOf.Count < 10 Then k_rowsOf.Add(k_where)
         Dim k_known As (Matches As Integer, Rows As Integer) = (0, 0)
         _classificationProblems.TryGetValue(k_problemKey, k_known)
         _classificationProblems(k_problemKey) = (k_matches, k_known.Rows + 1)
@@ -737,19 +817,342 @@ Public NotInheritable Class EfImporter
     ''' without its classification is worse than a refusal. Clasificatii is moved by the main transfer, which must have run first.
     ''' </summary>
     Private Sub ReportClassificationProblems(k_report As EfImportReport)
+        For Each k_pair In _unitsFromSursa.OrderBy(Function(p) p.Key)
+            k_report.Add(EfSeverity.Info, "EF_PrimiteOperatii", $"{k_pair.Value} rânduri EFT_O fără unitate au primit unitatea {_options.UnitBySursa(k_pair.Key)(0)} după Sursa «{k_pair.Key}» (cale.accdb).")
+        Next
+        ReportClassificationsByCode(k_report)
+        ReportClassificationsCreated(k_report)
         If _classificationProblems.Count = 0 Then Return
         Dim k_area As String = "EF_PrimiteOperatii"
         If _classificationPairs.Count = 0 Then
             k_report.Add(EfSeverity.Blocking, k_area,
                 $"Tabelul Clasificatii nu are rânduri în baza «{_options.UnitDatabase}»: transferați întâi nomenclatorul de clasificații, apoi E-Factura.")
         End If
+        ' Slice ME01-34: say WHICH classification each Access id is (its code and name from the unit file) and propose the MariaDB row with that code
         For Each k_pair In _classificationProblems.OrderBy(Function(p) p.Key.Item2).ThenBy(Function(p) p.Key.Item1)
             Dim k_unit As String = If(k_pair.Key.Item2 = 0, "fără unitate", $"unitatea {k_pair.Key.Item2}")
-            k_report.AddLimited(EfSeverity.Blocking, k_area, "clasificație nerezolvată",
+            Dim k_text As String =
                 $"clasificația Access {k_pair.Key.Item1}, {k_unit}: {k_pair.Value.Matches} potriviri în Clasificatii (IdClsfAcc + IdUnitate) " &
-                $"în loc de exact una; {k_pair.Value.Rows} rânduri EFT_O. Nimic nu s-a scris.")
+                $"în loc de exact una; {k_pair.Value.Rows} rânduri EFT_O. Nimic nu s-a scris."
+            Dim k_entries As List(Of AccessClsf) = Nothing
+            Dim k_why As String = Nothing
+            If _classificationNotCreated.TryGetValue(k_pair.Key, k_why) Then k_text &= " Nu s-a putut crea din Access: " & k_why
+            If Not _accessClassifications.TryGetValue(k_pair.Key.Item1, k_entries) Then
+                k_text &= $" Id-ul nu există în tabelul Clasificatii din niciunul din cele {_classificationFilesRead} fișiere de unitate citite din Access, deci codul lui nu se poate afla."
+            ElseIf k_entries.Select(Function(k_e) ClsfKey(k_e.Code)).Distinct().Count() > 1 Then
+                k_text &= " În Access același id este altă clasificație în fișiere de unități diferite: " &
+                    String.Join("; ", k_entries.Select(Function(k_e) $"unitatea {k_e.IdUnitate}: «{k_e.Code}» ({k_e.Denumire})")) & ". Nu se poate propune nimic."
+            Else
+                Dim k_info As AccessClsf = k_entries(0)
+                k_text &= $" În Access este «{k_info.Code}» ({k_info.Denumire})." & ClassificationProposal(k_info.Code, k_info.Denumire, k_pair.Key.Item2)
+            End If
+            Dim k_rowsText As List(Of String) = Nothing
+            If _classificationProblemRows.TryGetValue(k_pair.Key, k_rowsText) AndAlso k_rowsText.Count > 0 Then
+                k_text &= " Rânduri EFT_O: " & String.Join("; ", k_rowsText) & If(k_pair.Value.Rows > k_rowsText.Count, $"; … și încă {k_pair.Value.Rows - k_rowsText.Count}.", ".")
+            End If
+            k_report.AddLimited(EfSeverity.Blocking, k_area, "clasificație nerezolvată", k_text)
         Next
     End Sub
+
+    ''' <summary>Slice ME01-34: the classifications created from Access (write pass) or that will be (verification).</summary>
+    Private Sub ReportClassificationsCreated(k_report As EfImportReport)
+        For Each k_pair In _classificationsCreated.OrderBy(Function(p) p.Key.Item2).ThenBy(Function(p) p.Key.Item1)
+            k_report.AddLimited(EfSeverity.Warning, "EF_PrimiteOperatii", "clasificație creată din Access",
+                $"clasificația Access {k_pair.Key.Item1} lipsea din Clasificatii și a fost creată din Access: Clsf «{k_pair.Value.Code}» ({k_pair.Value.Denumire}), unitatea {k_pair.Value.Unit}, " &
+                $"IDClsf {k_pair.Value.IdClsf}; {k_pair.Value.Rows} rânduri EFT_O.")
+        Next
+        For Each k_pair In _classificationsPlanned.OrderBy(Function(p) p.Key.Item2).ThenBy(Function(p) p.Key.Item1)
+            k_report.AddLimited(EfSeverity.Warning, "EF_PrimiteOperatii", "clasificație de creat din Access",
+                $"clasificația Access {k_pair.Key.Item1} lipsește din Clasificatii și SE VA CREA din Access la scriere: Clsf «{k_pair.Value.Code}» ({k_pair.Value.Denumire}), unitatea {k_pair.Value.Unit}; " &
+                $"{k_pair.Value.Rows} rânduri EFT_O.")
+        Next
+    End Sub
+
+    ''' <summary>
+    ''' Slice ME01-34: BEFORE the EFT_O rows are copied, finds the Access classifications that those rows (of the invoices kept) name and that no <c>Clasificatii</c> row of the
+    ''' target answers to -- neither by (IdClsfAcc, IdUnitate) nor by code -- and, when Access knows them, creates them in <c>Clasificatii</c> (write pass) or announces them
+    ''' (verification). Done as a pass of its own so no INSERT happens while the rows are being read. The unit is the row's own, or the single unit whose Access file holds
+    ''' the id; a row without a unit whose id sits in several units' files is NOT created (it would be a guess). Nothing is created when the code is already in that unit, the
+    ''' unit is not in <c>Unitati</c>, the id has different codes in different files, or the code has no known sector; MariaDB refusing the row (a missing key in
+    ''' AVACONT_COMUN) is logged and shown on the blocking line of the id.
+    ''' </summary>
+    Private Sub PrepareClassifications(k_source As OleDbConnection, k_write As Boolean, k_report As EfImportReport, k_cn As MySqlConnection, k_tx As MySqlTransaction)
+        Dim k_table As String = AccessSchema.ResolveTableName(k_source, "EFT_O")
+        If k_table Is Nothing OrElse k_cn Is Nothing Then Return
+        Dim k_wanted As New Dictionary(Of (Integer, Integer), Integer)()
+        Using k_reader = AccessSchema.OpenKeyReader(k_source, k_table, New String() {"IDEFT", "IdClsf", "IdUnitate", "Sursa"})
+            While k_reader.Read()
+                Dim k_parent = ToInt(k_reader.ValueOrMissing("IDEFT"))
+                If Not k_parent.HasValue OrElse Not _receivedIds.Contains(k_parent.Value) Then Continue While
+                Dim k_id = ToInt(k_reader.ValueOrMissing("IdClsf"))
+                If Not k_id.HasValue OrElse k_id.Value = 0 Then Continue While
+                Dim k_unit = ToInt(k_reader.ValueOrMissing("IdUnitate"))
+                If Not k_unit.HasValue OrElse k_unit.Value = 0 Then k_unit = UnitFromSursa(AccessText(k_reader.ValueOrMissing("Sursa")), False)
+                Dim k_key = (k_id.Value, If(k_unit.HasValue, k_unit.Value, 0))
+                Dim k_rows As Integer = 0
+                k_wanted.TryGetValue(k_key, k_rows)
+                k_wanted(k_key) = k_rows + 1
+            End While
+        End Using
+        For Each k_item In k_wanted.OrderBy(Function(p) p.Key.Item2).ThenBy(Function(p) p.Key.Item1)
+            Dim k_id As Integer = k_item.Key.Item1
+            Dim k_unit As Integer = k_item.Key.Item2
+            Dim k_found As List(Of Integer) = Nothing
+            If k_unit <> 0 AndAlso _classificationPairs.TryGetValue((k_id, k_unit), k_found) AndAlso k_found.Count >= 1 Then Continue For   ' answered (one row) or a duplicate: not for creation
+            If ResolveByCode(k_id, k_unit).HasValue Then Continue For
+            CreateClassification(k_id, k_unit, k_item.Value, k_write, k_cn, k_tx)
+        Next
+    End Sub
+
+    Private Sub CreateClassification(k_accessId As Integer, k_unit As Integer, k_rows As Integer, k_write As Boolean, k_cn As MySqlConnection, k_tx As MySqlTransaction)
+        Dim k_key = (k_accessId, k_unit)
+        Dim k_entries As List(Of AccessClsf) = Nothing
+        If Not _accessClassifications.TryGetValue(k_accessId, k_entries) Then Return   ' Access does not know it: the blocking line says so
+        If k_entries.Select(Function(k_e) ClsfKey(k_e.Code)).Distinct().Count() > 1 Then
+            _classificationNotCreated(k_key) = "id-ul are coduri diferite în fișierele unităților."
+            Return
+        End If
+        Dim k_target As Integer = k_unit
+        If k_target = 0 Then
+            Dim k_units = k_entries.Select(Function(k_e) k_e.IdUnitate).Where(Function(k_u) k_u <> 0).Distinct().ToList()
+            If k_units.Count <> 1 Then
+                _classificationNotCreated(k_key) = If(k_units.Count = 0, "nu se știe unitatea (rândul nu are unitate, iar fișierul citit nu aparține unei unități).",
+                                                      $"rândul nu are unitate, iar id-ul este în fișierele a {k_units.Count} unități ({String.Join(", ", k_units)}): unitatea ar fi o presupunere.")
+                Return
+            End If
+            k_target = k_units(0)
+        End If
+        Dim k_first As AccessClsf = k_entries(0)
+        Dim k_all As List(Of ClsfCandidate) = Nothing
+        If _classificationsByCode.TryGetValue(ClsfKey(k_first.Code), k_all) AndAlso k_all.Any(Function(k_c) k_c.IdUnitate.HasValue AndAlso k_c.IdUnitate.Value = k_target) Then
+            _classificationNotCreated(k_key) = $"unitatea {k_target} are deja în Clasificatii un rând cu Clsf «{k_first.Code}» (nu se face dublură)."
+            Return
+        End If
+        Dim k_derived As New ClasificatieDerived(k_first.Capitol, k_first.Subcapitol, k_first.Articol, k_first.Alineat, k_first.Sursa)
+        If k_derived.Sector.Length = 0 Then
+            _classificationNotCreated(k_key) = $"capitolul «{k_first.Capitol}» nu are un sector cunoscut."
+            Return
+        End If
+        Using k_check As New MySqlCommand("SELECT COUNT(*) FROM `Unitati` WHERE `IdUnitate` = @u", k_cn, k_tx)
+            k_check.Parameters.AddWithValue("@u", k_target)
+            If Convert.ToInt64(k_check.ExecuteScalar(), CultureInfo.InvariantCulture) = 0 Then
+                _classificationNotCreated(k_key) = $"unitatea {k_target} nu există în Unitati."
+                Return
+            End If
+        End Using
+        Dim k_name As String = If(k_first.Denumire.Length > 255, k_first.Denumire.Substring(0, 255), k_first.Denumire)
+        If Not k_write Then
+            _classificationsPlanned(k_key) = (k_target, k_first.Code, k_name, 0)
+            Return
+        End If
+        Try
+            Using k_cmd As New MySqlCommand("INSERT INTO `Clasificatii` (`IdClsfAcc`, `IdUnitate`, `Capitol`, `Subcapitol`, `Articol`, `Alineat`, `Denumire`, `Sector`, `Sursa`, `SS`) " &
+                                            "VALUES (@acc, @u, @c, @s, @a, @al, @d, @sec, @sur, @ss)", k_cn, k_tx)
+                k_cmd.Parameters.AddWithValue("@acc", k_accessId)
+                k_cmd.Parameters.AddWithValue("@u", k_target)
+                k_cmd.Parameters.AddWithValue("@c", k_derived.Capitol)
+                k_cmd.Parameters.AddWithValue("@s", k_derived.Subcapitol)
+                k_cmd.Parameters.AddWithValue("@a", k_derived.Articol)
+                k_cmd.Parameters.AddWithValue("@al", k_derived.Alineat)
+                k_cmd.Parameters.AddWithValue("@d", k_name)
+                k_cmd.Parameters.AddWithValue("@sec", k_derived.Sector)
+                k_cmd.Parameters.AddWithValue("@sur", k_derived.Sursa)
+                k_cmd.Parameters.AddWithValue("@ss", k_derived.SS)
+                k_cmd.ExecuteNonQuery()
+                Dim k_newId As Integer = CInt(k_cmd.LastInsertedId)
+                ' the new row answers to its pair and to its code from now on, so the EFT_O rows (with or without a unit) resolve through the normal path
+                _classificationPairs((k_accessId, k_target)) = New List(Of Integer) From {k_newId}
+                If k_all Is Nothing Then
+                    k_all = New List(Of ClsfCandidate)()
+                    _classificationsByCode(ClsfKey(k_first.Code)) = k_all
+                End If
+                k_all.Add(New ClsfCandidate(k_newId, k_accessId, k_target, k_name))
+                _classificationsCreated(k_key) = (k_newId, k_target, k_first.Code, k_name, k_rows)
+            End Using
+        Catch ex As MySqlException
+            ' a statement the server refuses (a key missing in AVACONT_COMUN, a column too long) leaves the transaction usable: logged, shown on the blocking line of the id
+            GlobalErrorLog.Write("EfImporter.CreateClassification", ex)
+            _classificationNotCreated(k_key) = "MariaDB a refuzat rândul: " & ex.Message
+        End Try
+    End Sub
+
+    ''' <summary>Slice ME01-34: the Access ids that were tied to a Clasificatii row by their code, so the operator sees what was decided for him.</summary>
+    Private Sub ReportClassificationsByCode(k_report As EfImportReport)
+        For Each k_pair In _classificationsByCodeUsed.OrderBy(Function(p) p.Key.Item2).ThenBy(Function(p) p.Key.Item1)
+            Dim k_unit As String = If(k_pair.Key.Item2 = 0, "fără unitate", $"unitatea {k_pair.Key.Item2}")
+            Dim k_entries As List(Of AccessClsf) = Nothing
+            Dim k_code As String = If(_accessClassifications.TryGetValue(k_pair.Key.Item1, k_entries), k_entries(0).Code, "?")
+            k_report.AddLimited(EfSeverity.Info, "EF_PrimiteOperatii", "clasificație găsită după Clsf",
+                $"clasificația Access {k_pair.Key.Item1}, {k_unit}: nu are pereche unică (IdClsfAcc + IdUnitate) în Clasificatii; s-a legat după Clsf «{k_code}» de IDClsf {k_pair.Value.IdClsf} " &
+                $"({k_pair.Value.Rows} rânduri EFT_O).")
+        Next
+    End Sub
+
+    ''' <summary>One <c>Clasificatii</c> row of the target, as the proposal for an unresolved Access id needs it (slice ME01-34).</summary>
+    Private NotInheritable Class ClsfCandidate
+        Public ReadOnly IdClsf As Integer
+        Public ReadOnly IdClsfAcc As Integer
+        Public ReadOnly IdUnitate As Integer?
+        Public ReadOnly Denumire As String
+
+        Public Sub New(k_idClsf As Integer, k_idClsfAcc As Integer, k_idUnitate As Integer?, k_denumire As String)
+            IdClsf = k_idClsf
+            IdClsfAcc = k_idClsfAcc
+            IdUnitate = k_idUnitate
+            Denumire = k_denumire
+        End Sub
+
+        Public Function Describe() As String
+            Return $"IDClsf {IdClsf} (unitatea {If(IdUnitate.HasValue, IdUnitate.Value.ToString(CultureInfo.InvariantCulture), "-")}, IdClsfAcc {IdClsfAcc})"
+        End Function
+    End Class
+
+    ''' <summary>Same normalisation on both sides of the comparison between an Access code and <c>Clasificatii.Clsf</c>.</summary>
+    Private Shared Function ClsfKey(k_code As String) As String
+        Return k_code.Trim().ToUpperInvariant()
+    End Function
+
+    Private Shared Function AccessText(k_value As Object) As String
+        If k_value Is Nothing OrElse k_value Is DBNull.Value Then Return String.Empty
+        Return Convert.ToString(k_value, CultureInfo.InvariantCulture).Trim()
+    End Function
+
+    ''' <summary>The target's Clasificatii by <c>Clsf</c> (Capitol.Subcapitol.Articol.Alineat), every row with that code.</summary>
+    Private Function LoadClassificationCodes(k_cn As MySqlConnection, k_tx As MySqlTransaction) As Dictionary(Of String, List(Of ClsfCandidate))
+        Dim k_codes As New Dictionary(Of String, List(Of ClsfCandidate))(StringComparer.Ordinal)
+        If k_cn Is Nothing OrElse Not TableExists(k_cn, "Clasificatii", k_tx) Then Return k_codes
+        Using k_cmd As New MySqlCommand("SELECT `IDClsf`, `IdClsfAcc`, `IdUnitate`, `Clsf`, `Denumire` FROM `Clasificatii`", k_cn, k_tx)
+            Using k_reader = k_cmd.ExecuteReader()
+                While k_reader.Read()
+                    If k_reader.IsDBNull(3) Then Continue While
+                    Dim k_key As String = ClsfKey(k_reader.GetString(3))
+                    Dim k_list As List(Of ClsfCandidate) = Nothing
+                    If Not k_codes.TryGetValue(k_key, k_list) Then
+                        k_list = New List(Of ClsfCandidate)()
+                        k_codes(k_key) = k_list
+                    End If
+                    k_list.Add(New ClsfCandidate(k_reader.GetInt32(0), k_reader.GetInt32(1),
+                                                 If(k_reader.IsDBNull(2), CType(Nothing, Integer?), k_reader.GetInt32(2)),
+                                                 If(k_reader.IsDBNull(4), String.Empty, k_reader.GetString(4))))
+                End While
+            End Using
+        End Using
+        Return k_codes
+    End Function
+
+    ''' <summary>One Access <c>Clasificatii</c> row: its code and name, the unit whose file holds it (the Access table has no unit column: its ids belong to that file).</summary>
+    Private NotInheritable Class AccessClsf
+        Public ReadOnly Capitol As String
+        Public ReadOnly Subcapitol As String
+        Public ReadOnly Articol As String
+        Public ReadOnly Alineat As String
+        Public ReadOnly Sursa As String
+        Public ReadOnly Denumire As String
+        Public ReadOnly IdUnitate As Integer
+
+        Public Sub New(k_capitol As String, k_subcapitol As String, k_articol As String, k_alineat As String, k_sursa As String, k_denumire As String, k_idUnitate As Integer)
+            Capitol = k_capitol
+            Subcapitol = k_subcapitol
+            Articol = k_articol
+            Alineat = k_alineat
+            Sursa = k_sursa
+            Denumire = k_denumire
+            IdUnitate = k_idUnitate
+        End Sub
+
+        ''' <summary>The code as <c>Clasificatii.Clsf</c> builds it: <c>concat_ws('.', Capitol, Subcapitol, Articol, Alineat)</c>.</summary>
+        Public ReadOnly Property Code As String
+            Get
+                Return String.Join(".", Capitol, Subcapitol, Articol, Alineat)
+            End Get
+        End Property
+    End Class
+
+    ''' <summary>
+    ''' Every Access classification of the unit files given in the options (<see cref="EfImportOptions.ClassificationFiles"/>; the unit file of the issuer when none is
+    ''' given), by Access id: its code (Capitol.Subcapitol.Articol.Alineat, as <c>Clasificatii.Clsf</c> builds it), its name and the unit of the file. The same id can be
+    ''' a different classification in two files, so an id keeps one entry per file. A file that cannot be read is logged and shown as a warning (the id is then
+    ''' simply not found there), so the findings that need this still come out.
+    ''' </summary>
+    Private Function LoadAccessClassifications(k_report As EfImportReport) As Dictionary(Of Integer, List(Of AccessClsf))
+        Dim k_found As New Dictionary(Of Integer, List(Of AccessClsf))()
+        Dim k_files As New List(Of (IdUnitate As Integer, FilePath As String))(_options.ClassificationFiles)
+        If k_files.Count = 0 AndAlso Not String.IsNullOrWhiteSpace(_options.IssuedFile) Then k_files.Add((0, _options.IssuedFile))
+        _classificationFilesRead = 0
+        For Each k_file In k_files
+            If Not File.Exists(k_file.FilePath) Then Continue For
+            Try
+                Using k_cn = AccessProvider.Open(k_file.FilePath, _options.AccessPassword)
+                    Dim k_table As String = AccessSchema.ResolveTableName(k_cn, "Clasificatii")
+                    If k_table Is Nothing Then
+                        k_report.Add(EfSeverity.Warning, "EF_PrimiteOperatii", $"Fișierul «{Path.GetFileName(k_file.FilePath)}» nu are tabelul «Clasificatii».")
+                        Continue For
+                    End If
+                    Using k_reader = AccessSchema.OpenReader(k_cn, k_table)
+                        While k_reader.Read()
+                            Dim k_id = ToInt(k_reader.ValueOrMissing("IDClsf"))
+                            If Not k_id.HasValue OrElse k_id.Value = 0 Then Continue While
+                            Dim k_list As List(Of AccessClsf) = Nothing
+                            If Not k_found.TryGetValue(k_id.Value, k_list) Then
+                                k_list = New List(Of AccessClsf)()
+                                k_found(k_id.Value) = k_list
+                            End If
+                            k_list.Add(New AccessClsf(AccessText(k_reader.ValueOrMissing("Capitol")), AccessText(k_reader.ValueOrMissing("Subcapitol")),
+                                                      AccessText(k_reader.ValueOrMissing("Articol")), AccessText(k_reader.ValueOrMissing("Alineat")),
+                                                      AccessText(k_reader.ValueOrMissing("Sursa")), AccessText(k_reader.ValueOrMissing("Denumire")), k_file.IdUnitate))
+                        End While
+                    End Using
+                End Using
+                _classificationFilesRead += 1
+            Catch ex As Exception
+                GlobalErrorLog.Write("EfImporter.LoadAccessClassifications", ex)
+                k_report.Add(EfSeverity.Warning, "EF_PrimiteOperatii", $"Clasificațiile din «{Path.GetFileName(k_file.FilePath)}» nu s-au putut citi: {ex.Message}")
+            End Try
+        Next
+        Return k_found
+    End Function
+
+    ''' <summary>
+    ''' The <c>Clasificatii.IDClsf</c> of an Access id found by its CODE: the Access code of the id (all unit files agree on it) = <c>Clasificatii.Clsf</c>, and exactly one
+    ''' MariaDB row has it (on the row's unit when it has one; without a unit, among the units whose Access file holds the id when there are several). Nothing otherwise.
+    ''' </summary>
+    Private Function ResolveByCode(k_accessId As Integer, k_unit As Integer) As Integer?
+        Dim k_entries As List(Of AccessClsf) = Nothing
+        If Not _accessClassifications.TryGetValue(k_accessId, k_entries) Then Return Nothing
+        Dim k_codes = k_entries.Select(Function(k_e) ClsfKey(k_e.Code)).Distinct().ToList()
+        If k_codes.Count <> 1 Then Return Nothing   ' the same Access id is another classification in another unit file
+        Dim k_all As List(Of ClsfCandidate) = Nothing
+        If Not _classificationsByCode.TryGetValue(k_codes(0), k_all) Then Return Nothing
+        Dim k_pool As List(Of ClsfCandidate) = k_all
+        If k_unit <> 0 Then
+            k_pool = k_all.Where(Function(k_c) k_c.IdUnitate.HasValue AndAlso k_c.IdUnitate.Value = k_unit).ToList()
+        ElseIf k_pool.Count > 1 Then
+            Dim k_units As New HashSet(Of Integer)(k_entries.Select(Function(k_e) k_e.IdUnitate))
+            k_pool = k_all.Where(Function(k_c) k_c.IdUnitate.HasValue AndAlso k_units.Contains(k_c.IdUnitate.Value)).ToList()
+        End If
+        Return If(k_pool.Count = 1, CType(k_pool(0).IdClsf, Integer?), Nothing)
+    End Function
+
+    ''' <summary>
+    ''' What to do about an Access classification that did not resolve: the MariaDB row with the same code (<c>Clsf</c>) when there is exactly one (on the row's unit when
+    ''' it has one), the list when there are several, and creating it from Access (the main transfer of KBot.Migrator, which moves <c>Clasificatii</c>) when there is none.
+    ''' This only runs for what <see cref="ResolveByCode"/> could NOT tie (it ties the single match by itself): several candidates, none, or a code that Access does not give.
+    ''' </summary>
+    Private Function ClassificationProposal(k_code As String, k_name As String, k_unit As Integer) As String
+        Dim k_all As List(Of ClsfCandidate) = Nothing
+        If Not _classificationsByCode.TryGetValue(ClsfKey(k_code), k_all) OrElse k_all.Count = 0 Then
+            Return $" Propunere: în MariaDB nu există nicio clasificație cu Clsf «{k_code}»; se creează din Access (denumire «{k_name}») prin transferul nomenclatorului Clasificatii din KBot.Migrator, apoi se rulează din nou."
+        End If
+        Dim k_pool As List(Of ClsfCandidate) = k_all
+        If k_unit <> 0 Then k_pool = k_all.Where(Function(k_c) k_c.IdUnitate.HasValue AndAlso k_c.IdUnitate.Value = k_unit).ToList()
+        If k_pool.Count = 1 Then
+            Return $" Propunere: în MariaDB, Clsf «{k_code}» este {k_pool(0).Describe()}, «{k_pool(0).Denumire}»; singura cu acest cod" & If(k_unit <> 0, $" la unitatea {k_unit}.", ".")
+        End If
+        If k_pool.Count = 0 Then
+            Return $" Propunere: Clsf «{k_code}» nu există la unitatea {k_unit}, ci la: {String.Join("; ", k_all.Take(6).Select(Function(k_c) k_c.Describe()))}; sau se creează din Access (denumire «{k_name}») prin transferul nomenclatorului Clasificatii din KBot.Migrator."
+        End If
+        Return $" Nu există o propunere unică: {k_pool.Count} clasificații în MariaDB au Clsf «{k_code}»: {String.Join("; ", k_pool.Take(6).Select(Function(k_c) k_c.Describe()))}."
+    End Function
 
     Private Function ReceivedNoteSpec() As EfTableSpec
         Dim s = ReceivedChild("EFT_C", "EF_PrimiteNote", "IdNota", "IDEFTC")

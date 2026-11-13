@@ -33,8 +33,12 @@ Partial Class CommandsView
         lblState = New Label()
         tlyMain = New KBotTableLayoutPanel()
         tlyBar = New KBotTableLayoutPanel()
+        tlyBon = New KBotTableLayoutPanel()
+        cmbBon = New KBotComboBox()
+        btnDeleteBon = New KBotButton()
         tlyMain.SuspendLayout()
         tlyBar.SuspendLayout()
+        tlyBon.SuspendLayout()
         SuspendLayout()
         ' 
         ' cmbCommand
@@ -214,20 +218,21 @@ Partial Class CommandsView
         tlyMain.ColumnCount = 1
         tlyMain.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyMain.Controls.Add(tlyBar, 0, 0)
-        tlyMain.Controls.Add(txtOutput, 0, 1)
-        tlyMain.Controls.Add(txtExplain, 0, 2)
-        tlyMain.Controls.Add(lblState, 0, 3)
+        tlyMain.Controls.Add(tlyBon, 0, 1)
+        tlyMain.Controls.Add(txtOutput, 0, 2)
+        tlyMain.Controls.Add(txtExplain, 0, 3)
+        tlyMain.Controls.Add(lblState, 0, 4)
         tlyMain.Dock = DockStyle.Fill
         tlyMain.Location = New Point(0, 0)
         tlyMain.Margin = New Padding(0)
         tlyMain.Name = "tlyMain"
         tlyMain.Padding = New Padding(8)
-        tlyMain.RowCount = 4
+        tlyMain.RowCount = 5
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 66F))
+        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 66F))   ' the detected bons; collapsed in code until a bon search finds some
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 360F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
-        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
         tlyMain.Size = New Size(1350, 840)
         tlyMain.TabIndex = 0
         ' 
@@ -259,7 +264,50 @@ Partial Class CommandsView
         tlyBar.ScaleAbsoluteStyles = False
         tlyBar.Size = New Size(1334, 66)
         tlyBar.TabIndex = 0
-        ' 
+        '
+        ' tlyBon (the bons the deletion found: choose ONE, delete only it)
+        '
+        tlyBon.AutoFitToTheme = False
+        tlyBon.ColumnCount = 2
+        tlyBon.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyBon.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 210F))
+        tlyBon.Controls.Add(cmbBon, 0, 0)
+        tlyBon.Controls.Add(btnDeleteBon, 1, 0)
+        tlyBon.Dock = DockStyle.Fill
+        tlyBon.Location = New Point(8, 74)
+        tlyBon.Margin = New Padding(0)
+        tlyBon.Name = "tlyBon"
+        tlyBon.RowCount = 1
+        tlyBon.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyBon.ScaleAbsoluteStyles = False
+        tlyBon.Size = New Size(1334, 66)
+        tlyBon.TabIndex = 1
+        '
+        ' cmbBon
+        '
+        cmbBon.Dock = DockStyle.Fill
+        cmbBon.Location = New Point(0, 6)
+        cmbBon.Margin = New Padding(0, 6, 12, 12)
+        cmbBon.Name = "cmbBon"
+        cmbBon.PlaceholderText = "Alegeți bonul de șters"
+        cmbBon.Size = New Size(1112, 37)
+        cmbBon.TabIndex = 0
+        tips.SetToolTipHeader(cmbBon, "Bonuri găsite")
+        tips.SetToolTipText(cmbBon, "Bonurile găsite pentru valoarea scrisă în casetă." & vbLf & "Alegeți bonul de șters: se șterge DOAR el, nu și celelalte din listă.")
+        '
+        ' btnDeleteBon
+        '
+        btnDeleteBon.AccessibleRole = AccessibleRole.PushButton
+        btnDeleteBon.Dock = DockStyle.Fill
+        btnDeleteBon.Location = New Point(1124, 3)
+        btnDeleteBon.Margin = New Padding(0, 3, 0, 9)
+        btnDeleteBon.Name = "btnDeleteBon"
+        btnDeleteBon.Size = New Size(210, 54)
+        btnDeleteBon.TabIndex = 1
+        btnDeleteBon.Text = "Șterge bonul"
+        tips.SetToolTipHeader(btnDeleteBon, "Șterge bonul")
+        tips.SetToolTipText(btnDeleteBon, "Șterge definitiv bonul ales în listă (antetul și pozițiile lui), într-o singură tranzacție, cu Jurnal." & vbLf & "Cere confirmare și NU se poate anula.")
+        '
         ' CommandsView
         ' 
         AutoScaleMode = AutoScaleMode.None
@@ -269,12 +317,16 @@ Partial Class CommandsView
         Size = New Size(1350, 840)
         tlyMain.ResumeLayout(False)
         tlyBar.ResumeLayout(False)
+        tlyBon.ResumeLayout(False)
         ResumeLayout(False)
     End Sub
 
     Friend WithEvents tips As KBotToolTip
     Friend WithEvents tlyMain As KBotTableLayoutPanel
     Friend WithEvents tlyBar As KBotTableLayoutPanel
+    Friend WithEvents tlyBon As KBotTableLayoutPanel
+    Friend WithEvents cmbBon As KBotComboBox
+    Friend WithEvents btnDeleteBon As KBotButton
     Friend WithEvents cmbCommand As KBotComboBox
     Friend WithEvents btnRun As KBotButton
     Friend WithEvents btnCopy As KBotButton

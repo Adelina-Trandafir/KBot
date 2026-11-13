@@ -34,7 +34,7 @@ avertismentul apare sus, de la început.
   IBAN; nebifat, lista arată beneficiarii, iar grila codul SSI.
 
 ## Documente justificative
-<!-- slice: 0049, 0049-02 -->
+<!-- slice: 0049, 0049-02, 0000-179 -->
 
 - Primul rând al listei, **«< TOȚI BENEFICIARII >»**, ține documentele comune întregii
   ordonanțări. Un beneficiar anume arată și documentele lui, și pe cele comune. Cu un singur
@@ -42,8 +42,8 @@ avertismentul apare sus, de la început.
 - **«Adaugă rând»** cere textul documentului (de exemplu factura) și îl pune pe beneficiarul
   selectat; pe «< TOȚI BENEFICIARII >» textul se dă tuturor, câte o copie fiecăruia.
 - **«Adaugă fișier»** anexează unul sau mai multe fișiere la beneficiarul selectat.
-- **«Șterge rândul»** / **«Șterge fișierul»**. Un document comun nu se poate șterge de pe un
-  beneficiar anume: se șterge de pe «< TOȚI BENEFICIARII >».
+- **✕** de la capătul unui rând text îl șterge; **«Șterge fișierul»** îl șterge pe cel ales. Un
+  document comun nu se poate șterge de pe un beneficiar anume: se șterge de pe «< TOȚI BENEFICIARII >».
 
 **Cel puțin un rând text trebuie să existe**, altfel ordonanțarea nu se poate salva.
 

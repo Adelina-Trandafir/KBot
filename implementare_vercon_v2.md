@@ -1,6 +1,8 @@
 # Implementare VERCON v2
 
-### [2026-11-09 — SLICE-VC14-03 — Macheta și meniul BU](docs/worklog/SLICE-VC14-03-macheta-si-meniu-bu.md)
+### [2026-11-10 — SLICE-VC15-01 — Reparat «changeEfactura is not defined» la asocierea eFactura–NIR](docs/worklog/SLICE-VC15-01-changeefactura-nedefinit.md)
+
+### [2026-11-11 — SLICE-VC14-03 — Macheta și meniul BU](docs/worklog/SLICE-VC14-03-macheta-si-meniu-bu.md)
 
 ### [2026-11-09 — SLICE-VC14-02 — Documente și evidență BU](docs/worklog/SLICE-VC14-02-documente-si-evidenta-bu.md)
 

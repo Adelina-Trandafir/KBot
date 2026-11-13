@@ -155,7 +155,6 @@ Public Class SetariPaginaView
     End Sub
 
     Private Sub UpdateButtons()
-        btnSterge.Enabled = CurrentRule() IsNot Nothing
         btnSalveaza.Enabled = _dirty
     End Sub
 
@@ -184,9 +183,11 @@ Public Class SetariPaginaView
         MarkDirty()
     End Sub
 
-    Private Sub BtnSterge_Click(sender As Object, e As EventArgs) Handles btnSterge.Click
+    ' The delete column of the grid (the standard one): takes the rule of that row out of the list.
+    Private Sub Grila_ButtonClick(sender As Object, e As KBotButtonClickEventArgs) Handles grila.ButtonClick
         Try
-            Dim i As Integer = grila.CurrentRowIndex
+            If e.ColumnKey <> "sterge" Then Return
+            Dim i As Integer = e.RowIndex
             If i < 0 OrElse i >= _rules.Count Then Return
             _rules.RemoveAt(i)
             FillGrid()
@@ -194,7 +195,7 @@ Public Class SetariPaginaView
             BindEditor()
             MarkDirty()
         Catch ex As Exception
-            GlobalErrorLog.Write("SetariPaginaView.BtnSterge_Click", ex)
+            GlobalErrorLog.Write("SetariPaginaView.Grila_ButtonClick", ex)
         End Try
     End Sub
 
@@ -260,7 +261,6 @@ Public Class SetariPaginaView
             lblHint.ForeColor = p.TextDimColor
             lblHint.BackColor = Color.Transparent
             ButtonStyles.ApplySecondary(btnAdauga, scheme)
-            ButtonStyles.ApplySecondary(btnSterge, scheme)
             ButtonStyles.ApplySecondary(btnImplicite, scheme)
             ButtonStyles.ApplyPrimary(btnSalveaza, scheme)
             grila.ApplyTheme(scheme)

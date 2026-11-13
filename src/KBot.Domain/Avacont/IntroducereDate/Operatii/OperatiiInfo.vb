@@ -58,6 +58,8 @@ Public NotInheritable Class FacturiPlatiPartener
     Public Property Cod As String = String.Empty
     Public Property Denumire As String = String.Empty
     Public Property Cui As String = String.Empty
+    ''' <summary><c>Parteneri.CodClient</c> (several codes of one CodFiscal are joined with «;»); empty when the column is not there yet or holds nothing.</summary>
+    Public Property CodClient As String = String.Empty
     Public Property Iban As String = String.Empty
 End Class
 
@@ -128,6 +130,8 @@ Public NotInheritable Class FacturaNoua
     Public Property Suma As Decimal
     ''' <summary>«Factura» or «Nota credit».</summary>
     Public Property Fel As String = "Factură"
+    ''' <summary>The accounting note the invoice is booked in (MANDATORY, positive; a number that does not exist yet opens a new note).</summary>
+    Public Property NumarNC As Integer
     ''' <summary>What is paid now on it (0 = nothing).</summary>
     Public Property Platit As Decimal
 End Class
@@ -148,6 +152,7 @@ Public NotInheritable Class FacturiPlatiCerere
     Public Property IdSablonE As Integer
     ''' <summary>0 = no payment.</summary>
     Public Property IdSablonP As Integer
+    ''' <summary>The note of the PAYMENT (its order); 0 when nothing is paid. Every typed invoice carries its own note.</summary>
     Public Property NumarNC As Integer
     Public Property DataOP As Date
     Public Property ExplicatieOP As String = String.Empty
@@ -157,7 +162,10 @@ End Class
 
 ''' <summary>What the save posted; the order number is the REAL one.</summary>
 Public NotInheritable Class FacturiPlatiRezultat
+    ''' <summary>The note of the payment, else the first note used.</summary>
     Public Property NumarNC As Integer
+    ''' <summary>Every note the save posted into, ascending.</summary>
+    Public Property Note As New List(Of Integer)()
     Public Property An As Integer
     Public Property Facturi As Integer
     ''' <summary>The real number of the order; 0 = no payment was made.</summary>

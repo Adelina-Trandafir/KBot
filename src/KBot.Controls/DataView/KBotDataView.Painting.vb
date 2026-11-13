@@ -535,7 +535,10 @@ Partial Class KBotDataView
                 ' painting it too would show the old value around the caret.
                 ' A date cell keeps its right strip for the calendar button (KBotDataView.DateEditor.vb).
                 Dim k_withDate As Boolean = HasDateButton(col)
-                If Not IsEditingCell(col.Key, rowIndex) Then
+                If _cellArgs.CellImage IsNot Nothing AndAlso Not IsEditingCell(col.Key, rowIndex) Then
+                    ' Slice AV02-05: a picture instead of the text (state columns).
+                    DrawImageCell(g, contentRect, _cellArgs.CellImage, _cellArgs.Alignment, enabled)
+                ElseIf Not IsEditingCell(col.Key, rowIndex) Then
                     DrawTextCell(g, If(k_withDate, DateTextRect(contentRect), contentRect), _cellArgs.Text, _cellArgs.Font,
                                  fore, _cellArgs.Alignment)
                 End If
@@ -572,6 +575,36 @@ Partial Class KBotDataView
         If String.IsNullOrEmpty(text) Then Return
         TextRenderer.DrawText(g, text, font, contentRect, fore,
             HorizontalFlags(align) Or TextFormatFlags.VerticalCenter Or TextFormatFlags.EndEllipsis)
+    End Sub
+
+    ' Slice AV02-05: the picture a CellFormatting handler put on a Text cell, at its natural size
+    ' (shrunk to fit, never enlarged), placed horizontally by the cell alignment and centred
+    ' vertically. A disabled cell draws it greyed, like its text would be.
+    Private Sub DrawImageCell(g As Graphics, contentRect As Rectangle, k_image As Image,
+                              align As ContentAlignment, enabled As Boolean)
+        If contentRect.Width <= 0 OrElse contentRect.Height <= 0 Then Return
+        Dim w As Integer = k_image.Width
+        Dim h As Integer = k_image.Height
+        If w > contentRect.Width OrElse h > contentRect.Height Then
+            Dim f As Double = Math.Min(contentRect.Width / CDbl(w), contentRect.Height / CDbl(h))
+            w = Math.Max(1, CInt(Math.Floor(w * f)))
+            h = Math.Max(1, CInt(Math.Floor(h * f)))
+        End If
+        Dim x As Integer
+        Select Case align
+            Case ContentAlignment.TopLeft, ContentAlignment.MiddleLeft, ContentAlignment.BottomLeft
+                x = contentRect.Left
+            Case ContentAlignment.TopRight, ContentAlignment.MiddleRight, ContentAlignment.BottomRight
+                x = contentRect.Right - w
+            Case Else
+                x = contentRect.Left + (contentRect.Width - w) \ 2
+        End Select
+        Dim box As New Rectangle(x, contentRect.Top + (contentRect.Height - h) \ 2, w, h)
+        If enabled Then
+            g.DrawImage(k_image, box)
+        Else
+            ControlPaint.DrawImageDisabled(g, k_image, box.X, box.Y, Color.Transparent)
+        End If
     End Sub
 
     ' Bifă centrată. Geometria e cea din AdvancedTreeControl (dreptunghi rotunjit + bifă),

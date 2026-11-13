@@ -29,6 +29,7 @@ Partial Class SetariPaginaView
         Dim KBotDataColumn2 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn3 As KBotDataColumn = New KBotDataColumn()
         Dim KBotDataColumn4 As KBotDataColumn = New KBotDataColumn()
+        Dim KBotDataColumn5 As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         tlyBody = New KBotTableLayoutPanel()
         lblTitlu = New Label()
@@ -38,7 +39,6 @@ Partial Class SetariPaginaView
         editor = New RegulaPaginaEditor()
         tlyButoane = New KBotTableLayoutPanel()
         btnAdauga = New Button()
-        btnSterge = New Button()
         btnImplicite = New Button()
         btnSalveaza = New Button()
         tlyBody.SuspendLayout()
@@ -149,8 +149,20 @@ Partial Class SetariPaginaView
         KBotDataColumn4.OptionGroup = Nothing
         KBotDataColumn4.ReadOnly = True
         KBotDataColumn4.Width = 150
+        KBotDataColumn5.AggregateFormatString = Nothing
+        KBotDataColumn5.ColumnType = KBotColumnType.Button
+        KBotDataColumn5.ButtonKind = KBotButtonKind.Delete
+        KBotDataColumn5.FormatString = Nothing
+        KBotDataColumn5.HeaderText = ""
+        KBotDataColumn5.HeaderTextAlign = ContentAlignment.MiddleLeft
+        KBotDataColumn5.Key = "sterge"
+        KBotDataColumn5.MinWidth = 34
+        KBotDataColumn5.OptionGroup = Nothing
+        KBotDataColumn5.Resizable = False
+        KBotDataColumn5.Width = 34
         grila.Columns.Add(KBotDataColumn3)
         grila.Columns.Add(KBotDataColumn4)
+        grila.Columns.Add(KBotDataColumn5)
         grila.Dock = DockStyle.Fill
         grila.FillColumnKey = "selector"
         grila.Location = New Point(4, 0)
@@ -174,16 +186,14 @@ Partial Class SetariPaginaView
         '
         tlyButoane.AutoFitToTheme = False
         tlyButoane.AutoSize = True
-        tlyButoane.ColumnCount = 5
-        tlyButoane.ColumnStyles.Add(New ColumnStyle())
+        tlyButoane.ColumnCount = 4
         tlyButoane.ColumnStyles.Add(New ColumnStyle())
         tlyButoane.ColumnStyles.Add(New ColumnStyle())
         tlyButoane.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyButoane.ColumnStyles.Add(New ColumnStyle())
         tlyButoane.Controls.Add(btnAdauga, 0, 0)
-        tlyButoane.Controls.Add(btnSterge, 1, 0)
-        tlyButoane.Controls.Add(btnImplicite, 2, 0)
-        tlyButoane.Controls.Add(btnSalveaza, 4, 0)
+        tlyButoane.Controls.Add(btnImplicite, 1, 0)
+        tlyButoane.Controls.Add(btnSalveaza, 3, 0)
         tlyButoane.Dock = DockStyle.Top
         tlyButoane.Location = New Point(28, 758)
         tlyButoane.Margin = New Padding(4, 0, 4, 0)
@@ -207,21 +217,6 @@ Partial Class SetariPaginaView
         tips.SetToolTipHeader(btnAdauga, "Regulă nouă")
         tips.SetToolTipText(btnAdauga, "Deschide fereastra cu arborele paginii FOREXE: alegeți elementul, completați stilul." & vbLf & "Fără browser pornit, regula se scrie de mână.")
         btnAdauga.UseVisualStyleBackColor = True
-        '
-        ' btnSterge
-        '
-        btnSterge.AutoSize = True
-        btnSterge.FlatStyle = FlatStyle.Flat
-        btnSterge.Location = New Point(138, 0)
-        btnSterge.Margin = New Padding(0, 0, 6, 0)
-        btnSterge.Name = "btnSterge"
-        btnSterge.Padding = New Padding(6, 3, 6, 3)
-        btnSterge.Size = New Size(130, 46)
-        btnSterge.TabIndex = 1
-        btnSterge.Text = "Șterge"
-        tips.SetToolTipHeader(btnSterge, "Șterge rândul")
-        tips.SetToolTipText(btnSterge, "Scoate din listă rândul selectat.")
-        btnSterge.UseVisualStyleBackColor = True
         '
         ' btnImplicite
         '
@@ -278,7 +273,6 @@ Partial Class SetariPaginaView
     Friend WithEvents editor As RegulaPaginaEditor
     Friend WithEvents tlyButoane As KBotTableLayoutPanel
     Friend WithEvents btnAdauga As Button
-    Friend WithEvents btnSterge As Button
     Friend WithEvents btnImplicite As Button
     Friend WithEvents btnSalveaza As Button
 End Class

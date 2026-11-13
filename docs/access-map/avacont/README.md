@@ -13,6 +13,7 @@ intrebari. Marcaj in fise: VERIFICAT = citit intr-un fisier numit; PRESUPUS = de
 | [sablon-operatii-ocs](sablon-operatii-ocs.md) | Sablon operatii salarii | lipseste | PORT, proiectat nou; **nu se salveaza articol fara minim un rand PC** |
 | [setari-implicite-si-bife](setari-implicite-si-bife.md) | Configurari Avacont + 4 bife | partial (E-Factura, date unitate exista) | pagina «Avacont» in Setari > Aplicatie, nu formular separat |
 | [parteneri-ca-analitic](parteneri-ca-analitic.md) | Parteneri | exista ecran pentru furnizori; analiticele nu | DE DECIS (partener = furnizor SAU analitic) |
+| [modificare-nc1280](modificare-nc1280.md) | Modificare note (`btnMNC_LST`, etapa 2, AV02-05) | lipseste | PORT: lista + stergere (fara modificare, fara listari); 8 intrebari deschise |
 
 Clasificatii (cheltuieli): EXISTA (doar verificare de lipsuri, fara fisa noua). Parteneri: NU mai e «EXISTA» - vezi fisa.
 ELIMINAT (decis de operator): Adauga/Incarca/Transfera unitate, Backup online + Descarca

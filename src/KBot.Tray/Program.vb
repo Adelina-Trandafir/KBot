@@ -6,9 +6,8 @@ Imports KBot.Common
 Imports KBot.Theming
 
 ''' <summary>
-''' Entry point of KBot.Tray.exe. One instance per Windows user; the instance that stays is the COPY in
-''' <c>%LOCALAPPDATA%\AVACONT\KBot\Tray</c> (see <see cref="ShadowCopy"/>), so the files of the installation folder are never
-''' held open and the K-BOT updater can replace them.
+''' Entry point of KBot.Tray.exe, the signer edition (slice TRAY-02). One instance per Windows user. It runs from its own folder and
+''' replaces its own files when a newer tray is published (<see cref="TrayUpdater"/>).
 ''' </summary>
 Friend Module Program
 
@@ -16,6 +15,9 @@ Friend Module Program
 
     <STAThread>
     Friend Sub Main(k_args As String())
+        ' Started by the previous tray after an update: that one still owns the lock below until it has ended.
+        TrayUpdater.WaitForPreviousInstance(k_args)
+
         Application.SetUnhandledExceptionMode(UnhandledExceptionMode.CatchException)
         AddHandler Application.ThreadException, AddressOf OnThreadException
         AddHandler AppDomain.CurrentDomain.UnhandledException, AddressOf OnUnhandledException
@@ -32,20 +34,15 @@ Friend Module Program
                 Return
             End If
 
-            Dim k_appDir As String = ShadowCopy.AppDirectory(k_args)
-            If Not ShadowCopy.IsShadow() Then
-                ' Started from the installation folder: hand over to the copy and leave, so this file is free to be replaced.
-                k_mutex.ReleaseMutex()
-                k_mutex.Dispose()
-                k_mutex = Nothing
-                ShadowCopy.StartCopy(k_appDir)
-                Return
-            End If
+            Dim k_appDir As String = Path.GetDirectoryName(Environment.ProcessPath)
+            TrayLog.Write("start", $"KBot.Tray {Diagnostics.FileVersionInfo.GetVersionInfo(Environment.ProcessPath).FileVersion} from {k_appDir}; developer's build folder={Autostart.IsDevelopmentFolder(k_appDir)}")
 
             Application.EnableVisualStyles()
             Application.SetCompatibleTextRenderingDefault(False)
             Application.SetHighDpiMode(HighDpiMode.PerMonitorV2)
             ThemeManager.Initialize()
+            ' The message boxes of the signing windows (KBotMessage.Show) are the K-BOT window, as in K-BOT.
+            KBot.Controls.KBotMessageBox.Install()
 
             Using k_context As New TrayContext(k_appDir)
                 Application.Run(k_context)

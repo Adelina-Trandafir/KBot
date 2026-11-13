@@ -1,9 +1,4 @@
 /* PTC shares the BC new-row grid and action bar; BP keeps its saved tree. */
-.vc-bu.vc-nom { display: flex; flex-direction: column; gap: 8px; }
-.vc-bu__editor { min-height: 0; flex: 1 1 auto; display: flex; flex-direction: column; }
-.vc-bu__lines { min-height: 10rem; flex: 1 1 auto; }
-.vc-bu__add { display: flex; align-items: end; gap: 8px; }
-.vc-bu .vc-doc__header:empty { display: none; }
 .vc-doc:is(.vc-doc--bp, .vc-doc--bt, .vc-doc--bs) .vc-doc__header--oi {
   grid-template-columns: repeat(3, minmax(0, 280px));
   align-content: start;
@@ -81,6 +76,14 @@
 .vc-oi-card .vc-oi-card__date { width: 6.5em; }
 .vc-oi-card .vc-oi-card__number { width: 6em; text-align: right; font-variant-numeric: tabular-nums; }
 .vc-oi-card td small { display: block; overflow: hidden; text-overflow: ellipsis; font-size: .9em; color: var(--ink-muted, var(--ink)); }
+/* BU (transfer between subunits) is the BT page plus the destination: unit, gestiune, optional receiver, accounts. */
+.vc-doc--bu .vc-field[data-field="giver"] { grid-column: 1; grid-row: 1; }
+.vc-doc--bu .vc-field[data-field="unit"] { grid-column: 2; grid-row: 1; }
+.vc-doc--bu .vc-field[data-field="gestiune"] { grid-column: 1; grid-row: 2; }
+.vc-doc--bu .vc-field[data-field="receiver"] { grid-column: 2; grid-row: 2; }
+.vc-doc--bu .vc-field[data-field="warehouse"], .vc-doc--bu .vc-field[data-field="created"] { grid-column: 1; grid-row: 3; }
+.vc-doc--bu .vc-field[data-field="use"] { grid-column: 2; grid-row: 3; }
+.vc-doc.vc-doc--bu .vc-field[data-field="Expl"] { grid-column: 1 / -1; grid-row: auto; }
 @media (max-width: 800px) {
   .vc-doc:is(.vc-doc--bp, .vc-doc--bt, .vc-doc--bs) .vc-doc__header--oi { grid-template-columns: minmax(0, 1fr); }
   .vc-doc:is(.vc-doc--bp, .vc-doc--bt, .vc-doc--bs) .vc-field[data-field] { grid-column: auto; grid-row: auto; }

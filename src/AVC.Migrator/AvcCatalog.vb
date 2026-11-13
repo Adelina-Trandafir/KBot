@@ -12,6 +12,7 @@ Friend NotInheritable Class AvcCatalog
         Return New List(Of AvcStep) From {
             New AvcSubunitsStep(),
             New AvcPlanContStep(),
+            New AvcParteneriCodClientStep(),
             New AvcParteneriSiStep(),
             New AvcJurnaleStep(),
             New AvcSablonOperatiiStep(),

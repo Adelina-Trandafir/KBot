@@ -62,6 +62,19 @@ Friend NotInheritable Class AvcLinieRow
     Public Property Suma As Decimal
 End Class
 
+''' <summary>One partner of an Access unit file (<c>Parteneri</c>): the code the posting lines use, its name and its tax code (slice ME01-36).</summary>
+Friend NotInheritable Class AvcPartnerRow
+    Public Property IdUnitate As Integer
+    Public Property CodPartener As String = String.Empty
+    Public Property Denumire As String = String.Empty
+    Public Property CodFiscal As String = String.Empty
+    Public Property ContIBAN As String = String.Empty
+    Public Property Banca As String = String.Empty
+    Public Property Adresa As String = String.Empty
+    Public Property Tip As String = String.Empty
+    Public Property Ascuns As Integer?
+End Class
+
 ''' <summary>Everything read from the posting tables of the ticked units.</summary>
 Friend NotInheritable Class AvcOperatiiSet
     Public ReadOnly Property Note As New List(Of AvcNotaRow)()
@@ -69,6 +82,8 @@ Friend NotInheritable Class AvcOperatiiSet
     Public ReadOnly Property Operatii As New List(Of AvcOperRow)()
     Public ReadOnly Property Debit As New List(Of AvcLinieRow)()
     Public ReadOnly Property Credit As New List(Of AvcLinieRow)()
+    ''' <summary>"IdUnitate|CodPartener" ▸ the partner of that unit's Access file (to name a partner that the target lacks and to find it by its tax code).</summary>
+    Public ReadOnly Property Parteneri As New Dictionary(Of String, AvcPartnerRow)(StringComparer.OrdinalIgnoreCase)
     Public ReadOnly Property UnitsWithoutTable As New List(Of Integer)()
     Public ReadOnly Property MissingColumns As New List(Of String)()
 End Class
@@ -101,6 +116,7 @@ Friend NotInheritable Class AvcOperatiiReader
                     ReadOperations(k_cn, k_tables("Oper"), k_unit.IdUnitate, k_result)
                     ReadLines(k_cn, k_tables("Debit"), k_unit.IdUnitate, "SumaDebit", k_result.Debit, k_result)
                     ReadLines(k_cn, k_tables("Credit"), k_unit.IdUnitate, "SumaCredit", k_result.Credit, k_result)
+                    ReadPartners(k_cn, k_unit.IdUnitate, k_result)
                 End Using
             Next
             Return k_result
@@ -152,6 +168,52 @@ Friend NotInheritable Class AvcOperatiiReader
                     .Angajament = Yes(k_reader.ValueOrMissing("Angajament")), .Propunere = Yes(k_reader.ValueOrMissing("Propunere")), .Auto = Yes(k_reader.ValueOrMissing("Auto")),
                     .Platit = Yes(k_reader.ValueOrMissing("Platit")), .NrAng = Pos(k_reader.ValueOrMissing("NrANG")), .NrOpe = Pos(k_reader.ValueOrMissing("NrOPE")),
                     .Dtq = Dat(k_reader.ValueOrMissing("DTQ"))})
+            End While
+        End Using
+    End Sub
+
+    ''' <summary>Slice ME01-36: the Access partners of every ticked unit that has a unit file ("IdUnitate|CodPartener"). Access I/O: logs and rethrows.</summary>
+    Public Shared Function ReadAllPartners(k_context As AvcContext) As Dictionary(Of String, AvcPartnerRow)
+        Try
+            Dim k_set As New AvcOperatiiSet()
+            For Each k_unit In k_context.Units
+                If Not k_unit.HasUnitFile Then Continue For
+                Using k_cn = AccessProvider.Open(k_unit.UnitFilePath, k_context.AccessPassword)
+                    ReadPartners(k_cn, k_unit.IdUnitate, k_set)
+                End Using
+            Next
+            Return k_set.Parteneri
+        Catch ex As Exception
+            GlobalErrorLog.Write("AvcOperatiiReader.ReadAllPartners", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>0 or 1 (a Yes/No column comes as True/False or -1/0); Nothing when empty.</summary>
+    Private Shared Function Pos0(k_value As Object) As Integer?
+        If k_value Is Nothing OrElse k_value Is DBNull.Value Then Return Nothing
+        If TypeOf k_value Is Boolean Then Return If(CBool(k_value), 1, 0)
+        Dim k_text As String = Convert.ToString(k_value, CultureInfo.InvariantCulture).Trim()
+        If k_text.Length = 0 Then Return Nothing
+        Dim k_number As Decimal
+        If Not Decimal.TryParse(k_text, NumberStyles.Any, CultureInfo.InvariantCulture, k_number) Then Return Nothing
+        Return If(k_number <> 0D, 1, 0)
+    End Function
+
+    ''' <summary>The partners of the unit file; a file without a Parteneri table simply gives none (the partner is then reported as unknown in Access).</summary>
+    Private Shared Sub ReadPartners(k_cn As OleDbConnection, k_unit As Integer, k_result As AvcOperatiiSet)
+        Dim k_table As String = AccessSchema.ResolveTableName(k_cn, "Parteneri")
+        If k_table Is Nothing Then Return
+        Using k_reader = AccessSchema.OpenReader(k_cn, k_table)
+            While k_reader.Read()
+                Dim k_code As String = AvcSql.AsText(k_reader.ValueOrMissing("CodPartener"))
+                If k_code.Length = 0 Then Continue While
+                Dim k_name As String = AvcSql.AsText(k_reader.ValueOrMissing("DenumirePartener"))
+                If k_name.Length = 0 Then k_name = AvcSql.AsText(k_reader.ValueOrMissing("NumePartener"))
+                k_result.Parteneri(k_unit.ToString(CultureInfo.InvariantCulture) & "|" & k_code) =
+                    New AvcPartnerRow() With {.IdUnitate = k_unit, .CodPartener = k_code, .Denumire = k_name, .CodFiscal = AvcSql.AsText(k_reader.ValueOrMissing("CodFiscal")),
+                     .ContIBAN = AvcSql.AsText(k_reader.ValueOrMissing("ContIBAN")), .Banca = AvcSql.AsText(k_reader.ValueOrMissing("Banca")),
+                     .Adresa = AvcSql.AsText(k_reader.ValueOrMissing("Adresa")), .Tip = AvcSql.AsText(k_reader.ValueOrMissing("Tip")), .Ascuns = Pos0(k_reader.ValueOrMissing("Ascuns"))}
             End While
         End Using
     End Sub

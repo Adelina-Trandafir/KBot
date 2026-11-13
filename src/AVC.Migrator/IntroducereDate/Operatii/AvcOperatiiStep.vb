@@ -20,11 +20,44 @@ Friend NotInheritable Class AvcOperatiiLookups
     Public ReadOnly Property ClasificatiiDupaAcc As New Dictionary(Of Integer, List(Of Integer))()
     ''' <summary>"IdUnitate|CodPartener" ▸ IdPartener.</summary>
     Public ReadOnly Property Parteneri As New Dictionary(Of String, Integer)(StringComparer.OrdinalIgnoreCase)
+    ''' <summary>Slice ME01-36: "IdUnitate|normalized CodFiscal" ▸ every partner of the target with that tax code.</summary>
+    Public ReadOnly Property ParteneriDupaCui As New Dictionary(Of String, List(Of AvcTargetPartner))(StringComparer.OrdinalIgnoreCase)
+    ''' <summary>Slice ME01-36: the partners of the Access unit files ("IdUnitate|CodPartener"), to say who a missing partner was.</summary>
+    Public Property AccessParteneri As Dictionary(Of String, AvcPartnerRow) = New Dictionary(Of String, AvcPartnerRow)()
+End Class
+
+''' <summary>A partner of the target (<c>Parteneri</c>), as the search by tax code needs it.</summary>
+Friend NotInheritable Class AvcTargetPartner
+    Public Property IdPartener As Integer
+    Public Property CodPartener As String = String.Empty
+    Public Property Denumire As String = String.Empty
+    Public Property CodFiscal As String = String.Empty
+End Class
+
+''' <summary>A partner of an Access unit that the target does not have at all (neither by code nor by tax code): the write ADDS it to Parteneri (slice ME01-36).</summary>
+Friend NotInheritable Class AvcPartnerToAdd
+    Public Property IdUnitate As Integer
+    Public Property CodAccess As String = String.Empty
+    Public Property Access As AvcPartnerRow
+    Public ReadOnly Property Operatii As New SortedSet(Of Integer)()
+    Public Property Linii As Integer
+End Class
+
+''' <summary>A partner of an Access unit that the target does not have under its code and that is allocated to the target partner with the same tax code (slice ME01-36).</summary>
+Friend NotInheritable Class AvcPartnerMove
+    Public Property IdUnitate As Integer
+    Public Property CodAccess As String = String.Empty
+    Public Property Access As AvcPartnerRow
+    Public Property Target As AvcTargetPartner
+    Public ReadOnly Property Operatii As New SortedSet(Of Integer)()
+    Public Property Linii As Integer
 End Class
 
 Friend NotInheritable Class AvcPlanLinie
     Public Property IdCont As Integer?
     Public Property IdPartener As Integer?
+    ''' <summary>Slice ME01-36: "IdUnitate|CodPartener" of a partner that the write adds to Parteneri first (IdPartener is then empty until the write).</summary>
+    Public Property NewPartnerKey As String = String.Empty
     Public Property Suma As Decimal
 End Class
 
@@ -55,6 +88,10 @@ Friend NotInheritable Class AvcOperatiiPlan
     ''' <summary>reason ▸ descriptions of the rows left out (operations or documents).</summary>
     Public ReadOnly Property Omise As New SortedDictionary(Of String, List(Of String))(StringComparer.Ordinal)
     Public ReadOnly Property UnitatiFaraSubunitate As New SortedSet(Of Integer)()
+    ''' <summary>Slice ME01-36: "IdUnitate|CodPartener" ▸ the partner of Access allocated to a target partner by tax code, with the operations it was done for.</summary>
+    Public ReadOnly Property PartnerMoves As New SortedDictionary(Of String, AvcPartnerMove)(StringComparer.Ordinal)
+    ''' <summary>Slice ME01-36: "IdUnitate|CodPartener" ▸ the Access partner that is added to Parteneri by the write.</summary>
+    Public ReadOnly Property PartnersToAdd As New SortedDictionary(Of String, AvcPartnerToAdd)(StringComparer.Ordinal)
 
     ''' <summary>IdUnitate ▸ the name the operator knows the unit by (<c>AlteDetalii</c>); the bare id when no context was given.</summary>
     Public Property UnitName As Func(Of Integer, String) = Function(k_id) k_id.ToString(CultureInfo.InvariantCulture)
@@ -190,8 +227,21 @@ Friend NotInheritable Class AvcOperatiiStep
                           End If
                           k_list.Add(k_r.GetInt32(0))
                       End Sub)
-            ReadPairs(k_cn, k_transaction, "SELECT `IdPartener`, `IdUnitate`, `CodPartener` FROM `Parteneri`",
-                      Sub(k_r) k_result.Parteneri(k_r.GetInt32(1).ToString(CultureInfo.InvariantCulture) & "|" & k_r.GetString(2)) = k_r.GetInt32(0))
+            ReadPairs(k_cn, k_transaction, "SELECT `IdPartener`, `IdUnitate`, `CodPartener`, `DenumirePartener`, `CodFiscal` FROM `Parteneri`",
+                      Sub(k_r)
+                          Dim k_unitText As String = k_r.GetInt32(1).ToString(CultureInfo.InvariantCulture)
+                          k_result.Parteneri(k_unitText & "|" & k_r.GetString(2)) = k_r.GetInt32(0)
+                          Dim k_cui As String = EfCui.Normalize(If(k_r.IsDBNull(4), String.Empty, k_r.GetString(4)))
+                          If k_cui.Length = 0 Then Return
+                          Dim k_list As List(Of AvcTargetPartner) = Nothing
+                          If Not k_result.ParteneriDupaCui.TryGetValue(k_unitText & "|" & k_cui, k_list) Then
+                              k_list = New List(Of AvcTargetPartner)()
+                              k_result.ParteneriDupaCui(k_unitText & "|" & k_cui) = k_list
+                          End If
+                          k_list.Add(New AvcTargetPartner() With {.IdPartener = k_r.GetInt32(0), .CodPartener = k_r.GetString(2),
+                                                                  .Denumire = If(k_r.IsDBNull(3), String.Empty, k_r.GetString(3)), .CodFiscal = If(k_r.IsDBNull(4), String.Empty, k_r.GetString(4))})
+                      End Sub)
+            If _set IsNot Nothing Then k_result.AccessParteneri = _set.Parteneri
             For Each k_row In _planContRows.Rows
                 k_result.SimbolComp(k_row.IdUnitate.ToString(CultureInfo.InvariantCulture) & "|" & k_row.SimbolAccess) = k_row.ComposedSymbol()
             Next
@@ -241,7 +291,7 @@ Friend NotInheritable Class AvcOperatiiStep
 
         Dim k_groups = _set.Documente.GroupBy(Function(k_d) New With {k_d.IdUnitate, .Nota = k_d.NumarNC.GetValueOrDefault(0)})
         For Each k_group In k_groups.OrderBy(Function(k_g) k_g.Key.IdUnitate).ThenBy(Function(k_g) k_g.Key.Nota)
-            Dim k_sub As (IdSubunitate As Integer?, SursaSector As String)
+            Dim k_sub As (IdSubunitate As Integer?, SursaSector As String) = (CType(Nothing, Integer?), String.Empty)
             If Not k_look.Subunits.TryGetValue(k_group.Key.IdUnitate, k_sub) Then
                 k_plan.UnitatiFaraSubunitate.Add(k_group.Key.IdUnitate)
                 Continue For
@@ -283,6 +333,8 @@ Friend NotInheritable Class AvcOperatiiStep
                                              k_debit As Dictionary(Of String, List(Of AvcLinieRow)), k_credit As Dictionary(Of String, List(Of AvcLinieRow)),
                                              k_plan As AvcOperatiiPlan) As AvcPlanOper
         Dim k_result As New AvcPlanOper() With {.Row = k_op}
+        Dim k_pendingMoves As New List(Of (Access As AvcPartnerRow, Code As String, Target As AvcTargetPartner))()
+        Dim k_pendingAdds As New List(Of (Access As AvcPartnerRow, Code As String))()
         If Not k_op.DataOperatie.HasValue Then
             k_plan.Omit("Operații fără dată", k_plan.Describe(k_op))
             Return Nothing
@@ -325,21 +377,66 @@ Friend NotInheritable Class AvcOperatiiStep
                     Return Nothing
                 End If
                 Dim k_partner As Integer? = Nothing
+                Dim k_newPartnerKey As String = String.Empty
                 If k_line.CodPartener.Length > 0 Then
                     Dim k_id As Integer
-                    If Not k_look.Parteneri.TryGetValue(Key2(k_line.IdUnitate, k_line.CodPartener), k_id) Then
-                        k_plan.Omit("Partener negăsit în Parteneri (migrat de KBot.Migrator)", k_plan.Describe(k_op) & $" (partener {k_line.CodPartener})")
-                        Return Nothing
+                    If k_look.Parteneri.TryGetValue(Key2(k_line.IdUnitate, k_line.CodPartener), k_id) Then
+                        k_partner = k_id
+                    Else
+                        ' slice ME01-36: the code is not in Parteneri of the target; Access says who it is, and the tax code finds the same partner in the target
+                        Dim k_accessPartner As AvcPartnerRow = Nothing
+                        k_look.AccessParteneri.TryGetValue(Key2(k_line.IdUnitate, k_line.CodPartener), k_accessPartner)
+                        Dim k_who As String = $"partenerul {k_line.CodPartener}" & If(k_accessPartner Is Nothing, " (nu e în tabelul Parteneri din Access)",
+                                                                                       $" «{k_accessPartner.Denumire}», cod fiscal «{k_accessPartner.CodFiscal}»")
+                        Dim k_cui As String = If(k_accessPartner Is Nothing, String.Empty, EfCui.Normalize(k_accessPartner.CodFiscal))
+                        If k_accessPartner Is Nothing Then
+                            k_plan.Omit("Partener negăsit în Parteneri (MariaDB) și nici în tabelul Parteneri din Access", k_plan.Describe(k_op) & " – " & k_who)
+                            Return Nothing
+                        End If
+                        Dim k_found As List(Of AvcTargetPartner) = Nothing
+                        If k_cui.Length > 0 AndAlso k_look.ParteneriDupaCui.TryGetValue(Key2(k_line.IdUnitate, k_cui), k_found) Then
+                            If k_found.Count > 1 Then
+                                k_plan.Omit("Mai mulți parteneri în MariaDB cu același cod fiscal, la unitatea operației: nu se alege unul singur",
+                                            k_plan.Describe(k_op) & " – " & k_who & ". În MariaDB: " & String.Join("; ", k_found.Select(Function(k_t) $"cod {k_t.CodPartener} «{k_t.Denumire}»")))
+                                Return Nothing
+                            End If
+                            k_partner = k_found(0).IdPartener
+                            k_pendingMoves.Add((k_accessPartner, k_line.CodPartener, k_found(0)))
+                        Else
+                            ' the partner is not in the target at all (neither by code nor by tax code): the write ADDS it to Parteneri, from Access
+                            k_newPartnerKey = Key2(k_line.IdUnitate, k_line.CodPartener)
+                            k_pendingAdds.Add((k_accessPartner, k_line.CodPartener))
+                        End If
                     End If
-                    k_partner = k_id
                 End If
-                k_pair.Item2.Add(New AvcPlanLinie() With {.IdCont = k_idCont, .IdPartener = k_partner, .Suma = k_line.Suma})
+                k_pair.Item2.Add(New AvcPlanLinie() With {.IdCont = k_idCont, .IdPartener = k_partner, .NewPartnerKey = k_newPartnerKey, .Suma = k_line.Suma})
             Next
         Next
         If k_result.Debit.Sum(Function(k_l) k_l.Suma) <> k_result.Credit.Sum(Function(k_l) k_l.Suma) Then
             k_plan.Omit("Operații cu debitul diferit de credit", k_plan.Describe(k_op))
             Return Nothing
         End If
+        ' the allocations to another partner count only for operations that are kept
+        For Each k_move In k_pendingMoves
+            Dim k_moveKey As String = Key2(k_op.IdUnitate, k_move.Code)
+            Dim k_recorded As AvcPartnerMove = Nothing
+            If Not k_plan.PartnerMoves.TryGetValue(k_moveKey, k_recorded) Then
+                k_recorded = New AvcPartnerMove() With {.IdUnitate = k_op.IdUnitate, .CodAccess = k_move.Code, .Access = k_move.Access, .Target = k_move.Target}
+                k_plan.PartnerMoves(k_moveKey) = k_recorded
+            End If
+            k_recorded.Operatii.Add(k_op.IdOperatie)
+            k_recorded.Linii += 1
+        Next
+        For Each k_add In k_pendingAdds
+            Dim k_addKey As String = Key2(k_op.IdUnitate, k_add.Code)
+            Dim k_toAdd As AvcPartnerToAdd = Nothing
+            If Not k_plan.PartnersToAdd.TryGetValue(k_addKey, k_toAdd) Then
+                k_toAdd = New AvcPartnerToAdd() With {.IdUnitate = k_op.IdUnitate, .CodAccess = k_add.Code, .Access = k_add.Access}
+                k_plan.PartnersToAdd(k_addKey) = k_toAdd
+            End If
+            k_toAdd.Operatii.Add(k_op.IdOperatie)
+            k_toAdd.Linii += 1
+        Next
         Return k_result
     End Function
 
@@ -390,8 +487,16 @@ Friend NotInheritable Class AvcOperatiiStep
                                            $"Unitățile {k_plan.UnitatiFaraSubunitateText()} au nevoie de subunități. Bifați pasul «Subunități» în aceeași migrare sau creați-le înainte."))
             End If
             For Each k_pair In k_plan.Omise
-                k_findings.Add(New Finding(AvcKinds.REZUMAT, FindingClass.Atentie, "TZ_Oper", String.Empty,
-                                           $"{k_pair.Value.Count} rânduri NU se migrează: {k_pair.Key}", k_pair.Value.Count).WithDetail(String.Join(vbLf, k_pair.Value.Take(30))))
+                ' slice ME01-36: a row that cannot be migrated stops the migration (BLOCKING); the detail names the rows (the number after «operația» is the Access IdOperatie)
+                Dim k_detail As String = String.Join(vbLf, k_pair.Value.Take(200)) & If(k_pair.Value.Count > 200, vbLf & $"… și încă {k_pair.Value.Count - 200}.", String.Empty)
+                k_findings.Add(New Finding(AvcKinds.REZUMAT, FindingClass.Blocant, "TZ_Oper", String.Empty,
+                                           $"{k_pair.Value.Count} rânduri NU se migrează: {k_pair.Key}", k_pair.Value.Count).WithDetail(k_detail))
+            Next
+            For Each k_move In k_plan.PartnerMoves.Values
+                k_findings.Add(New Finding(AvcKinds.REZUMAT, FindingClass.Atentie, "TZ_Oper", String.Empty, DescribePartnerMove(k_move, k_context)))
+            Next
+            For Each k_add In k_plan.PartnersToAdd.Values
+                k_findings.Add(New Finding(AvcKinds.REZUMAT, FindingClass.Atentie, "Parteneri", String.Empty, DescribePartnerAdd(k_add, k_context)))
             Next
             RowsToWrite = k_plan.OperatiiCount()
             k_findings.Add(New Finding(AvcKinds.REZUMAT, FindingClass.Informativ, "TZ_Oper", String.Empty,
@@ -411,6 +516,23 @@ Friend NotInheritable Class AvcOperatiiStep
             GlobalErrorLog.Write("AvcOperatiiStep.Verify", ex)
             Throw
         End Try
+    End Function
+
+    ''' <summary>Slice ME01-36: a partner that exists only in Access and is added to Parteneri of the target by the write.</summary>
+    Private Shared Function DescribePartnerAdd(k_add As AvcPartnerToAdd, k_context As AvcContext) As String
+        Dim k_ops As String = String.Join(", ", k_add.Operatii.Take(20).Select(Function(k_o) k_o.ToString(CultureInfo.InvariantCulture))) &
+                              If(k_add.Operatii.Count > 20, $" … și încă {k_add.Operatii.Count - 20}", String.Empty)
+        Return $"Partener nou, adăugat în Parteneri (unitatea {k_context.UnitLabel(k_add.IdUnitate)}): cod {k_add.CodAccess} «{k_add.Access.Denumire}», cod fiscal «{k_add.Access.CodFiscal}» " &
+               $"(nu există în MariaDB nici după cod, nici după cod fiscal); {k_add.Linii} linii, operațiile Access: {k_ops}."
+    End Function
+
+    ''' <summary>Slice ME01-36: who the partner was in Access and to which partner of MariaDB it is allocated, with the operations (Access IdOperatie) it was done for.</summary>
+    Private Shared Function DescribePartnerMove(k_move As AvcPartnerMove, k_context As AvcContext) As String
+        Dim k_ops As String = String.Join(", ", k_move.Operatii.Take(20).Select(Function(k_o) k_o.ToString(CultureInfo.InvariantCulture))) &
+                              If(k_move.Operatii.Count > 20, $" … și încă {k_move.Operatii.Count - 20}", String.Empty)
+        Return $"Partener realocat (unitatea {k_context.UnitLabel(k_move.IdUnitate)}): în Access {k_move.CodAccess} «{k_move.Access.Denumire}», cod fiscal «{k_move.Access.CodFiscal}» ▸ " &
+               $"în MariaDB {k_move.Target.CodPartener} «{k_move.Target.Denumire}», cod fiscal «{k_move.Target.CodFiscal}» (IdPartener {k_move.Target.IdPartener.ToString(CultureInfo.InvariantCulture)}); " &
+               $"{k_move.Linii} linii, operațiile Access: {k_ops}."
     End Function
 
     ' ── write ───────────────────────────────────────────────────────────────────
@@ -440,6 +562,25 @@ Friend NotInheritable Class AvcOperatiiStep
             If _set Is Nothing Then Throw New InvalidOperationException("«Operații» nu a fost citit din Access.")
             Dim k_plan = BuildPlan(LoadLookups(k_cn, k_transaction), k_context)
             If k_plan.UnitatiFaraSubunitate.Count > 0 Then Throw New InvalidOperationException($"Unitățile {k_plan.UnitatiFaraSubunitateText()} nu au subunitate.")
+            For Each k_move In k_plan.PartnerMoves.Values
+                Dim k_text As String = DescribePartnerMove(k_move, k_context)
+                k_progress.Report(k_text)
+                k_dump.WriteComment("TZ_Debit", k_text)
+            Next
+            Dim k_newPartners As New Dictionary(Of String, Integer)(StringComparer.Ordinal)
+            For Each k_add In k_plan.PartnersToAdd
+                k_cancel.ThrowIfCancellationRequested()
+                Dim k_row As AvcPartnerRow = k_add.Value.Access
+                Dim k_idPartener As Long = InsertRow(k_cn, k_transaction, k_dump, "Parteneri", New Dictionary(Of String, Object)(StringComparer.Ordinal) From {
+                    {"IdUnitate", k_add.Value.IdUnitate}, {"CodPartener", k_add.Value.CodAccess}, {"DenumirePartener", If(k_row.Denumire.Length > 0, k_row.Denumire, Nothing)},
+                    {"CodFiscal", If(k_row.CodFiscal.Length > 0, k_row.CodFiscal, Nothing)}, {"ContIBAN", If(k_row.ContIBAN.Length > 0, k_row.ContIBAN, Nothing)},
+                    {"Banca", If(k_row.Banca.Length > 0, k_row.Banca, Nothing)}, {"Adresa", If(k_row.Adresa.Length > 0, k_row.Adresa, Nothing)}, {"Tip", If(k_row.Tip.Length > 0, k_row.Tip, Nothing)},
+                    {"Ascuns", If(k_row.Ascuns.HasValue, CObj(k_row.Ascuns.Value), Nothing)}, {"Provenienta", "avacont"}})
+                k_newPartners(k_add.Key) = CInt(k_idPartener)
+                Dim k_addText As String = DescribePartnerAdd(k_add.Value, k_context) & $" IdPartener {k_idPartener.ToString(CultureInfo.InvariantCulture)}."
+                k_progress.Report(k_addText)
+                k_dump.WriteComment("Parteneri", k_addText)
+            Next
             k_dump.WriteComment("TZ_NoteC", "Fostele NoteC / Documente / Oper / Debit / Credit; CreatedAt = DTQ din Access; id-urile Access în coloanele *Access (o repetare adaugă doar ce lipsește).")
 
             ' What is already there (a repeat adds only what is missing).
@@ -497,7 +638,7 @@ Friend NotInheritable Class AvcOperatiiStep
                         For Each k_pair In {Tuple.Create("TZ_Debit", k_op.Debit), Tuple.Create("TZ_Credit", k_op.Credit)}
                             For Each k_line In k_pair.Item2
                                 InsertRow(k_cn, k_transaction, k_dump, k_pair.Item1, New Dictionary(Of String, Object)(StringComparer.Ordinal) From {
-                                    {"IdOper", k_idOper}, {"IdCont", k_line.IdCont.Value}, {"IdPartener", If(k_line.IdPartener.HasValue, CObj(k_line.IdPartener.Value), Nothing)},
+                                    {"IdOper", k_idOper}, {"IdCont", k_line.IdCont.Value}, {"IdPartener", If(k_line.IdPartener.HasValue, CObj(k_line.IdPartener.Value), If(k_line.NewPartnerKey.Length > 0, CObj(k_newPartners(k_line.NewPartnerKey)), Nothing))},
                                     {"Suma", k_line.Suma}, {"CreatedAt", k_created}})
                                 k_count(k_pair.Item1) += 1
                             Next
@@ -508,7 +649,9 @@ Friend NotInheritable Class AvcOperatiiStep
             PointInvoiceLinks(k_cn, k_transaction, k_dump, k_progress)
             k_dump.FlushAll()
             k_progress.Report($"«TZ_Oper»: {k_count("TZ_NoteC")} note, {k_count("TZ_Documente")} documente, {k_count("TZ_Oper")} operații (confirmate la COMMIT).")
-            Return Tables.Select(Function(k_t) New AvcWritten(k_t, k_count(k_t))).ToList()
+            Dim k_written As List(Of AvcWritten) = Tables.Select(Function(k_t) New AvcWritten(k_t, k_count(k_t))).ToList()
+            If k_newPartners.Count > 0 Then k_written.Add(New AvcWritten("Parteneri", k_newPartners.Count))
+            Return k_written
         Catch ex As OperationCanceledException
             Throw
         Catch ex As Exception

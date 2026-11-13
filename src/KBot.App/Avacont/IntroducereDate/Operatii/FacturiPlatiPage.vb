@@ -12,15 +12,25 @@ Imports KBot.Theming
 
 ''' <summary>
 ''' Slice AV02-04 -- the «Facturi si plati» page (the Access form OPuri2017): for ONE partner, the invoices typed by hand (evidence with the chosen template), the
-''' unpaid invoices already in the books (current year, and the previous year when the database holds it), and the payment of any of them with its order (OP). It does
-''' the same job as the page «Contari» of the received e-invoices, over invoices that do not come from the e-invoice list; the server uses the same services.
-''' The number of the order shown before the save is PROVISIONAL (tooltip on the label); the save answers the real one and the message says it.
+''' unpaid invoices already in the books (current year, and the previous year when the database holds it), and the payment of any of them with its order (OP).
+''' Layout (operator's sketch, 10.11.2026): classification | partner | client code | bank account on top; the evidence templates on the left and ONE view on the
+''' right (a nav list switches between three stand-alone grids: new invoices, current year, previous year); the payment templates on the left of the payment
+''' grid, whose first row is the payment being made and whose other rows are the orders of the partner in the year. Stand-alone: nothing is shared with the
+''' E-Factura pages. The grid of new invoices always ends with a blank row (the place to add): the blank row is never saved.
+''' The number of the order shown before the save is PROVISIONAL (tooltip on the column); the save answers the real one and the message says it.
 ''' </summary>
 Public Class FacturiPlatiPage
     Implements IThemedControl, ISablonPagina
 
     Private Shared ReadOnly _kinds As New List(Of Object) From {"Factură", "Notă credit"}
     Private Const DateFormat As String = "dd.MM.yyyy"
+    Private Const ViewNoi As String = "noi"
+    Private Const ViewCurent As String = "curent"
+    Private Const ViewAnterior As String = "anterior"
+    Private Const ColDelete As String = "sterge"
+
+    ' The numbers of the notes of the year (the choices of the «Nota contabila» cell of the payment row).
+    Private ReadOnly _noteItems As New List(Of Object)()
 
     Private _api As IOperatiiApi
     Private _gate As ReauthGate
@@ -46,6 +56,8 @@ Public Class FacturiPlatiPage
         gridNoi.ReadOnlyGrid = False
         gridCurent.ReadOnlyGrid = False
         gridAnterior.ReadOnlyGrid = False
+        gridPlata.ReadOnlyGrid = False
+        AddBlankInvoiceRow()
     End Sub
 
     ''' <summary>Hands the page what it needs and reads the notes, the partners and the classifications. UI boundary: a failure is shown in the status line.</summary>
@@ -88,14 +100,12 @@ Public Class FacturiPlatiPage
                     cmbClsf.Items.Add(CType(k_c, Object))
                 Next
                 FillNotes()
-                dtpDataOp.Value = If(Date.Today.Year = YearOfWork(), Date.Today, New Date(YearOfWork(), 1, 1))
             Finally
                 _filling = False
             End Try
             _loaded = True
             cmbPartener.Enabled = True
             cmbClsf.Enabled = True
-            cmbNota.Enabled = True
             SetStatus(If(k_context.Clasificatii.Count = 0, "Subunitatea nu are clasificații cu șabloane de operații. Adăugați șabloane în «Șabloane».", String.Empty))
             RefreshState()
             Return True
@@ -125,12 +135,26 @@ Public Class FacturiPlatiPage
     End Function
 
     Private Sub FillNotes()
-        cmbNota.Items.Clear()
+        _noteItems.Clear()
         For Each k_n As OperatiiNotaInfo In _context.Baza.Note
-            cmbNota.Items.Add(CType(k_n.NumarNC.ToString(CultureInfo.InvariantCulture), Object))
+            _noteItems.Add(CType(k_n.NumarNC.ToString(CultureInfo.InvariantCulture), Object))
         Next
-        cmbNota.Text = If(_context.Baza.Urmatoare > 0, _context.Baza.Urmatoare.ToString(CultureInfo.InvariantCulture), String.Empty)
+        ' The spare row of the new invoices starts with the next number of the year.
+        For Each k_row As KBotDataRow In gridNoi.Rows
+            If IsBlankInvoice(k_row) Then k_row("nota") = DefaultNote()
+        Next
+        gridNoi.Invalidate()
     End Sub
+
+    ' The note a new payment starts with: the next number of the year.
+    Private Function DefaultNote() As String
+        Return If(_context IsNot Nothing AndAlso _context.Baza.Urmatoare > 0, _context.Baza.Urmatoare.ToString(CultureInfo.InvariantCulture), String.Empty)
+    End Function
+
+    ' The date a new payment starts with: today when it is in the year of work, else the first day of that year.
+    Private Function DefaultOpDate() As String
+        Return If(Date.Today.Year = YearOfWork(), Date.Today, New Date(YearOfWork(), 1, 1)).ToString(DateFormat, CultureInfo.InvariantCulture)
+    End Function
 
     ' ── The partner and the classification ──────────────────────────────────────
 
@@ -188,9 +212,10 @@ Public Class FacturiPlatiPage
                 FillOpen(gridAnterior, k_data.Anterior)
                 FillOrders(k_data.Plati)
                 txtIban.Text = If(k_data.ContIban.Length > 0, k_data.ContIban, _partner.Iban)
+                txtCodClient.Text = _partner.CodClient
                 gridCurent.Enabled = True
                 gridAnterior.Enabled = True
-                gridPlati.Enabled = True
+                gridPlata.Enabled = True
                 gridNoi.Enabled = True
             Finally
                 _filling = False
@@ -227,33 +252,80 @@ Public Class FacturiPlatiPage
         End Try
     End Sub
 
+    ' The payment grid: the FIRST row (no Tag) is the payment being made -- what the operator typed in it survives a re-read of the partner -- and the rows below
+    ' (Tag = the order) are the orders of the partner in the year, read-only.
     Private Sub FillOrders(k_orders As IReadOnlyList(Of PlataOrdin))
-        gridPlati.BeginUpdate()
+        Dim k_old As KBotDataRow = PaymentRow()
+        Dim k_date As String = If(k_old Is Nothing, DefaultOpDate(), Convert.ToString(k_old("data"), CultureInfo.InvariantCulture))
+        Dim k_note As String = If(k_old Is Nothing, DefaultNote(), Convert.ToString(k_old("nota"), CultureInfo.InvariantCulture))
+        Dim k_explanation As String = If(k_old Is Nothing, String.Empty, Convert.ToString(k_old("explicatie"), CultureInfo.InvariantCulture))
+        gridPlata.BeginUpdate()
         Try
-            gridPlati.ClearRows()
+            gridPlata.ClearRows()
+            Dim k_new As KBotDataRow = gridPlata.AddRow()
+            k_new("nrop") = String.Empty
+            k_new("data") = k_date
+            k_new("nota") = k_note
+            k_new("documente") = String.Empty
+            k_new("explicatie") = k_explanation
+            k_new("valoare") = 0D
             For Each k_o As PlataOrdin In k_orders
-                Dim k_row As KBotDataRow = gridPlati.AddRow()
+                Dim k_row As KBotDataRow = gridPlata.AddRow()
                 k_row.Tag = k_o
                 k_row("nrop") = k_o.NrOP.ToString(CultureInfo.InvariantCulture)
                 k_row("data") = If(k_o.DataOP.HasValue, k_o.DataOP.Value.ToString(DateFormat, CultureInfo.InvariantCulture), String.Empty)
+                k_row("nota") = String.Empty
                 k_row("documente") = k_o.Documente
                 k_row("explicatie") = k_o.Explicatie
                 k_row("valoare") = k_o.Valoare
-                k_row("stare") = If(k_o.Blocat, "Blocat", "Deschis")
             Next
         Finally
-            gridPlati.EndUpdate()
+            gridPlata.EndUpdate()
         End Try
     End Sub
+
+    ' The payment being made (first row, no Tag); Nothing while no partner is read.
+    Private Function PaymentRow() As KBotDataRow
+        Return If(gridPlata.Rows.Count > 0 AndAlso gridPlata.Rows(0).Tag Is Nothing, gridPlata.Rows(0), Nothing)
+    End Function
+
+    Private Shared Function TextOf(k_row As KBotDataRow, k_key As String) As String
+        Return Convert.ToString(k_row(k_key), CultureInfo.InvariantCulture)
+    End Function
+
+    ' The spare row at the end of the grid of new invoices: the place where the next invoice is typed.
+    Private Sub AddBlankInvoiceRow(Optional k_note As String = Nothing)
+        Dim k_row As KBotDataRow = gridNoi.AddRow()
+        k_row("numar") = String.Empty
+        k_row("data") = Date.Today.ToString(DateFormat, CultureInfo.InvariantCulture)
+        k_row("fel") = "Factură"
+        k_row("nota") = If(String.IsNullOrWhiteSpace(k_note), DefaultNote(), k_note)
+        k_row("suma") = 0D
+        k_row("platit") = 0D
+    End Sub
+
+    Private Shared Function IsBlankInvoice(k_row As KBotDataRow) As Boolean
+        Return TextOf(k_row, "numar").Trim().Length = 0 AndAlso ParseAmount(k_row("suma")) = 0D AndAlso ParseAmount(k_row("platit")) = 0D
+    End Function
+
+    ' The invoices typed by hand, without the spare row.
+    Private Function TypedInvoices() As List(Of KBotDataRow)
+        Dim k_rows As New List(Of KBotDataRow)()
+        For Each k_row As KBotDataRow In gridNoi.Rows
+            If Not IsBlankInvoice(k_row) Then k_rows.Add(k_row)
+        Next
+        Return k_rows
+    End Function
 
     ' Gives up everything typed for the previous partner.
     Private Sub ClearEdits()
         _filling = True
         Try
             gridNoi.ClearRows()
+            AddBlankInvoiceRow()
+            gridPlata.ClearRows()
             _dirty = False
             _explanationTyped = False
-            txtExplicatie.Text = String.Empty
         Finally
             _filling = False
         End Try
@@ -319,38 +391,70 @@ Public Class FacturiPlatiPage
 
     ' ── Typed invoices ──────────────────────────────────────────────────────────
 
-    Private Sub BtnAdauga_Click(sender As Object, e As EventArgs) Handles btnAdauga.Click
+    ' The nav list shows ONE of the three grids at a time.
+    Private Sub NavFacturi_SelectionChanged(k_key As String) Handles navFacturi.SelectionChanged
         Try
-            If _partner Is Nothing Then Return
-            Dim k_row As KBotDataRow = gridNoi.AddRow()
-            k_row("numar") = String.Empty
-            k_row("data") = Date.Today.ToString(DateFormat, CultureInfo.InvariantCulture)
-            k_row("fel") = "Factură"
-            k_row("suma") = 0D
-            k_row("platit") = 0D
-            _dirty = True
-            gridNoi.CurrentRowIndex = gridNoi.Rows.Count - 1
-            gridNoi.Invalidate()
+            gridNoi.Visible = String.Equals(k_key, ViewNoi, StringComparison.Ordinal)
+            gridCurent.Visible = String.Equals(k_key, ViewCurent, StringComparison.Ordinal)
+            gridAnterior.Visible = String.Equals(k_key, ViewAnterior, StringComparison.Ordinal)
             RefreshState()
         Catch ex As Exception
-            GlobalErrorLog.Write("FacturiPlatiPage.BtnAdauga_Click", ex)
+            GlobalErrorLog.Write("FacturiPlatiPage.NavFacturi_SelectionChanged", ex)
         End Try
     End Sub
 
-    Private Sub BtnStergeRand_Click(sender As Object, e As EventArgs) Handles btnStergeRand.Click
+    ' The spare row is what the operator types in; once it holds something a new spare row follows it.
+    Private Sub KeepBlankRowLast()
+        If gridNoi.Rows.Count = 0 OrElse Not IsBlankInvoice(gridNoi.Rows(gridNoi.Rows.Count - 1)) Then
+            Dim k_was As Boolean = _filling
+            _filling = True
+            Try
+                ' The next invoice starts in the same note as the one just typed (the usual case: a batch of invoices in one note).
+                AddBlankInvoiceRow(If(gridNoi.Rows.Count = 0, Nothing, TextOf(gridNoi.Rows(gridNoi.Rows.Count - 1), "nota")))
+            Finally
+                _filling = k_was
+            End Try
+            gridNoi.Invalidate()
+        End If
+    End Sub
+
+    ' The delete column of the grid (the standard one): takes the typed invoice out. The spare row has no button.
+    Private Sub GridNoi_ButtonClick(sender As Object, e As KBotButtonClickEventArgs) Handles gridNoi.ButtonClick
         Try
-            Dim k_index As Integer = gridNoi.CurrentRowIndex
-            If k_index < 0 OrElse k_index >= gridNoi.Rows.Count Then Return
-            gridNoi.RemoveRowAt(k_index)
+            If Not String.Equals(e.ColumnKey, ColDelete, StringComparison.Ordinal) OrElse _busy Then Return
+            If e.RowIndex < 0 OrElse e.RowIndex >= gridNoi.Rows.Count OrElse IsBlankInvoice(gridNoi.Rows(e.RowIndex)) Then Return
+            gridNoi.RemoveRowAt(e.RowIndex)
+            KeepBlankRowLast()
             Recompose()
             RefreshState()
         Catch ex As Exception
-            GlobalErrorLog.Write("FacturiPlatiPage.BtnStergeRand_Click", ex)
+            GlobalErrorLog.Write("FacturiPlatiPage.GridNoi_ButtonClick", ex)
         End Try
     End Sub
 
+    Private Sub GridNoi_CellFormatting(sender As Object, e As KBotCellFormattingEventArgs) Handles gridNoi.CellFormatting
+        If String.Equals(e.ColumnKey, ColDelete, StringComparison.Ordinal) AndAlso e.Row IsNot Nothing AndAlso IsBlankInvoice(e.Row) Then
+            e.HideButton = True
+            e.Enabled = False
+        End If
+    End Sub
+
     Private Sub GridNoi_ComboItemsRequested(sender As Object, e As KBotComboItemsEventArgs) Handles gridNoi.ComboItemsRequested
-        e.Items = _kinds
+        e.Items = If(String.Equals(e.ColumnKey, "nota", StringComparison.Ordinal), _noteItems, _kinds)
+    End Sub
+
+    Private Sub GridPlata_ComboItemsRequested(sender As Object, e As KBotComboItemsEventArgs) Handles gridPlata.ComboItemsRequested
+        e.Items = _noteItems
+    End Sub
+
+    ' Only the payment row is typed in; the orders of the year below it are shown as they were posted. The payment row has no delete button (nothing to delete yet).
+    Private Sub GridPlata_CellFormatting(sender As Object, e As KBotCellFormattingEventArgs) Handles gridPlata.CellFormatting
+        If e.Row Is Nothing Then Return
+        If e.Row.Tag IsNot Nothing Then e.ReadOnlyCell = True
+        If String.Equals(e.ColumnKey, ColDelete, StringComparison.Ordinal) AndAlso e.Row.Tag Is Nothing Then
+            e.HideButton = True
+            e.Enabled = False
+        End If
     End Sub
 
     ' ── Amounts to pay ──────────────────────────────────────────────────────────
@@ -391,10 +495,36 @@ Public Class FacturiPlatiPage
                 If (k_total >= 0D AndAlso k_paid > k_total) OrElse (k_total < 0D AndAlso k_paid < k_total) Then gridNoi.Rows(e.RowIndex)("platit") = k_total
             End If
             _dirty = True
+            If sender Is gridNoi Then KeepBlankRowLast()
             Recompose()
             RefreshState()
         Catch ex As Exception
             GlobalErrorLog.Write("FacturiPlatiPage.Grid_CellValueChanged", ex)
+        End Try
+    End Sub
+
+    ' What the operator types in the explanation is made valid (ASCII, no comma, at most 75 characters) and from then on is no longer composed.
+    Private Sub GridPlata_CellValidating(sender As Object, e As KBotCellValidatingEventArgs) Handles gridPlata.CellValidating
+        Try
+            If Not String.Equals(e.ColumnKey, "explicatie", StringComparison.Ordinal) Then Return
+            Dim k_clean As String = OpExplicatie.Clean(Convert.ToString(e.ProposedValue, CultureInfo.InvariantCulture))
+            If k_clean.Length > OpExplicatie.MaxLength Then k_clean = k_clean.Substring(0, OpExplicatie.MaxLength)
+            e.ProposedValue = k_clean
+        Catch ex As Exception
+            GlobalErrorLog.Write("FacturiPlatiPage.GridPlata_CellValidating", ex)
+        End Try
+    End Sub
+
+    Private Sub GridPlata_CellValueChanged(sender As Object, e As KBotCellValueEventArgs) Handles gridPlata.CellValueChanged
+        Try
+            If _filling OrElse e.RowIndex <> 0 Then Return
+            If String.Equals(e.ColumnKey, "explicatie", StringComparison.Ordinal) Then
+                _explanationTyped = Convert.ToString(e.NewValue, CultureInfo.InvariantCulture).Length > 0
+            End If
+            _dirty = True
+            RefreshState()
+        Catch ex As Exception
+            GlobalErrorLog.Write("FacturiPlatiPage.GridPlata_CellValueChanged", ex)
         End Try
     End Sub
 
@@ -437,56 +567,33 @@ Public Class FacturiPlatiPage
     Private Sub Recompose()
         If _explanationTyped OrElse _idSablonP = 0 Then Return
         Dim k_template As FacturiPlatiSablon = If(_classification Is Nothing, Nothing, _classification.SabloaneP.FirstOrDefault(Function(k_s) k_s.IdSablon = _idSablonP))
+        Dim k_row As KBotDataRow = PaymentRow()
+        If k_row Is Nothing Then Return
         Dim k_cut As Boolean
+        Dim k_was As Boolean = _filling
         _filling = True
         Try
-            txtExplicatie.Text = OpExplicatie.Compose(PaidNumbers(), String.Empty, If(k_template Is Nothing, String.Empty, OpExplicatie.Fit(k_template.FelOP)), k_cut)
+            k_row("explicatie") = OpExplicatie.Compose(PaidNumbers(), String.Empty, If(k_template Is Nothing, String.Empty, OpExplicatie.Fit(k_template.FelOP)), k_cut)
         Finally
-            _filling = False
+            _filling = k_was
         End Try
-    End Sub
-
-    ' What the operator types in the explanation is made valid (ASCII, no comma, at most 75 characters) and from then on is no longer composed.
-    Private Sub TxtExplicatie_TextChanged(sender As Object, e As EventArgs) Handles txtExplicatie.TextChanged
-        Try
-            If _filling Then Return
-            Dim k_clean As String = OpExplicatie.Clean(txtExplicatie.Text)
-            If k_clean.Length > OpExplicatie.MaxLength Then k_clean = k_clean.Substring(0, OpExplicatie.MaxLength)
-            If Not String.Equals(k_clean, txtExplicatie.Text, StringComparison.Ordinal) Then
-                _filling = True
-                Try
-                    txtExplicatie.Text = k_clean
-                Finally
-                    _filling = False
-                End Try
-            End If
-            _explanationTyped = k_clean.Length > 0
-            RefreshState()
-        Catch ex As Exception
-            GlobalErrorLog.Write("FacturiPlatiPage.TxtExplicatie_TextChanged", ex)
-        End Try
+        gridPlata.Invalidate()
     End Sub
 
     ' ── Delete a payment ────────────────────────────────────────────────────────
 
-    Private Sub GridPlati_CellClick(sender As Object, e As KBotCellEventArgs) Handles gridPlati.CellClick
+    ' The delete column of the payment grid (the standard one), on the rows of the orders of the year. An order that sits in an OPME or is confirmed by a bank
+    ' statement is not deleted: the message says why.
+    Private Async Sub GridPlata_ButtonClick(sender As Object, e As KBotButtonClickEventArgs) Handles gridPlata.ButtonClick
         Try
-            RefreshState()
-        Catch ex As Exception
-            GlobalErrorLog.Write("FacturiPlatiPage.GridPlati_CellClick", ex)
-        End Try
-    End Sub
-
-    Private Function SelectedOrder() As PlataOrdin
-        Dim k_index As Integer = gridPlati.CurrentRowIndex
-        If k_index < 0 OrElse k_index >= gridPlati.Rows.Count Then Return Nothing
-        Return TryCast(gridPlati.Rows(k_index).Tag, PlataOrdin)
-    End Function
-
-    Private Async Sub BtnStergePlata_Click(sender As Object, e As EventArgs) Handles btnStergePlata.Click
-        Try
-            Dim k_order As PlataOrdin = SelectedOrder()
-            If k_order Is Nothing OrElse k_order.Blocat OrElse _busy Then Return
+            If Not String.Equals(e.ColumnKey, ColDelete, StringComparison.Ordinal) OrElse _busy Then Return
+            If e.RowIndex < 0 OrElse e.RowIndex >= gridPlata.Rows.Count Then Return
+            Dim k_order As PlataOrdin = TryCast(gridPlata.Rows(e.RowIndex).Tag, PlataOrdin)
+            If k_order Is Nothing Then Return
+            If k_order.Blocat Then
+                KBotMessage.Show(Me, k_order.Motiv & " Plata și ordinul nu se mai pot șterge.", "Facturi și plăți", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
             If KBotMessage.Show(Me, $"Ștergeți plata cu ordinul de plată {k_order.NrOP.ToString(CultureInfo.InvariantCulture)}, împreună cu ordinul?" & vbLf & "Operația nu poate fi anulată.",
                                 "Facturi și plăți", MessageBoxButtons.YesNo, MessageBoxIcon.Warning) <> DialogResult.Yes Then Return
             SetBusy(True)
@@ -496,12 +603,12 @@ Public Class FacturiPlatiPage
             SetBusy(False)
             Await LoadPartnerAsync().ConfigureAwait(True)
         Catch ex As ApiException
-            GlobalErrorLog.Write("FacturiPlatiPage.BtnStergePlata_Click", ex)
+            GlobalErrorLog.Write("FacturiPlatiPage.GridPlata_ButtonClick", ex)
             SetBusy(False)
             SetStatus(ex.Message)
             KBotMessage.Show(Me, ex.Message, "Facturi și plăți", MessageBoxButtons.OK, MessageBoxIcon.Warning)
         Catch ex As Exception
-            GlobalErrorLog.Write("FacturiPlatiPage.BtnStergePlata_Click", ex)
+            GlobalErrorLog.Write("FacturiPlatiPage.GridPlata_ButtonClick", ex)
             If Not IsDisposed Then SetBusy(False)
         End Try
     End Sub
@@ -535,18 +642,29 @@ Public Class FacturiPlatiPage
     Private Function ValidateRequest(ByRef k_request As FacturiPlatiCerere) As String
         If _partner Is Nothing Then Return "Alegeți partenerul."
         If _classification Is Nothing Then Return "Alegeți clasificația bugetară."
-        Dim k_note As Integer
-        If Not Integer.TryParse(cmbNota.Text.Trim(), NumberStyles.None, CultureInfo.InvariantCulture, k_note) OrElse k_note <= 0 Then Return "Nota contabilă trebuie să fie un număr întreg pozitiv."
+        Dim k_payRow As KBotDataRow = PaymentRow()
+        If k_payRow Is Nothing Then Return "Alegeți partenerul."
         Dim k_paying As Boolean = _idSablonP > 0
+        ' The note of the payment (its order) is mandatory only when something is paid; every new invoice carries its own mandatory note.
+        Dim k_note As Integer
+        If Not Integer.TryParse(TextOf(k_payRow, "nota").Trim(), NumberStyles.None, CultureInfo.InvariantCulture, k_note) OrElse k_note <= 0 Then
+            If k_paying Then Return "Nota contabilă a plății trebuie să fie un număr întreg pozitiv."
+            k_note = 0
+        End If
         Dim k_new As New List(Of FacturaNoua)()
-        For Each k_row As KBotDataRow In gridNoi.Rows
+        For Each k_row As KBotDataRow In TypedInvoices()
             Dim k_number As String = Convert.ToString(k_row("numar"), CultureInfo.InvariantCulture).Trim()
             If k_number.Length = 0 Then Return "O factură nouă nu are număr."
             Dim k_date As Date
             If Not ParseDate(k_row("data"), k_date) Then Return $"Data facturii {k_number} nu este validă (zz.ll.aaaa)."
             Dim k_amount As Decimal = ParseAmount(k_row("suma"))
             If k_amount = 0D Then Return $"Factura {k_number} are valoarea zero."
-            k_new.Add(New FacturaNoua() With {.Numar = k_number, .Data = k_date, .Suma = k_amount, .Fel = Convert.ToString(k_row("fel"), CultureInfo.InvariantCulture), .Platit = ParseAmount(k_row("platit"))})
+            Dim k_invoiceNote As Integer
+            If Not Integer.TryParse(TextOf(k_row, "nota").Trim(), NumberStyles.None, CultureInfo.InvariantCulture, k_invoiceNote) OrElse k_invoiceNote <= 0 Then
+                Return $"Factura {k_number} nu are număr de notă contabilă (obligatoriu, număr întreg pozitiv)."
+            End If
+            k_new.Add(New FacturaNoua() With {.Numar = k_number, .Data = k_date, .Suma = k_amount, .Fel = Convert.ToString(k_row("fel"), CultureInfo.InvariantCulture),
+                                              .NumarNC = k_invoiceNote, .Platit = ParseAmount(k_row("platit"))})
         Next
         If k_new.Count > 0 AndAlso _idSablonE = 0 Then Return "Alegeți șablonul de evidențiere pentru facturile noi."
         Dim k_chosen As New List(Of FacturaAleasa)()
@@ -562,12 +680,16 @@ Public Class FacturiPlatiPage
         If k_total <> 0D AndAlso Not k_paying Then Return "Alegeți șablonul de plată: există sume de plată."
         If k_paying AndAlso k_total <= 0D Then Return "Suma de plată trebuie să fie pozitivă."
         If k_paying AndAlso txtIban.Text.Trim().Length = 0 Then Return "Partenerul nu are niciun cont bancar configurat: nu se poate face ordinul de plată."
-        Dim k_dateOp As Date = dtpDataOp.Value.Date
+        Dim k_dateOp As Date
+        If Not ParseDate(TextOf(k_payRow, "data"), k_dateOp) Then
+            If k_paying Then Return "Data ordinului de plată nu este validă (zz.ll.aaaa)."
+            k_dateOp = New Date(YearOfWork(), 1, 1)
+        End If
         If k_paying AndAlso k_dateOp.Year <> YearOfWork() Then Return $"Data ordinului de plată trebuie să fie în anul de lucru ({YearOfWork()})."
         k_request = New FacturiPlatiCerere() With {
             .IdSubunitate = _idSubunitate, .An = YearOfWork(), .IdPartener = _partner.IdPartener, .IdClsf = _classification.IdClsf,
             .IdSablonE = _idSablonE, .IdSablonP = If(k_paying, _idSablonP, 0), .NumarNC = k_note, .DataOP = k_dateOp,
-            .ExplicatieOP = txtExplicatie.Text.Trim(), .Noi = k_new, .Existente = k_chosen}
+            .ExplicatieOP = TextOf(k_payRow, "explicatie").Trim(), .Noi = k_new, .Existente = k_chosen}
         Return String.Empty
     End Function
 
@@ -587,7 +709,8 @@ Public Class FacturiPlatiPage
                 Function() _api.SalveazaFacturiPlatiAsync(k_request, CancellationToken.None)).ConfigureAwait(True)
             If IsDisposed Then Return True
             _dirty = False
-            Dim k_text As String = $"Nota contabilă {k_result.NumarNC.ToString(CultureInfo.InvariantCulture)}: {k_result.Facturi.ToString(CultureInfo.InvariantCulture)} facturi noi înregistrate"
+            Dim k_notes As String = String.Join(", ", k_result.Note.Select(Function(k_n) k_n.ToString(CultureInfo.InvariantCulture)))
+            Dim k_text As String = $"{k_result.Facturi.ToString(CultureInfo.InvariantCulture)} facturi noi înregistrate" & If(k_notes.Length > 0, $" (nota contabilă {k_notes})", String.Empty)
             If k_result.NrOP > 0 Then
                 k_text &= $", plată de {k_result.ValoarePlata.ToString("N2", New CultureInfo("ro-RO"))} cu ordinul de plată numărul {k_result.NrOP.ToString(CultureInfo.InvariantCulture)}."
                 If k_shown > 0 AndAlso k_shown <> k_result.NrOP Then
@@ -633,7 +756,7 @@ Public Class FacturiPlatiPage
 
     Public ReadOnly Property HasPending As Boolean Implements ISablonPagina.HasPending
         Get
-            Return _partner IsNot Nothing AndAlso _dirty AndAlso (gridNoi.Rows.Count > 0 OrElse TotalToPay() <> 0D)
+            Return _partner IsNot Nothing AndAlso _dirty AndAlso (TypedInvoices().Count > 0 OrElse TotalToPay() <> 0D)
         End Get
     End Property
 
@@ -664,19 +787,21 @@ Public Class FacturiPlatiPage
         Dim k_paying As Boolean = _idSablonP > 0
         Dim k_total As Decimal = TotalToPay()
         Dim k_active As Boolean = Not _busy AndAlso _partner IsNot Nothing
-        btnAdauga.Enabled = k_active
-        btnStergeRand.Enabled = k_active AndAlso gridNoi.Rows.Count > 0
-        btnSalveaza.Enabled = k_active AndAlso _classification IsNot Nothing AndAlso (gridNoi.Rows.Count > 0 OrElse k_total <> 0D)
+        Dim k_typed As Integer = TypedInvoices().Count
+        btnSalveaza.Enabled = k_active AndAlso _classification IsNot Nothing AndAlso (k_typed > 0 OrElse k_total <> 0D)
         btnRenunta.Enabled = k_active
-        Dim k_order As PlataOrdin = SelectedOrder()
-        btnStergePlata.Enabled = k_active AndAlso k_order IsNot Nothing AndAlso Not k_order.Blocat
-        tips.SetToolTipText(btnStergePlata, If(k_order IsNot Nothing AndAlso k_order.Blocat, k_order.Motiv & " Plata și ordinul nu se mai pot șterge.",
-                                               "Șterge plata aleasă în tabelul ordinelor, împreună cu ordinul ei. Nu merge dacă ordinul e într-un OPME sau confirmat prin extras."))
-        txtExplicatie.Enabled = k_active AndAlso k_paying
-        If _partnerData IsNot Nothing AndAlso k_paying AndAlso k_total <> 0D Then
-            lblNumarOp.Text = $"Număr O.P.: {_partnerData.NumarOP.ToString(CultureInfo.InvariantCulture)} (provizoriu)"
-        Else
-            lblNumarOp.Text = String.Empty
+        ' The payment row shows what is paid now and the order number that would follow (PROVISIONAL).
+        Dim k_pay As KBotDataRow = PaymentRow()
+        If k_pay IsNot Nothing Then
+            Dim k_was As Boolean = _filling
+            _filling = True
+            Try
+                k_pay("valoare") = k_total
+                k_pay("nrop") = If(_partnerData IsNot Nothing AndAlso k_paying AndAlso k_total <> 0D, $"{_partnerData.NumarOP.ToString(CultureInfo.InvariantCulture)} (provizoriu)", String.Empty)
+            Finally
+                _filling = k_was
+            End Try
+            gridPlata.Invalidate()
         End If
     End Sub
 
@@ -688,7 +813,7 @@ Public Class FacturiPlatiPage
         Try
             If k_scheme Is Nothing Then Return
             BackColor = k_scheme.PanelBack()
-            For Each k_c As Control In {tlyPagina, tlyAntet, tlyMijloc, tlySabloane, tlyGrile, tlyJos}
+            For Each k_c As Control In {tlyPagina, tlyClsf, tlyAntet, tlyView, pnlView, tlyJos}
                 k_c.BackColor = k_scheme.PanelBack()
             Next
             lblStare.ForeColor = k_scheme.Palette.TextDimColor

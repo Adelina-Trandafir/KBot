@@ -37,7 +37,8 @@ def register(bp, guard, scoped, session, build, repo_of):
                              'ORDER BY t.DATA_BU DESC,t.ID DESC', _scope(ctx))
             holders = _all(cursor, 'SELECT IDC AS id,Denumire AS label FROM VC_Clienti '
                            'WHERE SubunitId=%s AND GestiuneId=%s AND Activ=1', (ctx['subunit'], ctx['gestiune']))
-            return {'today': bucharest_today().isoformat(), 'destinations': bu_catalog.destinations(cursor, ctx),
+            zec = int(ctx['zec']) if ctx.get('zec') is not None else 4
+            return {'today': bucharest_today().isoformat(), 'zec': zec, 'destinations': bu_catalog.destinations(cursor, ctx),
                     'holders': holders, 'documents': [{**doc, 'day': _iso(doc['day'])} for doc in documents]}
 
     @bp.get(PATH + '/eligible')

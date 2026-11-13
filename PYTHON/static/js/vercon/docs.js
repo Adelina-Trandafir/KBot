@@ -124,6 +124,7 @@ export function mountDocuments(host, opts) {
   if (['nir', 'bc'].includes(family)) headerFit({ box: main, header: headerHost, lines: linesHost, minRows: 10, signal: abort.signal });
   const productEntry = family === 'nir' ? receiptProductEntry({ host, root, allocation, draft: () => state.draft,
     api: opts.api, selection: opts.sel, changed: () => { state.dirty = true; }, note: () => state.draft?.efactura ? state.draft.efactura_note || '' : null }) : null;
+  const changeEfactura = receiptEfacturaChanges(opts.api);
   const efLineDialog = family === 'nir' ? efacturaLineDialog({ host, api: opts.api, sel: opts.sel, note: () => state.draft?.efactura_note || '' }) : null;   // VC06-38
   const treeHost = inline ? el('div', { className: 'vc-receipt-tree' }) : savedHost;
   if (treeHost !== savedHost) savedHost.append(treeHost);

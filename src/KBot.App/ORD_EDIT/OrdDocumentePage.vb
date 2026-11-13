@@ -402,11 +402,13 @@ Public Class OrdDocumentePage
         End Try
     End Sub
 
-    Private Sub BtnStergeText_Click(sender As Object, e As EventArgs) Handles btnAdaugaText.Click
+    ' Coloana ✕ a grilei (cea standard): sterge randul de pe care s-a apasat.
+    Private Sub GrdText_ButtonClick(sender As Object, e As KBotButtonClickEventArgs) Handles grdText.ButtonClick
         Try
-            StergeRandul(grdText)
+            If e.ColumnKey <> "sterge" Then Return
+            StergeRandul(grdText, e.RowIndex)
         Catch ex As Exception
-            GlobalErrorLog.Write("OrdDocumentePage.BtnStergeText_Click", ex)
+            GlobalErrorLog.Write("OrdDocumentePage.GrdText_ButtonClick", ex)
         End Try
     End Sub
 
@@ -458,7 +460,7 @@ Public Class OrdDocumentePage
 
     Private Sub BtnStergeFisier_Click(sender As Object, e As EventArgs) Handles btnStergeFisier.Click
         Try
-            StergeRandul(grdFisiere)
+            StergeRandul(grdFisiere, grdFisiere.CurrentRowIndex)
         Catch ex As Exception
             GlobalErrorLog.Write("OrdDocumentePage.BtnStergeFisier_Click", ex)
         End Try
@@ -544,9 +546,9 @@ Public Class OrdDocumentePage
     ''' cel din Access (<c>dtnDel_Click</c>: «Documentul selectat nu este al Beneficiarului
     ''' curent!»), fiindca altfel operatorul ar sterge de sub ceilalti fara sa-si dea seama.
     ''' </summary>
-    Private Sub StergeRandul(grila As KBotDataView)
+    Private Sub StergeRandul(grila As KBotDataView, rowIndex As Integer)
         If _draft Is Nothing Then Return
-        Dim grup As List(Of OrdDraftDoc) = GrupulRandului(grila, grila.CurrentRowIndex)
+        Dim grup As List(Of OrdDraftDoc) = GrupulRandului(grila, rowIndex)
         If grup Is Nothing Then Return
 
         ' Fara rand sintetic (un singur beneficiar) refuzul n-ar avea unde sa trimita
@@ -603,11 +605,10 @@ Public Class OrdDocumentePage
             tlyFisiere.BackColor = scheme.PanelBack()
 
 
-            ' «Adaugă» e actiunea, deci poarta accentul; «Șterge» ramane secundar — un buton
-            ' distructiv nu se imbraca in culoarea care cheama degetul.
+            ' «Adaugă» e actiunea, deci poarta accentul; «Șterge fișierul» ramane secundar — un buton
+            ' distructiv nu se imbraca in culoarea care cheama degetul. Randurile text se sterg cu ✕.
             ButtonStyles.ApplyPrimary(btnAdaugaText, scheme)
             ButtonStyles.ApplyPrimary(btnAdaugaFisier, scheme)
-            ButtonStyles.ApplySecondary(btnStergeText, scheme)
             ButtonStyles.ApplySecondary(btnStergeFisier, scheme)
         Catch ex As Exception
             GlobalErrorLog.Write("OrdDocumentePage.ApplyTheme", ex)
