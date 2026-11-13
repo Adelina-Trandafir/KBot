@@ -33,6 +33,9 @@ import { receiptProductEntry, mfColumns, mfMonthly } from './receipt-product-ent
 import { efacturaIntake } from './efactura-intake.js';
 import { efacturaLineDialog } from './efactura-line-dialog.js';
 import { efacturaMenu, receiptEfacturaChanges } from './efactura-actions.js';
+import { invoiceTwins, twinText } from './invoice-twins.js';
+import { changeDocumentNumber } from './number-change.js';
+import { changeDocumentSupplier } from './supplier-change.js';
 import { showReceiptEfactura } from './efactura-view.js';
 import { headerFit } from './header-fit.js';
 
@@ -102,6 +105,7 @@ export function mountDocuments(host, opts) {
     aborted: () => abort.signal.aborted, controls: () => ({ input: inputs.get('Numar'), ...subnumber.controls() }),
     error: () => errors.get('h.Numar'), track: trackStorno });
   const checkNumber = numbering.check;
+  const twins = ['nir', 'storno'].includes(family) ? invoiceTwins({ family, api: opts.api, url, state, status, aborted: () => abort.signal.aborted }) : { warn: async () => {} };   // VC14-05: same invoice number at the same supplier = a warning
   const subnumber = documentSubnumber({ family, owner: headerUi, state, check: checkNumber, report });
   const mf = () => family === 'nir' && (opts.sel().type === 'MF' || allocation.hasMF()), editing = () => state.mode !== 'view';
   const invoiceDoc = () => family === 'nir' && state.mode !== 'add' ? state.doc : null;
@@ -187,7 +191,7 @@ export function mountDocuments(host, opts) {
       console.error('[VERCON] Receipt product catalog missing from response', { path: url('/lookups'), fields: Object.keys(lookups || {}) });
       throw new Error('Serverul nu a trimis lista produselor pentru recepție. Documentul nu poate fi încărcat.');
     }
-    treeDirty = true; Object.assign(state, { docs: list.documents || [], canWrite: list.can_write && !list.closed, closed: list.closed, zec: list.zec, lookups });
+    treeDirty = true; Object.assign(state, { docs: list.documents || [], canWrite: list.can_write && !list.closed, canChangeSupplier: !!list.can_write, closed: list.closed, zec: list.zec, lookups });
     side?.configureCache(lookups.warehouse_statement_cache);
     if (config.source) state.sources = (await opts.api(url('/sources'))).documents;
   }
@@ -524,6 +528,7 @@ export function mountDocuments(host, opts) {
         }
         if (receipt && spec.key === 'Numar' && String(previous ?? '') !== String(value ?? '')) state.draft.autoNumber = false;
         if (family === 'nir' && spec.key === 'Valoare') syncInvoiceValue();
+        if (['NrFact', 'CodFiscal'].includes(spec.key)) void twins.warn();
         if (status.textContent.startsWith('Completați mai întâi antetul') && !headerLock()) say('');
         if (spec.key === config.holder && String(previous) !== String(value)) {
           if (!await linesUi.commit()) { state.draft.header[spec.key] = previous; paintHeader(); return; }
@@ -834,12 +839,15 @@ export function mountDocuments(host, opts) {
     savedTree = paintTree(treeHost, treeNodes(), { title: family === 'bc' ? 'Bonuri salvate' : family === 'storno' ? 'FCS salvate' : 'Documente salvate', showSearchBox: false, collapsed: true, selected: state.doc?.id, onToggle: lazy ? opened : undefined, onSelect: (id) => open(Number(id)).catch(report), onAction: (id, anchor) => {
       if (id.startsWith('party:')) { openMenu(anchor, [{ icon: 'ℹ', label: 'Afișează info furnizor', run: () => showSupplierInfo({ api: opts.api, sel: opts.sel, cf: decodeURIComponent(id.slice(6)) }).catch(report) }]); return; }
       const doc = lazy ? receipts.find(id) : state.docs.find((item) => String(item.id) === id); if (!doc) return; const run = async (action) => { if (state.doc?.id !== doc.id) await open(doc.id); if (state.doc?.id === doc.id) await action(); };
-      const efactura = family === 'nir' ? efacturaMenu(doc, { busy: state.busy, blocked: efacturaBlocked(doc),
+      const efactura = ['nir', 'storno'].includes(family) ? efacturaMenu(doc, { busy: state.busy, blocked: efacturaBlocked(doc),
         view: () => run(() => showReceiptEfactura({ api: opts.api, selection: opts.sel(), doc: state.doc, owner: dialogs })).catch(report),
         change: mode => run(() => changeSavedEfactura(mode)).catch(report) }) : [];
       openMenu(anchor, [...(doc.source_missing ? [{ icon: '↔', label: 'Asociază cu un bon de consum', disabled: !state.canWrite || doc.annulled, run: () => run(edit).catch(report) }] : []),
         ...efactura,
-        { icon: '✎', label: 'Modifică', rule: efactura.length > 0, disabled: !state.canWrite || doc.annulled, run: () => run(edit).catch(report) }, { icon: '◉', label: 'Previzualizează', run: () => run(preview).catch(report) }, { icon: '◷', label: 'Istoric', run: () => run(history).catch(report) }, { icon: '×', label: 'Anulează', rule: true, disabled: !state.canWrite || doc.annulled || doc.order_locked, run: () => run(cancel).catch(report) }], { align: 'right' });
+        { icon: '✎', label: 'Modifică', rule: efactura.length > 0, disabled: !state.canWrite || doc.annulled, run: () => run(edit).catch(report) },
+        ...(doc.number_change ? [{ icon: '#', label: 'Modifică număr', disabled: !state.canWrite || state.busy, run: () => run(changeNumber).catch(report) }] : []),   // VC16-02: only BC / BP / BT / BS of the current month
+        ...(family === 'nir' ? [{ icon: '🏢', label: 'Modifică furnizor', disabled: !state.canChangeSupplier || state.busy || doc.annulled || doc.has_efactura, run: () => run(changeSupplier).catch(report) }] : []),   // VC16-03: any period, also a closed exercise
+        { icon: '◉', label: 'Previzualizează', run: () => run(preview).catch(report) }, { icon: '◷', label: 'Istoric', run: () => run(history).catch(report) }, { icon: '×', label: 'Anulează', rule: true, disabled: !state.canWrite || doc.annulled || doc.order_locked, run: () => run(cancel).catch(report) }], { align: 'right' });
     } }, treeUi);
     paintTreeAdd();
   }
@@ -869,7 +877,7 @@ export function mountDocuments(host, opts) {
     state.busy = true; root.inert = true;
     let result;
     try {
-      result = await changeEfactura({ doc, mode, selection: opts.sel(), signal });
+      result = await changeEfactura({ doc, mode, selection: opts.sel(), signal, label: family === 'storno' ? 'FCS' : 'NIR' });
       if (!result || signal.aborted) return;
       const updated = await opts.api(url(`/${doc.id}`));
       if (signal.aborted) return;
@@ -990,6 +998,7 @@ export function mountDocuments(host, opts) {
         say(fields.length ? `Completați sau corectați: ${fields.join(', ')}.` : 'Completați sau corectați rândurile marcate din tabel.', true);
         return;
       }
+      if (!state.pendingBody) void twins.warn();   // VC14-05: once more before saving (a value that was not typed, e.g. from an e-invoice); never blocks
       if (family === 'nir' && !state.pendingBody && !sharedReceipt(invoiceDoc())) {
         // A difference of at most 1 leu between the invoice value and the lines is a warning, not a block.
         const gap = syncInvoiceValue();
@@ -1049,9 +1058,26 @@ export function mountDocuments(host, opts) {
       if (reason == null) return; pendingCancel = { reason, version: doc.version, request_key: key(), id: doc.id };
     }
     state.busy = true;
-    try { const result = await json('POST', `/${pendingCancel.id}/cancel`, pendingCancel); if (abort.signal.aborted) return; pendingCancel = null; state.doc = result.document; await refresh(); paint(); say('Anulat.'); }
+    try { const result = await json('POST', `/${pendingCancel.id}/cancel`, pendingCancel); if (abort.signal.aborted) return; pendingCancel = null; state.doc = result.document; await refresh(); paint(); say('Anulat și scos din evidență. Numărul poate fi folosit din nou.'); }
     catch (error) { if (error.status && error.status < 500) pendingCancel = null; report(error); }
     finally { state.busy = false; paintBar(); }
+  }
+  async function changeNumber() {   // VC16-02
+    const doc = state.doc; if (!doc || !state.canWrite || doc.annulled || state.busy) return;
+    if (editing()) { say('Salvați sau renunțați la modificările documentului înainte de a schimba numărul.', true); return; }
+    const saved = await changeDocumentNumber({ doc, title: config.title, key, post: (number, version, request_key) => json('POST', `/${doc.id}/number`, { number, version, request_key }) });
+    if (abort.signal.aborted || !saved) return;
+    state.doc = saved; await refresh(); if (abort.signal.aborted) return; paint(); say(`Numărul a fost modificat: ${saved.number}.`);
+  }
+  async function changeSupplier() {   // VC16-03: only the supplier of a saved NIR, in any period (the right of the operation is enough, the closed exercise is not)
+    const doc = state.doc; if (!doc || !state.canChangeSupplier || doc.annulled || doc.has_efactura || state.busy) return;
+    if (editing()) { say('Salvați sau renunțați la modificările documentului înainte de a schimba furnizorul.', true); return; }
+    const saved = await changeDocumentSupplier({ doc: { ...doc, number: numberText(doc) }, title: config.title, suppliers: state.lookups?.partners || [], key,
+      post: (cf, version, request_key) => json('POST', `/${doc.id}/supplier`, { cf, version, request_key }) });
+    if (abort.signal.aborted || !saved) return;
+    state.doc = saved.document; await refresh(); if (abort.signal.aborted) return; paint();
+    say(`Furnizorul a fost modificat: ${saved.result.supplier.name}.`);
+    const twin = twinText(saved.document.header.NrFact, saved.result.twins || []); if (twin) showMessage(status, twin, 'warning');   // VC14-05 warning, never a block
   }
   async function history() { const doc = state.doc; if (doc) await showDocumentHistory({ api: opts.api, url: url(`/${doc.id}/history`), title: `Istoric • ${config.title} nr. ${doc.number}`, owner: dialogs, isCurrent: () => !abort.signal.aborted && state.doc === doc }); }
   async function preview() {

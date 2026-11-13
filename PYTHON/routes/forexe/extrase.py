@@ -49,7 +49,8 @@ un octet, FIECARE extras vazut inainte ar parea nou. Asa ca se compara ce se poa
 compara sigur:
 
   * fisierul     (NumeFisier, DataExtras)
-  * operatiunea  (DataDoc, NrDoc, platitor_cui, suma_debit, suma_credit)
+  * operatiunea  (DataDoc, NrDoc, platitor_cui, suma_debit, suma_credit, Referinta)
+                 -- Referinta added in AD21-02: two equal payments of one payer differ only by it
 
 Si mai concret decat atat: pe randurile scrise de Access, `FX_Extrase.HASH` este GOL.
 `Extrase_Add` calcula hash-ul, cauta dupa el cu `FindFirst`... si apoi NU il scria in
@@ -517,7 +518,7 @@ _H_INSERT_SQL = (
     "VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
 )
 _E_EXISTENTE_SQL = (
-    "SELECT DataDoc, NrDoc, platitor_cui, suma_debit, suma_credit FROM FX_Extrase"
+    "SELECT DataDoc, NrDoc, platitor_cui, suma_debit, suma_credit, Referinta FROM FX_Extrase"
 )
 _E_INSERT_SQL = (
     "INSERT INTO FX_Extrase "
@@ -661,8 +662,8 @@ def importa_extrase(cursor, extrase, sari_continut_cunoscut=False):
         # DataDoc is a DATE since 0080-01; `_zi` folds a driver datetime to a date
         # so the pair (read, written) compares like with like.
         operatiuni_vazute = {
-            (_zi(dd), nd, cui, _f(sd), _f(sc))
-            for (dd, nd, cui, sd, sc) in cursor.fetchall()
+            (_zi(dd), nd, cui, _f(sd), _f(sc), _ref_cheie(ref))
+            for (dd, nd, cui, sd, sc, ref) in cursor.fetchall()
         }
 
     importate = 0
@@ -768,7 +769,19 @@ def _cheie_operatiune(cont_misc):
     d = parse_cont_misc(cont_misc)
     return (parse_data_yyyymmdd(d.get("datadoc")), null_if_empty(d.get("nrdoc")),
             null_if_empty(d.get("platitor")), parse_loose_number(d.get("sumad")),
-            parse_loose_number(d.get("sumac")))
+            parse_loose_number(d.get("sumac")),
+            _ref_cheie(extract_obs_value(d.get("explicatii"), "", "-")))
+
+
+def _ref_cheie(referinta) -> str:
+    """
+    Referinta as part of the natural key (AD21-02): None and '' are the same value.
+
+    Two payments by the same person, same day, same document number and same amount
+    (the bank gives both NrDoc 1) differ only by the reference in front of the first
+    dash of the explanation; without it the second one was dropped as a duplicate.
+    """
+    return str(referinta or "").strip()
 
 
 def _f(v) -> float:
@@ -887,7 +900,7 @@ def _scrie_operatiune(cursor, nom: _Nomenclatoare, cont_misc, idexh: int,
     elif cod_contract is not None and id_clsf is not None and cod_contract != "ERRRRRRRRRR":
         cod_ai = nom.indicator_pentru(cod_contract, id_clsf)
 
-    cheie = (data_doc, nr_doc, platitor_cui, suma_debit, suma_credit)
+    cheie = (data_doc, nr_doc, platitor_cui, suma_debit, suma_credit, _ref_cheie(referinta))
     if cheie in vazute:
         return False
     vazute.add(cheie)

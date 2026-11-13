@@ -33,7 +33,7 @@ def register(bp, guard, scoped, session, build, repo_of):
                              'LEFT JOIN VC_Clienti p ON p.SubunitId=t.SURSA_SUBUNITATE AND p.GestiuneId=t.SURSA_GESTIUNE AND p.IDC=t.PREDATOR '
                              'LEFT JOIN VC_NIR n ON n.SubunitId=t.DEST_SUBUNITATE AND n.GestiuneId=t.DEST_GESTIUNE '
                              'AND n.ExercitiuId=t.DEST_EXERCITIU AND n.IdIntrare=t.DEST_NIR '
-                             'WHERE t.SURSA_SUBUNITATE=%s AND t.SURSA_GESTIUNE=%s AND t.SURSA_EXERCITIU=%s '
+                             'WHERE t.SURSA_SUBUNITATE=%s AND t.SURSA_GESTIUNE=%s AND t.SURSA_EXERCITIU=%s AND t.ANULAT=0 '
                              'ORDER BY t.DATA_BU DESC,t.ID DESC', _scope(ctx))
             holders = _all(cursor, 'SELECT IDC AS id,Denumire AS label FROM VC_Clienti '
                            'WHERE SubunitId=%s AND GestiuneId=%s AND Activ=1', (ctx['subunit'], ctx['gestiune']))

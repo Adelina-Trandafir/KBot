@@ -181,7 +181,7 @@ Partial Class OnceQueryView
         txtSql.TabIndex = 10
         txtSql.WordWrap = False
         tips.SetToolTipHeader(txtSql, "Textul interogării")
-        tips.SetToolTipText(txtSql, "Instrucțiuni separate prin ;. Numele de tabele NU se calificează: fiecare bază rulează pe ea însăși." & vbLf & "DELIMITER, DROP DATABASE și DROP SCHEMA sunt refuzate. Cel mult 30.000 de octeți." & vbLf & "Scrieți-o ca să nu strice dacă rulează de două ori (IF EXISTS, WHERE pe ce rămâne de reparat).")
+        tips.SetToolTipText(txtSql, "Instrucțiuni separate prin ;. Numele de tabele NU se calificează: fiecare bază rulează pe ea însăși." & vbLf & "DELIMITER, DROP DATABASE și DROP SCHEMA sunt refuzate. Cel mult 100.000 de octeți (peste 30.000 se urcă ca fișier pe server)." & vbLf & "Scrieți-o ca să nu strice dacă rulează de două ori (IF EXISTS, WHERE pe ce rămâne de reparat).")
         '
         ' tlyBottom
         '

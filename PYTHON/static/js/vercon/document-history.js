@@ -4,6 +4,11 @@ import { formatMoney } from './fields.js';
 const OPERATIONS = {
   'bc.update': 'Modificare bon de consum',
   'bc.stock_recalculated': 'Recalculare automată stoc',
+  'bc.number': 'Modificare număr bon de consum',   // VC16-02
+  'bp.number': 'Modificare număr bon de predare',
+  'bt.number': 'Modificare număr bon de transfer',
+  'bs.number': 'Modificare număr bon de casare',
+  'nir.supplier': 'Modificare furnizor NIR',   // VC16-03
   'lista.bc_update': 'Recalculare după modificare BC',
   'lista.balance_recalculated': 'Recalculare automată DEP/EC',
   'lista.portions_update': 'Modificare număr copii / porții',

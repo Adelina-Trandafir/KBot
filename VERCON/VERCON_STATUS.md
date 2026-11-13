@@ -1,5 +1,37 @@
 # VERCON — status (registru separat, ca ADECHIT_STATUS)
 
+## SLICE-VC16-03 — «Modifică furnizor» la NIR, în orice perioadă — 13.11.2026
+
+**IMPLEMENTAT LOCAL.** Meniul ⋮ al unui NIR oferă «Modifică furnizor»: se schimbă numai furnizorul (și al FCS-urilor recepției și al facturii comune, dacă nu o folosesc alte recepții), inclusiv într-un exercițiu închis. Refuzat la NIR anulat, NIR asociat cu eFactură și factură comună partajată. Verificat doar sintaxa; nerulat în aplicație, nepublicat. [Worklog VC16-03](../docs/worklog/SLICE-VC16-03-nir-modifica-furnizor-orice-perioada.md).
+
+## SLICE-VC19-01 — Raport Amortizare: fără «Stare», valori și pentru bunurile nepredate — 13.11.2026
+
+**IMPLEMENTAT LOCAL.** Raportul nu mai are coloana «Stare»; valoarea lunară apare mereu; pentru un bun nepredat luni folosite = DF, cumulat = DF × lunar, valoare rămasă = valoare − cumulat. Presupunere: cumulat nepredat = DF × lunar. Raportul grupează pe clasificare cu totaluri în subsol; raport nou «Centralizator amortizări» (o linie pe clasificare); bunurile intrate după data raportului nu mai sunt incluse (notă în raport). Verificat doar prin citire; nerulat, teste nerulate (`test_vc08_depreciation.py` trebuie actualizat), nepublicat. [Worklog VC19-01](../docs/worklog/SLICE-VC19-01-amortizare-nepredat-fara-stare.md).
+
+## SLICE-VC18-01 — Gestionari: salvare la schimbarea rândului, fără mesaj — 13.11.2026
+
+**IMPLEMENTAT LOCAL.** În Configurări → Clienți / Gestionari rândul se salvează doar când treci pe alt rând (sau din ⋮ → Salvează rândul), fără «Se salvează…» / «Salvat.». Verificat doar sintaxa; nerulat în aplicație, nepublicat. [Worklog VC18-01](../docs/worklog/SLICE-VC18-01-gestionari-salvare-la-schimbarea-randului.md).
+
+## SLICE-VC17-01 — Raport bancă (ADECHIT): data extrasului — 13.11.2026
+
+**IMPLEMENTAT LOCAL.** În Raport bancă, coloana «Data» (și intervalul, ordinea, subtotalul zilnic) arată data extrasului la care e asociată plata, nu data plății; fără asociere rămâne data plății. Verificat doar sintaxa; SQL nerulat, nepublicat. [Worklog VC17-01](../docs/worklog/SLICE-VC17-01-raport-banca-data-extras.md).
+
+## SLICE-VC16-02 — «Modifică număr» la BC, BP, BT, BS — 12.11.2026
+
+**IMPLEMENTAT LOCAL.** Meniul ⋮ al bonurilor din luna în curs oferă «Modifică număr»: se schimbă numai numărul, cu verificare pe server (ordine cronologică, număr liber, pe cont la BC când gestiunea numerotează pe cont). Verificat doar sintaxa; nerulat în aplicație, nepublicat. [Worklog VC16-02](../docs/worklog/SLICE-VC16-02-modifica-numar-bonuri.md).
+
+## SLICE-VC16-01 — Reparat «twins.warn is not a function» — 12.11.2026
+
+**IMPLEMENTAT LOCAL.** Salvarea NIR / FCS nu mai dă eroarea: `invoiceTwins` returnează acum obiectul `{ warn }`, cum așteaptă `docs.js`. Corectiv la VC14-05. Verificat doar sintaxa; nerulat în aplicație, nepublicat. [Worklog VC16-01](../docs/worklog/SLICE-VC16-01-twins-warn-nu-este-functie.md).
+
+## SLICE-VC14-05 — Număr de factură dublu și asocierea cu facturi storno — 12.11.2026
+
+**IMPLEMENTAT LOCAL.** La salvarea unui NIR / FCS și la asocierea cu eFactura, un număr de factură care există deja la același furnizor dă o avertizare prin sistemul de mesaje (nu blochează). eFacturile se pot asocia și cu facturi storno (FCS), atât note de credit cât și facturi normale cu cantitate negativă; nota de credit se trimite acum din K-BOT. Verificat doar sintaxa; nerulat, nepublicat. [Worklog VC14-05](../docs/worklog/SLICE-VC14-05-numar-factura-dublu-si-asociere-storno.md).
+
+## SLICE-VC14-04 — Anularea arhivează și șterge documentul — 12.11.2026
+
+**IMPLEMENTAT LOCAL.** NIR, FCS, BC, BR, BP, BT, BS, BU și listele de alimente anulate sunt copiate într-o arhivă (`VC_ArhivaAnulate`) și șterse din tabele: nu mai apar în arbori, iar numărul lor se eliberează. Comandă KBotAdmin pentru cele deja anulate. DDL `sql/VC14_04_ARHIVA_ANULATE.sql` de aplicat de mână înainte. Verificat doar sintaxa; nerulat, nepublicat. [Worklog VC14-04](../docs/worklog/SLICE-VC14-04-anulare-arhiveaza-si-sterge.md).
+
 ## SLICE-VC15-01 — Reparat «changeEfactura is not defined» — 10.11.2026
 
 **IMPLEMENTAT LOCAL.** Meniul NIR (Asociază eFactura…, înlocuire, eliminare) nu mai dă eroarea: `docs.js` construiește acum `changeEfactura`. Verificat doar sintaxa; nerulat în aplicație, nepublicat. [Worklog VC15-01](../docs/worklog/SLICE-VC15-01-changeefactura-nedefinit.md).

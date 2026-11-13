@@ -83,7 +83,7 @@ Public Class OnceQueryView
         Dim k_name As String = txtName.Text.Trim()
         Dim k_units As List(Of String) = TargetDatabases()
         Dim k_problem As String = OnceQuery.CheckName(k_name)
-        If k_problem = String.Empty Then k_problem = OnceQuery.CheckSize(txtSql.Text)
+        If k_problem = String.Empty Then k_problem = OnceQuery.CheckFileSize(txtSql.Text)
         If k_problem = String.Empty AndAlso k_units.Count = 0 Then k_problem = "Alegeți în arborele din stânga o bază de date sau «TOATE BAZELE»."
         If k_problem <> String.Empty Then
             KBotMessage.Show(k_problem, "Interogare unică", MessageBoxButtons.OK, MessageBoxIcon.Information)
@@ -94,8 +94,40 @@ Public Class OnceQueryView
                                  "O bază care a rulat deja textul exact este sărită; modificările nu se pot anula." & vbLf & vbLf &
                                  "Ați făcut întâi «Vezi (nu execută)»? Continuați?", "Interogare unică") Then Return
         End If
-        Dim k_command As String = OnceQuery.RunCommand(_context.Client.Settings, k_name, txtSql.Text, k_view, k_units)
-        Await Stream(k_command, "interogare unică «" & k_name & "» (" & If(k_view, "vezi", "execută") & ")", k_view)
+        Dim k_text As String = txtSql.Text
+        Dim k_remote As String = Nothing
+        If OnceQuery.NeedsFile(k_text) Then
+            ' VC14-04: a text over the command-line limit goes up as a file on the server and the runner reads it with --sql-file
+            k_remote = "/tmp/kbot-once-" & Guid.NewGuid().ToString("N") & ".sql"
+            Dim k_uploaded As Boolean = False
+            Await UiRun.Guard("OnceQueryView.Upload", _context,
+                Async Function()
+                    _context.Say("Se urcă textul interogării pe server...")
+                    Await _context.Client.UploadBytesAsync(New UTF8Encoding(False).GetBytes(k_text), k_remote)
+                    k_uploaded = True
+                End Function)
+            If Not k_uploaded Then Return
+        End If
+        Dim k_error As Exception = Nothing
+        Try
+            Dim k_command As String = OnceQuery.RunCommand(_context.Client.Settings, k_name, k_text, k_view, k_units, k_remote)
+            Await Stream(k_command, "interogare unică «" & k_name & "» (" & If(k_view, "vezi", "execută") & ")", k_view)
+        Catch ex As Exception
+            GlobalErrorLog.Write("OnceQueryView.RunOnce", ex)
+            k_error = ex   ' VB cannot Await in Finally: the file is removed below, then the error goes on
+        End Try
+        If k_remote IsNot Nothing Then Await RemoveRemote(k_remote)
+        If k_error IsNot Nothing Then System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(k_error).Throw()
+    End Function
+
+    ''' <summary>Removes the uploaded text from the server once the run is over (a failure is shown in the log, it does not stop anything).</summary>
+    Private Async Function RemoveRemote(k_remote As String) As Task
+        Try
+            Await _context.Client.DeleteRemoteAsync(k_remote)
+        Catch ex As Exception
+            GlobalErrorLog.Write("OnceQueryView.RemoveRemote", ex)
+            _log.Add(KBotLogLevel.Warn, "Nu am putut șterge fișierul temporar " & k_remote & " de pe server: " & ex.Message)
+        End Try
     End Function
 
     Private Async Sub BtnStatus_Click(k_sender As Object, e As EventArgs) Handles btnStatus.Click

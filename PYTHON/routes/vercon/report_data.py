@@ -194,7 +194,7 @@ def balances(source, final=False, *, hide_empty=False):
 
 def dataset(source, spec):
     if spec['kind'] == 'depreciation':
-        from . import depreciation_read, report_mf
+        from . import depreciation_read, depreciation_report, report_mf
 
         # Reuse the same date projection as the register, without filtering its
         # historical movements to the report period (the first handover matters).
@@ -206,10 +206,17 @@ def dataset(source, spec):
         if source.params.get('mf_selection'):
             eligible = {row['variant'] for row in report_mf.depreciation_options(source)
                         if report_mf.accepted(spec, row, source.params)}
-        return [{**row, 'variant': row['id'], 'status': labels.get(row['status'], row['status']),
+        catalogue = depreciation_report.names(source.cursor)
+        chosen = [row for row in result['assets'] if selected(row['id'], source.params, 'variant')
+                  and (eligible is None or row['id'] in eligible)]
+        # VC19-01: an asset that enters after the report date has no amounts at that date
+        # (they would blank every classification total); the report says how many were left out.
+        source.cache['_depreciation_not_entered'] = sum(row['status'] == 'not_entered' for row in chosen)
+        rows = [{**row, 'variant': row['id'], 'status': labels.get(row['status'], row['status']),
+                 'classification': depreciation_report.label(row.get('account'), catalogue),
                  'issues_text': '; '.join(issue['message'] for issue in row.get('issues', []))}
-                for row in result['assets'] if selected(row['id'], source.params, 'variant')
-                and (eligible is None or row['id'] in eligible)]
+                for row in chosen if row['status'] != 'not_entered']
+        return depreciation_report.summarize(rows) if spec.get('summary') else rows
     if spec.get('ledger') == 'custody' or spec.get('family') in ('bp', 'bt', 'bs'):
         from . import report_oi
         rows = report_oi.dataset(source, spec)

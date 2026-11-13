@@ -7,7 +7,7 @@ def check(cursor, ctx, raw=None, exclude=None, account=None):
     """`account` = the account chosen on the draft; it matters only when the gestiune numbers its BC per account."""
     scoped = account if account is not None and consumption_numbering.per_account(cursor, ctx) else None
     rows = _all(cursor, 'SELECT NumarBC FROM VC_Iesiri_H WHERE SubunitId=%s AND GestiuneId=%s '
-                'AND ExercitiuId=%s AND COALESCE(Retur,0)=0' + (' AND IdMasina=%s' if scoped is not None else ''),
+                'AND ExercitiuId=%s AND COALESCE(Retur,0)=0 AND Anulat=0' + (' AND IdMasina=%s' if scoped is not None else ''),
                 (*_scope(ctx), *([scoped] if scoped is not None else [])))
     counter = _one(cursor, 'SELECT LastNumber FROM VC_Numbering WHERE SubunitId=%s AND GestiuneId=%s '
                    'AND ExercitiuId=%s AND Kind=%s', (*_scope(ctx), consumption_numbering.kind(scoped)))

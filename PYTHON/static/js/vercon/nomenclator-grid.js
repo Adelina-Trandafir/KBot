@@ -11,8 +11,9 @@ const titles = { categorii: 'Categorii / Conturi', produse: 'Produse', variante:
 
 function mountCrud(host, opts) {
   const committee = ['comisie_nir', 'comisie_inventar'].includes(opts.kind);
-  if (committee) opts = { ...opts, rowSave: true };
-  const incompleteRow = committee ? 'Comisia nu poate fi salvată.' : 'Produsul nu poate fi salvat.';
+  const holders = opts.kind === 'clienti';
+  if (committee || holders) opts = { ...opts, rowSave: true };
+  const incompleteRow = committee ? 'Comisia nu poate fi salvată.' : holders ? 'Gestionarul nu poate fi salvat.' : 'Produsul nu poate fi salvat.';
   const ui = scope();
   const state = { rows: [], columns: opts.initialColumns || [], lookups: {}, labels: {}, selected: null, selectedId: null, canWrite: false,
     filter: '', visibility: opts.visibility || 'active', adding: null };
@@ -118,7 +119,7 @@ function mountCrud(host, opts) {
         parent: parent(), key: crypto.randomUUID(), version: item.version };
       requests.set(item.__key, request);
     }
-    busy = true; search.disabled = filterButton.disabled = true; say('Se salvează…');
+    busy = true; search.disabled = filterButton.disabled = true; say(holders ? '' : 'Se salvează…');
     if (addButton) addButton.disabled = true;
     try {
       const result = request.adding
@@ -126,7 +127,7 @@ function mountCrud(host, opts) {
         : await write('PUT', '/' + item.id, { values: request.values, version: request.version });
       if (disposed) return item;
       Object.assign(item, result.row, { __new: false });
-      requests.delete(item.__key); unsaved.delete(item.__key); say('Salvat.');
+      requests.delete(item.__key); unsaved.delete(item.__key); say(holders ? '' : 'Salvat.');
       Promise.resolve(opts.onSaved?.(item)).catch(report);
       return item;
     } catch (error) {
@@ -243,7 +244,7 @@ function mountCrud(host, opts) {
       rowIssue: opts.rowSave ? rowIssue : undefined,
       confirmRowIssue: opts.rowSave ? async ({ row, message }) => {
         const keep = await confirmBox(message + ' Continuați editarea?',
-          { title: committee ? 'Comisie incompletă' : 'Produs incomplet', yes: 'Continuă editarea', no: 'Anulează rândul', warning: true });
+          { title: committee ? 'Comisie incompletă' : holders ? 'Gestionar incomplet' : 'Produs incomplet', yes: 'Continuă editarea', no: 'Anulează rândul', warning: true });
         if (!keep) unsaved.delete(row.__key);
         return keep ? 'continue' : 'cancel';
       } : undefined,

@@ -1,11 +1,12 @@
-"""Calendar-year receipt series. Cancelled numbers retain their positions."""
+"""Calendar-year receipt series. Since VC14-04 a cancelled receipt is deleted (archived) and a cancelled row left from before
+is ignored here: its number is free again."""
 from . import documents as d, protocol
 from .nomenclatoare import NomError
 
 
 def series(cursor, ctx, day):
     return d._all(cursor, 'SELECT IdIntrare, ABS(Numar) AS Numar, COALESCE(NumarSub,0) AS sub, DATE(Data) AS day, COALESCE(Storno,0) AS storno FROM VC_NIR '
-                  "WHERE SubunitId=%s AND GestiuneId=%s AND YEAR(Data)=%s AND Numar<>0 AND TipDoc<>'STOC_INITIAL'",
+                  "WHERE SubunitId=%s AND GestiuneId=%s AND YEAR(Data)=%s AND Numar<>0 AND TipDoc<>'STOC_INITIAL' AND Anulat=0",
                   (ctx['subunit'], ctx['gestiune'], day.year))
 
 

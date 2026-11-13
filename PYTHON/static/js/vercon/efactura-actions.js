@@ -15,15 +15,15 @@ export function efacturaMenu(doc, { busy, blocked, view, change }) {
 
 export function receiptEfacturaChanges(api) {
   const unconfirmed = new WeakMap();
-  return async function change({ doc, mode, selection, signal }) {
-    const association = { api, sel: () => selection, doc, signal };
+  return async function change({ doc, mode, selection, signal, label = 'NIR' }) {
+    const association = { api, sel: () => selection, doc, signal, label };   // label: NIR or FCS (VC14-05: a storno invoice can be tied to an e-invoice too)
     if (mode === 'associate') return associateEfactura(association);
 
     const invoice = await pickReceiptEfactura(doc, mode === 'replace' ? 'Alegeți eFactura de înlocuit' : 'Alegeți asocierea de eliminat');
     if (!invoice || signal.aborted) return null;
     if (mode === 'replace') return associateEfactura({ ...association, replace: invoice });
 
-    const yes = await confirmBox(`Eliminați asocierea NIR-ului cu eFactura ${invoice.number} (${invoice.supplier})?`,
+    const yes = await confirmBox(`Eliminați asocierea ${label} ${doc.number} cu eFactura ${invoice.number} (${invoice.supplier})?`,
       { title: 'Elimină asocierea cu eFactura', yes: 'Elimină asocierea', no: 'Renunță' });
     if (!yes || signal.aborted) return null;
     const keys = unconfirmed.get(doc) || new Map();

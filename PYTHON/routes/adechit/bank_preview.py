@@ -57,7 +57,11 @@ def preview(repo, args):
             subunit, child_id = next(iter(matches))
             if subunit == repo.scope():
                 target = target_by_child.get(child_id)
-        if target:
+        if float(source.get('suma_asociata') or 0) > 0:
+            # SLICE-AD21-01: a partly associated movement is finished by hand, with its own distribution.
+            target = None
+            status = 'Extras parțial asociat: restul se asociază manual'
+        elif target:
             status = 'Potrivire unică: Cod fiscal + Cont'
         elif len(matches) > 1:
             status = 'Potrivire ambiguă: alegeți explicit copilul'

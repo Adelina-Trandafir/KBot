@@ -8,6 +8,7 @@
     GET  /api/vercon/stock/available?date=&products=      stock of the variants on a date (informative; the binding check runs on save)
     POST /api/vercon/doc/<family>                         create   {header, lines, source?, request_key}
     PUT  /api/vercon/doc/<family>/<id>                    edit     {header, lines, version}
+    POST /api/vercon/doc/<family>/<id>/number             VC16-02  {number, version}  bc | bp | bt | bs: only the number, current month, in the order of the dates
     POST /api/vercon/doc/<family>/<id>/cancel             cancel   {reason, version}  (the document stays, marked cancelled)
 
 family = nir | storno | bc | br. A write needs the family's VR right, the CURRENT lock token, an open period and the
@@ -21,7 +22,7 @@ from flask import g, request
 from . import depreciation_read, documents, lista, mf, oi, protocol, stock_routes, report_routes, receipt_number, receipt_choices, receipt_tree, receipt_context, receipt_routes, receipt_distribution, invoices, efactura_queue, supplier_merge, supplier_lookup
 from .capabilities import FormUnavailable
 from .nomenclatoare import NomError
-from . import document_order, food_list_portions, migration_links, oi_context, oi_register_repair, efactura_association, efactura_receipts, efactura_visibility
+from . import document_order, food_list_portions, invoice_twins, number_change, supplier_change, migration_links, oi_context, oi_register_repair, efactura_association, efactura_receipts, efactura_visibility
 
 RIGHT = {'nir': 'receptie', 'storno': 'storno', 'bc': 'consum', 'br': 'retur', 'bp': 'oi_predare', 'bt': 'oi_transfer', 'bs': 'oi_casare', 'lista': 'alimente'}
 FORM_OF = {'lista': 'lista_alimente'}   # the menu key of a family whose name differs
@@ -79,7 +80,7 @@ def register(bp, guard, scoped, open_db):
             raise NomError('FAMILY_UNKNOWN', 'Tipul de document nu există.', 404)
         return name
 
-    def build(cursor, vctx, family, write):
+    def build(cursor, vctx, family, write, closed_ok=False):
         """The verified facts every statement uses: the ids come from the server-resolved context, never from the page."""
         if family in ('nir', 'storno'):
             from . import supplier_identity
@@ -90,7 +91,8 @@ def register(bp, guard, scoped, open_db):
         sel = vctx['selection']
         exercise = protocol.exercise_of(cursor, sel['subunit'], sel['gestiune'], gest['type'], sel['year'])
         if write:
-            protocol.ensure_open(exercise)
+            if not closed_ok:   # VC16-03: only «Modifica furnizor» writes in a closed exercise
+                protocol.ensure_open(exercise)
             cursor.execute('SELECT GestiuneId FROM VC_Gestiuni WHERE SubunitId=%s AND GestiuneId=%s FOR UPDATE',
                            (sel['subunit'], sel['gestiune']))
             cursor.fetchone()
@@ -118,6 +120,9 @@ def register(bp, guard, scoped, open_db):
     def read_document(cursor, ctx, family, doc_id):
         doc = backend(family).get_document(cursor, repo_of(cursor, ctx), ctx, family, doc_id)
         document_order.annotate(cursor, ctx, family, doc)
+        if family == 'storno':   # VC14-05: an FCS can be tied to an e-invoice too, so it carries the same markers and the same edit lock
+            efactura_receipts.annotate(cursor, ctx, [doc])
+            return doc
         return invoices.enrich(cursor, ctx, doc) if family == 'nir' else doc
 
     stock_routes.register(bp, guard, scoped, session, build)
@@ -137,7 +142,8 @@ def register(bp, guard, scoped, open_db):
             ctx, _ = build(cursor, vctx, family, False)
             rows = backend(family).list_documents(cursor, ctx, family)
             document_order.annotate_rows(cursor, ctx, family, rows)
-            if family == 'nir':
+            number_change.annotate(cursor, ctx, family, rows)   # VC16-02: «Modifica numar» is offered only in the current month
+            if family in ('nir', 'storno'):
                 efactura_receipts.annotate(cursor, ctx, rows)
         return {'family': family, 'documents': rows, 'year': ctx['an'], 'closed': ctx['closed'], 'scale': ctx['scale'], 'zec': ctx['zec'],
                 'can_write': RIGHT[family] in g.vercon_operations}
@@ -214,6 +220,16 @@ def register(bp, guard, scoped, open_db):
                 from .nir_number import check
                 return check(cursor, ctx, request.args.get('number'), exclude, documents._int(request.args.get('sub')) or 0, request.args.get('date'))
             return receipt_number.check(cursor, ctx, request.args.get('number'), exclude, documents._int(request.args.get('sub')) or 0, request.args.get('date'), insert=family == 'storno')
+
+    @bp.get('/api/vercon/doc/<family>/invoice-twins')
+    @guard('read')
+    def invoice_twins_check(family):
+        """VC14-05: other NIR / FCS with the same invoice number at the same supplier. A warning for the page, never a refusal."""
+        _need(family)
+        vctx = scoped('read')
+        with session(False) as cursor:
+            ctx, _ = build(cursor, vctx, family, False)
+            return invoice_twins.check(cursor, ctx, family, request.args)
 
     @bp.get('/api/vercon/doc/<family>/sources')
     @guard('read')
@@ -473,6 +489,44 @@ def register(bp, guard, scoped, open_db):
             doc = read_document(cursor, ctx, family, doc_id)
         return {'result': result, 'document': doc}
 
+    @bp.post('/api/vercon/doc/<family>/<int:doc_id>/number')
+    @guard('read')
+    def doc_number_change(family, doc_id):
+        """VC16-02: only the number of a BC / BP / BT / BS of the current month, and only keeping the numbers in the order of the dates."""
+        if family not in number_change.FAMILIES:
+            raise NomError('FAMILY_UNKNOWN', 'Numărul acestui document nu se poate modifica.', 404)
+        data = body()
+        _need_write(family)
+        vctx = scoped(RIGHT[family], data)
+        with session(True) as cursor:
+            ctx, _ = build(cursor, vctx, family, True)
+            key = str(data.get('request_key') or '')[:64]
+            fp = protocol.fingerprint('number', family, doc_id, data.get('version'), data.get('number'))
+            replay = protocol.replayed(cursor, ctx, key, fp) if key else None
+            result = replay if replay is not None else number_change.change(cursor, repo_of(cursor, ctx), ctx, family, doc_id, data, request_id())
+            if key and replay is None:
+                protocol.remember(cursor, ctx, key, fp, result)
+            doc = read_document(cursor, ctx, family, doc_id)
+        return {'result': result, 'document': doc}
+
+    @bp.post('/api/vercon/doc/nir/<int:doc_id>/supplier')
+    @guard('read')
+    def doc_supplier_change(doc_id):
+        """VC16-03: only the supplier of a saved NIR, in ANY period (also in a closed exercise)."""
+        data = body()
+        _need_write('nir')
+        vctx = scoped(RIGHT['nir'], data)
+        with session(True) as cursor:
+            ctx, _ = build(cursor, vctx, 'nir', True, closed_ok=True)
+            key = str(data.get('request_key') or '')[:64]
+            fp = protocol.fingerprint('supplier', doc_id, data.get('version'), data.get('cf'))
+            replay = protocol.replayed(cursor, ctx, key, fp) if key else None
+            result = replay if replay is not None else supplier_change.change(cursor, repo_of(cursor, ctx), ctx, doc_id, data, request_id())
+            if key and replay is None:
+                protocol.remember(cursor, ctx, key, fp, result)
+            doc = read_document(cursor, ctx, 'nir', doc_id)
+        return {'result': result, 'document': doc}
+
     @bp.post('/api/vercon/doc/<family>/<int:doc_id>/cancel')
     @guard('read')
     def doc_cancel(family, doc_id):
@@ -488,5 +542,10 @@ def register(bp, guard, scoped, open_db):
             result = replay if replay is not None else cancel_fn(family)(cursor, repo_of(cursor, ctx), ctx, family, doc_id, data, request_id())
             if key and replay is None:
                 protocol.remember(cursor, ctx, key, fp, result)
-            doc = read_document(cursor, ctx, family, doc_id)
+            try:
+                doc = read_document(cursor, ctx, family, doc_id)
+            except NomError as error:   # VC14-04: a cancelled document is archived and deleted, there is nothing left to show
+                if error.reason != 'NOT_FOUND':
+                    raise
+                doc = None
         return {'result': result, 'document': doc}

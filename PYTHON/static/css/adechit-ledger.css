@@ -5,16 +5,20 @@
 .ade-tablist { display: flex; align-items: end; gap: 1px; padding: 3px 6px 0; border-bottom: 1px solid var(--line); background: var(--sky-1); }
 .ade-tablist button { align-self: stretch; min-width: 130px; padding: 4px 14px; color: var(--ink-soft); background: transparent; border: 1px solid transparent; border-bottom: 0; border-radius: var(--radius-sm) var(--radius-sm) 0 0; font: inherit; font-size: var(--fs-ms); font-weight: 800; cursor: pointer; }
 /* Each ledger tab has its own soft tint (dark mode: same hues, darker); the table header takes the tint of the open tab. */
-.portal.ade-page { --ade-tab-receipt: #dcf0e1; --ade-tab-other: #fbeed0; --ade-tab-refund: #f8dcdd; }
-html[data-theme="dark"] .portal.ade-page { --ade-tab-receipt: #1f3a2b; --ade-tab-other: #3f3721; --ade-tab-refund: #412628; }
+.portal.ade-page { --ade-tab-receipt: #dcf0e1; --ade-tab-other: #fbeed0; --ade-tab-refund: #f8dcdd; --ade-tab-extract: #dde6f7; }
+html[data-theme="dark"] .portal.ade-page { --ade-tab-receipt: #1f3a2b; --ade-tab-other: #3f3721; --ade-tab-refund: #412628; --ade-tab-extract: #222f4a; }
 .ade-tablist button[data-ledger="receipt"] { --ade-tab: var(--ade-tab-receipt); }
 .ade-tablist button[data-ledger="other"] { --ade-tab: var(--ade-tab-other); }
 .ade-tablist button[data-ledger="refund"] { --ade-tab: var(--ade-tab-refund); }
+.ade-tablist button[data-ledger="extract"] { --ade-tab: var(--ade-tab-extract); }
 .ade-tablist button { background: color-mix(in srgb, var(--ade-tab) 55%, transparent); }
 .ade-tablist button[aria-selected="true"] { color: var(--blue-deep); background: var(--ade-tab); border-color: var(--line); }
 .ade-ledger[data-kind="receipt"] { --ade-head-bg: var(--ade-tab-receipt); }
 .ade-ledger[data-kind="other"] { --ade-head-bg: var(--ade-tab-other); }
 .ade-ledger[data-kind="refund"] { --ade-head-bg: var(--ade-tab-refund); }
+.ade-ledger[data-kind="extract"] { --ade-head-bg: var(--ade-tab-extract); }
+.ade-ledger-table col.ade-col-extras-number { width: 9%; }
+.ade-ledger-table col.ade-col-extras-value { width: 10%; }
 #ade-selected-child { display: none; /* ascuns tot timpul (operator, 08.10.2026); app.js il mai scrie, dar nu se vede */ margin: 0 6px 5px auto; color: var(--ink-soft); font-size: var(--fs-sm); }
 .ade-ledger-body { min-height: 0; overflow-x: hidden; overflow-y: auto; }
 .ade-ledger-table { width: 100%; border-collapse: collapse; table-layout: fixed; font-size: var(--fs-ms); }

@@ -7,7 +7,7 @@ def check(cursor, ctx, family, raw=None, exclude=None):
     from .oi import SPEC
     spec = SPEC[family]
     cursor.execute('SELECT DISTINCT {number} AS number,{identity} AS identity FROM {table} '
-                   'WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s'.format(
+                   'WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND Anulat=0'.format(
                        number=spec['num'], identity=spec['key'], table=spec['table']), _scope(ctx))
     rows = [(bon_number.parse(family, row['number']), row['identity']) for row in cursor.fetchall()]
     counter = _one(cursor, 'SELECT LastNumber FROM VC_Numbering WHERE SubunitId=%s AND GestiuneId=%s '

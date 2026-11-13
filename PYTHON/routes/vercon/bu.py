@@ -244,8 +244,10 @@ def cancel(cursor, repo, target_repo, ctx, target, row, data, request_id):
     consumption_timeline.require_nonnegative(cursor, target, variants, month_start)
     if bp_rows:
         oi_custody.check_timeline(cursor, target, variants)
+    from . import archive
+    archive.purge_bu(cursor, ctx, target, row, reason, ctx['email'])   # VC14-04: kept in the archive, gone from the tables
     if link:
         invoices.refresh_state(cursor, link['FACTURA_ID'])
     protocol.audit(cursor, ctx, 'bu.cancel', bu_links.TABLE, identity, {'Anulat': 0},
                    {'Anulat': 1, 'Motiv': reason}, data['request_key'], request_id)
-    return {'id': identity, 'number': 'BU %d' % identity}
+    return {'id': identity, 'number': 'BU %d' % identity, 'deleted': True}

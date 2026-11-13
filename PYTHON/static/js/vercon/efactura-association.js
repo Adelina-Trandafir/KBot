@@ -5,8 +5,10 @@ import { confirmBox, pickBox } from '../utils/confirm-box.js';
 import { associationGrid } from './efactura-association-grid.js';
 import { sourceGrids } from './efactura-source-grids.js';
 import { tryAutoAssociate } from './efactura-auto-association.js';
+import { twinText } from './invoice-twins.js';
+import { showMessage } from './ui.js';
 
-export async function associateEfactura({ api, sel, doc, replace = null, signal }) {
+export async function associateEfactura({ api, sel, doc, replace = null, signal, label = 'NIR' }) {
   if (signal?.aborted) return null;
   if (!replace) {
     const saved = await tryAutoAssociate({ api, sel, doc });
@@ -16,7 +18,7 @@ export async function associateEfactura({ api, sel, doc, replace = null, signal 
   const linkedInvoices = new Set((doc.efactura || []).map(item => item.sending));
   const query = extra => new URLSearchParams({ ...sel(), ...extra });
   const read = (path, extra = {}) => api(`/api/vercon/doc/nir/efactura${path}?${query(extra)}`);
-  const title = replace ? `Înlocuire eFactura ${replace.number} pentru NIR ${doc.number}` : `Asociere NIR ${doc.number} cu eFactura`;
+  const title = replace ? `Înlocuire eFactura ${replace.number} pentru ${label} ${doc.number}` : `Asociere ${label} ${doc.number} cu eFactura`;
   const saveLabel = replace ? 'Salvează înlocuirea' : 'Salvează asocierile';
   const dialog = el('dialog', { className: 'vc-efi vc-efi--association', 'aria-label': title });
   const status = el('p', { className: 'vc-efi__status vc-save-status', role: 'status' });
@@ -126,7 +128,11 @@ export async function associateEfactura({ api, sel, doc, replace = null, signal 
       const stale = data.allocations.length - valid.length;
       links = valid.map(l => ({ ...l }));
       const proposed = proposals(data.lines, data.nir_lines, links); links.push(...proposed); dirty = !!proposed.length;
-      paint(); say(`${proposed.length} potriviri propuse; ${data.other_receipts.length} alte NIR-uri asociate.${stale ? ` ${stale} asocieri vechi nu mai sunt valabile după modificarea documentului; refaceți-le.` : ''} Confirmați prin salvare.`);
+      paint();
+      // VC14-05: the same invoice number at the same supplier on another saved document: a warning, the association goes on
+      if (data.twins?.length) showMessage(status, twinText(data.number, data.twins), 'warning');
+      say(`${proposed.length} potriviri propuse; ${data.other_receipts.length} alte NIR-uri asociate.${stale ? ` ${stale} asocieri vechi nu mai sunt valabile după modificarea documentului; refaceți-le.` : ''} Confirmați prin salvare.`);
+      if (!data.lines.length) say(data.storno ? 'Factura aleasă nu are rânduri storno (cantitate negativă sau notă de credit) de asociat unei facturi storno (FCS).' : 'Factura aleasă nu are rânduri normale de asociat unui NIR (toate sunt storno: cantitate negativă sau notă de credit).', true);
     } catch (error) { say(error.message || 'Asocierea nu poate fi deschisă.', true); }
     finally { busy = false; controls(); }
   }

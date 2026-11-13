@@ -425,13 +425,14 @@ export function mountBu(host, opts) {
     const id = cancelled ?? result.id;
     state.dirty = false; state.draft = null; state.mode = 'view';
     await refresh();
+    // VC14-04: a cancelled BU is archived and gone from the list; the page is emptied, not left on a cancelled document.
+    if (cancelled) { state.doc = null; state.details = []; paint(); say(`${result.number} a fost anulat și scos din evidență.`); return; }
     const doc = state.docs.find(item => item.id === id);
     if (doc) {
       state.doc = doc; state.details = (await read('/' + id)).lines;
       openNodes().add(bonOrder.branch(treeDoc(doc)));
     }
     paint();
-    if (cancelled) { say(`${result.number} a fost anulat.`); return; }
     const nir = `NIR ${doc ? nirNumber(doc) : ''}`.trim();
     say(`Salvat ${result.number}. ` + (result.bp ? `În destinație au fost create ${nir} și ${result.bp}.` : `În destinație a fost creat ${nir} în magazie.`));
   }

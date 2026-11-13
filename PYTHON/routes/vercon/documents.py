@@ -9,8 +9,9 @@ are committed together or not at all. Rules shared by the four families:
     existing header-total rules. Historical unchanged values are preserved;
   * a price is never negative and a quantity is always positive. Warehouse validation starts from the closing stock
     of the month before the active month;
-  * a saved document is edited only while its period is open, with the revision the page saw, and is never deleted: it is
-    cancelled with a reason and stays visible as cancelled;
+  * a saved document is edited only while its period is open, with the revision the page saw. It is cancelled with a reason:
+    since VC14-04 the cancel ARCHIVES it (archive.py, VC_ArhivaAnulate) and deletes it, so it is no longer in the trees and
+    its number is free again;
   * a document another one depends on (a receipt with a storno, a bon with a return, an asset already in
     the OI/MF register) is not edited or cancelled until that dependency is cancelled first. Editing a BC in the active
     month validates stock from that month's opening and recalculates its food list atomically; cancellation still requires unlinking it.
@@ -145,7 +146,7 @@ def list_documents(cursor, ctx, family):
     if family in ('nir', 'storno'):
         rows = _all(cursor, 'SELECT n.IdIntrare, n.Numar, COALESCE(n.NumarSub,0) AS sub_number, n.Data, n.DataFc, n.NrFact, n.Valoare, n.CodPartener, n.IdStorno, n.TipDoc, n.Anulat, n.Version, '
                             'COALESCE(p.DenumirePartener, n.FurnizorV) AS Partener FROM VC_NIR n LEFT JOIN ' + suppliers.relation() + ' p ON p.CodFiscal=n.CodPartener '
-                            'WHERE n.SubunitId=%s AND n.GestiuneId=%s AND n.ExercitiuId=%s AND COALESCE(n.Storno,0)=%s ORDER BY n.Data DESC, n.Numar DESC',
+                            'WHERE n.SubunitId=%s AND n.GestiuneId=%s AND n.ExercitiuId=%s AND COALESCE(n.Storno,0)=%s AND n.Anulat=0 ORDER BY n.Data DESC, n.Numar DESC',   # VC14-04: annulled = hidden
                     (s, g, e, 1 if family == 'storno' else 0))
         return [{'id': r['IdIntrare'], 'number': abs(r['Numar'] or 0), 'sub_number': r['sub_number'], 'date': _iso(r['Data']), 'invoice_date': _iso(r['DataFc']), 'invoice': r['NrFact'],
                  'total': _money(r['Valoare'], scale), 'party_cf': r['CodPartener'], 'party': r['Partener'] or '', 'doc_type': r['TipDoc'],
@@ -154,7 +155,7 @@ def list_documents(cursor, ctx, family):
                         '(SELECT COUNT(*) FROM VC_LegBCLA l WHERE l.SubunitId=h.SubunitId AND l.GestiuneId=h.GestiuneId AND l.ExercitiuId=h.ExercitiuId AND l.IdBonConsum=h.IdBonConsum) AS Legaturi '
                         'FROM VC_Iesiri_H h LEFT JOIN VC_Clienti c ON c.SubunitId=h.SubunitId AND c.GestiuneId=h.GestiuneId AND c.IDC=h.IDC '
                         'LEFT JOIN VC_Masini m ON m.SubunitId=h.SubunitId AND m.GestiuneId=h.GestiuneId AND m.IdMasina=h.IdMasina '
-                        'WHERE h.SubunitId=%s AND h.GestiuneId=%s AND h.ExercitiuId=%s AND COALESCE(h.Retur,0)=%s ORDER BY h.DataBC DESC, h.IdBonConsum DESC',
+                        'WHERE h.SubunitId=%s AND h.GestiuneId=%s AND h.ExercitiuId=%s AND COALESCE(h.Retur,0)=%s AND h.Anulat=0 ORDER BY h.DataBC DESC, h.IdBonConsum DESC',
                 (s, g, e, 1 if family == 'br' else 0))
     return [{'id': r['IdBonConsum'], 'number': bon_number.display(family, r['NumarBC']), 'date': _iso(r['DataBC']), 'total': _money(r['ValoareBC'], scale),
              'receiver_id': r['IDC'], 'receiver': r['Primitor'] or '', 'category_id': r['IdMasina'], 'category': r['Cont'] or '', 'source': r['IdRetur'],
@@ -373,7 +374,7 @@ def _load_for_write(repo, ctx, family, doc_id, base_version):
 
 
 def _guard_dependents(cursor, ctx, family, doc_id, action):
-    if family == 'nir' and action == 'edit':
+    if family in ('nir', 'storno') and action == 'edit':   # VC14-05: an FCS tied to an e-invoice is locked like a NIR
         from .efactura_receipts import require_editable
         require_editable(cursor, ctx, doc_id)
     s, g, e = _scope(ctx)
@@ -416,7 +417,7 @@ def _mark_cancelled(cursor, ctx, table, pk, doc_id, reason, base_version):
 
 # ---- NIR (receipt) ---------------------------------------------------------------------------------------------------
 def cancel_document(cursor, repo, ctx, family, doc_id, body, request_id):
-    from . import invoices
+    from . import archive, invoices
     reason = _check_cancel_input(body)
     link = invoices.link_of(cursor, ctx, doc_id) if family == 'nir' and invoices.ready(cursor) else None
     if link:
@@ -431,10 +432,11 @@ def cancel_document(cursor, repo, ctx, family, doc_id, body, request_id):
                        'WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND IdIntrare=%s', (reason, ctx['email'], *_scope(ctx), doc_id))
     products = _document_variants(cursor, ctx, family, doc_id)
     consumption_timeline.require_nonnegative(cursor, ctx, products, month_start)
+    archived = archive.purge(cursor, ctx, family, doc_id, reason, ctx['email'])   # VC14-04: kept in the archive, gone from the tables
     if link:
         invoices.refresh_state(cursor, link['FACTURA_ID'])
-    protocol.audit(cursor, ctx, family + '.cancel', table, doc_id, {'Anulat': 0}, {'Anulat': 1, 'Motiv': reason}, None, request_id)
-    return {'id': doc_id}
+    protocol.audit(cursor, ctx, family + '.cancel', table, doc_id, {'Anulat': 0}, {'Anulat': 1, 'Motiv': reason, 'Arhiva': archived}, None, request_id)
+    return {'id': doc_id, 'deleted': True}
 
 
 def _document_variants(cursor, ctx, family, doc_id):

@@ -216,14 +216,23 @@ def _cash_entries(repo, start, end):
 
 
 def _bank_entries(repo, start, end):
+    """The date shown (and used for the period, the order and the daily subtotal) is the DATE OF THE BANK STATEMENT the
+    payment was associated with, as in the associations list; a payment without an association keeps its own date."""
     low, high = _day_bounds(start, end)
+    scope = repo.scope()
     return [{'Grupa': r['Grupa'], 'Nume': r['Nume'], 'Data': str(r['Data'])[:10], 'Serie': 'A.D.', 'Numar': r['NrDoc'],
              'Incasari': r['Plata'] or 0, 'Plati': 0} for r in repo.query(
-        'SELECT g.Grupa, pl.Nume, p.Data, a.NrDoc, p.Plata FROM AD_Plati p '
+        'SELECT t.Grupa, t.Nume, t.Data, t.NrDoc, t.Plata FROM ('
+        'SELECT g.Grupa, pl.Nume, a.NrDoc, p.Plata, COALESCE(('
+        'SELECT MIN(f.DataExtras) FROM AD_EXTRASE_ASOCIERI x '
+        'JOIN FX_Extrase e ON e.IDFXE=x.IDFXE '
+        'JOIN FX_Extrase_H h ON h.IDEXH=e.IDFXH '
+        'JOIN FX_Extrase_F f ON f.IDEXF=h.IDEXF '
+        'WHERE x.IDPL=p.IDPL AND x.SUBUNIT_ID=p.SubunitId), p.Data) AS Data FROM AD_Plati p '
         'JOIN AD_AlteDoc a ON a.IDPL=p.IDPL AND a.SubunitId=p.SubunitId '
         'JOIN AD_Platitori pl ON pl.IDP=p.IDP AND pl.SubunitId=p.SubunitId '
         'JOIN AD_Grupe g ON g.IDG=pl.IDG AND g.SubunitId=pl.SubunitId '
-        'WHERE p.SubunitId=%s AND p.Data>=%s AND p.Data<%s AND p.Anulata=0', (repo.scope(), low, high))]
+        'WHERE p.SubunitId=%s AND p.Anulata=0) t WHERE t.Data>=%s AND t.Data<%s', (scope, low, high))]
 
 
 def _ledger_report(repo, unit, args, title, entries_of, filename):

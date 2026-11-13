@@ -17,8 +17,10 @@
 
 /* reasonBox: the question, then a required reason; «Yes» stays off until the reason is filled in */
 .confirm-box__field { display: block; padding: 0 20px 16px; font-weight: 650; }
-.confirm-box__field textarea { box-sizing: border-box; display: block; width: 100%; margin-top: 6px; padding: 6px 8px; color: inherit; background: var(--card, #fff); border: 1px solid var(--line, #cdd5e0); border-radius: var(--radius-sm, 6px); font: inherit; font-weight: 400; resize: vertical; }
-.confirm-box__field textarea:focus { border-color: var(--blue, #309eff); outline: 1px solid var(--blue, #309eff); }
+.confirm-box__field textarea, .confirm-box__field input { box-sizing: border-box; display: block; width: 100%; margin-top: 6px; padding: 6px 8px; color: inherit; background: var(--card, #fff); border: 1px solid var(--line, #cdd5e0); border-radius: var(--radius-sm, 6px); font: inherit; font-weight: 400; resize: vertical; }
+.confirm-box__field textarea:focus, .confirm-box__field input:focus { border-color: var(--blue, #309eff); outline: 1px solid var(--blue, #309eff); }
+/* numberBox (VC16-02): the server's refusal stays in the box, under the field, until the operator changes the number or gives up */
+.confirm-box__error { margin: 0; padding: 0 20px 16px; color: #b42318; text-align: left; }
 .confirm-box button:disabled { opacity: .5; cursor: default; }
 .confirm-box--warning footer button:last-child:disabled:hover { background: #c0392b; }
 
@@ -29,3 +31,7 @@
 .confirm-box--pick footer { justify-content: flex-start; }
 .confirm-box--message footer { justify-content: flex-end; }
 .confirm-box--message footer .confirm-box__action { margin-right: auto; }
+
+/* supplierBox (VC16-03, js/vercon/supplier-change.js): a wider box whose supplier list may drop below the footer */
+.confirm-box--supplier { width: min(520px, calc(92 * var(--application-vw, 1vw))); overflow: visible; }
+.confirm-box--supplier .confirm-box__field > div { margin-top: 6px; }

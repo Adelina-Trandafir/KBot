@@ -22,7 +22,7 @@ def group_identity(row, key):
 
 
 def by_name(rows, spec, groups):
-    if spec['kind'] in NO_PRODUCT_KINDS or len(rows) < 2:
+    if spec['kind'] in NO_PRODUCT_KINDS or spec.get('summary') or len(rows) < 2:
         return rows
     # A document group keeps its current position: first appearance in the incoming rows.
     first_seen = {}

@@ -2,7 +2,7 @@
 // the question sits in the middle. «No» / «Renunta» is on the left, «Yes» / «OK» on the right.
 // `warning: true` paints the box as a serious warning (red header). Escape and the backdrop answer No. Usage: if (!await confirmBox('Intrebare?', { title, yes, no })) return;
 const styledDocuments = new WeakSet();
-function ensureStyle(doc = document) {
+export function ensureStyle(doc = document) {
   if (styledDocuments.has(doc)) return; styledDocuments.add(doc);
   const k_link = doc.createElement('link'); k_link.rel = 'stylesheet'; k_link.href = '/static/css/confirm-box.css';
   doc.head.append(k_link);
@@ -83,6 +83,47 @@ export function reasonBox(k_text, { title = 'Confirmare', label = 'Motiv', yes =
     k_dialog.addEventListener('mousedown', (k_event) => { if (k_event.target === k_dialog) k_finish(null); });
     k_dialog.append(k_header, k_body, k_field, k_footer); document.body.append(k_dialog); k_dialog.showModal();
     k_input.focus();
+  });
+}
+
+// A box that asks for ONE whole number and saves it itself (SLICE-VC16-02, «Modifica numar»). `save(number)` is async and resolves with the
+// result; when it throws, the message stays in the box under the field (the operator corrects the number or gives up). Resolves with the
+// result of `save`, or null on No / Escape / outside click. «Yes» stays off until the field holds a different positive number than `value`.
+export function numberBox(k_text, { title = 'Număr', label = 'Număr nou', value = '', yes = 'Salvează', no = 'Renunță', save } = {}) {
+  ensureStyle();
+  return new Promise((k_resolve) => {
+    const k_dialog = document.createElement('dialog');
+    k_dialog.className = 'confirm-box';
+    k_dialog.setAttribute('aria-label', title);
+    const k_header = document.createElement('header');
+    const k_title = document.createElement('h2'); k_title.textContent = title; k_header.append(k_title);
+    const k_body = document.createElement('p'); k_body.className = 'confirm-box__text'; k_body.textContent = k_text;
+    const k_field = document.createElement('label'); k_field.className = 'confirm-box__field'; k_field.textContent = label;
+    const k_input = document.createElement('input'); k_input.type = 'text'; k_input.inputMode = 'numeric'; k_input.maxLength = 9; k_input.value = String(value);
+    k_field.append(k_input);
+    const k_error = document.createElement('p'); k_error.className = 'confirm-box__error'; k_error.setAttribute('role', 'alert'); k_error.hidden = true;
+    const k_footer = document.createElement('footer');
+    let k_busy = false;
+    const k_finish = (k_answer) => { k_dialog.close(); k_dialog.remove(); k_resolve(k_answer); };
+    const k_no = document.createElement('button'); k_no.type = 'button'; k_no.textContent = no;
+    k_no.addEventListener('click', () => { if (!k_busy) k_finish(null); });
+    const k_yes = document.createElement('button'); k_yes.type = 'button'; k_yes.textContent = yes; k_yes.disabled = true;
+    const k_valid = () => /^[1-9][0-9]*$/.test(k_input.value.trim()) && k_input.value.trim() !== String(value);
+    const k_submit = async () => {
+      if (k_busy || !k_valid()) return;
+      k_busy = true; k_yes.disabled = true; k_error.hidden = true;
+      try { k_finish(await save(Number(k_input.value.trim()))); return; }
+      catch (k_failure) { k_error.textContent = k_failure?.message || 'Numărul nu a putut fi salvat.'; k_error.hidden = false; }
+      k_busy = false; k_yes.disabled = !k_valid(); k_input.focus(); k_input.select();
+    };
+    k_yes.addEventListener('click', k_submit);
+    k_input.addEventListener('input', () => { k_error.hidden = true; k_yes.disabled = !k_valid(); });
+    k_input.addEventListener('keydown', (k_event) => { if (k_event.key === 'Enter') { k_event.preventDefault(); k_submit(); } });
+    k_footer.append(k_no, k_yes);
+    k_dialog.addEventListener('cancel', (k_event) => { k_event.preventDefault(); if (!k_busy) k_finish(null); });
+    k_dialog.addEventListener('mousedown', (k_event) => { if (k_event.target === k_dialog && !k_busy) k_finish(null); });
+    k_dialog.append(k_header, k_body, k_field, k_error, k_footer); document.body.append(k_dialog); k_dialog.showModal();
+    k_input.focus(); k_input.select();
   });
 }
 

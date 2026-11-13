@@ -88,6 +88,9 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
             notes.append('Amortizare la data de sfârșit selectată, cu parametrii curenți din registru și prețul curent al variantei. '
                          'Calculul folosește întregul istoric; data de început nu limitează amortizarea cumulată. '
                          'Observațiile din tabel indică activele care necesită corectarea datelor.')
+            left_out = source.cache.get('_depreciation_not_entered')
+            if left_out:
+                notes.append('Bunuri intrate după data raportului, neincluse: %d.' % left_out)
         if spec.get('ledger') == 'custody' or spec['kind'] in ('balance', 'product', 'accounts', 'final', 'inventory', 'statement'):
             notes.append('Stoc evaluat la prețul curent al variantei; documentele păstrează valorile proprii.')
         if spec.get('ledger') != 'custody' and spec['kind'] in ('balance', 'product', 'accounts'):

@@ -13,8 +13,11 @@ Public NotInheritable Class OnceQuery
     Public Const ExitFailed As Integer = 1
     Public Const ExitRefused As Integer = 2
 
-    ''' <summary>One SSH packet carries the command line; base64 adds a third.</summary>
+    ''' <summary>One SSH packet carries the command line; base64 adds a third. Longer texts go through a file (see <see cref="NeedsFile"/>).</summary>
     Public Const MaxSqlBytes As Integer = 30000
+
+    ''' <summary>The most a text may hold when it travels as a file: the limit of the runner itself (<c>MAX_SQL_BYTES</c> in runner.py).</summary>
+    Public Const MaxFileBytes As Integer = 100000
 
     Private Shared ReadOnly NamePattern As New Regex("^[A-Za-z0-9_.\-]{3,100}$", RegexOptions.Compiled)
 
@@ -38,20 +41,42 @@ Public NotInheritable Class OnceQuery
         Return String.Empty
     End Function
 
+    ''' <summary>True when the text is too long for the command line and has to be uploaded as a file (<c>--sql-file</c>).</summary>
+    Public Shared Function NeedsFile(k_sql As String) As Boolean
+        Return Encoding.UTF8.GetByteCount(If(k_sql, String.Empty)) > MaxSqlBytes
+    End Function
+
+    ''' <summary>Empty = the text can run (on the command line or as an uploaded file); otherwise why it cannot.</summary>
+    Public Shared Function CheckFileSize(k_sql As String) As String
+        Dim k_size As Integer = Encoding.UTF8.GetByteCount(If(k_sql, String.Empty))
+        If k_size = 0 Then Return "Scrieți sau încărcați interogarea."
+        If k_size > MaxFileBytes Then
+            Return $"Interogarea are {k_size} octeți; limita este {MaxFileBytes}. Împărțiți-o în mai multe interogări."
+        End If
+        Return String.Empty
+    End Function
+
     Private Shared Function Prefix(k_settings As AdminSettings) As String
         Return "cd " & AdminClient.Quote(k_settings.RemoteRoot) & " && PYTHONIOENCODING=utf-8 PYTHONUNBUFFERED=1 " &
                AdminClient.Quote(k_settings.RemotePython) & " -m routes.one_time.runner"
     End Function
 
-    ''' <summary>View = show what would run on each database and execute nothing; otherwise execute.</summary>
+    ''' <summary>
+    ''' View = show what would run on each database and execute nothing; otherwise execute. <paramref name="k_remoteFile"/> = the text
+    ''' was uploaded to that path on the server (a text over <see cref="MaxSqlBytes"/>): the runner reads it with <c>--sql-file</c>
+    ''' and the text does not travel on the command line.
+    ''' </summary>
     Public Shared Function RunCommand(k_settings As AdminSettings, k_name As String, k_sql As String,
-                                      k_view As Boolean, k_targets As IEnumerable(Of String)) As String
+                                      k_view As Boolean, k_targets As IEnumerable(Of String),
+                                      Optional k_remoteFile As String = Nothing) As String
         Dim k_problem As String = CheckName(k_name)
-        If k_problem = String.Empty Then k_problem = CheckSize(k_sql)
+        If k_problem = String.Empty Then k_problem = If(k_remoteFile Is Nothing, CheckSize(k_sql), CheckFileSize(k_sql))
         If k_problem <> String.Empty Then Throw New ApplicationException(k_problem)
         If k_targets Is Nothing OrElse Not k_targets.Any() Then Throw New ApplicationException("Bifați cel puțin o bază.")
-        Dim k_b64 As String = Convert.ToBase64String(Encoding.UTF8.GetBytes(k_sql))
-        Return Prefix(k_settings) & " --name " & AdminClient.Quote(k_name.Trim()) & " --sql-b64 " & AdminClient.Quote(k_b64) &
+        Dim k_source As String = If(k_remoteFile Is Nothing,
+                                    " --sql-b64 " & AdminClient.Quote(Convert.ToBase64String(Encoding.UTF8.GetBytes(k_sql))),
+                                    " --sql-file " & AdminClient.Quote(k_remoteFile))
+        Return Prefix(k_settings) & " --name " & AdminClient.Quote(k_name.Trim()) & k_source &
                " --targets " & AdminClient.Quote(String.Join(",", k_targets)) & If(k_view, " --view", " --run")
     End Function
 

@@ -33,7 +33,7 @@ def list_documents(cursor, ctx, family):
     scale = ctx['scale']
     rows = _all(cursor, 'SELECT l.IdLista, l.NumarLA, l.DATALA, l.ValoareBon, l.ValoareLista, l.DEP, l.Anulat, l.Version, '
                         '(SELECT COUNT(*) FROM VC_LegBCLA x WHERE x.SubunitId=l.SubunitId AND x.GestiuneId=l.GestiuneId AND x.ExercitiuId=l.ExercitiuId AND x.IdLista=l.IdLista) AS Bonuri '
-                        'FROM VC_LABC l WHERE l.SubunitId=%s AND l.GestiuneId=%s AND l.ExercitiuId=%s ORDER BY l.DATALA DESC, l.IdLista DESC', (s, g, e))
+                        'FROM VC_LABC l WHERE l.SubunitId=%s AND l.GestiuneId=%s AND l.ExercitiuId=%s AND l.Anulat=0 ORDER BY l.DATALA DESC, l.IdLista DESC', (s, g, e))
     return food_list_portions.annotate(cursor, ctx, [
         {'id': r['IdLista'], 'number': r['NumarLA'], 'date': _iso(r['DATALA']), 'total': _money(r['ValoareLista'], scale), 'bons_total': _money(r['ValoareBon'], scale),
          'diff': _money(r['DEP'], scale), 'bons': r['Bonuri'], 'annulled': bool(r['Anulat']), 'version': r['Version']} for r in rows])
@@ -271,8 +271,10 @@ def cancel(cursor, repo, ctx, family, doc_id, body, request_id):
     repo.delete('VC_LegBCLA', {'IdLista': doc_id})   # the bons are free again; they are not touched
     cursor.execute('UPDATE VC_LABC SET Anulat=1, MotivAnulare=%s, AnulatDe=%s, AnulatLa=NOW(), Version=Version+1 WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND IdLista=%s',
                    (reason, ctx['email'], *_scope(ctx), doc_id))
-    protocol.audit(cursor, ctx, 'lista.cancel', 'VC_LABC', doc_id, {'Anulat': 0, 'bons': freed}, {'Anulat': 1, 'Motiv': reason}, None, request_id)
-    return {'id': doc_id}
+    from . import archive
+    archived = archive.purge(cursor, ctx, 'lista', doc_id, reason, ctx['email'])   # VC14-04: kept in the archive, gone from the tables
+    protocol.audit(cursor, ctx, 'lista.cancel', 'VC_LABC', doc_id, {'Anulat': 0, 'bons': freed}, {'Anulat': 1, 'Motiv': reason, 'Arhiva': archived}, None, request_id)
+    return {'id': doc_id, 'deleted': True}
 
 
 CREATE = {'lista': create}

@@ -2,6 +2,8 @@
 // exactly one candidate invoice, nothing associated yet, no other NIR on the invoice and the proposals use up EVERY line of both sides
 // (positive quantities, nothing left over). Anything else -> null, and the window opens as usual.
 import { proposals, units } from './efactura-match.js';
+import { notify } from './messages.js';
+import { twinText } from './invoice-twins.js';
 
 const left = line => units(line.left) ?? 0n;
 const used = (links, side, id) => links.filter(link => link[side] === id)
@@ -15,6 +17,8 @@ export async function tryAutoAssociate({ api, sel, doc }) {
     const candidates = (list.items || []).filter(item => item.state !== 'PRELUATA' || item.manual_links);
     if (candidates.length !== 1) return null;
     const data = await read(`/${candidates[0].id}/association`, { nir: doc.id });
+    // VC14-05: the same invoice number at the same supplier on another saved document: a warning through the message system, never a block
+    if (data.twins?.length) notify(twinText(data.number, data.twins), 'warning');
     if (data.allocations.length || data.other_receipts.length || !data.lines.length || !data.nir_lines.length) return null;
     const links = proposals(data.lines, data.nir_lines, []);
     if (!links.length

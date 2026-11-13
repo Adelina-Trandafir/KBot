@@ -43,6 +43,8 @@ Public Class CommandsView
 
     ' The wipe of a wrongly migrated VERCON database (slice ME01-16): the typed value must be the database name.
     Private Const WipeCommandName As String = "vercon_golire"
+    ' Archives and deletes the documents annulled before VC14-04 (they leave the trees, their numbers are free); the typed value must be the database name.
+    Private Const ArchiveCancelledName As String = "vercon_arhiva_anulate"
     ' The same wipe for the accounting data of Avacont (TZ_ + the links of the invoices to their operations): the typed value must be the database name.
     Private Const AvacontWipeCommandName As String = "avacont_golire"
     Private Const DeleteBcName As String = "vercon_bc_sterge"
@@ -59,13 +61,18 @@ Public Class CommandsView
     ' Commands that only exist behind a button, never in the list.
     Private Shared ReadOnly HiddenCommands As New HashSet(Of String)(StringComparer.Ordinal) From {DdfExplainName, DdfRepairName, LanturiRepairName, ClsfDupRepairName, DeleteAngName, PreviewDeleteBcName}
 
+    ' ADECHIT: everything the unit database holds about ONE child, asked by CNP (slice ME03-01); read only, several blocks.
+    Private Const AdechitChildName As String = "adechit_copil"
+
     ' The roots of the command list, in the order they are shown. A command is listed under the application it works for; the server
     ' does not say which, so the table below does (a command it does not name goes under NoAppRoot).
     Private Const NoAppRoot As String = "_FARA APLICATIE"
     Private Shared ReadOnly AppRoots As String() = {"VERCON", "FOREXE", "AVACONT", "ADECHIT", NoAppRoot}
     Private Shared ReadOnly CommandApps As New Dictionary(Of String, String)(StringComparer.Ordinal) From {
         {"profil_produs", "VERCON"},
+        {AdechitChildName, "ADECHIT"},
         {WipeCommandName, "VERCON"},
+        {ArchiveCancelledName, "VERCON"},
         {DeleteBcName, "VERCON"},
         {AvacontWipeCommandName, "AVACONT"},
         {SignCheckName, "VERCON"},

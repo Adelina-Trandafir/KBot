@@ -1,10 +1,15 @@
-"""Explicit, partial links from a saved NIR to an e-invoice. Never changes stock or NIR contents."""
+"""Explicit, partial links from a saved NIR to an e-invoice. Never changes stock or NIR contents.
+
+SLICE-VC14-05: a storno invoice (FCS) can be tied to an e-invoice too. An e-invoice line TAKES GOODS BACK when it is on a credit note (Semn -1) or
+when a normal invoice carries a negative quantity (not every supplier issues credit notes); such a line is tied to the lines of an FCS, every
+other line to the lines of a NIR. The budgets work on the absolute quantity of the line.
+"""
 from decimal import Decimal, InvalidOperation
 
 from flask import request
 
 from utils import vercon_efactura as shared
-from . import efactura_queue as queue, efactura_product_cpv, efactura_receipts, protocol
+from . import efactura_queue as queue, efactura_product_cpv, efactura_receipts, invoice_twins, protocol
 from .documents import _one, _all, _int, _scope
 from .nomenclatoare import NomError
 
@@ -19,8 +24,8 @@ def receipt(cursor, ctx, identity, lock=False, *, allow_initial=False):
     row = _one(cursor, 'SELECT n.*,' + supplier + ' AS EF_CUI FROM VC_NIR n '
                'WHERE n.SubunitId=%s AND n.GestiuneId=%s AND n.ExercitiuId=%s AND n.IdIntrare=%s'
                + (' FOR UPDATE' if lock else ''), (*_scope(ctx), identity))
-    if not row or row['Anulat'] or row.get('Storno') or (not allow_initial and row.get('TipDoc') == 'STOC_INITIAL'):
-        raise NomError('INVALID', 'Alegeți un NIR salvat, neanulat, de cumpărare.', 422)
+    if not row or row['Anulat'] or (not allow_initial and row.get('TipDoc') == 'STOC_INITIAL'):
+        raise NomError('INVALID', 'Alegeți un NIR de cumpărare sau o factură storno (FCS) salvată, neanulată.', 422)
     return row
 
 
@@ -78,9 +83,19 @@ def compatible(cursor, nir, ef):
                        % (nir_date or 'lipsă', ef_date or 'lipsă'), 422)
 
 
-def nir_lines(cursor, ctx, nir_id):
-    return _all(cursor, 'SELECT i.ID,i.IdProdus,i.Cant,i.PUTVA,i.ValoareCUTVA,p.ID AS PRODUCT_ID,p.DenumireP,p.UM,p.CPV '
-                'FROM VC_Intrari i JOIN VC_ProduseP pp ON pp.SubunitId=i.SubunitId AND pp.GestiuneId=i.GestiuneId AND pp.IdProdus=i.IdProdus '
+def is_storno(nir):
+    return bool(nir.get('Storno'))
+
+
+def line_is_storno(ef, line):
+    """True when the e-invoice line takes goods back: a credit note (Semn -1), or a normal invoice with a negative quantity. Both together = a normal line."""
+    return (int(ef.get('Semn') or 1) < 0) != ((line['Cant'] or 0) < 0)
+
+
+def nir_lines(cursor, ctx, nir_id, storno=False):
+    table = 'VC_IntrariStorno' if storno else 'VC_Intrari'   # the lines of an FCS are in their own table
+    return _all(cursor, 'SELECT i.ID,i.IdProdus,i.Cant,i.PUTVA,' + ('NULL' if storno else 'i.ValoareCUTVA') + ' AS ValoareCUTVA,p.ID AS PRODUCT_ID,p.DenumireP,p.UM,p.CPV '
+                'FROM ' + table + ' i JOIN VC_ProduseP pp ON pp.SubunitId=i.SubunitId AND pp.GestiuneId=i.GestiuneId AND pp.IdProdus=i.IdProdus '
                 'JOIN VC_Produse p ON p.SubunitId=pp.SubunitId AND p.GestiuneId=pp.GestiuneId AND p.ID=pp.ID '
                 'WHERE i.SubunitId=%s AND i.GestiuneId=%s AND i.ExercitiuId=%s AND i.IdIntrare=%s', (*_scope(ctx), nir_id))
 
@@ -121,16 +136,18 @@ def detail(cursor, ctx, sending_id, nir_id, old_id=None):
         check_link(cursor, ctx, nir_id, old_id, sending_id)
     legacy_guard(cursor, ctx, sending_id, nir_id, old_id)
     links, used_ef, used_nir = budgets(cursor, ctx, sending_id, nir_id, old_id)
+    storno = is_storno(nir)
     source = _all(cursor, 'SELECT l.IdLinie,l.Denumire,l.Unit,l.Cpv,l.Cant FROM EF_PrimiteLinii l WHERE l.IdPrimita=%s AND ' + shared.sent_line_sql('%s', 'l.IdLinie'),
                   (ef['IdPrimita'], sending_id))
-    target = nir_lines(cursor, ctx, nir_id)
+    source = [l for l in source if line_is_storno(ef, l) == storno]   # a storno receipt sees only the lines that take goods back, a NIR the others
+    target = nir_lines(cursor, ctx, nir_id, storno)
     memory = _all(cursor, 'SELECT NUME_HASH,PRODUS_ID FROM EF_VERCON_CORELARI WHERE CUI=%s AND SUBUNIT_ID=%s AND GESTIUNE_ID=%s',
                   (ef['CuiNormalizat'], ctx['subunit'], ctx['gestiune']))
     learned = {}
     for row in memory:
         learned.setdefault(row['NUME_HASH'], set()).add(row['PRODUS_ID'])
     ef_lines = [{'id': l['IdLinie'], 'name': l['Denumire'] or '', 'um': l['Unit'] or '', 'cpv': shared.cpv(l['Cpv']),
-                 'qty': queue._text(l['Cant']), 'left': queue._text((l['Cant'] or Decimal(0)) - used_ef.get(l['IdLinie'], 0)),
+                 'qty': queue._text(abs(l['Cant'] or Decimal(0))), 'left': queue._text(abs(l['Cant'] or Decimal(0)) - used_ef.get(l['IdLinie'], 0)),
                  'learned': sorted(learned.get(shared.name_hash(l['Denumire']), set()))} for l in source]
     receipt_lines = [{'id': l['ID'], 'product': l['PRODUCT_ID'], 'name': l['DenumireP'] or '', 'um': l['UM'] or '', 'cpv': shared.cpv(l['CPV']),
                       'qty': queue._text(l['Cant']), 'left': queue._text((l['Cant'] or Decimal(0)) - used_nir.get(l['ID'], 0))} for l in target]
@@ -143,7 +160,9 @@ def detail(cursor, ctx, sending_id, nir_id, old_id=None):
                   'JOIN VC_Gestiuni g ON g.SubunitId=n.SubunitId AND g.GestiuneId=n.GestiuneId WHERE r.IdTrimitere=%s', (sending_id,))
     valid_others = {(l['SUBUNIT_ID'], l['GESTIUNE_ID'], l['EXERCITIU_ID'], l['NIR_ID']) for l in links
                     if l['ID_TRIMITERE'] == sending_id and l['VALID'] and not same_nir(l, ctx, nir_id)}
-    return {'id': sending_id, 'nir': nir_id, 'version': nir['Version'],
+    # VC14-05: the same invoice number at the same supplier on another saved document: a warning for the window, never a refusal
+    twins = invoice_twins.find(cursor, ctx, ef['CuiNormalizat'], ef['NrFact'], exclude=nir_id, ignore=[r['IdIntrare'] for r in others])
+    return {'id': sending_id, 'nir': nir_id, 'version': nir['Version'], 'storno': storno, 'twins': twins,
             'number': ef['NrFact'], 'supplier': ef['DenumireP'], 'lines': ef_lines, 'nir_lines': receipt_lines,
             'allocations': [{'line': l['ID_LINIE'], 'nir_line': l['INTRARE_ID'], 'qty': queue._text(l['CANT_FACTURA']),
                              'nir_qty': queue._text(l['CANT_NIR']), 'valid': bool(l['VALID'])} for l in own],
@@ -215,9 +234,11 @@ def save(cursor, ctx, sending_id, nir_id, data):
     compatible(cursor, nir, ef)
     legacy_guard(cursor, ctx, sending_id, nir_id, old_id)
     _, used_ef, used_nir = budgets(cursor, ctx, sending_id, nir_id, old_id)
-    source = {l['IdLinie']: l for l in _all(cursor, 'SELECT l.IdLinie,l.Denumire,l.Cpv,l.Cant FROM EF_PrimiteLinii l WHERE l.IdPrimita=%s AND ' + shared.sent_line_sql('%s', 'l.IdLinie'),
-                                            (ef['IdPrimita'], sending_id))}
-    target = {l['ID']: l for l in nir_lines(cursor, ctx, nir_id)}
+    storno = is_storno(nir)
+    every = {l['IdLinie']: l for l in _all(cursor, 'SELECT l.IdLinie,l.Denumire,l.Cpv,l.Cant FROM EF_PrimiteLinii l WHERE l.IdPrimita=%s AND ' + shared.sent_line_sql('%s', 'l.IdLinie'),
+                                           (ef['IdPrimita'], sending_id))}
+    source = {k: l for k, l in every.items() if line_is_storno(ef, l) == storno}
+    target = {l['ID']: l for l in nir_lines(cursor, ctx, nir_id, storno)}
     raw = data.get('allocations')
     if not isinstance(raw, list) or len(raw) > 1000:
         raise NomError('INVALID', 'Lista asocierilor este invalidă (maximum 1000).', 422)
@@ -226,13 +247,16 @@ def save(cursor, ctx, sending_id, nir_id, data):
         if not isinstance(item, dict):
             raise NomError('INVALID', 'Asociere invalidă.', 422)
         lid, nid = _int(item.get('line')), _int(item.get('nir_line'))
+        if lid in every and lid not in source:
+            raise NomError('EF_SIGN', 'Rândul facturii ia marfa înapoi (notă de credit sau cantitate negativă) și se asociază doar unei facturi storno (FCS); celelalte rânduri se asociază unui NIR.' if not storno
+                           else 'Rândul facturii este o intrare normală și se asociază unui NIR; unei facturi storno (FCS) i se asociază numai rândurile cu cantitate negativă sau din nota de credit.', 422)
         if lid not in source or nid not in target or (lid, nid) in seen:
             raise NomError('INVALID', 'Un rând este necunoscut sau o asociere apare de două ori.', 422)
         seen.add((lid, nid))
         qty, nqty = quantity(item.get('qty')), quantity(item.get('nir_qty'))
         used_ef[lid] = used_ef.get(lid, Decimal(0)) + qty
         used_nir[nid] = used_nir.get(nid, Decimal(0)) + nqty
-        if used_ef[lid] > (source[lid]['Cant'] or 0) or used_nir[nid] > (target[nid]['Cant'] or 0):
+        if used_ef[lid] > abs(source[lid]['Cant'] or 0) or used_nir[nid] > (target[nid]['Cant'] or 0):
             raise NomError('EF_QUANTITY', 'Cantitatea depășește restul disponibil în factură sau NIR. Reîncărcați asocierea.', 409)
         clean.append((lid, nid, qty, nqty))
         if item.get('learn') is True:

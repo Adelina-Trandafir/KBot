@@ -32,12 +32,12 @@ def _consumption(cursor, ctx):
 
 
 def _returns(cursor, ctx):
-    rows = _all(cursor, 'SELECT NumarBC FROM VC_Iesiri_H WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND COALESCE(Retur,0)=1', _scope(ctx))
+    rows = _all(cursor, 'SELECT NumarBC FROM VC_Iesiri_H WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND COALESCE(Retur,0)=1 AND Anulat=0', _scope(ctx))
     return _top(cursor, ctx, 'BR', [bon_number.parse('br', row['NumarBC']) for row in rows]) + 1
 
 
 def _lists(cursor, ctx):
-    rows = _all(cursor, 'SELECT NumarLA FROM VC_LABC WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s', _scope(ctx))
+    rows = _all(cursor, 'SELECT NumarLA FROM VC_LABC WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND Anulat=0', _scope(ctx))
     return _top(cursor, ctx, 'LISTA', [_int(row['NumarLA']) for row in rows]) + 1
 
 

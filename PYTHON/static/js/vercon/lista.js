@@ -354,7 +354,7 @@ export function mountLista(host, opts) {
     const doc = state.doc; if (!doc || doc.annulled || !state.canWrite) return;
     if (doc.order_locked) { say(doc.order_message, true); return; }
     const reason = await reasonBox('Anulați lista nr. ' + doc.number + '? Bonurile pot fi asociate altei liste.', { title: 'Anulare listă', yes: 'Anulează lista' }); if (!reason || disposed) return;
-    root.inert = true; try { const result = await write('POST', '/' + doc.id + '/cancel', { reason, version: doc.version }); if (disposed) return; state.doc = result.document; paint(); say('Anulată.'); await refresh(); if (!disposed) paintSaved(); } finally { if (!disposed) root.inert = false; }
+    root.inert = true; try { const result = await write('POST', '/' + doc.id + '/cancel', { reason, version: doc.version }); if (disposed) return; state.doc = result.document; paint(); say('Anulată și scoasă din evidență. Numărul poate fi folosit din nou.'); await refresh(); if (!disposed) paintSaved(); } finally { if (!disposed) root.inert = false; }
   }
   const ready = Promise.all([refresh(), opts.api(url('/lookups'))]).then(([, lookups]) => { if (!disposed) { state.lookups = lookups; paint(); } }).catch(report); paint();
   return { ready, isDirty: dirty,

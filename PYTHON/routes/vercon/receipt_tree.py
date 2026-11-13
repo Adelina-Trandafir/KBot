@@ -13,7 +13,7 @@ from .nomenclatoare import NomError
 # The supplier as the tree shows it: the registered partner, else the free-text name, else '' (opening stock).
 _PARTY = "COALESCE(NULLIF(p.DenumirePartener,''), NULLIF(n.FurnizorV,''), '')"
 _FROM = ('FROM VC_NIR n LEFT JOIN ' + suppliers.relation() + ' p ON p.CodFiscal=n.CodPartener '
-         'WHERE n.SubunitId=%s AND n.GestiuneId=%s AND n.ExercitiuId=%s AND COALESCE(n.Storno,0)=0')
+         'WHERE n.SubunitId=%s AND n.GestiuneId=%s AND n.ExercitiuId=%s AND COALESCE(n.Storno,0)=0 AND n.Anulat=0')   # VC14-04: an annulled receipt is not in the tree at all
 
 
 def parties(cursor, ctx):

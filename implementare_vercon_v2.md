@@ -1,5 +1,19 @@
 # Implementare VERCON v2
 
+### [2026-11-13 — SLICE-VC16-03 — «Modifică furnizor» la NIR, în orice perioadă](docs/worklog/SLICE-VC16-03-nir-modifica-furnizor-orice-perioada.md)
+
+### [2026-11-13 — SLICE-VC19-01 — Raport Amortizare: fără «Stare», valori și pentru bunurile nepredate](docs/worklog/SLICE-VC19-01-amortizare-nepredat-fara-stare.md)
+
+### [2026-11-13 — SLICE-VC18-01 — Gestionari: salvare doar la schimbarea rândului, fără mesaj](docs/worklog/SLICE-VC18-01-gestionari-salvare-la-schimbarea-randului.md)
+
+### [2026-11-12 — SLICE-VC16-02 — «Modifică număr» la BC, BP, BT, BS](docs/worklog/SLICE-VC16-02-modifica-numar-bonuri.md)
+
+### [2026-11-12 — SLICE-VC16-01 — Reparat «twins.warn is not a function» la salvarea NIR / FCS](docs/worklog/SLICE-VC16-01-twins-warn-nu-este-functie.md)
+
+### [2026-11-12 — SLICE-VC14-05 — Număr de factură dublu și asocierea cu facturi storno](docs/worklog/SLICE-VC14-05-numar-factura-dublu-si-asociere-storno.md)
+
+### [2026-11-12 — SLICE-VC14-04 — Anularea arhivează și șterge documentul](docs/worklog/SLICE-VC14-04-anulare-arhiveaza-si-sterge.md)
+
 ### [2026-11-10 — SLICE-VC15-01 — Reparat «changeEfactura is not defined» la asocierea eFactura–NIR](docs/worklog/SLICE-VC15-01-changeefactura-nedefinit.md)
 
 ### [2026-11-11 — SLICE-VC14-03 — Macheta și meniul BU](docs/worklog/SLICE-VC14-03-macheta-si-meniu-bu.md)

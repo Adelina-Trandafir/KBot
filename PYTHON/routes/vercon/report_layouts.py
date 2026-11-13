@@ -43,7 +43,8 @@ TITLES = {'Balanta_produse': 'Balanță stocuri produse', 'Fisa_Magazie': 'FIȘ�
           'Consumuri_Produs': 'Situație consumuri / conturi', 'Consumuri_Unitati': 'Situație consumuri / gestionari',
           'Nota_Comanda': 'NOTĂ DE COMANDĂ', 'Referat_periodic_produs': 'REFERAT DE ACHIZIȚIE',
           'Referat_periodic_Intrari': 'REFERAT DE ACHIZIȚIE', 'Plan_Achizitii': 'Situație intrări produse în perioada',
-          'Situatie_Intrari': 'Situație intrări produse în perioada', 'ListaAlimente2015': 'LISTĂ ZILNICĂ DE ALIMENTE'}
+          'Situatie_Intrari': 'Situație intrări produse în perioada', 'ListaAlimente2015': 'LISTĂ ZILNICĂ DE ALIMENTE',
+          'Centralizator_Amortizari': 'Centralizator amortizări'}
 TITLES.update({'OI_Balanta': 'BALANȚĂ OBIECTE DE INVENTAR ÎN FOLOSINȚĂ',
                'OI_LISTA_INVENTAR': 'LISTĂ DE INVENTARIERE PE DEȚINĂTOR',
                'OI_LISTA_INVENTAR_TOTAL': 'LISTĂ DE INVENTARIERE OBIECTE DE INVENTAR',
@@ -143,13 +144,20 @@ def default(spec):
             groups = ['party'] if name != 'Referat_periodic_produs' else []
             signs = ['ÎNTOCMIT,\nResponsabil achiziții', 'VIZĂ CFP']
     elif kind == 'depreciation':
-        columns = [NAME, col('code', 'Nr. inventar', 1.2), col('start_date', 'Prima predare', 1, 'date'),
-                   col('used_months', 'Luni folosite', .7, 'int'), col('remaining_months', 'Luni rămase', .7, 'int'),
-                   money('value', 'Valoare variantă'), money('monthly', 'Valoare lunară'),
+        amounts = [money('value', 'Valoare variantă'), money('monthly', 'Valoare lunară'),
                    money('month_depreciation', 'Amortizare lună'), money('accumulated', 'Amortizare cumulată'),
-                   money('remaining', 'Valoare rămasă'), col('status', 'Stare', 1.3),
-                   col('issues_text', 'Observații', 2)]
-        groups, totals = [], []
+                   money('remaining', 'Valoare rămasă')]
+        totals = [column['key'] for column in amounts]
+        if spec.get('summary'):
+            # VC19-01: one line per classification, grand total in the footer.
+            columns = [col('classification', 'Clasificare', 4), {**col('count', 'Nr. bunuri', .8, 'int'), 'decimals': 0}] + amounts
+            groups, totals = [], ['count'] + totals
+        else:
+            columns = [NAME, col('code', 'Nr. inventar', 1.2), col('start_date', 'Prima predare', 1, 'date'),
+                       col('used_months', 'Luni folosite', .7, 'int'), col('remaining_months', 'Luni rămase', .7, 'int')] + amounts + [
+                       col('issues_text', 'Observații', 2)]
+            # VC19-01: one table per classification, totals in its footer.
+            groups = ['classification']
     elif kind == 'food':
         columns, groups, totals = [], [], []
     if spec.get('ledger') == 'custody':
@@ -202,7 +210,7 @@ def default(spec):
                    'warehouse_account', 'giver_name', 'entries', 'transfers_in', 'transfers_out', 'scrapping',
                    'entries_value', 'transfers_in_value', 'transfers_out_value', 'scrapping_value',
                    'start_date', 'used_months', 'remaining_months', 'monthly', 'month_depreciation',
-                   'accumulated', 'remaining', 'status', 'issues_text']})
+                   'accumulated', 'remaining', 'status', 'issues_text', 'classification', 'count']})
 
 
 def unit_default(unit):

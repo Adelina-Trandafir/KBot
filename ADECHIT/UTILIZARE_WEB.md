@@ -189,6 +189,13 @@ Arborele **LUNA / ANUL** din asociere folosește tot **Data_extras din antetul X
 <!-- slice: AD20-01 -->
 În fereastra **Asociere extrase cu copii**, **Închide** este în stânga jos. **Previzualizare automată** este în dreapta jos, lângă **Asociază și înregistrează în Alte plăți**. Modul automat păstrează în aceeași zonă comanda de revenire la asociere manuală și generarea documentelor bifate.
 
+## Fila Extrase și Asocieri curente — AD21-01
+
+<!-- slice: AD21-01 -->
+**Fila Extrase** (lângă Chitanțe, Alte plăți, Restituiri) arată, pentru copilul și luna selectate, extrasele asociate: număr, **Data extras**, **Valoare extras** (întreaga linie din extras), **Valoare asociată** (partea înregistrată pe copil), plătitorul din bancă și numărul documentului din Alte plăți. Doar consultare.
+
+În fereastra **Asociere extrase cu copii**, butonul **Asocieri curente** listează asocierile lunii alese la **Luna înregistrării**. **Șterge asocierea selectată** este activ numai în luna deschisă (ultima) și numai cu dreptul «Anulare documente». Ștergerea elimină **complet** documentul din Alte plăți și plata lui (nu este anulare); numărul documentului se eliberează. Se șterge o singură repartizare: dacă extrasul fusese împărțit la mai mulți copii, el rămâne parțial asociat și reapare în lista neasociatelor, cu coloana **Rămas** (diferența). Restul se asociază manual; totalul repartizat trebuie să fie egal cu **Rămas**. Un copil nu poate primi a doua repartizare din același extras. Previzualizarea automată nu propune copil pentru un extras parțial asociat. Plătitorul creat din extras rămâne. Fără SQL nou (pentru mai multe repartizări pe același extras rămâne necesar AD_15).
+
 ## Căutarea copilului în asocierea extraselor — AD20-03
 
 <!-- slice: AD20-03 -->

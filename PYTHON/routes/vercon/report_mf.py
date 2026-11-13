@@ -7,7 +7,8 @@ from .nomenclatoare import NomError
 
 MODES = {'MF_Bon_BP': 'bons', 'MF_Bon_BT': 'bons', 'MF_Bon_BS': 'bons',
          'MF_Balanta': 'balance', 'MF_Balanta_Subinv': 'balance',
-         'MF_LISTA_INVENTAR': 'inventory', 'Amortizare': 'depreciation'}
+         'MF_LISTA_INVENTAR': 'inventory', 'Amortizare': 'depreciation',
+         'Centralizator_Amortizari': 'depreciation'}
 
 
 def parse_selection(raw):

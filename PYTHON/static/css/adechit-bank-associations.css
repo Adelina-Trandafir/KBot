@@ -3,7 +3,7 @@
 .ade-bank-window .ade-catalog-header { box-sizing: border-box; height: 46px; min-height: 46px; flex: 0 0 46px; flex-direction: row; align-items: center; gap: 8px; padding: 4px 12px; }
 .ade-bank-window .ade-catalog-header h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: var(--fs-lg); }
 .ade-bank-window .ade-catalog-header .btn, .ade-bank-window footer .btn { min-width: 0; min-height: 28px; padding: 4px 10px; font-size: var(--fs-ms); line-height: 1.2; }
-.ade-bank-window footer .btn { box-sizing: border-box; min-height: 56px; }
+.ade-bank-window footer .btn { box-sizing: border-box; min-height: 42px; }
 .ade-bank-window .ade-catalog-header .btn { flex-shrink: 0; }
 .ade-bank-window [hidden] { display: none !important; }
 .ade-bank-workspace { display: grid; grid-template-columns: 258px minmax(0, 1fr) 260px; grid-template-rows: auto minmax(210px, 1.2fr) minmax(180px, 1fr); gap: 8px 12px; flex: 1; min-height: 0; padding: 8px 12px; overflow: auto; }
@@ -28,9 +28,11 @@
 .ade-bank-distribution ul { list-style: none; margin: 0; padding: 0; }
 .ade-bank-distribution li { display: flex; align-items: center; justify-content: space-between; gap: 6px; padding: 4px 0; border-bottom: 1px solid var(--line); }
 .ade-bank-distribution p { margin: 0; }
-.ade-bank-hidden { display: flex; align-items: center; gap: 6px; flex-shrink: 0; padding: 6px 8px; border-top: 1px solid var(--line); }
-.ade-bank-hidden input { accent-color: var(--blue); }
-.ade-bank-window footer { box-sizing: border-box; min-height: 66px; align-items: center; justify-content: flex-start; gap: 8px; flex: 0 0 auto; flex-wrap: wrap; padding: 4px 12px; }
+/* SLICE-AD21-02: hidden-group filter in the heading and a 25% shorter bank footer. */
+.ade-bank-window .ade-bank-groups-heading { display: flex; align-items: center; gap: 8px; }
+.ade-bank-hidden { display: flex; align-items: center; gap: 6px; flex-shrink: 0; margin-left: auto; font-size: var(--fs-ms); font-weight: normal; white-space: nowrap; }
+.ade-bank-hidden input { margin: 0; accent-color: var(--blue); }
+.ade-bank-window footer { box-sizing: border-box; min-height: 49.5px; align-items: center; justify-content: flex-start; gap: 8px; flex: 0 0 auto; flex-wrap: wrap; padding: 3px 12px; }
 .ade-bank-window footer > .msg { flex: 1 1 160px; margin: 0; font-size: .9em; padding: 4px 8px; }
 .ade-bank-window footer > .ade-bank-modes { margin-left: auto; }
 .ade-bank-window .btn:disabled { opacity: .48; cursor: default; }
@@ -54,6 +56,13 @@
 .ade-bank-auto-panel > .btn { align-self: flex-start; }
 .ade-bank-window[data-mode="auto"] .ade-bank-workspace { grid-template-rows: auto minmax(210px, 1fr); }
 .ade-bank-window[data-mode="auto"] .ade-bank-association { grid-row: 2; }
+/* SLICE-AD21-01: "Asocieri curente" - the list takes the left side, the month selector stays on the right. */
+.ade-bank-current-panel { display: flex; grid-column: 1 / 3; grid-row: 1 / 4; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid var(--line); }
+.ade-bank-current-panel .ade-list-grid { flex: 1; min-height: 0; }
+.ade-bank-current-actions { display: flex; flex: 0 0 auto; flex-wrap: wrap; align-items: center; gap: 10px; padding: 6px 8px; border-top: 1px solid var(--line); }
+.ade-bank-current-actions p { flex: 1 1 220px; margin: 0; color: var(--ink-soft); font-size: .9em; }
+.ade-bank-window[data-mode="current"] .ade-bank-workspace { grid-template-rows: minmax(210px, 1fr); }
+.ade-bank-window[data-mode="current"] .ade-bank-association { grid-row: 1; }
 @media (min-width: 981px) and (max-width: 1250px) {
   .ade-bank-workspace { grid-template-columns: 180px minmax(0, 1fr) 230px; gap: 8px; }
   .ade-bank-columns { grid-template-columns: 160px minmax(322.5px, .75fr) minmax(207.5px, .85fr); gap: 8px; }
@@ -67,9 +76,12 @@
   .ade-bank-association { grid-column: 1 / 3; grid-row: 4; width: min(300px, 100%); }
   .ade-bank-window[data-mode="auto"] .ade-bank-workspace { grid-template-rows: auto 380px auto; }
   .ade-bank-window[data-mode="auto"] .ade-bank-association { grid-row: 3; }
+  .ade-bank-window[data-mode="current"] .ade-bank-workspace { grid-template-rows: 380px auto; }
+  .ade-bank-window[data-mode="current"] .ade-bank-current-panel { grid-column: 1 / 3; grid-row: 1; }
+  .ade-bank-window[data-mode="current"] .ade-bank-association { grid-row: 2; }
   .ade-bank-filters { flex-wrap: wrap; gap: 6px; }
   .ade-bank-filters label { flex-basis: 100%; }
   .ade-bank-window .ade-catalog-header { padding-inline: 8px; }
-  .ade-bank-window footer { padding: 4px 8px; }
+  .ade-bank-window footer { padding: 3px 8px; }
   .ade-bank-window footer > .msg { flex-basis: 100%; order: -1; }
 }

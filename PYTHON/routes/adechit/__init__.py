@@ -204,6 +204,20 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
                 'Asocierea necesită drepturile de încasare și de modificare a plătitorilor.', 403)
         return command(repo, 'bank-extract-associate', lambda body: associate(repo, g.portal['db_name'], body, g.portal['email']))
 
+    @bp.get('/api/adechit/bank-extracts/current')
+    @guard('read')
+    def bank_extract_current(repo):
+        from .bank_associations import current
+        response = jsonify(current(repo, request.args))
+        response.headers['Cache-Control'] = 'no-store'
+        return response
+
+    @bp.post('/api/adechit/bank-extracts/delete-association')
+    @guard('cancel')
+    def bank_extract_delete_association(repo):
+        from .bank_associations import delete_association
+        return command(repo, 'bank-extract-delete-association', lambda body: delete_association(repo, body))
+
     @bp.get('/api/adechit/bank-extracts/document-number')
     @guard('read')
     def bank_document_number(repo):
@@ -353,7 +367,10 @@ def create_blueprint(authenticate=None, repository_factory=None, rights=None):
         month_id = request.args.get('IDL', '')
         kind = request.args.get('kind', '')
         require(month_id.isdigit(), 'FILTER', 'Filtru de lună invalid.', 400)
-        require(kind in ('receipt', 'other', 'refund'), 'FILTER', 'Tip de document invalid.', 400)
+        require(kind in ('receipt', 'other', 'refund', 'extract'), 'FILTER', 'Tip de document invalid.', 400)
+        if kind == 'extract':
+            from .bank_associations import attendance_associations
+            return {'rows': attendance_associations(repo, attendance_id, int(month_id))}
         return {'rows': repo.ledger_rows(attendance_id, int(month_id), kind)}
 
     @bp.post('/api/adechit/documents')

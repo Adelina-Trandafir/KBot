@@ -50,9 +50,12 @@ def allocations(cursor, sending_id=None, receipt_scope=None):
     supplier = receipt_supplier_sql(cursor)
     return rows(cursor,
         'SELECT a.*, p.Denumire AS NUME_EFACTURA, '
-        '(n.IdIntrare IS NOT NULL AND COALESCE(n.Anulat,0)=0 AND COALESCE(n.Storno,0)=0 '
-        "AND n.TipDoc<>'STOC_INITIAL' AND i.ID IS NOT NULL AND i.IdProdus=a.PRODUS_PRET_ID "
-        'AND n.Version=a.NIR_VERSION AND i.Cant=a.CANT_SURSA AND i.PUTVA=a.PRET_SURSA '
+        # VC14-05: the line a link points to is a line of the receipt (VC_Intrari) or, for a storno invoice (FCS), of VC_IntrariStorno
+        '(n.IdIntrare IS NOT NULL AND COALESCE(n.Anulat,0)=0 '
+        "AND n.TipDoc<>'STOC_INITIAL' "
+        'AND IF(COALESCE(n.Storno,0)=1, (st.ID IS NOT NULL AND st.IdProdus=a.PRODUS_PRET_ID AND st.Cant=a.CANT_SURSA AND st.PUTVA=a.PRET_SURSA), '
+        '(i.ID IS NOT NULL AND i.IdProdus=a.PRODUS_PRET_ID AND i.Cant=a.CANT_SURSA AND i.PUTVA=a.PRET_SURSA)) '
+        'AND n.Version=a.NIR_VERSION '
         'AND DATE(n.DataFc)=DATE(f.DataFact) '
         + "AND NULLIF(" + supplier + ",'')=NULLIF(" + fiscal_sql('f.CuiNormalizat') + ",'') "
         "AND t.Stare IN ('TRIMISA','PRELUATA')) AS VALID "
@@ -62,6 +65,8 @@ def allocations(cursor, sending_id=None, receipt_scope=None):
         'AND n.ExercitiuId=a.EXERCITIU_ID AND n.IdIntrare=a.NIR_ID '
         'LEFT JOIN VC_Intrari i ON i.SubunitId=a.SUBUNIT_ID AND i.GestiuneId=a.GESTIUNE_ID '
         'AND i.ExercitiuId=a.EXERCITIU_ID AND i.IdIntrare=a.NIR_ID AND i.ID=a.INTRARE_ID '
+        'LEFT JOIN VC_IntrariStorno st ON st.SubunitId=a.SUBUNIT_ID AND st.GestiuneId=a.GESTIUNE_ID '
+        'AND st.ExercitiuId=a.EXERCITIU_ID AND st.IdIntrare=a.NIR_ID AND st.ID=a.INTRARE_ID '
         + ('WHERE ' + ' AND '.join(filters) if filters else ''), tuple(args))
 
 
@@ -76,7 +81,8 @@ def progress(cursor, sending_id):
     for link in links:
         if link['VALID']:
             used[link['ID_LINIE']] = used.get(link['ID_LINIE'], Decimal(0)) + link['CANT_FACTURA']
-    complete = bool(lines) and all(l['Cant'] is not None and l['Cant'] > 0 and used.get(l['IdLinie'], 0) == l['Cant'] for l in lines)
+    # VC14-05: a line may be negative (a normal invoice with a negative quantity, tied to a storno receipt): the budget is its absolute value
+    complete = bool(lines) and all(l['Cant'] is not None and l['Cant'] != 0 and used.get(l['IdLinie'], 0) == abs(l['Cant']) for l in lines)
     return {'used': used, 'links': links, 'state': 'PRELUATA' if complete else 'PARTIALA' if used else 'TRIMISA'}
 
 
@@ -101,7 +107,7 @@ def progress_states(cursor):
     states = {}
     for sending_id, items in lines.items():
         amounts = used.get(sending_id, {})
-        complete = bool(items) and all(item['Cant'] is not None and item['Cant'] > 0
-                                      and amounts.get(item['IdLinie'], 0) == item['Cant'] for item in items)
+        complete = bool(items) and all(item['Cant'] is not None and item['Cant'] != 0
+                                      and amounts.get(item['IdLinie'], 0) == abs(item['Cant']) for item in items)
         states[sending_id] = 'PRELUATA' if complete else 'PARTIALA' if amounts else 'TRIMISA'
     return states

@@ -4,6 +4,7 @@ import { confirmBox } from '../utils/confirm-box.js';
 import { bindBankPreview } from './bank-preview.js';
 import { bindBankPeriods } from './bank-periods.js';
 import { bindBankChildSearch } from './bank-child-search.js';
+import { bindBankCurrent } from './bank-current.js';
 
 const $ = (id) => document.getElementById(id);
 const text = (key, title, width = 150) => ({ key, title, width, minWidth: 50, valueType: ValueType.Text });
@@ -14,7 +15,7 @@ export function bindBankAssociations({ api, context, refresh, monthId }) {
   const explanation = $('ade-bank-explanation'); const search = $('ade-bank-search');
   let grids = []; let data = { extracts: [], groups: [], children: [], payers: [], months: [] };
   let extract = null; let group = null; let child = null; let payer = null;
-  let busy = false; let automatic = false; let touched = false; let next = null; let chosenMonth = '';
+  let busy = false; let automatic = false; let viewing = false; let touched = false; let next = null; let chosenMonth = '';
   let savedRequest = null; let listSequence = 0; let searchTimer = null; let queuedSearch = false; let lastSearch = '';
   let allocations = [];
   let numbering = null;
@@ -42,13 +43,15 @@ export function bindBankAssociations({ api, context, refresh, monthId }) {
   const periods = bindBankPeriods({ api, onChange: () => run(async () => {
     if (!automatic && !await discardAllocations()) return false;
     clearTimeout(searchTimer);
+    if (viewing) return false;
     return automatic ? auto.load() : loadExtracts();
   }) });
   const childLookup = bindBankChildSearch({ api, context, run, select: selectSearchChild,
-    ready: () => dialog.open && !automatic && !busy });
+    ready: () => dialog.open && !automatic && !viewing && !busy });
+  const current = bindBankCurrent({ api, context, month: selectedMonth, run, message, refresh });
 
   function update() {
-    childLookup.sync();
+    childLookup.sync(); current.sync();
     const childReady = child && child.sid_month === selectedMonth()?.IDL;
     const numberReady = numbering && numbering.month_id === selectedMonth()?.IDL && numbering.extract_id === extract?.IDFXE;
     $('ade-bank-save').disabled = busy || !canSave() || !extract || !selectedMonth()
@@ -58,12 +61,14 @@ export function bindBankAssociations({ api, context, refresh, monthId }) {
     $('ade-bank-more').hidden = next == null;
   }
   const allocatedTotal = () => allocations.reduce((total, item) => total + item.amount, 0);
-  const remainingAmount = () => Number(extract?.suma_credit || 0) - allocatedTotal();
+  // SLICE-AD21-01: what is still to associate (a partly associated movement keeps only the difference).
+  const extractLeft = () => Number(extract?.suma_ramasa ?? extract?.suma_credit ?? 0);
+  const remainingAmount = () => extractLeft() - allocatedTotal();
   function amountLimitError() {
     if (!extract || !amountInput.value.trim()) return '';
     const value = Number(amountInput.value);
     if (!Number.isFinite(value)) return '';
-    if (value > Number(extract.suma_credit)) return `Suma pentru copil nu poate depăși suma extrasului: ${money(extract.suma_credit)} lei.`;
+    if (value > extractLeft()) return `Suma pentru copil nu poate depăși suma de asociat din extras: ${money(extractLeft())} lei.`;
     if (value > remainingAmount()) return `Suma pentru copil nu poate depăși restul nerepartizat: ${money(remainingAmount())} lei.`;
     return '';
   }
@@ -99,7 +104,7 @@ export function bindBankAssociations({ api, context, refresh, monthId }) {
   }
   async function loadNumbering() {
     numbering = null; numberInput.value = ''; update();
-    if (!selectedMonth() || automatic) return;
+    if (!selectedMonth() || automatic || viewing) return;
     const query = new URLSearchParams({ IDL: selectedMonth().IDL });
     if (extract) query.set('extract_id', extract.IDFXE);
     applyNumbering(await api(`/api/adechit/bank-extracts/document-number?${query}`));
@@ -121,7 +126,7 @@ export function bindBankAssociations({ api, context, refresh, monthId }) {
     const remaining = remainingAmount();
     suggestAmount();
     $('ade-bank-total').textContent = extract
-      ? `Repartizat: ${money(allocatedTotal())} / ${money(extract.suma_credit)} lei · rămas: ${money(remaining)} lei` : '';
+      ? `Repartizat: ${money(allocatedTotal())} / ${money(extractLeft())} lei · rămas: ${money(remaining)} lei` : '';
   }
   function suggestAmount() {
     amountInput.value = extract ? String(remainingAmount()) : '';
@@ -172,6 +177,7 @@ export function bindBankAssociations({ api, context, refresh, monthId }) {
       text('NrDoc', 'Nr. document', 95), text('platitor_nume', 'Plătitor bancă', 240),
       text('platitor_cui', 'Cod fiscal', 90), text('platitor_iban', 'Cont plătitor', 210),
       { ...text('suma_credit', 'Încasare', 80), valueType: ValueType.Number, align: 'right' },
+      { ...text('suma_ramasa', 'Rămas', 70), valueType: ValueType.Number, align: 'right' },
       text('Explicatii', 'Detalii extras', 200)], 'IDFXE', (row) => {
       if (busy || row.IDFXE === extract?.IDFXE && row.fingerprint === extract?.fingerprint) return;
       run(async () => {
@@ -248,7 +254,7 @@ export function bindBankAssociations({ api, context, refresh, monthId }) {
     const query = filters(); const own = ++listSequence;
     if (more && next != null) query.set('before', next);
     const result = await api(`/api/adechit/bank-extracts?${query}`);
-    if (own !== listSequence || !dialog.open || automatic) return false;
+    if (own !== listSequence || !dialog.open || automatic || viewing) return false;
     if (background && busy) { queuedSearch = true; return false; }
     if (!more) {
       const retained = background && extract ? result.rows.find((row) => row.IDFXE === extract.IDFXE) : null;
@@ -261,24 +267,28 @@ export function bindBankAssociations({ api, context, refresh, monthId }) {
     update(); return true;
   }
   function requestSearch() {
-    if (!dialog.open) return;
+    if (!dialog.open || viewing) return;
     if (busy) { queuedSearch = true; return; }
     const action = automatic ? auto.load(null, false, { background: true }) : loadExtracts(false, true);
     action.catch(report);
   }
-  async function setMode(value) {
-    if (!automatic && value && !await discardAllocations()) return;
+  // SLICE-AD21-01: three modes - 'manual', 'auto' (preview) and 'current' (the associations already made).
+  async function setMode(mode) {
+    const toAuto = mode === 'auto'; const toCurrent = mode === 'current';
+    if (!automatic && !viewing && mode !== 'manual' && !await discardAllocations()) return;
     childLookup.reset();
     listSequence += 1;
-    automatic = value; dialog.dataset.mode = value ? 'auto' : 'manual';
-    dialog.querySelectorAll('.ade-bank-manual').forEach((item) => { item.hidden = value; });
-    $('ade-bank-auto-panel').hidden = !value; $('ade-bank-auto-save').hidden = !value;
-    $('ade-bank-manual-mode').hidden = !value;
-    $('ade-bank-auto-mode').hidden = value;
-    $('ade-bank-manual-mode').setAttribute('aria-pressed', String(!value));
-    $('ade-bank-auto-mode').setAttribute('aria-pressed', String(value));
+    automatic = toAuto; viewing = toCurrent; dialog.dataset.mode = mode;
+    dialog.querySelectorAll('.ade-bank-manual').forEach((item) => { item.hidden = mode !== 'manual'; });
+    $('ade-bank-auto-panel').hidden = !toAuto; $('ade-bank-auto-save').hidden = !toAuto;
+    $('ade-bank-current-panel').hidden = !toCurrent;
+    dialog.querySelector('.ade-bank-periods').hidden = toCurrent;
+    dialog.querySelector('.ade-bank-filters').hidden = toCurrent;
+    [['manual', 'ade-bank-manual-mode'], ['auto', 'ade-bank-auto-mode'], ['current', 'ade-bank-current-mode']]
+      .forEach(([name, id]) => $(id).setAttribute('aria-pressed', String(mode === name)));
     message('');
-    if (value) await auto.load();
+    if (toAuto) await auto.load();
+    else if (toCurrent) { auto.cancelLoad(); await current.load(); }
     else { auto.cancelLoad(); await loadCatalogs(); await loadExtracts(); }
   }
   async function open() {
@@ -291,7 +301,7 @@ export function bindBankAssociations({ api, context, refresh, monthId }) {
     auto.invalidate(); explanation.value = ''; search.value = ''; lastSearch = ''; queuedSearch = false;
     $('ade-bank-show-hidden').checked = false;
     month.replaceChildren(new Option('Alegeți luna', '')); message(''); dialog.showModal(); buildGrids();
-    await run(async () => { await periods.open(); await setMode(false); });
+    await run(async () => { await periods.open(); await setMode('manual'); });
   }
   $('ade-bank-save').addEventListener('click', () => run(async () => {
     const period = selectedMonth();
@@ -301,12 +311,12 @@ export function bindBankAssociations({ api, context, refresh, monthId }) {
     const limitError = validateAmountLimit();
     if (limitError) throw new Error(limitError);
     const items = numberedItems(allocations.length ? allocations : [currentAllocation()]);
-    if (items.reduce((total, item) => total + item.amount, 0) !== Number(extract.suma_credit))
-      throw new Error('Totalul sumelor repartizate trebuie să fie egal cu încasarea din extras.');
+    if (items.reduce((total, item) => total + item.amount, 0) !== extractLeft())
+      throw new Error('Totalul sumelor repartizate trebuie să fie egal cu suma de asociat din extras.');
     const body = JSON.stringify({ extract_id: extract.IDFXE, fingerprint: extract.fingerprint, number_year: numbering.year,
       allocations: items.map(({ child: name, ...item }) => item) });
     if (!savedRequest || savedRequest.body !== body) savedRequest = { body, key: crypto.randomUUID() };
-    if (!await confirmBox(`${money(extract.suma_credit)} lei · ${extract.platitor_nume}\n`
+    if (!await confirmBox(`${money(extractLeft())} lei${extractLeft() !== Number(extract.suma_credit) ? ` din ${money(extract.suma_credit)}` : ''} · ${extract.platitor_nume}\n`
       + `${period.LunaT} ${period.Anul} · ${context().subunit.name}\n`
       + items.map((item) => `${item.child} · nr. ${item.document_number}: ${money(item.amount)} lei · ${item.explanation}`).join('\n'), {
       title: 'Asociere extras', yes: 'Asociază și înregistrează', no: 'Renunță' })) return;
@@ -329,13 +339,14 @@ export function bindBankAssociations({ api, context, refresh, monthId }) {
     if (allocations.some(entry => entry.document_number === item.document_number))
       throw new Error(`Numărul ${item.document_number} este deja atribuit unui copil din repartizare. Introduceți alt număr.`);
     if (allocations.length >= 50) throw new Error('Se pot repartiza cel mult 50 de copii.');
-    if (allocatedTotal() + item.amount > Number(extract.suma_credit)) throw new Error('Sumele repartizate depășesc încasarea din extras.');
+    if (allocatedTotal() + item.amount > extractLeft()) throw new Error('Sumele repartizate depășesc suma de asociat din extras.');
     allocations.push(item);
     numberInput.value = nextDraftNumber(String(BigInt(item.document_number) + 1n));
     renderAllocations(); update();
   }));
-  $('ade-bank-manual-mode').addEventListener('click', () => run(() => setMode(false)));
-  $('ade-bank-auto-mode').addEventListener('click', () => run(() => setMode(true)));
+  $('ade-bank-manual-mode').addEventListener('click', () => run(() => setMode('manual')));
+  $('ade-bank-auto-mode').addEventListener('click', () => run(() => setMode('auto')));
+  $('ade-bank-current-mode').addEventListener('click', () => run(() => setMode('current')));
   $('ade-bank-reload').addEventListener('click', () => run(async () => {
     if (!automatic && !await discardAllocations()) return;
     clearTimeout(searchTimer);
@@ -353,6 +364,7 @@ export function bindBankAssociations({ api, context, refresh, monthId }) {
     if (!await discardAllocations()) { month.value = chosenMonth; return; }
     if (!await auto.discardChanges()) { month.value = chosenMonth; return; }
     chosenMonth = month.value; auto.invalidate();
+    if (viewing) { await current.load(); return; }
     if (automatic) { await suggestExplanation(); await auto.load(); }
     else await loadCatalogs();
   }));
@@ -364,7 +376,7 @@ export function bindBankAssociations({ api, context, refresh, monthId }) {
   function cleanup() {
     childLookup.reset(); childLookup.sync();
     clearTimeout(searchTimer); listSequence += 1; queuedSearch = false;
-    grids.forEach((instance) => instance.destroy()); grids = []; auto.invalidate(); periods.destroy();
+    grids.forEach((instance) => instance.destroy()); grids = []; auto.invalidate(); periods.destroy(); current.destroy();
   }
   async function close() { if (!busy && await discardAllocations()) { dialog.close(); cleanup(); } }
   $('ade-bank-close').addEventListener('click', () => close().catch(report));

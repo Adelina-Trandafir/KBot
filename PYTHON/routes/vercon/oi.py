@@ -50,7 +50,7 @@ def list_documents(cursor, ctx, family):
     rows = _all(cursor, ('SELECT t.{k} AS id, MIN(t.{n}) AS number, MIN(t.{d}) AS d, MIN(t.{h}) AS holder_id, MIN(c.Denumire) AS holder, SUM(t.ValoareCUTVA) AS total, '
                          'MAX(t.Anulat) AS annulled, MAX(t.ID) AS version_id, SUM(t.Version) AS version_sum, COUNT(*) AS line_count{old} FROM {tb} t '
                          'LEFT JOIN VC_Clienti c ON c.SubunitId=t.SubunitId AND c.GestiuneId=t.GestiuneId AND c.IDC=t.{h}{oj} '
-                         'WHERE t.SubunitId=%s AND t.GestiuneId=%s AND t.ExercitiuId=%s AND t.{k} IS NOT NULL AND t.{k}<>0 GROUP BY t.{k} ORDER BY d DESC, t.{k} DESC').format(
+                         'WHERE t.SubunitId=%s AND t.GestiuneId=%s AND t.ExercitiuId=%s AND t.{k} IS NOT NULL AND t.{k}<>0 AND t.Anulat=0 GROUP BY t.{k} ORDER BY d DESC, t.{k} DESC').format(
         k=spec['key'], n=spec['num'], d=spec['date'], h=spec['holder'], tb=spec['table'], old=old_sql, oj=old_join), (s, g, e))
     from .bu_links import is_bu
     return [{'id': r['id'], 'number': bon_number.display(family, r['number']), 'date': _iso(r['d']), 'holder_id': r['holder_id'], 'holder': r['holder'] or '',
@@ -509,8 +509,10 @@ def cancel(cursor, repo, ctx, family, doc_id, body, request_id):
     if month_start is not None:
         consumption_timeline.require_nonnegative(cursor, ctx, {r['IdProdus'] for r in rows}, month_start)
     oi_custody.check_timeline(cursor, ctx, {r['IdProdus'] for r in rows})
-    protocol.audit(cursor, ctx, family + '.cancel', spec['table'], doc_id, {'Anulat': 0}, {'Anulat': 1, 'Motiv': reason}, None, request_id)
-    return {'id': doc_id}
+    from . import archive
+    archived = archive.purge(cursor, ctx, family, doc_id, reason, ctx['email'])   # VC14-04: kept in the archive, gone from the tables
+    protocol.audit(cursor, ctx, family + '.cancel', spec['table'], doc_id, {'Anulat': 0}, {'Anulat': 1, 'Motiv': reason, 'Arhiva': archived}, None, request_id)
+    return {'id': doc_id, 'deleted': True}
 
 
 CREATE = {'bp': create_bp, 'bt': lambda *a: create_out('bt', *a), 'bs': lambda *a: create_out('bs', *a)}

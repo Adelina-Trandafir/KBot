@@ -54,6 +54,7 @@ add('OI_Fisa_Evidenta_Produse_STOC', 'final_total', ('OI',), 'Obiecte de inventa
 add('OI_Fisa_Evidenta|OI_Fisa_Evidenta_Primitori|OI_Fisa_Evidenta_Produse',
     'custody_statement', ('OI',), 'Obiecte de inventar', ledger='custody')
 add('Amortizare', 'depreciation', ('MF',), 'Mijloace fixe')
+add('Centralizator_Amortizari', 'depreciation', ('MF',), 'Mijloace fixe', summary=True)
 add('NIR|NIR_SFP', 'documents', family='nir', group='Recepții')
 CATALOG['nir_sfp']['types'] = G
 CATALOG['nir']['include_storno'] = True
@@ -91,6 +92,7 @@ for name, label in {
     'Bon_Consum': 'BONURI',
     'Centralizator_BC': 'CENTRALIZATOR',
     'OI_Balanta': 'Balanță obiecte de inventar',
+    'Centralizator_Amortizari': 'Centralizator amortizări',
     'MF_Balanta': 'Balanta',
     'MF_LISTA_INVENTAR': 'Lista Inventar',
     'MF_Bon_BP': 'Bon Predare',

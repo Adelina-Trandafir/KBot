@@ -390,6 +390,13 @@ def _c_profil_produs(conn, db, param):
     return profile(conn, db, param, _block)
 
 
+def _c_adechit_copil(conn, db, param):
+    """ADECHIT, read only: everything the unit database holds about the child with this CNP, found through his IDP
+    (routes/admin_cli/adechit_copil.py); returns several blocks."""
+    from routes.admin_cli.adechit_copil import profile
+    return profile(conn, db, param, _block)
+
+
 def _c_oi_semne(conn, db):
     """VERCON: register rows whose quantity and value have different signs, per gestiune (routes/admin_cli/vercon_profile.py)."""
     from routes.admin_cli.vercon_profile import sign_check
@@ -457,6 +464,13 @@ def _c_vercon_golire(conn, db, param):
     return wipe(conn, db, param, _block)
 
 
+def _c_vercon_arhiva_anulate(conn, db, param):
+    """VERCON, WRITES: archives (VC_ArhivaAnulate) and deletes every document annulled before slice VC14-04, so it leaves the trees and its number
+    is free (routes/admin_cli/vercon_arhiva_anulate.py); the typed value must be the database name."""
+    from routes.admin_cli.vercon_arhiva_anulate import run
+    return run(conn, db, param, _block)
+
+
 def _c_avacont_golire(conn, db, param):
     """AVACONT, WRITES, IRREVERSIBLE: empties every TZ_ table and EF_PrimiteOperatii of ONE unit database so the accounting data can be migrated again
     (routes/admin_cli/avacont_wipe.py); the typed value must be the database name."""
@@ -499,6 +513,10 @@ COMMANDS = {
                         "din toate tabelele). Cere o baza anume si codul angajamentului.", False, _c_fisa_angajament),
     "profil_produs": ("Profil produs VERCON", "Tot ce stie baza despre un produs (IdProdus): fiecare rand din fiecare tabela VC_ in care apare, "
                       "cu antetul bonului/NIR-ului, plus verificarea registrului OI. Cere o baza anume si IdProdus.", False, _c_profil_produs),
+    "adechit_copil": ("Informatii copil", "Tot ce stie baza despre un copil, gasit dupa CNP: copilul si platitorii lui, istoricul de grupe, lunile "
+                      "(prezenta si contract), situatia lunara, platile si incasarile, chitantele, alte documente, retururile, compensarile si "
+                      "extrasele bancare asociate - tot ce face referinta la IDP-ul lui. Doar citire; cere o baza anume si CNP-ul.",
+                      False, _c_adechit_copil),
     "oi_semne": ("Semne gresite registru OI", "Randurile din registrul OI (VC_OI_Produse) la care cantitatea si valoarea au semne diferite, "
                  "pe gestiune. Doar citire; merge si pe toate bazele.", False, _c_oi_semne),
     "oi_semne_repara": ("Repara semne registru OI", "Pune valoarea negativa pe randurile din registrul OI care au cantitatea negativa si valoarea "
@@ -532,6 +550,9 @@ COMMANDS = {
     "vercon_golire": ("Golire VERCON (VC_ si trimiteri EF)", "Goleste TOATE tabelele VC_ ale bazei alese si tabelele EF_ de trimitere catre Vercon "
                       "(EF_PrimiteVercon*, EF_VERCON_*), ca baza sa poata fi migrata din nou. FX_, AD_, TZ_ si Parteneri nu se ating. "
                       "SCRIE si NU se poate anula; cere o baza anume si numele ei scris ca confirmare.", True, _c_vercon_golire),
+    "vercon_arhiva_anulate": ("Arhivare documente anulate VERCON", "Muta in arhiva (VC_ArhivaAnulate) si sterge din tabelele VC_ toate documentele deja anulate "
+                              "(NIR, FCS, BC, BR, BP, BT, BS, BU, liste de alimente): dispar din arbori, iar numerele lor se elibereaza. Documentele care nu se pot muta "
+                              "raman neatinse si sunt listate. Cere numele bazei scris ca confirmare si tabela din sql/VC14_04_ARHIVA_ANULATE.sql.", True, _c_vercon_arhiva_anulate),
     "avacont_golire": ("Golire date contabile (TZ_ si legaturi EF)", "Goleste TOATE tabelele TZ_ ale bazei alese (note, documente, operatii, plan de conturi, "
                        "solduri, jurnale, sabloane, subunitati, OP-uri, setari) si legaturile facturilor primite cu operatiile (EF_PrimiteOperatii), ca "
                        "datele contabile sa poata fi migrate din nou. Parteneri, Clasificatii, FX_, AD_, VC_ si restul EF_ nu se ating. "
@@ -551,10 +572,12 @@ COMMANDS = {
 COMMAND_PARAMS = {
     "fisa_angajament": "Cod angajament",
     "profil_produs": "IdProdus",
+    "adechit_copil": "CNP copil",
     "ddf_antete_explica": "Cod angajament",
     "ddf_antete_repara": "Cod angajament",
     "receptii_lanturi_repara": "Cod angajament",
     "vercon_golire": "Numele bazei (confirmare)",
+    "vercon_arhiva_anulate": "Numele bazei (confirmare)",
     "avacont_golire": "Numele bazei (confirmare)",
     "angajament_analiza": "Cod angajament",
     "angajament_stergere": "Cod angajament",
@@ -564,7 +587,7 @@ COMMAND_PARAMS = {
 
 # Commands restricted to one selected database (including database-wide VERCON checks).
 SINGLE_DB_COMMANDS = {"oi_semne_repara", "storno_preturi", "storno_preturi_repara", "ddf_antete", "ddf_antete_explica", "ddf_antete_repara",
-                     "receptii_lanturi", "receptii_lanturi_repara", "vercon_golire", "avacont_golire", "clasificatii_dubluri_repara", "angajament_analiza", "angajament_stergere",
+                     "receptii_lanturi", "receptii_lanturi_repara", "vercon_golire", "vercon_arhiva_anulate", "avacont_golire", "clasificatii_dubluri_repara", "angajament_analiza", "angajament_stergere",
                      vercon_bc_delete.PREVIEW, vercon_bc_delete.DELETE}
 
 

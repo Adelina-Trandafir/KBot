@@ -20,7 +20,8 @@ LINES THAT DO NOT GO (slice 00EF-56). On a line the accountant can choose «NU S
 shows the line and the choice can be changed while the sending waits) but VERCON never reads it: not in the list of the Administrator's «Adaugare NIR», not in the
 association with a NIR, not in the quantity budget that decides PRELUATA. The line stays in EF_PrimiteLinii, i.e. in e-Factura, untouched. At least one line must go.
 
-NOT IN THIS SLICE: the invoices of kind credit note («NC», Semn -1) cannot be sent (decision D3); the VERCON side (list, return, take over) is EV04 / EV05.
+CREDIT NOTES (slice VC14-05, replaces decision D3): an invoice of kind credit note («NC», Semn -1) is sent like any other; in Vercon it is tied to a storno receipt (FCS), and it never starts a NIR.
+NOT IN THIS SLICE: the VERCON side (list, return, take over) is EV04 / EV05.
 """
 import logging
 from utils import vercon_efactura as associations
@@ -83,7 +84,7 @@ def cere_contabil(role):
 _SQL_TRIMITERI = ("SELECT IdTrimitere, IdPrimita, Stare, Observatie, UnTrimis, DataTrimis, MotivReturnare, UnReturnat, DataReturnat, UnPreluat, DataPreluat "
                   "FROM EF_PrimiteVercon WHERE IdPrimita = %s ORDER BY IdTrimitere DESC")
 
-_SQL_NIR = ("SELECT n.IdTrimitere, n.SubunitId, n.GestiuneId, n.ExercitiuId, n.IdIntrare, v.Numar, v.NumarSub, v.Data, "
+_SQL_NIR = ("SELECT n.IdTrimitere, n.SubunitId, n.GestiuneId, n.ExercitiuId, n.IdIntrare, ABS(v.Numar) AS Numar, COALESCE(v.Storno, 0) AS Storno, v.NumarSub, v.Data, "
             "(v.IdIntrare IS NOT NULL) AS Exista, COALESCE(v.Anulat, 0) AS Anulat, CONCAT(s.Name,' / ',g.Name) AS Gestiune "
             "FROM EF_PrimiteVerconNir n "
             "LEFT JOIN VC_NIR v ON v.SubunitId = n.SubunitId AND v.GestiuneId = n.GestiuneId AND v.ExercitiuId = n.ExercitiuId AND v.IdIntrare = n.IdIntrare "
@@ -101,7 +102,7 @@ def _nir_ale(cursor, ids):
     for row in cursor.fetchall():
         out[row["IdTrimitere"]].append({
             "SubunitId": row["SubunitId"], "GestiuneId": row["GestiuneId"], "Gestiune": row["Gestiune"] or "", "ExercitiuId": row["ExercitiuId"],
-            "IdIntrare": row["IdIntrare"], "Numar": row["Numar"], "NumarSub": row["NumarSub"],
+            "IdIntrare": row["IdIntrare"], "Numar": row["Numar"], "Storno": bool(row["Storno"]), "NumarSub": row["NumarSub"],
             "Data": row["Data"].isoformat() if row["Data"] is not None else None,
             "Anulat": bool(row["Anulat"]), "Valid": bool(row["Exista"]) and not row["Anulat"]})
     for identity in ids:
@@ -190,9 +191,8 @@ def _starea(conn, cursor, id_primita, role):
     # The partner in force: the one kept for the tax code, or the only one; several and none kept: None and the accountant chooses (`parteneri`).
     partners, partner = rezolva_partener(cursor, row["CuiNormalizat"])
     reason = None
-    if row["Tip"] != "FC" or int(row["Semn"] or 1) != 1:
-        reason = "Nota de credit (storno) nu se trimite la Vercon."
-    elif not lines:
+    # VC14-05: a credit note («NC», Semn -1) is sent like any invoice; in Vercon it is tied to a storno receipt (FCS)
+    if not lines:
         reason = "Factura nu are linii."
     elif active is not None:
         reason = "Factura este deja trimisă la Vercon."

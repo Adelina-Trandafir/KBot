@@ -118,8 +118,22 @@ def calculate(asset, events, on_date, scale, zec):
     if quantity != 1:
         issue('MF_QUANTITY_AMBIGUOUS', 'Varianta nu reprezintă o singură bucată la data calculului. Nu se repartizează arbitrar valoarea amortizării.')
         return result
+    # VC18-01: the monthly amount does not depend on any handover, so it is shown for every asset.
+    monthly, monthly_source = monthly_amount(value, normal, asset.get('ValoareLuna'),
+                                              asset.get('ValoareLunara'), scale, zec)
+    result.update(monthly=monthly, monthly_source=monthly_source)
+    if abs(monthly * normal - value) * 2 > normal * Decimal(1).scaleb(-zec):
+        issue('MF_MONTHLY_BASIS_DIFFERENCE', 'Valoarea lunară stocată nu corespunde valorii curente împărțite la DNF. Se păstrează valoarea lunară sursă, cu restul în ultima lună.')
+    if asset.get('ValoareLuna') is not None and asset.get('ValoareLunara') is not None:
+        if asset['ValoareLuna'] != asset['ValoareLunara']:
+            issue('MF_MONTHLY_SOURCE_DIFFERENCE', 'ValoareLuna și ValoareLunara diferă; calculul folosește ValoareLuna, fără rescrierea sursei.')
     if not handovers or handovers[0]['date'] > on_date:
-        result['status'] = 'not_in_use'
+        # VC18-01: not handed over yet = zero calendar months of depreciation, so the
+        # months used so far are the DF already carried by the asset (as in Access).
+        total = accumulated(value, monthly, used_before, normal)
+        result.update(status='not_in_use', calendar_months=0, used_months=used_before,
+                      remaining_months=normal - used_before, accumulated=total, remaining=value - total,
+                      month_depreciation=0, next_month_depreciation=0)
         return result
     start = handovers[0]['date']
     if start < entry:
@@ -142,14 +156,7 @@ def calculate(asset, events, on_date, scale, zec):
     if disposed and disposed < quantity:
         issue('MF_PARTIAL_SCRAPPING', 'Casarea parțială a unui număr de inventar necesită repartizarea explicită a valorii.')
         return result
-    monthly, monthly_source = monthly_amount(value, normal, asset.get('ValoareLuna'),
-                                              asset.get('ValoareLunara'), scale, zec)
-    if abs(monthly * normal - value) * 2 > normal * Decimal(1).scaleb(-zec):
-        issue('MF_MONTHLY_BASIS_DIFFERENCE', 'Valoarea lunară stocată nu corespunde valorii curente împărțite la DNF. Se păstrează valoarea lunară sursă, cu restul în ultima lună.')
-    if asset.get('ValoareLuna') is not None and asset.get('ValoareLunara') is not None:
-        if asset['ValoareLuna'] != asset['ValoareLunara']:
-            issue('MF_MONTHLY_SOURCE_DIFFERENCE', 'ValoareLuna și ValoareLunara diferă; calculul folosește ValoareLuna, fără rescrierea sursei.')
-    effective = min(on_date, stop) if stop else on_date
+    effective =min(on_date, stop) if stop else on_date
     elapsed = calendar_months(start, effective)
     used = min(normal, used_before + elapsed)
     total = accumulated(value, monthly, used, normal)

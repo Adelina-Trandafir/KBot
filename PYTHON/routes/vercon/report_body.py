@@ -151,7 +151,8 @@ def build(spec, layout, rows, ctx, unit, committees=None, *, page_break_accounts
                     ('Codul produsului', row.get('code') or row['variant']), ('UM', row.get('um') or ''),
                     ('Preț unitar', report_model.number(row.get('price'), zec))]})
             else:
-                blocks.append({'t': 'group', 'text': (('Categorie: ' if key == 'account' else '') + str(value or 'Fără încadrare'))})
+                prefix = 'Categorie: ' if key == 'account' else 'Clasificare: ' if key == 'classification' else ''
+                blocks.append({'t': 'group', 'text': prefix + str(value or 'Fără încadrare')})
             walk(children, level + 1)
             if level + 1 < len(groups):
                 totals = [k for k in layout.get('totals', []) if k.endswith('_value') or k in ('value', 'vat')]

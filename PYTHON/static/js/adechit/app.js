@@ -17,6 +17,7 @@ import { bindReports, outputReport, closeReportPreviews } from './reports.js';
 import { bindHelp } from './help.js';
 import { bindNoticeConfig } from './payment-notice-config.js';
 import { bindBankAssociations } from './bank-associations.js';
+import { extractLedgerHtml } from './extract-ledger.js';
 import { bindExtractsIntake } from './extracts-intake.js';
 import { bindWorkingDays } from './working-days.js';
 import { bindChildSearch } from './child-search.js';
@@ -690,9 +691,11 @@ async function openReceiptMenu(button, receipt) {
 function renderLedger(rows = []) {
   receiptMenuCleanup?.();
   const kind = state.ledger;
-  const spec = ledgerSpec(kind);
   const body = $('ade-ledger-body');
   if (!state.selected) { body.innerHTML = '<div class="ade-ledger-empty">Selectați copilul pentru a vedea documentele și a adăuga un rând.</div>'; return; }
+  // SLICE-AD21-01: associated bank statements; read only, no draft row.
+  if (kind === 'extract') { body.innerHTML = extractLedgerHtml(rows, { money, dateText, escapeHtml }); return; }
+  const spec = ledgerSpec(kind);
   const existing = [...rows].sort((a, b) => String(a.Explicatie || '').localeCompare(String(b.Explicatie || ''), 'ro', { sensitivity: 'base' }))
     .map((row) => {
       const k_buttons = (kind === 'receipt' ? receiptActionButton(row.IDC) : '')

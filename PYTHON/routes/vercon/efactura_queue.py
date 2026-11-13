@@ -82,8 +82,8 @@ def listing(cursor, summary=False, ctx=None):
         supplier = association.receipt_supplier_sql(cursor)
         nir = _one(cursor, 'SELECT n.*,' + supplier + ' AS EF_CUI FROM VC_NIR n '
                    'WHERE n.SubunitId=%s AND n.GestiuneId=%s AND n.ExercitiuId=%s AND n.IdIntrare=%s', (*_scope(ctx), nir_id))
-        if not nir or nir['Anulat'] or nir.get('Storno') or nir.get('TipDoc') == 'STOC_INITIAL':
-            raise NomError('INVALID', 'Alegeți un NIR salvat, neanulat, de cumpărare.', 422)
+        if not nir or nir['Anulat'] or nir.get('TipDoc') == 'STOC_INITIAL':   # VC14-05: a storno invoice (FCS) is allowed too
+            raise NomError('INVALID', 'Alegeți un NIR de cumpărare sau o factură storno (FCS) salvată, neanulată.', 422)
         if not nir['EF_CUI']:
             raise NomError('INVOICE_SUPPLIER',
                            'NIR-ul nu are un cod fiscal disponibil pentru filtrarea eFacturilor. '
@@ -92,6 +92,9 @@ def listing(cursor, summary=False, ctx=None):
             raise NomError('INVOICE_DATE', 'NIR-ul nu are Data facturii completată.', 422)
         filters.extend((association.fiscal_sql('p.CuiNormalizat') + '=%s', 'DATE(p.DataFact)=%s'))
         params.extend((nir['EF_CUI'], _iso(nir['DataFc'])[:10]))
+    if not summary and not association_mode:
+        # VC14-05: a credit note is only tied to a storno receipt (association); it never starts a NIR from the «Adaugare NIR» list
+        filters.append('COALESCE(p.Semn,1)=1')
     if not summary and not association_mode and request.args.get('date'):
         filters.append('p.DataFact=%s')
         params.append(request.args['date'])
@@ -123,7 +126,7 @@ def listing(cursor, summary=False, ctx=None):
     items = [{'id': r['IdTrimitere'], 'invoice_id': r['IdPrimita'], 'number': r['NrFact'], 'date': _iso(r['DataFact']), 'supplier': r['DenumireP'],
               'cui': r['CuiNormalizat'], 'total': _text(sent_total(cursor, r['IdTrimitere'], r['IdPrimita'], Decimal(r['Total'] or 0)) * int(r['Semn'] or 1)), 'lines': r['Linii'], 'note': r['Observatie'] or '',
               'sent_by': r['UnTrimis'] or '', 'sent_at': _iso(r['DataTrimis']), 'again': r['Stare'] == 'PRELUATA' and r['effective'] == 'TRIMISA',
-              'state': r['effective'], 'manual_links': r['manual_links'], 'inactive': r['IdTrimitere'] in hidden} for r in rows]
+              'state': r['effective'], 'manual_links': r['manual_links'], 'inactive': r['IdTrimitere'] in hidden, 'credit_note': int(r['Semn'] or 1) < 0} for r in rows]
     return {'available': True, 'visibility_available': visibility_ready, 'items': items, 'pending_count': pending_count}
 
 

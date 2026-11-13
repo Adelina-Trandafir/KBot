@@ -23,13 +23,22 @@ Corecții pentru asocierea extraselor și introducerea manuală a documentelor �
 | SLICE-AD20-13 | Data_extras din antetul XML în DGV-ul asocierii și imediat după Încărcat în istoricul încărcărilor | TESTAT ȘI VALIDAT DE ADELINA (versiunea finală); ÎNREGISTRAT PENTRU SERVER | [Data extras în cele două liste](../SLICE-AD20-13-data-extras-asociere-istoric.md) |
 | SLICE-AD20-14 | Arbore LUNA/ANUL și filtrarea încasărilor după Data_extras din antetul XML | VALIDAT DE ADELINA; ÎNREGISTRAT PENTRU SERVER | [Arbore după data antetului](../SLICE-AD20-14-arbore-perioade-data-header-extras.md) |
 | SLICE-AD20-15 | SQL manual pentru ștergerea plăților din extrase în noiembrie 2026 și eliberarea repreluării, cu păstrarea legăturilor copil–plătitor | SCRIS LOCAL; SQL NERULAT; NEÎNREGISTRAT, în așteptarea confirmării explicite | [Resetare plăți din extrase](../SLICE-AD20-15-reset-plati-extrase-luna-curenta.md) |
+| SLICE-AD21-01 | Fila Extrase în secțiunea de jos; mod «Asocieri curente» și ștergere completă a unei repartizări din luna deschisă, cu reapariția diferenței în lista de neasociate | SCRIS LOCAL; fără teste, MariaDB sau browser; fără SQL nou | [Fila Extrase și Asocieri curente](../SLICE-AD21-01-fila-extrase-asocieri-curente-stergere.md) |
+| SLICE-AD21-02 | Lista extraselor arată numai plătitori cu CNP (13 cifre); Referința intră în cheia de import, ca două plăți identice ale aceleiași persoane să se preia ambele | SCRIS LOCAL; fără teste, MariaDB sau browser; fără SQL nou | [Doar CNP și Referința în cheie](../SLICE-AD21-02-extrase-doar-cnp-referinta-in-cheie.md) |
 
 ### Current focus
+
+13.11.2026: AD21-02 filtrează lista extraselor la CNP (doar afișare) și adaugă Referința la cheia de import (`routes/forexe/extrase.py`, comună cu FOREXE). Scris local, neprobat.
+
+12.11.2026: AD21-01 (felie dată de Adelina) adaugă fila Extrase și modul «Asocieri curente» cu ștergerea completă a unei repartizări din luna deschisă; extrasul parțial asociat reapare cu diferența. Scris local, neprobat.
 
 05.11.2026: AD20-15 pregătește numai fișierul SQL manual pentru plățile provenite din extrase în luna curentă, precizată de Adelina: noiembrie 2026. Păstrează plătitorii și istoricul lor; elimină rezervările extras–plată pentru repreluare. SQL-ul nu a fost executat și fișierele noi nu sunt înregistrate. AD20-14 are cele șase fișiere înregistrate după «validat. inregistreaza-l»; AD20-01–13 rămân validate și înregistrate anterior (31 de fișiere distincte, 103 înregistrări). Agentul nu a executat teste, publicare sau Git. Următoarea subfelie liberă: **AD20-16**.
 
 ### Open threads
 
+- AD21-02: SCRIS LOCAL, neprobat. De probat: lista și arborele de luni arată numai CUI de 13 cifre; un extras cu două plăți identice (data, nr. document, CNP, sumă) le preia pe ambele. Extrasul deja încărcat din imagine trebuie șters și reîncărcat de mână (altfel e refuzat ca același fișier). Ajutor actualizat în secțiunea asocierii manuale; fără capturi noi.
+
+- AD21-01: SCRIS LOCAL, neprobat pe MariaDB sau în browser. De probat: fila Extrase (valoare extras vs. asociată, extras împărțit), modul «Asocieri curente», ștergerea în luna deschisă (documentul și plata dispar, numărul se eliberează), reapariția diferenței în lista de neasociate cu coloana Rămas, refuzul în luna închisă, reasocierea diferenței cu AD_15 instalat. Capturile de ajutor pentru fila nouă lipsesc.
 - AD20-15: rularea manuală și confirmarea rezultatelor de către Adelina rămân de făcut; înregistrarea celor cinci fișiere proprii așteaptă confirmarea explicită. Scriptul refuză lunile închise și situațiile salvate afectate, fără a le modifica.
 - AD20-01–14 sunt validate și înregistrate; publicarea efectivă și Git pe server nu au fost executate de agent în această etapă.
 - Capturile 12/13/14 pentru încărcare/asociere și 16 pentru Alte plăți rămân de refăcut cu blur puternic pe datele sensibile; nu s-au realizat capturi noi. Ajutorul și ghidul textual sunt actualizate.

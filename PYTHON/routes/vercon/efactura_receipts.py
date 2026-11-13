@@ -6,7 +6,7 @@ from flask import send_file
 from utils import vercon_efactura as shared
 from .nomenclatoare import NomError
 
-LOCK_MESSAGE = 'NIR-ul este asociat unei eFacturi și nu poate fi modificat. Eliminați asocierile înainte de editare.'
+LOCK_MESSAGE = 'Documentul este asociat unei eFacturi și nu poate fi modificat. Eliminați asocierile înainte de editare.'
 
 
 def linked(cursor, ctx, identities):
@@ -24,7 +24,7 @@ def linked(cursor, ctx, identities):
         'JOIN EF_Primite p ON p.IdPrimita=t.IdPrimita '
         'JOIN VC_NIR n ON n.SubunitId=r.SubunitId AND n.GestiuneId=r.GestiuneId '
         'AND n.ExercitiuId=r.ExercitiuId AND n.IdIntrare=r.IdIntrare '
-        "WHERE t.Stare IN ('TRIMISA','PRELUATA') AND COALESCE(n.Anulat,0)=0 AND COALESCE(n.Storno,0)=0 "
+        "WHERE t.Stare IN ('TRIMISA','PRELUATA') AND COALESCE(n.Anulat,0)=0 "   # VC14-05: a storno invoice (FCS) can be tied to an e-invoice too
         'AND r.SubunitId=%s AND r.GestiuneId=%s AND r.ExercitiuId=%s AND r.IdIntrare IN (' + marks + ') '
         'ORDER BY p.DenumireP,p.DataFact,p.NrFact', (*scope, *identities))
     manual, valid = set(), set()
