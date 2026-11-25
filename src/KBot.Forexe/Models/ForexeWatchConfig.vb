@@ -21,6 +21,7 @@ Public NotInheritable Class ForexeWatchConfig
     ''' <c>darkMode</c> is not a setting of its own: it follows K-BOT's theme (a dark scheme
     ''' darkens the page too - operator, 21.09.2026). <c>menu</c> (slice 0097-02) = the floating
     ''' K-BOT menu is drawn in the page. <c>gate</c> = the reservation gate of slice 0114-26 is active.
+    ''' <c>noVeil</c> (slice 0097-11) = no backdrop over the page while the robot works.
     ''' </summary>
     Public Shared Function JsonFromSettings(settings As AppSettings) As String
         Try
@@ -41,6 +42,7 @@ Public NotInheritable Class ForexeWatchConfig
                 New JProperty("devTools", s.ForexeDevToolsAllowed),
                 New JProperty("menu", s.ForexeShowPageMenu),
                 New JProperty("gate", s.ForexeReservationGate),
+                New JProperty("noVeil", s.ForexeNoBusyVeil AndAlso s.AdvancedOptions),
                 New JProperty("darkMode", DarkModeNow()),
                 New JProperty("veil", VeilColorsNow()),
                 New JProperty("rules", rules))

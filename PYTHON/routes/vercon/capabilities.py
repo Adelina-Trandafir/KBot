@@ -16,7 +16,7 @@ FORMS = {
     "baza_date":      ("Baza de date",           "Configurari",  ALL,                          "nomenclatoare"),
     "comisii":        ("Comisii",                "Configurari",  ALL,                          "nomenclatoare"),
     "parteneri":      ("Furnizori (Parteneri)",   "Configurari",  ALL,                          "read"),
-    "gestionari":     ("Gestionari",              "Configurari",  ALL,                          "nomenclatoare"),
+    "gestionari":     ("Gestionari",             "Configurari",  ALL,                          "nomenclatoare"),
     "setari":         ("Unitate / setari",        "Configurari",  ALL,                          "configure"),
     "inchidere_an":   ("Inchidere an",            "Configurari",  frozenset({MATERIALE, ALIMENTE}), "close"),
     "nir":            ("Factură Cumpărare (NIR)",  "Intrari",      ALL,                          "receptie"),

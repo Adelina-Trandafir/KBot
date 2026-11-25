@@ -4,18 +4,23 @@ Imports System.Threading.Tasks
 Imports KBot.Api
 Imports KBot.Common
 Imports KBot.Controls
+Imports KBot.Domain
 Imports KBot.Theming
 
 ''' <summary>
 ''' «OperatiiSabloane» window (slices AV02-03 / AV02-04): the shell. A vertical bar like the one of «Sabloane» chooses the page, one at a time: «Operatii diverse»
 ''' (<see cref="OperatiiDiversePage"/>, the Access form OP9) and «Facturi si plati» (<see cref="FacturiPlatiPage"/>, OPuri2017; read the first time it is shown).
 ''' Before the other page takes over, and before the window closes, the page in front settles what it has pending (the question of unsaved work); Cancel keeps the
-''' operator where they are. The window follows the year and the subunit of the title bar as they were when it opened (it is modal). «Salarii» comes as a third page.
+''' operator where they are. The window follows the year of the title bar as it was when it opened (it is modal). Slice AV02-06: its own title bar carries the
+''' «Sursa/Sector» selector (no «Toate»: a partner is kept once per sector+source, so the pages work on ONE). It opens on the source of the main window, or on 02A when
+''' the main window says «Toate»; the subunit of the pages is the one of that source (the main window's subunit when it belongs to it). «Salarii» comes as a third page.
 ''' </summary>
 Public Class OperatiiSabloaneForm
 
     Private Const KeyDiverse As String = "diverse"
     Private Const KeyFacturi As String = "facturi"
+    ' What the window opens on when the main window says «Toate» (the operator's rule, AV02-06).
+    Private Const DefaultSs As String = "02A"
 
     Private _api As IOperatiiApi
     Private _sablonApi As ISablonOperatiiApi
@@ -23,7 +28,14 @@ Public Class OperatiiSabloaneForm
     Private _session As SessionContext
     Private _idSubunitate As Integer?
     Private _subunitSs As String = String.Empty
+    Private _subunits As IReadOnlyList(Of SubunitateInfo)
+    ' What the main window gave at open (the subunit and its source): kept, the choice of the selector can come back to it.
+    Private _mainSubunit As Integer?
+    Private _mainSs As String = String.Empty
+    Private _sources As New List(Of String)()
+    Private _currentSs As String = String.Empty
     Private _activeKey As String = KeyDiverse
+    Private _boundDiverse As Boolean
     Private _boundFacturi As Boolean
     Private _switching As Boolean
     Private _closeAfterCommit As Boolean
@@ -37,10 +49,13 @@ Public Class OperatiiSabloaneForm
     ''' <param name="k_api">The posting API of the two pages.</param>
     ''' <param name="k_sablonApi">The operation templates (the page «Operatii diverse» lists the ones of type A).</param>
     ''' <param name="k_session">The session: the year of the title bar.</param>
-    ''' <param name="k_idSubunitate">The subunit in force; Nothing = none (the pages stay locked and say so).</param>
-    ''' <param name="k_subunitSs">The sector+source of that subunit (which templates show).</param>
+    ''' <param name="k_idSubunitate">The subunit in force in the main window; Nothing = none.</param>
+    ''' <param name="k_subunitSs">The sector+source of that subunit (used when the list of subunits is not known).</param>
+    ''' <param name="k_subunits">Every subunit of the unit (the pages follow the one of the chosen source); Nothing = not read yet.</param>
+    ''' <param name="k_sources">The sectors+sources the window offers (no «Toate»); empty = only the one of the subunit.</param>
     Public Sub New(k_api As IOperatiiApi, k_sablonApi As ISablonOperatiiApi, k_gate As ReauthGate, k_session As SessionContext,
-                   Optional k_idSubunitate As Integer? = Nothing, Optional k_subunitSs As String = Nothing)
+                   Optional k_idSubunitate As Integer? = Nothing, Optional k_subunitSs As String = Nothing,
+                   Optional k_subunits As IReadOnlyList(Of SubunitateInfo) = Nothing, Optional k_sources As IEnumerable(Of String) = Nothing)
         ArgumentNullException.ThrowIfNull(k_api)
         ArgumentNullException.ThrowIfNull(k_sablonApi)
         ArgumentNullException.ThrowIfNull(k_gate)
@@ -52,16 +67,92 @@ Public Class OperatiiSabloaneForm
         _session = k_session
         _idSubunitate = k_idSubunitate
         _subunitSs = If(k_subunitSs, String.Empty)
+        _subunits = k_subunits
+        _mainSubunit = k_idSubunitate
+        _mainSs = _subunitSs
+        StartSources(k_sources)
         SetCaption()
+    End Sub
+
+    ' The choices of the «Sursa/Sector» selector and the one it opens on: the source of the main window, else 02A (when «Toate»), else the first one.
+    Private Sub StartSources(k_sources As IEnumerable(Of String))
+        _sources = If(k_sources, Enumerable.Empty(Of String)()).Where(Function(k_s) Not String.IsNullOrWhiteSpace(k_s)).Distinct(StringComparer.OrdinalIgnoreCase).
+            OrderBy(Function(k_s) k_s, StringComparer.OrdinalIgnoreCase).ToList()
+        Dim k_main As String = If(_session.ToateSursele OrElse String.IsNullOrEmpty(_session.SectorSursa), String.Empty, _session.SectorSursa)
+        Dim k_start As String = k_main
+        If k_start.Length = 0 Then
+            k_start = If(_sources.Any(Function(k_s) String.Equals(k_s, DefaultSs, StringComparison.OrdinalIgnoreCase)), DefaultSs,
+                         If(_sources.Count > 0, _sources(0), If(_subunitSs.Length > 0, _subunitSs, DefaultSs)))
+        End If
+        If Not _sources.Any(Function(k_s) String.Equals(k_s, k_start, StringComparison.OrdinalIgnoreCase)) Then _sources.Insert(0, k_start)
+        _currentSs = _sources.First(Function(k_s) String.Equals(k_s, k_start, StringComparison.OrdinalIgnoreCase))
+        capBar.SetSelectorItems(KBotCaptionBar.SelectorSector, _sources.Select(Function(k_s) New KeyValuePair(Of String, String)(k_s, k_s)), _currentSs)
+        ResolveSubunit()
+    End Sub
+
+    ' The main window's selected subunit or the single configured destination of the source.
+    Private Sub ResolveSubunit()
+        _subunitSs = _currentSs
+        If _subunits Is Nothing Then
+            ' The list of subunits is not known: only the subunit the main window gave can be used, and only for its own source.
+            _idSubunitate = If(String.Equals(_mainSs, _currentSs, StringComparison.OrdinalIgnoreCase), _mainSubunit, Nothing)
+            Return
+        End If
+        Dim k_mine As List(Of SubunitateInfo) = _subunits.Where(Function(k_u) k_u.Activ AndAlso String.Equals(k_u.SursaSector, _currentSs, StringComparison.OrdinalIgnoreCase)).ToList()
+        Dim k_keep As Integer? = _mainSubunit
+        Dim k_pick As SubunitateInfo = k_mine.FirstOrDefault(Function(k_u) k_keep.HasValue AndAlso k_u.IdSubunitate = k_keep.Value)
+        If k_pick Is Nothing Then
+            Dim k_implicite As List(Of SubunitateInfo) = k_mine.Where(Function(k_u) k_u.Implicita).ToList()
+            If k_implicite.Count = 1 Then k_pick = k_implicite(0)
+        End If
+        If k_pick Is Nothing AndAlso k_mine.Count = 1 Then k_pick = k_mine(0)
+        _idSubunitate = If(k_pick Is Nothing, Nothing, CType(k_pick.IdSubunitate, Integer?))
     End Sub
 
     ' The first page reads its data once the window is up.
     Private Sub OperatiiSabloaneForm_Load(sender As Object, e As EventArgs) Handles Me.Load
         Try
             If _api Is Nothing Then Return
-            pageDiverse.Bind(_api, _sablonApi, _gate, _session, _idSubunitate, _subunitSs)
+            EnsureBound(KeyDiverse)
         Catch ex As Exception
             GlobalErrorLog.Write("OperatiiSabloaneForm.OperatiiSabloaneForm_Load", ex)
+        End Try
+    End Sub
+
+    ' A page reads its data the first time it is shown, and again after the source changed.
+    Private Sub EnsureBound(k_key As String)
+        If String.Equals(k_key, KeyFacturi, StringComparison.Ordinal) Then
+            If _boundFacturi Then Return
+            _boundFacturi = True
+            pageFacturi.Bind(_api, _gate, _session, _idSubunitate)
+        Else
+            If _boundDiverse Then Return
+            _boundDiverse = True
+            pageDiverse.Bind(_api, _sablonApi, _gate, _session, _idSubunitate, _subunitSs)
+        End If
+    End Sub
+
+    ' UI boundary (event handler): the page in front settles its pending work first; on Cancel the selector stays where it is (it never moves by itself).
+    Private Async Sub CapBar_SelectorChanged(sender As Object, e As CaptionSelectorChangedEventArgs) Handles capBar.SelectorChanged
+        Try
+            If _session Is Nothing OrElse _switching OrElse Not String.Equals(e.Selector, KBotCaptionBar.SelectorSector, StringComparison.Ordinal) OrElse
+               String.Equals(e.Key, _currentSs, StringComparison.OrdinalIgnoreCase) Then Return
+            _switching = True
+            Try
+                If Not Await ActivePage.CommitAsync().ConfigureAwait(True) Then Return
+                If IsDisposed Then Return
+                _currentSs = e.Key
+                capBar.SetSelectorKey(KBotCaptionBar.SelectorSector, e.Key)
+                ResolveSubunit()
+                ' Both pages read again for the new source: the one in front now, the other when it is shown.
+                _boundDiverse = False
+                _boundFacturi = False
+                EnsureBound(_activeKey)
+            Finally
+                _switching = False
+            End Try
+        Catch ex As Exception
+            GlobalErrorLog.Write("OperatiiSabloaneForm.CapBar_SelectorChanged", ex)
         End Try
     End Sub
 
@@ -73,12 +164,8 @@ Public Class OperatiiSabloaneForm
 
     Private Sub SetCaption()
         Dim k_year As String = If(_session Is Nothing, String.Empty, " · " & _session.An.ToString(CultureInfo.InvariantCulture))
-        Dim k_ss As String = String.Empty
-        If _session IsNot Nothing Then
-            k_ss = If(_session.ToateSursele OrElse String.IsNullOrEmpty(_session.SectorSursa), " · toate sursele", " · " & _session.SectorSursa)
-        End If
         Dim k_page As String = If(String.Equals(_activeKey, KeyFacturi, StringComparison.Ordinal), "facturi și plăți", "operații diverse")
-        capBar.Text = "K-BOT — Operații contabile · " & k_page & k_ss & k_year
+        capBar.Text = "K-BOT — Operații contabile · " & k_page & k_year
         Text = capBar.Text
     End Sub
 
@@ -107,10 +194,7 @@ Public Class OperatiiSabloaneForm
     Private Sub ShowPage(k_key As String)
         _activeKey = k_key
         Dim k_isFacturi As Boolean = String.Equals(k_key, KeyFacturi, StringComparison.Ordinal)
-        If k_isFacturi AndAlso Not _boundFacturi Then
-            _boundFacturi = True
-            pageFacturi.Bind(_api, _gate, _session, _idSubunitate)
-        End If
+        EnsureBound(k_key)
         pageDiverse.Visible = Not k_isFacturi
         pageFacturi.Visible = k_isFacturi
         SetCaption()

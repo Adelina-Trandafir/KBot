@@ -99,7 +99,7 @@ Partial Public Class KbotForm
             Dim mapate As List(Of Angajament)
             busyBar.Running = True
             Try
-                mapate = Await _controller.DownloadListaAsync()
+                mapate = Await _controller.DownloadListaAsync(_state.TreeInfos.Keys.ToList())
             Finally
                 busyBar.Running = False
             End Try
@@ -132,6 +132,8 @@ Partial Public Class KbotForm
             Finally
                 busyBar.Running = False
             End Try
+            ' Slice 0097-10: the server has the rows -> the next read can stop at the newest of them.
+            _controller.ConfirmaListaPrimita()
 
             ' The tree is re-read ONLY when something was written: a reload clears the
             ' selection and drops the operator back on «sumar», which is pointless when no
@@ -143,7 +145,7 @@ Partial Public Class KbotForm
             ' A good download is SILENT (operator, 28.09.2026): the figures go to the operator
             ' log only, never into a box. Only errors are shown.
             OperatorLog.Write("MainForm.Tree_FooterRightIconClicked", "Listă angajamente",
-                $"Angajamente în FOREXE: {rezultat.Candidate}. " &
+                $"Angajamente citite din FOREXE (până la primul angajament cunoscut): {rezultat.Candidate}. " &
                 $"Adăugate acum: {rezultat.Inserate} · deja existente (neatinse): {rezultat.Existente}.")
 
             ' Slice 0100: multi-thread mode only -- the new ones can be downloaded right away.

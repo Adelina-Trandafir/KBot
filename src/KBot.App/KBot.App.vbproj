@@ -241,14 +241,32 @@
       <SubType>Code</SubType>
     </Compile>
     <!-- Slice AV02-05: «Modificare operatii»; the partials are plain code (no designer, no .resx). -->
+    <Compile Update="Avacont\IntroducereDate\Operatii\NotaManualaView.vb">
+      <SubType>UserControl</SubType>
+    </Compile>
+    <Compile Update="Avacont\IntroducereDate\Operatii\NotaManualaView.Antet.vb">
+      <DependentUpon>NotaManualaView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+
+    <Compile Update="Avacont\IntroducereDate\Operatii\NotaManualaView.Protectie.vb">
+      <DependentUpon>NotaManualaView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Avacont\IntroducereDate\Operatii\NotaManualaView.Salvare.vb">
+      <DependentUpon>NotaManualaView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Avacont\IntroducereDate\Operatii\NotaManualaView.Designer.vb">
+      <DependentUpon>NotaManualaView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Avacont\IntroducereDate\Operatii\NotaManualaForm.Designer.vb">
+      <DependentUpon>NotaManualaForm.vb</DependentUpon>
+    </Compile>
     <Compile Update="Avacont\ModificareDate\Operatii\Views\ModificareOperatiiForm.Designer.vb">
       <DependentUpon>ModificareOperatiiForm.vb</DependentUpon>
     </Compile>
     <Compile Update="Avacont\ModificareDate\Operatii\Views\ModificareOperatiiForm.Lista.vb">
-      <DependentUpon>ModificareOperatiiForm.vb</DependentUpon>
-      <SubType>Code</SubType>
-    </Compile>
-    <Compile Update="Avacont\ModificareDate\Operatii\Views\ModificareOperatiiForm.Info.vb">
       <DependentUpon>ModificareOperatiiForm.vb</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
@@ -362,6 +380,10 @@
     </Compile>
     <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareView.Access.vb">
       <DependentUpon>FacturiCumparareView.vb</DependentUpon>
+      <SubType>Code</SubType>
+    </Compile>
+    <Compile Update="Setari\Views\SetariAplicatieView.Avacont.vb">
+      <DependentUpon>SetariAplicatieView.vb</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
     <Compile Update="EFactura\Views\FacturiCumparare\FacturiCumparareView.Contare.vb">

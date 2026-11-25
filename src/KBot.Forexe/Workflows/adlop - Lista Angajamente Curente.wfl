@@ -1,11 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <Workflow name="FOREXEBUG - Listă angajamente curente" startUrl="current" expectedUrl="https://forexe.mfinante.gov.ro/CABWeb/home">
-  <!-- V.4
+  <!-- V.6
     1. Cauta Angajamente dupa (opțional) 'Data Început', 'Cod Program', 'Sursa', 'Cod Indicator'.
-    2. Citește datele din tabelul generat (table.table-striped)
-    3. Apasă butonul 'Next' (a[rel='next']) cât timp există
-    4. Așteaptă să se încarce tabelul generat (table.table-striped) 
-    4. Merge la 2.
+    2. Citește tabelul generat (table.table-striped) de la PRIMA pagină, în ordinea din FOREXE
+    3. Apasă 'Next' (a[rel='next']) până întâlnește {{COD_IESIRE}} (primul angajament deja cunoscut) sau până la ultima pagină
+    4. Dacă FOREXE răspunde cu pagina de eroare, păstrează ce a citit până atunci
   -->
   <!-- OBLIGATORIU LA INCEPUT !-->
   <IfExists selector="#select2-drop-mask" timeout="1">
@@ -46,10 +45,17 @@
 
   <Log message="Extrag tot conținutul tabelului..." level="action"/>
 
+  <!-- V.6 (slice 0097-10): FOREXE lists the NEWEST angajament FIRST (seen 20.11.2026: reading from the last page stopped
+       at once on a known code). Read forward from page 1 and stop at {{COD_IESIRE}} (a code K-BOT already has: the first one
+       met is the newest known, everything after it is older); the sentinel «(?!)» matches nothing = read it all.
+       partialOnError: when FOREXE answers a page turn with its error page, the rows read so far (the newest) are kept
+       (and marked <saveTo>_INCOMPLET). -->
   <ScrapeTable selector="table.table-striped"
               saveTo="ListaAngajamente"
               timeout="10"
               nextPageSelector="a[rel='next']"
+              partialOnError="true"
+              exitIfCellEquals="Cod:~:^\s*{{COD_IESIRE}}"
               waitSelector="table.table-striped"
               fingerprintSelector="table.table-striped tbody tr:last-child td:nth-child(1)"
               LogValue="Scrape listă angajamente"/>

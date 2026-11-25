@@ -8,7 +8,7 @@
     GET  /api/vercon/stock/available?date=&products=      stock of the variants on a date (informative; the binding check runs on save)
     POST /api/vercon/doc/<family>                         create   {header, lines, source?, request_key}
     PUT  /api/vercon/doc/<family>/<id>                    edit     {header, lines, version}
-    POST /api/vercon/doc/<family>/<id>/number             VC16-02  {number, version}  bc | bp | bt | bs: only the number, current month, in the order of the dates
+    POST /api/vercon/doc/<family>/<id>/number             {number, version}  nir: existing receipt rules; bc | bp | bt | bs: current month and date order
     POST /api/vercon/doc/<family>/<id>/cancel             cancel   {reason, version}  (the document stays, marked cancelled)
 
 family = nir | storno | bc | br. A write needs the family's VR right, the CURRENT lock token, an open period and the
@@ -22,7 +22,7 @@ from flask import g, request
 from . import depreciation_read, documents, lista, mf, oi, protocol, stock_routes, report_routes, receipt_number, receipt_choices, receipt_tree, receipt_context, receipt_routes, receipt_distribution, invoices, efactura_queue, supplier_merge, supplier_lookup
 from .capabilities import FormUnavailable
 from .nomenclatoare import NomError
-from . import document_order, food_list_portions, invoice_twins, number_change, supplier_change, migration_links, oi_context, oi_register_repair, efactura_association, efactura_receipts, efactura_visibility
+from . import document_order, food_list_portions, invoice_twins, number_change, receipt_number_change, supplier_change, migration_links, oi_context, oi_register_repair, efactura_association, efactura_receipts, efactura_visibility
 
 RIGHT = {'nir': 'receptie', 'storno': 'storno', 'bc': 'consum', 'br': 'retur', 'bp': 'oi_predare', 'bt': 'oi_transfer', 'bs': 'oi_casare', 'lista': 'alimente'}
 FORM_OF = {'lista': 'lista_alimente'}   # the menu key of a family whose name differs
@@ -120,6 +120,8 @@ def register(bp, guard, scoped, open_db):
     def read_document(cursor, ctx, family, doc_id):
         doc = backend(family).get_document(cursor, repo_of(cursor, ctx), ctx, family, doc_id)
         document_order.annotate(cursor, ctx, family, doc)
+        if family == 'lista':
+            number_change.annotate(cursor, ctx, family, [doc])
         if family == 'storno':   # VC14-05: an FCS can be tied to an e-invoice too, so it carries the same markers and the same edit lock
             efactura_receipts.annotate(cursor, ctx, [doc])
             return doc
@@ -142,7 +144,7 @@ def register(bp, guard, scoped, open_db):
             ctx, _ = build(cursor, vctx, family, False)
             rows = backend(family).list_documents(cursor, ctx, family)
             document_order.annotate_rows(cursor, ctx, family, rows)
-            number_change.annotate(cursor, ctx, family, rows)   # VC16-02: «Modifica numar» is offered only in the current month
+            number_change.annotate(cursor, ctx, family, rows)
             if family in ('nir', 'storno'):
                 efactura_receipts.annotate(cursor, ctx, rows)
         return {'family': family, 'documents': rows, 'year': ctx['an'], 'closed': ctx['closed'], 'scale': ctx['scale'], 'zec': ctx['zec'],
@@ -203,23 +205,24 @@ def register(bp, guard, scoped, open_db):
     @bp.get('/api/vercon/doc/<family>/number')
     @guard('read')
     def receipt_number_check(family):
-        if family not in ('nir', 'storno', 'bc', *oi.FAMILIES_OI):
+        if family not in ('nir', 'storno', 'bc', 'br', *oi.FAMILIES_OI):
             raise NomError('FAMILY_UNKNOWN', 'Acest document nu folosește seria NIR/FCS.', 404)
         _need(family)
         vctx = scoped('read')
         exclude = documents._int(request.args.get('exclude'))
         with session(False) as cursor:
-            ctx, _ = build(cursor, vctx, family, False)
+            ctx, exercise = build(cursor, vctx, family, False)
+            if family == 'br':
+                day = protocol.to_date(request.args.get('date'), 'Data returului', exercise)
+                return {'suggested': number_change.return_number(cursor, ctx, day, request.args.get('number')),
+                        'valid': True, 'duplicate': False}
             if family == 'bc':
                 from .consumption_number import check
                 return check(cursor, ctx, request.args.get('number'), exclude, documents._int(request.args.get('account')))
             if family in oi.FAMILIES_OI:
                 from .oi_number import check
                 return check(cursor, ctx, family, request.args.get('number'), exclude)
-            if family == 'nir' and request.args.get('initial') != '1':
-                from .nir_number import check
-                return check(cursor, ctx, request.args.get('number'), exclude, documents._int(request.args.get('sub')) or 0, request.args.get('date'))
-            return receipt_number.check(cursor, ctx, request.args.get('number'), exclude, documents._int(request.args.get('sub')) or 0, request.args.get('date'), insert=family == 'storno')
+            return receipt_number.check(cursor, ctx, request.args.get('number'), exclude, request.args.get('sub'), request.args.get('date'))
 
     @bp.get('/api/vercon/doc/<family>/invoice-twins')
     @guard('read')
@@ -245,8 +248,8 @@ def register(bp, guard, scoped, open_db):
                 from .storno_stock import sources
                 on = protocol.to_date(request.args.get('date') or bucharest_today().isoformat(), 'Data FCS')
                 rows = sources(cursor, ctx, on, documents._int(request.args.get('exclude')))
-            else:
-                rows = documents.list_documents(cursor, ctx, 'bc')
+            else:   # VC20-02: only the bons that still have something to return (and are not on a food list)
+                rows = documents.return_sources(cursor, ctx, documents._int(request.args.get('exclude')))
         return {'documents': [r for r in rows if not r['annulled']]}
 
     @bp.get('/api/vercon/doc/<family>/eligible')
@@ -305,8 +308,10 @@ def register(bp, guard, scoped, open_db):
         vctx = scoped('read')
         exclude = documents._int(request.args.get('exclude'))
         with session(False) as cursor:
-            ctx, _ = build(cursor, vctx, 'lista', False)
-            return {'bons': lista.eligible_bons(cursor, ctx, exclude)}
+            ctx, exercise = build(cursor, vctx, 'lista', False)
+            raw_date = request.args.get('date')
+            day = protocol.to_date(raw_date, 'Data listei', exercise) if raw_date is not None else None
+            return {'bons': lista.eligible_bons(cursor, ctx, exclude, day=day)}
 
     @bp.get('/api/vercon/doc/lista/balance')
     @guard('read')
@@ -318,13 +323,14 @@ def register(bp, guard, scoped, open_db):
         exclude = documents._int(request.args.get('exclude'))
         if request.args.get('exclude') is not None and (exclude is None or exclude <= 0):
             raise NomError('INVALID', 'Lista exclusă este invalidă.', 422)
+        number = documents._int(request.args.get('number'))
         with session(False) as cursor:
             ctx, exercise = build(cursor, vctx, 'lista', False)
             day = protocol.to_date(request.args.get('date'), 'Data listei', exercise)
             source = report_data.Source(cursor, g.portal['db_name'], ctx, {
                 'start': day.replace(month=1, day=1), 'end': day, 'document': exclude,
             })
-            values = food_balance.columns(food_balance.before(source, day, exclude), ctx['scale'])
+            values = food_balance.columns(food_balance.before(source, day, exclude, number=number), ctx['scale'])
         return {'date': day.isoformat(), **values}
 
     @bp.get('/api/vercon/mf/assets')
@@ -436,9 +442,9 @@ def register(bp, guard, scoped, open_db):
             targets = [row for row in documents.list_documents(cursor, ctx, 'storno') if not row['annulled']]
         return {'lines': rows, 'documents': targets, 'can_write': not ctx['closed'] and RIGHT['storno'] in g.vercon_operations}
 
-    def recover(cursor, ctx, operation, row_id, data, action):
+    def recover(cursor, ctx, operation, row_id, data, action, *payload):
         key = str(data.get('request_key') or '')[:64]
-        fp = protocol.fingerprint(operation, row_id, data.get('version'), data.get('source'), data.get('target_version'), data.get('reason'))
+        fp = protocol.fingerprint(operation, row_id, data.get('version'), data.get('source'), data.get('target_version'), data.get('reason'), *payload)
         replay = protocol.replayed(cursor, ctx, key, fp) if key else None
         result = replay if replay is not None else action(cursor, repo_of(cursor, ctx), ctx, row_id, data, request_id())
         if key and replay is None:
@@ -471,6 +477,18 @@ def register(bp, guard, scoped, open_db):
             doc = read_document(cursor, ctx, 'lista', doc_id)
         return {'result': result, 'document': doc}
 
+    @bp.put('/api/vercon/doc/lista/<int:doc_id>/bons')
+    @guard('read')
+    def lista_replace_bons(doc_id):
+        data = body()
+        _need_write('lista')
+        vctx = scoped(RIGHT['lista'], data)
+        with session(True) as cursor:
+            ctx, _ = build(cursor, vctx, 'lista', True)
+            result = recover(cursor, ctx, 'lista.bons_update', doc_id, data, lista.replace_bons, data.get('bons'))
+            doc = read_document(cursor, ctx, 'lista', doc_id)
+        return {'result': result, 'document': doc}
+
     @bp.put('/api/vercon/doc/<family>/<int:doc_id>')
     @guard('read')
     def doc_edit(family, doc_id):
@@ -492,8 +510,8 @@ def register(bp, guard, scoped, open_db):
     @bp.post('/api/vercon/doc/<family>/<int:doc_id>/number')
     @guard('read')
     def doc_number_change(family, doc_id):
-        """VC16-02: only the number of a BC / BP / BT / BS of the current month, and only keeping the numbers in the order of the dates."""
-        if family not in number_change.FAMILIES:
+        """Change only the number, using the rules of the document's series."""
+        if family not in ('nir', *number_change.FAMILIES):
             raise NomError('FAMILY_UNKNOWN', 'Numărul acestui document nu se poate modifica.', 404)
         data = body()
         _need_write(family)
@@ -503,7 +521,12 @@ def register(bp, guard, scoped, open_db):
             key = str(data.get('request_key') or '')[:64]
             fp = protocol.fingerprint('number', family, doc_id, data.get('version'), data.get('number'))
             replay = protocol.replayed(cursor, ctx, key, fp) if key else None
-            result = replay if replay is not None else number_change.change(cursor, repo_of(cursor, ctx), ctx, family, doc_id, data, request_id())
+            if replay is not None:
+                result = replay
+            elif family == 'nir':
+                result = receipt_number_change.change(cursor, repo_of(cursor, ctx), ctx, doc_id, data, request_id())
+            else:
+                result = number_change.change(cursor, repo_of(cursor, ctx), ctx, family, doc_id, data, request_id())
             if key and replay is None:
                 protocol.remember(cursor, ctx, key, fp, result)
             doc = read_document(cursor, ctx, family, doc_id)

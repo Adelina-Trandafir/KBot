@@ -1,11 +1,18 @@
 // The application's one confirmation box (replaces window.confirm everywhere): the page behind it is blurred and
 // the question sits in the middle. «No» / «Renunta» is on the left, «Yes» / «OK» on the right.
 // `warning: true` paints the box as a serious warning (red header). Escape and the backdrop answer No. Usage: if (!await confirmBox('Intrebare?', { title, yes, no })) return;
+import { DialogButton } from '../components/dialog-button/dialog-button.js';
+
+// VC21-01: the buttons are the shared dialog buttons: «No» = Cancel (left), «Yes» = OK1 (right), a message's extra action = OK2.
+const dialogButton = (k_kind, k_label, k_className = '') => new DialogButton(null, { kind: k_kind, label: k_label, className: k_className }).element;
+
 const styledDocuments = new WeakSet();
 export function ensureStyle(doc = document) {
   if (styledDocuments.has(doc)) return; styledDocuments.add(doc);
-  const k_link = doc.createElement('link'); k_link.rel = 'stylesheet'; k_link.href = '/static/css/confirm-box.css';
-  doc.head.append(k_link);
+  for (const k_href of ['/static/js/components/dialog-button/dialog-button.css', '/static/css/confirm-box.css']) {
+    const k_link = doc.createElement('link'); k_link.rel = 'stylesheet'; k_link.href = k_href;
+    doc.head.append(k_link);
+  }
 }
 
 // Notice with an optional left-hand action, using the same custom dialog as confirmations.
@@ -17,14 +24,13 @@ export function messageBox(text, { title = 'Mesaj', button = 'Am înțeles', act
   const header = ownerDocument.createElement('header'), heading = ownerDocument.createElement('h2');
   heading.textContent = title; header.append(heading);
   const body = ownerDocument.createElement('p'); body.className = 'confirm-box__text'; body.textContent = text;
-  const footer = ownerDocument.createElement('footer'), acknowledge = ownerDocument.createElement('button');
-  acknowledge.type = 'button'; acknowledge.textContent = button; footer.append(acknowledge);
+  const footer = ownerDocument.createElement('footer'), acknowledge = dialogButton('ok1', button);
+  footer.append(acknowledge);
   let finish, done = false;
   const closed = new Promise(resolve => { finish = resolve; });
   const close = () => { if (done) return; done = true; if (dialog.open) dialog.close(); dialog.remove(); finish(); };
   if (action) {
-    const actionButton = ownerDocument.createElement('button');
-    actionButton.type = 'button'; actionButton.className = 'confirm-box__action'; actionButton.textContent = action.label;
+    const actionButton = dialogButton('ok2', action.label, 'confirm-box__action');
     actionButton.addEventListener('click', () => { if (done) return; close(); action.run(); });
     footer.prepend(actionButton);
   }
@@ -46,9 +52,9 @@ export function confirmBox(k_text, { title = 'Confirmare', yes = 'Da', no = 'Nu'
     const k_body = document.createElement('p'); k_body.className = 'confirm-box__text'; k_body.textContent = k_text;
     const k_footer = document.createElement('footer');
     const k_finish = (k_answer) => { k_dialog.close(); k_dialog.remove(); k_resolve(k_answer); };
-    for (const [k_label, k_answer] of [[no, false], [yes, true]]) {
-      const k_button = document.createElement('button'); k_button.type = 'button';
-      k_button.textContent = k_label; k_button.addEventListener('click', () => k_finish(k_answer)); k_footer.append(k_button);
+    for (const [k_kind, k_label, k_answer] of [['cancel', no, false], ['ok1', yes, true]]) {
+      const k_button = dialogButton(k_kind, k_label);
+      k_button.addEventListener('click', () => k_finish(k_answer)); k_footer.append(k_button);
     }
     k_dialog.addEventListener('cancel', (k_event) => { k_event.preventDefault(); k_finish(false); });
     k_dialog.addEventListener('mousedown', (k_event) => { if (k_event.target === k_dialog) k_finish(false); });
@@ -73,9 +79,9 @@ export function reasonBox(k_text, { title = 'Confirmare', label = 'Motiv', yes =
     k_field.append(k_input);
     const k_footer = document.createElement('footer');
     const k_finish = (k_answer) => { k_dialog.close(); k_dialog.remove(); k_resolve(k_answer); };
-    const k_no = document.createElement('button'); k_no.type = 'button'; k_no.textContent = no;
+    const k_no = dialogButton('cancel', no);
     k_no.addEventListener('click', () => k_finish(null));
-    const k_yes = document.createElement('button'); k_yes.type = 'button'; k_yes.textContent = yes; k_yes.disabled = true;
+    const k_yes = dialogButton('ok1', yes); k_yes.disabled = true;
     k_yes.addEventListener('click', () => { const k_reason = k_input.value.trim(); if (k_reason) k_finish(k_reason); });
     k_input.addEventListener('input', () => { k_yes.disabled = !k_input.value.trim(); });
     k_footer.append(k_no, k_yes);
@@ -89,7 +95,7 @@ export function reasonBox(k_text, { title = 'Confirmare', label = 'Motiv', yes =
 // A box that asks for ONE whole number and saves it itself (SLICE-VC16-02, «Modifica numar»). `save(number)` is async and resolves with the
 // result; when it throws, the message stays in the box under the field (the operator corrects the number or gives up). Resolves with the
 // result of `save`, or null on No / Escape / outside click. «Yes» stays off until the field holds a different positive number than `value`.
-export function numberBox(k_text, { title = 'Număr', label = 'Număr nou', value = '', yes = 'Salvează', no = 'Renunță', save } = {}) {
+export function numberBox(k_text, { title = 'Număr', label = 'Număr nou', value = '', maxLength = 9, yes = 'Salvează', no = 'Renunță', save } = {}) {
   ensureStyle();
   return new Promise((k_resolve) => {
     const k_dialog = document.createElement('dialog');
@@ -99,15 +105,15 @@ export function numberBox(k_text, { title = 'Număr', label = 'Număr nou', valu
     const k_title = document.createElement('h2'); k_title.textContent = title; k_header.append(k_title);
     const k_body = document.createElement('p'); k_body.className = 'confirm-box__text'; k_body.textContent = k_text;
     const k_field = document.createElement('label'); k_field.className = 'confirm-box__field'; k_field.textContent = label;
-    const k_input = document.createElement('input'); k_input.type = 'text'; k_input.inputMode = 'numeric'; k_input.maxLength = 9; k_input.value = String(value);
+    const k_input = document.createElement('input'); k_input.type = 'text'; k_input.inputMode = 'numeric'; k_input.maxLength = maxLength; k_input.value = String(value);
     k_field.append(k_input);
     const k_error = document.createElement('p'); k_error.className = 'confirm-box__error'; k_error.setAttribute('role', 'alert'); k_error.hidden = true;
     const k_footer = document.createElement('footer');
     let k_busy = false;
     const k_finish = (k_answer) => { k_dialog.close(); k_dialog.remove(); k_resolve(k_answer); };
-    const k_no = document.createElement('button'); k_no.type = 'button'; k_no.textContent = no;
+    const k_no = dialogButton('cancel', no);
     k_no.addEventListener('click', () => { if (!k_busy) k_finish(null); });
-    const k_yes = document.createElement('button'); k_yes.type = 'button'; k_yes.textContent = yes; k_yes.disabled = true;
+    const k_yes = dialogButton('ok1', yes); k_yes.disabled = true;
     const k_valid = () => /^[1-9][0-9]*$/.test(k_input.value.trim()) && k_input.value.trim() !== String(value);
     const k_submit = async () => {
       if (k_busy || !k_valid()) return;
@@ -144,7 +150,7 @@ export function pickBox(title, items, { no = 'Renunță' } = {}) {
       k_button.addEventListener('click', () => k_finish(k_item.value)); k_list.append(k_button);
     }
     if (!items.length) { const k_empty = document.createElement('p'); k_empty.className = 'confirm-box__text'; k_empty.textContent = 'Nu există alte grupe.'; k_list.append(k_empty); }
-    const k_cancel = document.createElement('button'); k_cancel.type = 'button'; k_cancel.textContent = no;
+    const k_cancel = dialogButton('cancel', no);
     k_cancel.addEventListener('click', () => k_finish(null)); k_footer.append(k_cancel);
     k_dialog.addEventListener('cancel', (k_event) => { k_event.preventDefault(); k_finish(null); });
     k_dialog.addEventListener('mousedown', (k_event) => { if (k_event.target === k_dialog) k_finish(null); });

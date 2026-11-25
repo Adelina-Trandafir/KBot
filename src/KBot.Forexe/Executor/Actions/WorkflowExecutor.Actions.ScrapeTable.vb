@@ -150,8 +150,17 @@ Partial Public Class WorkflowExecutor
     Private Async Function WicketErrorTextAsync() As Task(Of String)
         Try
             Dim box = _page.Locator("text=S-a produs o eroare").First
-            If Await box.CountAsync() = 0 Then Return String.Empty
-            Return (Await box.InnerTextAsync(New LocatorInnerTextOptions With {.Timeout = 2000})).Trim()
+            If Await box.CountAsync() > 0 Then
+                Return (Await box.InnerTextAsync(New LocatorInnerTextOptions With {.Timeout = 2000})).Trim()
+            End If
+            ' Slice 0097-10: the list read of 20.11.2026 was left on «CABWeb/ErrorPage?NN» (seen in the next run's
+            ' «Url gresit» line) with no way to tell whether the page carries the text above - so the address
+            ' itself is the second witness.
+            Dim k_url As String = _page.Url
+            If k_url.IndexOf("/ErrorPage", StringComparison.OrdinalIgnoreCase) >= 0 Then
+                Return "FOREXE a răspuns cu pagina ErrorPage (" & k_url & ")."
+            End If
+            Return String.Empty
         Catch ex As Exception
             GlobalErrorLog.Write("WorkflowExecutor.WicketErrorTextAsync", ex)
             Return String.Empty
@@ -228,7 +237,13 @@ Partial Public Class WorkflowExecutor
                 Dim finalObj As JObject = FilterColumns(jObj, action)
 
                 If hasEquals AndAlso EvaluateCellEquals(finalObj, action.ExitIfCellEquals) Then
-                    _logger.LogInfo($"[ScrapeTable] exitIfCellEquals declanșat la rândul {i}.")
+                    ' Slice 0097-10: say WHICH value stopped the read and how many rows were kept before it, so a read that
+                    ' stops at once («nimic nou») can be told from one that stopped where it should.
+                    Dim k_colExit As String = action.ExitIfCellEquals.Split(":"c)(0).Trim()
+                    Dim k_propExit = finalObj.Properties().FirstOrDefault(
+                        Function(k_p) String.Equals(k_p.Name, k_colExit, StringComparison.OrdinalIgnoreCase))
+                    _logger.LogInfo($"[ScrapeTable] exitIfCellEquals declanșat la rândul {i} ({k_colExit} = «{If(k_propExit?.Value?.ToString(), String.Empty)}»); " &
+                                    $"rânduri păstrate înainte de el: {allData.Count}.")
                     Return True
                 End If
 
@@ -451,24 +466,53 @@ Partial Public Class WorkflowExecutor
 
         _logger.LogInfo("[ScrapeTable] Navighez la ultima pagina (page=last)...")
 
+        ' Slice 0097-10 (corrective, 20.11.2026): the «last page» button is GONE once the last page is shown, and the
+        ' Ajax answer of a long list can take longer than the Wicket-idle wait. The old loop clicked the same locator
+        ' again after that wait: the button had meanwhile disappeared, so the click waited its 30 s and failed with
+        ' «waiting for Locator(a.last)» although the last page WAS on screen. Now the button is looked at again
+        ' before every click, and after a click it is waited for to go away.
         Dim attempts As Integer = 0
         While attempts < 3
             attempts += 1
 
-            Await lastBtn.ClickAsync()
-            Await WaitForWicketIdleAsync()
-
-            Dim lastBtnNow = _page.Locator(action.LastPageSelector)
-            If Await lastBtnNow.CountAsync() = 0 OrElse Not Await lastBtnNow.IsVisibleAsync() Then
+            If Await LastPageButtonGoneAsync(action) Then
                 Await LogCurrentPageAsync()
                 Return
             End If
+
+            Try
+                Await _page.Locator(action.LastPageSelector).ClickAsync(
+                    New LocatorClickOptions With {.Timeout = Stretched(5000)})
+            Catch ex As TimeoutException
+                ' Not clickable within the time: the loop looks at the button again (gone = we are there).
+                _logger.LogDebug("[ScrapeTable] Clic pe «ultima pagină» fără răspuns la timp: " & ex.Message)
+            Catch ex As PlaywrightException When ex.Message.Contains("Timeout")
+                _logger.LogDebug("[ScrapeTable] Clic pe «ultima pagină» fără răspuns la timp: " & ex.Message)
+            End Try
+            Await WaitForWicketIdleAsync()
+
+            ' The page may still be loading: wait (at most 10 s, stretched) for the button to go away.
+            Dim k_deadline As DateTime = DateTime.UtcNow.AddMilliseconds(Stretched(10000))
+            Do
+                If Await LastPageButtonGoneAsync(action) Then
+                    Await LogCurrentPageAsync()
+                    Return
+                End If
+                If DateTime.UtcNow >= k_deadline Then Exit Do
+                Await Task.Delay(250)
+            Loop
 
             _logger.LogWarning($"[ScrapeTable] Navigare la ultima pagina nereușită (tentativa {attempts}/3). Reincerc...")
             Await Task.Delay(500)
         End While
 
         _logger.LogWarning("[ScrapeTable] Nu am reușit să ajung la ultima pagina după 3 tentative.")
+    End Function
+
+    ''' <summary>True when the «last page» button is not on the page (or not visible): the last page is shown.</summary>
+    Private Async Function LastPageButtonGoneAsync(k_action As ScrapeTableAction) As Task(Of Boolean)
+        Dim k_btn = _page.Locator(k_action.LastPageSelector)
+        Return Await k_btn.CountAsync() = 0 OrElse Not Await k_btn.IsVisibleAsync()
     End Function
 
     ' ============================================================
@@ -531,6 +575,8 @@ Partial Public Class WorkflowExecutor
         If String.IsNullOrEmpty(finalSaveTo) Then Return
 
         SetVariable(finalSaveTo, finalJson)
+        ' Slice 0097-10: a read cut by FOREXE's error page is the newest part only - say so to whoever uses the table.
+        If stoppedOnError Then SetVariable(finalSaveTo & KBot.Forexe.WorkflowCatalog.SufixIncomplet, "true")
         _logger.LogSuccess($"[ScrapeTable] Finalizat{If(exitScrape, " (exit condiție)", "")}{If(stoppedOnError, " (oprit de eroarea FOREXE, rezultat parțial)", "")}. " &
                            $"Total {allData.Count} rânduri în '{finalSaveTo}'.")
     End Sub

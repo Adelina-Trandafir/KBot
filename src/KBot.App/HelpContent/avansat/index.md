@@ -44,5 +44,10 @@ ca valorile ei să se refacă la următoarea descărcare din FOREXE.
   poate anula.
 - După ștergere, reîncarcă arborele și descarcă din nou din FOREXE angajamentele lunii.
 
+## Browserul fără mască
+<!-- slice: 0097-11 -->
+
+În **Setări › FOREXE**, secțiunea **Browserul**, bifa **«Nu acoperi browserul în timpul lucrului robotului»** (se vede doar cât timp opțiunile avansate sunt pornite). Bifată, pagina FOREXE nu mai e acoperită cu fundalul și cardul «K-BOT lucrează în FOREXE» cât lucrează robotul: vezi exact ce face. Se aplică imediat. Pagina rămâne blocată pentru mouse și tastatură până termină robotul, ca să nu strici ce face. Browserul se vede doar cât e andocat, cu butonul de arătare a browserului din consolă.
+
 Cât timp opțiunile avansate sunt pornite, ajutorul arată și această parte, iar manualul exportat
 din fereastra de ajutor conține toate cele trei părți.

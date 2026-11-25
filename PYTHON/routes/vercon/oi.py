@@ -359,6 +359,8 @@ def _load(cursor, repo, ctx, family, doc_id, base_version):
 
 
 def edit_bp(cursor, repo, ctx, exercise, doc_id, body, request_id):
+    from .archive import release_renumbered
+
     rows = _load(cursor, repo, ctx, 'bp', doc_id, body.get('version'))
     _guard(cursor, ctx, 'bp', doc_id, rows)
     errors = {}
@@ -376,6 +378,7 @@ def edit_bp(cursor, repo, ctx, exercise, doc_id, body, request_id):
     _forget(repo, 'bp', doc_id)
     repo.delete('VC_OI_Predare', {'IDBP': doc_id})
     _write_bp(cursor, repo, ctx, doc_id, number, header, lines, bc_id, utc_now())
+    release_renumbered(cursor, ctx, 'bp', rows[0], number)
     month_start = consumption_timeline.work_month_start(cursor, ctx, header['_date'], rows[0]['DATABP'])
     consumption_timeline.require_nonnegative(cursor, ctx, {l['variant'] for l in lines} | old_products, month_start)
     oi_custody.check_timeline(cursor, ctx, {l['variant'] for l in lines} | old_products)
@@ -471,6 +474,8 @@ def create_out(family, cursor, repo, ctx, exercise, body, request_key, request_i
 
 
 def edit_out(family, cursor, repo, ctx, exercise, doc_id, body, request_id):
+    from .archive import release_renumbered
+
     rows = _load(cursor, repo, ctx, family, doc_id, body.get('version'))
     _guard(cursor, ctx, family, doc_id, rows)
     errors = {}
@@ -487,6 +492,7 @@ def edit_out(family, cursor, repo, ctx, exercise, doc_id, body, request_id):
     _forget(repo, family, doc_id)
     repo.delete(spec['table'], {spec['key']: doc_id})
     (_write_bt if family == 'bt' else _write_bs)(repo, ctx, doc_id, number, header, lines, utc_now())
+    release_renumbered(cursor, ctx, family, rows[0], number)
     oi_custody.check_timeline(cursor, ctx)
     protocol.audit(cursor, ctx, family + '.update', spec['table'], doc_id, {'number': rows[0][spec['num']], 'lines': len(rows)}, {'number': number, 'lines': len(lines)}, None, request_id)
     return {'id': doc_id, 'number': number}

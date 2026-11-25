@@ -27,9 +27,11 @@ def read(source, spec, node_id, *, recursive=False):
                 or any(part != 'none' and (not part.isdecimal() or int(part) <= 0) for part in parts[2:])):
             raise NomError('REPORT_BRANCH', 'Identificator de intrări invalid.', 422)
     rows = []
+    family = spec.get('incoming_family')
     for row in source.rows('receipts'):
         day = row['date']
-        if row['annulled'] or day is None or not source.params['start'] <= stock.day_of(day) <= source.params['end']:
+        if (row['annulled'] or day is None or not source.params['start'] <= stock.day_of(day) <= source.params['end']
+                or family and row['family'] != family):
             continue
         if node_id != 'root' and key(row.get('supplier')) != parts[1]:
             continue

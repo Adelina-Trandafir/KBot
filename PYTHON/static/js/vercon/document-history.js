@@ -9,7 +9,10 @@ const OPERATIONS = {
   'bt.number': 'Modificare număr bon de transfer',
   'bs.number': 'Modificare număr bon de casare',
   'nir.supplier': 'Modificare furnizor NIR',   // VC16-03
+  'nir.number': 'Schimbare număr NIR',   // VC16-04
   'lista.bc_update': 'Recalculare după modificare BC',
+  'lista.bons_update': 'Schimbare bonuri atașate',
+  'lista.number': 'Modificare număr listă de alimente',
   'lista.balance_recalculated': 'Recalculare automată DEP/EC',
   'lista.portions_update': 'Modificare număr copii / porții',
   'lista.date_update': 'Modificare dată listă de alimente',
@@ -19,6 +22,7 @@ const LABELS = { number: 'Număr', date: 'Data', name: 'Produs', variant: 'Varia
   day_closing_stock: 'Stoc la sfârșitul zilei bonului', prior_balance: 'Sold anterior',
   daily_balance: 'DEP/EC pe zi', closing_balance: 'Sold final', list_value: 'Valoare listă', bons_total: 'Total BC',
   ValoareBon: 'Total BC', ValoareLista: 'Valoare listă', DEP: 'Diferență listă − BC',
+  bons_added: 'Bonuri adăugate', bons_removed: 'Bonuri scoase',
   NumarBC: 'Număr BC', ValoareBC: 'Valoare BC', total: 'Total', meals: 'Mese', header: 'Antet',
   Cant: 'Cantitate', PUTVA: 'Preț cu TVA', ValoareCUTVA: 'Valoare cu TVA', IdProdus: 'Variantă',
   line_details: 'Linii', lines: 'Linii', MicDejun_P: 'Porții mic dejun', MicDejun_V: 'Valoare mic dejun',

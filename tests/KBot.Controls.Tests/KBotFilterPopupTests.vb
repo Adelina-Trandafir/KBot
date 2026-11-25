@@ -117,16 +117,24 @@ Public Class KBotFilterPopupTests
     End Sub
 
     <Fact>
-    Public Sub Search_NarrowsTheList_WithoutTouchingTheChecks()
+    Public Sub Search_NarrowsTheList_AndClearsAllChecks()
         RunSta(Sub()
                    Using p = Meniu()
                        Assert.Equal(Valori.Count, p.DebugShownCount())
                        p.DebugSearch("ana")
                        Assert.Equal(1, p.DebugShownCount())
-                       ' Căutarea ascunde, nu debifează.
-                       Assert.Equal(Valori.Count, p.DebugCheckedCount())
+                       ' Se debifează inclusiv valorile ascunse de căutare.
+                       Assert.Equal(0, p.DebugCheckedCount())
+                       Assert.Empty(p.BuildFilter().SelectedValues)
+                       p.DebugToggleValue("Ana")
+                       Assert.Equal(1, p.BuildFilter().SelectedValues.Count)
+                       Assert.Contains("Ana", p.BuildFilter().SelectedValues)
+                       p.DebugSearch("an")
+                       Assert.Equal(0, p.DebugCheckedCount())
+                       p.DebugToggleValue("Ana")
                        p.DebugSearch("")
                        Assert.Equal(Valori.Count, p.DebugShownCount())
+                       Assert.Equal(0, p.DebugCheckedCount())
                    End Using
                End Sub)
     End Sub

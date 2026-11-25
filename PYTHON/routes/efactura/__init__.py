@@ -26,7 +26,7 @@ the bottom, so `efactura_bp` must exist BEFORE that import (same pattern as rout
     primite_ke_routes.py /api/efactura/primite/<id>/ke..., /api/efactura/ke/...                (slices KE01..KE07)
     primite_vercon.py    a received invoice SENT to VERCON: accounts per line, states, history     (slice 00EF-45 = EV01)
     primite_vercon_routes.py /api/efactura/vercon/..., /api/efactura/primite/<id>/vercon...    (slice 00EF-45 = EV01)
-    primite_contari.py / primite_contari_routes.py  calculation of the «Contari» of received invoices (no write)           (slice 01EF-02)
+    primite_contari_routes.py  the «Contari» of received invoices; calculation and save live in avacont/.../NoteC_contari* (SLICE-AV08-04) (slice 01EF-02)
     primite_arhiva.py / primite_arhiva_routes.py   archive of the received invoices: list, archive, take out                 (slice 01EF-03)
     primite_access.py / primite_access_legare.py / primite_access_routes.py  preluare from and trimitere to the Access store (slice 00EF-43)
 

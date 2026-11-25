@@ -509,6 +509,25 @@ export function bindPayers({ api, context, refresh, moveToSubunit }) {
   // The grid's "+": one form with the child and the first parent (no groups, no lists).
   return { isDirty: () => editor.open && (dirty || grids.some(instance => instance.hasEdit)),
     openForChild: (groupId, childId) => goTo({ group_id: groupId, child_id: childId }, 2, false),
+    editChildFromAttendance: async (childId) => {
+      if (!canEdit() || page.open || editor.open || busy) return;
+      busy = true;
+      let child;
+      try {
+        const [catalog, result] = await Promise.all([
+          api('/api/adechit/catalog-data?include_hidden=1'),
+          api(`/api/adechit/rows/Platitori?IDP=${childId}`),
+        ]);
+        child = result.rows.find((row) => row.IDP === childId);
+        if (!child) throw new Error('Copilul nu mai este disponibil. Reîncărcați situația.');
+        selectedGroup = catalog.groups.find((group) => group.IDG === child.IDG) || null;
+        if (!selectedGroup) throw new Error('Grupa copilului nu mai este disponibilă. Reîncărcați situația.');
+        catalog.groups.sort((a, b) => String(a.Grupa || '').localeCompare(String(b.Grupa || ''), 'ro', { sensitivity: 'base' }));
+        data = { ...catalog, children: [child], payers: [], educators: [], years: [] };
+        selectedChild = child; selectedPayer = null;
+      } finally { busy = false; }
+      editChild(child);
+    },
     addChildWithPayer: async (groupId) => {
     if (groupId == null) throw new Error('Selectați grupa copilului.');
     if (page.open || editor.open || busy) return;

@@ -94,6 +94,21 @@ Namespace KBot.Forexe
         Public Const VarDataIesire As String = "DATA_IESIRE"
 
         ''' <summary>
+        ''' Slice 0097-10: where the reverse read of «Lista Angajamente Curente» stops - a regular expression
+        ''' matched against the «Cod» column (<c>exitIfCellEquals="Cod:~:^\s*{{COD_IESIRE}}"</c>). Always sent;
+        ''' <see cref="DataIesireNiciuna"/> (matches nothing) when K-BOT knows no angajament yet, never empty
+        ''' (an empty value would match the very first row).
+        ''' </summary>
+        Public Const VarCodIesire As String = "COD_IESIRE"
+
+        ''' <summary>
+        ''' Slice 0097-10: variable the executor sets (to «true») next to a table whose read was CUT by FOREXE's error
+        ''' page: <c>&lt;saveTo&gt;_INCOMPLET</c>. The rows before the cut are kept; this tells the caller they are
+        ''' only the newest part of the list.
+        ''' </summary>
+        Public Const SufixIncomplet As String = "_INCOMPLET"
+
+        ''' <summary>
         ''' The receptions the operator did NOT tick, as the workflow reads them: their dates,
         ''' comma-separated, in the site's own spelling.
         ''' </summary>

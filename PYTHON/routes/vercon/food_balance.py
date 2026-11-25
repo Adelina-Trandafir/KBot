@@ -5,11 +5,17 @@ from . import report_data, stock
 from .nomenclatoare import NomError
 
 
-def before(source, day, exclude=None):
+def before(source, day, exclude=None, *, number=None):
     # Web DEP = list minus bons; the report uses the opposite sign.
-    prior = [row for row in source.rows('food_history')
-             if stock.day_of(row['date']) < day
-             and (exclude is None or str(row['IdLista']) != str(exclude))]
+    number = Decimal(str(number)) if number is not None else None
+    prior = []
+    for row in source.rows('food_history'):
+        if exclude is not None and str(row['IdLista']) == str(exclude):
+            continue
+        when = stock.day_of(row['date'])
+        if when < day or (when == day and number is not None and row['NumarLA'] is not None
+                          and Decimal(row['NumarLA']) < number):
+            prior.append(row)
     if any(row['difference'] is None for row in prior):
         raise NomError('REPORT_SOURCE', 'O listă anterioară nu are diferența păstrată în antet.', 409)
     initial = next((Decimal(row['IntValue']) for row in source.rows('settings')

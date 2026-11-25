@@ -146,6 +146,10 @@ Public Class DbBrowserView
         Public ReadOnly Filters As New List(Of FilterPart)()
         Public ReadOnly Parent As NavNode
         Public ReadOnly Children As New List(Of NavNode)()
+        ''' <summary>The column-filter conditions the SERVER searches with (ME04-02): JSON list, empty = none. Part of the view's identity, so each search is cached apart.</summary>
+        Public SearchJson As String = String.Empty
+        ''' <summary>The filters on the grid's column headers when this view was last shown (clones), put back after the rows are replaced.</summary>
+        Public GridFilters As New List(Of KBotColumnFilter)()
 
         Public Sub New(k_table As String)
             Table = k_table
@@ -166,7 +170,7 @@ Public Class DbBrowserView
         ''' <summary>What identifies the view (the cache key and the way to find a step already taken).</summary>
         Public ReadOnly Property Key As String
             Get
-                Return Table & "|" & String.Join(",", Filters.Select(Function(k_f) k_f.Column & "=" & k_f.Json))
+                Return Table & "|" & String.Join(",", Filters.Select(Function(k_f) k_f.Column & "=" & k_f.Json)) & If(SearchJson.Length > 0, "|?" & SearchJson, String.Empty)
             End Get
         End Property
 
@@ -197,7 +201,7 @@ Public Class DbBrowserView
 
         Public ReadOnly Property Caption As String
             Get
-                Return If(HasFilter, Table & "  [" & FilterCaption & "]", Table)
+                Return If(HasFilter, Table & "  [" & FilterCaption & "]", Table) & If(SearchJson.Length > 0, "  (căutare pe server)", String.Empty)
             End Get
         End Property
     End Class
@@ -530,6 +534,7 @@ Public Class DbBrowserView
         If k_offset.HasValue Then k_args.AddRange({"--offset", k_offset.Value.ToString(CultureInfo.InvariantCulture)})
         k_args.AddRange({"--limit", PageSize.ToString(CultureInfo.InvariantCulture)})
         If k_node.HasFilter Then k_args.AddRange({"--where-json", k_node.WhereJson})
+        If k_node.SearchJson.Length > 0 Then k_args.AddRange({"--filter-json", k_node.SearchJson})
         Return k_args
     End Function
 
@@ -571,6 +576,7 @@ Public Class DbBrowserView
         _lastQueryValues = Nothing
         SyncSidePanel()
         ShowTable(k_result, k_keepSort)
+        RestoreGridFilters(k_node)
         UpdateNavButtons()
         RevealInTree(k_node.Table)
         TableNavLog.Write("OPEN", "shown: " & k_node.Caption & ", " & _loadedRows.ToString(CultureInfo.InvariantCulture) & " rows in the grid, " &
@@ -578,6 +584,126 @@ Public Class DbBrowserView
         LogHistory("after open")
         _context.Say("Gata: " & k_node.Caption & ", " & _loadedRows.ToString("N0", CultureInfo.CurrentCulture) & " rânduri încărcate" & If(k_cached, " (din memorie).", "."))
     End Function
+
+    ' ------------------------------------------------------------------
+    ' Search on the server (ME04-02): the conditions of the column filters are sent to the server, which searches the WHOLE table
+    ' ------------------------------------------------------------------
+
+    ''' <summary>A clone of every filter now on the grid's column headers.</summary>
+    Private Function ActiveGridFilters() As List(Of KBotColumnFilter)
+        Dim k_list As New List(Of KBotColumnFilter)()
+        For Each k_column As KBotDataColumn In gridData.Columns
+            Dim k_filter As KBotColumnFilter = gridData.ColumnFilter(k_column.Key)
+            If k_filter IsNot Nothing Then k_list.Add(k_filter.Clone())
+        Next
+        Return k_list
+    End Function
+
+    ''' <summary>Puts the filters of the view back on the headers after the rows were replaced (they apply to rows the server already narrowed, so they leave them as they are).</summary>
+    Private Sub RestoreGridFilters(k_node As NavNode)
+        If k_node.GridFilters.Count = 0 Then Return
+        _filling = True
+        Try
+            For Each k_filter As KBotColumnFilter In k_node.GridFilters
+                If gridData.Columns.Any(Function(k_c) k_c.Key = k_filter.ColumnKey) Then gridData.SetColumnFilter(k_filter.Clone())
+            Next
+        Finally
+            _filling = False
+        End Try
+    End Sub
+
+    Private Shared Function ServerOperator(k_op As KBotFilterOperator) As String
+        Select Case k_op
+            Case KBotFilterOperator.Equals
+                Return "eq"
+            Case KBotFilterOperator.NotEquals
+                Return "ne"
+            Case KBotFilterOperator.Contains
+                Return "contains"
+            Case KBotFilterOperator.NotContains
+                Return "ncontains"
+            Case KBotFilterOperator.BeginsWith
+                Return "begins"
+            Case KBotFilterOperator.NotBeginsWith
+                Return "nbegins"
+            Case KBotFilterOperator.EndsWith
+                Return "ends"
+            Case KBotFilterOperator.NotEndsWith
+                Return "nends"
+            Case KBotFilterOperator.LessThan
+                Return "lt"
+            Case KBotFilterOperator.GreaterThan
+                Return "gt"
+            Case KBotFilterOperator.Between
+                Return "between"
+            Case KBotFilterOperator.IsEmpty
+                Return "empty"
+            Case KBotFilterOperator.IsNotEmpty
+                Return "nempty"
+            Case Else
+                Return String.Empty
+        End Select
+    End Function
+
+    ''' <summary>One operand as the server compares it: numbers with a point, dates as year-month-day. Nothing = the operand cannot be read (the condition is then left out, as the grid leaves it inert).</summary>
+    Private Shared Function ServerOperand(k_text As String, k_type As KBotValueType, k_kind As CellKind) As String
+        Dim k_value As Object = KBotFilterEngine.CoerceOperand(k_text, k_type)
+        If k_value Is Nothing Then Return Nothing
+        Select Case k_type
+            Case KBotValueType.Number
+                Return Convert.ToString(k_value, CultureInfo.InvariantCulture)
+            Case KBotValueType.DateTime
+                If TypeOf k_value IsNot Date Then Return Nothing
+                Return DirectCast(k_value, Date).ToString(If(k_kind = CellKind.DateOnly, "yyyy-MM-dd", "yyyy-MM-dd HH:mm:ss"), CultureInfo.InvariantCulture)
+            Case Else
+                Return k_text
+        End Select
+    End Function
+
+    ''' <summary>The conditions of the column filters as the JSON list the server takes; empty when no condition is set.</summary>
+    Private Function SearchJsonOf(k_filters As IEnumerable(Of KBotColumnFilter)) As String
+        Dim k_list As New List(Of Dictionary(Of String, Object))()
+        For Each k_filter As KBotColumnFilter In k_filters
+            If k_filter.Condition = KBotFilterOperator.None Then Continue For
+            Dim k_at As Integer
+            If Not _colIndex.TryGetValue(k_filter.ColumnKey, k_at) Then Continue For
+            Dim k_kind As CellKind = _kinds(k_at)
+            If k_kind = CellKind.Blob OrElse k_kind = CellKind.Flag OrElse k_kind = CellKind.TimeOnly Then Continue For
+            Dim k_type As KBotValueType = gridData.Column(k_filter.ColumnKey).ValueType
+            Dim k_op As String = ServerOperator(k_filter.Condition)
+            Dim k_item As New Dictionary(Of String, Object)(StringComparer.Ordinal) From {{"c", k_filter.ColumnKey}, {"o", k_op}}
+            Dim k_count As Integer = KBotFilterEngine.OperandCount(k_filter.Condition)
+            If k_count >= 1 Then
+                If String.IsNullOrWhiteSpace(k_filter.Operand1) Then Continue For
+                Dim k_first As String = ServerOperand(k_filter.Operand1, k_type, k_kind)
+                If k_first Is Nothing Then Continue For
+                k_item("a") = k_first
+            End If
+            If k_count = 2 Then
+                Dim k_second As String = ServerOperand(k_filter.Operand2, k_type, k_kind)
+                If k_second Is Nothing Then Continue For
+                k_item("b") = k_second
+            End If
+            k_list.Add(k_item)
+        Next
+        Return If(k_list.Count = 0, String.Empty, JsonSerializer.Serialize(k_list))
+    End Function
+
+    ''' <summary>A condition set (or lifted) on a column header: the server searches the whole table again (the list of ticked values stays on the rows already loaded).</summary>
+    Private Async Sub GridData_FilterChanged(k_sender As Object, e As EventArgs) Handles gridData.FilterChanged
+        Try
+            If _filling OrElse _queryMode OrElse _node Is Nothing OrElse _current Is Nothing Then Return
+            Dim k_node As NavNode = _node
+            k_node.GridFilters = ActiveGridFilters()
+            Dim k_json As String = SearchJsonOf(k_node.GridFilters)
+            If String.Equals(k_json, k_node.SearchJson, StringComparison.Ordinal) Then Return
+            TableNavLog.Write("SEARCH", k_node.Caption & ": server search " & If(k_json.Length = 0, "(none)", k_json))
+            k_node.SearchJson = k_json
+            Await OpenNodeAsync(k_node)
+        Catch ex As Exception
+            GlobalErrorLog.Write("DbBrowserView.GridData_FilterChanged", ex)
+        End Try
+    End Sub
 
     Private Sub RevealInTree(k_table As String)
         Dim k_item As AdvancedTreeControl.TreeItem = Nothing
@@ -1097,8 +1223,9 @@ Public Class DbBrowserView
             lblInfo.Text = _tableName & ": " & _loadedRows.ToString("N0", CultureInfo.CurrentCulture) & " rânduri." & _queryCutNote
             Return
         End If
-        Dim k_filtered As Boolean = _node IsNot Nothing AndAlso _node.HasFilter
-        lblInfo.Text = "Tabel " & _tableName & If(k_filtered, " [doar rândurile cu " & _node.FilterCaption & "]", String.Empty) & ": " &
+        Dim k_filtered As Boolean = _node IsNot Nothing AndAlso (_node.HasFilter OrElse _node.SearchJson.Length > 0)
+        lblInfo.Text = "Tabel " & _tableName & If(_node IsNot Nothing AndAlso _node.HasFilter, " [doar rândurile cu " & _node.FilterCaption & "]", String.Empty) &
+                       If(_node IsNot Nothing AndAlso _node.SearchJson.Length > 0, " [căutat pe server în tot tabelul]", String.Empty) & ": " &
                        _loadedRows.ToString("N0", CultureInfo.CurrentCulture) & " rânduri încărcate" &
                        If(_hasMore, " (mai sunt; «Încarcă încă» le aduce pe următoarele)", " (toate)") &
                        ", estimat în tabel ~" & _current.Info.RowsEst.ToString("N0", CultureInfo.CurrentCulture) & If(k_filtered, " (fără filtru).", ".")

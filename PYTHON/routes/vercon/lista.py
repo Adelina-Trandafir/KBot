@@ -16,7 +16,7 @@ from utils.clock import bucharest_today, utc_now
 from decimal import Decimal
 
 from . import bon_number, document_order, food_list_portions, lista_bc, numeric, protocol
-from .documents import _all, _dec, _exists, _fail, _int, _money, _one, _scope, _text, _iso
+from .documents import _all, _dec, _exists, _fail, _int, _load_for_write, _money, _one, _scope, _text, _iso
 from .nomenclatoare import NomError
 
 MEALS = {   # key -> (table, portions, value of a portion, value of the meal, distributed)
@@ -25,6 +25,11 @@ MEALS = {   # key -> (table, portions, value of a portion, value of the meal, di
     'c': ('VC_Cina', 'Cina_P', 'VC', 'Cina_V', 'Cina_D'),
 }
 _MAX_ITEMS = 60
+
+# The source BC remains at its original value. Food lists charge its net consumption.
+_NET_BON_VALUE = ('h.ValoareBC - COALESCE((SELECT SUM(r.ValoareBC) FROM VC_Iesiri_H r '
+                  'WHERE r.SubunitId=h.SubunitId AND r.GestiuneId=h.GestiuneId AND r.ExercitiuId=h.ExercitiuId '
+                  'AND r.IdRetur=h.IdBonConsum AND r.Retur=1 AND r.Anulat=0),0)')
 
 
 # ---- reading ---------------------------------------------------------------------------------------------------------
@@ -53,7 +58,8 @@ def get_document(cursor, repo, ctx, family, doc_id):
                               'WHERE x.SubunitId=%s AND x.GestiuneId=%s AND x.ExercitiuId=%s AND x.IdLista=%s ORDER BY x.Id'.format(t=table), (s, g, e, doc_id))
         meals[key] = {'P': summary.get(p), 'VMD': _money(summary.get(v), scale), 'V': _money(summary.get(total), scale), 'D': summary.get(d),
                       'items': [{'id': i['Id'], 'IdFel': i['IdFel'], 'fel': i['DenFel'], 'Tip': i['Tip'], 'Explicatie': i['Explicatie']} for i in items]}
-    bons = _all(cursor, 'SELECT h.IdBonConsum, h.NumarBC, h.DataBC, h.ValoareBC, h.Anulat, c.Denumire FROM VC_LegBCLA l JOIN VC_Iesiri_H h ON h.SubunitId=l.SubunitId AND h.GestiuneId=l.GestiuneId '
+    bons = _all(cursor, f'SELECT h.IdBonConsum, h.NumarBC, h.DataBC, {_NET_BON_VALUE} AS ValoareBC, h.Anulat, c.Denumire '
+                        'FROM VC_LegBCLA l JOIN VC_Iesiri_H h ON h.SubunitId=l.SubunitId AND h.GestiuneId=l.GestiuneId '
                         'AND h.ExercitiuId=l.ExercitiuId AND h.IdBonConsum=l.IdBonConsum LEFT JOIN VC_Clienti c ON c.SubunitId=h.SubunitId AND c.GestiuneId=h.GestiuneId AND c.IDC=h.IDC '
                         'WHERE l.SubunitId=%s AND l.GestiuneId=%s AND l.ExercitiuId=%s AND l.IdLista=%s ORDER BY h.DataBC, h.IdBonConsum', (s, g, e, doc_id))
     doc = {'family': 'lista', 'id': doc_id, 'version': head['Version'], 'annulled': bool(head['Anulat']), 'reason': head['MotivAnulare'], 'annulled_by': head['AnulatDe'],
@@ -83,13 +89,17 @@ def lookups(cursor, ctx, family):
         'today': bucharest_today().isoformat()}
 
 
-def eligible_bons(cursor, ctx, exclude_list=None):
+def eligible_bons(cursor, ctx, exclude_list=None, *, day=None):
     """The bons a list can still take: this gestiune and exercise, not cancelled, not a return, not in ANOTHER list."""
     s, g, e = _scope(ctx)
     scale = ctx['scale']
-    rows = _all(cursor, 'SELECT h.IdBonConsum, h.NumarBC, h.DataBC, h.ValoareBC, c.Denumire FROM VC_Iesiri_H h LEFT JOIN VC_Clienti c ON c.SubunitId=h.SubunitId AND c.GestiuneId=h.GestiuneId AND c.IDC=h.IDC '
+    date_limit = ' AND h.DataBC < DATE_ADD(%s, INTERVAL 1 DAY)' if day is not None else ''
+    params = (s, g, e, exclude_list or 0) + ((day,) if day is not None else ())
+    rows = _all(cursor, f'SELECT h.IdBonConsum, h.NumarBC, h.DataBC, {_NET_BON_VALUE} AS ValoareBC, c.Denumire '
+                        'FROM VC_Iesiri_H h LEFT JOIN VC_Clienti c ON c.SubunitId=h.SubunitId AND c.GestiuneId=h.GestiuneId AND c.IDC=h.IDC '
                         'WHERE h.SubunitId=%s AND h.GestiuneId=%s AND h.ExercitiuId=%s AND COALESCE(h.Retur,0)=0 AND h.Anulat=0 AND NOT EXISTS (SELECT 1 FROM VC_LegBCLA l WHERE l.SubunitId=h.SubunitId '
-                        'AND l.GestiuneId=h.GestiuneId AND l.ExercitiuId=h.ExercitiuId AND l.IdBonConsum=h.IdBonConsum AND l.IdLista<>%s) ORDER BY h.DataBC DESC, h.IdBonConsum DESC', (s, g, e, exclude_list or 0))
+                        'AND l.GestiuneId=h.GestiuneId AND l.ExercitiuId=h.ExercitiuId AND l.IdBonConsum=h.IdBonConsum AND l.IdLista<>%s)'
+                        + date_limit + ' ORDER BY h.DataBC DESC', params)
     return [{'id': r['IdBonConsum'], 'number': bon_number.display('bc', r['NumarBC']), 'date': _iso(r['DataBC']), 'receiver': r['Denumire'] or '', 'total': _money(r['ValoareBC'], scale)} for r in rows]
 
 
@@ -164,15 +174,16 @@ def _write_meals(repo, ctx, list_id, parsed, now):
     return total
 
 
-def _link_bons(repo, list_id, bons):
+def _link_bons(repo, list_id, bons, day, *, validate_retained=False):
     try:
-        return lista_bc.set_bonuri(repo, list_id, bons)
+        return lista_bc.set_bonuri(repo, list_id, bons, day, validate_retained=validate_retained)
     except lista_bc.ListaBcError as error:
         raise NomError('BON_INVALID', str(error), 409) from error
 
 
 def _bons_total(cursor, ctx, list_id):
-    row = _one(cursor, 'SELECT COALESCE(SUM(h.ValoareBC),0) AS t FROM VC_LegBCLA l JOIN VC_Iesiri_H h ON h.SubunitId=l.SubunitId AND h.GestiuneId=l.GestiuneId AND h.ExercitiuId=l.ExercitiuId '
+    row = _one(cursor, f'SELECT COALESCE(SUM({_NET_BON_VALUE}),0) AS t FROM VC_LegBCLA l '
+                       'JOIN VC_Iesiri_H h ON h.SubunitId=l.SubunitId AND h.GestiuneId=l.GestiuneId AND h.ExercitiuId=l.ExercitiuId '
                        'AND h.IdBonConsum=l.IdBonConsum WHERE l.SubunitId=%s AND l.GestiuneId=%s AND l.ExercitiuId=%s AND l.IdLista=%s AND h.Anulat=0', (*_scope(ctx), list_id))
     return Decimal(row['t'])
 
@@ -205,7 +216,7 @@ def create(cursor, repo, ctx, exercise, body, request_key, request_id):
     _fail(errors)
     list_id = repo.insert('VC_LABC', {'NumarLA': number, 'DATALA': parsed['date'], 'ValoareBon': 0, 'DEP': 0, 'ValoareLista': 0})
     total = _write_meals(repo, ctx, list_id, parsed, utc_now())
-    _link_bons(repo, list_id, parsed['bons'])
+    _link_bons(repo, list_id, parsed['bons'], parsed['date'])
     bons_total = _bons_total(cursor, ctx, list_id)
     repo.update('VC_LABC', {'ValoareBon': bons_total, 'ValoareLista': total, 'DEP': total - bons_total}, {'IdLista': list_id})
     protocol.freeze(cursor, ctx)
@@ -215,6 +226,7 @@ def create(cursor, repo, ctx, exercise, body, request_key, request_id):
 
 def edit(cursor, repo, ctx, exercise, doc_id, body, request_id):
     from . import recalculation_audit
+    from .archive import release_renumbered
 
     rows = repo.select('VC_LABC', {'IdLista': doc_id}, for_update=True)
     if not rows:
@@ -241,17 +253,49 @@ def edit(cursor, repo, ctx, exercise, doc_id, body, request_id):
     for table in [m[0] for m in MEALS.values()] + ['VC_ListaAlimente']:
         repo.delete(table, {'IDLISTA' if table == 'VC_ListaAlimente' else 'IdLista': doc_id})
     total = _write_meals(repo, ctx, doc_id, parsed, utc_now())
-    result = _link_bons(repo, doc_id, parsed['bons'])
+    previous_day = lista_bc.calendar_day(before['DATALA'])
+    result = _link_bons(repo, doc_id, parsed['bons'], parsed['date'],
+                        validate_retained=previous_day is None or parsed['date'] < previous_day)
     bons_total = _bons_total(cursor, ctx, doc_id)
     if repo.update('VC_LABC', {'NumarLA': number, 'DATALA': parsed['date'], 'ValoareBon': bons_total, 'ValoareLista': total, 'DEP': total - bons_total},
                    {'IdLista': doc_id, 'Version': before['Version']}, bump_version=True) != 1:
         raise NomError('CONFLICT', 'Lista a fost modificată de altcineva. Reîncărcați lista.', 409)
+    release_renumbered(cursor, ctx, 'lista', before, number)
     protocol.audit(cursor, ctx, 'lista.update', 'VC_LABC', doc_id, {'number': before['NumarLA'], 'total': before['ValoareLista']},
                    {'number': number, 'total': total, 'bons_added': result['added'], 'bons_removed': result['removed']}, None, request_id)
     origin = recalculation_audit.cause('lista', doc_id, number, parsed['date'], before['Version'] + 1)
     recalculation_audit.record(cursor, ctx, prior_balances, recalculation_audit.food_snapshot(cursor, ctx),
                                origin, 'lista.balance_recalculated', 'VC_LABC', request_id)
     return {'id': doc_id, 'number': number}
+
+
+def replace_bons(cursor, repo, ctx, doc_id, body, request_id):
+    from . import recalculation_audit
+
+    table, pk, before = _load_for_write(repo, ctx, 'lista', doc_id, body.get('version'))
+    bons = body.get('bons')
+    if not isinstance(bons, list):
+        raise NomError('INVALID', 'Lista de bonuri este invalidă.', 422)
+    day = protocol.to_date(_iso(before['DATALA']), 'Data listei')
+    prior_balances = recalculation_audit.food_snapshot(cursor, ctx)
+    changed = _link_bons(repo, doc_id, bons, day)
+    result = {'id': doc_id, 'number': before['NumarLA']}
+    if not changed['added'] and not changed['removed']:
+        return result
+    value = before['ValoareLista']
+    if value is None:
+        raise NomError('LIST_VALUE_MISSING', 'Lista nu are valoarea păstrată. Corectați mai întâi lista.', 409)
+    total = _bons_total(cursor, ctx, doc_id)
+    values = {'ValoareBon': total, 'DEP': Decimal(value) - total}
+    if repo.update(table, values, {pk: doc_id, 'Version': before['Version']}, bump_version=True) != 1:
+        raise NomError('CONFLICT', 'Lista a fost modificată de altcineva. Reîncărcați lista.', 409)
+    protocol.audit(cursor, ctx, 'lista.bons_update', table, doc_id, {key: before[key] for key in values},
+                   {**values, 'bons_added': changed['added'], 'bons_removed': changed['removed']}, None, request_id)
+    origin = recalculation_audit.cause('lista', doc_id, before['NumarLA'], day, before['Version'] + 1,
+                                      action='schimbarea bonurilor asociate')
+    recalculation_audit.record(cursor, ctx, prior_balances, recalculation_audit.food_snapshot(cursor, ctx),
+                               origin, 'lista.balance_recalculated', table, request_id)
+    return result
 
 
 def cancel(cursor, repo, ctx, family, doc_id, body, request_id):

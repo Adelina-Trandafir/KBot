@@ -45,6 +45,7 @@ Public Class SetariAplicatieView
     Private Const PAGE_GENERALE As String = "generale"
     Private Const PAGE_DOCUMENTE As String = "documente"
     Private Const PAGE_KBOT As String = "kbot"
+    Private Const PAGE_AVACONT As String = "avacont"   ' slice AV08-01 (SetariAplicatieView.Avacont.vb)
 
     Public Sub New()
         InitializeComponent()
@@ -62,11 +63,12 @@ Public Class SetariAplicatieView
                 Case PAGE_GENERALE : page = tlyGenerale
                 Case PAGE_DOCUMENTE : page = tlyPaginaDocumente
                 Case PAGE_KBOT : page = tlyPaginaKbot
+                Case PAGE_AVACONT : page = tlyPaginaAvacont
                 Case Else
                     ' No silent no-ops: a tab added in the designer and forgotten here must show.
                     Throw New ArgumentException("Pagină necunoscută în setările aplicației: «" & key & "».")
             End Select
-            For Each p As Control In New Control() {tlyGenerale, tlyPaginaDocumente, tlyPaginaKbot}
+            For Each p As Control In New Control() {tlyGenerale, tlyPaginaDocumente, tlyPaginaKbot, tlyPaginaAvacont}
                 p.Visible = ReferenceEquals(p, page)
             Next
         Catch ex As Exception
@@ -180,6 +182,7 @@ Public Class SetariAplicatieView
             IncarcaComutatoarele()
             IncarcaDocumentele()
             IncarcaArborele()
+            IncarcaAvacont()
         Catch ex As Exception
             GlobalErrorLog.Write("SetariAplicatieView.Activated", ex)
         End Try
@@ -268,6 +271,7 @@ Public Class SetariAplicatieView
             IncarcaComutatoarele()
             IncarcaDocumentele()
             IncarcaArborele()
+            IncarcaAvacont()
         End Try
     End Sub
 
@@ -710,7 +714,7 @@ Public Class SetariAplicatieView
             Dim p As ThemePalette = scheme.Palette
             BackColor = scheme.PanelBack()
             For Each t As Control In New Control() {tlyGenerale, tlyComutatoare, tlyPaginaDocumente, tlyDocumente,
-                                                   tlyPaginaKbot, tlyArbore}
+                                                   tlyPaginaKbot, tlyArbore, tlyPaginaAvacont}
                 t.BackColor = scheme.PanelBack()
             Next
             For Each caption As Label In New Label() {lblVerbose, lblAdobeMotor, lblExcelRibbon,

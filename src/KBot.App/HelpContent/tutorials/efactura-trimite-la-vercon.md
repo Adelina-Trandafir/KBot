@@ -66,8 +66,8 @@ Apasă <b>«Trimite la Vercon»</b>. Facturile bifate pleacă cu toate liniile �
 <mark>Nimic nu pleacă până la acest buton. Ca să nu trimiți din greșeală, tutorialul se oprește aici: apasă butonul tu, după ce ai ieșit din tutorial.</mark>
 
 ## Retragere sau schimbare
-<!-- slice: 00EF-48, 0000-118, 00EF-59, 0000-150 -->
-O factură trimisă rămâne bifată în arbore și nu mai poate fi debifată sau trimisă din nou. O factură returnată de Administrator se trimite din nou. Dacă un NIR făcut din ea este anulat în Vercon, factura așteaptă iarăși Administratorul.
+<!-- slice: 00EF-48, 0000-118, 00EF-59, 0000-150, 00EF-68, 0000-183 -->
+O factură trimisă rămâne bifată în arbore și nu mai poate fi debifată sau trimisă din nou. Dacă dai <b>clic pe ea</b>, vezi în dreapta liniile ei, doar de citit, cu contul cu care au plecat; butonul «Trimite la Vercon» rămâne stins. Cât timp Administratorul nu a preluat-o, apare <b>«Retrage de la Vercon»</b>: după retragere factura se bifează singură și o poți trimite în altă parte (alt cont, altă gestiune). O factură preluată în NIR se poate doar vedea, nu se mai retrage. O factură returnată de Administrator se trimite din nou. Dacă un NIR făcut din ea este anulat în Vercon, factura așteaptă iarăși Administratorul.
 
 ## În Vercon
 <!-- slice: 00EF-48, 0000-118 -->

@@ -91,6 +91,7 @@ from routes.schema_sync.schema_common import (COMMON_DB, FORBIDDEN_TARGETS, SOUR
 
 from routes.admin_cli.admin_backup import BACKUP_DIR      # the dump verbs live in admin_backup.py (ME02-02)
 from routes.admin_cli import vercon_bc_delete
+from routes.admin_cli import vercon_oi_golire
 JOURNAL_ACTOR_DEFAULT = "scavatarsoft@gmail.com"
 
 from routes.admin_cli.admin_common import (
@@ -384,6 +385,19 @@ def _c_fisa_angajament(conn, db, param):
                   "%d randuri. DIAG = verificarile calculate; restul = randurile brute ale tabelelor." % len(rows), raw=True)
 
 
+def _c_facturi_plati_cui(conn, db, param):
+    """AVACONT, read only: the invoices and payments of one CodFiscal per SS, from the accounting operations
+    (routes/admin_cli/facturi_plati_cui.py); returns several blocks."""
+    from routes.admin_cli.facturi_plati_cui import check
+    return check(conn, db, param, _block)
+
+
+def _c_facturi_plati_cui_parteneri(conn, db):
+    """AVACONT, read only: the partners (one per CodFiscal) of the database, for the choice box of the command above."""
+    from routes.admin_cli.facturi_plati_cui import partners
+    return partners(conn, db, _block)
+
+
 def _c_profil_produs(conn, db, param):
     """VERCON: every movement of one IdProdus in the unit database (routes/admin_cli/vercon_profile.py); returns several blocks."""
     from routes.admin_cli.vercon_profile import profile
@@ -395,6 +409,26 @@ def _c_adechit_copil(conn, db, param):
     (routes/admin_cli/adechit_copil.py); returns several blocks."""
     from routes.admin_cli.adechit_copil import profile
     return profile(conn, db, param, _block)
+
+
+def _c_adechit_plata_lista(conn, db, param):
+    """ADECHIT, read only: the payments of ONE child (CNP or ID) that could be moved; KBotAdmin turns them into a choice list
+    (routes/admin_cli/adechit_muta_plata.py)."""
+    from routes.admin_cli.adechit_muta_plata import list_payments
+    return list_payments(conn, db, param, _block)
+
+
+def _c_adechit_plata_analiza(conn, db, param):
+    """ADECHIT, read only: the picture of moving ONE payment to another child (routes/admin_cli/adechit_muta_plata.py)."""
+    from routes.admin_cli.adechit_muta_plata import analyse
+    return analyse(conn, db, param, _block)
+
+
+def _c_adechit_plata_muta(conn, db, param):
+    """ADECHIT, WRITES: moves ONE whole payment to another child of the same subunit and month, rebuilding the saved
+    monthly statements of a closed month (routes/admin_cli/adechit_muta_plata.py)."""
+    from routes.admin_cli.adechit_muta_plata import move
+    return move(conn, db, param, _block)
 
 
 def _c_oi_semne(conn, db):
@@ -436,6 +470,19 @@ def _c_ddf_antete_repara(conn, db, param):
     (routes/admin_cli/ddf_headers.py); the button «Repara» of KBotAdmin runs it after «Explica»."""
     from routes.admin_cli.ddf_headers import repair
     return repair(conn, db, param, _block)
+
+
+def _c_extrase_lipsa(conn, db):
+    """Read only: headers and operations the XML of FX_Extrase_F holds but FX_Extrase_H / FX_Extrase do not (routes/admin_cli/extrase_lipsa.py)."""
+    from routes.admin_cli.extrase_lipsa import check
+    return check(conn, db, _block)
+
+
+def _c_extrase_lipsa_repara(conn, db):
+    """WRITES: adds the missing headers and operations under their own FX_Extrase_F row (routes/admin_cli/extrase_lipsa.py);
+    the button «Repara» of KBotAdmin runs it after the check."""
+    from routes.admin_cli.extrase_lipsa import repair
+    return repair(conn, db, _block)
 
 
 def _c_receptii_lanturi(conn, db):
@@ -511,12 +558,28 @@ COMMANDS = {
     "analyze": ("ANALYZE TABLE", "Actualizeaza statisticile tabelelor (scrie, dar nu schimba date).", True, _c_analyze),
     "fisa_angajament": ("Fisa angajament", "Tot ce stie baza despre un angajament, intr-un singur tabel (verificarile KE intai, apoi randurile "
                         "din toate tabelele). Cere o baza anume si codul angajamentului.", False, _c_fisa_angajament),
+    "facturi_plati_cui": ("Facturi si plati pe CodFiscal", "Pentru un furnizor (ales dupa CodFiscal din lista partenerilor bazei) arata, pe fiecare SS si an, "
+                          "facturile (evidente Tip E) cu cat s-a platit si restul, platile (Tip P, cu numarul ordinului) si celelalte operatii contabile "
+                          "pe care le are partenerul. Doar citire; cere o baza anume.", False, _c_facturi_plati_cui),
+    "facturi_plati_cui_parteneri": ("Parteneri cu CodFiscal", "Lista furnizorilor bazei (unul pe CodFiscal) pentru caseta de alegere din comanda "
+                                    "«Facturi si plati pe CodFiscal». Doar citire; cere o baza anume.", False, _c_facturi_plati_cui_parteneri),
     "profil_produs": ("Profil produs VERCON", "Tot ce stie baza despre un produs (IdProdus): fiecare rand din fiecare tabela VC_ in care apare, "
                       "cu antetul bonului/NIR-ului, plus verificarea registrului OI. Cere o baza anume si IdProdus.", False, _c_profil_produs),
     "adechit_copil": ("Informatii copil", "Tot ce stie baza despre un copil, gasit dupa CNP: copilul si platitorii lui, istoricul de grupe, lunile "
                       "(prezenta si contract), situatia lunara, platile si incasarile, chitantele, alte documente, retururile, compensarile si "
                       "extrasele bancare asociate - tot ce face referinta la IDP-ul lui. Doar citire; cere o baza anume si CNP-ul.",
                       False, _c_adechit_copil),
+    "adechit_plata_lista": ("Mutare plata intre copii", "Muta o plata (incasare cu chitanta sau alta plata) de la un copil la altul din aceeasi subunitate "
+                            "si luna, cu plata intreaga. Pas 1: scrii copilul de la care pleaca plata si copilul care o primeste (CNP sau ID); se arata platile "
+                            "primului. Pas 2: alegi plata si se arata ce s-ar schimba. Pas 3: butonul «Muta plata» (scrie, cere confirmare). Cere o baza anume.",
+                            False, _c_adechit_plata_lista),
+    "adechit_plata_analiza": ("Mutare plata intre copii - analiza", "Ce s-ar schimba daca o plata (incasare cu chitanta sau alta plata) ar trece "
+                              "de la un copil la altul din aceeasi subunitate si luna: copiii, platitorul, documentele si situatiile salvate de refacut, "
+                              "sau motivele pentru care nu se poate. Doar citire; cere o baza anume, IDPL-ul platii si CNP-ul sau ID-ul copilului tinta.",
+                              False, _c_adechit_plata_analiza),
+    "adechit_plata_muta": ("Mutare plata intre copii", "Trece plata intreaga pe alt copil (aceeasi subunitate si luna): chitanta sau documentul raman "
+                           "neschimbate; daca luna e inchisa, situatiile salvate (SS_Buget) ale ambilor copii se refac cu aceleasi reguli ca in aplicatie. "
+                           "SCRIE in baza aleasa, intr-o singura tranzactie, cu Jurnal. Ruleaza intai analiza.", True, _c_adechit_plata_muta),
     "oi_semne": ("Semne gresite registru OI", "Randurile din registrul OI (VC_OI_Produse) la care cantitatea si valoarea au semne diferite, "
                  "pe gestiune. Doar citire; merge si pe toate bazele.", False, _c_oi_semne),
     "oi_semne_repara": ("Repara semne registru OI", "Pune valoarea negativa pe randurile din registrul OI care au cantitatea negativa si valoarea "
@@ -534,6 +597,12 @@ COMMANDS = {
                           "aceeasi data si aceeasi suma ca o revizie a antetului principal se sterg (rezervarile lor, unice, trec pe revizia ramasa), "
                           "celelalte se muta sub antetul spre care arata angajamentul; antetele ramase goale se sterg. SCRIE in baza aleasa, intr-o singura "
                           "tranzactie, cu Jurnal. Refuza tot ce nu e clar. Se porneste din butonul «Repara» de dupa «Explica».", True, _c_ddf_antete_repara),
+    "extrase_lipsa": ("Verificare extrase lipsa", "Reciteste XML-ul din FX_Extrase_F si semnaleaza antetele (FX_Extrase_H) si operatiunile "
+                      "(FX_Extrase) pe care importul trebuia sa le scrie si nu le-a scris. Doar citire; cere o singura baza.",
+                      False, _c_extrase_lipsa),
+    "extrase_lipsa_repara": ("Repara extrasele lipsa", "Scrie antetele si operatiunile care lipsesc, sub fisierul din care vin, cu aceleasi reguli "
+                             "ca importul. Nu atinge FX_Extrase_F si nici ce exista deja. SCRIE in baza aleasa, intr-o singura tranzactie, cu "
+                             "Jurnal. Se porneste din butonul «Repara» de dupa verificare.", True, _c_extrase_lipsa_repara),
     "receptii_lanturi": ("Verificare lanturi de receptii", "Semnaleaza receptiile al caror ultim instantaneu nu are valoarea receptiei si le "
                          "desparte pe cauze: instantaneu pe alta receptie, receptie rescrisa de gemena din aceeasi zi, alt caz. Doar citire; cere o singura baza.",
                          False, _c_receptii_lanturi),
@@ -566,13 +635,18 @@ COMMANDS = {
                             "SCRIE, intr-o singura tranzactie, si NU se poate anula. Se porneste din butonul «Sterge angajamentul» de dupa analiza.",
                             True, _c_angajament_stergere),
     **vercon_bc_delete.commands(_block),
+    **vercon_oi_golire.commands(_block),
 }
 
 # Commands that need one typed value besides the database: name -> label of that value. They run on ONE database only.
 COMMAND_PARAMS = {
     "fisa_angajament": "Cod angajament",
+    "facturi_plati_cui": "CodFiscal",
     "profil_produs": "IdProdus",
     "adechit_copil": "CNP copil",
+    "adechit_plata_lista": "CNP sau ID copil sursa",
+    "adechit_plata_analiza": "IDPL plata;CNP sau ID copil tinta",
+    "adechit_plata_muta": "IDPL plata;CNP sau ID copil tinta",
     "ddf_antete_explica": "Cod angajament",
     "ddf_antete_repara": "Cod angajament",
     "receptii_lanturi_repara": "Cod angajament",
@@ -583,12 +657,14 @@ COMMAND_PARAMS = {
     "angajament_stergere": "Cod angajament",
     vercon_bc_delete.DELETE: "Numărul bonului de consum sau ID",
     vercon_bc_delete.PREVIEW: "Numărul bonului de consum sau ID",
+    vercon_oi_golire.ANALYSIS: "Ani (TOATE sau 2022,2023); la mai multe gestiuni: IdGestiune;ani",
+    vercon_oi_golire.DELETE: "Valoarea data de analiza",
 }
 
 # Commands restricted to one selected database (including database-wide VERCON checks).
-SINGLE_DB_COMMANDS = {"oi_semne_repara", "storno_preturi", "storno_preturi_repara", "ddf_antete", "ddf_antete_explica", "ddf_antete_repara",
-                     "receptii_lanturi", "receptii_lanturi_repara", "vercon_golire", "vercon_arhiva_anulate", "avacont_golire", "clasificatii_dubluri_repara", "angajament_analiza", "angajament_stergere",
-                     vercon_bc_delete.PREVIEW, vercon_bc_delete.DELETE}
+SINGLE_DB_COMMANDS = {"facturi_plati_cui_parteneri", "adechit_plata_lista", "adechit_plata_analiza", "adechit_plata_muta", "oi_semne_repara", "storno_preturi", "storno_preturi_repara", "ddf_antete", "ddf_antete_explica", "ddf_antete_repara",
+                     "extrase_lipsa", "extrase_lipsa_repara", "receptii_lanturi", "receptii_lanturi_repara", "vercon_golire", "vercon_arhiva_anulate", "avacont_golire", "clasificatii_dubluri_repara", "angajament_analiza", "angajament_stergere",
+                     vercon_bc_delete.PREVIEW, vercon_bc_delete.DELETE, vercon_oi_golire.ANALYSIS, vercon_oi_golire.DELETE}
 
 
 def cmd_commands(args):

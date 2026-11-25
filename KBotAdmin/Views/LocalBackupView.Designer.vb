@@ -41,6 +41,7 @@ Partial Class LocalBackupView
         btnVerify = New KBotButton()
         btnExport = New KBotButton()
         btnHistory = New KBotButton()
+        btnSearchCopies = New KBotButton()
         btnPurge = New KBotButton()
         btnDelete = New KBotButton()
         btnProfile = New KBotButton()
@@ -78,13 +79,14 @@ Partial Class LocalBackupView
         ' tlyBar
         '
         tlyBar.AutoFitToTheme = False
-        tlyBar.ColumnCount = 10
+        tlyBar.ColumnCount = 11
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 84F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 92F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 128F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 92F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 104F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 108F))
+        tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 120F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 84F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 84F))
         tlyBar.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 84F))
@@ -95,9 +97,10 @@ Partial Class LocalBackupView
         tlyBar.Controls.Add(btnVerify, 3, 0)
         tlyBar.Controls.Add(btnExport, 4, 0)
         tlyBar.Controls.Add(btnHistory, 5, 0)
-        tlyBar.Controls.Add(btnPurge, 6, 0)
-        tlyBar.Controls.Add(btnDelete, 7, 0)
-        tlyBar.Controls.Add(btnProfile, 8, 0)
+        tlyBar.Controls.Add(btnSearchCopies, 6, 0)
+        tlyBar.Controls.Add(btnPurge, 7, 0)
+        tlyBar.Controls.Add(btnDelete, 8, 0)
+        tlyBar.Controls.Add(btnProfile, 9, 0)
         tlyBar.Dock = DockStyle.Fill
         tlyBar.Location = New Point(8, 8)
         tlyBar.Margin = New Padding(0)
@@ -179,6 +182,18 @@ Partial Class LocalBackupView
         btnHistory.Text = "Istoric rând"
         tips.SetToolTipHeader(btnHistory, "Istoricul unui rând")
         tips.SetToolTipText(btnHistory, "Arată cum a arătat un rând (după cheia lui primară) în toate copiile bazei alese, cu ce s-a schimbat de la una la alta.")
+        '
+        ' btnSearchCopies
+        '
+        btnSearchCopies.Dock = DockStyle.Fill
+        btnSearchCopies.Location = New Point(592, 0)
+        btnSearchCopies.Margin = New Padding(0, 2, 6, 6)
+        btnSearchCopies.Name = "btnSearchCopies"
+        btnSearchCopies.Size = New Size(114, 36)
+        btnSearchCopies.TabIndex = 9
+        btnSearchCopies.Text = "Caută în copii"
+        tips.SetToolTipHeader(btnSearchCopies, "Caută în copii")
+        tips.SetToolTipText(btnSearchCopies, "Caută un text (un nume, un cod, un număr) în toate copiile bazei alese și arată fiecare versiune a rândurilor găsite, cu prima și ultima copie în care apar. Ajută când ai șters ceva și nu mai știi când.")
         '
         ' btnPurge
         '
@@ -457,6 +472,7 @@ Partial Class LocalBackupView
     Friend WithEvents btnVerify As KBotButton
     Friend WithEvents btnExport As KBotButton
     Friend WithEvents btnHistory As KBotButton
+    Friend WithEvents btnSearchCopies As KBotButton
     Friend WithEvents btnPurge As KBotButton
     Friend WithEvents btnProfile As KBotButton
     Friend WithEvents btnDelete As KBotButton

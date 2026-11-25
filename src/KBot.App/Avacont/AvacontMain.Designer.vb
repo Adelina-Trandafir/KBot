@@ -96,17 +96,18 @@ Partial Class AvacontMain
         Dim KBotRibbonButton52 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton53 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim KBotRibbonButton54 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
+        Dim btnNotaManuala As New Controls.KBotRibbonButton()
         Dim KBotRibbonTab7 As KBot.Controls.KBotRibbonTab = New Controls.KBotRibbonTab()
         Dim KBotRibbonGroup13 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
         Dim KBotRibbonGroup14 As KBot.Controls.KBotRibbonGroup = New Controls.KBotRibbonGroup()
         Dim KBotRibbonButton55 As KBot.Controls.KBotRibbonButton = New Controls.KBotRibbonButton()
         Dim btnModOpReincarca As New Controls.KBotRibbonButton()
-        Dim btnModOpInfo As New Controls.KBotRibbonButton()
         Dim btnModOpOrdonare As New Controls.KBotRibbonButton()
         Dim btnModOpCurata As New Controls.KBotRibbonButton()
         Dim btnModOpExcel As New Controls.KBotRibbonButton()
         Dim btnModOpExcelTot As New Controls.KBotRibbonButton()
         Dim btnModOpSterge As New Controls.KBotRibbonButton()
+        Dim btnModOpEditeaza As New Controls.KBotRibbonButton()
         Dim btnModOpStergeDoc As New Controls.KBotRibbonButton()
         Dim btnClasificatiiAdauga As New Controls.KBotRibbonButton()
         Dim btnParteneriSterge As New Controls.KBotRibbonButton()
@@ -420,13 +421,6 @@ Partial Class AvacontMain
         btnModOpReincarca.ToolTipText = "Citește din nou operațiile subunității și ale anului din bara de titlu. Filtrele și ordonarea rămân."
         btnModOpReincarca.Visible = False
         ribbon.RightGroup.Buttons.Add(btnModOpReincarca)
-        btnModOpInfo.Image = My.Resources.Resources.Wefunction_Woofunction_Window_app_list_info_32
-        btnModOpInfo.Key = "modificare_operatii_info"
-        btnModOpInfo.Text = "Arată informațiile"
-        btnModOpInfo.ToolTipHeader = "Informații suplimentare"
-        btnModOpInfo.ToolTipText = "Arată sau ascunde, sub listă, detaliile operației alese: tipul, factura plătită, ordinul de plată, facturile plătite și soldul partenerului."
-        btnModOpInfo.Visible = False
-        ribbon.RightGroup.Buttons.Add(btnModOpInfo)
         btnModOpOrdonare.Image = My.Resources.Resources.cells
         btnModOpOrdonare.Key = "modificare_operatii_ordonare"
         btnModOpOrdonare.Text = "Ordonare implicită"
@@ -455,6 +449,12 @@ Partial Class AvacontMain
         btnModOpExcelTot.ToolTipText = "Salvează în Excel toate operațiile anului, fără filtre, în ordinea notei contabile."
         btnModOpExcelTot.Visible = False
         ribbon.RightGroup.Buttons.Add(btnModOpExcelTot)
+        btnModOpEditeaza.Image = My.Resources.Resources.cells
+        btnModOpEditeaza.Key = "modificare_operatii_editeaza"
+        btnModOpEditeaza.Text = "Modifică operație"
+        btnModOpEditeaza.ToolTipText = "Deschide editorul pentru operația aleasă."
+        btnModOpEditeaza.Visible = False
+        ribbon.RightGroup.Buttons.Add(btnModOpEditeaza)
         btnModOpSterge.Image = My.Resources.Resources.minus_red
         btnModOpSterge.Key = "modificare_operatii_sterge"
         btnModOpSterge.Text = "Șterge operația"
@@ -565,6 +565,11 @@ Partial Class AvacontMain
         KBotRibbonTab1.Groups.Add(KBotRibbonGroup4)
         KBotRibbonTab1.Text = "Configurări"
         KBotRibbonGroup13.Buttons.Add(KBotRibbonButton54)
+        btnNotaManuala.Image = My.Resources.Resources.cells
+        btnNotaManuala.Key = "nota_manuala"
+        btnNotaManuala.Text = "Notă manuală"
+        btnNotaManuala.ToolTipText = "Adaugă manual o operație contabilă în unitatea și anul de lucru."
+        KBotRibbonGroup13.Buttons.Add(btnNotaManuala)
         KBotRibbonGroup13.Text = "Introducere Date"
         KBotRibbonButton55.Image = My.Resources.Resources.cells
         KBotRibbonButton55.Key = "modificare_operatii"

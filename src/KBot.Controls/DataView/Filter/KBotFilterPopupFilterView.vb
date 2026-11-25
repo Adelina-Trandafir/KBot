@@ -32,6 +32,7 @@ Friend Class KBotFilterPopupFilterView
     Private ReadOnly _values As New List(Of String)()          ' distinct display texts, in order
     Private ReadOnly _checked As HashSet(Of String)
     Private ReadOnly _working As KBotColumnFilter
+    Private _containsSearch As Boolean
 
     ' The indices of _values that pass the search -- exactly what lstValues shows, same order.
     Private ReadOnly _shown As New List(Of Integer)()
@@ -81,6 +82,16 @@ Friend Class KBotFilterPopupFilterView
         tlyFilter.SetRowCollapsed(ConditionsRow, Not hasConditions)
         If hasConditions Then btnConditions.Text = KBotFilterEngine.ConditionMenuCaption(valueType) & "  ▸"
 
+        ' Restore an existing «Contains» in the same box without changing its saved ticks.
+        If _working.Condition = KBotFilterOperator.Contains Then
+            _containsSearch = True
+            _syncing = True
+            Try
+                txtSearch.Text = "%" & If(_working.Operand1, String.Empty) & "%"
+            Finally
+                _syncing = False
+            End Try
+        End If
         RebuildShown()
     End Sub
 
@@ -111,7 +122,7 @@ Friend Class KBotFilterPopupFilterView
     End Property
 
     Public Sub Activated() Implements IKBotFilterMenuView.Activated
-        txtSearch.Focus()
+        txtSearch.FocusInput()
     End Sub
 
     Public Function RequiredHeight() As Integer Implements IKBotFilterMenuView.RequiredHeight
@@ -154,9 +165,27 @@ Friend Class KBotFilterPopupFilterView
 
     ''' <summary>Puts a condition (and its operands) on the working filter; the popup hands it over.</summary>
     Friend Sub SetCondition(op As KBotFilterOperator, operand1 As String, operand2 As String)
+        _containsSearch = False
         _working.Condition = op
         _working.Operand1 = operand1
         _working.Operand2 = operand2
+    End Sub
+
+    ''' <summary>Edits «Contains» as %text% in the existing search box, without a dialog.</summary>
+    Friend Sub BeginContainsSearch()
+        Dim needle As String = If(_working.Condition = KBotFilterOperator.Contains,
+                                  If(_working.Operand1, String.Empty), SearchNeedle())
+        _containsSearch = True
+        _working.Condition = KBotFilterOperator.Contains
+        _working.Operand2 = Nothing
+        Dim pattern As String = "%" & needle & "%"
+        If String.Equals(txtSearch.Text, pattern, StringComparison.Ordinal) Then
+            RefreshSearch()
+        Else
+            txtSearch.Text = pattern
+        End If
+        txtSearch.FocusInput()
+        txtSearch.InnerTextBox.Select(1, needle.Length)
     End Sub
 
     ' ══════════════════════════════════════════════════════════════════════════
@@ -195,7 +224,7 @@ Friend Class KBotFilterPopupFilterView
     ' Fills the list with the values that pass the search (all, when empty) and refreshes the ticks.
     Private Sub RebuildShown()
         _shown.Clear()
-        Dim needle As String = txtSearch.Text.Trim()
+        Dim needle As String = SearchNeedle()
         For i As Integer = 0 To _values.Count - 1
             If needle.Length = 0 OrElse
                ValueLabel(_values(i)).Contains(needle, StringComparison.CurrentCultureIgnoreCase) Then
@@ -277,10 +306,25 @@ Friend Class KBotFilterPopupFilterView
     ' CONTROL EVENTS
     ' ══════════════════════════════════════════════════════════════════════════
 
+    ' In «Contains» mode the surrounding % signs describe the match; they are not literal text.
+    Private Function SearchNeedle() As String
+        Dim text As String = txtSearch.Text.Trim()
+        If _containsSearch Then Return text.Trim("%"c)
+        Return text
+    End Function
+
+    Private Sub RefreshSearch()
+        If _containsSearch Then _working.Operand1 = SearchNeedle()
+        ' Clear the full selection, including values hidden by the search.
+        _checked.Clear()
+        RebuildShown()
+        RaiseEvent ContentChanged()
+    End Sub
+
     Private Sub TxtSearch_TextChanged(sender As Object, e As EventArgs) Handles txtSearch.TextChanged
         Try
-            RebuildShown()
-            RaiseEvent ContentChanged()
+            If _syncing Then Return
+            RefreshSearch()
         Catch ex As Exception
             GlobalErrorLog.Write("KBotFilterPopupFilterView.TxtSearch_TextChanged", ex)
         End Try

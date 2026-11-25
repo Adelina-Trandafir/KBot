@@ -587,6 +587,27 @@ Public NotInheritable Class KBotDataColumn
         HeaderRightIconSize = DefaultHeaderIconSize
     End Sub
 
+    Private _nullShowsMixedCheck As Boolean = False
+
+    ''' <summary>
+    ''' Slice DGV0-02: on a <see cref="KBotColumnType.CheckBox"/> column, a cell whose value is Nothing / DBNull is drawn as the
+    ''' «some» box (the box with a filled square) instead of an empty one. So the column can say three things: ticked = yes,
+    ''' «some» = partly (value Nothing), empty box = no. Default False: Nothing stays an empty box, as everywhere else.
+    ''' </summary>
+    <Category("K-BOT")>
+    <Description("Pe o coloană CheckBox: o celulă fără valoare (Nothing) se desenează ca bifă «parțială» (pătrat plin în casetă), nu ca o casetă goală.")>
+    <DefaultValue(False)>
+    Public Property NullShowsMixedCheck As Boolean
+        Get
+            Return _nullShowsMixedCheck
+        End Get
+        Set(value As Boolean)
+            If _nullShowsMixedCheck = value Then Return
+            _nullShowsMixedCheck = value
+            Owner?.Invalidate()
+        End Set
+    End Property
+
     ''' <summary>
     ''' Culoarea de sub pictograma din dreapta cât timp cursorul e peste ea. <c>Color.Empty</c>
     ''' (implicit) = o spălare din culoarea de text a antetului, adică din temă.
@@ -898,12 +919,28 @@ Public NotInheritable Class KBotDataColumn
         Return CInt(Math.Round(device / s))
     End Function
 
+    ' Slice DGV0-01: the few DEVICE pixels the fill pass adds to this column so that the last column reaches the border of the grid. Widths are LOGICAL integers
+    ' and every column is rounded to the screen on its own, so at 125 % / 150 % the columns together can fall a few pixels short of the viewport; the fill column
+    ' takes that remainder here (0 at 100 %). Written only by the layout pass, reset at the start of every pass; never serialized.
+    Private _layoutExtraPx As Integer
+
+    <Browsable(False)>
+    <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
+    Friend Property LayoutExtraPx As Integer
+        Get
+            Return _layoutExtraPx
+        End Get
+        Set(value As Integer)
+            _layoutExtraPx = Math.Max(0, value)
+        End Set
+    End Property
+
     ''' <summary>Lățimea PICTATĂ (px de ecran). Cea cu care lucrează așezarea și pictarea.</summary>
     <Browsable(False)>
     <DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)>
     Friend ReadOnly Property WidthPx As Integer
         Get
-            Return ScalePx(_width)
+            Return ScalePx(_width) + _layoutExtraPx
         End Get
     End Property
 
@@ -1895,6 +1932,15 @@ Public NotInheritable Class KBotDataColumn
             _comboDropDownWidth = k_value
         End Set
     End Property
+
+    ''' <summary>Requires a list selection for the combo editor, including when text exactly matches a label.</summary>
+    <DefaultValue(False)>
+    Public Property ComboRequireExplicitSelection As Boolean
+
+    ''' <summary>Keeps the order of the supplied items in the combo's filtered results.</summary>
+    <DefaultValue(False)>
+    Public Property ComboFindInItemOrder As Boolean
+
     Private _comboDropDownWidth As Integer
 
     ''' <summary>

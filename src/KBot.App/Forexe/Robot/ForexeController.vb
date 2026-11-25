@@ -325,7 +325,12 @@ Partial Public NotInheritable Class ForexeController
     ''' upsert-ul e o treaptă separată, chemată din meniul de opțiuni al shell-ului.
     ''' Întoarce rândurile mapate, sau Nothing dacă fluxul nu a putut porni ori a eșuat.
     ''' </summary>
-    Public Async Function DownloadListaAsync() As Task(Of List(Of Angajament))
+    ''' <param name="coduriCunoscute">
+    ''' Slice 0097-10: the codes K-BOT already shows (the tree). Used ONLY when no «last known angajament» was
+    ''' remembered yet for this unit / year / program / source: the read from the end then stops at the first of
+    ''' them it meets. Nothing = none (the whole list is read, still from the end).
+    ''' </param>
+    Public Async Function DownloadListaAsync(Optional coduriCunoscute As IEnumerable(Of String) = Nothing) As Task(Of List(Of Angajament))
         ' Cutia neagră a descărcării (felia 0054): se deschide ÎNAINTE de orice ieșire, ca
         ' până și o cerere respinsă din start să lase o urmă pe disc.
         Dim jurnal As New ForexeRunDump("ListaAngajamente", String.Empty, _session)
@@ -350,7 +355,13 @@ Partial Public NotInheritable Class ForexeController
                 ' not narrowed to one source either (operator, 02.10.2026; the choice is the selector's since 25.10.2026).
                 Dim toateSursele As Boolean = _session.ToateSursele
                 If toateSursele Then RaporteazaStare("Lista pe toate sursele unității (sursa aleasă: Toate).")
-                Dim job As JobRequest = JobBuilder.BuildListaAngajamente(_session, toateSursele)
+                ' Slice 0097-10: FOREXE lists the NEWEST angajament first, so the read goes forward from page 1 and stops at
+                ' the first one K-BOT already has (everything after it is older).
+                _listaCheie = CheieLista(toateSursele)
+                _listaUltimCod = String.Empty
+                Dim codIesire As String = CodIesireLista(_listaCheie, coduriCunoscute)
+                Dim job As JobRequest = JobBuilder.BuildListaAngajamente(_session, toateSursele, codIesire)
+                jurnal.Note("cod_iesire", If(codIesire = WorkflowCatalog.DataIesireNiciuna, "niciunul (se citeste tot, de la sfarsit)", codIesire))
                 jurnal.NoteRequest(job)
                 Dim rezultat As JobResult = Await RunOrReplayAsync(job, String.Empty)
                 If rezultat Is Nothing Then
@@ -366,10 +377,26 @@ Partial Public NotInheritable Class ForexeController
 
                 Dim randuri As TabelRezultat = Nothing
                 If Not rezultat.Tables.TryGetValue(WorkflowCatalog.ListaAngajamenteTable, randuri) Then
-                    jurnal.Note("tabel_asteptat", WorkflowCatalog.ListaAngajamenteTable)
-                    ScrieJurnal(jurnal, "tabel-lipsa", rezultat)
-                    RaporteazaEsec($"Tabelul «{WorkflowCatalog.ListaAngajamenteTable}» lipsește din rezultat (0 rânduri).")
-                    Return Nothing
+                    ' Slice 0097-10: read from the end, the very first row can be the known one - nothing new. The
+                    ' flow then wrote the variable as an EMPTY array (which never becomes a table), unlike a flow that
+                    ' wrote nothing at all.
+                    Dim k_gol As String = Nothing
+                    If rezultat.Data.TryGetValue(WorkflowCatalog.ListaAngajamenteTable, k_gol) AndAlso k_gol IsNot Nothing AndAlso k_gol.Trim() = "[]" Then
+                        randuri = New TabelRezultat()
+                    Else
+                        jurnal.Note("tabel_asteptat", WorkflowCatalog.ListaAngajamenteTable)
+                        ScrieJurnal(jurnal, "tabel-lipsa", rezultat)
+                        RaporteazaEsec($"Tabelul «{WorkflowCatalog.ListaAngajamenteTable}» lipsește din rezultat (0 rânduri).")
+                        Return Nothing
+                    End If
+                End If
+
+                ' Slice 0097-10: FOREXE cut the read with its error page. What was read (the NEWEST part) is kept and
+                ' goes on to the server, but it must not become the «last known» one: the older rows were never read.
+                Dim incompleta As Boolean = rezultat.Data.ContainsKey(WorkflowCatalog.ListaAngajamenteTable & WorkflowCatalog.SufixIncomplet)
+                If incompleta Then
+                    jurnal.Note("citire_incompleta", "FOREXE a oprit citirea listei cu pagina de eroare; se pastreaza ce s-a citit pana atunci")
+                    RaporteazaStare("Atenție: FOREXE a oprit citirea listei (pagina de eroare). Păstrez angajamentele citite până aici (cele mai noi); restul rămân pentru o altă descărcare.")
                 End If
 
                 ' Cheile BRUTE, ca o redenumire în FOREXE să se vadă în jurnal chiar și
@@ -380,6 +407,9 @@ Partial Public NotInheritable Class ForexeController
 
                 Dim mapate As List(Of Angajament) = AngajamentMapper.FromListaAngajamenteResult(randuri)
                 Dim cale As String = _store.SalveazaLista(mapate)
+                ' Remembered only AFTER the server took the rows (ConfirmaListaPrimita): the list is newest first, so
+                ' the FIRST row is the newest one.
+                _listaUltimCod = If(incompleta OrElse mapate.Count = 0, String.Empty, mapate(0).CodAngajament)
                 ScrieJurnal(jurnal, "ok", rezultat, mapate)
                 RaporteazaStare($"{mapate.Count} angajamente mapate (din {randuri.Count} brute) → {Path.GetFileName(cale)}")
                 Return mapate
@@ -393,6 +423,55 @@ Partial Public NotInheritable Class ForexeController
             Throw
         End Try
     End Function
+
+    ' Slice 0097-10: what the LAST list download wants remembered once the server has the rows.
+    Private _listaCheie As String = String.Empty
+    Private _listaUltimCod As String = String.Empty
+
+    ''' <summary>The key one remembered «last known angajament» belongs to: unit | year | program | source.</summary>
+    Private Function CheieLista(toateSursele As Boolean) As String
+        Return String.Join("|", _session.DbName, _session.An.ToString(Globalization.CultureInfo.InvariantCulture),
+                           _session.CodProgram, If(toateSursele, "*", _session.SectorSursa))
+    End Function
+
+    ''' <summary>
+    ''' The <c>COD_IESIRE</c> regular expression: the remembered newest angajament; failing that, any of the codes the
+    ''' tree already shows (the first one met from the top is the newest known); failing that, the pattern that
+    ''' matches nothing (the whole list is read).
+    ''' </summary>
+    Private Function CodIesireLista(k_cheie As String, k_cunoscute As IEnumerable(Of String)) As String
+        Dim k_ultim As String = String.Empty
+        Try
+            k_ultim = WorkflowResultStore.UltimulCunoscut(k_cheie)
+        Catch ex As Exception
+            ' The store logged it. A damaged note must not stop the download: it only costs a longer read.
+            RaporteazaStare("Ultimul angajament cunoscut nu a putut fi citit (" & ex.Message & "); citesc lista fără oprire.")
+        End Try
+        If k_ultim <> String.Empty Then Return System.Text.RegularExpressions.Regex.Escape(k_ultim)
+
+        If k_cunoscute IsNot Nothing Then
+            Dim k_coduri As List(Of String) = k_cunoscute.Where(Function(k_c) Not String.IsNullOrWhiteSpace(k_c)).
+                Select(Function(k_c) System.Text.RegularExpressions.Regex.Escape(k_c.Trim())).Distinct().ToList()
+            If k_coduri.Count > 0 Then Return "(?:" & String.Join("|", k_coduri) & ")"
+        End If
+        Return WorkflowCatalog.DataIesireNiciuna
+    End Function
+
+    ''' <summary>
+    ''' To be called by whoever sent the list of the last <see cref="DownloadListaAsync"/> to the server, AFTER the
+    ''' server took it: only then is its newest angajament remembered as the place the next read stops. A read cut by
+    ''' FOREXE's error page, or one with nothing new, leaves what was remembered as it was.
+    ''' </summary>
+    Public Sub ConfirmaListaPrimita()
+        Try
+            If _listaCheie = String.Empty OrElse _listaUltimCod = String.Empty Then Return
+            WorkflowResultStore.PastreazaUltimulCunoscut(_listaCheie, _listaUltimCod)
+            _listaUltimCod = String.Empty
+        Catch ex As Exception
+            ' Not worth failing a download that already reached the server: the next read is only longer.
+            GlobalErrorLog.Write("ForexeController.ConfirmaListaPrimita", ex)
+        End Try
+    End Sub
 
     ''' <summary>The skipped receptions, for the download journal: whole days, then single ones as date#rank.</summary>
     Private Shared Function DescrieSarite(sarite As ReceptiiSarite) As String

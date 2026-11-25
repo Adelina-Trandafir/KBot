@@ -5,6 +5,7 @@ Imports System.Collections.Generic
 
 ''' <summary>A note (NoteC) of the subunit and year, for the note combo of both pages.</summary>
 Public NotInheritable Class OperatiiNotaInfo
+    Public Property IdNota As Integer
     Public Property NumarNC As Integer
     Public Property DataNc As Date?
     ''' <summary>How many documents the note already holds.</summary>
@@ -20,6 +21,8 @@ Public NotInheritable Class OperatiiContext
     Public Property Urmatoare As Integer
     ''' <summary>Date of the last closing document (CCV) of the year; the documents must be dated after it. Nothing = no closing yet.</summary>
     Public Property Inchidere As Date?
+    ''' <summary>The partners of the unit of the sector+source and the year (each partner is kept once per unit, so a window offers the ones of its own unit only).</summary>
+    Public Property Parteneri As IReadOnlyList(Of FacturiPlatiPartener) = New List(Of FacturiPlatiPartener)()
 End Class
 
 ''' <summary>One line of a «Operatii diverse» posting: the template line and its amount.</summary>
@@ -34,6 +37,8 @@ Public NotInheritable Class OperatiiDiverseCerere
     Public Property An As Integer
     Public Property IdSablon As Integer
     Public Property NumarNC As Integer
+    Public Property IdNota As Integer?
+    Public Property NotaNoua As Boolean?
     Public Property NumarDocument As String = String.Empty
     Public Property FelDocument As String = String.Empty
     Public Property DataDocument As Date
@@ -92,6 +97,8 @@ End Class
 Public NotInheritable Class FacturaDeschisa
     ''' <summary>The evidence operation (what a payment is allocated on).</summary>
     Public Property IdOper As Integer
+    Public Property IdPrimita As Integer?
+    Public Property FaraReceptie As Boolean
     Public Property Numar As String = String.Empty
     Public Property Data As Date?
     Public Property Fel As String = String.Empty
@@ -132,6 +139,8 @@ Public NotInheritable Class FacturaNoua
     Public Property Fel As String = "Factură"
     ''' <summary>The accounting note the invoice is booked in (MANDATORY, positive; a number that does not exist yet opens a new note).</summary>
     Public Property NumarNC As Integer
+    Public Property IdNota As Integer?
+    Public Property NotaNoua As Boolean?
     ''' <summary>What is paid now on it (0 = nothing).</summary>
     Public Property Platit As Decimal
 End Class
@@ -154,6 +163,12 @@ Public NotInheritable Class FacturiPlatiCerere
     Public Property IdSablonP As Integer
     ''' <summary>The note of the PAYMENT (its order); 0 when nothing is paid. Every typed invoice carries its own note.</summary>
     Public Property NumarNC As Integer
+    Public Property IdNota As Integer?
+    Public Property NotaNoua As Boolean?
+    Public Property Protectie As Boolean
+    Public Property ConfirmariReceptie As New List(Of Integer)()
+    ''' <summary>SLICE-AV08-07: the codes of the server warnings the operator answered «Da» (LUNA_NOUA).</summary>
+    Public Property Confirmari As New List(Of String)()
     Public Property DataOP As Date
     Public Property ExplicatieOP As String = String.Empty
     Public Property Noi As New List(Of FacturaNoua)()

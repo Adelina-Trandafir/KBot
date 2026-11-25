@@ -1,4 +1,4 @@
-"""Shared receipt arithmetic, chronology and read-only draft simulation."""
+"""Shared receipt arithmetic and read-only draft simulation."""
 from copy import deepcopy
 from datetime import date
 from decimal import Decimal
@@ -7,27 +7,6 @@ from . import consumption_timeline, numeric, receipt_choices
 from .nomenclatoare import NomError
 
 ACCEPTED_DIFFERENCE = Decimal(1)
-
-
-def chronology(cursor, ctx, number, sub, day, exclude=None):
-    from .documents import _all, _sub_text
-    rows = _all(cursor, 'SELECT IdIntrare, ABS(Numar) AS Numar, COALESCE(NumarSub,0) AS sub, DATE(Data) AS day, COALESCE(Storno,0) AS storno '
-                'FROM VC_NIR WHERE SubunitId=%s AND GestiuneId=%s AND YEAR(Data)=%s '
-                "AND Numar<>0 AND TipDoc<>'STOC_INITIAL' AND IdIntrare<>%s",
-                (ctx['subunit'], ctx['gestiune'], day.year, exclude or 0))
-    pair = (number, sub)
-    earlier = [r for r in rows if (r['Numar'], r['sub']) < pair and r['day']]
-    later = [r for r in rows if (r['Numar'], r['sub']) > pair and r['day']]
-    low = max(earlier, key=lambda r: r['day']) if earlier else None
-    high = min(later, key=lambda r: r['day']) if later else None
-    if (low and day < low['day']) or (high and day > high['day']):
-        def describe(row):
-            return '%s (%s %s%s)' % (row['day'].strftime('%d.%m.%Y'), 'FCS' if row['storno'] else 'NIR', row['Numar'], _sub_text(row['sub']))
-        message = 'Data NIR/FCS trebuie să fie între %s și %s.' % (
-            describe(low) if low else 'începutul anului', describe(high) if high else 'sfârșitul anului')
-        raise NomError('NIR_CHRONOLOGY', message, 422, {'h.Data': message})
-    return {'minimum': low['day'].isoformat() if low else None,
-            'maximum': high['day'].isoformat() if high else None}
 
 
 def gross_values(quantity, gross, rate, zec):

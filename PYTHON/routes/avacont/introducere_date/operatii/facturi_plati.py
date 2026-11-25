@@ -1,9 +1,9 @@
 # routes/avacont/introducere_date/operatii/facturi_plati.py
 """
 «Facturi si plati» (slice AV02-04; the Access form OPuri2017): invoices typed by hand, invoices already evidenced and not paid in full, and the payment with its
-order (OP) for ONE partner. The evidence and the payment use the same services as «Contari» of the received e-invoices (postare.py, plati.py): one invoice = one
+order (OP) for ONE partner. The evidence and the payment use the same services as «Contari» of the received e-invoices (NoteC.py, NoteC.py): one invoice = one
 document + one evidence operation (the template of type M, kind E, of the classification); one payment = one document «OP» + one payment operation + one OP, with
-the allocation on each invoice in TZ_PlatiFacturi (IdEvidentiere = the evidence operation; IdPrimita stays NULL because nothing here comes from EF_Primite).
+the allocation on each invoice in TZ_PlatiFacturi (IdEvidentiere = the evidence operation; IdPrimita is set when that operation has an exact e-invoice link).
 
     GET    /api/avacont/facturi-plati/context?idsubunitate=<n>&an=<yyyy>
            -> { subunitate, note, urmatoare, inchidere, parteneri: [{idpartener, cod, denumire, cui, codclient, iban}],
@@ -32,28 +32,23 @@ from routes.auth.guard import require_session
 from utils.database import get_kbot_connection
 
 from ... import avacont_bp
-from ...common import json_utf8, rollback
-from . import plati, postare
+from ...common import json_utf8
+from . import NoteC
 from .op9 import OpEroare, _data, _intreg, _iso
 
 logger = logging.getLogger(__name__)
 
 CENT = Decimal("0.01")
-TREZORERIE_BIC = "TREZROBU"
 
 
 def _suma(valoare, nume):
     try:
-        return Decimal(str(valoare)).quantize(CENT)
+        suma = Decimal(str(valoare))
+        if not suma.is_finite() or abs(suma) >= Decimal("10000000000000000"):
+            raise InvalidOperation
+        return suma.quantize(CENT)
     except (InvalidOperation, ValueError) as err:
         raise OpEroare("Suma «%s» nu este validă." % nume) from err
-
-
-def _in_limita(platit, rest):
-    """A payment of the same sign as the rest and not above it (a credit note has a negative rest)."""
-    if rest >= 0:
-        return 0 <= platit <= rest
-    return rest <= platit <= 0
 
 
 def _lista(corp, cheie):
@@ -66,10 +61,9 @@ def _lista(corp, cheie):
 
 
 def _clasificatii_cu_sabloane(cursor, id_subunitate, ss):
-    from routes.efactura import primite_contari as C
-    index = C._sabloane(cursor, id_subunitate)
+    index = NoteC.sabloane_subunitatii(cursor, id_subunitate)
     out = []
-    for c in C._clasificatii(cursor, index):
+    for c in NoteC.clasificatii_cu_sabloane(cursor, index):
         if c["SS"] != ss:
             continue
         slot = index[(c["Cheie"], c["SS"])]
@@ -90,21 +84,21 @@ def get_facturi_plati_context():
         an = _intreg(request.args.get("an"), "an")
         conn = get_kbot_connection(db_name)
         cursor = conn.cursor(dictionary=True)
-        sub = postare.subunitate_pentru(cursor, None, sid)
-        note, urmatoare = postare.note_ale_subunitatii(cursor, sid, an)
+        sub = NoteC.subunitate_pentru(cursor, None, sid)
+        note, urmatoare = NoteC.note_ale_subunitatii(cursor, sid, an)
         # Parteneri.CodClient comes with sql/AVACONT/IntroducereDate/Operatii/AV02_04_parteneri_cod_client.sql; until it is run the code stays empty.
         cursor.execute("SHOW COLUMNS FROM Parteneri LIKE 'CodClient'")
         coloana_cod_client = ", CodClient" if cursor.fetchone() else ""
         cursor.execute("SELECT IdPartener, CodPartener, DenumirePartener, CodFiscal, ContIBAN" + coloana_cod_client + " FROM Parteneri WHERE COALESCE(Ascuns, 0) = 0 "
-                       "ORDER BY DenumirePartener, IdPartener")
+                       "AND IdUnitate IN (" + NoteC.SQL_UNITATI_SURSEI + ") ORDER BY DenumirePartener, IdPartener", (sub["SursaSector"], an))
         parteneri = [{"idpartener": r["IdPartener"], "cod": r["CodPartener"] or "", "denumire": r["DenumirePartener"] or "", "cui": r["CodFiscal"] or "",
                       "codclient": r.get("CodClient") or "", "iban": r["ContIBAN"] or ""} for r in cursor.fetchall()]
         return json_utf8({
             "subunitate": {"idsubunitate": sub["IdSubunitate"], "denumire": sub["Denumire"], "sursasector": sub["SursaSector"]},
-            "note": [{"numarnc": n["NumarNC"], "datanc": _iso(n["DataNc"]), "documente": int(n["Documente"])} for n in note], "urmatoare": urmatoare,
-            "inchidere": _iso(postare.data_ultimei_inchideri(cursor, sid, an)), "parteneri": parteneri,
+            "note": [{"idnota": n["IdNota"], "numarnc": n["NumarNC"], "datanc": _iso(n["DataNc"]), "documente": int(n["Documente"])} for n in note], "urmatoare": urmatoare,
+            "inchidere": _iso(NoteC.data_ultimei_inchideri(cursor, sid, an)), "parteneri": parteneri,
             "clasificatii": _clasificatii_cu_sabloane(cursor, sid, sub["SursaSector"])}, 200)
-    except (OpEroare, postare.PostareEroare) as err:
+    except (OpEroare, NoteC.NoteCEroare) as err:
         return json_utf8({"error": str(err)}, err.status)
     except Exception as err:
         logger.error("[avacont.facturi_plati] context %s: %s", db_name, err, exc_info=True)
@@ -117,30 +111,24 @@ def get_facturi_plati_context():
 def _facturi_deschise(cursor, sid, an, id_partener):
     """The evidence operations (Tip E) of the subunit and year with a credit line of the partner, and what is left to pay on each (only the ones with a rest)."""
     cursor.execute(
-        "SELECT o.IdOper, d.NumarDocument, d.DataDocument, d.FelDocument, SUM(c.Suma) AS Valoare FROM TZ_Credit c JOIN TZ_Oper o ON o.IdOper = c.IdOper "
+        "SELECT DISTINCT o.IdOper, d.NumarDocument, d.DataDocument, d.FelDocument FROM TZ_Credit c JOIN TZ_Oper o ON o.IdOper = c.IdOper "
         "JOIN TZ_Documente d ON d.IdDocument = o.IdDocument JOIN TZ_NoteC n ON n.IdNota = d.IdNota "
         "WHERE c.IdPartener = %s AND o.Tip = 'E' AND n.IdSubunitate = %s AND n.An = %s "
-        "GROUP BY o.IdOper, d.NumarDocument, d.DataDocument, d.FelDocument ORDER BY d.DataDocument, o.IdOper", (id_partener, sid, an))
+        "ORDER BY d.DataDocument, d.NumarDocument", (id_partener, sid, an))
     randuri = cursor.fetchall()
-    rest = plati.rest_pe_operatii(cursor, [r["IdOper"] for r in randuri], id_partener)
+    ids = [r["IdOper"] for r in randuri]
+    legaturi = NoteC.primite_pe_evidentieri(cursor, ids, strict=False)
+    valori = NoteC.valori_pe_operatii(cursor, ids, id_partener, legaturi)
+    cu_receptie = NoteC.primite_cu_receptie(cursor, (e[0] for e in legaturi.values()))
     out = []
     for r in randuri:
-        valoare, ramas = plati.cent(r["Valoare"]), rest[r["IdOper"]]
+        valoare, platit, ramas = valori[r["IdOper"]]
         if ramas != 0:
+            id_primita = legaturi.get(r["IdOper"], (None,))[0]
             out.append({"idoper": r["IdOper"], "numar": r["NumarDocument"], "data": _iso(r["DataDocument"]), "fel": r["FelDocument"], "valoare": float(valoare),
-                        "platit": float(valoare - ramas), "rest": float(ramas)})
+                        "platit": float(platit), "rest": float(ramas), "idprimita": id_primita,
+                        "fara_receptie": id_primita is not None and id_primita not in cu_receptie})
     return out
-
-
-def _cont_iban(cursor, id_partener, id_clsf):
-    from routes.efactura import primite_contari as C
-    coduri = C._coduri(cursor, id_partener, id_clsf) if id_clsf else None
-    iban = (coduri or {}).get("ContBancar") or ""
-    if not iban:
-        cursor.execute("SELECT ContIBAN FROM Parteneri WHERE IdPartener = %s", (id_partener,))
-        row = cursor.fetchone()
-        iban = (row["ContIBAN"] if row else "") or ""
-    return iban, coduri
 
 
 @avacont_bp.route("/api/avacont/facturi-plati/deschise", methods=["GET"])
@@ -156,19 +144,19 @@ def get_facturi_plati_deschise():
         id_clsf = _intreg(request.args.get("idclsf"), "idclsf", obligatoriu=False)
         conn = get_kbot_connection(db_name)
         cursor = conn.cursor(dictionary=True)
-        postare.subunitate_pentru(cursor, None, sid)
+        NoteC.subunitate_pentru(cursor, None, sid)
         cursor.execute("SELECT o.IdOP, o.NrOP, o.DataOP, o.Valoare, o.Explicatie, o.Documente FROM TZ_OPuri o WHERE o.IdSubunitate = %s AND o.IdPartener = %s "
                        "AND YEAR(o.DataOP) = %s ORDER BY o.DataOP DESC, o.IdOP DESC", (sid, id_partener, an))
         ordine = []
         for o in cursor.fetchall():
-            motiv = plati.motiv_blocare(cursor, o["IdOP"])
+            motiv = NoteC.motiv_blocare(cursor, o["IdOP"])
             ordine.append({"idop": o["IdOP"], "nrop": o["NrOP"], "dataop": _iso(o["DataOP"]), "valoare": float(o["Valoare"]), "explicatie": o["Explicatie"] or "",
                            "documente": o["Documente"] or "", "blocat": motiv is not None, "motiv": motiv or ""})
-        iban, coduri = _cont_iban(cursor, id_partener, id_clsf)
+        iban, coduri = NoteC.cont_iban_partener(cursor, id_partener, id_clsf)
         return json_utf8({"curent": _facturi_deschise(cursor, sid, an, id_partener), "anterior": _facturi_deschise(cursor, sid, an - 1, id_partener),
-                          "plati": ordine, "numarop": plati.numar_op_urmator(cursor, sid), "contiban": iban,
+                          "plati": ordine, "numarop": NoteC.numar_op_urmator(cursor, sid), "contiban": iban,
                           "coduri": {"codang": (coduri or {}).get("CodAng", ""), "codind": (coduri or {}).get("CodInd", "")} if coduri else None}, 200)
-    except (OpEroare, postare.PostareEroare, plati.PlatiEroare) as err:
+    except (OpEroare, NoteC.NoteCEroare, NoteC.PlatiEroare) as err:
         return json_utf8({"error": str(err)}, err.status)
     except Exception as err:
         logger.error("[avacont.facturi_plati] deschise %s: %s", db_name, err, exc_info=True)
@@ -184,7 +172,12 @@ def _citeste_cerere(corp):
     cerere = {"sid": _intreg(corp.get("idsubunitate"), "idsubunitate"), "an": _intreg(corp.get("an"), "an"),
               "id_partener": _intreg(corp.get("idpartener"), "idpartener"), "id_clsf": _intreg(corp.get("idclsf"), "idclsf"),
               "id_e": _intreg(corp.get("idsablone"), "idsablone", obligatoriu=False), "id_p": _intreg(corp.get("idsablonp"), "idsablonp", obligatoriu=False),
-              "numar_nc": _intreg(corp.get("numarnc"), "numarnc", obligatoriu=False) or 0, "noi": [], "existente": {}}
+              "numar_nc": _intreg(corp.get("numarnc"), "numarnc", obligatoriu=False) or 0,
+              "idnota": _intreg(corp.get("idnota"), "idnota", obligatoriu=False), "nota_noua": corp.get("nota_noua"),
+              "protectie": corp.get("protectie") is True, "confirmari_receptie": set(), "noi": [], "existente": {},
+              "confirmari": [str(x) for x in _lista(corp, "confirmari")]}   # SLICE-AV08-07: the warning codes the operator answered «Da» (LUNA_NOUA)
+    for id_primita in _lista(corp, "confirmari_receptie"):
+        cerere["confirmari_receptie"].add(_intreg(id_primita, "idprimita"))
     # numarnc of the request = the note of the PAYMENT (checked when there is one); every typed invoice carries its own note
     if cerere["numar_nc"] < 0:
         raise OpEroare("Numărul notei contabile trebuie să fie pozitiv.")
@@ -200,13 +193,14 @@ def _citeste_cerere(corp):
         if suma == 0:
             raise OpEroare("Factura %s are suma zero." % numar)
         platit = _suma(f.get("platit") or 0, numar)
-        if not _in_limita(platit, suma):
+        if not NoteC.in_limita(platit, suma):
             raise OpEroare("Suma plătită a facturii %s nu poate depăși valoarea ei (%s)." % (numar, suma))
         fel = str(f.get("fel") or "Factură").strip()[:100] or "Factură"
         numar_nc = _intreg(f.get("numarnc"), "numarnc al facturii " + numar, obligatoriu=False) or 0
         if numar_nc <= 0:
             raise OpEroare("Factura %s nu are numărul notei contabile (obligatoriu)." % numar)
-        cerere["noi"].append({"numar": numar, "data": _data(f.get("data"), "data facturii " + numar), "suma": suma, "platit": platit, "fel": fel, "numar_nc": numar_nc})
+        cerere["noi"].append({"numar": numar, "data": _data(f.get("data"), "data facturii " + numar), "suma": suma, "platit": platit, "fel": fel,
+                              "numar_nc": numar_nc, "idnota": _intreg(f.get("idnota"), "idnota", obligatoriu=False), "nota_noua": f.get("nota_noua")})
     for f in _lista(corp, "existente"):
         if not isinstance(f, dict):
             raise OpEroare("O factură nu este validă.")
@@ -223,170 +217,33 @@ def post_facturi_plati_salveaza():
     """Books the typed invoices (evidence) and/or the payment with its order, in ONE transaction."""
     db_name = g.session.db_name
     user = g.session.username
-    conn = None
     try:
         c = _citeste_cerere(request.get_json(silent=True))
-        cu_plata = c["id_p"] is not None
-        total = sum((f["platit"] for f in c["noi"]), Decimal(0)) + sum(c["existente"].values(), Decimal(0))
-        if not c["noi"] and not (cu_plata and total != 0):
-            raise OpEroare("Nu este nimic de înregistrat: adăugați o factură nouă sau alegeți un șablon de plată și sume de plătit.")
-        if c["noi"] and c["id_e"] is None:
-            raise OpEroare("Alegeți șablonul de evidențiere pentru facturile noi.")
-        if cu_plata and total <= 0:
-            raise OpEroare("Suma de plată trebuie să fie pozitivă.", 409)
-        if cu_plata and c["numar_nc"] <= 0:
-            raise OpEroare("Plata nu are numărul notei contabile (obligatoriu).")
-        if not cu_plata and total != 0:
-            raise OpEroare("Alegeți șablonul de plată: sunt sume de plată pe facturi.")
-        conn = get_kbot_connection(db_name)
-        conn.autocommit = False
-        if not conn.in_transaction:
-            conn.start_transaction()
-        cursor = conn.cursor(dictionary=True)
-        sid, an = c["sid"], c["an"]
-        sub = postare.subunitate_pentru(cursor, None, sid)
-        from routes.efactura import primite_contari as C
-        from routes.efactura import primite_plata
-        index = C._sabloane(cursor, sid)
-        clsf = next((x for x in C._clasificatii(cursor, index) if x["IdClsf"] == c["id_clsf"] and x["SS"] == sub["SursaSector"]), None)
-        if clsf is None:
-            raise OpEroare("Clasificația aleasă nu are șabloane de operații în subunitatea în lucru.", 409)
-        slot = index[(clsf["Cheie"], clsf["SS"])]
-        if c["id_e"] is not None and c["id_e"] not in {s["IdSablon"] for s in slot["E"]}:
-            raise OpEroare("Șablonul de evidențiere ales nu se potrivește clasificației.", 409)
-        if c["id_p"] is not None and c["id_p"] not in {s["IdSablon"] for s in slot["P"]}:
-            raise OpEroare("Șablonul de plată ales nu se potrivește clasificației.", 409)
-        cursor.execute("SELECT IdPartener, DenumirePartener, CodFiscal FROM Parteneri WHERE IdPartener = %s", (c["id_partener"],))
-        partener = cursor.fetchone()
-        if partener is None:
-            raise OpEroare("Partenerul ales nu mai există.", 404)
-        # the existing invoices: evidence operations of this subunit with a credit line of the partner; the rest is read under lock
-        ids_oper = list(c["existente"])
-        existente = {}
-        if ids_oper:
-            cursor.execute(
-                "SELECT o.IdOper, d.NumarDocument, d.DataDocument FROM TZ_Oper o JOIN TZ_Documente d ON d.IdDocument = o.IdDocument JOIN TZ_NoteC n ON n.IdNota = d.IdNota "
-                "WHERE o.IdOper IN (" + ", ".join(["%s"] * len(ids_oper)) + ") AND o.Tip = 'E' AND n.IdSubunitate = %s FOR UPDATE", tuple(ids_oper) + (sid,))
-            existente = {r["IdOper"]: r for r in cursor.fetchall()}
-            if len(existente) != len(ids_oper):
-                raise OpEroare("O factură aleasă nu mai există sau nu aparține subunității.", 409)
-            valori = plati.valori_pe_operatii(cursor, ids_oper, c["id_partener"])
-            rest = {i: v[1] for i, v in valori.items()}
-            for id_oper in ids_oper:
-                if c["existente"][id_oper] != 0 and not _in_limita(c["existente"][id_oper], rest[id_oper]):
-                    raise OpEroare("Suma de plată a facturii %s depășește restul de plată (%s)." % (existente[id_oper]["NumarDocument"], rest[id_oper]), 409)
-        # note
-        inchidere = postare.data_ultimei_inchideri(cursor, sid, an)
-        note = {}
-
-        def id_nota_pentru(numar_nc):
-            """The note of that number: the one in the books, else a new one (opened once per request)."""
-            if numar_nc not in note:
-                id_n = postare.nota_existenta(cursor, sid, an, numar_nc)
-                if id_n is None:
-                    id_n, _ = postare.creeaza_nota(cursor, sid, an, user, numar_nc)
-                note[numar_nc] = id_n
-            return note[numar_nc]
-
-        # evidence of the typed invoices (each in its own note)
-        evidente, alocari = [], []
-        if c["noi"]:
-            cursor.execute("SELECT IdJurnal, Explicatie, Compartiment FROM TZ_SablonOperatii WHERE IdSablon = %s", (c["id_e"],))
-            sablon_e = cursor.fetchone()
-            linii_e = C._linii_sablon(cursor, c["id_e"], clsf["Forma"])
-            if sablon_e is None or not linii_e:
-                raise OpEroare("Șablonul de evidențiere nu are linie pentru forma %s a clasificației." % clsf["Forma"], 409)
-            linie_e = linii_e[0]
-            cont_d = postare.cont_pentru(cursor, sid, linie_e["ContDebit"], linie_e["AnaliticDebit"], clsf["ClsfF"], clsf["ClsfE"])
-            cont_c = postare.cont_pentru(cursor, sid, linie_e["ContCredit"], linie_e["AnaliticCredit"], clsf["ClsfF"], clsf["ClsfE"])
-            for f in c["noi"]:
-                data, _m = postare.ajusteaza_data(f["data"], None, an)
-                data, _m = postare.ajusteaza_data(data, inchidere, None)
-                if data.year != an:
-                    raise OpEroare("Data facturii %s iese din anul de lucru (%d)." % (f["numar"], an), 409)
-                id_doc = postare.creeaza_document(cursor, id_nota_pentru(f["numar_nc"]), C.numar_document(f["numar"]), data, f["fel"], "E", True, user)
-                antet = {"IdJurnal": sablon_e["IdJurnal"], "IdClsf": clsf["IdClsf"], "IdSablon": c["id_e"], "DataOperatie": data, "Explicatie": sablon_e["Explicatie"],
-                         "Tip": "E", "Compartiment": sablon_e["Compartiment"], "Angajament": linie_e["PA"], "Propunere": linie_e["PA"],
-                         "Ordonantare": linie_e["Ordonantare"], "Chelt": linie_e["Chelt"], "Auto": True}
-                id_oper, _nr = postare.creeaza_operatie(
-                    cursor, sid, an, id_doc, antet,
-                    [(cont_d, plati.id_partener_linie(linie_e["PartDebitMod"], linie_e["IdPartDebit"], c["id_partener"]), f["suma"])],
-                    [(cont_c, plati.id_partener_linie(linie_e["PartCreditMod"], linie_e["IdPartCredit"], c["id_partener"]), f["suma"])],
-                    user)
-                evidente.append({"numar": f["numar"], "idoper": id_oper})
-                if f["platit"] != 0:
-                    alocari.append({"IdOper": id_oper, "NumarDocument": C.numar_document(f["numar"]), "DataDocument": data, "Valoare": f["suma"], "Platit": f["platit"]})
-        for id_oper, platit in c["existente"].items():
-            if platit != 0:
-                r = existente[id_oper]
-                alocari.append({"IdOper": id_oper, "NumarDocument": r["NumarDocument"], "DataDocument": r["DataDocument"], "Valoare": valori[id_oper][0], "Platit": platit})
-        # payment and order
-        plata = None
-        if cu_plata:
-            data_op, _m = postare.ajusteaza_data(c["data_op"], inchidere, None)
-            if data_op.year != an:
-                raise OpEroare("Data ordinului de plată iese din anul de lucru (%d)." % an, 409)
-            iban, coduri = _cont_iban(cursor, c["id_partener"], c["id_clsf"])
-            if not iban:
-                raise OpEroare("Nu se poate adăuga operația de plată: partenerul selectat nu are niciun cont bancar configurat!", 409)
-            documente = [a["NumarDocument"] for a in alocari]
-            cursor.execute("SELECT IdJurnal, Explicatie, Compartiment, FelOP FROM TZ_SablonOperatii WHERE IdSablon = %s", (c["id_p"],))
-            sablon_p = cursor.fetchone()
-            linii_p = C._linii_sablon(cursor, c["id_p"], clsf["Forma"])
-            if sablon_p is None or not linii_p:
-                raise OpEroare("Șablonul de plată nu are linie pentru forma %s a clasificației." % clsf["Forma"], 409)
-            explicatie = c["explicatie_op"].strip() or " ".join(x for x in ["F " + " ".join(documente) if documente else "", sablon_p["FelOP"] or ""] if x)
-            explicatie = C.text_op(explicatie, C.MAX_EXPLICATIE_OP)
-            if len(explicatie) < C.MIN_EXPLICATIE_OP:
-                raise OpEroare("Explicația ordinului de plată trebuie să aibă între %d și %d caractere." % (C.MIN_EXPLICATIE_OP, C.MAX_EXPLICATIE_OP))
-            den_unit, cf_unit, program = primite_plata._date_unitate(cursor, db_name, clsf["SS"], an)
-            id_oper, id_op, numar, _doc = plati.posteaza_ordin(cursor, {
-                "sid": sid, "an_nota": an, "id_nota": id_nota_pentru(c["numar_nc"]), "data_op": data_op, "id_p": c["id_p"], "sablon": sablon_p, "linie": linii_p[0], "clsf": clsf,
-                "id_partener": c["id_partener"], "total": total, "user": user,
-                "header": {"Explicatie": explicatie, "Documente": ";".join(documente), "DenPartener": partener["DenumirePartener"], "CFPartener": partener["CodFiscal"],
-                           "ContBeneficiar": iban, "DenUnitate": den_unit, "CFUnitate": cf_unit, "pBIC": TREZORERIE_BIC,
-                           "CodAngajament": (coduri or {}).get("CodAng") or None, "CodIndicator": (coduri or {}).get("CodInd") or None, "CodProgram": program}})
-            plati.aloca_pe_operatii(cursor, id_oper, id_op, alocari, data_op, total, user)
-            plata = {"idoper": id_oper, "idop": id_op, "nrop": numar, "valoare": float(total), "dataop": _iso(data_op)}
-        conn.commit()
-        numere_note = sorted(note)
-        logger.info("[avacont.facturi_plati] %s: note %s, %s facturi noi, plata %s", db_name, numere_note, len(evidente), plata["nrop"] if plata else "-")
-        return json_utf8({"numarnc": c["numar_nc"] if cu_plata else (numere_note[0] if numere_note else 0), "note": numere_note, "an": an,
-                          "evidente": evidente, "plata": plata}, 200)
-    except (OpEroare, postare.PostareEroare, plati.PlatiEroare) as err:
-        rollback(conn)
+        with NoteC.salvare(db_name) as conn:
+            rezultat = NoteC.salveaza_facturi_plati(conn.cursor(dictionary=True), db_name, user, (getattr(g.session, "ctx", None) or {}).get("Role"), c)
+        logger.info("[avacont.facturi_plati] %s: note %s, %s facturi noi, plata %s", db_name, rezultat["note"], len(rezultat["evidente"]),
+                    rezultat["plata"]["nrop"] if rezultat["plata"] else "-")
+        return json_utf8(rezultat, 200)
+    except NoteC.NoteCEroare as err:
+        return json_utf8(err.corp(), err.status)   # SLICE-AV08-07: reason CONFIRMARE + the code = a warning the page asks Da / Nu
+    except (OpEroare, NoteC.PlatiEroare) as err:
         return json_utf8({"error": str(err)}, err.status)
     except Exception as err:
-        rollback(conn)
         logger.error("[avacont.facturi_plati] salvare %s: %s", db_name, err, exc_info=True)
         return json_utf8({"error": "Eroare la salvarea facturilor și plăților: %s" % err}, 500)
-    finally:
-        if conn is not None:
-            conn.close()
 
 
 @avacont_bp.route("/api/avacont/facturi-plati/plata/<int:id_op>", methods=["DELETE"])
 @require_session
 def delete_facturi_plati_plata(id_op):
-    """Deletes an UNLOCKED order with its payment."""
+    """Deletes an UNLOCKED order with its payment (SLICE-AV08-04: inside NoteC.salvare, like every write of the operations)."""
     db_name = g.session.db_name
-    conn = None
     try:
-        conn = get_kbot_connection(db_name)
-        conn.autocommit = False
-        if not conn.in_transaction:
-            conn.start_transaction()
-        cursor = conn.cursor(dictionary=True)
-        numar = plati.sterge_plata(cursor, id_op)
-        conn.commit()
+        with NoteC.salvare(db_name) as conn:
+            numar = NoteC.sterge_plata(conn.cursor(dictionary=True), id_op)
         return json_utf8({"idop": id_op, "nrop": numar}, 200)
-    except plati.PlatiEroare as err:
-        rollback(conn)
+    except (NoteC.PlatiEroare, NoteC.NoteCEroare) as err:
         return json_utf8({"error": str(err)}, err.status)
     except Exception as err:
-        rollback(conn)
         logger.error("[avacont.facturi_plati] stergere %s: %s", db_name, err, exc_info=True)
         return json_utf8({"error": "Eroare la ștergerea plății: %s" % err}, 500)
-    finally:
-        if conn is not None:
-            conn.close()

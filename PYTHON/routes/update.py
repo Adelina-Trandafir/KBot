@@ -55,6 +55,25 @@ and, last, `tray.json` (same folder):
     GET /api/update/tray/latest -> that block (200) or 404 when the tray was never published.
     GET /api/update/tray        -> the package it names, as a file.
 
+Slice FS01-01 -- FISCOLINO (the ANAF program, repo ANAF) has its OWN channel too, `fiscolino.json`
+(same folder), written LAST by ANAF's push-fiscolino.ps1. Same block as latest.json plus `minimum`:
+
+    { "version": "13.0.1.0", "minimum": "13.0.0.0", "file": "Fiscolino_13.0.1.0.zip", "size": 1,
+      "sha256": "...", "published_utc": "2026-11-15T10:00:00Z", "notes": "free text (ASCII lines)" }
+
+    GET /api/update/fiscolino/latest -> that block (200) or 404 when never published.
+    GET /api/update/fiscolino        -> the package it names, as a file.
+
+The FISCOLINO scheme package (the ANAF schemes, xdp forms and SAF-T data the program downloads
+from Options > Scheme XSD) is a channel of its own as well, `fiscolino-scheme.json`, written LAST
+by ANAF's push-scheme.ps1. No `minimum`: the program only compares size and sha256.
+
+    { "version": "2026.11.18", "file": "fiscolino-scheme-2026.11.18.zip", "size": 1,
+      "sha256": "...", "published_utc": "2026-11-18T10:00:00Z" }
+
+    GET /api/update/fiscolino-scheme/latest -> that block (200) or 404 when never published.
+    GET /api/update/fiscolino-scheme        -> the package it names, as a file.
+
 The OLD shape -- the block itself at the top level, written before slice 0104 -- is still
 read, as the "access" block: the first push after this slice rewrites the file in the
 new shape and keeps that block under "access".
@@ -81,6 +100,8 @@ update_bp = Blueprint("update", __name__)
 
 LATEST_NAME = "latest.json"
 TRAY_NAME = "tray.json"
+FISCOLINO_NAME = "fiscolino.json"
+FISCOLINO_SCHEME_NAME = "fiscolino-scheme.json"
 
 # The package name is written by the push script and read back here. Anything
 # that is not a plain file name (a path, an empty string) is refused before it
@@ -137,14 +158,16 @@ def parse_access_param(raw):
     raise ValueError(f"access={raw!r}")
 
 
-def _validate_block(data, where):
+def _validate_block(data, where, required=_REQUIRED_KEYS):
     """One block: the whole old file, or latest.json["access"] / latest.json["non_access"]."""
     if not isinstance(data, dict):
         raise LatestInvalid(f"{where}: not an object")
-    for key in _REQUIRED_KEYS:
+    for key in required:
         if key not in data:
             raise LatestInvalid(f"{where}: missing key '{key}'")
     for key in ("version", "minimum"):
+        if key not in required:
+            continue
         if not isinstance(data[key], str) or not _VERSION_RE.match(data[key]):
             raise LatestInvalid(f"{where}: '{key}' is not a version: {data[key]!r}")
     if not isinstance(data["file"], str) or not _SAFE_FILE_RE.match(data["file"]):
@@ -221,6 +244,41 @@ def read_tray(update_dir=None):
     if not isinstance(data["sha256"], str) or len(data["sha256"]) != 64:
         raise LatestInvalid(f"{where}: 'sha256' is not a 64-char hex digest")
     return data
+
+
+def read_fiscolino(update_dir=None):
+    """
+    The block of fiscolino.json (the FISCOLINO program, slice FS01-01), or None when it was
+    never published. Raises LatestInvalid when the file is unreadable or the block cannot be trusted.
+    """
+    update_dir = update_dir or get_update_dir()
+    path = os.path.join(update_dir, FISCOLINO_NAME)
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError) as e:
+        raise LatestInvalid(f"{FISCOLINO_NAME}: {e}") from e
+    return _validate_block(data, FISCOLINO_NAME)
+
+
+def read_fiscolino_scheme(update_dir=None):
+    """
+    The block of fiscolino-scheme.json (the FISCOLINO scheme package), or None when it was never
+    published. Same checks as the other blocks, but there is no `minimum`. Raises LatestInvalid
+    when the file is unreadable or the block cannot be trusted.
+    """
+    update_dir = update_dir or get_update_dir()
+    path = os.path.join(update_dir, FISCOLINO_SCHEME_NAME)
+    if not os.path.isfile(path):
+        return None
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except (OSError, ValueError) as e:
+        raise LatestInvalid(f"{FISCOLINO_SCHEME_NAME}: {e}") from e
+    return _validate_block(data, FISCOLINO_SCHEME_NAME, required=("version", "file", "size", "sha256"))
 
 
 def read_latest(update_dir=None, access=True):
@@ -402,6 +460,98 @@ def tray_download():
     except Exception as e:
         logger.error("tray package could not be sent: %s", e, exc_info=True)
         return _error("Pachetul tray nu a putut fi trimis.", "PACKAGE_SEND_FAILED", 500)
+
+
+@update_bp.route("/api/update/fiscolino/latest", methods=["GET"])
+def fiscolino_latest():
+    """The published FISCOLINO version (fiscolino.json), or 404 when it was never published."""
+    try:
+        block = read_fiscolino()
+    except LatestInvalid as e:
+        logger.error("fiscolino.json invalid: %s", e)
+        return _error("Descrierea actualizarii Fiscolino de pe server este invalida.", "FISCOLINO_INVALID", 500)
+    if not block:
+        return _error("Nu exista nicio versiune Fiscolino publicata.", "NO_FISCOLINO_PUBLISHED", 404)
+    return jsonify({
+        "version": block["version"],
+        "minimum": block["minimum"],
+        "file": block["file"],
+        "size": block["size"],
+        "sha256": block["sha256"],
+        "published_utc": block.get("published_utc"),
+        "notes": block.get("notes") or "",
+    }), 200
+
+
+@update_bp.route("/api/update/fiscolino", methods=["GET"])
+def fiscolino_download():
+    """The FISCOLINO package fiscolino.json names, streamed as a file (Range supported)."""
+    try:
+        block = read_fiscolino()
+    except LatestInvalid as e:
+        logger.error("fiscolino.json invalid: %s", e)
+        return _error("Descrierea actualizarii Fiscolino de pe server este invalida.", "FISCOLINO_INVALID", 500)
+    if not block:
+        return _error("Nu exista nicio versiune Fiscolino publicata.", "NO_FISCOLINO_PUBLISHED", 404)
+    path = os.path.join(get_update_dir(), block["file"])
+    if not os.path.isfile(path):
+        logger.error("fiscolino package listed in fiscolino.json is missing on disk: %s", path)
+        return _error("Pachetul Fiscolino lipseste de pe server.", "PACKAGE_MISSING", 500)
+    try:
+        response = send_file(path, mimetype="application/zip", as_attachment=True,
+                             download_name=block["file"], conditional=True)
+        response.headers["X-KBot-Version"] = block["version"]
+        response.headers["X-KBot-Sha256"] = block["sha256"]
+        logger.info("fiscolino package sent: %s (v%s)", block["file"], block["version"])
+        return response
+    except Exception as e:
+        logger.error("fiscolino package could not be sent: %s", e, exc_info=True)
+        return _error("Pachetul Fiscolino nu a putut fi trimis.", "PACKAGE_SEND_FAILED", 500)
+
+
+@update_bp.route("/api/update/fiscolino-scheme/latest", methods=["GET"])
+def fiscolino_scheme_latest():
+    """The published FISCOLINO scheme package (fiscolino-scheme.json), or 404 when it was never published."""
+    try:
+        block = read_fiscolino_scheme()
+    except LatestInvalid as e:
+        logger.error("fiscolino-scheme.json invalid: %s", e)
+        return _error("Descrierea pachetului de scheme de pe server este invalida.", "FISCOLINO_SCHEME_INVALID", 500)
+    if not block:
+        return _error("Nu exista niciun pachet de scheme publicat.", "NO_FISCOLINO_SCHEME_PUBLISHED", 404)
+    return jsonify({
+        "version": block["version"],
+        "file": block["file"],
+        "size": block["size"],
+        "sha256": block["sha256"],
+        "published_utc": block.get("published_utc"),
+    }), 200
+
+
+@update_bp.route("/api/update/fiscolino-scheme", methods=["GET"])
+def fiscolino_scheme_download():
+    """The scheme package fiscolino-scheme.json names, streamed as a file (Range supported)."""
+    try:
+        block = read_fiscolino_scheme()
+    except LatestInvalid as e:
+        logger.error("fiscolino-scheme.json invalid: %s", e)
+        return _error("Descrierea pachetului de scheme de pe server este invalida.", "FISCOLINO_SCHEME_INVALID", 500)
+    if not block:
+        return _error("Nu exista niciun pachet de scheme publicat.", "NO_FISCOLINO_SCHEME_PUBLISHED", 404)
+    path = os.path.join(get_update_dir(), block["file"])
+    if not os.path.isfile(path):
+        logger.error("scheme package listed in fiscolino-scheme.json is missing on disk: %s", path)
+        return _error("Pachetul de scheme lipseste de pe server.", "PACKAGE_MISSING", 500)
+    try:
+        response = send_file(path, mimetype="application/zip", as_attachment=True,
+                             download_name=block["file"], conditional=True)
+        response.headers["X-KBot-Version"] = block["version"]
+        response.headers["X-KBot-Sha256"] = block["sha256"]
+        logger.info("fiscolino scheme package sent: %s (v%s)", block["file"], block["version"])
+        return response
+    except Exception as e:
+        logger.error("fiscolino scheme package could not be sent: %s", e, exc_info=True)
+        return _error("Pachetul de scheme nu a putut fi trimis.", "PACKAGE_SEND_FAILED", 500)
 
 
 # The first install of a NEW user (no Access): the Inno Setup .exe, not the update zip.

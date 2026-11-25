@@ -3,6 +3,7 @@
 // invoice line (read-only when the invoice has one; otherwise typed or picked from the CPV nomenclator, as in «Produse») and the accountant's note.
 // «Salvează» answers { name, um, cpv }; «Renunță», Esc and the close button answer null (the line stays as it was).
 import { ModalFrame } from '../components/modal-frame/modal-frame.js';
+import { DialogButton } from '../components/dialog-button/dialog-button.js';
 import { confirmBox } from '../utils/confirm-box.js';
 import { mountCpvPicker } from './cpv-picker.js';
 import { el, scope, statusBar } from './ui.js';
@@ -25,8 +26,9 @@ export function efacturaLineDialog({ host, api, sel, note = () => '' }) {
     const pickButton = fixedCpv ? null : el('button', { type: 'button', className: 'vc-efl__pick', textContent: 'Alege…', title: 'Alege codul din nomenclatorul CPV' });
     const noteBox = area(4, { readOnly: true, value: note() || '', placeholder: 'Contabilul nu a scris nicio notă.', 'aria-label': 'Notă contabil' });
     const status = el('p', { className: 'vc-efi__status vc-save-status', role: 'status' });
-    const cancelButton = el('button', { type: 'button', textContent: 'Renunță' });
-    const saveButton = el('button', { type: 'button', className: 'is-primary', textContent: 'Salvează' });
+    // VC21-01: shared dialog buttons (Cancel on the left, OK1 on the right).
+    const cancelButton = new DialogButton(null, { kind: 'cancel', label: 'Renunță' }).element;
+    const saveButton = new DialogButton(null, { kind: 'ok1', label: 'Salvează' }).element;
     const label = (text, ...controls) => el('label', { className: 'vc-field' }, el('span', { textContent: text }), ...controls);
     const section = el('section', { className: 'vc-efi vc-efl', 'aria-label': 'Produs din eFactura' },
       el('div', { className: 'vc-efi__body vc-efl__body' },

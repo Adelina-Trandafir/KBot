@@ -1175,6 +1175,7 @@
         return {
             devTools: !!c.devTools, darkMode: !!c.darkMode, menu: c.menu !== false,
             gate: c.gate !== false,   // the reservation gate (0114-26) is on unless the setting says false
+            noVeil: !!c.noVeil,       // slice 0097-11 (advanced option): no backdrop while a robot job drives the page
             veil: veilColors(c.veil), rules: Array.isArray(c.rules) ? c.rules : []
         };
     }
@@ -1189,6 +1190,7 @@
         installStyles();
         installBusyStyle();
         syncMenu();
+        syncBusy();   // slice 0097-11: the veil switch applies at once, in the middle of a job too
     }
 
     // A rule's "page" (operator, 21.09.2026): empty = every page; otherwise the rule is in
@@ -1381,8 +1383,11 @@
             var root = document.documentElement;
             if (!root) { return; }
             var has = root.classList.contains('kbot-busy');
-            if (suspended && !has) { root.classList.add('kbot-busy'); }
-            else if (!suspended && has) { root.classList.remove('kbot-busy'); }
+            // Slice 0097-11: with config.noVeil the page stays uncovered while the robot works (the
+            // menu is still hidden by syncMenu, and the robot's own events are still muted).
+            var wantVeil = suspended && !(config && config.noVeil);
+            if (wantVeil && !has) { root.classList.add('kbot-busy'); }
+            else if (!wantVeil && has) { root.classList.remove('kbot-busy'); }
             if (veilText) { veilText.textContent = readBusyText(); }
         } catch (ignored) { }
     }

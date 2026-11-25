@@ -6,11 +6,11 @@ ONE row per TZ_Oper: every join below is on a key that gives at most one row (TZ
 TZ_OPuri by its UNIQUE IdOper; FX_ORD_TBL / FX_ORD by primary key), and the debit / credit side is read through its FIRST line (the amount is the
 sum of the side). Access joined OPuri and PlatiFacturi without grouping and showed an operation twice when an invoice was paid in two payments.
 
-The same SELECT feeds the list and the delete checks, so a row the list shows as deletable is checked by the same rule on delete.
+The same SELECT feeds the list and the delete checks (NoteC.motiv_stergere, SLICE-AV08-04), so a row the list shows as deletable is checked by the same rule on delete.
 """
 from datetime import date
 
-from ...introducere_date.operatii import postare
+from ...introducere_date.operatii import NoteC
 
 FEL_INCHIDERE = "I"
 
@@ -26,7 +26,7 @@ SQL_OPERATII = (
     "ot.IDORDTBLP AS OrdRand, ord.Semnatura AS OrdSemnatura, "
     "op.IdOP, op.NrOP, op.DataOP, op.IdOPME, "
     "(CASE WHEN op.IdOP IS NULL THEN 0 WHEN EXISTS (SELECT 1 FROM FX_Extrase x WHERE x.IDOP = COALESCE(op.IdOPAccess, op.IdOP)) THEN 1 ELSE 0 END) AS OPExtras, "
-    "(SELECT COUNT(*) FROM TZ_PlatiFacturi pf WHERE pf.IdEvidentiere = o.IdOper) AS PlatiPeEvidenta, "
+    + NoteC.SQL_PLATI_PE_EVIDENTA + " AS PlatiPeEvidenta, "   # SLICE-AV08-04: also the payments of the next year (IdEvidentiereAnterior)
     "(SELECT COUNT(*) FROM TZ_PlatiFacturi pf WHERE pf.IdPlata = o.IdOper) AS FacturiPlatite "
     "FROM TZ_Oper o "
     "JOIN TZ_Documente d ON d.IdDocument = o.IdDocument "
@@ -100,32 +100,6 @@ def stare_receptie(facturi, cu_receptie):
     return "T" if cu == len(facturi) else "P"
 
 
-def motiv_refuz(row, inchidere, azi=None):
-    """None when the operation can be deleted, else why not (Romanian, the operator reads it). The rules of the Access buttons
-    «Sterge operatie» / «Sterge Document» (ModificareNC1280: STO_Click, STD_Click; mdl_Salvare_NoteContabile: StergeOperatie2020), with the gaps closed:
-    the same checks for a document, plus the ordonantare and the locked order of payment."""
-    azi = azi or date.today()
-    if (row["FelDoc"] or "").upper() == FEL_INCHIDERE:
-        return "Operațiile de închidere nu se șterg de aici."
-    if (row["NumarDocument"] or "").upper().startswith("CCV"):
-        return "Nu se poate șterge o operație din nota de închidere."
-    data = row["DataDocument"]
-    if inchidere is not None and data is not None and data <= inchidere:
-        return "Operația face parte dintr-o lună închisă (ultima închidere: %s)." % inchidere.strftime("%d.%m.%Y")
-    if data is not None and data.year < azi.year and azi.month > 1:
-        return "Operația este dintr-un an anterior, care este închis."
-    if stare_ord(row):
-        return "Operația are o ordonanțare generată. Ștergeți întâi ordonanțarea."
-    if row["PlatiPeEvidenta"]:
-        return "Operația selectată este plătită! NU SE POATE ȘTERGE!"
-    if row["IdOP"] is not None:
-        if row["IdOPME"] is not None:
-            return "Ordinul de plată %s este adăugat într-un OPME." % row["NrOP"]
-        if row["OPExtras"]:
-            return "Ordinul de plată %s este confirmat printr-un extras de cont." % row["NrOP"]
-    return None
-
-
 def inchideri(cursor, perechi):
-    """{(IdSubunitate, An): date of the last closing | None} for the pairs met in the rows (postare.data_ultimei_inchideri, read once per pair)."""
-    return {p: postare.data_ultimei_inchideri(cursor, p[0], p[1]) for p in perechi}
+    """{(IdSubunitate, An): date of the last closing | None} for the pairs met in the rows (NoteC.data_ultimei_inchideri, read once per pair)."""
+    return {p: NoteC.data_ultimei_inchideri(cursor, p[0], p[1]) for p in perechi}

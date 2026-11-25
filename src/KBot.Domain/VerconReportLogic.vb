@@ -85,7 +85,8 @@ Public NotInheritable Class VerconReportTree
         Dim k_reports As List(Of VerconReportSpec) = k_all.Where(Function(k_r) Not Hidden.Contains(k_r.Id)).ToList()
         Dim k_mf As Boolean = k_reports.Any(Function(k_r) k_r.Types.Count = 1 AndAlso k_r.Types(0) = "MF")
         Dim k_custody As List(Of VerconReportSpec) = k_reports.Where(Function(k_r) k_r.Ledger = "custody" OrElse
-                                                                         CustodyFamilies.Contains(k_r.Family) OrElse k_r.Kind = "depreciation").ToList()
+                                                                         CustodyFamilies.Contains(k_r.Family) OrElse k_r.Kind = "depreciation" OrElse
+                                                                         k_r.Group = "Mijloace fixe").ToList()
         If k_custody.Count > 0 Then
             Dim k_rest As List(Of VerconReportSpec) = k_reports.Where(Function(k_r) Not k_custody.Contains(k_r)).ToList()
             Dim k_result As List(Of VerconTreeNode) = If(k_rest.Count > 0, BuildNodes(k_rest), New List(Of VerconTreeNode)())

@@ -82,9 +82,11 @@ Public Class PushFilesView
         FillRules()
         ShowRoots()
         Dim k_send As Integer = _scan.Files.Where(Function(k_f) k_f.State = PushState.NewOnServer OrElse k_f.State = PushState.Modified).Count()
-        Dim k_debug As Integer = _scan.Files.Where(Function(k_f) k_f.DebugHash <> String.Empty).Count()
+        Dim k_debug As Integer = _scan.Files.Where(Function(k_f) k_f.DebugHash <> String.Empty AndAlso k_f.State <> PushState.DeletedLocally).Count()
+        Dim k_deleted As Integer = _scan.Files.Where(Function(k_f) k_f.State = PushState.DeletedLocally).Count()
         lblState.Text = _scan.Files.Count.ToString(CultureInfo.InvariantCulture) & " fișiere permise, " &
                         k_send.ToString(CultureInfo.InvariantCulture) & " noi sau modificate; " & k_debug.ToString(CultureInfo.InvariantCulture) & " debugging de finalizat; " &
+                        k_deleted.ToString(CultureInfo.InvariantCulture) & " șterse local, de șters de pe server; " &
                         _scan.PushIgnoreSkipped.ToString(CultureInfo.InvariantCulture) & " oprite de .pushignore."
         _log.Add(KBotLogLevel.Info, lblState.Text)
         _context.Say(lblState.Text)
@@ -94,6 +96,7 @@ Public Class PushFilesView
         btnScan.Enabled = k_on
         btnSend.Enabled = k_on
         btnFinalizeDebug.Enabled = k_on
+        btnDeleteMissing.Enabled = k_on
         chkDebugging.Enabled = k_on
     End Sub
 
@@ -107,10 +110,11 @@ Public Class PushFilesView
                 If k_file.State = PushState.Identical AndAlso Not chkIdentical.Checked Then Continue For
                 Dim k_row As KBotDataRow = gridFiles.AddRow()
                 k_row.Tag = k_file
-                k_row("send") = (k_file.State = PushState.NewOnServer OrElse k_file.State = PushState.Modified)
+                ' A file deleted locally is ticked for removal from the server (its own button), never for upload or Git finalization.
+                k_row("send") = (k_file.State = PushState.NewOnServer OrElse k_file.State = PushState.Modified OrElse k_file.State = PushState.DeletedLocally)
                 k_row("path") = k_file.RelativePath
                 k_row("state") = StateText(k_file.State)
-                k_row("debug") = k_file.DebugHash <> String.Empty
+                k_row("debug") = k_file.DebugHash <> String.Empty AndAlso k_file.State <> PushState.DeletedLocally
                 k_row("ext") = k_file.Extension
                 k_row("slices") = If(k_file.RegisteredSlices = String.Empty, "FĂRĂ GIT", k_file.RegisteredSlices)
                 k_row("reasons") = k_file.RegisteredReasons
@@ -131,6 +135,7 @@ Public Class PushFilesView
             Case PushState.NewOnServer : Return "NOU"
             Case PushState.Modified : Return "MODIFICAT"
             Case PushState.AwaitingGit : Return "DEBUGGING"
+            Case PushState.DeletedLocally : Return "ȘTERS LOCAL"
             Case Else : Return "IDENTIC"
         End Select
     End Function
@@ -144,6 +149,7 @@ Public Class PushFilesView
                 Case PushState.NewOnServer : e.ForeColor = k_pal.SuccessColor
                 Case PushState.Modified : e.ForeColor = k_pal.WarningColor
                 Case PushState.AwaitingGit : e.ForeColor = k_pal.WarningColor
+                Case PushState.DeletedLocally : e.ForeColor = k_pal.ErrorColor
                 Case Else : e.ForeColor = k_pal.DisabledTextColor
             End Select
         Catch ex As Exception
@@ -163,7 +169,7 @@ Public Class PushFilesView
         Try
             If e.ColumnKey <> "debug" Then Return
             Dim k_file As PushFile = TryCast(e.Row.Tag, PushFile)
-            If k_file Is Nothing OrElse k_file.DebugHash = String.Empty Then e.Enabled = False
+            If k_file Is Nothing OrElse k_file.DebugHash = String.Empty OrElse k_file.State = PushState.DeletedLocally Then e.Enabled = False
         Catch ex As Exception
             GlobalErrorLog.Write("PushFilesView.GridFiles_CellFormatting", ex)
         End Try
@@ -209,7 +215,9 @@ Public Class PushFilesView
             Dim k_files As New List(Of PushFile)()
             For k_i As Integer = 0 To gridFiles.Rows.Count - 1
                 Dim k_file As PushFile = TryCast(gridFiles.Rows(k_i).Tag, PushFile)
-                If k_file IsNot Nothing AndAlso Convert.ToBoolean(gridFiles("send", k_i), CultureInfo.InvariantCulture) Then k_files.Add(k_file)
+                ' Rows deleted locally have nothing to upload; they go through «Șterge de pe server».
+                If k_file IsNot Nothing AndAlso k_file.State <> PushState.DeletedLocally AndAlso
+                    Convert.ToBoolean(gridFiles("send", k_i), CultureInfo.InvariantCulture) Then k_files.Add(k_file)
             Next
             RunLog.Write("Trimite: " & k_files.Count.ToString(CultureInfo.InvariantCulture) & " fișiere bifate din " & gridFiles.Rows.Count.ToString(CultureInfo.InvariantCulture) & " rânduri")
             If k_files.Count = 0 Then
@@ -272,7 +280,7 @@ Public Class PushFilesView
             Await ScanAsync()
             RunLog.Write("Trimite: rescanare gata")
             Dim k_left As Integer = If(_scan Is Nothing, 0, _scan.Files.Where(Function(k_f) k_f.State = PushState.NewOnServer OrElse k_f.State = PushState.Modified).Count())
-            Dim k_debugLeft As Integer = If(_scan Is Nothing, 0, _scan.Files.Where(Function(k_f) k_f.DebugHash <> String.Empty).Count())
+            Dim k_debugLeft As Integer = If(_scan Is Nothing, 0, _scan.Files.Where(Function(k_f) k_f.DebugHash <> String.Empty AndAlso k_f.State <> PushState.DeletedLocally).Count())
             Dim k_after As String = "Fișiere noi/modificate rămase: " & k_left.ToString(CultureInfo.InvariantCulture) &
                 ". Fișiere debugging de finalizat: " & k_debugLeft.ToString(CultureInfo.InvariantCulture) & "."
             _log.Add(If(k_left = 0, KBotLogLevel.Info, KBotLogLevel.Warn), k_after)
@@ -293,7 +301,7 @@ Public Class PushFilesView
             Dim k_files As New List(Of PushFile)
             For k_i As Integer = 0 To gridFiles.Rows.Count - 1
                 Dim k_file As PushFile = TryCast(gridFiles.Rows(k_i).Tag, PushFile)
-                If k_file IsNot Nothing AndAlso k_file.DebugHash <> String.Empty AndAlso
+                If k_file IsNot Nothing AndAlso k_file.DebugHash <> String.Empty AndAlso k_file.State <> PushState.DeletedLocally AndAlso
                     Convert.ToBoolean(gridFiles("debug", k_i), CultureInfo.InvariantCulture) Then k_files.Add(k_file)
             Next
             If k_files.Count = 0 Then
@@ -323,6 +331,70 @@ Public Class PushFilesView
         Catch ex As Exception
             GlobalErrorLog.Write("PushFilesView.BtnFinalizeDebug_Click", ex)
             KBotMessage.Show("Finalizarea debugging a eșuat: " & ex.Message, "Finalizare debugging", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        Finally
+            _running = False
+            SetButtons(True)
+        End Try
+    End Sub
+
+    ''' <summary>
+    ''' SLICE-ME01-38. Removes from the server the ticked rows that were deleted locally, after the operator confirms
+    ''' the list. The server only deletes files that are in its debugging evidence, and never config.py.
+    ''' </summary>
+    Private Async Sub BtnDeleteMissing_Click(k_sender As Object, e As EventArgs) Handles btnDeleteMissing.Click
+        If _running Then Return
+        Try
+            Dim k_paths As New List(Of String)
+            Dim k_protected As Integer = 0
+            ' .pushignore is re-read now (it may have changed since the scan): what it holds back is never deleted, whatever else.
+            Dim k_ignoreFile As PushIgnore = PushIgnore.Load(Settings.EffectiveLocalRoot().TrimEnd(IO.Path.DirectorySeparatorChar, IO.Path.AltDirectorySeparatorChar))
+            For k_i As Integer = 0 To gridFiles.Rows.Count - 1
+                Dim k_file As PushFile = TryCast(gridFiles.Rows(k_i).Tag, PushFile)
+                ' Re-check the disk: a file brought back locally since the scan must not be deleted from the server.
+                If k_file IsNot Nothing AndAlso k_file.State = PushState.DeletedLocally AndAlso Not IO.File.Exists(k_file.LocalFullPath) AndAlso
+                    Convert.ToBoolean(gridFiles("send", k_i), CultureInfo.InvariantCulture) Then
+                    If PushService.IsIgnored(Settings, k_ignoreFile, k_file.RelativePath) Then
+                        k_protected += 1
+                    Else
+                        k_paths.Add(k_file.RelativePath)
+                    End If
+                End If
+            Next
+            If k_protected > 0 Then _log.Add(KBotLogLevel.Warn, k_protected.ToString(CultureInfo.InvariantCulture) & " fișiere sunt în .pushignore și nu se șterg de pe server.")
+            If k_paths.Count = 0 Then
+                KBotMessage.Show("Nu este bifat niciun fișier «ȘTERS LOCAL». Scanați, apoi bifați fișierele de șters de pe server.",
+                    "Ștergere de pe server", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            Dim k_shown As IEnumerable(Of String) = k_paths.Take(15)
+            Dim k_more As String = If(k_paths.Count > 15, vbCrLf & "... și încă " & (k_paths.Count - 15).ToString(CultureInfo.InvariantCulture), String.Empty)
+            If Not UiRun.Confirm("Șterg DEFINITIV de pe server " & k_paths.Count.ToString(CultureInfo.InvariantCulture) &
+                " fișiere care nu mai există local? Nu se poate anula." & vbCrLf & vbCrLf & String.Join(vbCrLf, k_shown) & k_more,
+                "Ștergere de pe server") Then
+                _context.Say("Ștergerea a fost anulată (ați răspuns Nu).")
+                Return
+            End If
+            _running = True
+            SetButtons(False)
+            _log.Clear()
+            _log.Add(KBotLogLevel.Info, "== Ștergere de pe server: " & k_paths.Count.ToString(CultureInfo.InvariantCulture) & " fișiere ==")
+            _context.Say("Se șterg de pe server fișierele șterse local...")
+            Dim k_settings As AdminSettings = Settings
+            Dim k_deleted As List(Of String) = Nothing
+            Await UiRun.Guard("PushFilesView.BtnDeleteMissing_Click", _context,
+                Async Function()
+                    k_deleted = Await Task.Run(Function() DeploymentPublisher.DeleteMissing(k_settings, k_paths, Sub(k_line) _log.Add(KBotLogLevel.Info, k_line)))
+                End Function)
+            If k_deleted Is Nothing Then Return   ' Guard already told the operator what went wrong
+            Await ScanAsync()
+            Dim k_message As String = "Șterse de pe server: " & k_deleted.Count.ToString(CultureInfo.InvariantCulture) & " din " & k_paths.Count.ToString(CultureInfo.InvariantCulture) & " fișiere."
+            _log.Add(If(k_deleted.Count = k_paths.Count, KBotLogLevel.Info, KBotLogLevel.Warn), k_message)
+            _context.Say(k_message)
+            KBotMessage.Show(k_message, "Ștergere de pe server", MessageBoxButtons.OK,
+                If(k_deleted.Count = k_paths.Count, MessageBoxIcon.Information, MessageBoxIcon.Warning))
+        Catch ex As Exception
+            GlobalErrorLog.Write("PushFilesView.BtnDeleteMissing_Click", ex)
+            KBotMessage.Show("Ștergerea de pe server a eșuat: " & ex.Message, "Ștergere de pe server", MessageBoxButtons.OK, MessageBoxIcon.Error)
         Finally
             _running = False
             SetButtons(True)

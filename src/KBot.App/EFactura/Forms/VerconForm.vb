@@ -17,7 +17,8 @@ Imports KBot.Theming
 ''' waiting, taken over in a NIR, sent back with a reason). On the right, the lines of the ticked invoices, grouped by invoice: ALL the lines of an invoice are sent (nothing is ticked
 ''' per line); on each line she can PROPOSE the account of VERCON it goes to, from a tree (gestiune, then its accounts, whichever subunit), or leave it to the Administrator
 ''' («fără cont»). The account picked on the header of an invoice is written on all its lines. The account is a proposal: the Administrator can change it.
-''' One ticked invoice that was sent and still waits opens in the mode that changes its proposed accounts or takes it back. Nothing is saved until a button is pressed.
+''' Slice 00EF-68: a click on an invoice that was SENT (locked in the tree) shows its lines, read-only, with the accounts it went with; the send button stays off. While the Administrator
+''' has not taken it over, «Retrage de la Vercon» takes it back and the invoice is ticked again, ready to be sent elsewhere (another account, another gestiune). Nothing is saved until a button is pressed.
 ''' The rules (who may write, what can be sent, when it can be taken back) are the server's (PYTHON/routes/efactura/primite_vercon.py). Plan: docs/EV_PLAN.md.
 ''' </summary>
 Public Class VerconForm
@@ -38,6 +39,7 @@ Public Class VerconForm
     Private Const NotaInitiala As String = "Bifează facturile de trimis (ale unui singur furnizor odată): merg la Vercon cu TOATE liniile lor. Poți alege un cont pentru toate liniile (lângă notă), " &
                                            "pe antetul unei facturi sau pe fiecare linie. O linie fără cont rămâne pentru Administrator. Contul este doar o propunere. " &
                                            "O linie marcată «NU SE TRIMITE» nu ajunge deloc în Vercon (rămâne doar în e-Factura). " &
+                                           "Un click pe o factură deja trimisă îi arată liniile; dacă Administratorul nu a preluat-o încă, o poți retrage și apoi trimite în altă parte. " &
                                            "Nu se trimite nimic până nu apeși butonul."
     Private Const NotaUnFurnizor As String = "Se poate trimite un singur furnizor odată: facturile bifate la alți furnizori au fost debifate."
     Private Shared ReadOnly _ro As New CultureInfo("ro-RO")
@@ -74,8 +76,12 @@ Public Class VerconForm
     ' What the accountant picked for a line ({IdLinie -> face text}), kept when the lines grid is filled again.
     Private ReadOnly _choices As New Dictionary(Of Integer, String)()
     Private _items As New List(Of Object)()
+    ' Slice 00EF-68: the invoice whose sending is on screen read-only (0 = none; the grid shows the ticked invoices), _view = the grid is in that mode,
+    ' _modify = in that mode the sending still waits for the Administrator, so it can be taken back.
+    Private _viewId As Integer
+    Private _view As Boolean
+    Private _wasView As Boolean
     Private _modify As Boolean
-    Private _wasModify As Boolean
     Private _canWrite As Boolean = True
     Private _filling As Boolean
     Private _suppress As Boolean
@@ -157,7 +163,7 @@ Public Class VerconForm
         _busy = k_busy
         tree.Enabled = Not k_busy
         gridLinii.Enabled = Not k_busy
-        txtNota.Enabled = Not k_busy AndAlso Not _modify
+        txtNota.Enabled = Not k_busy
         RefreshButtons()
     End Sub
 
@@ -375,6 +381,8 @@ Public Class VerconForm
     Private Async Sub Tree_NodeChecked(k_node As AdvancedTreeControl.TreeItem) Handles tree.NodeChecked
         Try
             If _busy Then Return
+            ' A tick brings the grid back to the ticked invoices (a sent invoice was on screen read-only).
+            _viewId = 0
             _supplierNote = KeepOneSupplier()
             UpdateStatus()
             Await SyncTicksAsync().ConfigureAwait(True)
@@ -385,6 +393,52 @@ Public Class VerconForm
             ShowNotice("Facturile bifate nu au putut fi citite. Detalii în jurnalul de erori.", NoticeKind.Error)
         End Try
     End Sub
+
+    ' UI boundary (async Sub): a click on an invoice. A SENT one (locked) puts its lines on screen read-only; a click on any other invoice, while a sent one is on screen,
+    ' brings the grid back to the ticked invoices. Rows of months and suppliers change nothing.
+    Private Async Sub Tree_NodeMouseDown(k_node As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles tree.NodeMouseDown
+        Try
+            If _busy OrElse _api Is Nothing OrElse k_node Is Nothing OrElse e.Button <> MouseButtons.Left Then Return
+            Dim k_p As EFacturaPrimita = TryCast(k_node.Tag, EFacturaPrimita)
+            If k_p Is Nothing Then Return
+            If k_node.CheckLocked Then
+                Await ShowSentAsync(k_p.IdPrimita).ConfigureAwait(True)
+            ElseIf _viewId <> 0 Then
+                _viewId = 0
+                Await SyncTicksAsync().ConfigureAwait(True)
+            End If
+        Catch ex As OperationCanceledException
+            ' The page was closed.
+        Catch ex As Exception
+            GlobalErrorLog.Write("VerconForm.Tree_NodeMouseDown", ex)
+            If Not IsDisposed Then ShowNotice("Factura trimisă nu a putut fi citită. Detalii în jurnalul de erori.", NoticeKind.Error)
+        End Try
+    End Sub
+
+    ' Reads the sending of an invoice from the server (the Administrator may have taken it over since the tree was built) and shows it read-only.
+    Private Async Function ShowSentAsync(k_idPrimita As Integer) As Task
+        Dim k_mySeq As Integer = Interlocked.Increment(_seq)
+        CaptureChoices()
+        Dim k_state As EFacturaVerconStareFactura = Await _gate.RunAsync(Function() _api.GetVerconAsync(k_idPrimita, _cts.Token)).ConfigureAwait(True)
+        If IsDisposed OrElse k_mySeq <> _seq Then Return
+        Dim k_active As Boolean = k_state.Trimitere IsNot Nothing AndAlso
+            (String.Equals(k_state.Trimitere.Stare, EFacturaVerconStare.Trimisa, StringComparison.Ordinal) OrElse
+             String.Equals(k_state.Trimitere.Stare, EFacturaVerconStare.Preluata, StringComparison.Ordinal) OrElse
+             String.Equals(k_state.Trimitere.Stare, EFacturaVerconStare.Partiala, StringComparison.Ordinal))
+        If k_active Then
+            _states(k_idPrimita) = k_state
+            _viewId = k_idPrimita
+            FillGrid()
+            Return
+        End If
+        ' It is not sent any more (taken back or sent back meanwhile): the tree is read again, so the invoice is free to tick.
+        _states.Remove(k_idPrimita)
+        _viewId = 0
+        Await ReadVerconAsync().ConfigureAwait(True)
+        If IsDisposed Then Return
+        BuildTree(TickedIds(), True)
+        FillGrid()
+    End Function
 
     ' Only one supplier can be ticked: when a tick brought a second one, the NEWLY ticked supplier stays and the ticks of the others are taken off. Returns the notice (empty = nothing taken off).
     Private Function KeepOneSupplier() As String
@@ -529,6 +583,8 @@ Public Class VerconForm
 
     ' Keeps what is in the cells (the accounts chosen so far), so the grid can be filled again without losing them.
     Private Sub CaptureChoices()
+        ' The grid of a sent invoice shows what was sent, not choices of the accountant.
+        If _view Then Return
         For Each k_row As KBotDataRow In gridLinii.Rows
             Dim k_tag As LineTag = TryCast(k_row.Tag, LineTag)
             If k_tag IsNot Nothing Then _choices(k_tag.IdLinie) = Convert.ToString(k_row(ColCont), CultureInfo.InvariantCulture)
@@ -551,23 +607,33 @@ Public Class VerconForm
         End Select
     End Function
 
-    ' Puts the lines of the ticked invoices on screen. ONE ticked invoice that was sent and still waits opens in the mode that changes its accounts (or takes it back); an invoice
-    ' that cannot be sent (taken over already, no supplier among the partners, ...) is named in the notice and left out.
+    ' Puts the lines on screen: those of the ticked invoices, or (_viewId) those of ONE sent invoice, read-only. An invoice that cannot be sent (sent already,
+    ' no supplier among the partners, ...) is named in the notice and left out.
     Private Sub FillGrid()
         Dim k_notes As New List(Of String)()
-        Dim k_ids As List(Of Integer) = TickedIds().Where(Function(k_x) _states.ContainsKey(k_x)).ToList()
+        Dim k_ids As List(Of Integer)
+        _view = _viewId <> 0 AndAlso _states.ContainsKey(_viewId)
+        If _view Then
+            k_ids = New List(Of Integer) From {_viewId}
+        Else
+            _viewId = 0
+            k_ids = TickedIds().Where(Function(k_x) _states.ContainsKey(k_x)).ToList()
+        End If
         _canWrite = k_ids.All(Function(k_x) _states(k_x).PoateScrie)
-        _modify = k_ids.Count = 1 AndAlso _states(k_ids(0)).Trimitere IsNot Nothing AndAlso
-                  String.Equals(_states(k_ids(0)).Trimitere.Stare, EFacturaVerconStare.Trimisa, StringComparison.Ordinal)
+        _modify = _view AndAlso _states(_viewId).Trimitere IsNot Nothing AndAlso
+                  String.Equals(_states(_viewId).Trimitere.Stare, EFacturaVerconStare.Trimisa, StringComparison.Ordinal)
+        gridLinii.ReadOnlyGrid = _view
         _filling = True
         gridLinii.BeginUpdate()
         Try
             gridLinii.ClearRows()
-            If Not _canWrite Then k_notes.Add("Numai un utilizator cu rolul «Contabil» poate trimite facturi la Vercon.")
+            If Not _canWrite AndAlso Not _view Then k_notes.Add("Numai un utilizator cu rolul «Contabil» poate trimite facturi la Vercon.")
             For Each k_id As Integer In k_ids
                 Dim k_state As EFacturaVerconStareFactura = _states(k_id)
                 Dim k_name As String = k_state.Factura.NrFact
-                If Not _modify Then
+                If _view Then
+                    k_notes.Add(ViewNotice(k_state))
+                Else
                     If k_state.Trimitere IsNot Nothing Then
                         k_notes.Add($"Factura {k_name} este deja trimisă la Vercon (stare: {StateText(k_state.Trimitere)}); nu se trimite din nou.")
                         Continue For
@@ -576,10 +642,10 @@ Public Class VerconForm
                         k_notes.Add($"Factura {k_name} nu se poate trimite: {k_state.Motiv}")
                         Continue For
                     End If
+                    For Each k_d As EFacturaVerconDuplicat In k_state.Duplicate
+                        k_notes.Add($"Atenție: factura {k_name} pare deja înregistrată în Vercon (NIR {NirNumber(k_d)}, {k_d.Gestiune}).")
+                    Next
                 End If
-                For Each k_d As EFacturaVerconDuplicat In k_state.Duplicate
-                    k_notes.Add($"Atenție: factura {k_name} pare deja înregistrată în Vercon (NIR {NirNumber(k_d)}, {k_d.Gestiune}).")
-                Next
                 Dim k_group As String = GroupText(k_state.Factura)
                 For Each k_l As EFacturaVerconLinie In k_state.Linii
                     Dim k_row As KBotDataRow = gridLinii.AddRow()
@@ -590,11 +656,18 @@ Public Class VerconForm
                     k_row(ColCant) = $"{k_l.Cant.ToString("N2", CultureInfo.CurrentCulture)} {k_l.Unit}".Trim()
                     k_row(ColCuTva) = CDbl(k_l.ValoareCuTva)
                     Dim k_label As String = Nothing
-                    If _choices.TryGetValue(k_l.IdLinie, k_label) Then
-                        k_row(ColCont) = k_label
-                    ElseIf _modify AndAlso k_l.NuSeTrimite Then
-                        k_row(ColCont) = NuSeTrimite
-                    ElseIf _modify AndAlso k_l.IdMasina.HasValue AndAlso _labelById.TryGetValue(k_l.IdMasina.Value, k_label) Then
+                    If _view Then
+                        ' What went to Vercon: the account proposed on this line, «NU SE TRIMITE», or none.
+                        If k_l.NuSeTrimite Then
+                            k_row(ColCont) = NuSeTrimite
+                        ElseIf k_l.IdMasina.HasValue AndAlso _labelById.TryGetValue(k_l.IdMasina.Value, k_label) Then
+                            k_row(ColCont) = k_label
+                        ElseIf k_l.IdMasina.HasValue AndAlso Not String.IsNullOrWhiteSpace(k_l.Cont) Then
+                            k_row(ColCont) = If(String.IsNullOrWhiteSpace(k_l.Gestiune), k_l.Cont, $"{k_l.Gestiune} / {k_l.Cont}")
+                        Else
+                            k_row(ColCont) = FaraCont
+                        End If
+                    ElseIf _choices.TryGetValue(k_l.IdLinie, k_label) Then
                         k_row(ColCont) = k_label
                     Else
                         ' A line that has no choice yet takes the account held in the combo beside the note (none picked = «fără cont»).
@@ -612,7 +685,7 @@ Public Class VerconForm
             _supplierNote = String.Empty
         End If
         If k_notes.Count > 0 Then
-            ShowNotice(String.Join(vbCrLf, k_notes), If(gridLinii.RowCount = 0 OrElse Not _canWrite, NoticeKind.Error, NoticeKind.Warning))
+            ShowNotice(String.Join(vbCrLf, k_notes), If(Not _view AndAlso (gridLinii.RowCount = 0 OrElse Not _canWrite), NoticeKind.Error, NoticeKind.Warning))
         Else
             ntfMesaj.Visible = False
         End If
@@ -620,19 +693,32 @@ Public Class VerconForm
         RefreshButtons()
     End Sub
 
-    ' What the mode shows: the button, the one that takes the invoice back, the note (the one of the sending, read-only, while its accounts are changed).
+    ' What the notice says on top of a sent invoice shown read-only: where it is, and what can be done.
+    Private Function ViewNotice(k_state As EFacturaVerconStareFactura) As String
+        Dim k_id As Integer = k_state.Factura.IdPrimita
+        Dim k_where As String = VerconText(k_id)
+        If k_where.Length = 0 AndAlso k_state.Trimitere IsNot Nothing Then k_where = StateText(k_state.Trimitere)
+        Dim k_name As String = k_state.Factura.NrFact
+        If _modify Then
+            Return $"Factura {k_name} este trimisă la Vercon: {k_where}. Nu se mai poate trimite din nou. Dacă vrei s-o trimiți în altă parte (alt cont, altă gestiune), apasă «Retrage de la Vercon» și apoi trimite-o."
+        End If
+        Return $"Factura {k_name} este trimisă la Vercon: {k_where}. Administratorul a preluat-o, deci nu se mai poate retrage."
+    End Function
+
+    ' What the mode shows: the button that takes the invoice back, the note (the one of the sending, read-only, while a sent invoice is on screen).
     Private Sub ApplyMode(k_ids As List(Of Integer))
         btnRetrage.Visible = _modify
-        If _modify Then
-            txtNota.Text = _states(k_ids(0)).Trimitere.Observatie
+        If _view Then
+            Dim k_sending As EFacturaVerconTrimitere = _states(k_ids(0)).Trimitere
+            txtNota.Text = If(k_sending Is Nothing, String.Empty, k_sending.Observatie)
             txtNota.ReadOnly = True
             txtNota.Enabled = Not _busy
-        ElseIf _wasModify Then
+        ElseIf _wasView Then
             txtNota.Text = String.Empty
             txtNota.ReadOnly = False
             txtNota.Enabled = Not _busy
         End If
-        _wasModify = _modify
+        _wasView = _view
     End Sub
 
     ' The line at the bottom: where the lines go (per gestiune of the proposed accounts) and how many have no account.
@@ -683,14 +769,11 @@ Public Class VerconForm
 
     Private Sub RefreshButtons()
         Dim k_count As Integer = If(_busy, 0, InvoiceCount())
-        btnTrimite.Enabled = k_count > 0 AndAlso _canWrite AndAlso Not _busy
+        ' A sent invoice on screen cannot be sent again: only «Retrage» works, and only while the Administrator has not taken it over.
+        btnTrimite.Enabled = Not _view AndAlso k_count > 0 AndAlso _canWrite AndAlso Not _busy
         btnRetrage.Enabled = _modify AndAlso _canWrite AndAlso Not _busy
-        cmbCont.Enabled = _canWrite AndAlso Not _busy
-        If _modify Then
-            btnTrimite.Text = "Salvează conturile"
-        Else
-            btnTrimite.Text = If(k_count > 0, $"Trimite la Vercon ({k_count})", "Trimite la Vercon")
-        End If
+        cmbCont.Enabled = Not _view AndAlso _canWrite AndAlso Not _busy
+        btnTrimite.Text = If(Not _view AndAlso k_count > 0, $"Trimite la Vercon ({k_count})", "Trimite la Vercon")
     End Sub
 
     ' ── Editing ─────────────────────────────────────────────────────────────────
@@ -798,7 +881,7 @@ Public Class VerconForm
     ' UI boundary (async Sub): logs and swallows; a failed invoice is named in a notice and stays with its accounts (the server writes one invoice all or none).
     Private Async Sub BtnTrimite_Click(sender As Object, e As EventArgs) Handles btnTrimite.Click
         Try
-            If _api Is Nothing OrElse _busy OrElse Not _canWrite Then Return
+            If _api Is Nothing OrElse _busy OrElse _view OrElse Not _canWrite Then Return
             CaptureChoices()
             Dim k_todo As New List(Of Integer)()
             For Each k_row As KBotDataRow In gridLinii.Rows
@@ -806,26 +889,23 @@ Public Class VerconForm
                 If k_tag IsNot Nothing AndAlso Not k_todo.Contains(k_tag.IdPrimita) Then k_todo.Add(k_tag.IdPrimita)
             Next
             If k_todo.Count = 0 Then Return
-            Dim k_changeAccounts As Boolean = _modify
             ' The partner of each invoice is found by tax code only: the one the server keeps for the code, or the only one, is used without asking; when several have it and none is kept the operator picks (once per tax code) and the server keeps the choice. Closing the box sends nothing.
             Dim k_partnerOf As New Dictionary(Of Integer, Integer)()
-            If Not k_changeAccounts Then
-                Dim k_byCui As New Dictionary(Of String, Integer)(StringComparer.OrdinalIgnoreCase)
-                For Each k_id As Integer In k_todo
-                    Dim k_state As EFacturaVerconStareFactura = _states(k_id)
-                    If k_state.PartenerId.HasValue OrElse k_state.Parteneri.Count <= 1 Then Continue For
-                    Dim k_cui As String = k_state.Factura.CuiNormalizat
-                    Dim k_picked As Integer
-                    If Not k_byCui.TryGetValue(k_cui, k_picked) Then
-                        Using k_dialog As New AlegePartenerForm("Trimite la Vercon", $"factura {k_state.Factura.NrFact}", k_cui, k_state.Parteneri)
-                            If k_dialog.ShowDialog(Me) <> DialogResult.OK OrElse k_dialog.Selected Is Nothing Then Return
-                            k_picked = k_dialog.Selected.IdPartener
-                        End Using
-                        k_byCui(k_cui) = k_picked
-                    End If
-                    k_partnerOf(k_id) = k_picked
-                Next
-            End If
+            Dim k_byCui As New Dictionary(Of String, Integer)(StringComparer.OrdinalIgnoreCase)
+            For Each k_id As Integer In k_todo
+                Dim k_state As EFacturaVerconStareFactura = _states(k_id)
+                If k_state.PartenerId.HasValue OrElse k_state.Parteneri.Count <= 1 Then Continue For
+                Dim k_cui As String = k_state.Factura.CuiNormalizat
+                Dim k_picked As Integer
+                If Not k_byCui.TryGetValue(k_cui, k_picked) Then
+                    Using k_dialog As New AlegePartenerForm("Trimite la Vercon", $"factura {k_state.Factura.NrFact}", k_cui, k_state.Parteneri)
+                        If k_dialog.ShowDialog(Me) <> DialogResult.OK OrElse k_dialog.Selected Is Nothing Then Return
+                        k_picked = k_dialog.Selected.IdPartener
+                    End Using
+                    k_byCui(k_cui) = k_picked
+                End If
+                k_partnerOf(k_id) = k_picked
+            Next
             ntfMesaj.Visible = False
             SetBusy(True)
             Dim k_failures As New List(Of String)()
@@ -837,14 +917,10 @@ Public Class VerconForm
                     Dim k_name As String = _states(k_id).Factura.NrFact
                     Try
                         Dim k_accounts As List(Of EFacturaVerconContLinie) = AccountsOf(k_one)
-                        If k_changeAccounts Then
-                            Await _gate.RunAsync(Function() _api.SetVerconConturiAsync(k_one, k_accounts, _cts.Token)).ConfigureAwait(True)
-                        Else
-                            Dim k_partnerId As Integer? = Nothing
-                            Dim k_value As Integer
-                            If k_partnerOf.TryGetValue(k_one, k_value) Then k_partnerId = k_value
-                            Await _gate.RunAsync(Function() _api.SendVerconAsync(k_one, k_accounts, k_note, k_partnerId, _cts.Token)).ConfigureAwait(True)
-                        End If
+                        Dim k_partnerId As Integer? = Nothing
+                        Dim k_value As Integer
+                        If k_partnerOf.TryGetValue(k_one, k_value) Then k_partnerId = k_value
+                        Await _gate.RunAsync(Function() _api.SendVerconAsync(k_one, k_accounts, k_note, k_partnerId, _cts.Token)).ConfigureAwait(True)
                         If IsDisposed Then Return
                         k_done.Add(k_id)
                     Catch ex As OperationCanceledException
@@ -862,8 +938,7 @@ Public Class VerconForm
             If k_failures.Count > 0 Then
                 ShowNotice(String.Join(vbCrLf, k_failures), NoticeKind.Error)
             ElseIf k_done.Count > 0 Then
-                ShowNotice(If(k_changeAccounts, "Conturile propuse au fost salvate.",
-                              If(k_done.Count = 1, "O factură a fost trimisă la Vercon.", $"{k_done.Count} facturi au fost trimise la Vercon.")), NoticeKind.Success)
+                ShowNotice(If(k_done.Count = 1, "O factură a fost trimisă la Vercon.", $"{k_done.Count} facturi au fost trimise la Vercon."), NoticeKind.Success)
             End If
         Catch ex As OperationCanceledException
             ' The page was closed.
@@ -880,12 +955,11 @@ Public Class VerconForm
     Private Async Sub BtnRetrage_Click(sender As Object, e As EventArgs) Handles btnRetrage.Click
         Try
             If _api Is Nothing OrElse _busy OrElse Not _modify OrElse Not _canWrite Then Return
-            Dim k_ids As List(Of Integer) = TickedIds().Where(Function(k_x) _states.ContainsKey(k_x)).ToList()
-            If k_ids.Count <> 1 Then Return
-            Dim k_id As Integer = k_ids(0)
+            Dim k_id As Integer = _viewId
+            If k_id = 0 OrElse Not _states.ContainsKey(k_id) Then Return
             Dim k_state As EFacturaVerconStareFactura = _states(k_id)
             If k_state.Trimitere Is Nothing Then Return
-            If KBotMessage.Show(Me, $"Retragi factura {k_state.Factura.NrFact} de la Vercon? Administratorul nu o va mai vedea în lista lui. O poți trimite din nou oricând.",
+            If KBotMessage.Show(Me, $"Retragi factura {k_state.Factura.NrFact} de la Vercon? Administratorul nu o va mai vedea în lista lui. O poți trimite din nou oricând, și în altă parte (alt cont, altă gestiune).",
                                 "Retrage de la Vercon", MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
             Dim k_sending As Integer = k_state.Trimitere.IdTrimitere
             ntfMesaj.Visible = False
@@ -901,8 +975,17 @@ Public Class VerconForm
                 End Try
                 If IsDisposed Then Return
                 ' Withdrawn or refused, the state of the invoice changed on the server: it is read again either way.
+                _viewId = 0
                 Await AfterWriteAsync(New List(Of Integer) From {k_id}).ConfigureAwait(True)
-                If Not IsDisposed AndAlso k_withdrawn Then ShowNotice("Factura a fost retrasă de la Vercon.", NoticeKind.Success)
+                If IsDisposed Then Return
+                If k_withdrawn Then
+                    ' The invoice is free again: it is ticked (it was the only one on screen), so its lines are there to be sent where she wants.
+                    BuildTree(New List(Of Integer) From {k_id}, True)
+                    _supplierNote = KeepOneSupplier()
+                    UpdateStatus()
+                    Await SyncTicksAsync().ConfigureAwait(True)
+                    If Not IsDisposed Then ShowNotice("Factura a fost retrasă de la Vercon. O poți trimite acum în altă parte: alege contul și apasă «Trimite la Vercon».", NoticeKind.Success)
+                End If
             Finally
                 If Not IsDisposed Then SetBusy(False)
             End Try

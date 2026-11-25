@@ -2,25 +2,33 @@
 from math import ceil
 
 
-def pdf(block, available, paragraph):
+EDGES = {'l': 'LINEBEFORE', 'r': 'LINEAFTER', 't': 'LINEABOVE', 'b': 'LINEBELOW'}
+
+
+def pdf(block, available, paragraph, table_type):
     from reportlab.lib import colors
-    from reportlab.lib.enums import TA_CENTER
-    from reportlab.platypus import Table, TableStyle
+    from reportlab.lib.enums import TA_CENTER, TA_LEFT, TA_RIGHT
+    from reportlab.platypus import TableStyle
 
     data = [[''] * len(block['widths']) for _ in block['heights']]
-    commands = [('GRID', (0, 0), (-1, -1), .4, colors.black),
-                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+    commands = [('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
                 ('LEFTPADDING', (0, 0), (-1, -1), 3), ('RIGHTPADDING', (0, 0), (-1, -1), 3),
                 ('TOPPADDING', (0, 0), (-1, -1), 2), ('BOTTOMPADDING', (0, 0), (-1, -1), 2)]
+    if not block.get('cell_edges'):
+        commands.append(('GRID', (0, 0), (-1, -1), .4, colors.black))
     for cell in block['cells']:
         column, row = cell['column'], cell['row']
-        data[row][column] = paragraph(cell['text'], TA_CENTER, cell.get('size', 8), cell.get('bold', False))
+        align = {'l': TA_LEFT, 'r': TA_RIGHT}.get(cell.get('align'), TA_CENTER)
+        data[row][column] = paragraph(cell['text'], align, cell.get('size', 8), cell.get('bold', False),
+                                      href=cell.get('href'))
         last = (column + cell.get('colspan', 1) - 1, row + cell.get('rowspan', 1) - 1)
         if last != (column, row):
             commands.append(('SPAN', (column, row), last))
+        commands.extend((EDGES[edge], (column, row), last, .4, colors.black)
+                        for edge in cell.get('edges', ''))
     total = sum(block['widths'])
-    table = Table(data, colWidths=[available * value / total for value in block['widths']],
-                  minRowHeights=block['heights'], splitByRow=0, hAlign='CENTER')
+    table = table_type(data, colWidths=[available * value / total for value in block['widths']],
+                       minRowHeights=block['heights'], splitByRow=0, hAlign='CENTER')
     table.setStyle(TableStyle(commands))
     return table
 
@@ -32,18 +40,24 @@ def xlsx(sheet, block, first_row, write, widths):
     edge = Side(style='thin', color='000000')
     for index, weight in enumerate(block['widths'], 1):
         dimension = sheet.column_dimensions[get_column_letter(index)]
-        dimension.width = widths.observe(index, 'ANTET_BON_' + block['keys'][index - 1],
+        dimension.width = widths.observe(index, block.get('key_prefix', 'ANTET_BON_') + block['keys'][index - 1],
                                          weight * 15, dimension.width)
     for cell in block['cells']:
         column, row = cell['column'] + 1, first_row + cell['row']
         last_column = column + cell.get('colspan', 1) - 1
         last_row = row + cell.get('rowspan', 1) - 1
-        item = write(row, column, cell['text'], cell.get('bold', False), cell.get('size', 8))
-        item.alignment = Alignment(horizontal='center', vertical='center', wrap_text=True)
-        item.border = Border(left=edge, right=edge, top=edge, bottom=edge)
+        item = write(row, column, cell['text'], cell.get('bold', False), cell.get('size', 8),
+                     numeric=cell.get('numeric', False))
+        if item.data_type == 'n' and ',' in cell['text']:
+            item.number_format = '#,##0.' + '0' * len(cell['text'].rsplit(',', 1)[1])
+        align = {'l': 'left', 'r': 'right'}.get(cell.get('align'), 'center')
+        item.alignment = Alignment(horizontal=align, vertical='center', wrap_text=True)
+        sides = cell.get('edges', 'lrtb')
+        item.border = Border(left=edge if 'l' in sides else None, right=edge if 'r' in sides else None,
+                             top=edge if 't' in sides else None, bottom=edge if 'b' in sides else None)
         if last_column != column or last_row != row:
             sheet.merge_cells(start_row=row, start_column=column, end_row=last_row, end_column=last_column)
-    return first_row + len(block['heights']) + 1
+    return first_row + len(block['heights']) + block.get('space_after', 1)
 
 
 def fit_rows(sheet, block, first_row):

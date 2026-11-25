@@ -549,6 +549,7 @@ Partial Friend NotInheritable Class KBotFilterPopup
             menu.Items.Add(New CustomPopupItem(op.ToString(), KBotFilterEngine.OperatorCaption(op, _valueType)))
         Next
 
+        Dim focusContainsSearch As Boolean = False
         _suppressDeactivate = True
         AddHandler menu.ItemClicked,
             Sub(s As Object, ev As CustomPopupItemEventArgs)
@@ -559,6 +560,7 @@ Partial Friend NotInheritable Class KBotFilterPopup
                 ' below the menu would stay on screen, alive and useless, until the dialog
                 ' closed. Its Close comes anyway, as soon as we return from here.
                 menu.Hide()
+                focusContainsSearch = (chosen = KBotFilterOperator.Contains)
                 ApplyCondition(chosen)
             End Sub
         AddHandler menu.FormClosed,
@@ -567,15 +569,23 @@ Partial Friend NotInheritable Class KBotFilterPopup
                 ' If the choice in the submenu did not close the parent menu (the operator
                 ' pressed Esc), the focus comes back here -- otherwise a visible, dead window
                 ' would remain.
-                If Not _closing AndAlso Not IsDisposed Then Activate()
+                If Not _closing AndAlso Not IsDisposed Then
+                    Activate()
+                    If focusContainsSearch Then FilterView.Activated()
+                End If
             End Sub
 
         ' The anchor is in the BODY's coordinates (see FilterView_ConditionMenuRequested).
         menu.ShowBelow(pnlBody, anchorRow)
     End Sub
 
-    ' Asks for the operands (if it has any) and puts the condition on the working filter.
+    ' «Contains» uses the search box; other operands still use the condition dialog.
     Private Sub ApplyCondition(op As KBotFilterOperator)
+        If op = KBotFilterOperator.Contains Then
+            FilterView.BeginContainsSearch()
+            Return
+        End If
+
         If KBotFilterEngine.OperandCount(op) = 0 Then
             FilterView.SetCondition(op, Nothing, Nothing)
             AcceptFilter()

@@ -27,8 +27,14 @@ Namespace KBot.Forexe
         ''' <c>{{SURSA}}</c>, iar <c>IfVar</c> l-ar lua drept valoare și ar încerca să selecteze o
         ''' sursă cu acest nume.
         ''' </param>
+        ''' <param name="codIesire">
+        ''' Slice 0097-10: regular expression for the «Cod» column where the read stops (the newest angajament K-BOT
+        ''' already has; FOREXE lists the newest first, so it is the first known one met from page 1). Nothing / empty =
+        ''' <see cref="WorkflowCatalog.DataIesireNiciuna"/>: the whole list is read.
+        ''' </param>
         Public Shared Function BuildListaAngajamente(session As SessionContext,
-                                                     Optional toateSursele As Boolean = False) As JobRequest
+                                                     Optional toateSursele As Boolean = False,
+                                                     Optional codIesire As String = Nothing) As JobRequest
             If session Is Nothing Then Throw New ArgumentNullException(NameOf(session))
 
             Dim an As String = session.An.ToString(Globalization.CultureInfo.InvariantCulture)
@@ -41,6 +47,8 @@ Namespace KBot.Forexe
             job.Parameters("DATA_SFARSIT") = "31.12." & an
             job.Parameters("COD_PROGRAM") = session.CodProgram
             job.Parameters("SURSA") = If(toateSursele, String.Empty, session.SectorSursa)
+            job.Parameters(WorkflowCatalog.VarCodIesire) =
+                If(String.IsNullOrWhiteSpace(codIesire), WorkflowCatalog.DataIesireNiciuna, codIesire)
             Return job
         End Function
 

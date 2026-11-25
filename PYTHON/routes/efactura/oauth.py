@@ -23,6 +23,7 @@ NOTHING SECRET IS LOGGED OR RAISED: not the code, not a token, not the client se
 ANAF's answer. A failure logs the HTTP status and ANAF's short `error` code (filtered to a safe
 alphabet); the exception text is Romanian and generic.
 """
+import base64
 import json
 import logging
 import re
@@ -76,46 +77,57 @@ def authorize_url(cfg):
     return cfg.auth_url + separator + query
 
 
-def exchange_code(cfg, code):
+def exchange_code(cfg, code, *, basic_auth=False):
     """The one-time `code` -> tokens."""
     return _token_call(cfg, {
         "code": code,
         "token_content_type": "jwt",
-        "client_id": cfg.client_id,
-        "client_secret": cfg.client_secret,
         "redirect_uri": cfg.redirect_uri,
         "grant_type": "authorization_code",
-    }, what="schimbul codului", need_refresh=True)
+    }, what="schimbul codului", need_refresh=True, basic_auth=basic_auth)
 
 
-def refresh(cfg, refresh_token):
+def refresh(cfg, refresh_token, *, basic_auth=False):
     """A refresh token -> new tokens (no certificate)."""
     return _token_call(cfg, {
         "refresh_token": refresh_token,
         "grant_type": "refresh_token",
-        "client_id": cfg.client_id,
-        "client_secret": cfg.client_secret,
-    }, what="reînnoirea tokenului", need_refresh=False)
+    }, what="reînnoirea tokenului", need_refresh=False, basic_auth=basic_auth)
 
 
-def _token_call(cfg, fields, what, need_refresh):
+class _NoRedirect(urllib.request.HTTPRedirectHandler):
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        return None
+
+
+def _token_call(cfg, fields, what, need_refresh, *, basic_auth=False):
+    headers = {"Content-Type": "application/x-www-form-urlencoded", "Accept": "application/json", "User-Agent": "K-BOT"}
+    open_request = urllib.request.urlopen
+    if basic_auth:
+        # FISCOLINO follows the ANAF developer guide's Basic authentication scheme.
+        credentials = ":".join(urllib.parse.quote_plus(value) for value in (cfg.client_id, cfg.client_secret))
+        headers["Authorization"] = "Basic " + base64.b64encode(credentials.encode("ascii")).decode("ascii")
+        headers["User-Agent"] = "FISCOLINO"
+        open_request = urllib.request.build_opener(_NoRedirect()).open
+    else:
+        fields = {**fields, "client_id": cfg.client_id, "client_secret": cfg.client_secret}
     body = urllib.parse.urlencode(fields).encode("ascii")
     request = urllib.request.Request(
         cfg.token_url,
         data=body,
         method="POST",
-        headers={
-            "Content-Type": "application/x-www-form-urlencoded",
-            "Accept": "application/json",
-            "User-Agent": "K-BOT",
-        },
+        headers=headers,
     )
     try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+        with open_request(request, timeout=TIMEOUT_SECONDS) as response:
             raw = response.read(_MAX_BODY)
     except urllib.error.HTTPError as err:
         code = _error_code(err)
         definitive = 400 <= err.code < 500 and err.code not in (408, 429)
+        if basic_auth:
+            definitive = definitive and code in ("invalid_grant", "invalid_token", "expired_token")
+            if code not in ("invalid_grant", "invalid_token", "expired_token", "invalid_client", "invalid_request", "unauthorized_client"):
+                code = ""
         logger.error("ANAF token (%s): HTTP %s, error=%s", what, err.code, code or "-")
         detail = f" ({code})" if code else ""
         raise OauthError(f"ANAF a refuzat {what}: HTTP {err.code}{detail}.",

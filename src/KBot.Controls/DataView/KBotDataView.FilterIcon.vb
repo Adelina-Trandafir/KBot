@@ -2,6 +2,7 @@ Option Strict On
 Imports System.ComponentModel
 Imports System.Drawing
 Imports System.Drawing.Drawing2D
+Imports System.Windows.Forms
 Imports KBot.Common
 Imports KBot.Theming
 
@@ -39,6 +40,80 @@ Partial Class KBotDataView
     ' Coloana al cărei buton de filtru e sub cursor (pe CHEIE, ca la pictogramele de antet:
     ' o coloană poate fi înlocuită în colecție între două mișcări de mouse).
     Private _hotFilterKey As String = Nothing
+
+    ' Slice DGV0-02: coloana al cărei ANTET e sub cursor (nu doar pictograma) și coloana al cărei
+    ' meniu de filtrare e deschis acum — amândouă pe CHEIE. Servesc doar când pâlnia se arată la hover.
+    Private _hotHeaderCellKey As String = Nothing
+    Private _openFilterMenuKey As String = Nothing
+
+    Private _filterIconVisibility As KBotFilterIconVisibility = KBotFilterIconVisibility.Always
+
+    ''' <summary>
+    ''' Slice DGV0-02: când se desenează pâlnia de filtrare din antet. <c>Always</c> (implicit) o
+    ''' desenează mereu; <c>OnHover</c> doar pe coloana al cărei antet e sub cursor (sau al cărei
+    ''' meniu e deschis); <c>OnHoverOrFiltered</c> la fel, plus pe orice coloană care are deja un
+    ''' filtru pus — așa se vede dintr-o privire ce e filtrat, fără o pâlnie pe fiecare coloană.
+    ''' Locul pâlniei rămâne rezervat în toate modurile: titlul nu se mișcă la hover.
+    ''' </summary>
+    <Category("K-BOT: Filtrare")>
+    <Description("Când se arată pictograma de filtrare din antet: Always = mereu; OnHover = doar sub cursor; OnHoverOrFiltered = sub cursor și pe coloanele care au un filtru pus.")>
+    <DefaultValue(KBotFilterIconVisibility.Always)>
+    Public Property FilterIconVisibility As KBotFilterIconVisibility
+        Get
+            Return _filterIconVisibility
+        End Get
+        Set(value As KBotFilterIconVisibility)
+            If Not [Enum].IsDefined(GetType(KBotFilterIconVisibility), value) Then
+                Throw New ArgumentException("Unknown FilterIconVisibility: " & value.ToString(), NameOf(value))
+            End If
+            If _filterIconVisibility = value Then Return
+            _filterIconVisibility = value
+            Invalidate()
+        End Set
+    End Property
+
+    ''' <summary>
+    ''' Pâlnia acestei coloane se desenează acum? Locul ei e rezervat oricum; aici se hotărăște doar
+    ''' pictarea. Hit-testul nu depinde de asta: pâlnia ascunsă stă în celula de antet, iar pentru a
+    ''' ajunge cu mouse-ul pe ea cursorul trece întâi peste antet, care o arată.
+    ''' </summary>
+    Private Function IsFilterIconShown(col As KBotDataColumn) As Boolean
+        If _filterIconVisibility = KBotFilterIconVisibility.Always Then Return True
+        If col Is Nothing Then Return False
+        If _hotHeaderCellKey IsNot Nothing AndAlso
+           String.Equals(_hotHeaderCellKey, col.Key, StringComparison.Ordinal) Then Return True
+        If _openFilterMenuKey IsNot Nothing AndAlso
+           String.Equals(_openFilterMenuKey, col.Key, StringComparison.Ordinal) Then Return True
+        Return _filterIconVisibility = KBotFilterIconVisibility.OnHoverOrFiltered AndAlso
+               (HasColumnFilter(col.Key) OrElse IsColumnGrouped(col))
+    End Function
+
+    ' Slice DGV0-02: coloana e nivel de grupare activ? (Nivelurile fără coloană nu contează.)
+    Private Function IsColumnGrouped(col As KBotDataColumn) As Boolean
+        Return col IsNot Nothing AndAlso GroupLevelFor(col.Key) IsNot Nothing
+    End Function
+
+    ''' <summary>
+    ''' Slice DGV0-02: ține minte coloana al cărei antet e sub cursor (Nothing = niciuna) și
+    ''' repictează doar dacă pâlnia chiar depinde de ea. Chemată din OnMouseMove (boundary UI,
+    ''' care are propriul Try).
+    ''' </summary>
+    Friend Sub UpdateHeaderCellHover(pt As Point)
+        Dim col As KBotDataColumn = Nothing
+        If _showHeader AndAlso pt.Y >= 0 AndAlso pt.Y < HeaderBandHeight() Then col = ColumnAtX(pt.X)
+        SetHotHeaderCell(If(col Is Nothing, Nothing, col.Key))
+    End Sub
+
+    ''' <summary>Cursorul a plecat din control: nicio coloană nu mai e survolată.</summary>
+    Friend Sub ClearHeaderCellHover()
+        SetHotHeaderCell(Nothing)
+    End Sub
+
+    Private Sub SetHotHeaderCell(k_key As String)
+        If String.Equals(k_key, _hotHeaderCellKey, StringComparison.Ordinal) Then Return
+        _hotHeaderCellKey = k_key
+        If _filterIconVisibility <> KBotFilterIconVisibility.Always Then Invalidate()
+    End Sub
 
     ''' <summary>
     ''' Meniul de filtrare al unei coloane e pe cale să se deschidă. Gazda poate să-l oprească
@@ -122,6 +197,8 @@ Partial Class KBotDataView
     ''' </summary>
     Private Sub DrawColumnFilterIcon(g As Graphics, col As KBotDataColumn, iconRect As Rectangle)
         If iconRect.IsEmpty Then Return
+        ' Slice DGV0-02: pâlnia ascunsă nu se desenează (nici placa de hover); locul rămâne rezervat.
+        If Not IsFilterIconShown(col) Then Return
 
         If IsFilterIconHot(col) Then
             Using b As New SolidBrush(FilterIconHoverResolved(col))
@@ -131,12 +208,47 @@ Partial Class KBotDataView
             End Using
         End If
 
+        ' Slice DGV0-02: o coloană GRUPATĂ (și nefiltrată) arată alt semn în același loc — filtrul câștigă,
+        ' deci o coloană și filtrată, și grupată rămâne cu pâlnia.
+        If Not HasColumnFilter(col.Key) AndAlso IsColumnGrouped(col) Then
+            DrawGroupGlyph(g, iconRect)
+            Return
+        End If
+
         If col.ColumnFilterIcon IsNot Nothing Then
             g.DrawImage(col.ColumnFilterIcon, iconRect)
             Return
         End If
 
         DrawFunnel(g, iconRect, HasColumnFilter(col.Key))
+    End Sub
+
+    ''' <summary>
+    ''' Slice DGV0-02: semnul «coloană grupată» — un antet de grup (bara lungă) cu rândurile lui trase la
+    ''' dreapta dedesubt, în accent ca pâlnia plină. Desenat, ca să nu ceară nicio imagine.
+    ''' </summary>
+    Private Sub DrawGroupGlyph(g As Graphics, r As Rectangle)
+        Dim latura As Integer = Math.Max(8, Math.Min(r.Width, r.Height))
+        Dim x As Single = r.Left + (r.Width - latura) / 2.0F
+        Dim y As Single = r.Top + (r.Height - latura) / 2.0F
+        Dim gros As Single = Math.Max(2.0F, latura * 0.16F)
+
+        Dim bare As RectangleF() = {
+            New RectangleF(x + latura * 0.08F, y + latura * 0.14F, latura * 0.84F, gros),
+            New RectangleF(x + latura * 0.32F, y + latura * 0.42F, latura * 0.6F, gros),
+            New RectangleF(x + latura * 0.32F, y + latura * 0.7F, latura * 0.6F, gros)}
+
+        Dim vechiu As SmoothingMode = g.SmoothingMode
+        g.SmoothingMode = SmoothingMode.AntiAlias
+        Try
+            Using b As New SolidBrush(_cHeaderBaseline)
+                For Each bara As RectangleF In bare
+                    g.FillRectangle(b, bara)
+                Next
+            End Using
+        Finally
+            g.SmoothingMode = vechiu
+        End Try
     End Sub
 
     ''' <summary>
@@ -310,6 +422,16 @@ Partial Class KBotDataView
 
             ' Arătat NEMODAL, deci WinForms îl eliberează singur la închidere — vezi CustomPopup:
             ' un «Using» aici l-ar distruge înainte să-l vadă cineva.
+            ' Slice DGV0-02: cât timp meniul e deschis, cursorul e în el, nu pe antet — pâlnia coloanei
+            ' lui rămâne totuși desenată (altfel ar dispărea exact sub meniul care o poartă).
+            _openFilterMenuKey = col.Key
+            AddHandler meniu.FormClosed,
+                Sub(s As Object, e As FormClosedEventArgs)
+                    _openFilterMenuKey = Nothing
+                    Invalidate()
+                End Sub
+            Invalidate()
+
             meniu.ShowBelow(Me, iconRect)
         Catch ex As Exception
             GlobalErrorLog.Write("KBotDataView.OpenColumnFilterMenu", ex)

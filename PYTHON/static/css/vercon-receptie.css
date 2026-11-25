@@ -117,3 +117,7 @@
 .vc-doc--nir .vc-dgv .dgv__hc:not(.is-action) { padding-inline: max(1px, calc(22px - 4px)); }
 .vc-doc--nir.vc-doc--mf.is-adding .vc-dgv .dgv__hc { padding-left: 2px; padding-right: 2px; }
 .vc-doc--nir .vc-dgv .dgv__cell:has(> .dgv__editor) { padding-inline: 0; }
+
+.vc-nir-number-change .vc-nir-number-change__row { display: flex; align-items: stretch; gap: 6px; margin-top: 6px; }
+.vc-nir-number-change .vc-nir-number-change__row input { flex: 1 1 0; min-width: 0; width: auto; margin-top: 0; }
+.vc-nir-number-change .vc-nir-number-change__row button { flex: 0 0 auto; white-space: nowrap; }

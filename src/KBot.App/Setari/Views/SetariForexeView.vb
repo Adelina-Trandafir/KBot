@@ -70,6 +70,7 @@ Public Class SetariForexeView
                 chkMeniuPagina.Checked = AppSettings.Current.ForexeShowPageMenu
                 chkPoartaRezervari.Checked = AppSettings.Current.ForexeReservationGate
                 chkOperatiuniFaraSemnatura.Checked = AppSettings.Current.ForexeAllowUnsignedOperations
+                chkFaraMasca.Checked = AppSettings.Current.ForexeNoBusyVeil
                 chkUitaCertificatLaUnitate.Checked = AppSettings.Current.ForexeForgetCertificateOnUnitSwitch
                 UmpleCapturile()
                 UmpleMultiplicatorul()
@@ -279,6 +280,24 @@ Public Class SetariForexeView
         End Try
     End Sub
 
+    ' Slice 0097-11 (advanced options): the robot works on an UNCOVERED page. Saved at once and pushed into the open page.
+    Private Async Sub ChkFaraMasca_CheckedChanged(sender As Object, e As EventArgs) Handles chkFaraMasca.CheckedChanged
+        Try
+            If _suppress Then Return
+            Dim copie As AppSettings = AppSettings.Current.Clone()
+            copie.ForexeNoBusyVeil = chkFaraMasca.Checked
+            copie.Save()
+            Dim inPagina As Boolean = Await _controller.AplicaSetarilePaginiiAsync()
+            RaiseEvent StatusChanged(If(chkFaraMasca.Checked,
+                                        "Cât lucrează robotul, pagina FOREXE nu mai este acoperită.",
+                                        "Cât lucrează robotul, pagina FOREXE este acoperită ca până acum.") &
+                                     If(inPagina, " Aplicat în pagina deschisă.", " Se aplică la următoarea deschidere a browserului."))
+        Catch ex As Exception
+            GlobalErrorLog.Write("SetariForexeView.ChkFaraMasca_CheckedChanged", ex)
+            RaiseEvent StatusChanged("Setarea nu a putut fi salvată: " & ex.Message)
+        End Try
+    End Sub
+
     ' ---------------- the captures for the documents (28.09.2026) ----------------
 
     ' The two choices, in the order of the setting: index 0 = «Pagina originală» (True).
@@ -464,6 +483,7 @@ Public Class SetariForexeView
     Private Sub ArataSectiuneaIstoric()
         Dim k_avansat As Boolean = AppSettings.Current.AdvancedOptions
         lblTitluIstoric.Visible = k_avansat
+        chkFaraMasca.Visible = k_avansat   ' slice 0097-11: advanced options only
         tlyIstoric.Visible = k_avansat
         If k_avansat Then IncarcaUltimaLunaAsync()
     End Sub

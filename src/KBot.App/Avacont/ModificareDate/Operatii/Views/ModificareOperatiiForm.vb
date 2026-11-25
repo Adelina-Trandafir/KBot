@@ -11,10 +11,10 @@ Imports KBot.Theming
 
 ''' <summary>
 ''' «Modificare operatii» (slice AV02-05; the Access form ModificareNC1280 with its ribbon «MNC»): every posted operation of the subunit and year
-''' in force, one row each, with the column filters of the grid (several at once), the sort remembered per user, an info panel under the list and
-''' the delete of an operation or of a whole document (the server decides what may go). Nothing is modified here: «Modifica operatie» comes with
-''' the port of the Access form «Note». The subunit and the year are the main window's (title bar); the page follows them.
-''' Partials: .Ribbon (the view group), .Stergere (delete), .Info (the panel), .Lista (filling, icons, keys, sort, Excel).
+''' in force, one row each, with the column filters of the grid (several at once), the sort remembered per user and
+''' deletion of operations or documents. «Modifică operație» opens the shared accounting editor (SLICE-AV02-07).
+''' The subunit and the year follow the main window's title bar.
+''' Partials: .Ribbon (the view group), .Stergere (delete), .Lista (filling, icons, keys, sort, Excel).
 ''' </summary>
 Public Class ModificareOperatiiForm
     Implements IViewRibbon
@@ -63,7 +63,6 @@ Public Class ModificareOperatiiForm
             If _api Is Nothing Then Return
             AddHandler _session.PeriodChanged, AddressOf SessionPeriodChanged
             If _host IsNot Nothing Then AddHandler _host.SubunitPicked, AddressOf HostSubunitPicked
-            SetInfoVisible(AppSettings.Current.ModificareOperatiiInfo, k_save:=False)
             LoadList()
         Catch ex As Exception
             GlobalErrorLog.Write("ModificareOperatiiForm.ModificareOperatiiForm_Load", ex)
@@ -113,13 +112,14 @@ Public Class ModificareOperatiiForm
 
     ' ── Loading ─────────────────────────────────────────────────────────────────
 
-    ''' <summary>Reads the list of the subunit and year in force again, keeping the operation on screen selected when it is still there.</summary>
-    Friend Async Sub LoadList()
+    ''' <summary>Reads the list of the subunit and year in force again, keeping the operation on screen selected when it is still there
+    ''' (or <paramref name="k_select"/>, the operation just saved, slice AV08-05).</summary>
+    Friend Async Sub LoadList(Optional k_select As Integer = 0)
         Dim k_seq As Integer = Interlocked.Increment(_loadSeq)
         Try
             Dim k_sub As Integer? = If(_host Is Nothing, Nothing, _host.CurrentSubunitId)
             Dim k_an As Integer = _session.An
-            Dim k_keep As Integer = SelectedIdOper()
+            Dim k_keep As Integer = If(k_select > 0, k_select, SelectedIdOper())
             _idSubunitate = k_sub
             _an = k_an
             If Not k_sub.HasValue OrElse k_an = 0 Then
@@ -172,7 +172,7 @@ Public Class ModificareOperatiiForm
             Dim k_scheme As ThemeScheme = ThemeManager.Current
             ' The form background IS the 1px outline of the window (Padding(2)).
             BackColor = k_scheme.Palette.BorderColor
-            For Each k_c As Control In {tlyMain, pnlCard, tlyBody, tlyInfo}
+            For Each k_c As Control In {tlyMain, pnlCard, tlyBody}
                 k_c.BackColor = k_scheme.PanelBack()
             Next
             gridOperatii.Invalidate()

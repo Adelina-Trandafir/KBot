@@ -6,7 +6,7 @@ order: 20
 parent: contabil.forexe
 keywords: actualizare lista, angajamente noi, sincronizare
 ---
-<!-- slice: 0034, 0057, 0100, 0000-39, 0114-12, 0000-90, 0097-06 -->
+<!-- slice: 0034, 0057, 0100, 0000-39, 0114-12, 0000-90, 0097-06, 0097-10 -->
 Iconița **din dreapta, jos**, a listei de angajamente (cu textul «Actualizează» de lângă ea) deschide un meniu mic cu două rânduri.
 Rândul **«Descarcă angajamente NOI»** aduce din FOREXE lista tuturor
 angajamentelor unității (celălalt rând, «Actualizează angajamente VRAC», e în [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla)). Cât **Sursă/Sector** din bara de titlu e pe **«Toate»**, se aduc **toate sursele** unității;
@@ -17,6 +17,10 @@ cu o sursă anume aleasă, doar cele ale ei.
 - Angajamentele **noi** se adaugă în listă (doar cu codul, descrierea și starea).
 - Angajamentele **existente** rămân neatinse.
 - La sfârșit K-BOT spune câte angajamente noi a găsit.
+
+<!-- slice: 0097-10 -->
+FOREXE așază cele mai noi angajamente **primele**. K-BOT citește lista de la început și se oprește la primul angajament pe care îl avea deja: nu mai trece prin cele descărcate înainte, așa că descărcarea e mai scurtă.
+Dacă FOREXE oprește citirea cu o pagină de eroare, K-BOT păstrează ce a citit până atunci și scrie în consolă că citirea a fost incompletă; ce a rămas necitit se aduce la o altă descărcare.
 
 Cu [descărcarea pe mai multe taburi](topic:contabil.forexe.descarcare-multipla) pornită, dacă lista a
 adus angajamente noi, K-BOT întreabă și «Dorești actualizarea angajamentelor noi?».

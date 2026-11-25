@@ -6,6 +6,10 @@
 .vc-doc--lista .vc-doc__header .vc-field > span { font-weight: 700; }
 .vc-lista__bons { min-width: 0; }
 .vc-lista__bons > .vc-dgv:not(.vc-lista__summary) { height: 180px; }
+.vc-modal.vc-lista-bon-picker { width: min(480px, calc(94 * var(--application-vw, 1vw))); }
+.vc-lista-bon-picker .vc-modal__body .vc-tree-body { height: min(240px, calc(40 * var(--application-vh, 1vh))); }
+.vc-lista-bon-picker__grouping { margin-top: 8px; }
+.vc-lista-bon-picker .vc-modal__body .confirm-box__error { padding: 0; }
 .vc-lista__meals { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 10px; margin-bottom: 14px; }
 .vc-meal, .vc-lista__meal { border: 1px solid var(--line); border-radius: 4px; min-width: 0; overflow: hidden; }
 .vc-meal h4, .vc-lista__meal h4, .vc-lista__bons h4 { margin: 0; padding: 8px 10px; background: rgba(48,158,255,.1); }

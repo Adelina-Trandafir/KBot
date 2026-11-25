@@ -400,7 +400,7 @@ function createGrid() {
     onCellSaved: ({ row }) => { state.selected = row; loadLedger().catch(report); },
     onEditError: ({ error }) => report(error),
     dragRows: canMove, onRowDragStart: onChildDragStart, onRowDragEnd: onChildDragEnd,
-    onRowDblClick: (k_row) => { if (k_row?.IDG != null && k_row.IDP != null) state.payers.openForChild(k_row.IDG, k_row.IDP).catch(report); },
+    onRowDblClick: (k_row) => { if (k_row?.IDP != null) state.payers.editChildFromAttendance(k_row.IDP).catch(report); },
     onHeaderAction: () => addChild().catch(report), onCellAction: ({ row }) => pickGroupFor(row).catch(report) });
   state.grid.sortBy('Nume', 'asc');
 }

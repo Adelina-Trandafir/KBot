@@ -54,6 +54,22 @@ Public NotInheritable Class DeploymentPublisher
         End Try
     End Function
 
+    ''' <summary>
+    ''' SLICE-ME01-38. Deletes from the server the files that were published debugging from here and no longer exist
+    ''' locally, and drops them from the debugging evidence. The server refuses anything not in that evidence and config.py;
+    ''' returns the paths it deleted.
+    ''' </summary>
+    Public Shared Function DeleteMissing(k_settings As AdminSettings, k_paths As IReadOnlyList(Of String),
+                                         k_onLine As Action(Of String)) As List(Of String)
+        Try
+            Dim k_data As JsonElement = Execute(k_settings, Nothing, "delete_debug", k_onLine, k_paths)
+            Return JsonSerializer.Deserialize(Of List(Of String))(k_data.GetProperty("deleted").GetRawText())
+        Catch ex As Exception
+            GlobalErrorLog.Write("DeploymentPublisher.DeleteMissing", ex)
+            Throw
+        End Try
+    End Function
+
     Private Shared Function Execute(k_settings As AdminSettings, k_plan As DeploymentPlan, k_action As String,
                                     k_onLine As Action(Of String), Optional k_paths As IReadOnlyList(Of String) = Nothing) As JsonElement
         Dim k_stage As String = String.Empty

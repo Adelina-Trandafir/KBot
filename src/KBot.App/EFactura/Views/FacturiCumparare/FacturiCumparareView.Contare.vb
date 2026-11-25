@@ -389,6 +389,7 @@ Partial Public Class FacturiCumparareView
     ' «Salvează evidențierea» (slice 01EF-04). The warnings that need a confirmation are shown together and, when the operator agrees, their codes go with the request
     ' (the server checks them again). Started by the ribbon button «Salvează» (slice 03EF-04). UI boundary (async Sub): logs and swallows; a failure becomes a line in the notice.
     Private Async Sub SaveContare()
+        Dim k_asteaptaRaspuns As Boolean = False
         Try
             If _contareSalveaza OrElse _contareUltim Is Nothing Then Return
             _contareSalveaza = True
@@ -406,10 +407,14 @@ Partial Public Class FacturiCumparareView
                 KBotMessage.Show(FindForm(), "Numărul notei contabile trebuie să fie un număr întreg pozitiv.", "Contări", MessageBoxButtons.OK, MessageBoxIcon.Warning)
                 Return
             End If
+            Dim k_destinatie As EFacturaContariNota = k_answer.Note.FirstOrDefault(Function(n) k_note.HasValue AndAlso n.NumarNC = k_note.Value)
             Dim k_request As New EFacturaContariCerere() With {
                 .IdClsf = If(k_answer.Clasificatie Is Nothing, CType(Nothing, Integer?), k_answer.Clasificatie.IdClsf),
-                .IdSablonE = k_answer.IdSablonE, .IdSablonP = k_answer.IdSablonP, .An = YearFilter(), .IdSubunitate = SubunitInForce(),
-                .NumarNC = k_note, .IdPartener = _contarePartner, .[Mod] = k_answer.[Mod], .Protectie = AppSettings.Current.ContariProtectiePlati}
+                .IdSablonE = k_answer.IdSablonE, .IdSablonP = k_answer.IdSablonP, .An = YearFilter(),
+                .IdSubunitate = If(k_answer.Subunitate?.IdSubunitate, SubunitInForce()),
+                .NumarNC = k_note, .IdNota = If(k_destinatie IsNot Nothing AndAlso k_destinatie.IdNota > 0, k_destinatie.IdNota, CType(Nothing, Integer?)),
+                .NotaNoua = If(k_destinatie Is Nothing OrElse k_destinatie.IdNota > 0, CType(k_destinatie Is Nothing, Boolean?), Nothing),
+                .IdPartener = If(k_answer.IdPartener, _contarePartner), .[Mod] = k_answer.[Mod], .Protectie = AppSettings.Current.ContariProtectiePlati}
             If Not String.Equals(k_answer.[Mod], "evidentiere", StringComparison.Ordinal) Then
                 k_request.DataOP = detalii.pgContare.DataOP()
                 k_request.ExplicatieOP = detalii.pgContare.ExplicatieOP()
@@ -417,9 +422,12 @@ Partial Public Class FacturiCumparareView
             k_request.Ids.AddRange(_tickedIds.Where(Function(k_id) _nodes.ContainsKey(k_id)).OrderBy(Function(k_id) k_id))
             For Each k_row As EFacturaContariRand In k_answer.Evidenta
                 k_request.Platit(k_row.IdPrimita) = k_row.Platit   ' the amounts shown are the ones booked
+                If Not String.Equals(k_request.[Mod], "plata", StringComparison.Ordinal) Then k_request.EvidentaAsteptata(k_row.IdPrimita) = k_row.Suma
             Next
             k_request.Confirmari.AddRange(k_confirm.Select(Function(k_a) k_a.Cod))
+            k_asteaptaRaspuns = True
             Dim k_saved As EFacturaContariSalvat = Await _gate.RunAsync(Function() _api.SaveContariAsync(k_request, _cts.Token)).ConfigureAwait(True)
+            k_asteaptaRaspuns = False
             ' Slice 04EF-01: the order number the operator saw before saving was provisional; the REAL one comes back here.
             Dim k_op As String = If(k_saved.Plata Is Nothing, String.Empty,
                 $" Ordinul de plată are numărul {k_saved.Plata.NrOP.ToString(CultureInfo.CurrentCulture)}" &
@@ -433,10 +441,22 @@ Partial Public Class FacturiCumparareView
             ' The host was closed.
         Catch ex As ApiException
             GlobalErrorLog.Write("FacturiCumparareView.SaveContare", ex)
-            ShowProblem(ex.Message)
+            If k_asteaptaRaspuns AndAlso (Not ex.StatusCode.HasValue OrElse ex.StatusCode.Value >= 500) Then
+                ClearTicks()
+                _contareUltim = Nothing
+                ShowProblem("Rezultatul salvării este incert. Reîncărcați situația înainte de a relua.")
+            Else
+                ShowProblem(ex.Message)
+            End If
         Catch ex As Exception
             GlobalErrorLog.Write("FacturiCumparareView.SaveContare", ex)
-            ShowProblem("Salvarea nu a putut fi dusă la capăt. Detalii în jurnalul de erori.")
+            If k_asteaptaRaspuns Then
+                ClearTicks()
+                _contareUltim = Nothing
+                ShowProblem("Rezultatul salvării este incert. Reîncărcați situația înainte de a relua.")
+            Else
+                ShowProblem("Situația nu a putut fi reîncărcată. Detalii în jurnalul de erori.")
+            End If
         Finally
             _contareSalveaza = False
         End Try

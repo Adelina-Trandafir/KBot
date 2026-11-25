@@ -39,6 +39,7 @@ Partial Class SetariForexeView
         chkMeniuPagina = New CheckBox()
         chkPoartaRezervari = New CheckBox()
         chkOperatiuniFaraSemnatura = New CheckBox()
+        chkFaraMasca = New CheckBox()
         tlyCaptura = New KBotTableLayoutPanel()
         lblCapturaCaption = New Label()
         cmbCaptura = New KBotComboBox()
@@ -313,19 +314,21 @@ Partial Class SetariForexeView
         tlyBrowser.Controls.Add(chkMeniuPagina, 0, 2)
         tlyBrowser.Controls.Add(chkPoartaRezervari, 0, 3)
         tlyBrowser.Controls.Add(chkOperatiuniFaraSemnatura, 0, 4)
-        tlyBrowser.Controls.Add(tlyCaptura, 0, 5)
+        tlyBrowser.Controls.Add(chkFaraMasca, 0, 5)
+        tlyBrowser.Controls.Add(tlyCaptura, 0, 6)
         tlyBrowser.Dock = DockStyle.Top
         tlyBrowser.Location = New Point(28, 300)
         tlyBrowser.Margin = New Padding(4, 0, 4, 24)
         tlyBrowser.Name = "tlyBrowser"
-        tlyBrowser.RowCount = 6
+        tlyBrowser.RowCount = 7
         tlyBrowser.RowStyles.Add(New RowStyle())
         tlyBrowser.RowStyles.Add(New RowStyle())
         tlyBrowser.RowStyles.Add(New RowStyle())
         tlyBrowser.RowStyles.Add(New RowStyle())
         tlyBrowser.RowStyles.Add(New RowStyle())
         tlyBrowser.RowStyles.Add(New RowStyle())
-        tlyBrowser.Size = New Size(904, 241)
+        tlyBrowser.RowStyles.Add(New RowStyle())
+        tlyBrowser.Size = New Size(904, 280)
         tlyBrowser.TabIndex = 5
         '
         ' chkPoartaRezervari
@@ -355,6 +358,19 @@ Partial Class SetariForexeView
         tips.SetToolTipText(chkOperatiuniFaraSemnatura, "Bifată: poți trimite o revizie DDF înainte de semnarea Secțiunii A, relua trimiterea și continua cu definitivarea și derularea." & vbLf & "Debifată: aceste operațiuni cer semnătura pe Secțiunea A.")
         chkOperatiuniFaraSemnatura.UseVisualStyleBackColor = True
         '
+        ' chkFaraMasca (slice 0097-11, advanced options only)
+        '
+        chkFaraMasca.AutoSize = True
+        chkFaraMasca.Location = New Point(4, 195)
+        chkFaraMasca.Margin = New Padding(4, 0, 4, 10)
+        chkFaraMasca.Name = "chkFaraMasca"
+        chkFaraMasca.TabIndex = 5
+        chkFaraMasca.Text = "Nu acoperi browserul în timpul lucrului robotului"
+        tips.SetToolTipHeader(chkFaraMasca, "Browserul fără mască")
+        tips.SetToolTipText(chkFaraMasca, "Bifată: cât lucrează robotul, pagina FOREXE nu mai e acoperită cu fundalul și cardul «K-BOT lucrează în FOREXE», deci vezi exact ce face robotul." & vbLf & "Pagina rămâne blocată pentru mouse și tastatură cât lucrează robotul. Se aplică imediat în pagina deschisă.")
+        chkFaraMasca.UseVisualStyleBackColor = True
+        chkFaraMasca.Visible = False
+        '
         ' tlyCaptura
         '
         tlyCaptura.AutoFitToTheme = False
@@ -364,13 +380,13 @@ Partial Class SetariForexeView
         tlyCaptura.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyCaptura.Controls.Add(lblCapturaCaption, 0, 0)
         tlyCaptura.Controls.Add(cmbCaptura, 1, 0)
-        tlyCaptura.Location = New Point(4, 195)
+        tlyCaptura.Location = New Point(4, 234)
         tlyCaptura.Margin = New Padding(0, 0, 0, 0)
         tlyCaptura.Name = "tlyCaptura"
         tlyCaptura.RowCount = 1
         tlyCaptura.RowStyles.Add(New RowStyle())
         tlyCaptura.Size = New Size(900, 46)
-        tlyCaptura.TabIndex = 5
+        tlyCaptura.TabIndex = 6
         '
         ' lblCapturaCaption
         '
@@ -899,6 +915,7 @@ Partial Class SetariForexeView
     Friend WithEvents chkMeniuPagina As CheckBox
     Friend WithEvents chkPoartaRezervari As CheckBox
     Friend WithEvents chkOperatiuniFaraSemnatura As CheckBox
+    Friend WithEvents chkFaraMasca As CheckBox
     Friend WithEvents tlyCaptura As KBotTableLayoutPanel
     Friend WithEvents lblCapturaCaption As Label
     Friend WithEvents cmbCaptura As KBotComboBox

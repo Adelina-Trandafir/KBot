@@ -53,7 +53,7 @@ def publish(root, stage, manifest):
         raise RuntimeError("Rădăcina de publicare nu este un director real.")
     root = root.resolve(strict=True)
     action = manifest["action"]
-    if action not in ("publish", "commit_debug", "list_debug", "forget_debug"):
+    if action not in ("publish", "commit_debug", "list_debug", "forget_debug", "delete_debug"):
         raise RuntimeError("Acțiune de publicare necunoscută.")
     state_dir = root / ".kbotadmin-deployment"
     if state_dir.is_symlink():
@@ -62,6 +62,8 @@ def publish(root, stage, manifest):
         return {"ok": True, "debug_files": []}
     if action == "forget_debug" and not state_dir.exists():
         return {"ok": True, "forgotten": [], "action": "forget_debug"}
+    if action == "delete_debug" and not state_dir.exists():
+        return {"ok": True, "deleted": [], "action": "delete_debug"}
     state_dir.mkdir(mode=0o700, exist_ok=True)
     descriptor = os.open(state_dir / "publish.lock", os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600)
     # The same lock protects uploads without Git and Git-only finalization.
@@ -92,6 +94,24 @@ def publish(root, stage, manifest):
             if forgotten:
                 save_debug(state_path, state)
             return {"ok": True, "forgotten": forgotten, "action": "forget_debug"}
+        if action == "delete_debug":
+            # ME01-38: removes from the server the files the operator deleted locally. Only files that are in the
+            # debugging evidence (published from here) can be removed, and config.py never (rule 00).
+            wanted = [relative for relative in manifest.get("paths", []) if relative in state]
+            for relative in wanted:
+                if PurePosixPath(relative).name.lower() == "config.py":
+                    raise RuntimeError("Ștergerea lui config.py de pe server este interzisă: " + relative)
+            deleted = []
+            for relative in wanted:
+                target = target_path(root, relative)
+                if target.exists():
+                    target.unlink()
+                    print("Șters de pe server: " + relative, flush=True)
+                del state[relative]
+                deleted.append(relative)
+            if deleted:
+                save_debug(state_path, state)
+            return {"ok": True, "deleted": deleted, "action": "delete_debug"}
         return publish_locked(root, stage, manifest, state_path, state)
 
 

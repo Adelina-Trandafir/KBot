@@ -9,6 +9,9 @@ admin_dbview.py -- the verbs of KBotAdmin's page «Tabele» (sliceless). All of 
                                             the values column C holds (no NULL, no repeats), for a pick list; with --like only the
                                             values that contain S, those that start with it first; else sorted
         --where-json: a JSON object {column: value}; only the rows where every column equals its value (the linked-table jump of the page)
+    --filter-json J (db-table / db-rows): the column-filter conditions of the page, searched on the SERVER over the whole table (ME04-02):
+        a JSON list of {"c": column, "o": op, "a": operand, "b": second operand}; op is one of eq ne contains ncontains begins nbegins
+        ends nends lt gt between empty nempty; every condition must hold (AND), together with --where-json
     db-cell   --db D --table T --column C (--key-json J | --offset O)   the WHOLE content of one cell (text or blob)
 
 A cell in a page is shown short on purpose (a page travels over SSH as one JSON line):
@@ -228,8 +231,76 @@ def _where(columns, where_json):
     return " WHERE " + " AND ".join(parts), params
 
 
-def _page(conn, db, table, columns, pk, offset, limit, where_json=""):
+FILTER_TEXT_OPS = {"contains", "ncontains", "begins", "nbegins", "ends", "nends"}
+FILTER_VALUE_OPS = {"eq", "ne", "lt", "gt"}
+
+
+def _like_pattern(text, op):
+    """The LIKE pattern of a text condition: the user's % _ and backslash are escaped so they are searched as plain characters."""
+    safe = text.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_")
+    if op in ("contains", "ncontains"):
+        return "%" + safe + "%"
+    if op in ("begins", "nbegins"):
+        return safe + "%"
+    return "%" + safe
+
+
+def _filter_parts(columns, filter_json):
+    """The column-filter conditions of the page as SQL (parts joined by AND) and their parameters. Every column is checked
+    against the real columns; operands and operators never reach SQL as text, operands travel as parameters."""
+    if not filter_json:
+        return [], []
+    try:
+        conditions = json.loads(filter_json)
+    except ValueError as err:
+        raise AdminError("Căutarea nu poate fi citită: %s" % err)
+    if not isinstance(conditions, list) or not conditions:
+        raise AdminError("Căutarea trebuie să fie o listă de condiții.")
+    names = {c["name"] for c in columns}
+    parts, params = [], []
+    for cond in conditions:
+        if not isinstance(cond, dict):
+            raise AdminError("O condiție de căutare nu e validă.")
+        col, op = cond.get("c"), cond.get("o")
+        if col not in names:
+            raise AdminError("Coloana «%s» nu există în tabelul cerut." % col)
+        q = _q(col)
+        a, b = cond.get("a"), cond.get("b")
+        if op == "empty":
+            parts.append("(%s IS NULL OR TRIM(%s) = '')" % (q, q))
+        elif op == "nempty":
+            parts.append("(%s IS NOT NULL AND TRIM(%s) <> '')" % (q, q))
+        elif op in FILTER_TEXT_OPS:
+            if not isinstance(a, str):
+                raise AdminError("Condiția cere un text.")
+            negate = op.startswith("n")
+            parts.append("(%s %s %%s)" % (q, "IS NULL OR %s NOT LIKE" % q if negate else "LIKE"))
+            params.append(_like_pattern(a, op))
+        elif op in FILTER_VALUE_OPS:
+            if a is None or isinstance(a, (dict, list)):
+                raise AdminError("Condiția cere o valoare simplă.")
+            sign = {"eq": "=", "ne": "<>", "lt": "<", "gt": ">"}[op]
+            if op == "ne":
+                parts.append("(%s IS NULL OR %s <> %%s)" % (q, q))
+            else:
+                parts.append("%s %s %%s" % (q, sign))
+            params.append(a)
+        elif op == "between":
+            if a is None or b is None or isinstance(a, (dict, list)) or isinstance(b, (dict, list)):
+                raise AdminError("«Între» cere două valori simple.")
+            parts.append("%s BETWEEN %%s AND %%s" % q)
+            params.extend([a, b])
+        else:
+            raise AdminError("Condiția «%s» nu există." % op)
+    return parts, params
+
+
+def _page(conn, db, table, columns, pk, offset, limit, where_json="", filter_json=""):
     where, params = _where(columns, where_json)
+    extra, extra_params = _filter_parts(columns, filter_json)
+    if extra:
+        where = (where + " AND " if where else " WHERE ") + " AND ".join(extra)
+        params = list(params) + extra_params
     sql = "SELECT %s FROM %s.%s%s%s LIMIT %d OFFSET %d" % (
         _select_list(columns), _q(db), _q(table), where, _order_by(pk), limit + 1, offset)
     cur = conn.cursor()
@@ -289,7 +360,7 @@ def cmd_db_table(args):
         return {"db": db, "info": info, "columns": columns, "primary_key": pk,
                 "foreign_keys": _foreign_keys(conn, db, table), "referenced_by": _referenced_by(conn, db, table),
                 "indexes": _indexes(conn, db, table),
-                "page": _page(conn, db, table, columns, pk, 0, limit, args.where_json)}
+                "page": _page(conn, db, table, columns, pk, 0, limit, args.where_json, args.filter_json)}
     finally:
         if conn.is_connected():
             conn.close()
@@ -304,7 +375,7 @@ def cmd_db_rows(args):
         db = _one_db(conn, args.db)
         table = _s(_table_row(conn, db, args.table)["name"])
         return {"page": _page(conn, db, table, _columns(conn, db, table), _primary_key(conn, db, table), args.offset, limit,
-                              args.where_json)}
+                              args.where_json, args.filter_json)}
     finally:
         if conn.is_connected():
             conn.close()
@@ -415,6 +486,7 @@ def register(sub):
     p.add_argument("--table", required=True)
     p.add_argument("--limit", type=int, default=DEFAULT_PAGE)
     p.add_argument("--where-json", default="")
+    p.add_argument("--filter-json", default="")
     p.set_defaults(fn=cmd_db_table)
 
     p = sub.add_parser("db-rows")
@@ -423,6 +495,7 @@ def register(sub):
     p.add_argument("--offset", type=int, default=0)
     p.add_argument("--limit", type=int, default=DEFAULT_PAGE)
     p.add_argument("--where-json", default="")
+    p.add_argument("--filter-json", default="")
     p.set_defaults(fn=cmd_db_rows)
 
     p = sub.add_parser("db-distinct")

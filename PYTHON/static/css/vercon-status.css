@@ -45,7 +45,7 @@
   outline-offset: -1px;
 }
 /* Preserve the established widths of the inline document action buttons. */
-.vc-doc:is(.vc-doc--nir, .vc-doc--storno, .vc-doc--bc, .vc-doc--bp, .vc-doc--bt, .vc-doc--bs)
+.vc-doc:is(.vc-doc--nir, .vc-doc--storno, .vc-doc--bc, .vc-doc--br, .vc-doc--bp, .vc-doc--bt, .vc-doc--bs)
   .vc-doc__bar--nir-editing .vc-status-bar__start > button,
-.vc-doc:is(.vc-doc--nir, .vc-doc--storno, .vc-doc--bc, .vc-doc--bp, .vc-doc--bt, .vc-doc--bs)
+.vc-doc:is(.vc-doc--nir, .vc-doc--storno, .vc-doc--bc, .vc-doc--br, .vc-doc--bp, .vc-doc--bt, .vc-doc--bs)
   .vc-doc__bar--nir-editing .vc-status-bar__end > button { width: 8em; box-sizing: border-box; }

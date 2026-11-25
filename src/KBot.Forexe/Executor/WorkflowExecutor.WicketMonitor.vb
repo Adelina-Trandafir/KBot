@@ -13,7 +13,8 @@ End Class
 
 ' =============================================================================
 Partial Public Class WorkflowExecutor
-    Public Const WicketIdleTimeoutMs As Integer = 5000
+    ' Slice 0097-12: 10 s (was 5 s, operator 20.11.2026) - the longest the robot waits for FOREXE's Ajax to finish.
+    Public Const WicketIdleTimeoutMs As Integer = 10000
     Public Const WicketIdleThresholdMs As Integer = 300
 
     ' ── Câmpuri monitor ──────────────────────────────────────────────────────
@@ -22,6 +23,11 @@ Partial Public Class WorkflowExecutor
     Private _animlogoNone As Boolean = False
     Private _idleTimer As System.Threading.Timer = Nothing
     Private ReadOnly _idleLock As New Object()
+
+    ' Slice 0097-12 (diagnostic): what the page reported, to be said in the log by every wait.
+    Private _signalsReceived As Integer = 0
+    Private _lastSignalText As String = "niciunul"
+    Private _lastSignalAt As DateTime = DateTime.MinValue
 
     ' ── Câmpuri WaitForWicketIdleAsync ───────────────────────────────────────
     Private _idleTcs As TaskCompletionSource(Of Boolean) = Nothing
@@ -65,6 +71,8 @@ Partial Public Class WorkflowExecutor
             Await StartClickMonitoringAsync()
 
             _wicketMonitoringActive = True
+            _logger.LogInfo("[Wicket] Monitor pornit acum: scriptul se instalează (AddInitScript) doar pe documentele încărcate DE ACUM ÎNCOLO; " &
+                            "documentul curent: " & Await ProbeWicketPageAsync())
 
         Catch ex As Exception
             initEx = ex
@@ -118,6 +126,9 @@ Partial Public Class WorkflowExecutor
         Dim isNone As Boolean = String.Equals(entry.State, "none",
                                               StringComparison.OrdinalIgnoreCase)
         SyncLock _idleLock
+            _signalsReceived += 1
+            _lastSignalText = entry.Element & " = " & entry.State
+            _lastSignalAt = DateTime.Now
             If entry.Element = "#statlogo" Then _statlogoNone = isNone
             If entry.Element = "#animlogo" Then _animlogoNone = isNone
             If _idleTimer Is Nothing Then Return
@@ -205,18 +216,56 @@ Partial Public Class WorkflowExecutor
         End SyncLock
 
         Dim alreadyIdle As Boolean
+        Dim k_statNone As Boolean
+        Dim k_signals As Integer
+        Dim k_last As String
+        Dim k_lastAt As DateTime
         SyncLock _idleLock
             alreadyIdle = _animlogoNone
+            k_statNone = _statlogoNone
+            k_signals = _signalsReceived
+            k_last = _lastSignalText
+            k_lastAt = _lastSignalAt
         End SyncLock
         If alreadyIdle Then tcs.TrySetResult(True)
 
+        ' Slice 0097-12 (diagnostic, operator 20.11.2026): what the robot knows BEFORE it waits, and what the page itself shows.
+        Dim k_cap As Integer = Stretched(WicketIdleTimeoutMs)
+        Dim k_watch As Stopwatch = Stopwatch.StartNew()
+        _logger.LogInfo($"[Wicket] Aștept «gata» (plafon {k_cap} ms). Robot: animlogo={If(alreadyIdle, "none (DEJA liber -> revine imediat)", "vizibil")}, " &
+                        $"statlogo={If(k_statNone, "none", "vizibil/necunoscut")}, semnale primite de la pagină: {k_signals}, " &
+                        $"ultimul: {k_last}{If(k_lastAt = DateTime.MinValue, "", $" (acum {CInt((DateTime.Now - k_lastAt).TotalMilliseconds)} ms)")}. " &
+                        "Pagina: " & Await ProbeWicketPageAsync())
+
         Try
             ' Slice 0091: the cap stretches with the operator's multiplier for the waits.
-            Await Task.WhenAny(tcs.Task, Task.Delay(Stretched(WicketIdleTimeoutMs)))
+            Await Task.WhenAny(tcs.Task, Task.Delay(k_cap))
         Finally
             SyncLock _idleTcsLock
                 If _idleTcs Is tcs Then _idleTcs = Nothing
             End SyncLock
+        End Try
+
+        Dim k_signalled As Boolean = tcs.Task.IsCompleted
+        _logger.LogInfo($"[Wicket] {If(k_signalled, "SEMNAL «gata» primit", "PLAFON EXPIRAT, fără semnal «gata»")} după {k_watch.ElapsedMilliseconds} ms. " &
+                        "Pagina acum: " & Await ProbeWicketPageAsync())
+    End Function
+
+    ''' <summary>
+    ''' Slice 0097-12 (diagnostic): what THIS document shows about the Wicket monitor - whether the script is loaded and its
+    ''' observer armed, the display of #statlogo / #animlogo, and whether the callback to K-BOT exists. Never throws:
+    ''' a failed probe is said in its own text.
+    ''' </summary>
+    Private Async Function ProbeWicketPageAsync() As Task(Of String)
+        Try
+            If _page Is Nothing OrElse _page.IsClosed Then Return "pagina închisă"
+            Return Await _page.EvaluateAsync(Of String)(
+                "() => { var d = function (s) { var e = document.querySelector(s); return e ? getComputedStyle(e).display : 'LIPSEȘTE'; };" &
+                " return 'doc=' + document.readyState + ', #statlogo=' + d('#statlogo') + ', #animlogo=' + d('#animlogo')" &
+                " + ', script=' + (window._kbotWicketMonLoaded ? 'încărcat' : 'ABSENT') + ', observer=' + (window._kbotWicketMonArmed ? 'armat' : 'NU')" &
+                " + ', callback=' + (typeof window._wicketMonitorCallback); }")
+        Catch ex As Exception
+            Return "sondă eșuată: " & ex.Message
         End Try
     End Function
 

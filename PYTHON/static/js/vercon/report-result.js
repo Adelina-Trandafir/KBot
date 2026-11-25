@@ -71,7 +71,8 @@ function buildReportNodes(reports) {
     'NIR_SFP', 'NIR_Storno', 'Centralizator_Conturi_Furnizori', 'BUConsum', 'BUConsum_F', 'BUConsum_F1', 'BonRetur',
     'MF_Balanta_Subinv'].includes(report.id));
   const mf = reports.some(report => report.types.length === 1 && report.types[0] === 'MF');
-  const oi = reports.filter(report => report.ledger === 'custody' || ['bp', 'bt', 'bs'].includes(report.family) || report.kind === 'depreciation');
+  const oi = reports.filter(report => report.ledger === 'custody' || ['bp', 'bt', 'bs'].includes(report.family)
+    || report.kind === 'depreciation' || report.group === 'Mijloace fixe');
   if (oi.length) {
     const nodes = reports.filter(report => !oi.includes(report));
     const mfDocuments = ['MF_Bon_BP', 'MF_Bon_BT', 'MF_Bon_BS'];

@@ -10,6 +10,7 @@ from . import report_voucher
 from . import report_statement
 from . import report_stock_card
 from . import report_receipt_dates
+from . import report_layouts, report_purchase_order
 from reporting.snapshots import Snapshots as ReportSnapshots
 
 
@@ -43,6 +44,12 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
     if params['start'] > params['end'] or ctx['type'] not in ('OI', 'MF') and (params['start'].year != ctx['an'] or params['end'].year != ctx['an']):
         raise NomError('REPORT_PERIOD', 'Alegeți un interval în exercițiul curent.', 422)
     layout = report_store.read(unit, 'layout', spec['id'])
+    purchase_order = report_purchase_order.active(spec)
+    if spec['id'] == report_purchase_order.REPORT_ID:
+        saved_form = layout['value'].get('form') == report_purchase_order.FORM
+        if saved_form != purchase_order:
+            # Keep the stored definition intact, including a unit's former layout.
+            layout = {**layout, 'value': report_layouts.default(spec)}
     balance_reference = None
     if spec['id'] == 'OI_Balanta':
         # Use the actual warehouse balance definition, including configured columns.
@@ -55,6 +62,9 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
     report_store.validate('unit', identity['value'])
     issuer = report_identity.read(cursor, unit, ctx, issuer=issuer)
     identity = {**identity, 'value': report_identity.configured(identity['value'], issuer, unit)}
+    if purchase_order:
+        # The form carries the issuer and signatures on each of its own pages.
+        identity['value']['elements'] = []
     layout = {**layout, 'value': report_identity.display_definition(layout['value'], unit, issuer['name'])}
     if report_voucher.applies(spec):
         # Each document must carry its own form header, also with saved layouts.
@@ -73,17 +83,20 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
         if spec['kind'] == 'balance':
             rows = report_balance.prepare(rows, params)
             layout = {**layout, 'value': report_balance.display_layout(layout['value'], params)}
-        else:
+        elif not purchase_order:
             rows = report_sort.by_name(rows, spec, layout['value'].get('groups', []))
         if (params.get('document') is not None or params.get('document_ids') is not None) and not rows:
             raise NomError('NOT_FOUND', 'Documentul nu este disponibil în selecția raportului.', 404)
         committees = {row['IdComisie']: row for row in source.rows('committee')} if spec.get('family') in ('nir', 'storno') else {}
         if layout['value'].get('form') == 'nir-classic' and spec.get('family') in ('nir', 'storno'):
             receptions = report_reception.documents(rows, committees)
-        body_builder = report_statement.build if spec['kind'] == 'statement' else report_body.build
-        blocks = body_builder(spec, layout['value'], rows, ctx, identity['value'], committees,
-                                   page_break_accounts=spec['kind'] == 'balance' and params.get('page_break_accounts', False),
-                                   gestiune_name=gestiune_name)
+        if purchase_order:
+            blocks = report_purchase_order.blocks(layout['value'], rows, identity['value'], ctx['zec'])
+        else:
+            body_builder = report_statement.build if spec['kind'] == 'statement' else report_body.build
+            blocks = body_builder(spec, layout['value'], rows, ctx, identity['value'], committees,
+                                  page_break_accounts=spec['kind'] == 'balance' and params.get('page_break_accounts', False),
+                                  gestiune_name=gestiune_name)
         if spec['kind'] == 'depreciation':
             notes.append('Amortizare la data de sfârșit selectată, cu parametrii curenți din registru și prețul curent al variantei. '
                          'Calculul folosește întregul istoric; data de început nu limitează amortizarea cumulată. '
@@ -111,13 +124,14 @@ def build(cursor, unit, ctx, name, params, gestiune_name, *, source=None, issuer
     heading = [] if report_voucher.applies(spec) else [{'t': 'title', 'text': title}]
     if spec['id'] != 'ListaAlimente2015' and not report_voucher.applies(spec):
         heading.append({'t': 'text', 'text': period})
+    report_blocks = blocks if purchase_order else heading + band('before') + blocks + band('after')
     model = {'title': title, 'report_name': spec['id'], 'layout': layout['value'], 'identity': identity['value'],
              'letterhead_version': report_identity.VERSION,
              'warehouse_balance_version': report_balance.VERSION,
              'receipt_stock_date_version': report_receipt_dates.VERSION,
              'gestiune_name': gestiune_name, 'period_text': period,
              'filename': spec['id'].replace(' ', '_') + '_' + params['end'].isoformat(),
-             'blocks': heading + band('before') + blocks + band('after'),
+             'blocks': report_blocks,
              'notes': notes, 'context': {key: ctx[key] for key in ('subunit', 'gestiune', 'exercitiu', 'type', 'scale', 'zec')},
              'versions': {'layout': layout['version'], 'unit': identity['version'], 'queries': source.versions},
              'generated_at': utc_now().isoformat(timespec='seconds')}

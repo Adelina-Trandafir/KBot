@@ -4,6 +4,7 @@ They are data, not drawing code: an admin can change columns, bindings, groups,
 fonts, sizes and band elements without editing Python or a JSON file by hand.
 """
 from copy import deepcopy
+from . import report_purchase_order
 
 
 def col(key, label, width=1, kind='text'):
@@ -193,7 +194,7 @@ def default(spec):
             if family == 'bs':
                 columns = [c for c in columns if c['key'] != 'giver_name']
             groups, totals = ['account'], ['value']
-    return deepcopy({'schema': 1, 'title': TITLES.get(name, 'BON DE RETUR' if spec.get('family') == 'br'
+    layout = deepcopy({'schema': 1, 'title': TITLES.get(name, 'BON DE RETUR' if spec.get('family') == 'br'
                        else 'BON DE CONSUM (COLECTIV)' if spec.get('family') == 'bc' else spec['label']),
         'font_size': 8,
         'title_size': 16 if kind == 'documents' and spec.get('family') == 'nir' else 15,
@@ -211,6 +212,7 @@ def default(spec):
                    'entries_value', 'transfers_in_value', 'transfers_out_value', 'scrapping_value',
                    'start_date', 'used_months', 'remaining_months', 'monthly', 'month_depreciation',
                    'accumulated', 'remaining', 'status', 'issues_text', 'classification', 'count']})
+    return report_purchase_order.layout(layout) if report_purchase_order.active(spec) else layout
 
 
 def unit_default(unit):

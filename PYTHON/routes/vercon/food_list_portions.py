@@ -1,7 +1,7 @@
 """Restricted date corrections and portion corrections in the latest food-list month."""
 from decimal import Decimal
 
-from . import food_list_dates, numeric, protocol
+from . import food_list_dates, lista_bc, numeric, protocol
 from .documents import _int, _iso, _one, _scope
 from .nomenclatoare import NomError
 
@@ -49,6 +49,11 @@ def update(cursor, repo, ctx, doc_id, body, request_id):
     if version is None or version != before['Version']:
         raise NomError('CONFLICT', 'Lista a fost modificată. Reîncărcați lista.', 409)
     day = food_list_dates.clean(cursor, ctx, before, body)
+    if day < lista_bc.calendar_day(before['DATALA']):
+        try:
+            lista_bc.require_dates(repo, lista_bc.current(repo, doc_id), day)
+        except lista_bc.ListaBcError as error:
+            raise NomError('BON_INVALID', str(error), 409) from error
     if 'portions' not in body:
         if 'date' not in body:
             raise NomError('INVALID', 'Completați data listei sau numărul copiilor.', 422)

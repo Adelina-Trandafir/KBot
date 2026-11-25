@@ -11,7 +11,7 @@ from io import BytesIO
 
 from flask import Blueprint, Response, current_app, g, jsonify, request, send_file, send_from_directory
 
-from . import capabilities, diagnostics, doc_routes, nom_routes, operations, partners
+from . import capabilities, diagnostics, doc_routes, nom_routes, operations, partners, supplier_create
 from .capabilities import FormUnavailable
 from .connection import connection  # noqa: F401  re-exported for the repositories of VC03+
 from .context import SelectionInvalid, resolve
@@ -53,6 +53,8 @@ def create_blueprint(authenticate=None, rights=None, preview=False, provider=Non
             granted = drepturi.operations_of(context["email"], context["db_name"], SECTION)
             if 'read' in granted:
                 granted.add(partners.OPERATION)
+            if 'receptie' in granted:   # SLICE-VC20-01: whoever makes NIRs may add the supplier a NIR needs
+                granted.add(supplier_create.OPERATION)
             return granted
 
     def guard(operation):
@@ -238,6 +240,7 @@ def create_blueprint(authenticate=None, rights=None, preview=False, provider=Non
 
     nom_routes.register(bp, guard, scoped, open_db)
     partners.register(bp, guard, scoped, open_db)
+    supplier_create.register(bp, guard, scoped, open_db)
     doc_routes.register(bp, guard, scoped, open_db)
     bp.scoped = scoped   # the door business routes (VC06+) use
     return bp

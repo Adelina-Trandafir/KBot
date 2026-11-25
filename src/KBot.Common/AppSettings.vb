@@ -86,6 +86,12 @@ Public NotInheritable Class AppSettings
     ''' </summary>
     Public Property ContariProtectiePlati As Boolean = False
 
+    ''' <summary>
+    ''' Slice AV08-01: the tick «Protectie operatii» (Setari &gt; Aplicatie &gt; AVACONT), the Access setting Scheme._MNC.C5 that the form Note forced on at every opening.
+    ''' On: the accounting editor offers and saves only the accounts that fit the classification of the operation (not on closing operations). Default on, as in Access.
+    ''' </summary>
+    Public Property AvacontProtectieOperatii As Boolean = True
+
     ' ── «Modificare operatii» (slice AV02-05): what the operator chose last, per user ──
 
     ''' <summary>Slice AV02-05: the column the list of «Modificare operatii» was last sorted by; empty = the default order (note, date, document).</summary>
@@ -290,6 +296,13 @@ Public NotInheritable Class AppSettings
 
     ''' <summary>Allows KBOT to save FOREXE operations from DDF revisions before section A is signed.</summary>
     Public Property ForexeAllowUnsignedOperations As Boolean = False
+
+    ''' <summary>
+    ''' Slice 0097-11 (advanced options only): while a robot job drives the FOREXE page, K-BOT does NOT cover it with the
+    ''' opaque backdrop and its «K-BOT lucrează…» card, so the operator sees exactly what the robot does. The page stays
+    ''' shut to the operator's mouse and keyboard either way. Off by default.
+    ''' </summary>
+    Public Property ForexeNoBusyVeil As Boolean = False
 
     ''' <summary>
     ''' The operator's CSS rules for the FOREXE page, written into every load and refresh.
@@ -728,6 +741,7 @@ Public NotInheritable Class AppSettings
             .ReceptiiCheckedOnOpen = ReceptiiCheckedOnOpen,
             .KeBlockSameDayReception = KeBlockSameDayReception,
             .ContariProtectiePlati = ContariProtectiePlati,
+            .AvacontProtectieOperatii = AvacontProtectieOperatii,
             .MultiThreadDownloads = MultiThreadDownloads,
             .DownloadThreads = DownloadThreads,
             .AutoUpdateOnConnect = AutoUpdateOnConnect,
@@ -752,6 +766,7 @@ Public NotInheritable Class AppSettings
             .ForexeShowPageMenu = ForexeShowPageMenu,
             .ForexeReservationGate = ForexeReservationGate,
             .ForexeAllowUnsignedOperations = ForexeAllowUnsignedOperations,
+            .ForexeNoBusyVeil = ForexeNoBusyVeil,
             .ForexeDevToolsAllowed = ForexeDevToolsAllowed,
             .ForexePageStyles = ForexePageStyles?.Select(Function(r) New PageStyleRuleDto With {
                 .Enabled = r.Enabled, .Selector = r.Selector, .Css = r.Css, .Note = r.Note, .Page = r.Page}).ToList(),
@@ -800,6 +815,7 @@ Public NotInheritable Class AppSettings
         If dto.ReceptiiCheckedOnOpen.HasValue Then s.ReceptiiCheckedOnOpen = dto.ReceptiiCheckedOnOpen.Value
         If dto.KeBlockSameDayReception.HasValue Then s.KeBlockSameDayReception = dto.KeBlockSameDayReception.Value
         If dto.ContariProtectiePlati.HasValue Then s.ContariProtectiePlati = dto.ContariProtectiePlati.Value
+        If dto.AvacontProtectieOperatii.HasValue Then s.AvacontProtectieOperatii = dto.AvacontProtectieOperatii.Value
         If dto.MultiThreadDownloads.HasValue Then s.MultiThreadDownloads = dto.MultiThreadDownloads.Value
         ' A count / a number of days out of range in the file (hand-edited) keeps the default.
         If dto.DownloadThreads.HasValue AndAlso
@@ -834,6 +850,7 @@ Public NotInheritable Class AppSettings
         If dto.ForexeShowPageMenu.HasValue Then s.ForexeShowPageMenu = dto.ForexeShowPageMenu.Value
         If dto.ForexeReservationGate.HasValue Then s.ForexeReservationGate = dto.ForexeReservationGate.Value
         If dto.ForexeAllowUnsignedOperations.HasValue Then s.ForexeAllowUnsignedOperations = dto.ForexeAllowUnsignedOperations.Value
+        If dto.ForexeNoBusyVeil.HasValue Then s.ForexeNoBusyVeil = dto.ForexeNoBusyVeil.Value
         If dto.ForexeDevToolsAllowed.HasValue Then s.ForexeDevToolsAllowed = dto.ForexeDevToolsAllowed.Value
         If dto.ForexeCapturaPaginaOriginala.HasValue Then s.ForexeCapturaPaginaOriginala = dto.ForexeCapturaPaginaOriginala.Value
         ' A multiplier out of range in the file (hand-edited) keeps the default.
@@ -905,6 +922,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ReceptiiCheckedOnOpen As Boolean?
     Public Property KeBlockSameDayReception As Boolean?
     Public Property ContariProtectiePlati As Boolean?
+    Public Property AvacontProtectieOperatii As Boolean?
     Public Property MultiThreadDownloads As Boolean?
     Public Property DownloadThreads As Integer?
     Public Property AutoUpdateOnConnect As Boolean?
@@ -929,6 +947,7 @@ Friend NotInheritable Class AppSettingsDto
     Public Property ForexeShowPageMenu As Boolean?
     Public Property ForexeReservationGate As Boolean?
     Public Property ForexeAllowUnsignedOperations As Boolean?
+    Public Property ForexeNoBusyVeil As Boolean?
     Public Property ForexeDevToolsAllowed As Boolean?
     Public Property ForexePageStyles As List(Of PageStyleRuleDto)
     Public Property ForexeCapturaPaginaOriginala As Boolean?

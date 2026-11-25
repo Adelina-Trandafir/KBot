@@ -36,6 +36,16 @@ Public Class RecordHistoryForm
         btnCopySql.Enabled = False
     End Sub
 
+    ''' <summary>A key given at opening (coming from a search in the copies) is looked up at once.</summary>
+    Protected Overrides Sub OnShown(e As EventArgs)
+        MyBase.OnShown(e)
+        Try
+            If txtKey.Text.Length > 0 AndAlso btnSearch.Enabled Then BtnSearch_Click(btnSearch, EventArgs.Empty)
+        Catch ex As Exception
+            GlobalErrorLog.Write("RecordHistoryForm.OnShown", ex)
+        End Try
+    End Sub
+
     Private Sub TxtKey_FieldKeyDown(k_sender As Object, e As KeyEventArgs) Handles txtKey.FieldKeyDown
         Try
             If e.KeyCode = Keys.Enter Then

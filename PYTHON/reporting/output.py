@@ -28,7 +28,7 @@ def pdf(model, *, underline_links=True, product_row_links=False):
     from reportlab.lib.pagesizes import A4, landscape
     from reportlab.lib.styles import ParagraphStyle
     from reportlab.lib.units import mm
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer, PageBreak, Flowable, TopPadder
+    from reportlab.platypus import SimpleDocTemplate, Paragraph, Table, TableStyle, Spacer, PageBreak, Flowable, TopPadder, KeepInFrame
     from reportlab.pdfgen.canvas import Canvas
     if product_row_links:
         from . import pdf_row_links
@@ -88,7 +88,7 @@ def pdf(model, *, underline_links=True, product_row_links=False):
         kind = block['t']
         if kind == 'form_grid':
             from . import form_grid
-            return form_grid.pdf(block, available, para)
+            return form_grid.pdf(block, available, para, Table)
         if kind == 'positioned':
             return PositionedBand(block['elements'], available)
         if kind == 'break':
@@ -296,7 +296,13 @@ def pdf(model, *, underline_links=True, product_row_links=False):
             from .richtext import pdf_flowables
             story.extend(pdf_flowables(block['paragraphs']))
             continue
-        item = render(block, width)
+        if block.get('fit_page'):
+            # SimpleDocTemplate reserves six points of padding on each side of its frame.
+            frame_width = width - 12
+            frame_height = page[1] - 2 * margin - header_height - footer_height - 24
+            item = KeepInFrame(frame_width, frame_height, [render(block, frame_width)], mode='shrink')
+        else:
+            item = render(block, width)
         item.keepWithNext = block.get('keep_with_next', False)
         story.append(item)
         if block.get('anchor') != 'bottom' and block.get('space_after', 2):

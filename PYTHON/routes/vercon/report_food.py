@@ -62,7 +62,7 @@ def build(source, spec, layout):
                         'value': report_data.exact(head[prefix + '_V'], scale),
                         'distributed': head[prefix + '_D']})
         meal_columns.append([{'t': 'group', 'text': label}, section('feluri', [row for row in items if row['meal'] == key])])
-    before = food_balance.before(source, day)
+    before = food_balance.before(source, day, head['IdLista'], number=head['NumarLA'])
     current = None if head['DEP'] is None else -Decimal(head['DEP'])
     def difference(label, amount):
         return {'period': label, **food_balance.columns(amount, scale)}

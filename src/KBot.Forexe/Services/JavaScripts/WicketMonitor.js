@@ -1,6 +1,9 @@
 ﻿(function () {
     'use strict';
 
+    // Slice 0097-12 (diagnostic): .NET asks the page whether THIS document runs the monitor (WaitForWicketIdleAsync log).
+    window._kbotWicketMonLoaded = true;
+
     function setupWicketMonitor() {
         var statEl = document.querySelector('#statlogo');
         var animEl = document.querySelector('#animlogo');
@@ -35,6 +38,7 @@
             attributes: true,
             attributeFilter: ['style', 'class']
         });
+        window._kbotWicketMonArmed = true;   // slice 0097-12: observer attached on this document
     }
 
     if (document.readyState === 'loading') {

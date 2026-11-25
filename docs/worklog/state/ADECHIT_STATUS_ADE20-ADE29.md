@@ -42,3 +42,19 @@ Corecții pentru asocierea extraselor și introducerea manuală a documentelor �
 - AD20-15: rularea manuală și confirmarea rezultatelor de către Adelina rămân de făcut; înregistrarea celor cinci fișiere proprii așteaptă confirmarea explicită. Scriptul refuză lunile închise și situațiile salvate afectate, fără a le modifica.
 - AD20-01–14 sunt validate și înregistrate; publicarea efectivă și Git pe server nu au fost executate de agent în această etapă.
 - Capturile 12/13/14 pentru încărcare/asociere și 16 pentru Alte plăți rămân de refăcut cu blur puternic pe datele sensibile; nu s-au realizat capturi noi. Ajutorul și ghidul textual sunt actualizate.
+
+## Slice AD22
+
+### Registry
+
+| Subfelie | Livrabil | Stare | Worklog |
+|---|---|---|---|
+| SLICE-AD22-01 | Dublu clic în Prezență deschide direct editorul copilului cu datele actuale; editarea zilelor și dreptul Catalog se păstrează | SCRIS LOCAL; fără teste, verificări executate sau publicare; neînregistrat | [Editare copil din Prezență](../SLICE-AD22-01-prezenta-dubluclick-editare-copil.md) |
+
+### Current focus
+
+16.11.2026: AD22-01 înlocuiește deschiderea administrării plătitorilor din Prezență cu formularul existent «Modifică copilul». Datele se citesc după IDP, independent de grupa istorică a rândului. Ajutorul și ghidul sunt actualizate. Următoarea subfelie liberă: **AD22-02**.
+
+### Open threads
+
+- AD22-01: de probat de Adelina deschiderea directă, salvarea și Renunță, copil mutat față de luna consultată, lipsa dreptului Catalog și păstrarea editării zilelor. Nu s-au rulat teste sau alte verificări. Înregistrarea fișierelor așteaptă confirmarea explicită a Adelinei după probă, conform AGENTS.md.

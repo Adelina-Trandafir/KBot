@@ -12,11 +12,11 @@ a whole document.
     DELETE /api/avacont/modificare-operatii/document/<iddocument>
         -> 200 { "operatii": n }   409 with the reason when a check fails (the same checks as /verifica, read again under lock).
 
-Rules (citire.motiv_refuz): closing documents (Fel I, number CCV...), a closed month or an earlier closed year, an ordonantare generated, an evidence
-already paid, an order of payment in an OPME or confirmed by a bank statement: REFUSED. A document is deleted only when EVERY operation of it passes.
-What goes: a payment with an order through plati.sterge_plata (allocations, order, lines, operation); any other operation: its allocations as a payment,
+Rules (NoteC.motiv_stergere): closing documents (Fel I, number CCV...), a closed month or an earlier closed year, an ordonantare generated, an evidence
+already paid (also by a payment of the next year, SLICE-AV08-04), an order of payment in an OPME or confirmed by a bank statement: REFUSED. A document is deleted only when EVERY operation of it passes.
+What goes: a payment with an order through NoteC.sterge_plata (allocations, order, lines, operation); any other operation: its allocations as a payment,
 its link to the received invoice (EF_PrimiteOperatii, so the invoice can be booked again), its debit / credit lines, the operation; then the document
-and the note when they stay empty. Access deleted the whole document of an E/P operation even when it had other operations: here only an empty one goes.
+and the note when they stay empty (NoteC.curata_goale). SLICE-AV08-04: all inside NoteC.salvare, the lock of every write. Access deleted the whole document of an E/P operation even when it had other operations: here only an empty one goes.
 """
 import logging
 from datetime import date, datetime
@@ -27,8 +27,8 @@ from routes.auth.guard import require_session
 from utils.database import get_kbot_connection
 
 from ... import avacont_bp
-from ...common import json_utf8, rollback
-from ...introducere_date.operatii import plati
+from ...common import json_utf8
+from ...introducere_date.operatii import NoteC
 from . import citire
 
 logger = logging.getLogger(__name__)
@@ -71,7 +71,7 @@ def _verifica(cursor, rows):
     """(refuz, facturi): the first reason that stops the delete (with the operation named when there are several), and the invoices the payments paid."""
     inchid = citire.inchideri(cursor, {(r["IdSubunitate"], r["An"]) for r in rows})
     for r in rows:
-        motiv = citire.motiv_refuz(r, inchid.get((r["IdSubunitate"], r["An"])))
+        motiv = NoteC.motiv_stergere(r, inchid.get((r["IdSubunitate"], r["An"])))
         if motiv:
             if len(rows) > 1:
                 motiv = "Operația «%s» (%s): %s" % (r["Explicatie"] or "", _bani(r["SumaDebit"]), motiv)
@@ -99,25 +99,6 @@ def _intrebare(rows, facturi, document):
     return text
 
 
-def _sterge_operatie(cursor, r):
-    """Deletes one operation that passed the checks; the document / note are cleaned by the caller (or by sterge_plata)."""
-    if r["IdOP"] is not None:
-        plati.sterge_plata(cursor, r["IdOP"])
-        return
-    id_oper = r["IdOper"]
-    cursor.execute("DELETE FROM TZ_PlatiFacturi WHERE IdPlata = %s", (id_oper,))
-    cursor.execute("UPDATE TZ_PlatiFacturi SET IdEvidentiereAnterior = NULL WHERE IdEvidentiereAnterior = %s", (id_oper,))
-    cursor.execute("DELETE FROM EF_PrimiteOperatii WHERE IdOperatie = %s", (id_oper,))
-    cursor.execute("DELETE FROM TZ_Debit WHERE IdOper = %s", (id_oper,))
-    cursor.execute("DELETE FROM TZ_Credit WHERE IdOper = %s", (id_oper,))
-    cursor.execute("DELETE FROM TZ_Oper WHERE IdOper = %s", (id_oper,))
-
-
-def _curata(cursor, id_document, id_nota):
-    cursor.execute("DELETE FROM TZ_Documente WHERE IdDocument = %s AND NOT EXISTS (SELECT 1 FROM TZ_Oper WHERE IdDocument = %s)", (id_document, id_document))
-    cursor.execute("DELETE FROM TZ_NoteC WHERE IdNota = %s AND NOT EXISTS (SELECT 1 FROM TZ_Documente WHERE IdNota = %s)", (id_nota, id_nota))
-
-
 def _raspuns_verifica(where, params, document, eticheta):
     db_name = g.session.db_name
     conn = None
@@ -139,40 +120,25 @@ def _raspuns_verifica(where, params, document, eticheta):
 
 def _raspuns_sterge(where, params, eticheta):
     db_name = g.session.db_name
-    conn = None
     try:
-        conn = get_kbot_connection(db_name)
-        conn.autocommit = False
-        if not conn.in_transaction:
-            conn.start_transaction()
-        cursor = conn.cursor(dictionary=True)
-        rows = _operatii(cursor, where, params, blocheaza=True)
-        refuz, _ = _verifica(cursor, rows)
-        if refuz:
-            raise StergereEroare(refuz)
-        for r in rows:
-            _sterge_operatie(cursor, r)
-        for id_document, id_nota in {(r["IdDocument"], r["IdNota"]) for r in rows}:
-            _curata(cursor, id_document, id_nota)
-        conn.commit()
+        # SLICE-AV08-04: the lock and the transaction of every write of the accounting operations (NoteC.salvare)
+        with NoteC.salvare(db_name) as conn:
+            cursor = conn.cursor(dictionary=True)
+            rows = _operatii(cursor, where, params, blocheaza=True)
+            refuz, _ = _verifica(cursor, rows)
+            if refuz:
+                raise StergereEroare(refuz)
+            NoteC.sterge_randuri(cursor, rows)
         for r in rows:
             logger.info("[avacont.modificare_operatii] %s %s by %s: IdOper=%s NC=%s doc=%s/%s %s / %s suma=%s",
                         eticheta, db_name, g.session.username, r["IdOper"], r["NumarNC"], r["NumarDocument"], _iso(r["DataDocument"]),
                         r["ContDebit"], r["ContCredit"], r["SumaDebit"])
         return json_utf8({"operatii": len(rows)}, 200)
-    except StergereEroare as err:
-        rollback(conn)
-        return json_utf8({"error": str(err)}, err.status)
-    except plati.PlatiEroare as err:
-        rollback(conn)
+    except (StergereEroare, NoteC.PlatiEroare, NoteC.NoteCEroare) as err:
         return json_utf8({"error": str(err)}, err.status)
     except Exception as err:
-        rollback(conn)
         logger.error("[avacont.modificare_operatii] sterge %s %s: %s", eticheta, db_name, err, exc_info=True)
         return json_utf8({"error": "Eroare la ștergere: %s" % err}, 500)
-    finally:
-        if conn is not None:
-            conn.close()
 
 
 @avacont_bp.route("/api/avacont/modificare-operatii/operatie/<int:id_oper>/verifica", methods=["GET"])

@@ -85,7 +85,7 @@ def product_nodes(source, node_id, recursive):
     return nodes
 
 
-def document_suppliers(source, node_id, recursive=False):
+def document_suppliers(source, node_id, recursive=False, *, family=None):
     supplier_key = None
     if node_id.startswith('document-supplier:'):
         supplier_key = node_id.split(':', 1)[1]
@@ -94,7 +94,8 @@ def document_suppliers(source, node_id, recursive=False):
     groups, documents = {}, {}
     for row in source.rows('receipts'):
         day = row['date']
-        if row['annulled'] or day is None or not source.params['start'] <= stock.day_of(day) <= source.params['end']:
+        if (row['annulled'] or day is None or not source.params['start'] <= stock.day_of(day) <= source.params['end']
+                or family and row['family'] != family):
             continue
         supplier = str(row['supplier']) if row.get('supplier') is not None else 'none'
         if supplier_key is not None and supplier != supplier_key:
@@ -127,12 +128,13 @@ def selection_branch(source, spec, node_id, *, recursive=False, documents=False,
     if node_id.startswith('document-supplier:') or node_id == 'selection:document' and spec.get('document_options'):
         if not spec.get('document_options') or 'selection:document' not in allowed:
             raise NomError('REPORT_BRANCH', 'Ramura nu este disponibilă pentru acest raport.', 422)
-        return document_suppliers(source, node_id)
+        return document_suppliers(source, node_id, family=spec.get('incoming_family'))
     if node_id == 'root':
         if documents:
             if not spec.get('document_options'):
                 raise NomError('REPORT_BRANCH', 'Modul documente nu este disponibil pentru acest raport.', 422)
-            return {'spec': spec, **document_suppliers(source, 'selection:document', recursive)}
+            return {'spec': spec, **document_suppliers(source, 'selection:document', recursive,
+                                                     family=spec.get('incoming_family'))}
         if spec.get('incoming_selection'):
             return {'spec': spec, **report_incoming_selection.read(source, spec, node_id, recursive=recursive)}
         # Accounts are visible immediately. Expand descendants only on a bulk request.

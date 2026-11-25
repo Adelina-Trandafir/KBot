@@ -72,11 +72,14 @@ specifice stabilite de utilizator pentru ADECHIT, consemnate mai jos.
 | SLICE-AD19 | Solduri reportate separat în ADE.Migrator după omiterea istoricului din 2020 | AD19-04 SCRIS LOCAL: reportul calculat din SI/mișcări nu mai este blocat de neconcordanța primei situații salvate; istoricul se păstrează. Filtrul AD19-03 rămâne disponibil. Fără compilare, teste sau scrieri în baze | [AD19](docs/worklog/state/ADECHIT_STATUS_ADE10-ADE19.md#slice-ad19) |
 | SLICE-AD20 | Corecții asociere extrase și număr obligatoriu în Alte plăți | AD20-01–14 VALIDAT DE ADELINA, ÎNREGISTRAT PENTRU SERVER. AD20-15 SCRIS LOCAL: SQL manual pentru ștergerea plăților preluate din extrase în noiembrie 2026, păstrând legăturile cu plătitorii; SQL nerulat, neînregistrat; fără teste, publicare sau Git executate de agent | [AD20](docs/worklog/state/ADECHIT_STATUS_ADE20-ADE29.md#slice-ad20) |
 | SLICE-AD21 | Fila Extrase și ștergerea completă a asocierilor din luna deschisă | AD21-01 SCRIS LOCAL: fila Extrase, mod «Asocieri curente», ștergere per repartizare cu reapariția diferenței; AD21-02 SCRIS LOCAL: lista extraselor doar cu CNP (13 cifre) și Referința în cheia de import; fără teste, SQL nou sau publicare | [AD21](docs/worklog/state/ADECHIT_STATUS_ADE20-ADE29.md#slice-ad20) |
+| SLICE-AD22 | Editarea copilului prin dublu clic în Prezență | AD22-01 SCRIS LOCAL: deschidere directă a formularului existent cu datele actuale; fără teste sau publicare | [AD22](docs/worklog/state/ADECHIT_STATUS_ADE20-ADE29.md#slice-ad22) |
 
 05.11.2026 — AD20-01–13: confirmarea explicită «am verificat si validat: inregistreaza fisierele» privește versiunea finală cumulată. Toate cele 31 de fișiere distincte, inclusiv ajutorul și documentația, sunt înregistrate în 103 înregistrări cu motive separate. Publicarea efectivă nu este executată de agent în această etapă.
 
 
-**Următorul număr liber de felie: SLICE-AD22** (în AD21: AD21-03). AD17-01 este deja alocat în [worklogul existent](docs/worklog/SLICE-AD17-01-situatie-debitori-fara-randuri-zero.md).
+**16.11.2026 — SLICE-AD22-01:** dublu clic din Prezență deschide direct formularul «Modifică copilul», cu datele actuale și dreptul Catalog; celulele editabile păstrează editarea prezenței. **SCRIS LOCAL, NEPROBAT, NEPUBLICAT**; ajutor și ghid actualizate. [Worklog](docs/worklog/SLICE-AD22-01-prezenta-dubluclick-editare-copil.md), [stare AD22](docs/worklog/state/ADECHIT_STATUS_ADE20-ADE29.md#slice-ad22).
+
+**Următorul număr liber de felie: SLICE-AD23** (în AD22: AD22-02; în AD21: AD21-03). AD17-01 este deja alocat în [worklogul existent](docs/worklog/SLICE-AD17-01-situatie-debitori-fara-randuri-zero.md).
 Planul tuturor feliilor este [documentat](ADECHIT/PLAN_IMPLEMENTARE.md); toate
 confirmările de testare/publicare din 23.10.2026 privesc starea de la acea dată;
 intervențiile ulterioare au starea indicată separat în registru și în workloguri.

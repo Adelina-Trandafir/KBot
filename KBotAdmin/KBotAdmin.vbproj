@@ -21,7 +21,7 @@
     <OptionCompare>Binary</OptionCompare>
     <Nullable>disable</Nullable>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
-    <FileVersion>1.2.0.18</FileVersion>
+    <FileVersion>1.2.0.19</FileVersion>
     <ApplicationIcon>Images\KBotAdmin.ico</ApplicationIcon>
   </PropertyGroup>
 
@@ -122,6 +122,38 @@
     <EmbeddedResource Include="..\src\KBot.App\Forexe\Receptii_Icons\Fatcow-Farm-Fresh-Brick-link.32.png" LogicalName="icon.md_history">
       <Link>Images\Fatcow-Farm-Fresh-Brick-link.32.png</Link>
     </EmbeddedResource>
+  </ItemGroup>
+
+  <!-- ME06-02: CommandsView is split by responsibility; every partial is plain code (no designer on a double-click, no stray .resx). -->
+  <ItemGroup>
+    <Compile Update="Views\CommandsView.Names.vb">
+      <SubType>Code</SubType>
+      <DependentUpon>CommandsView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Views\CommandsView.Choices.vb">
+      <SubType>Code</SubType>
+      <DependentUpon>CommandsView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Views\CommandsView.Partner.vb">
+      <SubType>Code</SubType>
+      <DependentUpon>CommandsView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Views\CommandsView.Vercon.vb">
+      <SubType>Code</SubType>
+      <DependentUpon>CommandsView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Views\CommandsView.Move.vb">
+      <SubType>Code</SubType>
+      <DependentUpon>CommandsView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Views\CommandsView.Repairs.vb">
+      <SubType>Code</SubType>
+      <DependentUpon>CommandsView.vb</DependentUpon>
+    </Compile>
+    <Compile Update="Views\CommandsView.Render.vb">
+      <SubType>Code</SubType>
+      <DependentUpon>CommandsView.vb</DependentUpon>
+    </Compile>
   </ItemGroup>
 
   <ItemGroup>

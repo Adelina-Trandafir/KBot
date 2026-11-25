@@ -1,0 +1,81 @@
+/* Shared dialog buttons (SLICE-VC21-01): three roles.
+ *   k-dialog-button--ok1    main action (save / confirm): solid accent fill
+ *   k-dialog-button--cancel give up / close the page: neutral, outlined by the line colour
+ *   k-dialog-button--ok2    extra action next to OK1: accent outline on a transparent back
+ * Page styles should only set layout and the public CSS variables (--dialog-button-*).
+ * Put the buttons in .k-dialog-buttons: cancel first (left), then ok2, then ok1 (right).
+ */
+.k-dialog-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--dialog-button-row-gap, 8px);
+}
+.k-dialog-buttons > .k-dialog-button--cancel { order: 1; margin-right: auto; }
+.k-dialog-buttons > .k-dialog-button--ok2 { order: 2; }
+.k-dialog-buttons > .k-dialog-button--ok1 { order: 3; }
+
+button.k-dialog-button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  min-width: var(--dialog-button-min-width, 96px);
+  height: var(--dialog-button-height, 34px);
+  padding: 0 var(--dialog-button-padding-x, 16px);
+  margin: 0;
+  border: 1px solid var(--dialog-button-border, var(--line, #cdd5e0));
+  border-radius: var(--dialog-button-radius, 6px);
+  background: var(--dialog-button-back, var(--card, #fff));
+  color: var(--dialog-button-color, var(--ink, inherit));
+  font-family: inherit;
+  font-size: var(--dialog-button-font-size, var(--fs-ms, 15px));
+  font-weight: var(--dialog-button-font-weight, 600);
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color .15s, border-color .15s, color .15s;
+}
+button.k-dialog-button[hidden] { display: none; }
+
+/* OK1: solid accent fill */
+button.k-dialog-button--ok1 {
+  --dialog-button-border: var(--dialog-button-ok1-back, var(--blue-mid, #1e78d6));
+  --dialog-button-back: var(--dialog-button-ok1-back, var(--blue-mid, #1e78d6));
+  --dialog-button-color: var(--dialog-button-ok1-color, #fff);
+}
+button.k-dialog-button--ok1:not(:disabled):hover {
+  --dialog-button-border: var(--dialog-button-ok1-hover-back, var(--blue-deep, #004683));
+  --dialog-button-back: var(--dialog-button-ok1-hover-back, var(--blue-deep, #004683));
+}
+
+/* OK2: accent outline, transparent back */
+button.k-dialog-button--ok2 {
+  --dialog-button-border: var(--dialog-button-ok2-color, var(--blue-mid, #1e78d6));
+  --dialog-button-back: transparent;
+  --dialog-button-color: var(--dialog-button-ok2-color, var(--blue-mid, #1e78d6));
+}
+button.k-dialog-button--ok2:not(:disabled):hover {
+  --dialog-button-back: var(--dialog-button-ok2-hover-back, var(--sky-2, #dceaff));
+}
+
+/* Cancel: neutral */
+button.k-dialog-button--cancel:not(:disabled):hover {
+  --dialog-button-back: var(--dialog-button-cancel-hover-back, var(--sky-2, #dceaff));
+  --dialog-button-border: var(--dialog-button-cancel-hover-border, var(--blue-mid, #1e78d6));
+}
+
+button.k-dialog-button:not(:disabled):active { filter: brightness(.94); }
+button.k-dialog-button:focus-visible {
+  outline: 2px solid var(--dialog-button-focus-color, var(--blue-mid, #1e78d6));
+  outline-offset: 2px;
+}
+button.k-dialog-button:disabled { cursor: default; opacity: .5; }
+
+/* Dark theme: the accent is a light blue, so the OK1 text turns dark for contrast. */
+html[data-theme="dark"] button.k-dialog-button--ok1 { --dialog-button-ok1-color: #0b1a2e; }
+html[data-theme="dark"] button.k-dialog-button--ok1:not(:disabled):hover { --dialog-button-ok1-hover-back: #8cc6ff; }
+html[data-theme="dark"] button.k-dialog-button--ok2:not(:disabled):hover { --dialog-button-ok2-hover-back: #1f2b3d; }
+html[data-theme="dark"] button.k-dialog-button--cancel:not(:disabled):hover { --dialog-button-cancel-hover-back: #1f2b3d; }

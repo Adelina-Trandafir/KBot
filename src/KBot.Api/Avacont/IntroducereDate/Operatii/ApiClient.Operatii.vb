@@ -14,6 +14,7 @@ Partial Public Class ApiClient
     Implements IOperatiiApi
 
     Private NotInheritable Class OpNotaWire
+        Public Property idnota As Integer
         Public Property numarnc As Integer
         Public Property datanc As String
         Public Property documente As Integer
@@ -59,6 +60,8 @@ Partial Public Class ApiClient
     End Class
 
     Private NotInheritable Class FpFacturaWire
+        Public Property idprimita As Integer?
+        Public Property fara_receptie As Boolean
         Public Property idoper As Integer
         Public Property numar As String
         Public Property data As String
@@ -93,6 +96,8 @@ Partial Public Class ApiClient
     End Class
 
     Private NotInheritable Class OpDiverseRequest
+        Public Property idnota As Integer?
+        Public Property nota_noua As Boolean?
         Public Property idsubunitate As Integer
         Public Property an As Integer
         Public Property idsablon As Integer
@@ -108,7 +113,6 @@ Partial Public Class ApiClient
         Public Property idlinie As Integer
         Public Property iddocument As Integer
         Public Property idoper As Integer
-        Public Property nrang As Integer
     End Class
 
     Private NotInheritable Class OpDiverseResponse
@@ -119,6 +123,8 @@ Partial Public Class ApiClient
     End Class
 
     Private NotInheritable Class FpNouaRequest
+        Public Property idnota As Integer?
+        Public Property nota_noua As Boolean?
         Public Property numar As String
         Public Property data As String
         Public Property suma As Decimal
@@ -133,6 +139,11 @@ Partial Public Class ApiClient
     End Class
 
     Private NotInheritable Class FpSalveazaRequest
+        Public Property idnota As Integer?
+        Public Property nota_noua As Boolean?
+        Public Property protectie As Boolean
+        Public Property confirmari_receptie As List(Of Integer)
+        Public Property confirmari As List(Of String)
         Public Property idsubunitate As Integer
         Public Property an As Integer
         Public Property idpartener As Integer
@@ -188,8 +199,16 @@ Partial Public Class ApiClient
         k_ctx.Urmatoare = k_payload.urmatoare
         k_ctx.Inchidere = OpDate(k_payload.inchidere)
         k_ctx.Note = If(k_payload.note, New List(Of OpNotaWire)()).Select(
-            Function(k_n) New OperatiiNotaInfo() With {.NumarNC = k_n.numarnc, .DataNc = OpDate(k_n.datanc), .Documente = k_n.documente}).ToList()
+            Function(k_n) New OperatiiNotaInfo() With {.IdNota = k_n.idnota, .NumarNC = k_n.numarnc, .DataNc = OpDate(k_n.datanc), .Documente = k_n.documente}).ToList()
+        k_ctx.Parteneri = MapOpPartners(k_payload.parteneri)
         Return k_ctx
+    End Function
+
+    Private Shared Function MapOpPartners(k_list As List(Of FpPartenerWire)) As IReadOnlyList(Of FacturiPlatiPartener)
+        Return If(k_list, New List(Of FpPartenerWire)()).Select(
+            Function(k_p) New FacturiPlatiPartener() With {
+                .IdPartener = k_p.idpartener, .Cod = If(k_p.cod, String.Empty), .Denumire = If(k_p.denumire, String.Empty),
+                .Cui = If(k_p.cui, String.Empty), .CodClient = If(k_p.codclient, String.Empty), .Iban = If(k_p.iban, String.Empty)}).ToList()
     End Function
 
     Private Shared Function MapFpSabloane(k_list As List(Of FpSablonWire)) As IReadOnlyList(Of FacturiPlatiSablon)
@@ -201,7 +220,7 @@ Partial Public Class ApiClient
         Return If(k_list, New List(Of FpFacturaWire)()).Select(
             Function(k_f) New FacturaDeschisa() With {
                 .IdOper = k_f.idoper, .Numar = If(k_f.numar, String.Empty), .Data = OpDate(k_f.data), .Fel = If(k_f.fel, String.Empty),
-                .Valoare = k_f.valoare, .Platit = k_f.platit, .Rest = k_f.rest}).ToList()
+                .Valoare = k_f.valoare, .Platit = k_f.platit, .Rest = k_f.rest, .IdPrimita = k_f.idprimita, .FaraReceptie = k_f.fara_receptie}).ToList()
     End Function
 
     Public Async Function GetOperatiiContextAsync(k_idSubunitate As Integer, k_an As Integer, ct As CancellationToken) As Task(Of OperatiiContext) _
@@ -225,6 +244,7 @@ Partial Public Class ApiClient
             ArgumentNullException.ThrowIfNull(k_cerere)
             Dim k_body As New OpDiverseRequest() With {
                 .idsubunitate = k_cerere.IdSubunitate, .an = k_cerere.An, .idsablon = k_cerere.IdSablon, .numarnc = k_cerere.NumarNC,
+                .idnota = k_cerere.IdNota, .nota_noua = k_cerere.NotaNoua,
                 .numardocument = k_cerere.NumarDocument, .feldocument = k_cerere.FelDocument,
                 .datadocument = k_cerere.DataDocument.ToString(OpIso, CultureInfo.InvariantCulture),
                 .idpartener = If(k_cerere.IdPartener > 0, CType(k_cerere.IdPartener, Integer?), Nothing),
@@ -252,10 +272,7 @@ Partial Public Class ApiClient
             Dim k_payload As OpContextResponse = JsonSerializer.Deserialize(Of OpContextResponse)(k_resp, _json)
             Dim k_ctx As New FacturiPlatiContext() With {.Baza = MapOpContext(k_payload)}
             If k_payload Is Nothing Then Return k_ctx
-            k_ctx.Parteneri = If(k_payload.parteneri, New List(Of FpPartenerWire)()).Select(
-                Function(k_p) New FacturiPlatiPartener() With {
-                    .IdPartener = k_p.idpartener, .Cod = If(k_p.cod, String.Empty), .Denumire = If(k_p.denumire, String.Empty),
-                    .Cui = If(k_p.cui, String.Empty), .CodClient = If(k_p.codclient, String.Empty), .Iban = If(k_p.iban, String.Empty)}).ToList()
+            k_ctx.Parteneri = MapOpPartners(k_payload.parteneri)
             k_ctx.Clasificatii = If(k_payload.clasificatii, New List(Of FpClasificatieWire)()).Select(
                 Function(k_c) New FacturiPlatiClasificatie() With {
                     .IdClsf = k_c.idclsf, .Clsf = If(k_c.clsf, String.Empty), .Denumire = If(k_c.denumire, String.Empty), .Forma = If(k_c.forma, String.Empty),
@@ -301,9 +318,12 @@ Partial Public Class ApiClient
                 .idsubunitate = k_cerere.IdSubunitate, .an = k_cerere.An, .idpartener = k_cerere.IdPartener, .idclsf = k_cerere.IdClsf,
                 .idsablone = If(k_cerere.IdSablonE > 0, CType(k_cerere.IdSablonE, Integer?), Nothing),
                 .idsablonp = If(k_cerere.IdSablonP > 0, CType(k_cerere.IdSablonP, Integer?), Nothing),
-                .numarnc = k_cerere.NumarNC, .dataop = k_cerere.DataOP.ToString(OpIso, CultureInfo.InvariantCulture), .explicatieop = k_cerere.ExplicatieOP,
+                .numarnc = k_cerere.NumarNC, .idnota = k_cerere.IdNota, .nota_noua = k_cerere.NotaNoua,
+                .protectie = k_cerere.Protectie, .confirmari_receptie = k_cerere.ConfirmariReceptie, .confirmari = k_cerere.Confirmari,
+                .dataop = k_cerere.DataOP.ToString(OpIso, CultureInfo.InvariantCulture), .explicatieop = k_cerere.ExplicatieOP,
                 .noi = k_cerere.Noi.Select(Function(k_f) New FpNouaRequest() With {
-                    .numar = k_f.Numar, .data = k_f.Data.ToString(OpIso, CultureInfo.InvariantCulture), .suma = k_f.Suma, .fel = k_f.Fel, .numarnc = k_f.NumarNC, .platit = k_f.Platit}).ToList(),
+                    .numar = k_f.Numar, .data = k_f.Data.ToString(OpIso, CultureInfo.InvariantCulture), .suma = k_f.Suma, .fel = k_f.Fel,
+                    .numarnc = k_f.NumarNC, .idnota = k_f.IdNota, .nota_noua = k_f.NotaNoua, .platit = k_f.Platit}).ToList(),
                 .existente = k_cerere.Existente.Select(Function(k_f) New FpExistentaRequest() With {.idoper = k_f.IdOper, .platit = k_f.Platit}).ToList()}
             Dim k_resp As String = Await SendNomenclatoareAsync(
                 HttpMethod.Post, $"{AvacontRoot}/facturi-plati/salveaza", k_body, "salvarea facturilor și plăților", ct).ConfigureAwait(False)

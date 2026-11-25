@@ -362,6 +362,25 @@ Public Class LocalBackupView
         End Try
     End Sub
 
+    Private Sub BtnSearchCopies_Click(k_sender As Object, e As EventArgs) Handles btnSearchCopies.Click
+        Try
+            Dim k_item As SnapshotManifest = SelectedSnapshot()
+            If k_item Is Nothing Then
+                KBotMessage.Show("Alegeți din listă o copie a bazei în care vreți să căutați (se caută în toate copiile ei).", "Copii locale", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                Return
+            End If
+            Dim k_store As BackupStore = BackupAccess.EnsureStore(_context, Me)
+            If k_store Is Nothing Then Return
+            Dim k_ofDb As List(Of SnapshotManifest) = _all.Where(Function(k_m) String.Equals(k_m.Db, k_item.Db, StringComparison.OrdinalIgnoreCase)).ToList()
+            Using k_form As New CopySearchForm(k_store, k_ofDb, String.Empty)
+                k_form.ShowDialog(Me)
+            End Using
+        Catch ex As Exception
+            GlobalErrorLog.Write("LocalBackupView.BtnSearchCopies_Click", ex)
+            KBotMessage.Show(ex.Message, "Copii locale", MessageBoxButtons.OK, MessageBoxIcon.Error)
+        End Try
+    End Sub
+
     Private Sub BtnProfile_Click(k_sender As Object, e As EventArgs) Handles btnProfile.Click
         Try
             Dim k_dbs As List(Of String) = If(_context.IsAll, New List(Of String)(), New List(Of String) From {_context.SelectedDb})

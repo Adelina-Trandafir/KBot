@@ -8,22 +8,22 @@ Imports KBot.Domain
 Imports KBot.Theming
 
 ' Slice AV02-05 - «Modificare operatii»: the buttons of the ribbon's view group while the page is on screen (the Access ribbon «MNC», what of it is
-' ported: the info panel, the default order, clearing the filters, Excel of the list as shown or of the whole year, the two deletes, reload).
+' ported: the default order, clearing the filters, Excel of the list as shown or of the whole year, the two deletes, reload).
 ' The buttons are made in the designer of AvacontMain with these keys.
 Partial Public Class ModificareOperatiiForm
 
-    Friend Const KeyInfo As String = "modificare_operatii_info"
     Friend Const KeyOrdonare As String = "modificare_operatii_ordonare"
     Friend Const KeyCurata As String = "modificare_operatii_curata"
     Friend Const KeyExcel As String = "modificare_operatii_excel"
     Friend Const KeyExcelTot As String = "modificare_operatii_excel_tot"
     Friend Const KeyStergeOperatie As String = "modificare_operatii_sterge"
     Friend Const KeyStergeDocument As String = "modificare_operatii_sterge_doc"
+    Friend Const KeyEditeaza As String = "modificare_operatii_editeaza"
     Friend Const KeyReincarca As String = "modificare_operatii_reincarca"
 
     ''' <summary>Every key of the page's view group (AvacontMain lists them among its view keys).</summary>
     Friend Shared ReadOnly Property AllRibbonKeys As String() = {
-        KeyReincarca, KeyInfo, KeyOrdonare, KeyCurata, KeyExcel, KeyExcelTot, KeyStergeOperatie, KeyStergeDocument}
+        KeyReincarca, KeyOrdonare, KeyCurata, KeyExcel, KeyExcelTot, KeyEditeaza, KeyStergeOperatie, KeyStergeDocument}
 
     Public ReadOnly Property RibbonCaption As String Implements IViewRibbon.RibbonCaption
         Get
@@ -41,9 +41,9 @@ Partial Public Class ModificareOperatiiForm
         If Not AllRibbonKeys.Contains(k_key) Then Return ViewButtonState.Hidden
         If _busy Then Return ViewButtonState.Dimmed
         Select Case k_key
-            Case KeyReincarca, KeyInfo
+            Case KeyReincarca
                 Return ViewButtonState.Enabled
-            Case KeyStergeOperatie, KeyStergeDocument
+            Case KeyEditeaza, KeyStergeOperatie, KeyStergeDocument
                 Return If(SelectedOperatie() IsNot Nothing, ViewButtonState.Enabled, ViewButtonState.Dimmed)
             Case KeyCurata
                 Return If(gridOperatii.IsFiltered OrElse gridOperatii.SortDirection <> KBotSortDirection.None, ViewButtonState.Enabled, ViewButtonState.Dimmed)
@@ -55,25 +55,36 @@ Partial Public Class ModificareOperatiiForm
     End Function
 
     Public Function RibbonButtonText(k_key As String) As String Implements IViewRibbon.RibbonButtonText
-        If Not String.Equals(k_key, KeyInfo, StringComparison.Ordinal) Then Return String.Empty
-        Return If(InfoVisible, "Ascunde informațiile", "Arată informațiile")
+        ' No button of this page changes its text.
+        Return String.Empty
     End Function
 
     Public Sub RunRibbonButton(k_key As String) Implements IViewRibbon.RunRibbonButton
         Try
             Select Case k_key
                 Case KeyReincarca : LoadList()
-                Case KeyInfo : ToggleInfo()
                 Case KeyOrdonare : OrdonareImplicita()
                 Case KeyCurata : CurataFiltre()
                 Case KeyExcel : ExportExcel(True)
                 Case KeyExcelTot : ExportExcel(False)
+                Case KeyEditeaza : EditeazaOperatie()
                 Case KeyStergeOperatie : StergeOperatie()
                 Case KeyStergeDocument : StergeDocument()
                 Case Else : Throw New ArgumentException("Unknown ribbon key: " & k_key, NameOf(k_key))
             End Select
         Catch ex As Exception
             GlobalErrorLog.Write("ModificareOperatiiForm.RunRibbonButton", ex)
+        End Try
+    End Sub
+
+    Private Async Sub EditeazaOperatie()
+        Try
+            Dim operatie As OperatieContabila = SelectedOperatie()
+            Dim host As KbotForm = TryCast(_host, KbotForm)
+            If _busy OrElse operatie Is Nothing OrElse host Is Nothing OrElse Not _idSubunitate.HasValue Then Return
+            Await host.DeschideNotaManualaAsync(operatie.IdOper, _idSubunitate, _an)
+        Catch ex As Exception
+            GlobalErrorLog.Write("ModificareOperatiiForm.EditeazaOperatie", ex)
         End Try
     End Sub
 

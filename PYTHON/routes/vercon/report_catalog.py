@@ -76,7 +76,8 @@ add('Fisa_Evidenta', 'consumption_sheet', G, 'Centralizatoare')
 add('Centralizator_Conturi_Furnizori', 'receipts_summary', group='Centralizatoare', grouping=('account', 'supplier'))
 add('Centralizator_Furnizori', 'receipts_summary', G, 'Centralizatoare', grouping=('supplier', 'account'))
 add('nou_Furnizori', 'suppliers', group='Recepții')
-add('Nota_Comanda', 'purchases', G, 'Achiziții', grouping=('supplier', 'name', 'um'), document_options=True)
+add('Nota_Comanda', 'purchases', ALL, 'Achiziții', grouping=('supplier', 'name', 'um'),
+    document_options=True, incoming_family='nir')
 add('Referat_periodic_Intrari', 'purchases', G, 'Achiziții', grouping=('supplier', 'name', 'um'), document_options=True)
 add('Referat_periodic_produs', 'purchases', group='Achiziții', grouping=('name', 'um'), document_options=True)
 add('Plan_Achizitii|Situatie_Intrari', 'purchases', ('MATERIALE', 'ALIMENTE', 'OI'), 'Achiziții', grouping=('name', 'um', 'cpv'), document_options=True)
@@ -85,6 +86,7 @@ add('ListaAlimente2015|BC subreport 2013|MicDejun subreport|Dejun subreport|Cina
 EXCLUDED = ('Balanta_produse_AFB', 'Balanta_Produse_BF', 'Balanta_produse_furnizor')
 
 for name, label in {
+    'Nota_Comanda': 'Notă de comandă',
     'Referat_periodic_produs': 'Referat Periodic',
     'Referat_periodic_Intrari': 'Referat Periodic',
     'Centralizator_Furnizori': 'Situație Furnizori',
@@ -127,6 +129,11 @@ def spec_of(name, gest_type):
     if gest_type == 'OI' and spec['id'] in OI_REPORTS:
         group, label, selection_mode = OI_REPORTS[spec['id']]
         spec = {**spec, 'group': group, 'tree_group': group, 'label': label}
+    if spec['id'] == 'Nota_Comanda':
+        if gest_type == 'OI':
+            spec = {**spec, 'tree_group': spec['group']}
+        elif gest_type == 'MF':
+            spec = {**spec, 'group': 'Mijloace fixe'}
     if spec['kind'] == 'depreciation':
         filters = ['variant']
     elif spec.get('ledger') == 'custody':

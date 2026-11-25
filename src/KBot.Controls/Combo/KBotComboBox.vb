@@ -736,6 +736,12 @@ Partial Public Class KBotComboBox
             CloseDropDown()
 
             Dim typed As String = Text
+            If RequireExplicitSelection Then
+                If _selectedIndex >= 0 AndAlso Not String.Equals(typed, CaptionOf(_items(_selectedIndex)), StringComparison.Ordinal) Then
+                    SetSelectedIndexCore(-1, writeText:=False)
+                End If
+                Return
+            End If
             Dim match As Integer = If(typed.Length = 0, -1, FindStringExact(typed))
             If match < 0 AndAlso _findAsYouType AndAlso typed.Length > 0 Then match = UniquePrefixMatch(typed)
 
@@ -766,6 +772,10 @@ Partial Public Class KBotComboBox
             GlobalErrorLog.Write("KBotComboBox.CommitText", ex)
         End Try
     End Sub
+
+    ''' <summary>Typed text filters the choices. A value is obtained only by selecting a row.</summary>
+    <DefaultValue(False)>
+    Public Property RequireExplicitSelection As Boolean
 
     ' A row of the list becomes the selection -- SelectedIndexChanged fires, the row becomes the
     ' last accepted value, and its caption goes on the face even when the index did not move.

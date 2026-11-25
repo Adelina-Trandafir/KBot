@@ -38,11 +38,12 @@ from .configurari.clasificatii_venituri import clasificatii_venituri  # noqa: E4
 # configurari/sablon_operatii/  (slice AV01-14; sql/AVACONT/Configurari/SablonOperatii/AV01_14_sablon_operatii.sql)
 #   sablon_operatii.py -> GET/POST /api/avacont/sabloane-operatii                          (TZ_SablonOperatii, TZ_SablonOperatiiLinie)
 from .configurari.sablon_operatii import sablon_operatii  # noqa: E402,F401
-# introducere_date/operatii/  (stage 2: AV02-01 posting service postare.py, AV02-02 plati.py, AV02-03 op9.py, AV02-04 facturi_plati.py)
+# introducere_date/operatii/  (stage 2; SLICE-AV08-04: every write of the accounting notes is in the NoteC_* files, gathered by NoteC.py; the routes below only read and answer)
 #   op9.py          -> GET /api/avacont/operatii-diverse/context, POST /api/avacont/operatii-diverse/salveaza           (the Access form OP9)
 #   facturi_plati.py -> GET /api/avacont/facturi-plati/context, GET .../deschise, POST .../salveaza, DELETE .../plata/<id>  (the Access form OPuri2017)
 from .introducere_date.operatii import op9  # noqa: E402,F401
 from .introducere_date.operatii import facturi_plati  # noqa: E402,F401
+from .introducere_date.operatii import note_manuale  # noqa: E402,F401
 # modificare_date/operatii/  (slice AV02-05, the Access form ModificareNC1280; no DDL)
 #   lista.py    -> GET /api/avacont/modificare-operatii/lista, GET .../info/<idoper>
 #   stergere.py -> GET .../operatie/<id>/verifica, GET .../document/<id>/verifica, DELETE .../operatie/<id>, DELETE .../document/<id>

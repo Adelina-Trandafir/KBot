@@ -18,8 +18,7 @@ def _top(cursor, ctx, kind, numbers):
 
 def _receipts(cursor, ctx):
     year = ctx['year'] if isinstance(ctx['year'], int) else ctx['an']
-    series = receipt_number.series(cursor, ctx, date(year, 12, 31))
-    return max((row['Numar'] for row in series), default=0) + 1
+    return receipt_number.last_number(cursor, ctx, date(year, 12, 31)) + 1
 
 
 def _consumption(cursor, ctx):

@@ -41,3 +41,12 @@
   .vc-partners .vc-status-bar { grid-template-columns: minmax(0, 1fr); }
   .vc-partners .vc-status-bar__end { flex-wrap: wrap; }
 }
+/* SLICE-VC20-01: the «+» of the supplier form and the buttons of a new supplier (visible only while adding). */
+.vc-partners__card { display: flex; flex-direction: column; }
+.vc-partners__head { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; min-width: 0; }
+.vc-partners__head h4 { margin: 0; flex: 1 1 auto; }
+.vc-partners__head .vc-partners__add { flex: 0 0 auto; }
+/* The buttons keep the common hover / focus look of the application (lift, shadow, focus ring 2px away): the bar is set in from the card edge so the card does not clip it. */
+.vc-partners__addbar { margin-top: auto; padding: 8px 8px 8px; }
+.vc-partners__addbar[hidden] { display: none; }
+.vc-partners__list.is-disabled { opacity: .55; }

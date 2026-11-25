@@ -125,7 +125,8 @@ def register(bp, guard, scoped, open_db):
             # Include partners without CF so their fiscal identity can be completed.
             cursor.execute(_SELECT + ' WHERE ' + _VISIBLE)
             rows = cursor.fetchall()
-        return {'rows': [_present(row) for row in _display_rows(rows)], 'can_update': OPERATION in g.vercon_operations}
+        return {'rows': [_present(row) for row in _display_rows(rows)], 'can_update': OPERATION in g.vercon_operations,
+                'can_add': 'parteneri_adauga' in g.vercon_operations}   # VC20-01: the «+» of the form
 
     @bp.post('/api/vercon/partners/<int:row_id>/anaf')
     @guard(OPERATION)

@@ -423,6 +423,7 @@ Partial Class KBotDataView
         For Each c In _columns
             c.AutoHidden = False
             c.AutoShown = False
+            c.LayoutExtraPx = 0     ' slice DGV0-01: the rounding remainder is recomputed by every pass
         Next
     End Sub
 
@@ -627,13 +628,34 @@ Partial Class KBotDataView
         If total = available Then Return
         If total < available Then
             DistributeLeftover(vis, available - total)
+            AbsorbRoundingGap(vis, available)
         ElseIf Not suppressShrink AndAlso _shrinkColumnsToFit Then
             ShrinkToFit(vis, available)
+            AbsorbRoundingGap(vis, available, afterShrink:=True)
         Else
             ' Strâmtarea GENERALĂ e stinsă — dar coloana de umplere rămâne elastică. Vezi
             ' ShrinkFillTarget: ea e singura care cedează, și doar până la podeaua ei.
             ShrinkFillTarget(vis, available)
+            AbsorbRoundingGap(vis, available, afterShrink:=True)
         End If
+    End Sub
+
+    ' Slice DGV0-01: after the leftover was handed out, a few device pixels can still be missing (every logical width is rounded to the screen on its own, and the
+    ' fill column is written with the rounding that never goes over). They are the fill column's, so the last column of the grid ends on the border instead of a few
+    ' pixels before it. Only a REMAINDER of that size is taken (at most one pixel per column plus one logical pixel): a real leftover (a column capped by MaxWidth, no
+    ' fill column) is not ours to spend and stays empty.
+    '
+    ' After a SHRINK (the columns together were wider than the viewport) the missing pixels are always rounding: every column was lowered with the rounding that never goes
+    ' over, one logical pixel at most each, so the loss adds up over the columns (this is the gap seen on grids whose authored widths are wider than the window). There the
+    ' whole remainder is taken; after a GROW only a remainder of the size of the rounding is.
+    Private Sub AbsorbRoundingGap(vis As List(Of KBotDataColumn), available As Integer, Optional afterShrink As Boolean = False)
+        Dim rest As Integer = available - SumWidths(vis)
+        If rest <= 0 Then Return
+        If Not afterShrink AndAlso rest > vis.Count + CInt(Math.Ceiling(DpiScaleX)) Then Return
+        Dim target As KBotDataColumn = FillTargetColumn(vis)
+        If target Is Nothing AndAlso _fillMode = KBotFillMode.Proportional Then target = vis(vis.Count - 1)
+        If target Is Nothing Then Return
+        target.LayoutExtraPx = rest
     End Sub
 
     ''' <summary>

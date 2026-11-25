@@ -17,7 +17,7 @@ The same function serves the one-time cleanup of the documents annulled before t
 import json
 
 from . import bon_number, consumption_numbering
-from .documents import _all, _one, _scope, _sub_text
+from .documents import _all, _int, _one, _scope, _sub_text
 from .nomenclatoare import NomError
 
 ARCHIVE = 'VC_ArhivaAnulate'
@@ -103,35 +103,60 @@ def _date_of(family, row):
     return row[SPEC[family]['date']]
 
 
-def _release_number(cursor, ctx, family, head):
-    """Lower the counter to the highest number still saved: the number just freed is the next automatic one again.
-    NIR / FCS have no counter: their series is computed from the rows, so the delete alone frees the number."""
-    sc = _scope(ctx)
-    if family in ('nir', 'storno'):
-        return
+def _counter_series(cursor, ctx, family, head, *, active_only=False):
+    params = _scope(ctx)
+    where = _SC + (' AND Anulat=0' if active_only else '')
     if family in ('bc', 'br'):
+        table, key, column = 'VC_Iesiri_H', 'IdBonConsum', 'NumarBC'
         account = head.get('IdMasina')
         scoped = account if family == 'bc' and account is not None and consumption_numbering.per_account(cursor, ctx) else None
         kind = 'BR' if family == 'br' else consumption_numbering.kind(scoped)
-        sql = 'SELECT NumarBC AS n FROM VC_Iesiri_H WHERE ' + _SC + ' AND COALESCE(Retur,0)=%s' + (' AND IdMasina=%s' if scoped is not None else '')
-        rows = _all(cursor, sql, (*sc, 1 if family == 'br' else 0, *([scoped] if scoped is not None else [])))
-        numbers = [bon_number.parse(family, r['n']) for r in rows]
+        where += ' AND COALESCE(Retur,0)=%s'
+        params += (1 if family == 'br' else 0,)
+        if scoped is not None:
+            where += ' AND IdMasina=%s'
+            params += (scoped,)
     elif family == 'lista':
-        kind = 'LISTA'
-        numbers = []
-        for r in _all(cursor, 'SELECT NumarLA AS n FROM VC_LABC WHERE ' + _SC, sc):
-            try:
-                numbers.append(int(r['n']))
-            except (TypeError, ValueError):
-                numbers.append(None)   # a number that is not a whole number cannot hold the counter up
+        table, key, column, kind = 'VC_LABC', 'IdLista', 'NumarLA', 'LISTA'
     else:
         from .oi import SPEC
         spec = SPEC[family]
-        kind = spec['kind']
-        rows = _all(cursor, 'SELECT DISTINCT `%s` AS n FROM `%s` WHERE %s' % (spec['num'], spec['table'], _SC), sc)
-        numbers = [bon_number.parse(family, r['n']) for r in rows]
-    top = max([n for n in numbers if n is not None], default=0)
-    cursor.execute('UPDATE VC_Numbering SET LastNumber=%s, Version=Version+1 WHERE ' + _SC + ' AND Kind=%s AND LastNumber>%s', (top, *sc, kind, top))
+        table, key, column, kind = spec['table'], spec['key'], spec['num'], spec['kind']
+    rows = _all(cursor, 'SELECT DISTINCT `%s` AS doc_id, `%s` AS n FROM `%s` WHERE %s' % (key, column, table, where), params)
+    numbers = []
+    for row in rows:
+        number = _int(row['n']) if family == 'lista' else bon_number.parse(family, row['n'])
+        if number is not None:
+            numbers.append((row['doc_id'], number))
+    return kind, head[key], numbers
+
+
+def _release_number(cursor, ctx, family, head):
+    """Lower the counter after cancellation. NIR/FCS use the saved documents as their series."""
+    if family in ('nir', 'storno'):
+        return
+    kind, _, numbers = _counter_series(cursor, ctx, family, head)
+    top = max((number for _, number in numbers), default=0)
+    cursor.execute('UPDATE VC_Numbering SET LastNumber=%s, Version=Version+1 WHERE ' + _SC + ' AND Kind=%s AND LastNumber>%s',
+                   (top, *_scope(ctx), kind, top))
+
+
+def release_renumbered(cursor, ctx, family, before, replacement):
+    """After saving the document, synchronize its old series if it held the highest number."""
+    if family == 'lista':
+        old, new = _int(before['NumarLA']), _int(replacement)
+    else:
+        old = bon_number.parse(family, _text_of(family, before))
+        new = bon_number.parse(family, replacement)
+    if old is None or new is None or new == old:
+        return
+    kind, doc_id, numbers = _counter_series(cursor, ctx, family, before, active_only=True)
+    if any(number > old for other_id, number in numbers if other_id != doc_id):
+        return
+    top = max((number for _, number in numbers), default=0)
+    cursor.execute('INSERT INTO VC_Numbering (SubunitId, GestiuneId, ExercitiuId, Kind, LastNumber) VALUES (%s,%s,%s,%s,%s) '
+                   'ON DUPLICATE KEY UPDATE Version=IF(LastNumber=VALUES(LastNumber), Version, Version+1), LastNumber=VALUES(LastNumber)',
+                   (*_scope(ctx), kind, max(0, top)))
 
 
 def _dependents(cursor, ctx, family, doc_id):

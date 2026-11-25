@@ -6,7 +6,7 @@ Imports KBot.Controls
 Imports KBot.Domain
 Imports KBot.Theming
 
-' Slice AV02-05 - «Modificare operatii»: filling the list, the icons of the columns «Tip», «Ord» and «R», the letter keys of the Access list and the
+' Slice AV02-05 - «Modificare operatii»: filling the list, the icons of the columns «Tip» and «Ord», the letter keys of the Access list and the
 ' sort remembered per user. The filters are the grid's own (one per column, all applied together).
 Partial Public Class ModificareOperatiiForm
 
@@ -38,6 +38,15 @@ Partial Public Class ModificareOperatiiForm
             Case OperatieStareOrd.SemnatCD : Return "Semnată CD"
             Case OperatieStareOrd.Ordonator : Return "Semnată de ordonator"
             Case Else : Return String.Empty
+        End Select
+    End Function
+
+    ''' <summary>The value of the tick box of the column «R»: True = all invoices have a reception, Nothing = some, False = none.</summary>
+    Friend Shared Function ReceptieValue(k_state As OperatieStareReceptie) As Object
+        Select Case k_state
+            Case OperatieStareReceptie.Toate : Return True
+            Case OperatieStareReceptie.Partiala : Return Nothing
+            Case Else : Return False
         End Select
     End Function
 
@@ -77,7 +86,8 @@ Partial Public Class ModificareOperatiiForm
                 k_row("chelt") = k_op.Chelt
                 k_row("cfpp") = k_op.Cfpp
                 k_row("ord") = OrdText(k_op.Ord)
-                k_row("rec") = ReceptieText(k_op.Receptie)
+                ' R: ticked = every invoice has a reception, «some» box (Nothing) = only some, empty = none.
+                k_row("rec") = ReceptieValue(k_op.Receptie)
             Next
         Finally
             gridOperatii.EndUpdate()
@@ -97,7 +107,6 @@ Partial Public Class ModificareOperatiiForm
         If k_index < 0 AndAlso k_keepId > 0 AndAlso gridOperatii.RowCount > 0 Then k_index = Math.Min(Math.Max(k_oldPos, 0), gridOperatii.RowCount - 1)
         gridOperatii.CurrentRowIndex = k_index
         RefreshButtons()
-        LoadInfo()
     End Sub
 
     ''' <summary>The operation of the selected row, or Nothing.</summary>
@@ -167,8 +176,6 @@ Partial Public Class ModificareOperatiiForm
                     e.CellImage = ModificareOperatiiIcons.TipIcon(k_op.Fel, k_palette.AccentColor, IconSize())
                 Case "ord"
                     e.CellImage = ModificareOperatiiIcons.OrdIcon(k_op.Ord, k_palette.AccentColor, k_back, IconSize())
-                Case "rec"
-                    e.CellImage = ModificareOperatiiIcons.ReceptieIcon(k_op.Receptie, k_palette.SuccessColor, k_back, IconSize())
             End Select
         Catch ex As Exception
             GlobalErrorLog.Write("ModificareOperatiiForm.GridOperatii_CellFormatting", ex)
@@ -178,7 +185,6 @@ Partial Public Class ModificareOperatiiForm
     Private Sub GridOperatii_SelectionChanged(sender As Object, e As EventArgs) Handles gridOperatii.SelectionChanged
         Try
             RefreshButtons()
-            LoadInfo()
         Catch ex As Exception
             GlobalErrorLog.Write("ModificareOperatiiForm.GridOperatii_SelectionChanged", ex)
         End Try

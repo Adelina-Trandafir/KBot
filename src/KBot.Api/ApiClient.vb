@@ -81,6 +81,9 @@ Public Class ApiClient
             EnsureConfigured()
             If String.IsNullOrEmpty(dbName) Then Throw New ArgumentException("dbName gol.", NameOf(dbName))
             If rows Is Nothing Then Throw New ArgumentNullException(NameOf(rows))
+            ' Slice 0097-10: the list is read from the end up to the newest known angajament, so «nothing new» is a
+            ' normal answer. There is nothing to send: no call (the server was never asked about an empty list).
+            If rows.Count = 0 Then Return New AngajamenteAdaugate()
 
             Dim req As New UpsertAngajamenteRequest() With {.db_name = dbName, .doar_noi = True}
             UmpleRandurile(req, rows)

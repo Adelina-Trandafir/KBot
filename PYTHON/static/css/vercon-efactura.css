@@ -18,11 +18,11 @@
 .vc-efi__status[data-state="error"] { color: #c0392b; }
 .vc-efi footer { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--line, #cdd5e0); }
 .vc-efi__spacer { flex: 1 1 auto; }
-.vc-efi :is(footer, .vc-status-bar__start, .vc-status-bar__end, .vc-efi__actions) > button { min-width: 120px; min-height: 34px; padding: 6px 16px; color: inherit; background: var(--sky-2, #eaf2fb); border: 1px solid var(--line, #cdd5e0); border-radius: var(--radius-sm, 6px); font: inherit; font-weight: 650; cursor: pointer; }
-.vc-efi :is(footer, .vc-status-bar__start, .vc-status-bar__end, .vc-efi__actions) > button:hover:not(:disabled) { background: var(--sky-1, #f3f8fe); }
-.vc-efi :is(footer, .vc-status-bar__start, .vc-status-bar__end, .vc-efi__actions) > button.is-primary { color: #fff; background: var(--blue, #309eff); border-color: var(--blue, #309eff); }
-.vc-efi :is(footer, .vc-status-bar__start, .vc-status-bar__end, .vc-efi__actions) > button:disabled { opacity: .5; cursor: default; }
-.vc-efi :is(footer, .vc-status-bar__start, .vc-status-bar__end, .vc-efi__actions) > button:focus-visible, .vc-efi__table tbody tr:focus-visible { outline: 2px solid var(--blue, #309eff); outline-offset: 1px; }
+.vc-efi :is(footer, .vc-status-bar__start, .vc-status-bar__end, .vc-efi__actions) > button:not(:where(.k-dialog-button)) { min-width: 120px; min-height: 34px; padding: 6px 16px; color: inherit; background: var(--sky-2, #eaf2fb); border: 1px solid var(--line, #cdd5e0); border-radius: var(--radius-sm, 6px); font: inherit; font-weight: 650; cursor: pointer; }
+.vc-efi :is(footer, .vc-status-bar__start, .vc-status-bar__end, .vc-efi__actions) > button:not(:where(.k-dialog-button)):hover:not(:disabled) { background: var(--sky-1, #f3f8fe); }
+.vc-efi :is(footer, .vc-status-bar__start, .vc-status-bar__end, .vc-efi__actions) > button:not(:where(.k-dialog-button)).is-primary { color: #fff; background: var(--blue, #309eff); border-color: var(--blue, #309eff); }
+.vc-efi :is(footer, .vc-status-bar__start, .vc-status-bar__end, .vc-efi__actions) > button:not(:where(.k-dialog-button)):disabled { opacity: .5; cursor: default; }
+.vc-efi :is(footer, .vc-status-bar__start, .vc-status-bar__end, .vc-efi__actions) > button:not(:where(.k-dialog-button)):focus-visible, .vc-efi__table tbody tr:focus-visible { outline: 2px solid var(--blue, #309eff); outline-offset: 1px; }
 .vc-efi--association { width: min(1400px, 96vw); max-height: 92vh; }
 .vc-efi--association .vc-efi__body { overflow: auto; }
 .vc-efi__work { min-width: 0; margin: 0; padding: 0; border: 0; }

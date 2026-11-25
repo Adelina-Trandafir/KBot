@@ -1,7 +1,7 @@
 # routes/efactura/primite_contari_routes.py
 """
 Route of the «Contari» of the received invoices (slice 01EF-02). `@require_session`; the unit and the role are the session's. The rules are in
-primite_contari.py. It only CALCULATES; it writes nothing.
+NoteC (NoteC_contari*, SLICE-AV08-04). The calculation writes nothing.
 
   POST /api/efactura/contari/calcul   body { ids: [IdPrimita...], idClsf?, idSablonE?, idSablonP?, platit?: { "<IdPrimita>": value }, an? }
         -> { poate_scrie, furnizor, clasificatii, clasificatie, clasificatieSugerata, sabloaneEvidentiere, sabloanePlata, idSablonE, idSablonP,
@@ -21,7 +21,8 @@ Errors are `{ "error": "<text>", "reason": "<CODE>" }`. Audit journal: EF_CONTAR
 """
 from flask import g
 
-from . import efactura_bp, primite_contari
+from . import efactura_bp
+from routes.avacont.introducere_date.operatii import NoteC
 from .factura_routes import _audit, _body, _guarded, _json
 from .tokens import EfEroare
 from routes.auth.guard import require_session
@@ -37,7 +38,7 @@ def contari_calcul():
     if set(body) - _CAMPURI:
         raise EfEroare("Corpul conține câmpuri nepermise.", "CAMP_NEPERMIS", 400)
     role = (getattr(g.session, "ctx", None) or {}).get("Role")
-    return _json(primite_contari.calcul(g.session.db_name, body, role))
+    return _json(NoteC.calcul_contari(g.session.db_name, body, role))
 
 
 @efactura_bp.route("/api/efactura/contari/salveaza", methods=["POST"])
@@ -45,10 +46,10 @@ def contari_calcul():
 @_guarded("contari/salveaza")
 def contari_salveaza():
     body = _body()
-    if set(body) - (_CAMPURI | {"confirmari"}):
+    if set(body) - (_CAMPURI | {"confirmari", "idNota", "notaNoua", "evidentaAsteptata"}):
         raise EfEroare("Corpul conține câmpuri nepermise.", "CAMP_NEPERMIS", 400)
     role = (getattr(g.session, "ctx", None) or {}).get("Role")
-    rezultat = primite_contari.salveaza(g.session.db_name, body, role, g.session.username)
+    rezultat = NoteC.salveaza_contari(g.session.db_name, body, role, g.session.username)
     plata = rezultat.get("Plata") or {}
     _audit("EF_CONTARE", ",".join(str(i) for i in body.get("ids", [])), "NC=%s operatii=%d%s" % (rezultat["NumarNC"], len(rezultat["Operatii"]),
                                                                                               (" OP=%s" % plata["NrOP"]) if plata else ""))
@@ -77,4 +78,4 @@ def contari_existente(id_primita):
     -> { factura: { IdPrimita, NrFact, NumarDocument, DataFact, FelDocument, Total }, clasificatie: { IdClsf, Clsf, Denumire, ... } | null,
          sabloaneEvidentiere, sabloanePlata (those fitting the classification in the subunit of the note),
          operatii: [{ IdOperatiePrimita, Faza: E|P, Suma, IdSablon|null, Explicatie, NumarDocument, DataDocument, FelDocument, NumarNC, DataNc, Subunitate }] }"""
-    return _json(primite_contari.existente(g.session.db_name, id_primita))
+    return _json(NoteC.existente_contari(g.session.db_name, id_primita))

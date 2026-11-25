@@ -101,6 +101,7 @@ Partial Public Class ApiClient
     End Class
 
     Private NotInheritable Class ContariNotaWire
+        Public Property IdNota As Integer
         Public Property NumarNC As Integer
         Public Property DataNc As String
         Public Property Documente As Integer
@@ -179,6 +180,9 @@ Partial Public Class ApiClient
         If k_save Then
             k_fields("confirmari") = k_request.Confirmari
             k_fields("numarNC") = k_request.NumarNC
+            If k_request.IdNota.HasValue Then k_fields("idNota") = k_request.IdNota.Value
+            If k_request.NotaNoua.HasValue Then k_fields("notaNoua") = k_request.NotaNoua.Value
+            If k_request.EvidentaAsteptata.Count > 0 Then k_fields("evidentaAsteptata") = k_request.EvidentaAsteptata
             If k_request.DataOP.HasValue Then k_fields("dataOP") = k_request.DataOP.Value.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture)
             If Not String.IsNullOrWhiteSpace(k_request.ExplicatieOP) Then k_fields("explicatieOP") = k_request.ExplicatieOP
         End If
@@ -224,6 +228,7 @@ Partial Public Class ApiClient
                 k_result.FurnizorDenumire = If(wire.furnizor.Denumire, String.Empty)
                 k_result.FurnizorCui = If(wire.furnizor.Cui, String.Empty)
                 k_result.PartenerGasit = wire.furnizor.Partener IsNot Nothing
+                k_result.IdPartener = wire.furnizor.Partener?.IdPartener
                 If wire.furnizor.Parteneri IsNot Nothing Then
                     For Each w As ContariPartenerWire In wire.furnizor.Parteneri
                         k_result.Parteneri.Add(New EFacturaPartenerCui() With {
@@ -249,7 +254,7 @@ Partial Public Class ApiClient
                 k_result.NotaUrmatoare = wire.note.Urmatoare
                 If wire.note.Existente IsNot Nothing Then
                     For Each w As ContariNotaWire In wire.note.Existente
-                        k_result.Note.Add(New EFacturaContariNota() With {.NumarNC = w.NumarNC, .DataNc = ParseDay(w.DataNc), .Documente = w.Documente})
+                        k_result.Note.Add(New EFacturaContariNota() With {.IdNota = w.IdNota, .NumarNC = w.NumarNC, .DataNc = ParseDay(w.DataNc), .Documente = w.Documente})
                     Next
                 End If
             End If

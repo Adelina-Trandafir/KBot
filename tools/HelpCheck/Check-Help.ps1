@@ -255,6 +255,10 @@ function Test-SliceId([string]$id, [string]$where) {
     elseif ($id -match '^DIR\d(-\d{2})?$') {
         $ok = ($statusIndex -match '(?m)^\|\s*DIR\d?[\s|/-]') -or [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")
     }
+    # Slice DGV0 (shared corrections of KBotDataView, family DGV0-nn): the id is DGV0 or DGV0-nn, with a worklog or a row in the index.
+    elseif ($id -match '^DGV0(-\d{2})?$') {
+        $ok = ($statusIndex -match '(?m)^\|\s*DGV0[\s|/-]') -or [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")
+    }
     # Slice CHAT (the shared chat in K-BOT.app, CHAT-08 on): the id is CHAT-NN, with a worklog or a row in the index.
     elseif ($id -match '^CHAT-\d{2}$') {
         $ok = ($statusIndex -match '(?m)^\|\s*CHAT[\s|/-]') -and [bool](Get-ChildItem -LiteralPath $worklogDir -Filter "SLICE-$id*.md")

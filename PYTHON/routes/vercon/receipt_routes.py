@@ -4,7 +4,7 @@ from utils import vercon_suppliers as suppliers
 
 from flask import request
 
-from . import documents as d, receipts, receipt_rules, nir_number, receipt_auto, receipt_adjustment, invoices, protocol
+from . import documents as d, receipts, receipt_rules, receipt_number, receipt_auto, receipt_adjustment, invoices, protocol
 from .nomenclatoare import NomError
 
 
@@ -44,15 +44,11 @@ def register(bp, guard, scoped, session, build, repo_of, need):
                 external = sum((Decimal(row['ValoareCUTVA'] or 0) for row in previous.get('other_lines', [])), Decimal(0))
                 parsed['declared'] = Decimal(str(target)) - external
             header = data.get('header') or {}
-            if parsed['cols']['TipDoc'] != 'STOC_INITIAL':
-                changed = not previous or (str(header.get('Data')), str(header.get('DataFc')), str(header.get('Numar')), d._int(header.get('NumarSub')) or 0) != (
-                    previous['header']['Data'], previous['header']['DataFc'], str(previous['number']), previous.get('sub_number') or 0)
-                if changed:
-                    verdict = nir_number.check(cursor, ctx, header.get('Numar'), doc_id,
-                                               d._int(header.get('NumarSub')) or 0, header.get('Data'))
-                    if not verdict['valid'] or verdict['duplicate']:
-                        raise NomError('INVALID', 'Numărul NIR este invalid sau deja folosit.', 422,
-                                       {'h.Numar': 'Numărul NIR este invalid sau deja folosit.'})
+            sub = receipt_number.sub_number(header.get('NumarSub', previous.get('sub_number') if previous else 0))
+            changed = not previous or (str(header.get('Data')), str(header.get('DataFc')), str(header.get('Numar')), sub) != (
+                previous['header']['Data'], previous['header']['DataFc'], str(previous['number']), previous.get('sub_number') or 0)
+            if changed:
+                receipt_number.check(cursor, ctx, header.get('Numar'), doc_id, sub, header.get('Data'))
             if data.get('action') == 'adjust':
                 parsed = receipt_rules.adjust(parsed, ctx, data.get('line_key'))
             elif data.get('action') == 'undo_adjustment':

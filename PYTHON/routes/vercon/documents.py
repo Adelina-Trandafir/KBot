@@ -272,31 +272,8 @@ def _numarsub_column(cursor, ctx):
     return ctx['_numarsub']
 
 
-def _sub_number(raw, errors):
-    """The sub-number of a NIR number, in hundredths (707,1 = 10; 707,01 = 1). 0 = none; at most 2 digits."""
-    if raw in (None, '', 0, '0'):
-        return 0
-    value = _int(raw)
-    if value is None or not 0 <= value <= 99:
-        errors['h.Numar'] = 'Sub-numărul poate avea cel mult 2 cifre (1-99 sutimi).'
-        return 0
-    return value
-
-
 def _sub_text(sub):
     return (',%d' % (sub // 10) if sub % 10 == 0 else ',%02d' % sub) if sub else ''
-
-
-def _nir_number_taken(cursor, ctx, number, storno, exclude=None, sub=0):
-    sql = 'SELECT 1 FROM VC_NIR WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND Numar=%s AND COALESCE(Storno,0)=%s AND Anulat=0'
-    params = list(_scope(ctx)) + [-number if storno else number, 1 if storno else 0]
-    if _numarsub_column(cursor, ctx):
-        sql += ' AND COALESCE(NumarSub,0)=%s'   # 707 and 707,1 are two different numbers
-        params.append(sub)
-    if exclude:
-        sql += ' AND IdIntrare<>%s'
-        params.append(exclude)
-    return bool(_one(cursor, sql + ' LIMIT 1', params))
 
 
 def _bon_number_taken(cursor, ctx, family, number, exclude=None, account=None):
@@ -318,41 +295,36 @@ def _bon_number_taken(cursor, ctx, family, number, exclude=None, account=None):
 
 
 def _kind(family):
-    return {'nir': 'NIR', 'storno': 'STORNO', 'bc': 'BC', 'br': 'BR'}[family]
+    return {'bc': 'BC', 'br': 'BR'}[family]
 
 
-def _assign_number(cursor, ctx, family, manual, errors, exclude=None, sub=0, account=None):
-    """(number, text). Automatic when `manual` is empty; a manual number only when free. For NIR/storno the number is the
-    integer stored in NIR.Numar (a storno stores it negative); for the bons it is the text stored in NumarBC (bon_number: BC 13, BX 13).
-    `account` = the account of a BC: with per-account numbering (consumption_numbering) it picks the counter and the scope."""
-    bon = family in ('bc', 'br')
+def _assign_number(cursor, ctx, family, manual, errors, exclude=None, account=None):
+    """BC/BR numbering. NIR/FCS use receipt_number exclusively."""
     scoped = account if family == 'bc' and account is not None and consumption_numbering.per_account(cursor, ctx) else None
     kind = consumption_numbering.kind(scoped) if family == 'bc' else _kind(family)
     if manual in (None, ''):
-        if sub:
-            errors['h.Numar'] = 'Sub-numărul se poate folosi numai împreună cu un număr.'
-            return None, None
-        if family in ('nir', 'storno'):
-            return protocol.next_number(cursor, ctx, _kind(family), lambda n: _nir_number_taken(cursor, ctx, n, family == 'storno', exclude)), None
         number = protocol.next_number(cursor, ctx, kind, lambda n: _bon_number_taken(cursor, ctx, family, n, exclude, scoped))
         return number, bon_number.text(family, number)
     number = _int(manual)
     if number is None or number < 1:
         errors['h.Numar'] = 'Numărul trebuie să fie un întreg pozitiv.'
         return None, None
-    taken = _nir_number_taken(cursor, ctx, number, family == 'storno', exclude, sub) if family in ('nir', 'storno') \
-        else _bon_number_taken(cursor, ctx, family, number, exclude, scoped)
+    taken = _bon_number_taken(cursor, ctx, family, number, exclude, scoped)
     if taken:
-        errors['h.Numar'] = 'Numărul %s este deja folosit.' % ((bon_number.text(family, number) if bon else str(number)) + _sub_text(sub))
+        errors['h.Numar'] = 'Numărul %s este deja folosit.' % bon_number.text(family, number)
         return None, None
-    if not sub:
-        protocol.raise_counter(cursor, ctx, kind, number)   # a sub-number sits between two numbers: it moves nothing
-    return number, (bon_number.text(family, number) if bon else None)
+    protocol.raise_counter(cursor, ctx, kind, number)
+    return number, bon_number.text(family, number)
 
 
 # ---- guards shared by edit and cancel --------------------------------------------------------------------------------
 def _load_for_write(repo, ctx, family, doc_id, base_version):
-    table, pk = ('VC_NIR', 'IdIntrare') if family in ('nir', 'storno') else ('VC_Iesiri_H', 'IdBonConsum')
+    if family == 'lista':
+        table, pk = 'VC_LABC', 'IdLista'
+    elif family in ('nir', 'storno'):
+        table, pk = 'VC_NIR', 'IdIntrare'
+    else:
+        table, pk = 'VC_Iesiri_H', 'IdBonConsum'
     rows = repo.select(table, {pk: doc_id}, for_update=True)
     if not rows:
         raise NomError('NOT_FOUND', 'Documentul nu mai există.', 404)
@@ -417,13 +389,15 @@ def _mark_cancelled(cursor, ctx, table, pk, doc_id, reason, base_version):
 
 # ---- NIR (receipt) ---------------------------------------------------------------------------------------------------
 def cancel_document(cursor, repo, ctx, family, doc_id, body, request_id):
-    from . import archive, invoices
+    from . import archive, food_list_recalculation, invoices, recalculation_audit
     reason = _check_cancel_input(body)
     link = invoices.link_of(cursor, ctx, doc_id) if family == 'nir' and invoices.ready(cursor) else None
     if link:
         invoices.load(cursor, link['FACTURA_ID'], lock=True)
     table, pk, before = _load_for_write(repo, ctx, family, doc_id, body.get('version'))
     _guard_dependents(cursor, ctx, family, doc_id, 'cancel')
+    source_id = before['IdRetur'] if family == 'br' else None
+    prior_food = food_list_recalculation.snapshot_for_return(cursor, repo, ctx, source_id)
     document_day = before['Data'] if family in ('nir', 'storno') else before['DataBC']
     month_start = consumption_timeline.work_month_start(cursor, ctx, document_day)
     _mark_cancelled(cursor, ctx, table, pk, doc_id, reason, before['Version'])
@@ -435,6 +409,10 @@ def cancel_document(cursor, repo, ctx, family, doc_id, body, request_id):
     archived = archive.purge(cursor, ctx, family, doc_id, reason, ctx['email'])   # VC14-04: kept in the archive, gone from the tables
     if link:
         invoices.refresh_state(cursor, link['FACTURA_ID'])
+    if prior_food:
+        origin = recalculation_audit.cause('br', doc_id, before['NumarBC'], document_day,
+                                           before['Version'] + 1, action='anularea')
+        food_list_recalculation.refresh_after_return(cursor, repo, ctx, source_id, prior_food, origin, request_id)
     protocol.audit(cursor, ctx, family + '.cancel', table, doc_id, {'Anulat': 0}, {'Anulat': 1, 'Motiv': reason, 'Arhiva': archived}, None, request_id)
     return {'id': doc_id, 'deleted': True}
 
@@ -513,9 +491,7 @@ def create_storno(cursor, repo, ctx, exercise, body, request_key, request_id):
     _fail(errors)
     lines = _clean_stornolines(cursor, ctx, source['IdIntrare'], body.get('lines'), on=cols['Data'])
     from . import receipt_number
-    sub = _sub_number(header.get('NumarSub'), errors)
-    _fail(errors)
-    number, sub = receipt_number.assign_pair(cursor, ctx, header.get('Numar'), sub, cols['Data'])
+    number, sub = receipt_number.assign_pair(cursor, ctx, header.get('Numar'), header.get('NumarSub'), cols['Data'])
     _fail(errors)
     total = numeric.to_stored(total_of(lines, ctx['scale']), ctx['scale'])
     values = {**cols, 'Valoare': total, 'Numar': -number}
@@ -550,13 +526,9 @@ def edit_storno(cursor, repo, ctx, exercise, doc_id, body, request_id):
             errors['h.IdComisie'] = 'Valoarea aleasă nu există în această gestiune.'
     _fail(errors)
     lines = _clean_stornolines(cursor, ctx, source['IdIntrare'], body.get('lines'), exclude=doc_id, on=cols['Data'])
-    old_day = before['Data'].date() if hasattr(before['Data'], 'date') else before['Data']
-    if old_day and cols['Data'].year != old_day.year:
-        errors['h.Data'] = 'Data FCS nu poate muta documentul în altă serie anuală.'
     from . import receipt_number
-    sub = _sub_number(header.get('NumarSub', before.get('NumarSub', 0)), errors)
-    _fail(errors)
-    number, sub = receipt_number.assign_pair(cursor, ctx, header.get('Numar') or abs(before['Numar'] or 0), sub, cols['Data'], doc_id)
+    wanted = header.get('Numar') if header.get('Numar') not in (None, '') else abs(before['Numar'] or 0)
+    number, sub = receipt_number.assign_pair(cursor, ctx, wanted, header.get('NumarSub', before.get('NumarSub', 0)), cols['Data'], doc_id)
     _fail(errors)
     cols['Numar'] = -number
     if _has_numarsub(cursor):
@@ -657,6 +629,7 @@ def _clean_bon_lines(repo, ctx, raw_lines, errors, account=None):
 
 def edit_bc(cursor, repo, ctx, exercise, doc_id, body, request_id):
     from . import recalculation_audit
+    from .archive import release_renumbered
 
     table, pk, before = _load_for_write(repo, ctx, 'bc', doc_id, body.get('version'))
     _guard_dependents(cursor, ctx, 'bc', doc_id, 'edit')
@@ -694,6 +667,7 @@ def edit_bc(cursor, repo, ctx, exercise, doc_id, body, request_id):
     total = numeric.to_stored(total_of(total_lines, ctx['scale']), ctx['scale'])
     if repo.update('VC_Iesiri_H', {**cols, 'NumarBC': text, 'ValoareBC': total, 'DataSalvare': now}, {'IdBonConsum': doc_id, 'Version': before['Version']}, bump_version=True) != 1:
         raise NomError('CONFLICT', 'Documentul a fost modificat de altcineva. Reîncărcați documentul.', 409)
+    release_renumbered(cursor, ctx, 'bc', before, text)
     month_start = consumption_timeline.work_month_start(cursor, ctx, cols['DataBC'])
     consumption_timeline.require_nonnegative(cursor, ctx, variants, month_start)
     from .food_list_recalculation import refresh_for_bon
@@ -723,6 +697,26 @@ def return_eligible(cursor, ctx, bc_id, exclude=None):
         (s, g, e, bc_id, exclude or 0))}
     return [{'variant': r['IdProdus'], 'name': r['DenumireP'], 'um': r['UM'], 'qty': _money(Decimal(r['q']), scale), 'done': _money(done.get(r['IdProdus'], 0), scale),
              'left': _money(Decimal(r['q']) - done.get(r['IdProdus'], 0), scale), 'PUTVA': _money(r['putva'], scale)} for r in rows]
+
+
+def return_sources(cursor, ctx, exclude=None):
+    """Active consumption bons with at least one product left to return.
+
+    Ignore the quantities of the return being edited or linked.
+    """
+    s, g, e = _scope(ctx)
+    cursor.execute(
+        'SELECT o.IdBonConsum AS id FROM VC_Iesiri o JOIN VC_Iesiri_H h ON h.SubunitId=o.SubunitId AND h.GestiuneId=o.GestiuneId '
+        'AND h.ExercitiuId=o.ExercitiuId AND h.IdBonConsum=o.IdBonConsum '
+        'WHERE o.SubunitId=%s AND o.GestiuneId=%s AND o.ExercitiuId=%s AND COALESCE(h.Retur,0)=0 AND h.Anulat=0 '
+        'GROUP BY o.SubunitId, o.GestiuneId, o.ExercitiuId, o.IdBonConsum, o.IdProdus '
+        'HAVING SUM(o.Cant) > COALESCE((SELECT SUM(x.Cant) FROM VC_IesiriRetur x JOIN VC_Iesiri_H r ON r.SubunitId=x.SubunitId '
+        'AND r.GestiuneId=x.GestiuneId AND r.ExercitiuId=x.ExercitiuId AND r.IdBonConsum=x.IdBonConsum '
+        'WHERE x.SubunitId=o.SubunitId AND x.GestiuneId=o.GestiuneId AND x.ExercitiuId=o.ExercitiuId AND x.IdProdus=o.IdProdus '
+        'AND r.IdRetur=o.IdBonConsum AND COALESCE(r.Retur,0)=1 AND r.Anulat=0 AND r.IdBonConsum<>%s),0)',
+        (s, g, e, exclude or 0))
+    open_ids = {row['id'] for row in cursor.fetchall()}
+    return [row for row in list_documents(cursor, ctx, 'bc') if row['id'] in open_ids]
 
 
 def _source_bc(repo, source_id):
@@ -765,41 +759,53 @@ def _clean_return_lines(cursor, ctx, source_id, raw_lines, exclude=None):
 
 
 def create_br(cursor, repo, ctx, exercise, body, request_key, request_id):
+    from . import food_list_recalculation, number_change, recalculation_audit
+
     source = _source_bc(repo, _int(body.get('source')))
+    source_id = source['IdBonConsum']
     header = body.get('header') if isinstance(body.get('header'), dict) else {}
     errors = {}
     cols = _bon_header(cursor, repo, ctx, exercise, header, errors, source=source)
     _fail(errors)
-    lines = _clean_return_lines(cursor, ctx, source['IdBonConsum'], body.get('lines'))
-    number, text = _assign_number(cursor, ctx, 'br', header.get('Numar'), errors)
+    lines = _clean_return_lines(cursor, ctx, source_id, body.get('lines'))
+    proposed = number_change.return_number(cursor, ctx, cols['DataBC'], header.get('Numar'))
+    number, text = _assign_number(cursor, ctx, 'br', proposed, errors)
     _fail(errors)
     total = numeric.to_stored(total_of(lines, ctx['scale']), ctx['scale'])
-    doc_id = repo.insert('VC_Iesiri_H', {**cols, 'IdRetur': source['IdBonConsum'], 'NumarBC': text, 'ValoareBC': total, 'Retur': 1, 'DataSalvare': utc_now()})
+    prior_food = food_list_recalculation.snapshot_for_return(cursor, repo, ctx, source_id)
+    doc_id = repo.insert('VC_Iesiri_H', {**cols, 'IdRetur': source_id, 'NumarBC': text, 'ValoareBC': total, 'Retur': 1, 'DataSalvare': utc_now()})
     now = utc_now()
     for line in lines:
         repo.insert('VC_IesiriRetur', {'IdBonConsum': doc_id, 'IdProdus': line['variant'], 'Cant': line['Cant'], 'PUTVA': line['PUTVA'], 'DataSalvare': now})
+    origin = recalculation_audit.cause('br', doc_id, text, cols['DataBC'], 1, action='salvarea')
+    recalculated = food_list_recalculation.refresh_after_return(cursor, repo, ctx, source_id, prior_food, origin, request_id)
     protocol.freeze(cursor, ctx)
     protocol.audit(cursor, ctx, 'br.create', 'VC_Iesiri_H', doc_id, None, {'header': cols, 'number': text, 'total': total, 'lines': len(lines)}, request_key, request_id)
-    return {'id': doc_id, 'number': text}
+    return {'id': doc_id, 'number': text, 'recalculated_lists': recalculated}
 
 
 def edit_br(cursor, repo, ctx, exercise, doc_id, body, request_id):
+    from . import food_list_recalculation, recalculation_audit
+    from .archive import release_renumbered
+
     table, pk, before = _load_for_write(repo, ctx, 'br', doc_id, body.get('version'))
     if before['IdRetur'] is None:
         message = 'Returul nu are bon sursă. Asociați-l mai întâi cu un bon de consum, apoi îl puteți modifica.'
         raise NomError('SOURCE_REQUIRED', message, 422, {'source': message})
-    source = _source_bc(repo, before['IdRetur'])
+    source_id = before['IdRetur']
+    source = _source_bc(repo, source_id)
     header = body.get('header') if isinstance(body.get('header'), dict) else {}
     errors = {}
     cols = _bon_header(cursor, repo, ctx, exercise, header, errors, source=source)
     _fail(errors)
-    lines = _clean_return_lines(cursor, ctx, source['IdBonConsum'], body.get('lines'), exclude=doc_id)
+    lines = _clean_return_lines(cursor, ctx, source_id, body.get('lines'), exclude=doc_id)
     text = before['NumarBC']
     manual = header.get('Numar')
     if manual not in (None, '') and _int(manual) != bon_number.parse('br', text):
         _, text = _assign_number(cursor, ctx, 'br', manual, errors, exclude=doc_id)
     _fail(errors)
     variants = _document_variants(cursor, ctx, 'br', doc_id) | {line['variant'] for line in lines}
+    prior_food = food_list_recalculation.snapshot_for_return(cursor, repo, ctx, source_id)
     repo.delete('VC_IesiriRetur', {'IdBonConsum': doc_id})
     now = utc_now()
     for line in lines:
@@ -807,10 +813,13 @@ def edit_br(cursor, repo, ctx, exercise, doc_id, body, request_id):
     total = numeric.to_stored(total_of(lines, ctx['scale']), ctx['scale'])
     if repo.update('VC_Iesiri_H', {**cols, 'NumarBC': text, 'ValoareBC': total, 'DataSalvare': now}, {'IdBonConsum': doc_id, 'Version': before['Version']}, bump_version=True) != 1:
         raise NomError('CONFLICT', 'Documentul a fost modificat de altcineva. Reîncărcați documentul.', 409)
+    release_renumbered(cursor, ctx, 'br', before, text)
     month_start = consumption_timeline.work_month_start(cursor, ctx, cols['DataBC'], before['DataBC'])
     consumption_timeline.require_nonnegative(cursor, ctx, variants, month_start)
+    origin = recalculation_audit.cause('br', doc_id, text, cols['DataBC'], before['Version'] + 1)
+    recalculated = food_list_recalculation.refresh_after_return(cursor, repo, ctx, source_id, prior_food, origin, request_id)
     protocol.audit(cursor, ctx, 'br.update', 'VC_Iesiri_H', doc_id, {'NumarBC': before['NumarBC'], 'ValoareBC': before['ValoareBC']}, {'header': cols, 'total': total, 'lines': len(lines)}, None, request_id)
-    return {'id': doc_id, 'number': text}
+    return {'id': doc_id, 'number': text, 'recalculated_lists': recalculated}
 
 
 from .receipts import create_nir, edit_nir, _has_numarsub

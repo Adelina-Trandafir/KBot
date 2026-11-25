@@ -369,6 +369,56 @@ Public NotInheritable Class WorkflowResultStore
         End Try
     End Function
 
+    ' ── Slice 0097-10: the newest angajament of a list K-BOT already has ─────────────────────
+    Private Const FisierUltimulCunoscut As String = "UltimulAngajament.json"
+
+    Private Shared ReadOnly _gateUltimul As New Object()
+
+    ''' <summary>
+    ''' The code of the newest angajament (in FOREXE's order of entry) a COMPLETE list download of
+    ''' <paramref name="k_cheie"/> (unit | year | program | source) brought in. Empty = none known.
+    ''' </summary>
+    Public Shared Function UltimulCunoscut(k_cheie As String) As String
+        Try
+            SyncLock _gateUltimul
+                Dim k_all As Dictionary(Of String, String) = CitesteUltimele()
+                Dim k_cod As String = Nothing
+                If k_all.TryGetValue(k_cheie, k_cod) AndAlso Not String.IsNullOrWhiteSpace(k_cod) Then Return k_cod.Trim()
+                Return String.Empty
+            End SyncLock
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowResultStore.UltimulCunoscut", ex)
+            Throw
+        End Try
+    End Function
+
+    ''' <summary>Remembers <paramref name="k_cod"/> as the newest known angajament of <paramref name="k_cheie"/>.</summary>
+    Public Shared Sub PastreazaUltimulCunoscut(k_cheie As String, k_cod As String)
+        Try
+            If String.IsNullOrWhiteSpace(k_cod) Then Return
+            SyncLock _gateUltimul
+                Dim k_all As Dictionary(Of String, String) = CitesteUltimele()
+                k_all(k_cheie) = k_cod.Trim()
+                File.WriteAllText(CaleUltimele(), JsonSerializer.Serialize(k_all, _jsonOptions))
+            End SyncLock
+        Catch ex As Exception
+            GlobalErrorLog.Write("WorkflowResultStore.PastreazaUltimulCunoscut", ex)
+            Throw
+        End Try
+    End Sub
+
+    Private Shared Function CaleUltimele() As String
+        Return Path.Combine(OutputFolder, FisierUltimulCunoscut)
+    End Function
+
+    Private Shared Function CitesteUltimele() As Dictionary(Of String, String)
+        Dim k_cale As String = CaleUltimele()
+        If Not File.Exists(k_cale) Then Return New Dictionary(Of String, String)(StringComparer.OrdinalIgnoreCase)
+        Dim k_text As String = File.ReadAllText(k_cale)
+        Dim k_dict As Dictionary(Of String, String) = JsonSerializer.Deserialize(Of Dictionary(Of String, String))(k_text)
+        Return New Dictionary(Of String, String)(If(k_dict, New Dictionary(Of String, String)()), StringComparer.OrdinalIgnoreCase)
+    End Function
+
     ''' <summary>
     ''' Păstrează rezultatul brut al unei prelucrări complete și îl scrie ca JSON.
     ''' Întoarce calea fișierului scris.

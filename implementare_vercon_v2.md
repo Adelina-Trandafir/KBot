@@ -1,5 +1,25 @@
 # Implementare VERCON v2
 
+### [2026-11-25 — SLICE-VC24-04 — Schimbarea bonurilor atașate listei de alimente](docs/worklog/SLICE-VC24-04-schimba-bonurile-listei.md)
+
+### [2026-11-24 — SLICE-VC25-01 — Macheta notei de comandă](docs/worklog/SLICE-VC25-01-nota-de-comanda.md)
+
+### [2026-11-24 — SLICE-VC24-03 — Contorul după schimbarea ultimului număr](docs/worklog/SLICE-VC24-03-contor-dupa-renumerotare.md)
+
+### [2026-11-24 — SLICE-VC24-02 — Afișarea numărului propus la Liste Alimente](docs/worklog/SLICE-VC24-02-afisare-numar-propus-lista-alimente.md)
+
+### [2026-11-24 — SLICE-VC20-03 — Numerotare și selecție produse la Bonuri Retur](docs/worklog/SLICE-VC20-03-numerotare-si-selectie-produse-retur.md)
+
+### [2026-11-20 — SLICE-VC24-01 — Număr listă de alimente și retur din BC asociat](docs/worklog/SLICE-VC24-01-numar-lista-alimente-si-retur.md)
+
+### [2026-11-19 — SLICE-VC23-01 — Mesajul despre numărul NIR/FCS se actualizează la schimbarea datei sau a numărului](docs/worklog/SLICE-VC23-01-mesaj-numar-nir-se-actualizeaza.md)
+
+### [2026-11-18 — SLICE-VC22-01 — Golire gestiune OI/MF: bonuri PTC + consumuri + NIR (KBotAdmin › Comenzi)](docs/worklog/SLICE-VC22-01-golire-gestiune-oi-mf.md)
+
+### [2026-11-18 — SLICE-VC20-02 — Bon de retur: «+» în arbore și editare pe loc ca la BC / FCS](docs/worklog/SLICE-VC20-02-br-plus-in-antetul-arborelui.md)
+
+### [2026-11-18 — SLICE-VC20-01 — Adăugarea furnizorilor (ANAF) în macheta Furnizori și furnizorul nou din e-Factura](docs/worklog/SLICE-VC20-01-adauga-furnizor-anaf.md)
+
 ### [2026-11-13 — SLICE-VC16-03 — «Modifică furnizor» la NIR, în orice perioadă](docs/worklog/SLICE-VC16-03-nir-modifica-furnizor-orice-perioada.md)
 
 ### [2026-11-13 — SLICE-VC19-01 — Raport Amortizare: fără «Stare», valori și pentru bunurile nepredate](docs/worklog/SLICE-VC19-01-amortizare-nepredat-fara-stare.md)
@@ -997,3 +1017,5 @@ La salvare, daca valoarea din antet difera de totalul liniilor cu cel mult 1 leu
 ### [2026-11-09 — SLICE-VC06-41: Filtrul de afișare în NIR din eFactura](docs/worklog/SLICE-VC06-41-filtru-nir-din-efactura.md)
 
 ### [2026-11-09 — SLICE-VC06-42: Înlocuirea și eliminarea asocierilor NIR–eFactura](docs/worklog/SLICE-VC06-42-inlocuire-eliminare-asociere-nir-efactura.md)
+
+### [2026-11-17 — SLICE-VC16-04: Schimbă / propune număr NIR și validare unică NIR/FCS](docs/worklog/SLICE-VC16-04-schimba-numar-nir.md)

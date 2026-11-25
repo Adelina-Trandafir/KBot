@@ -9,12 +9,12 @@ from decimal import Decimal, localcontext
 from . import food_balance, protocol, report_data, stock, stock_source
 
 
-def cause(family, doc_id, number, day, version):
-    label = 'bonului de consum' if family == 'bc' else 'listei de alimente'
+def cause(family, doc_id, number, day, version, *, action='modificarea'):
+    label = {'bc': 'bonului de consum', 'br': 'bonului de retur', 'lista': 'listei de alimente'}[family]
     day = str(day)[:10]
     shown_day = '.'.join(reversed(day.split('-')))
     return {'family': family, 'id': doc_id, 'number': str(number), 'date': day, 'version': version,
-            'reason': 'Recalculare automată după modificarea %s %s din %s.' % (label, number, shown_day)}
+            'reason': 'Recalculare automată după %s %s %s din %s.' % (action, label, number, shown_day)}
 
 
 def food_snapshot(cursor, ctx):
@@ -22,7 +22,7 @@ def food_snapshot(cursor, ctx):
         return {}
     cursor.execute('SELECT IdLista,NumarLA,DATE(DATALA) AS day,DEP,ValoareLista,ValoareBon FROM VC_LABC '
                    'WHERE SubunitId=%s AND GestiuneId=%s AND ExercitiuId=%s AND Anulat=0 '
-                   'ORDER BY DATALA,IdLista', (ctx['subunit'], ctx['gestiune'], ctx['exercitiu']))
+                   'ORDER BY DATE(DATALA),NumarLA', (ctx['subunit'], ctx['gestiune'], ctx['exercitiu']))
     rows = cursor.fetchall()
     source = report_data.Source(cursor, ctx['unit'], ctx, {
         'start': date(ctx['an'], 1, 1), 'end': date(ctx['an'], 12, 31),
@@ -32,7 +32,7 @@ def food_snapshot(cursor, ctx):
         precision.prec = 60
         for row in rows:
             day = stock.day_of(row['day'])
-            opening = food_balance.before(source, day)
+            opening = food_balance.before(source, day, row['IdLista'], number=row['NumarLA'])
             current = -Decimal(row['DEP']) if row['DEP'] is not None else None
             result[row['IdLista']] = {
                 'number': str(row['NumarLA']), 'date': day.isoformat(),

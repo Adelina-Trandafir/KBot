@@ -5,15 +5,15 @@
 .confirm-box h2 { margin: 0; font-size: var(--fs-xl); }
 .confirm-box__text { margin: 0; padding: 22px 20px; text-align: center; font-size: var(--fs-lg); white-space: pre-line; }
 .confirm-box footer { display: flex; justify-content: space-between; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--line, #cdd5e0); }
-.confirm-box button { min-width: 110px; min-height: 34px; padding: 6px 16px; color: inherit; background: var(--sky-2, #eaf2fb); border: 1px solid var(--line, #cdd5e0); border-radius: var(--radius-sm, 6px); font: inherit; font-weight: 650; cursor: pointer; }
-.confirm-box button:hover { background: var(--sky-1, #f3f8fe); }
-.confirm-box button:focus-visible { outline: 2px solid var(--blue, #309eff); outline-offset: 1px; }
+.confirm-box button:not(:where(.k-dialog-button)) { min-width: 110px; min-height: 34px; padding: 6px 16px; color: inherit; background: var(--sky-2, #eaf2fb); border: 1px solid var(--line, #cdd5e0); border-radius: var(--radius-sm, 6px); font: inherit; font-weight: 650; cursor: pointer; }
+.confirm-box button:not(:where(.k-dialog-button)):hover { background: var(--sky-1, #f3f8fe); }
+.confirm-box button:not(:where(.k-dialog-button)):focus-visible { outline: 2px solid var(--blue, #309eff); outline-offset: 1px; }
 
 .confirm-box--warning { border-color: #c0392b; }
 .confirm-box--warning header { color: #fff; background: #c0392b; border-bottom-color: #c0392b; }
 .confirm-box--warning .confirm-box__text { text-align: left; }
-.confirm-box--warning footer button:last-child { color: #fff; background: #c0392b; border-color: #c0392b; }
-.confirm-box--warning footer button:last-child:hover { background: #a93226; }
+.confirm-box--warning footer button:not(:where(.k-dialog-button)):last-child { color: #fff; background: #c0392b; border-color: #c0392b; }
+.confirm-box--warning footer button:not(:where(.k-dialog-button)):last-child:hover { background: #a93226; }
 
 /* reasonBox: the question, then a required reason; «Yes» stays off until the reason is filled in */
 .confirm-box__field { display: block; padding: 0 20px 16px; font-weight: 650; }
@@ -22,7 +22,7 @@
 /* numberBox (VC16-02): the server's refusal stays in the box, under the field, until the operator changes the number or gives up */
 .confirm-box__error { margin: 0; padding: 0 20px 16px; color: #b42318; text-align: left; }
 .confirm-box button:disabled { opacity: .5; cursor: default; }
-.confirm-box--warning footer button:last-child:disabled:hover { background: #c0392b; }
+.confirm-box--warning footer button:not(:where(.k-dialog-button)):last-child:disabled:hover { background: #c0392b; }
 
 /* pickBox: a vertical list of choices, at most five and a half rows high, then it scrolls */
 .confirm-box--pick { width: min(360px, calc(92 * var(--application-vw, 1vw))); }
@@ -35,3 +35,8 @@
 /* supplierBox (VC16-03, js/vercon/supplier-change.js): a wider box whose supplier list may drop below the footer */
 .confirm-box--supplier { width: min(520px, calc(92 * var(--application-vw, 1vw))); overflow: visible; }
 .confirm-box--supplier .confirm-box__field > div { margin-top: 6px; }
+
+/* VC21-01: the boxes use the shared dialog buttons (js/components/dialog-button): Cancel left, OK1 right, OK2 for the extra action.
+   A warning box keeps its red main button; the selector is long on purpose so the dark-theme OK1 rule of dialog-button.css never wins. */
+.confirm-box--warning footer button.k-dialog-button.k-dialog-button--ok1 { --dialog-button-ok1-back: #c0392b; --dialog-button-ok1-color: #fff; }
+.confirm-box--warning footer button.k-dialog-button.k-dialog-button--ok1:not(:disabled):hover { --dialog-button-ok1-hover-back: #a93226; }

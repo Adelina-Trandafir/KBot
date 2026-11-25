@@ -510,7 +510,14 @@ Partial Class KBotDataView
 
         Select Case col.ColumnType
             Case KBotColumnType.CheckBox
-                If Not _cellArgs.HideGlyph Then DrawCheckCell(g, contentRect, ToBool(value), enabled)
+                If Not _cellArgs.HideGlyph Then
+                    ' Slice DGV0-02: a column that asked for it draws an empty value as the «some» box.
+                    If col.NullShowsMixedCheck AndAlso (value Is Nothing OrElse TypeOf value Is DBNull) Then
+                        DrawMixedCheck(g, contentRect)
+                    Else
+                        DrawCheckCell(g, contentRect, ToBool(value), enabled)
+                    End If
+                End If
             Case KBotColumnType.OptionButton
                 If Not _cellArgs.HideGlyph Then DrawOptionCell(g, contentRect, ToBool(value), enabled)
             Case KBotColumnType.Button

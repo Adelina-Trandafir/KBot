@@ -3,12 +3,12 @@ from utils.clock import utc_now
 from decimal import Decimal
 from utils import vercon_suppliers as suppliers
 
-from . import consumption_timeline, numeric, protocol, receipt_choices, receipt_rules, receipt_number, nir_number, receipt_auto, receipt_products
+from . import consumption_timeline, numeric, protocol, receipt_choices, receipt_rules, receipt_number, receipt_auto, receipt_products
 from .nomenclatoare import NomError
 from .documents import (_int, _dec, _text, _one, _all, _fail, _exists, _scope,
                         _line_key, _account_of_product, _account_of_variant,
                         _NOT_IN_ACCOUNT, _MAX_LINES, receipt_line, total_of,
-                        _sub_number, _numarsub_column, _assign_number,
+                        _numarsub_column,
                         _load_for_write, _guard_dependents)
 
 def _clean_nir(cursor, repo, ctx, exercise, body, family, source=None, stored=None, allow_empty=False):
@@ -265,18 +265,8 @@ def create_nir(cursor, repo, ctx, exercise, body, request_key, request_id, parse
     body = {**body, 'id': None}
     parsed = parsed if parsed is not None else _clean_nir(cursor, repo, ctx, exercise, body, 'nir')
     parsed['accept_difference'] = body.get('accept_difference') is True
-    errors = {}
     header = body.get('header') or {}
-    sub = _sub_number(header.get('NumarSub'), errors)
-    if sub and not _numarsub_column(cursor, ctx):
-        errors['h.Numar'] = 'Sub-numerele NIR nu sunt disponibile în această bază de date.'
-    number = None
-    if not errors:
-        if parsed['cols']['TipDoc'] == 'STOC_INITIAL':
-            number = receipt_number.assign(cursor, ctx, header.get('Numar'), sub, parsed['cols']['Data'])
-        else:
-            number, sub = nir_number.assign(cursor, ctx, header.get('Numar'), sub, parsed['cols']['Data'])
-    _fail(errors)
+    number, sub = receipt_number.assign_pair(cursor, ctx, header.get('Numar'), header.get('NumarSub'), parsed['cols']['Data'])
     total_int = _nir_total(ctx, parsed)
     invoice_id, current = invoices.prepare_receipt(cursor, ctx, None, header)
     receipt_rules.simulate(cursor, repo, ctx, parsed)
@@ -345,28 +335,19 @@ def edit_nir(cursor, repo, ctx, exercise, doc_id, body, request_id):
     old_lines = {r['id']: r for r in previous['lines']}
     parsed = _clean_nir(cursor, repo, ctx, exercise, body, 'nir', stored=old_lines)
     parsed['accept_difference'] = body.get('accept_difference') is True
-    errors = {}
     header = body.get('header') or {}
     manual = header.get('Numar')
     number = abs(before['Numar'] or 0)
     before_sub = int(before.get('NumarSub') or 0)
-    sub = _sub_number(header.get('NumarSub'), errors) if 'NumarSub' in header else before_sub   # an old client that sends none keeps it
-    if sub and not _numarsub_column(cursor, ctx):
-        errors['h.Numar'] = 'Sub-numerele NIR nu sunt disponibile în această bază de date.'
+    sub = receipt_number.sub_number(header.get('NumarSub', before_sub))
     wanted = manual if manual not in (None, '') else number
     old_day = before['Data'].date() if hasattr(before['Data'], 'date') else before['Data']
     changed_number = _int(str(wanted)) != number or sub != before_sub
     changed_day = parsed['cols']['Data'] != old_day
     changed_invoice_day = str(header.get('DataFc') or '')[:10] != str(previous['header']['DataFc'] or '')[:10]
-    if changed_day and old_day and parsed['cols']['Data'].year != old_day.year:
-        errors['h.Data'] = 'Data NIR nu poate muta documentul în altă serie anuală.'
-    if not errors and (changed_number or changed_day or changed_invoice_day):
-        if parsed['cols']['TipDoc'] == 'STOC_INITIAL':
-            number = receipt_number.assign(cursor, ctx, wanted, sub, parsed['cols']['Data'], doc_id)
-        else:
-            number, sub = nir_number.assign(cursor, ctx, wanted, sub, parsed['cols']['Data'], doc_id)
+    if changed_number or changed_day or changed_invoice_day:
+        number, sub = receipt_number.assign_pair(cursor, ctx, wanted, sub, parsed['cols']['Data'], doc_id)
         changed_number = number != abs(before['Numar'] or 0) or sub != before_sub
-    _fail(errors)
     economic = len(parsed['lines']) != len(old_lines) or any(not r.get('preserve') for r in parsed['lines'])
     same_declared = parsed['declared'] == before['Valoare']
     total_int = before['Valoare'] if not economic and same_declared else _nir_total(ctx, parsed)

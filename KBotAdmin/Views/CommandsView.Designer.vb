@@ -28,17 +28,27 @@ Partial Class CommandsView
         btnDeleteAng = New KBotButton()
         btnFix = New KBotButton()
         txtParam = New KBotTextBox()
+        txtParam2 = New KBotTextBox()
+        tlyParam = New KBotTableLayoutPanel()
+        btnMuta = New KBotButton()
         txtOutput = New KBotTextBox()
         txtExplain = New KBotTextBox()
         lblState = New Label()
         tlyMain = New KBotTableLayoutPanel()
         tlyBar = New KBotTableLayoutPanel()
         tlyBon = New KBotTableLayoutPanel()
+        tlyPlata = New KBotTableLayoutPanel()
+        cmbPlata = New KBotComboBox()
         cmbBon = New KBotComboBox()
         btnDeleteBon = New KBotButton()
+        tlyPartener = New KBotTableLayoutPanel()
+        cmbPartener = New KBotComboBox()
         tlyMain.SuspendLayout()
         tlyBar.SuspendLayout()
         tlyBon.SuspendLayout()
+        tlyPlata.SuspendLayout()
+        tlyPartener.SuspendLayout()
+        tlyParam.SuspendLayout()
         SuspendLayout()
         ' 
         ' cmbCommand
@@ -136,6 +146,20 @@ Partial Class CommandsView
         tips.SetToolTipText(btnDeleteAng, "Apare doar după «Analiză ștergere angajament», pentru codul analizat." & vbLf & "Șterge din baza aleasă exact ce a arătat analiza (tabelele FX_ ale codului; tabelele EF_ rămân), într-o singură tranzacție, cu Jurnal. Cere confirmare și NU se poate anula.")
         btnDeleteAng.Visible = False
         '
+        ' btnMuta (step 2 of «Mutare plata intre copii»; same cell as the other repair buttons: never visible together)
+        '
+        btnMuta.AccessibleRole = AccessibleRole.PushButton
+        btnMuta.Dock = DockStyle.Fill
+        btnMuta.Location = New Point(1125, 3)
+        btnMuta.Margin = New Padding(0, 3, 0, 9)
+        btnMuta.Name = "btnMuta"
+        btnMuta.Size = New Size(210, 54)
+        btnMuta.TabIndex = 9
+        btnMuta.Text = "Mută plata"
+        tips.SetToolTipHeader(btnMuta, "Mută plata")
+        tips.SetToolTipText(btnMuta, "Apare doar după «Mutare plata intre copii - analiza», când analiza spune că se poate." & vbLf & "Mută plata arătată de analiză pe copilul ales; dacă luna e închisă, refă situațiile salvate ale ambilor copii. Cere confirmare, scrie într-o singură tranzacție, cu Jurnal.")
+        btnMuta.Visible = False
+        '
         ' btnFix
         '
         btnFix.AccessibleRole = AccessibleRole.PushButton
@@ -152,14 +176,14 @@ Partial Class CommandsView
         '
         ' txtParam
         ' 
-        txtParam.Dock = DockStyle.Left
+        txtParam.Dock = DockStyle.Fill
         txtParam.HorizontalScrollBarPadding = New Padding(0)
-        txtParam.Location = New Point(885, 6)
+        txtParam.Location = New Point(0, 6)
         txtParam.Margin = New Padding(0, 6, 12, 12)
         txtParam.MaxLength = 60
         txtParam.Name = "txtParam"
         txtParam.PlaceholderText = "Cod angajament"
-        txtParam.Size = New Size(360, 48)
+        txtParam.Size = New Size(180, 48)
         txtParam.TabIndex = 3
         txtParam.TextAlign = HorizontalAlignment.Center
         txtParam.TextPadding = New Padding(0)
@@ -167,6 +191,42 @@ Partial Class CommandsView
         tips.SetToolTipText(txtParam, "Valoarea cerută de comanda aleasă, conform textului din casetă." & vbLf & "Comanda cere o singură bază aleasă în arbore.")
         txtParam.VerticalScrollBarPadding = New Padding(0)
         txtParam.Visible = False
+        '
+        ' txtParam2 (second typed value; only «Mutare plata intre copii»: the child who receives the payment)
+        '
+        txtParam2.Dock = DockStyle.Fill
+        txtParam2.HorizontalScrollBarPadding = New Padding(0)
+        txtParam2.Location = New Point(192, 6)
+        txtParam2.Margin = New Padding(0, 6, 12, 12)
+        txtParam2.MaxLength = 40
+        txtParam2.Name = "txtParam2"
+        txtParam2.PlaceholderText = "CNP sau ID copil țintă[;IDS plătitor]"
+        txtParam2.Size = New Size(180, 48)
+        txtParam2.TabIndex = 4
+        txtParam2.TextAlign = HorizontalAlignment.Center
+        txtParam2.TextPadding = New Padding(0)
+        tips.SetToolTipHeader(txtParam2, "Copilul care primește plata")
+        tips.SetToolTipText(txtParam2, "CNP-ul copilului (13 cifre) sau ID-ul lui (până la 9 cifre), din aceeași subunitate cu plata." & vbLf & "Dacă are mai mulți plătitori activi, adăugați după ; IDS-ul plătitorului ales (de ex. 123456;789).")
+        txtParam2.VerticalScrollBarPadding = New Padding(0)
+        txtParam2.Visible = False
+        '
+        ' tlyParam (the two typed values side by side; the second column collapses in code when only one is needed)
+        '
+        tlyParam.AutoFitToTheme = False
+        tlyParam.ColumnCount = 2
+        tlyParam.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
+        tlyParam.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 50F))
+        tlyParam.Controls.Add(txtParam, 0, 0)
+        tlyParam.Controls.Add(txtParam2, 1, 0)
+        tlyParam.Dock = DockStyle.Fill
+        tlyParam.Location = New Point(885, 0)
+        tlyParam.Margin = New Padding(0)
+        tlyParam.Name = "tlyParam"
+        tlyParam.RowCount = 1
+        tlyParam.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyParam.ScaleAbsoluteStyles = False
+        tlyParam.Size = New Size(360, 66)
+        tlyParam.TabIndex = 3
         ' 
         ' txtOutput
         ' 
@@ -180,7 +240,7 @@ Partial Class CommandsView
         txtOutput.ReadOnly = True
         txtOutput.ScrollBars = ScrollBars.Both
         txtOutput.Size = New Size(1334, 356)
-        txtOutput.TabIndex = 2
+        txtOutput.TabIndex = 3
         tips.SetToolTipHeader(txtOutput, "Rezultat")
         tips.SetToolTipText(txtOutput, "Rezultatul comenzii, câte un bloc pe fiecare bază.")
         txtOutput.WordWrap = False
@@ -195,7 +255,7 @@ Partial Class CommandsView
         txtExplain.Name = "txtExplain"
         txtExplain.ReadOnly = True
         txtExplain.Size = New Size(1334, 351)
-        txtExplain.TabIndex = 3
+        txtExplain.TabIndex = 4
         tips.SetToolTipHeader(txtExplain, "Ce face și ce te aștepți")
         tips.SetToolTipText(txtExplain, "Explicația comenzii alese și ce rezultat e normal. Se schimbă odată cu comanda din listă.")
         ' 
@@ -207,7 +267,7 @@ Partial Class CommandsView
         lblState.Margin = New Padding(0)
         lblState.Name = "lblState"
         lblState.Size = New Size(1334, 42)
-        lblState.TabIndex = 4
+        lblState.TabIndex = 5
         lblState.TextAlign = ContentAlignment.MiddleLeft
         tips.SetToolTipHeader(lblState, "Starea")
         tips.SetToolTipText(lblState, "Pe ce baze s-a rulat și cât a durat.")
@@ -219,17 +279,21 @@ Partial Class CommandsView
         tlyMain.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyMain.Controls.Add(tlyBar, 0, 0)
         tlyMain.Controls.Add(tlyBon, 0, 1)
-        tlyMain.Controls.Add(txtOutput, 0, 2)
-        tlyMain.Controls.Add(txtExplain, 0, 3)
-        tlyMain.Controls.Add(lblState, 0, 4)
+        tlyMain.Controls.Add(tlyPlata, 0, 2)
+        tlyMain.Controls.Add(tlyPartener, 0, 3)
+        tlyMain.Controls.Add(txtOutput, 0, 4)
+        tlyMain.Controls.Add(txtExplain, 0, 5)
+        tlyMain.Controls.Add(lblState, 0, 6)
         tlyMain.Dock = DockStyle.Fill
         tlyMain.Location = New Point(0, 0)
         tlyMain.Margin = New Padding(0)
         tlyMain.Name = "tlyMain"
         tlyMain.Padding = New Padding(8)
-        tlyMain.RowCount = 5
+        tlyMain.RowCount = 7
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 66F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 66F))   ' the detected bons; collapsed in code until a bon search finds some
+        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 66F))   ' the payments of the source child (payment move); collapsed in code until listed
+        tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 66F))   ' the partners of the chosen database (invoices and payments by CodFiscal); collapsed in code for any other command
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 360F))
         tlyMain.RowStyles.Add(New RowStyle(SizeType.Absolute, 42F))
@@ -249,11 +313,12 @@ Partial Class CommandsView
         tlyBar.Controls.Add(cmbCommand, 0, 0)
         tlyBar.Controls.Add(btnRun, 1, 0)
         tlyBar.Controls.Add(btnCopy, 2, 0)
-        tlyBar.Controls.Add(txtParam, 3, 0)
+        tlyBar.Controls.Add(tlyParam, 3, 0)
         tlyBar.Controls.Add(btnRepair, 4, 0)
         tlyBar.Controls.Add(btnExplain, 4, 0)
         tlyBar.Controls.Add(btnLanturi, 4, 0)
         tlyBar.Controls.Add(btnDeleteAng, 4, 0)
+        tlyBar.Controls.Add(btnMuta, 4, 0)
         tlyBar.Controls.Add(btnFix, 5, 0)
         tlyBar.Dock = DockStyle.Fill
         tlyBar.Location = New Point(8, 8)
@@ -282,6 +347,66 @@ Partial Class CommandsView
         tlyBon.ScaleAbsoluteStyles = False
         tlyBon.Size = New Size(1334, 66)
         tlyBon.TabIndex = 1
+        '
+        ' tlyPlata (the payments of the source child: choose ONE, the analysis shows what moving it would do)
+        '
+        tlyPlata.AutoFitToTheme = False
+        tlyPlata.ColumnCount = 1
+        tlyPlata.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyPlata.Controls.Add(cmbPlata, 0, 0)
+        tlyPlata.Dock = DockStyle.Fill
+        tlyPlata.Location = New Point(8, 140)
+        tlyPlata.Margin = New Padding(0)
+        tlyPlata.Name = "tlyPlata"
+        tlyPlata.RowCount = 1
+        tlyPlata.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyPlata.ScaleAbsoluteStyles = False
+        tlyPlata.Size = New Size(1334, 66)
+        tlyPlata.TabIndex = 2
+        tlyPlata.Visible = False
+        '
+        ' tlyPartener (the partners of the chosen database: choose ONE, «Rulează» shows its invoices and payments per SS)
+        '
+        tlyPartener.AutoFitToTheme = False
+        tlyPartener.ColumnCount = 1
+        tlyPartener.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyPartener.Controls.Add(cmbPartener, 0, 0)
+        tlyPartener.Dock = DockStyle.Fill
+        tlyPartener.Location = New Point(8, 206)
+        tlyPartener.Margin = New Padding(0)
+        tlyPartener.Name = "tlyPartener"
+        tlyPartener.RowCount = 1
+        tlyPartener.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
+        tlyPartener.ScaleAbsoluteStyles = False
+        tlyPartener.Size = New Size(1334, 66)
+        tlyPartener.TabIndex = 3
+        tlyPartener.Visible = False
+        '
+        ' cmbPartener
+        '
+        cmbPartener.Dock = DockStyle.Fill
+        cmbPartener.Editable = True
+        cmbPartener.FindAsYouType = True
+        cmbPartener.Location = New Point(0, 6)
+        cmbPartener.Margin = New Padding(0, 6, 0, 12)
+        cmbPartener.Name = "cmbPartener"
+        cmbPartener.PlaceholderText = "Alegeți furnizorul (scrieți o parte din denumire sau CodFiscal)"
+        cmbPartener.Size = New Size(1334, 37)
+        cmbPartener.TabIndex = 0
+        tips.SetToolTipHeader(cmbPartener, "Furnizori")
+        tips.SetToolTipText(cmbPartener, "Partenerii bazei alese (unul pe CodFiscal), cu sursele (SS) unităților în care apar." & vbLf & "Scrieți o parte din denumire sau din CodFiscal ca să îi găsiți; «Rulează» arată facturile și plățile lui pe fiecare SS.")
+        '
+        ' cmbPlata
+        '
+        cmbPlata.Dock = DockStyle.Fill
+        cmbPlata.Location = New Point(0, 6)
+        cmbPlata.Margin = New Padding(0, 6, 0, 12)
+        cmbPlata.Name = "cmbPlata"
+        cmbPlata.PlaceholderText = "Alegeți plata de mutat"
+        cmbPlata.Size = New Size(1334, 37)
+        cmbPlata.TabIndex = 0
+        tips.SetToolTipHeader(cmbPlata, "Plățile copilului")
+        tips.SetToolTipText(cmbPlata, "Plățile neanulate ale copilului de la care pleacă plata." & vbLf & "Alegeți plata de mutat: se arată ce s-ar schimba, iar apoi apare «Mută plata».")
         '
         ' cmbBon
         '
@@ -318,6 +443,9 @@ Partial Class CommandsView
         tlyMain.ResumeLayout(False)
         tlyBar.ResumeLayout(False)
         tlyBon.ResumeLayout(False)
+        tlyPlata.ResumeLayout(False)
+        tlyPartener.ResumeLayout(False)
+        tlyParam.ResumeLayout(False)
         ResumeLayout(False)
     End Sub
 
@@ -326,6 +454,10 @@ Partial Class CommandsView
     Friend WithEvents tlyBar As KBotTableLayoutPanel
     Friend WithEvents tlyBon As KBotTableLayoutPanel
     Friend WithEvents cmbBon As KBotComboBox
+    Friend WithEvents tlyPlata As KBotTableLayoutPanel
+    Friend WithEvents cmbPlata As KBotComboBox
+    Friend WithEvents tlyPartener As KBotTableLayoutPanel
+    Friend WithEvents cmbPartener As KBotComboBox
     Friend WithEvents btnDeleteBon As KBotButton
     Friend WithEvents cmbCommand As KBotComboBox
     Friend WithEvents btnRun As KBotButton
@@ -336,6 +468,9 @@ Partial Class CommandsView
     Friend WithEvents btnDeleteAng As KBotButton
     Friend WithEvents btnFix As KBotButton
     Friend WithEvents txtParam As KBotTextBox
+    Friend WithEvents txtParam2 As KBotTextBox
+    Friend WithEvents tlyParam As KBotTableLayoutPanel
+    Friend WithEvents btnMuta As KBotButton
     Friend WithEvents txtOutput As KBotTextBox
     Friend WithEvents txtExplain As KBotTextBox
     Friend WithEvents lblState As Label

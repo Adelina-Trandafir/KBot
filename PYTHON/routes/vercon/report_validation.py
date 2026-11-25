@@ -2,6 +2,7 @@
 import math
 import re
 from .nomenclatoare import NomError
+from . import report_purchase_order
 
 FIELD = re.compile(r'[A-Za-z_][A-Za-z0-9_]*')
 
@@ -80,9 +81,13 @@ def definition(part, value):
         string(value.get('title'), 'Titlu', 1000)
         number(value.get('font_size', 8), 5, 24, 'Font raport')
         number(value.get('title_size', 15), 8, 40, 'Font titlu')
-        if value.get('form', 'generic') not in ('generic', 'nir-classic'):
+        form = value.get('form', 'generic')
+        if form not in ('generic', 'nir-classic', report_purchase_order.FORM):
             fail('Formular de raport necunoscut.')
         table(value)
+        if form == report_purchase_order.FORM and (
+                not value['landscape'] or tuple(c['key'] for c in value['columns']) != report_purchase_order.FIELDS):
+            fail('Nota de comandă folosește orientarea peisaj și cele opt coloane ale formularului.')
         sections = value.get('sections', {})
         if not isinstance(sections, dict) or len(sections) > 20:
             fail('Secțiuni invalide.')
@@ -93,6 +98,8 @@ def definition(part, value):
         signs = value.get('signatures', [])
         if not isinstance(signs, list) or len(signs) > 10:
             fail('Semnături invalide.')
+        if form == report_purchase_order.FORM and len(signs) != 3:
+            fail('Nota de comandă folosește trei semnături.')
         for sign in signs:
             string(sign, 'Semnătură', 500)
     elements = value.get('elements', [])

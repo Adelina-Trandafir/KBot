@@ -1,7 +1,7 @@
 # Fisa de citire: Setari implicite + bifele din panglica - AV01
 
 > DECIZII operator (23.10.2026): setarile Avacont sunt **per utilizator**; «Stergere N.C.» (`DelNC`) si «Stergere
-> clasificatii» (`DelCLSF`) devin **drept de rol**, nu bife in Setari. «Protectie operatii» (S6) nu devine setare: e o regula a ecranului Note (filtrare conturi dupa clasificatie), activa implicit.
+> clasificatii» (`DelCLSF`) devin **drept de rol**, nu bife in Setari. «Protectie operatii» (S6) DEVINE setare per utilizator (decizie 24.11.2026, inlocuieste pe cea din 23.10.2026): fila «AVACONT» din Setari > Aplicatie, implicit pusa; implementata in SLICE-AV08-01.
 > Rolurile exista deja (`Roluri`, `Roluri_Operatii` in `AVACONT_COMUN`) - de citit cum se ataseaza un drept nou.
 
 Buton ribbon Access: `btnCFG` "Configurari Avacont" (USysRibbon.xml:155) -> `DoCmd.OpenForm "Setari implicite"`

@@ -2,10 +2,12 @@
 import { numberValue } from './receipt-number.js';
 import { confirmBox, reasonBox } from '../utils/confirm-box.js';
 import { format, formatMoney, parse } from './fields.js';
-import { el, scope, field, column, grid, paintTree, groupedNodes, docNode, modal, rowMenu, openMenu, showMessage, statusBar } from './ui.js';
+import { el, scope, field, column, grid, paintTree, refreshTree, groupedNodes, docNode, modal, rowMenu, openMenu, showMessage, statusBar, CheckBox } from './ui.js';
 import { documentReport } from './document-report.js';
 import { showDocumentHistory } from './document-history.js';
+import { changeDocumentNumber } from './number-change.js';
 import { ActionAddButton } from '../components/action-add-button/action-add-button.js';
+import { DialogButton } from '../components/dialog-button/dialog-button.js';
 import { receiptTotal } from './receipt-reconciliation.js';
 
 const MEALS = [['md', 'Mic dejun'], ['d', 'Dejun'], ['c', 'Cină / Gustare']];
@@ -18,6 +20,9 @@ const key = () => crypto.randomUUID();
 const number = (value) => Number(String(value ?? '').replace(/\s/g, '').replace(',', '.')) || 0;
 const dateText = (value) => format(value, { type: 'date' });
 const amount = (value) => format(value, { type: 'decimal' });
+const confirmWithoutBons = () => confirmBox('Salvați lista fără bonuri de consum?', {
+  title: 'Listă fără bonuri', yes: 'Salvează fără bonuri', no: 'Revin', warning: true,
+});
 export function mountLista(host, opts) {
   const state = { docs: [], lookups: { dishes: [] }, doc: null, draft: null, mode: 'view', dirty: false, canWrite: false, closed: false, zec: 4, request: null };
   const headUi = scope(), mealUi = scope(), bonsUi = scope(), treeUi = scope(), dialogs = scope();
@@ -58,8 +63,17 @@ export function mountLista(host, opts) {
     say(); paint();
   }
   async function startAdd() {
-    if (!await allowDiscard()) return; ++generation; state.mode = 'add'; state.dirty = false; state.request = null;
+    if (!await allowDiscard()) return;
+    const token = ++generation;
+    state.mode = 'add'; state.dirty = false; state.request = null;
     state.draft = { header: { Numar: '', Data: state.lookups.today, Comentarii: '' }, meals: { md: blankMeal(), d: blankMeal(), c: blankMeal() }, bons: [] }; say(); paint();
+    const { rows } = await opts.api(`/api/vercon/numbering?${query()}`, { signal: opts.signal }).catch(() => ({ rows: [] }));
+    if (disposed || token !== generation) return;
+    const current = rows.find(row => row.key === 'lista')?.current;
+    if (!Number.isInteger(current) || current < 0) return;
+    const numberInput = inputs.get('Numar').input;
+    numberInput.placeholder = format(current + 1, { type: 'int' });
+    numberInput.title = 'Număr orientativ. Dacă lăsați câmpul gol, numărul final se atribuie la salvare.';
   }
   function startEdit() {
     if (!state.doc || !state.canWrite || state.doc.annulled) return;
@@ -77,7 +91,7 @@ export function mountLista(host, opts) {
     if (v) for (const spec of [{ key: 'Numar', label: 'Număr listă', type: 'int', min: 1 }, { key: 'Data', label: 'Data', type: 'date', required: true }, { key: 'Comentarii', label: 'Comentarii', type: 'text' }]) {
       const f = field(spec, v.header[spec.key], fullEdit() || state.mode === 'portions' && spec.key === 'Data' && state.doc?.date_editable, (raw) => {
         state.draft.header[spec.key] = raw; state.dirty = true;
-        if (spec.key === 'Data') void refreshPriorTotals();
+        if (spec.key === 'Data' || spec.key === 'Numar') void refreshPriorTotals();
       }, headUi);
       if (spec.key === 'Numar') { f.input.placeholder = 'Automat'; f.input.title = 'Lăsați gol pentru numerotare automată.'; }
       if (spec.key === 'Data' && state.mode === 'portions') {
@@ -120,13 +134,15 @@ export function mountLista(host, opts) {
     if (!v) return;
     const parsed = parse(v.header.Data, { type: 'date', required: true });
     if (!parsed.ok) { paintPriorTotals(null, 'Alegeți data listei pentru calcul.'); return; }
-    const date = parsed.value;
-    const isCurrent = () => !disposed && sequence === balanceSequence && token === generation && value()?.header.Data === date;
-    paintPriorTotals(null, 'Se calculează soldul anterior datei listei…');
-    const exclude = state.mode !== 'add' && state.doc ? '&exclude=' + state.doc.id : '';
+    const date = parsed.value, listNumber = v.header.Numar;
+    const isCurrent = () => !disposed && sequence === balanceSequence && token === generation;
+    paintPriorTotals(null, 'Se calculează soldul anterior listei…');
+    const params = new URLSearchParams({ date });
+    if (listNumber != null && listNumber !== '') params.set('number', listNumber);
+    if (state.mode !== 'add' && state.doc) params.set('exclude', state.doc.id);
     try {
-      const values = await opts.api(url('/balance', '&date=' + encodeURIComponent(date) + exclude));
-      if (isCurrent()) paintPriorTotals(values, 'Cumulat înainte de ' + dateText(date) + ', conform raportului.');
+      const values = await opts.api(url('/balance', '&' + params));
+      if (isCurrent()) paintPriorTotals(values, 'Sold cumulat înainte de această listă, conform raportului.');
     } catch (error) {
       if (!isCurrent()) return;
       paintPriorTotals(null, 'Soldul anterior nu a putut fi calculat.'); report(error);
@@ -200,13 +216,14 @@ export function mountLista(host, opts) {
     bonsUi.clear(); bons.replaceChildren(); bonsGrid = null; const v = value(); if (!v) return;
     const gridHost = el('div');
     bons.append(el('h4', { textContent: 'Bonuri de consum asociate' }), gridHost);
-    bonsGrid = grid(gridHost, { layoutId: 'vercon.lista.bons.compact-v1', proportionalWidths: true, rowKey: 'id', rows: v.bons.map((row, index) => ({ ...row, ordinal: index + 1 })), editable: false,
+    const ordered = [...v.bons].sort((a, b) => (a.date || '').localeCompare(b.date || '') || numberValue(a.number) - numberValue(b.number));
+    bonsGrid = grid(gridHost, { layoutId: 'vercon.lista.bons.compact-v1', proportionalWidths: true, rowKey: 'id', rows: ordered.map((row, index) => ({ ...row, ordinal: index + 1 })), editable: false,
       columns: [
         { key: 'ordinal', title: '#', width: 40 },
-        column({ key: 'number', label: 'Număr BC', type: 'int' }),
+        column({ key: 'number', label: 'Număr BC', type: 'int' }, { sortValue: numberValue }),
         column({ key: 'date', label: 'Data', type: 'date' }),
         column({ key: 'receiver', label: 'Primitor' }, { width: 240 }),
-        column({ key: 'total', label: 'Valoare BC', type: 'decimal' }),
+        column({ key: 'total', label: 'Valoare netă BC', type: 'decimal' }),
         { key: 'actions', title: '⋮', width: 36, display: 'button', actionText: '⋮' }],
       footer: true, footerCaption: '', footerAction: { label: '+ Adaugă rând', span: 2, disabled: !fullEdit() }, onFooterAction: () => chooseBon().catch(report),
       onCellAction: ({ row }) => rowMenu(bonsGrid, row, [{ label: 'Scoate BC din listă', disabled: !fullEdit(), run: async () => {
@@ -228,22 +245,125 @@ export function mountLista(host, opts) {
     paintBalance('closing', closing);
   }
   async function chooseBon() {
-    if (!fullEdit() || !await commit()) return; const token = generation, draft = state.draft;
-    const data = await opts.api(url('/bons', state.mode === 'edit' ? '&exclude=' + state.doc.id : '')); if (disposed || token !== generation || draft !== state.draft) return;
-    const available = data.bons.filter((row) => !draft.bons.some((item) => String(item.id) === String(row.id)));
-    const popup = modal('Alege B.C.', dialogs), tree = el('div', { className: 'vc-bon-picker' }), detail = el('p', { className: 'vc-hint' });
-    const add = el('button', { type: 'button', textContent: 'Adaugă BC', disabled: true, className: 'is-primary' }), cancel = el('button', { type: 'button', textContent: 'Renunță' });
-    let selected; popup.body.append(tree, detail); popup.footer.append(cancel, add); cancel.addEventListener('click', popup.close);
-    const nodes = groupedNodes(available, [(row) => row.receiver, (row) => dateText(row.date)], (row) => row.number + ' • ' + amount(row.total) + ' lei',
-      [null, (row) => ({ sortType: 'date', sortValue: row.date, sortDirection: 'desc' }),
-        (row) => ({ sortType: 'date', sortValue: row.date, sortDirection: 'desc', sortThen: [{ type: 'number', value: numberValue(row.number) }, { type: 'number', value: row.id }] })]);
-    const stripActions = (rows) => rows.forEach((node) => { delete node.rightIcon; if (node.children) stripActions(node.children); }); stripActions(nodes);
-    paintTree(tree, nodes, { title: 'Bonuri disponibile', onSelect: (id) => { selected = available.find((row) => String(row.id) === id); add.disabled = !selected; detail.textContent = selected ? selected.number + ' • ' + selected.receiver + ' • ' + amount(selected.total) + ' lei' : ''; } }, popup.scope);
-    if (!available.length) detail.textContent = 'Nu există bonuri de consum disponibile.';
-    add.addEventListener('click', () => {
-      if (!selected || token !== generation || state.draft !== draft || draft.bons.some((row) => String(row.id) === String(selected.id))) return;
-      draft.bons.push({ ...selected, annulled: false }); state.dirty = true; popup.close(); paintBons();
-    });
+    if (!fullEdit() || !await commit()) return;
+    const token = generation, draft = state.draft;
+    const parsed = parse(draft.header.Data, { type: 'date', required: true });
+    inputs.get('Data').error.textContent = parsed.ok ? '' : parsed.message;
+    if (!parsed.ok) { inputs.get('Data').input.focus(); return; }
+    const isCurrent = () => !disposed && token === generation && draft === state.draft
+      && parse(draft.header.Data, { type: 'date', required: true }).value === parsed.value;
+    const bons = await loadBons(parsed.value, state.mode === 'edit' ? state.doc.id : null);
+    if (!isCurrent()) return;
+    const current = new Set(draft.bons.map(row => String(row.id)));
+    bonPicker({ rows: bons.filter(row => !current.has(String(row.id))), day: parsed.value, isCurrent,
+      apply: (selected) => {
+        const attached = new Set(draft.bons.map(row => row.id));
+        draft.bons.push(...selected.filter(row => !attached.has(row.id)).map(row => ({ ...row, annulled: false })));
+        state.dirty = true;
+        paintBons();
+      } });
+  }
+  async function loadBons(day, exclude) {
+    const params = new URLSearchParams({ date: day });
+    if (exclude != null) params.set('exclude', exclude);
+    const { bons } = await opts.api(url('/bons', '&' + params), { signal: opts.signal });
+    return bons;
+  }
+  function bonPicker({ rows, day, attached, isCurrent, apply }) {
+    const replacing = attached != null;
+    const popup = modal(replacing ? 'Schimbă bonul atașat' : 'Alege B.C.', dialogs);
+    popup.dialog.classList.add('vc-lista-bon-picker');
+    popup.footer.classList.add('k-dialog-buttons');
+    const treeHost = el('div'), groupingHost = el('div', { className: 'vc-lista-bon-picker__grouping' });
+    const detail = el('p', { className: 'vc-hint', role: 'status' });
+    const message = el('p', { className: 'confirm-box__error', role: 'alert', hidden: true });
+    popup.body.append(treeHost, groupingHost, detail, message);
+    const original = new Set((attached || []).map(row => 'doc:' + row.id));
+    const byId = new Map(rows.map(row => ['doc:' + row.id, row]));
+    let pending = false;
+    const cancel = popup.scope.own(new DialogButton(popup.footer, { kind: 'cancel', onClick: popup.close }));
+    const saveChoice = popup.scope.own(new DialogButton(popup.footer, {
+      kind: 'ok1', label: replacing ? 'Salvează' : 'Adaugă BC', disabled: true, onClick: save,
+    }));
+    popup.dialog.addEventListener('cancel', event => {
+      if (pending) { event.preventDefault(); event.stopImmediatePropagation(); }
+    }, true);
+    const stripActions = items => items.forEach(node => { delete node.rightIcon; if (node.children) stripActions(node.children); });
+    function nodesFor(byDate) {
+      const receiver = row => row.receiver, dayLabel = row => dateText(row.date);
+      const dateOrder = row => ({ sortType: 'date', sortValue: row.date, sortDirection: 'desc' });
+      const leafOrder = row => ({ ...dateOrder(row), sortThen: [{ type: 'number', value: numberValue(row.number) }] });
+      const levels = byDate ? [dayLabel, receiver] : [receiver, dayLabel];
+      const order = byDate ? [dateOrder, null, leafOrder] : [null, dateOrder, leafOrder];
+      const nodes = groupedNodes(rows, levels, row =>
+        row.number + ' • ' + amount(row.total) + ' lei' + (row.annulled ? ' • anulat' : ''), order);
+      stripActions(nodes);
+      return nodes;
+    }
+    const tree = paintTree(treeHost, nodesFor(false), {
+      title: 'Bonuri de consum', collapsed: true, checkable: true, onCheckChange: updateSelection,
+    }, popup.scope);
+    tree.setCheckedLeaves(original);
+    const grouping = popup.scope.own(new CheckBox(groupingHost, {
+      label: 'Grupează după dată', disabled: !rows.length,
+      onChange: byDate => {
+        tree.expandedNodes.clear();
+        refreshTree(tree, nodesFor(byDate));
+      },
+    }));
+    function updateSelection(ids) {
+      const changed = ids.length !== original.size || ids.some(id => !original.has(id));
+      saveChoice.setEnabled(!pending && changed);
+      detail.textContent = rows.length ? `Data listei ${dateText(day)} • Bonuri selectate ${ids.length}`
+        : `Nu există bonuri disponibile până la ${dateText(day)}.`;
+    }
+    async function save() {
+      if (pending || !isCurrent()) return;
+      const ids = tree.getCheckedLeaves();
+      pending = true;
+      saveChoice.setEnabled(false); cancel.setEnabled(false); grouping.setEnabled(false); treeHost.inert = true;
+      message.hidden = true;
+      try {
+        if (replacing && !ids.length && !await confirmWithoutBons()) return;
+        if (popup.closed || !isCurrent()) return;
+        await apply(ids.map(id => byId.get(id)));
+        popup.close();
+      } catch (error) {
+        if (!popup.closed && isCurrent()) {
+          message.hidden = false;
+          message.textContent = error.message || 'Bonurile nu au putut fi salvate.';
+        }
+      } finally {
+        if (!popup.closed) {
+          pending = false; cancel.setEnabled(true); grouping.setEnabled(!!rows.length); treeHost.inert = false;
+          updateSelection(tree.getCheckedLeaves());
+        }
+      }
+    }
+  }
+  async function changeBons(id) {
+    await openDoc(id);
+    const doc = state.doc, token = generation;
+    const isCurrent = () => !disposed && token === generation && !editing() && state.doc === doc;
+    if (!isCurrent() || !state.canWrite || doc?.annulled || String(doc?.id) !== String(id) || !doc.header.Data) return;
+    const day = doc.header.Data;
+    const eligible = await loadBons(day, doc.id);
+    if (!isCurrent()) return;
+    const options = new Map(doc.bons.map(row => [row.id, row]));
+    for (const row of eligible) options.set(row.id, row);
+    const requests = new Map();
+    bonPicker({ rows: [...options.values()], day, attached: doc.bons, isCurrent, apply: async (selected) => {
+      const bons = selected.map(row => row.id).sort((a, b) => a - b);
+      const selection = JSON.stringify(bons);
+      if (!requests.has(selection)) requests.set(selection, key());
+      const { document } = await write('PUT', `/${doc.id}/bons`, { version: doc.version, bons, request_key: requests.get(selection) });
+      if (!isCurrent()) return;
+      state.doc = document;
+      paint();
+      say('Bonurile atașate au fost salvate.');
+      try { await refresh(); if (!disposed && state.doc === document && !editing()) paintSaved(); }
+      catch (error) { report(error); }
+    } });
   }
   function paintSaved() {
     treeUi.clear(); treeHost.hidden = editing(); if (editing()) { treeHost.replaceChildren(); return; }
@@ -263,6 +383,11 @@ export function mountLista(host, opts) {
     paintTree(treeHost, nodes, { title: 'Liste salvate', showSearchBox: false, collapsed: true, selected: state.doc?.id, onSelect: (id) => openDoc(id).catch(report), onAction: (id, anchor) => openMenu(anchor, [
       { label: 'Deschide', run: () => openDoc(id) },
       { label: editLabel(state.docs.find(row => String(row.id) === id)), disabled: !state.canWrite || !canModify(state.docs.find(row => String(row.id) === id)), run: async () => { await openDoc(id); if (!disposed && state.doc && String(state.doc.id) === id) startEdit(); } },
+      { icon: '#', label: 'Modifică număr', disabled: !state.canWrite || !state.docs.find(row => String(row.id) === id)?.number_change,
+        run: () => changeNumber(id).catch(report) },
+      { label: 'Schimbă bonul atașat',
+        disabled: !state.canWrite || !state.docs.some(row => String(row.id) === id && !row.annulled && row.date),
+        run: () => changeBons(id).catch(report) },
       { label: 'Vizualizare', run: async () => { await openDoc(id); if (!disposed && state.doc && String(state.doc.id) === id) await showPreview(); } },
       { label: 'Istoric', run: async () => { await openDoc(id); if (!disposed && state.doc && String(state.doc.id) === id) await history(); } },
       { label: 'Anulează lista', disabled: !state.canWrite || state.docs.some((row) => String(row.id) === id && (row.annulled || row.order_locked)), run: async () => { await openDoc(id); if (!disposed && state.doc && String(state.doc.id) === id) await cancelList(); } },
@@ -279,7 +404,7 @@ export function mountLista(host, opts) {
       const m = v.meals[id]; sections.push({ title: label, columns: [column({ key: 'P', label: 'Porții', type: 'int' }), column({ key: 'VMD', label: 'Preț', type: 'decimal' }), column({ key: 'V', label: 'Valoare', type: 'decimal' })], rows: [{ ...m, V: editing() ? mealValue(m) : m.V }] },
         { title: 'Feluri • ' + label, columns: [column({ key: 'Tip', label: 'FELUL' }), column({ key: 'Explicatie', label: 'Explicații' }, { width: 480 })], rows: m.items.filter(row => !isBlankDish(row)) });
     }
-    sections.push({ title: 'Bonuri asociate', columns: [column({ key: 'number', label: 'BC', type: 'int' }), column({ key: 'date', label: 'Data', type: 'date' }), column({ key: 'receiver', label: 'Primitor' }, { width: 260 }), column({ key: 'total', label: 'Valoare', type: 'decimal' })], rows: v.bons });
+    sections.push({ title: 'Bonuri asociate', columns: [column({ key: 'number', label: 'BC', type: 'int' }), column({ key: 'date', label: 'Data', type: 'date' }), column({ key: 'receiver', label: 'Primitor' }, { width: 260 }), column({ key: 'total', label: 'Valoare netă BC', type: 'decimal' })], rows: v.bons });
     const token = generation, draft = state.draft, doc = editing() ? null : state.doc;
     await documentReport({ api: opts.api, selection: opts.sel(), family: 'lista', document: doc,
       title: editing() ? 'Listă de alimente • Ciornă nesalvată' + (v.header.Numar ? ' nr. ' + v.header.Numar : '') : 'Listă de alimente nr. ' + state.doc.number,
@@ -336,7 +461,8 @@ export function mountLista(host, opts) {
     if (!state.canWrite || !editing() || !await commit()) return;
     const portionsOnly = state.mode === 'portions', collected = portionsOnly ? collectPortions() : collect();
     if (collected.errors.length) { say(collected.errors.join(' '), true); return; }
-    if (!portionsOnly && !collected.body.bons.length && !await confirmBox('Salvați lista fără bonuri de consum?', { title: 'Listă fără bonuri', yes: 'Salvează', no: 'Revin' })) return;
+    const bons = portionsOnly ? state.doc.bons : collected.body.bons;
+    if (!state.request && !bons.length && !await confirmWithoutBons()) return;
     // Retain the exact body after an uncertain POST response; retries must carry the same request.
     const adding = state.mode === 'add'; const request = state.request || { body: collected.body, key: key() };
     if (adding) state.request = request; root.inert = true; say('Se salvează…');
@@ -355,6 +481,25 @@ export function mountLista(host, opts) {
     if (doc.order_locked) { say(doc.order_message, true); return; }
     const reason = await reasonBox('Anulați lista nr. ' + doc.number + '? Bonurile pot fi asociate altei liste.', { title: 'Anulare listă', yes: 'Anulează lista' }); if (!reason || disposed) return;
     root.inert = true; try { const result = await write('POST', '/' + doc.id + '/cancel', { reason, version: doc.version }); if (disposed) return; state.doc = result.document; paint(); say('Anulată și scoasă din evidență. Numărul poate fi folosit din nou.'); await refresh(); if (!disposed) paintSaved(); } finally { if (!disposed) root.inert = false; }
+  }
+  async function changeNumber(id) {
+    await openDoc(id);
+    const doc = state.doc, token = generation;
+    if (disposed || !state.canWrite || editing() || !doc?.number_change || String(doc.id) !== String(id)) return;
+    const isCurrent = () => !disposed && token === generation;
+    const requests = new Map();
+    const saved = await changeDocumentNumber({ doc, title: 'Lista de alimente nr.', key, isCurrent,
+      post: (number, version, request_key) => {
+        if (!isCurrent()) throw new Error('Lista selectată s-a schimbat. Redeschideți comanda.');
+        if (!requests.has(number)) requests.set(number, request_key);
+        return write('POST', `/${doc.id}/number`, { number, version, request_key: requests.get(number) });
+      } });
+    if (!saved || !isCurrent()) return;
+    state.doc = saved;
+    paint();
+    say(`Numărul listei a fost schimbat în ${saved.number}.`);
+    await refresh();
+    if (isCurrent()) paintSaved();
   }
   const ready = Promise.all([refresh(), opts.api(url('/lookups'))]).then(([, lookups]) => { if (!disposed) { state.lookups = lookups; paint(); } }).catch(report); paint();
   return { ready, isDirty: dirty,

@@ -1,8 +1,8 @@
-# routes/avacont/introducere_date/operatii/plati.py
+# routes/avacont/introducere_date/operatii/NoteC_plati.py
 """
 Payments, orders of payment (OP) and the settings of the accounting (slice AV02-02; first caller: 04EF-01, the payment from «Contari»).
 
-Like postare.py it takes a cursor from the CALLER'S transaction (never commits, never opens a connection) and has no Flask in it.
+Like NoteC it takes a cursor from the CALLER'S transaction (never commits, never opens a connection) and has no Flask in it.
 
 Rules kept here (the database cannot say them across rows):
 - SETTINGS (TZ_Settings): the row of the subunit wins, else the row of the whole unit (IdSubunitate NULL), else the default written here.
@@ -14,9 +14,11 @@ Rules kept here (the database cannot say them across rows):
 import logging
 from decimal import Decimal, ROUND_HALF_UP
 
+from . import NoteC
+
 logger = logging.getLogger(__name__)
 
-CENT = Decimal("0.01")
+from .NoteC_tranzactie import CENT  # noqa: E402  (one copy of the constant)
 PLAJA_COMUNA = "PlajaComunaOPuri"
 IMPLICITE = {PLAJA_COMUNA: "0"}
 
@@ -121,12 +123,14 @@ def operatii_legate(cursor, ids_primita):
     return out
 
 
-def evidentieri(cursor, ids_primita):
+def evidentieri(cursor, ids_primita, fara_legatura=None):
     """{IdPrimita: [{IdOper | None, Suma}]}: the evidence rows of the invoices, WITHOUT payment operations (a migrated payment row is not evidence).
     A link with no TZ_Oper row under its key still counts (IdOper None): the row says the amount was evidenced."""
     out = {i: [] for i in ids_primita}
     for i, randuri in operatii_legate(cursor, ids_primita).items():
         for r in randuri:
+            if r["Legatura"]["IdOperatiePrimita"] == fara_legatura:
+                continue
             op = r["Oper"]
             if op is not None and (op["TipOp"] == "P" or op["FelDoc"] == "P"):
                 continue
@@ -138,13 +142,50 @@ def alocat(cursor, ids_primita, fara_plata=None):
     """{IdPrimita: amount already allocated on it}. `fara_plata` = the payment operation to leave out (an edit)."""
     if not ids_primita:
         return {}
-    sql = "SELECT IdPrimita, SUM(Platit) AS S FROM TZ_PlatiFacturi WHERE IdPrimita IN (" + _marks(len(ids_primita)) + ")"
-    params = list(ids_primita)
+    marks = _marks(len(ids_primita))
+    # Legacy AVACONT allocations may have only IdEvidentiere. Count them by the exact, unique invoice link.
+    cursor.execute("SELECT DISTINCT a.IdEvidentiere FROM TZ_PlatiFacturi a JOIN EF_PrimiteOperatii e ON e.IdOperatie = a.IdEvidentiere "
+                   "WHERE a.IdPrimita IS NULL AND e.IdPrimita IN (" + marks + ")", tuple(ids_primita))
+    primite_pe_evidentieri(cursor, [r["IdEvidentiere"] for r in cursor.fetchall()])
+    sql = ("SELECT COALESCE(a.IdPrimita, e.IdPrimita) AS IdFactura, SUM(a.Platit) AS S FROM TZ_PlatiFacturi a LEFT JOIN "
+           "(SELECT IdOperatie, MIN(IdPrimita) AS IdPrimita FROM EF_PrimiteOperatii "
+           "WHERE IdOperatie > 0 GROUP BY IdOperatie HAVING COUNT(DISTINCT IdPrimita) = 1) e "
+           "ON a.IdPrimita IS NULL AND e.IdOperatie = a.IdEvidentiere "
+           "WHERE (a.IdPrimita IN (" + marks + ") OR (a.IdPrimita IS NULL AND e.IdPrimita IN (" + marks + ")))")
+    params = list(ids_primita) * 2
     if fara_plata is not None:
-        sql += " AND IdPlata <> %s"
+        sql += " AND a.IdPlata <> %s"
         params.append(fara_plata)
-    cursor.execute(sql + " GROUP BY IdPrimita", tuple(params))
-    return {r["IdPrimita"]: cent(r["S"]) for r in cursor.fetchall()}
+    cursor.execute(sql + " GROUP BY IdFactura", tuple(params))
+    return {r["IdFactura"]: cent(r["S"]) for r in cursor.fetchall()}
+
+
+def primite_pe_evidentieri(cursor, ids_oper, strict=True):
+    if not ids_oper:
+        return {}
+    cursor.execute("SELECT IdOperatie, MIN(IdPrimita) AS IdPrimita, COUNT(DISTINCT IdPrimita) AS N, SUM(Suma) AS Suma "
+                   "FROM EF_PrimiteOperatii WHERE IdOperatie IN (" + _marks(len(ids_oper)) + ") GROUP BY IdOperatie", tuple(ids_oper))
+    rezultat = {}
+    for rand in cursor.fetchall():
+        if rand["N"] != 1:
+            if strict:
+                raise PlatiEroare("Evidențierea %s are mai multe e-facturi. Selectați și plătiți factura exactă în Contări." % rand["IdOperatie"], "FACTURA_AMBIGUA")
+            rezultat[rand["IdOperatie"]] = (None, Decimal(0))
+        else:
+            rezultat[rand["IdOperatie"]] = (rand["IdPrimita"], cent(rand["Suma"]))
+    return rezultat
+
+
+def in_limita(suma, rest):
+    return (0 <= suma <= rest) if rest >= 0 else (rest <= suma <= 0)
+
+
+def limita_comuna(a, b):
+    if a > 0 and b > 0:
+        return min(a, b)
+    if a < 0 and b < 0:
+        return max(a, b)
+    return Decimal(0)
 
 
 def rest_de_plata(cursor, ids_primita, evidente_noi=None, fara_plata=None):
@@ -208,16 +249,13 @@ def aloca_pe_evidentieri(cursor, id_plata, id_op, facturi, data_plata, total_pla
     for f in facturi:
         ramas_de_alocat = cent(f["Platit"])
         surse = ev.get(f["IdPrimita"]) or [{"IdOper": None, "Suma": ramas_de_alocat}]
-        for pozitie, e in enumerate(surse):
+        for e in surse:
             if ramas_de_alocat == 0:
                 break
-            if pozitie == len(surse) - 1:
-                parte = ramas_de_alocat   # the last source takes the rest (the rest check of the caller already proved it fits)
-            else:
-                disponibil = e["Suma"] - deja.get(e["IdOper"], Decimal(0)) if e["IdOper"] is not None else e["Suma"]
-                if disponibil == 0 or (disponibil > 0) != (ramas_de_alocat > 0):
-                    continue
-                parte = ramas_de_alocat if abs(ramas_de_alocat) <= abs(disponibil) else disponibil
+            disponibil = e["Suma"] - deja.get(e["IdOper"], Decimal(0)) if e["IdOper"] is not None else e["Suma"]
+            parte = limita_comuna(ramas_de_alocat, disponibil)
+            if parte == 0:
+                continue
             cursor.execute(
                 "INSERT INTO TZ_PlatiFacturi (IdPlata, IdOP, IdEvidentiere, IdPrimita, NumarDocument, DataDocument, ValoareFactura, Platit, Diferenta, ValoarePlata, "
                 "DataPlata, UN) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
@@ -226,6 +264,8 @@ def aloca_pe_evidentieri(cursor, id_plata, id_op, facturi, data_plata, total_pla
             ramas_de_alocat -= parte
             if e["IdOper"] is not None:
                 deja[e["IdOper"]] = deja.get(e["IdOper"], Decimal(0)) + parte
+        if ramas_de_alocat:
+            raise PlatiEroare("Restul de plată al facturii %s s-a modificat. Reîncărcați situația." % f["NrFact"], "PLATA_PESTE_REST")
 
 
 def aloca_pe_operatii(cursor, id_plata, id_op, alocari, data_plata, total_plata, user):
@@ -235,17 +275,13 @@ def aloca_pe_operatii(cursor, id_plata, id_op, alocari, data_plata, total_plata,
         valoare, platit = cent(a["Valoare"]), cent(a["Platit"])
         cursor.execute(
             "INSERT INTO TZ_PlatiFacturi (IdPlata, IdOP, IdEvidentiere, IdPrimita, NumarDocument, DataDocument, ValoareFactura, Platit, Diferenta, ValoarePlata, "
-            "DataPlata, UN) VALUES (%s, %s, %s, NULL, %s, %s, %s, %s, %s, %s, %s, %s)",
-            (id_plata, id_op, a["IdOper"], a["NumarDocument"], a["DataDocument"], valoare, platit, valoare - platit, cent(total_plata), data_plata, user))
+            "DataPlata, UN) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)",
+            (id_plata, id_op, a["IdOper"], a.get("IdPrimita"), a["NumarDocument"], a["DataDocument"], valoare, platit,
+             valoare - platit, cent(total_plata), data_plata, user))
 
 
-def rest_pe_operatii(cursor, ids_oper, id_partener):
-    """{IdOper: rest to pay} for evidence operations: the credit lines of the partner on the operation minus what the payments allocated on it (slice AV02-03)."""
-    return {i: rest for i, (_, rest) in valori_pe_operatii(cursor, ids_oper, id_partener).items()}
-
-
-def valori_pe_operatii(cursor, ids_oper, id_partener):
-    """{IdOper: (value of the invoice for the partner, rest to pay)}."""
+def valori_pe_operatii(cursor, ids_oper, id_partener, legaturi=None):
+    """{IdOper: (value, allocated directly to this evidence, remaining eligible amount)}."""
     if not ids_oper:
         return {}
     marks = _marks(len(ids_oper))
@@ -253,7 +289,19 @@ def valori_pe_operatii(cursor, ids_oper, id_partener):
     total = {r["IdOper"]: cent(r["S"]) for r in cursor.fetchall()}
     cursor.execute("SELECT IdEvidentiere, SUM(Platit) AS S FROM TZ_PlatiFacturi WHERE IdEvidentiere IN (" + marks + ") GROUP BY IdEvidentiere", tuple(ids_oper))
     deja = {r["IdEvidentiere"]: cent(r["S"]) for r in cursor.fetchall()}
-    return {i: (total.get(i, Decimal(0)), total.get(i, Decimal(0)) - deja.get(i, Decimal(0))) for i in ids_oper}
+    if legaturi is None:
+        legaturi = primite_pe_evidentieri(cursor, ids_oper)
+    disponibil = rest_de_plata(cursor, sorted({legatura[0] for legatura in legaturi.values() if legatura[0] is not None}))
+    valori = {}
+    for i in ids_oper:
+        valoare = total.get(i, Decimal(0))
+        platit = deja.get(i, Decimal(0))
+        rest = valoare - platit
+        if i in legaturi:
+            id_primita, valoare_legata = legaturi[i]
+            rest = Decimal(0) if id_primita is None else limita_comuna(limita_comuna(rest, valoare_legata - platit), disponibil[id_primita])
+        valori[i] = (valoare, platit, rest)
+    return valori
 
 
 def id_partener_linie(mod, id_fix, id_operatie):
@@ -268,20 +316,12 @@ def posteaza_ordin(cursor, c):
     c: sid, an_nota, id_nota, data_op, id_p (the payment template), sablon (IdJurnal, Explicatie, Compartiment), linie (the template line), clsf (IdClsf, ClsfF, ClsfE),
     id_partener, total, header (the extra columns of TZ_OPuri: Explicatie, Documente, DenPartener, CFPartener, ContBeneficiar, DenUnitate, CFUnitate, pBIC, CodAngajament,
     CodIndicator, CodProgram). Returns (IdOper, IdOP, NrOP, IdDocument). The number is read under lock HERE: it is the real one."""
-    from . import postare
     sid, linie, sablon, clsf = c["sid"], c["linie"], c["sablon"], c["clsf"]
     numar = numar_op_urmator(cursor, sid, blocheaza=True)
-    id_doc = postare.creeaza_document(cursor, c["id_nota"], str(numar), c["data_op"], "OP", "P", True, c["user"])
-    cont_d = postare.cont_pentru(cursor, sid, linie["ContDebit"], linie["AnaliticDebit"], clsf["ClsfF"], clsf["ClsfE"])
-    cont_c = postare.cont_pentru(cursor, sid, linie["ContCredit"], linie["AnaliticCredit"], clsf["ClsfF"], clsf["ClsfE"])
-    antet = {"IdJurnal": sablon["IdJurnal"], "IdClsf": clsf["IdClsf"], "IdSablon": c["id_p"], "DataOperatie": c["data_op"], "Explicatie": sablon["Explicatie"],
-             "Tip": "P", "Compartiment": sablon["Compartiment"], "Angajament": linie["PA"], "Propunere": linie["PA"], "Ordonantare": linie["Ordonantare"],
-             "Chelt": linie["Chelt"], "Auto": True}
+    id_doc = NoteC.creeaza_document(cursor, c["id_nota"], str(numar), c["data_op"], "OP", "P", True, c["user"])
     total = c["total"]
-    id_oper, _ = postare.creeaza_operatie(
-        cursor, sid, c["an_nota"], id_doc, antet,
-        [(cont_d, id_partener_linie(linie["PartDebitMod"], linie["IdPartDebit"], c["id_partener"]), total)],
-        [(cont_c, id_partener_linie(linie["PartCreditMod"], linie["IdPartCredit"], c["id_partener"]), total)], c["user"])
+    antet, debit, credit = NoteC.operatie_din_sablon(cursor, sid, dict(sablon, IdSablon=c["id_p"]), linie, clsf, "P", c["data_op"], c["id_partener"], total)
+    id_oper = NoteC.creeaza_operatie(cursor, sid, c["an_nota"], id_doc, antet, debit, credit, c["user"])
     id_op, numar = creeaza_op(cursor, dict(c["header"], IdOper=id_oper, IdSubunitate=sid, DataOP=c["data_op"], Valoare=total, IdPartener=c["id_partener"]),
                               c["user"], numar=numar)
     return id_oper, id_op, numar, id_doc
@@ -298,17 +338,18 @@ def sterge_plata(cursor, id_op):
         raise PlatiEroare(motiv + " Plata și ordinul nu se mai pot șterge.", "OP_BLOCAT")
     cursor.execute("SELECT IdOper, NrOP FROM TZ_OPuri WHERE IdOP = %s FOR UPDATE", (id_op,))
     op = cursor.fetchone()
+    cursor.execute("SELECT o.IdDocument, o.IdOrdTbl, d.IdNota, d.DataDocument, n.IdSubunitate, n.An FROM TZ_Oper o JOIN TZ_Documente d ON d.IdDocument = o.IdDocument "
+                   "JOIN TZ_NoteC n ON n.IdNota = d.IdNota WHERE o.IdOper = %s FOR UPDATE", (op["IdOper"],))
+    doc = cursor.fetchone()
+    # SLICE-AV08-04: the delete rules of «Modificare operatii» (Access STO_Click / EInchis) hold for «Sterge plata» of every window too
+    if doc is not None:
+        if doc["IdOrdTbl"] is not None:
+            raise PlatiEroare("Plata are o ordonanțare generată. Ștergeți întâi ordonanțarea.", "PLATA_ORDONANTATA")
+        if NoteC.perioada_inchisa(doc["DataDocument"], NoteC.data_ultimei_inchideri(cursor, doc["IdSubunitate"], doc["An"])):
+            raise PlatiEroare("Plata face parte dintr-o perioadă închisă și nu se mai poate șterge.", "PLATA_INCHISA")
     cursor.execute("DELETE FROM TZ_PlatiFacturi WHERE IdOP = %s OR IdPlata = %s", (id_op, op["IdOper"]))
     cursor.execute("DELETE FROM TZ_OPuri WHERE IdOP = %s", (id_op,))
-    cursor.execute("SELECT IdDocument FROM TZ_Oper WHERE IdOper = %s", (op["IdOper"],))
-    doc = cursor.fetchone()
-    cursor.execute("DELETE FROM TZ_Debit WHERE IdOper = %s", (op["IdOper"],))
-    cursor.execute("DELETE FROM TZ_Credit WHERE IdOper = %s", (op["IdOper"],))
-    cursor.execute("DELETE FROM TZ_Oper WHERE IdOper = %s", (op["IdOper"],))
+    NoteC.sterge_operatie(cursor, op["IdOper"])   # SLICE-AV08-04: the one delete of an operation
     if doc is not None:
-        cursor.execute("SELECT IdNota FROM TZ_Documente WHERE IdDocument = %s", (doc["IdDocument"],))
-        nota = cursor.fetchone()
-        cursor.execute("DELETE FROM TZ_Documente WHERE IdDocument = %s AND NOT EXISTS (SELECT 1 FROM TZ_Oper WHERE IdDocument = %s)", (doc["IdDocument"], doc["IdDocument"]))
-        if nota is not None:
-            cursor.execute("DELETE FROM TZ_NoteC WHERE IdNota = %s AND NOT EXISTS (SELECT 1 FROM TZ_Documente WHERE IdNota = %s)", (nota["IdNota"], nota["IdNota"]))
+        NoteC.curata_goale(cursor, doc["IdDocument"], doc["IdNota"])
     return int(op["NrOP"])

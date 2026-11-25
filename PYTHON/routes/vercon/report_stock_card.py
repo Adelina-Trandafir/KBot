@@ -22,6 +22,9 @@ def without_links(model):
                     for cell in row['cells']:
                         if isinstance(cell, dict):
                             cell.pop('href', None)
+            elif block['t'] == 'form_grid':
+                for cell in block['cells']:
+                    cell.pop('href', None)
 
     visit(built['blocks'])
     for document in built.get('receptions', []):
@@ -50,6 +53,11 @@ def attach(model, ctx, params):
             if block['t'] == 'columns':
                 for child in block['children']:
                     visit(child)
+            if block['t'] == 'form_grid':
+                for cell in block['cells']:
+                    product = cell.pop('product', None)
+                    if product and (href := link(product)):
+                        cell['href'] = href
             if block['t'] != 'table':
                 continue
             name_columns = {index for index, column in enumerate(block['cols']) if column.get('key') == 'name'}

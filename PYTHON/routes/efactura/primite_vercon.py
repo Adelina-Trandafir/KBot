@@ -196,8 +196,7 @@ def _starea(conn, cursor, id_primita, role):
         reason = "Factura nu are linii."
     elif active is not None:
         reason = "Factura este deja trimisă la Vercon."
-    elif not partners:
-        reason = "Nu există niciun partener cu codul fiscal al furnizorului. Adăugați-l întâi în lista de parteneri."
+    # VC20-01: a supplier that is not in Parteneri yet no longer blocks the sending; the Administrator adds it (ANAF data) when he saves the NIR.
     sign = int(row["Semn"] or 1)
     return {
         "poate_scrie": (role or "").strip().lower() == primite_ke.ROL_CONTABIL.lower(),
@@ -297,7 +296,7 @@ def _incuie_factura(cursor, id_primita):
 def _alege_partener(state, id_partener):
     """The partner row the sending is for: the one the accountant named, else the one in force (kept for the tax code, or the only one); none: a choice is required."""
     partner = alege_partener(state["parteneri"], id_partener) if id_partener is not None else state["partener"]
-    if partner is None:
+    if partner is None and state["parteneri"]:
         raise EfEroare("Mai mulți parteneri au codul fiscal al furnizorului. Alegeți unul.", "PARTENER_DE_ALES", 409)
     return partner
 
@@ -318,8 +317,9 @@ def trimite(dc, id_primita, role, username, conturi, observatie, id_partener=Non
         _incuie_factura(cursor, id_primita)
         if _activ(cursor, id_primita) is not None:  # another session sent it between the read and the lock
             raise EfEroare("Factura este deja trimisă la Vercon.", "NETRIMISIBILA", 409)
-        activeaza_partener(cursor, partner["IdPartener"])
-        leaga_partener(cursor, state["factura"]["CuiNormalizat"], partner["IdPartener"], username)
+        if partner is not None:   # VC20-01: None = a new supplier, added later by the Administrator in VERCON
+            activeaza_partener(cursor, partner["IdPartener"])
+            leaga_partener(cursor, state["factura"]["CuiNormalizat"], partner["IdPartener"], username)
         cursor.execute("INSERT INTO EF_PrimiteVercon (IdPrimita, Stare, Observatie, UnTrimis) VALUES (%s, 'TRIMISA', %s, %s)", (id_primita, note, username))
         id_trimitere = cursor.lastrowid
         cursor.executemany("INSERT INTO EF_PrimiteVerconLinii (IdTrimitere, IdLinie, IdMasina, NuSeTrimite) VALUES (%s, %s, %s, %s)",

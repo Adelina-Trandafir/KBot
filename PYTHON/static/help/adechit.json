@@ -85,7 +85,7 @@
         {"p":"Pe calculator, trageți rândul copilului peste o grupă din panoul din stânga. Pe telefon, butonul ↕ de pe rând deschide lista grupelor. Aplicația cere o confirmare („Mutare copil”) înainte să mute."},
         {"p":"Mutarea schimbă grupa pentru prezența lunii deschise; lunile închise rămân cum au fost."},
         {"h":"Dublu clic pe un copil","id":"copii-dublu"},
-        {"p":"Dublu clic pe un rând al tabelului deschide fereastra **Plătitori** cu grupa și copilul respectiv deja selectate ([vezi Plătitori](#platitori)). Pe celula **Prezență**, dublu clic editează ziua, ca mai sus."}
+        {"p":"Dublu clic pe un rând din Prezență deschide direct formularul **Modifică copilul**, cu datele actuale ale copilului. Aveți nevoie de dreptul **Catalog**. **Salvează** păstrează modificările și reîncarcă situația; **Renunță** închide formularul fără salvare. Pe celula **Prezență**, dublu clic începe editarea zilelor dacă aveți dreptul de a le modifica; pentru formularul copilului, apăsați pe numele lui.","slice":"AD22-01"}
       ]
     },
     {

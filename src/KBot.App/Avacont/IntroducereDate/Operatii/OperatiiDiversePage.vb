@@ -11,7 +11,7 @@ Imports KBot.Domain
 Imports KBot.Theming
 
 ''' <summary>
-''' Slice AV02-03 -- the «Operatii diverse» page (the Access form OP9): the templates of type A on the left (searchable), the header (note, document number, kind and
+''' Slice AV02-03 -- the «Operatii diverse» page (the Access form OP9): the templates of type A on the left (a tree by journal, collapsed, with its own search), the header (note, document number, kind and
 ''' date of the document, the partner where a line needs one, the amount) and the lines of the chosen template on the right. The amount of the header is copied on every
 ''' line and can be changed line by line; «Salveaza» posts the lines with an amount (a document and an operation each) through the server. The accounts come from the
 ''' template on the server: the page sends only the ids of the lines and their amounts.
@@ -30,6 +30,7 @@ Public Class OperatiiDiversePage
     Private _bound As Boolean
     Private _loaded As Boolean
     Private _busy As Boolean
+    Private _salvareIncerta As Boolean
     Private _filling As Boolean
     Private _dirty As Boolean
     Private _catalog As SabloaneOperatiiCatalog
@@ -39,6 +40,8 @@ Public Class OperatiiDiversePage
     Private _journals As New Dictionary(Of Integer, JurnalInfo)()
     Private _classifications As New Dictionary(Of Integer, SablonClsfInfo)()
     Private _partners As New Dictionary(Of Integer, SablonPartenerInfo)()
+    ' The node of every template of the tree (the key is the id of the template).
+    Private ReadOnly _nodeOf As New Dictionary(Of Integer, AdvancedTreeControl.TreeItem)()
 
     Public Sub New()
         InitializeComponent()
@@ -59,8 +62,9 @@ Public Class OperatiiDiversePage
             _gate = k_gate
             _session = k_session
             _subunitSs = If(k_subunitSs, String.Empty)
+            ResetAll()
             If Not k_idSubunitate.HasValue Then
-                SetStatus("Alegeți o subunitate în bara de titlu: operațiile aparțin unei subunități.")
+                SetStatus("Sursa/Sectorul ales nu are nicio subunitate: operațiile aparțin unei subunități. Creați-o în «Plan de conturi».")
                 Return
             End If
             _idSubunitate = k_idSubunitate.Value
@@ -69,6 +73,23 @@ Public Class OperatiiDiversePage
         Catch ex As Exception
             GlobalErrorLog.Write("OperatiiDiversePage.Bind", ex)
         End Try
+    End Sub
+
+    ' Bind is also called when the sector+source of the window changes: what the page held for the previous one goes away first.
+    Private Sub ResetAll()
+        _bound = False
+        _loaded = False
+        _templates = New List(Of SablonOperatieInfo)()
+        _filling = True
+        Try
+            treeSabloane.Clear()
+            _nodeOf.Clear()
+            cmbNota.Items.Clear()
+            cmbPartener.Items.Clear()
+        Finally
+            _filling = False
+        End Try
+        ResetHeader()
     End Sub
 
     Private Async Function LoadAsync() As Task(Of Boolean)
@@ -99,14 +120,15 @@ Public Class OperatiiDiversePage
                     cmbFelDoc.Items.Add(CType(k_f, Object))
                 Next
                 cmbPartener.Items.Clear()
-                For Each k_p As SablonPartenerInfo In k_catalog.Parteneri
-                    cmbPartener.Items.Add(CType(k_p, Object))
+                ' The partner of the operation: only the ones of the unit of this sector+source and year (the catalog holds every unit's, so a partner showed up several times).
+                For Each k_p As FacturiPlatiPartener In k_context.Parteneri
+                    cmbPartener.Items.Add(CType(New SablonPartenerInfo() With {.IdPartener = k_p.IdPartener, .Cod = k_p.Cod, .Denumire = k_p.Denumire}, Object))
                 Next
             Finally
                 _filling = False
             End Try
             _loaded = True
-            FillTemplates()
+            BuildTemplates()
             ResetHeader()
             SetStatus(If(_templates.Count = 0, "Nu există șabloane de operații diverse pentru această subunitate. Adăugați-le în «Șabloane».", String.Empty))
             Return True
@@ -135,48 +157,71 @@ Public Class OperatiiDiversePage
         Return If(k_p Is Nothing, Convert.ToString(k_item, CultureInfo.InvariantCulture), $"{k_p.Denumire} ({k_p.Cod})")
     End Function
 
-    ' ── The list of templates ───────────────────────────────────────────────────
+    ' ── The tree of templates ───────────────────────────────────────────────────
 
-    Private Sub FillTemplates()
-        Dim k_filter As String = txtCauta.Text.Trim()
-        lstSabloane.BeginUpdate()
+    ' Built once per read: a folder per journal (closed), the operations of that journal under it. A pick never builds it again, so the folders the operator
+    ' opened stay open; the search of the tree finds an operation by its explanation and opens the folder it is in.
+    Private Sub BuildTemplates()
+        _filling = True
         Try
-            lstSabloane.ClearRows()
-            For Each k_t As SablonOperatieInfo In _templates
-                If k_filter.Length > 0 AndAlso k_t.Explicatie.IndexOf(k_filter, StringComparison.CurrentCultureIgnoreCase) < 0 Then Continue For
-                Dim k_row As KBotDataRow = lstSabloane.AddRow()
-                k_row.Tag = k_t
-                k_row("nume") = k_t.Explicatie
-                If _current IsNot Nothing AndAlso k_t.IdSablon = _current.IdSablon Then lstSabloane.CurrentRowIndex = lstSabloane.Rows.Count - 1
+            treeSabloane.Clear()
+            _nodeOf.Clear()
+            Dim k_folder As Image = My.Resources.Resources.folder_open
+            Dim k_groups As IEnumerable(Of IGrouping(Of Integer, SablonOperatieInfo)) = _templates.GroupBy(Function(k_t) k_t.IdJurnal).
+                OrderBy(Function(k_g) JournalCaption(k_g.Key), StringComparer.CurrentCultureIgnoreCase)
+            For Each k_group As IGrouping(Of Integer, SablonOperatieInfo) In k_groups
+                Dim k_parent As AdvancedTreeControl.TreeItem = treeSabloane.AddItem(
+                    $"J|{k_group.Key.ToString(CultureInfo.InvariantCulture)}", Escape(JournalCaption(k_group.Key)), pLeftIconClosed:=k_folder, pLeftIconOpen:=k_folder)
+                k_parent.Bold = True
+                For Each k_t As SablonOperatieInfo In k_group
+                    Dim k_node As AdvancedTreeControl.TreeItem = treeSabloane.AddItem(
+                        $"O|{k_t.IdSablon.ToString(CultureInfo.InvariantCulture)}", Escape(If(String.IsNullOrWhiteSpace(k_t.Explicatie), "(fără explicație)", k_t.Explicatie)), k_parent)
+                    k_node.Tag = k_t
+                    _nodeOf(k_t.IdSablon) = k_node
+                Next
             Next
         Finally
-            lstSabloane.EndUpdate()
+            _filling = False
         End Try
-        lstSabloane.Enabled = Not _busy
+        treeSabloane.Invalidate()
+        treeSabloane.Enabled = Not _busy
     End Sub
 
-    Private Sub TxtCauta_TextChanged(sender As Object, e As EventArgs) Handles txtCauta.TextChanged
-        Try
-            If _filling OrElse Not _loaded Then Return
-            FillTemplates()
-        Catch ex As Exception
-            GlobalErrorLog.Write("OperatiiDiversePage.TxtCauta_TextChanged", ex)
-        End Try
+    Private Function JournalCaption(k_idJournal As Integer) As String
+        Dim k_journal As JurnalInfo = Nothing
+        If Not _journals.TryGetValue(k_idJournal, k_journal) Then Return "Fără jurnal"
+        Return If(String.IsNullOrWhiteSpace(k_journal.Denumire), k_journal.Cod, $"{k_journal.Cod} - {k_journal.Denumire}")
+    End Function
+
+    ' The tree reads «<» as the start of its markup; names are plain text.
+    Private Shared Function Escape(k_text As String) As String
+        Return If(k_text, String.Empty).Replace("<", "‹").Replace(">", "›").Replace("~~~", "~ ~ ~")
+    End Function
+
+    ' The selected node follows the operation in work (none in work = none selected); the folder of it is opened.
+    Private Sub SyncSelection()
+        If _current Is Nothing Then
+            treeSabloane.SelectedNode = Nothing
+            Return
+        End If
+        Dim k_node As AdvancedTreeControl.TreeItem = Nothing
+        If _nodeOf.TryGetValue(_current.IdSablon, k_node) Then treeSabloane.SelectAndReveal(k_node)
     End Sub
 
-    Private Sub LstSabloane_CellClick(sender As Object, e As KBotCellEventArgs) Handles lstSabloane.CellClick
+    ' UI boundary (event handler). A click on a folder only opens or closes it (the tree does that); a click on an operation chooses it.
+    Private Sub TreeSabloane_NodeMouseUp(k_node As AdvancedTreeControl.TreeItem, e As MouseEventArgs) Handles treeSabloane.NodeMouseUp
         Try
-            If _filling OrElse _busy OrElse e.RowIndex < 0 OrElse e.RowIndex >= lstSabloane.Rows.Count Then Return
-            Dim k_template As SablonOperatieInfo = TryCast(lstSabloane.Rows(e.RowIndex).Tag, SablonOperatieInfo)
+            If _filling OrElse _busy OrElse Not _loaded OrElse k_node Is Nothing OrElse e.Button <> MouseButtons.Left Then Return
+            Dim k_template As SablonOperatieInfo = TryCast(k_node.Tag, SablonOperatieInfo)
             If k_template Is Nothing OrElse (_current IsNot Nothing AndAlso k_template.IdSablon = _current.IdSablon) Then Return
             If _dirty AndAlso KBotMessage.Show(Me, "Operația în lucru are date necomplet salvate." & vbLf & "Renunțați la ea și alegeți alta?", "Operații diverse",
                                                MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then
-                FillTemplates()
+                SyncSelection()
                 Return
             End If
             Choose(k_template)
         Catch ex As Exception
-            GlobalErrorLog.Write("OperatiiDiversePage.LstSabloane_CellClick", ex)
+            GlobalErrorLog.Write("OperatiiDiversePage.TreeSabloane_NodeMouseUp", ex)
         End Try
     End Sub
 
@@ -201,7 +246,7 @@ Public Class OperatiiDiversePage
         End Try
         SetHeaderEnabled(True)
         SetStatus(String.Empty)
-        FillTemplates()
+        SyncSelection()
         RefreshButtons()
     End Sub
 
@@ -215,13 +260,10 @@ Public Class OperatiiDiversePage
         Try
             gridLinii.ClearRows()
             If _current Is Nothing Then Return
-            Dim k_journal As JurnalInfo = Nothing
-            Dim k_code As String = If(_journals.TryGetValue(_current.IdJurnal, k_journal), k_journal.Cod, String.Empty)
             For Each k_l As SablonLinieInfo In _current.Linii.OrderBy(Function(k_x) k_x.IdLinie)
                 Dim k_row As KBotDataRow = gridLinii.AddRow()
                 k_row.Tag = k_l
                 Dim k_clsf As SablonClsfInfo = Nothing
-                k_row("jurnal") = k_code
                 k_row("clsf") = If(k_l.IdClsf > 0 AndAlso _classifications.TryGetValue(k_l.IdClsf, k_clsf), k_clsf.Clsf, String.Empty)
                 k_row("explicatie") = _current.Explicatie
                 k_row("contd") = Symbol(k_l.ContDebit, k_l.AnaliticDebit)
@@ -370,7 +412,7 @@ Public Class OperatiiDiversePage
             If _current Is Nothing Then Return
             If _dirty AndAlso KBotMessage.Show(Me, "Renunțați la operația în lucru?", "Operații diverse", MessageBoxButtons.YesNo, MessageBoxIcon.Question) <> DialogResult.Yes Then Return
             ResetHeader()
-            FillTemplates()
+            SyncSelection()
             SetStatus(String.Empty)
         Catch ex As Exception
             GlobalErrorLog.Write("OperatiiDiversePage.BtnRenunta_Click", ex)
@@ -398,15 +440,18 @@ Public Class OperatiiDiversePage
             If k_l IsNot Nothing AndAlso k_amount <> 0D Then k_lines.Add(New OperatiiDiverseLinie() With {.IdLinie = k_l.IdLinie, .Suma = k_amount})
         Next
         If k_lines.Count = 0 Then Return "Nicio linie nu are sumă: nu este nimic de înregistrat."
+        Dim k_nota As OperatiiNotaInfo = _context.Note.FirstOrDefault(Function(nota) nota.NumarNC = k_note)
         k_request = New OperatiiDiverseCerere() With {
             .IdSubunitate = _idSubunitate, .An = If(_session Is Nothing OrElse _session.An = 0, k_date.Year, _session.An), .IdSablon = _current.IdSablon, .NumarNC = k_note,
+            .IdNota = If(k_nota IsNot Nothing AndAlso k_nota.IdNota > 0, k_nota.IdNota, CType(Nothing, Integer?)),
+            .NotaNoua = If(k_nota Is Nothing OrElse k_nota.IdNota > 0, CType(k_nota Is Nothing, Boolean?), Nothing),
             .NumarDocument = txtNrDoc.Text.Trim(), .FelDocument = cmbFelDoc.Text.Trim(), .DataDocument = k_date,
             .IdPartener = If(k_partner Is Nothing, 0, k_partner.IdPartener), .Linii = k_lines}
         Return String.Empty
     End Function
 
     Private Async Function SaveAsync() As Task(Of Boolean)
-        If Not _bound OrElse _busy Then Return False
+        If Not _bound OrElse _busy OrElse _salvareIncerta Then Return False
         Dim k_request As OperatiiDiverseCerere = Nothing
         Dim k_problem As String = ValidateRequest(k_request)
         If k_problem.Length > 0 Then
@@ -414,27 +459,33 @@ Public Class OperatiiDiversePage
             KBotMessage.Show(Me, k_problem, "Operații diverse", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Return False
         End If
+        Dim k_asteaptaRaspuns As Boolean = False
         Try
             SetBusy(True)
+            k_asteaptaRaspuns = True
             Dim k_result As OperatiiDiverseRezultat = Await _gate.RunAsync(
                 Function() _api.SalveazaOperatiiDiverseAsync(k_request, CancellationToken.None)).ConfigureAwait(True)
+            k_asteaptaRaspuns = False
             If IsDisposed Then Return True
             _dirty = False
             KBotMessage.Show(Me, $"Au fost înregistrate {k_result.Operatii} operații în nota contabilă {k_result.NumarNC}.", "Operații diverse", MessageBoxButtons.OK, MessageBoxIcon.Information)
             Dim k_template As SablonOperatieInfo = _current
             Await ReloadContextAsync().ConfigureAwait(True)
             ResetHeader()
-            FillTemplates()
-            If k_template IsNot Nothing Then Choose(k_template)
+            If k_template IsNot Nothing Then Choose(k_template) Else SyncSelection()
             Return True
         Catch ex As ApiException
             GlobalErrorLog.Write("OperatiiDiversePage.SaveAsync", ex)
-            SetStatus(ex.Message)
-            KBotMessage.Show(Me, ex.Message, "Operații diverse", MessageBoxButtons.OK, MessageBoxIcon.Warning)
+            _salvareIncerta = k_asteaptaRaspuns AndAlso (Not ex.StatusCode.HasValue OrElse ex.StatusCode.Value >= 500)
+            Dim mesaj As String = If(_salvareIncerta, "Rezultatul salvării este incert. Verificați lista operațiilor înainte de a relua.", ex.Message)
+            SetStatus(mesaj)
+            KBotMessage.Show(Me, mesaj, "Operații diverse", MessageBoxButtons.OK, MessageBoxIcon.Warning)
             Return False
         Catch ex As Exception
             GlobalErrorLog.Write("OperatiiDiversePage.SaveAsync", ex)
-            SetStatus("Operațiile nu au putut fi salvate. Detalii în jurnalul de erori.")
+            _salvareIncerta = k_asteaptaRaspuns
+            SetStatus(If(_salvareIncerta, "Rezultatul salvării este incert. Verificați lista operațiilor înainte de a relua.",
+                         "Datele operațiilor nu au putut fi reîncărcate. Detalii în jurnalul de erori."))
             Return False
         Finally
             If Not IsDisposed Then SetBusy(False)
@@ -459,7 +510,7 @@ Public Class OperatiiDiversePage
 
     Public ReadOnly Property HasPending As Boolean Implements ISablonPagina.HasPending
         Get
-            Return _current IsNot Nothing AndAlso _dirty
+            Return _current IsNot Nothing AndAlso _dirty AndAlso Not _salvareIncerta
         End Get
     End Property
 
@@ -482,12 +533,12 @@ Public Class OperatiiDiversePage
 
     Private Sub SetBusy(k_busy As Boolean)
         _busy = k_busy
-        lstSabloane.Enabled = Not k_busy
+        treeSabloane.Enabled = Not k_busy
         RefreshButtons()
     End Sub
 
     Private Sub RefreshButtons()
-        btnSalveaza.Enabled = _loaded AndAlso Not _busy AndAlso _current IsNot Nothing
+        btnSalveaza.Enabled = _loaded AndAlso Not (_busy OrElse _salvareIncerta) AndAlso _current IsNot Nothing
         btnRenunta.Enabled = _loaded AndAlso Not _busy AndAlso _current IsNot Nothing
     End Sub
 

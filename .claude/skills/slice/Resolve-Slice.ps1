@@ -79,7 +79,9 @@ if ($needSubScan) {
 $announce = [regex]'(?i)(next free[^:\r\n]{0,30}:\s*\**\s*)[A-Za-z0-9-]+(?:,\s*[A-Za-z0-9-]+)*'
 foreach ($f in $files) {
     $text = $f + "`n"
-    $len = (Get-Item -LiteralPath (Join-Path $root $f)).Length
+    $item = Get-Item -LiteralPath (Join-Path $root $f) -ErrorAction SilentlyContinue
+    if ($null -eq $item) { continue }   # tracked by Git but deleted in the working tree
+    $len = $item.Length
     if ($len -gt 5MB) { continue }
     try { $text += [IO.File]::ReadAllText((Join-Path $root $f)) } catch { continue }
     # "Next free number: 0131" announces a free number, it does not use it: blank those values out.

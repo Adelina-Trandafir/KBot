@@ -1,13 +1,13 @@
 """Explicit recovery of migrated returns and storno lines with missing sources.
 
-The route owns the transaction and the gestiune lock. Linking a BR changes only
-its source; linking a storno line introduces a stock movement and checks history.
+The route owns the transaction and the gestiune lock. A BR association can
+change the linked food-list balance. A storno association checks stock history.
 """
 from collections import defaultdict
 from utils.clock import utc_now
 from decimal import Decimal
 
-from . import consumption_timeline, documents as docs, protocol
+from . import consumption_timeline, documents as docs, food_list_recalculation, protocol, recalculation_audit
 from .nomenclatoare import NomError
 
 
@@ -50,8 +50,11 @@ def link_return(cursor, repo, ctx, doc_id, body, request_id):
             problems.append('%s: cantitate %s; rămas de returnat %s' % (entry['name'] or str(variant), quantity, entry['left']))
     if problems:
         reject('Asocierea este respinsă. ' + '; '.join(problems) + '.')
+    prior_food = food_list_recalculation.snapshot_for_return(cursor, repo, ctx, source_id)
     if repo.update('VC_Iesiri_H', {'IdRetur': source_id}, {'IdBonConsum': doc_id, 'Version': before['Version']}, bump_version=True) != 1:
         reject('Returul a fost modificat de altcineva. Reîncărcați documentul.', 'CONFLICT', 409)
+    origin = recalculation_audit.cause('br', doc_id, before['NumarBC'], before['DataBC'], before['Version'] + 1, action='asocierea')
+    food_list_recalculation.refresh_after_return(cursor, repo, ctx, source_id, prior_food, origin, request_id)
     protocol.audit(cursor, ctx, 'br.link', 'VC_Iesiri_H', doc_id,
                    {'IdRetur': None, 'Version': before['Version']},
                    {'IdRetur': source_id, 'Version': before['Version'] + 1}, None, request_id)

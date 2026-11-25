@@ -1,0 +1,8 @@
+# În blocul server HTTPS kbot.avatarsoft.ro. FISCOLINO interceptează redirecționarea local.
+# Acest bloc acoperă accesarea externă a callbackului, fără query string în access log.
+location = /api/fiscolino/efactura/callback {
+    access_log off;
+    add_header Cache-Control "no-store" always;
+    add_header Referrer-Policy "no-referrer" always;
+    return 204;
+}

@@ -1,6 +1,6 @@
 Imports KBot.Controls
 
-' «Modificare operatii» (slice AV02-05, the Access form ModificareNC1280): the list of the posted operations and, under it, the info panel.
+' «Modificare operatii» (slice AV02-05, the Access form ModificareNC1280): the list of the posted operations (the info panel under it was removed in DGV0-02).
 ' All controls are declared HERE (docs/kbot-forms-ui-convention.md). Coordinates are written at 144 dpi.
 <Global.Microsoft.VisualBasic.CompilerServices.DesignerGenerated()>
 Partial Class ModificareOperatiiForm
@@ -35,13 +35,6 @@ Partial Class ModificareOperatiiForm
         Dim colCfpp As KBotDataColumn = New KBotDataColumn()
         Dim colOrd As KBotDataColumn = New KBotDataColumn()
         Dim colRec As KBotDataColumn = New KBotDataColumn()
-        Dim colFacNumar As KBotDataColumn = New KBotDataColumn()
-        Dim colFacData As KBotDataColumn = New KBotDataColumn()
-        Dim colFacPlatit As KBotDataColumn = New KBotDataColumn()
-        Dim colSoldEticheta As KBotDataColumn = New KBotDataColumn()
-        Dim colSoldDebit As KBotDataColumn = New KBotDataColumn()
-        Dim colSoldCredit As KBotDataColumn = New KBotDataColumn()
-        Dim colSoldSold As KBotDataColumn = New KBotDataColumn()
         tips = New KBotToolTip(components)
         tlyMain = New KBotTableLayoutPanel()
         capBar = New KBotCaptionBar()
@@ -49,14 +42,9 @@ Partial Class ModificareOperatiiForm
         pnlCard = New Panel()
         tlyBody = New KBotTableLayoutPanel()
         gridOperatii = New KBotDataView()
-        tlyInfo = New KBotTableLayoutPanel()
-        lblInfo = New KBotLabel()
-        gridFacturi = New KBotDataView()
-        gridSold = New KBotDataView()
         tlyMain.SuspendLayout()
         pnlCard.SuspendLayout()
         tlyBody.SuspendLayout()
-        tlyInfo.SuspendLayout()
         SuspendLayout()
         '
         ' tlyMain
@@ -122,20 +110,19 @@ Partial Class ModificareOperatiiForm
         tlyBody.ColumnCount = 1
         tlyBody.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyBody.Controls.Add(gridOperatii, 0, 0)
-        tlyBody.Controls.Add(tlyInfo, 0, 1)
         tlyBody.Dock = DockStyle.Fill
         tlyBody.Location = New Point(12, 9)
         tlyBody.Margin = New Padding(0)
         tlyBody.Name = "tlyBody"
-        tlyBody.RowCount = 2
+        tlyBody.RowCount = 1
         tlyBody.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyBody.RowStyles.Add(New RowStyle(SizeType.Absolute, 270F))
         tlyBody.Size = New Size(1892, 923)
         tlyBody.TabIndex = 0
         '
         ' gridOperatii
         '
         colTip.AggregateFormatString = Nothing
+        colTip.AllowGrouping = False
         colTip.ColumnFilterIcon = My.Resources.Resources.filter
         colTip.FormatString = Nothing
         colTip.HeaderText = "Tip"
@@ -159,6 +146,7 @@ Partial Class ModificareOperatiiForm
         colNc.ValueType = KBotValueType.Number
         colNc.Width = 80
         colDoc.AggregateFormatString = Nothing
+        colDoc.AllowGrouping = False
         colDoc.ColumnFilterIcon = My.Resources.Resources.filter
         colDoc.FormatString = Nothing
         colDoc.HeaderText = "Doc."
@@ -171,6 +159,7 @@ Partial Class ModificareOperatiiForm
         colDoc.Width = 140
         colData.AggregateFormatString = Nothing
         colData.ColumnFilterIcon = My.Resources.Resources.filter
+        colData.Format = KBotFormat.ShortDate
         colData.FormatString = Nothing
         colData.HeaderText = "Data"
         colData.HeaderTextAlign = ContentAlignment.MiddleCenter
@@ -215,6 +204,7 @@ Partial Class ModificareOperatiiForm
         colJurnal.TextAlign = ContentAlignment.MiddleCenter
         colJurnal.Width = 80
         colExplicatie.AggregateFormatString = Nothing
+        colExplicatie.AllowGrouping = False
         colExplicatie.ColumnFilterIcon = My.Resources.Resources.filter
         colExplicatie.FormatString = Nothing
         colExplicatie.HeaderText = "Explicație"
@@ -226,6 +216,7 @@ Partial Class ModificareOperatiiForm
         colExplicatie.TextAlign = ContentAlignment.MiddleLeft
         colExplicatie.Width = 300
         colDebit.AggregateFormatString = Nothing
+        colDebit.AllowGrouping = False
         colDebit.ColumnFilterIcon = My.Resources.Resources.filter
         colDebit.FormatString = Nothing
         colDebit.HeaderText = "Cont debit"
@@ -237,6 +228,7 @@ Partial Class ModificareOperatiiForm
         colDebit.TextAlign = ContentAlignment.MiddleLeft
         colDebit.Width = 210
         colCredit.AggregateFormatString = Nothing
+        colCredit.AllowGrouping = False
         colCredit.ColumnFilterIcon = My.Resources.Resources.filter
         colCredit.FormatString = Nothing
         colCredit.HeaderText = "Cont credit"
@@ -249,6 +241,7 @@ Partial Class ModificareOperatiiForm
         colCredit.Width = 210
         colSuma.Aggregate = KBotAggregate.Sum
         colSuma.AggregateFormatString = Nothing
+        colSuma.AllowGrouping = False
         colSuma.ColumnFilterIcon = My.Resources.Resources.filter
         colSuma.DecimalPlaces = 2
         colSuma.Format = KBotFormat.Standard
@@ -263,51 +256,49 @@ Partial Class ModificareOperatiiForm
         colSuma.ValueType = KBotValueType.Number
         colSuma.Width = 150
         colChelt.AggregateFormatString = Nothing
-        colChelt.ColumnFilterIcon = My.Resources.Resources.filter
         colChelt.ColumnType = KBotColumnType.CheckBox
         colChelt.FormatString = Nothing
-        colChelt.HeaderText = "CH"
+        colChelt.HeaderText = "Ch"
         colChelt.HeaderTextAlign = ContentAlignment.MiddleCenter
         colChelt.Key = "chelt"
+        colChelt.MinWidth = 28
         colChelt.OptionGroup = Nothing
         colChelt.ReadOnly = True
-        colChelt.ShowColumnFilter = True
         colChelt.TextAlign = ContentAlignment.MiddleCenter
-        colChelt.Width = 66
+        colChelt.Width = 28
         colCfpp.AggregateFormatString = Nothing
-        colCfpp.ColumnFilterIcon = My.Resources.Resources.filter
         colCfpp.ColumnType = KBotColumnType.CheckBox
         colCfpp.FormatString = Nothing
-        colCfpp.HeaderText = "CF"
+        colCfpp.HeaderText = "Cf"
         colCfpp.HeaderTextAlign = ContentAlignment.MiddleCenter
         colCfpp.Key = "cfpp"
+        colCfpp.MinWidth = 28
         colCfpp.OptionGroup = Nothing
         colCfpp.ReadOnly = True
-        colCfpp.ShowColumnFilter = True
         colCfpp.TextAlign = ContentAlignment.MiddleCenter
-        colCfpp.Width = 66
+        colCfpp.Width = 28
         colOrd.AggregateFormatString = Nothing
-        colOrd.ColumnFilterIcon = My.Resources.Resources.filter
         colOrd.FormatString = Nothing
-        colOrd.HeaderText = "Ord"
+        colOrd.HeaderText = "O"
         colOrd.HeaderTextAlign = ContentAlignment.MiddleCenter
         colOrd.Key = "ord"
+        colOrd.MinWidth = 28
         colOrd.OptionGroup = Nothing
         colOrd.ReadOnly = True
-        colOrd.ShowColumnFilter = True
         colOrd.TextAlign = ContentAlignment.MiddleCenter
-        colOrd.Width = 70
+        colOrd.Width = 28
         colRec.AggregateFormatString = Nothing
-        colRec.ColumnFilterIcon = My.Resources.Resources.filter
+        colRec.ColumnType = KBotColumnType.CheckBox
         colRec.FormatString = Nothing
         colRec.HeaderText = "R"
         colRec.HeaderTextAlign = ContentAlignment.MiddleCenter
         colRec.Key = "rec"
+        colRec.NullShowsMixedCheck = True
+        colRec.MinWidth = 28
         colRec.OptionGroup = Nothing
         colRec.ReadOnly = True
-        colRec.ShowColumnFilter = True
         colRec.TextAlign = ContentAlignment.MiddleCenter
-        colRec.Width = 60
+        colRec.Width = 28
         gridOperatii.AutoSizeColumnsMode = KBotAutoSizeMode.None
         gridOperatii.BackColor = SystemColors.Window
         gridOperatii.ColumnFillMode = KBotFillMode.SpecificColumn
@@ -327,152 +318,16 @@ Partial Class ModificareOperatiiForm
         gridOperatii.Columns.Add(colOrd)
         gridOperatii.Columns.Add(colRec)
         gridOperatii.Dock = DockStyle.Fill
+        gridOperatii.EnableGrouping = True
         gridOperatii.FillColumnKey = "explicatie"
-        gridOperatii.Font = New Font("Calibri", 9F)
+        gridOperatii.FilterIconVisibility = KBotFilterIconVisibility.OnHoverOrFiltered
+        gridOperatii.Font = New Font("Calibri", 10F)
         gridOperatii.FooterVisible = True
         gridOperatii.Location = New Point(0, 0)
         gridOperatii.Margin = New Padding(0)
         gridOperatii.Name = "gridOperatii"
         gridOperatii.Size = New Size(1892, 653)
         gridOperatii.TabIndex = 0
-        '
-        ' tlyInfo
-        '
-        tlyInfo.ColumnCount = 3
-        tlyInfo.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 40F))
-        tlyInfo.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 30F))
-        tlyInfo.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 30F))
-        tlyInfo.Controls.Add(lblInfo, 0, 0)
-        tlyInfo.Controls.Add(gridFacturi, 1, 0)
-        tlyInfo.Controls.Add(gridSold, 2, 0)
-        tlyInfo.Dock = DockStyle.Fill
-        tlyInfo.Location = New Point(0, 653)
-        tlyInfo.Margin = New Padding(0, 9, 0, 0)
-        tlyInfo.Name = "tlyInfo"
-        tlyInfo.RowCount = 1
-        tlyInfo.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
-        tlyInfo.Size = New Size(1892, 261)
-        tlyInfo.TabIndex = 1
-        tlyInfo.Visible = False
-        '
-        ' lblInfo
-        '
-        lblInfo.BorderWidth = 0
-        lblInfo.Dock = DockStyle.Fill
-        lblInfo.Font = New Font("Calibri", 9F)
-        lblInfo.Margin = New Padding(0, 0, 12, 0)
-        lblInfo.Name = "lblInfo"
-        lblInfo.TabIndex = 0
-        lblInfo.Text = ""
-        lblInfo.TextAlign = ContentAlignment.TopLeft
-        '
-        ' gridFacturi
-        '
-        colFacNumar.AggregateFormatString = Nothing
-        colFacNumar.FormatString = Nothing
-        colFacNumar.HeaderText = "Factura plătită"
-        colFacNumar.HeaderTextAlign = ContentAlignment.MiddleCenter
-        colFacNumar.Key = "numar"
-        colFacNumar.OptionGroup = Nothing
-        colFacNumar.ReadOnly = True
-        colFacNumar.TextAlign = ContentAlignment.MiddleLeft
-        colFacNumar.Width = 200
-        colFacData.AggregateFormatString = Nothing
-        colFacData.FormatString = Nothing
-        colFacData.HeaderText = "Data"
-        colFacData.HeaderTextAlign = ContentAlignment.MiddleCenter
-        colFacData.Key = "data"
-        colFacData.OptionGroup = Nothing
-        colFacData.ReadOnly = True
-        colFacData.TextAlign = ContentAlignment.MiddleCenter
-        colFacData.ValueType = KBotValueType.DateTime
-        colFacData.Width = 120
-        colFacPlatit.Aggregate = KBotAggregate.Sum
-        colFacPlatit.AggregateFormatString = Nothing
-        colFacPlatit.DecimalPlaces = 2
-        colFacPlatit.Format = KBotFormat.Standard
-        colFacPlatit.FormatString = Nothing
-        colFacPlatit.HeaderText = "Plătit"
-        colFacPlatit.HeaderTextAlign = ContentAlignment.MiddleCenter
-        colFacPlatit.Key = "platit"
-        colFacPlatit.OptionGroup = Nothing
-        colFacPlatit.ReadOnly = True
-        colFacPlatit.TextAlign = ContentAlignment.MiddleRight
-        colFacPlatit.ValueType = KBotValueType.Number
-        colFacPlatit.Width = 140
-        gridFacturi.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridFacturi.BackColor = SystemColors.Window
-        gridFacturi.ColumnFillMode = KBotFillMode.SpecificColumn
-        gridFacturi.Columns.Add(colFacNumar)
-        gridFacturi.Columns.Add(colFacData)
-        gridFacturi.Columns.Add(colFacPlatit)
-        gridFacturi.Dock = DockStyle.Fill
-        gridFacturi.FillColumnKey = "numar"
-        gridFacturi.Font = New Font("Calibri", 9F)
-        gridFacturi.FooterVisible = True
-        gridFacturi.Margin = New Padding(0, 0, 12, 0)
-        gridFacturi.Name = "gridFacturi"
-        gridFacturi.Size = New Size(100, 100)
-        gridFacturi.TabIndex = 1
-        '
-        ' gridSold
-        '
-        colSoldEticheta.AggregateFormatString = Nothing
-        colSoldEticheta.FormatString = Nothing
-        colSoldEticheta.HeaderText = "Sold partener"
-        colSoldEticheta.HeaderTextAlign = ContentAlignment.MiddleCenter
-        colSoldEticheta.Key = "eticheta"
-        colSoldEticheta.OptionGroup = Nothing
-        colSoldEticheta.ReadOnly = True
-        colSoldEticheta.TextAlign = ContentAlignment.MiddleLeft
-        colSoldEticheta.Width = 200
-        colSoldDebit.AggregateFormatString = Nothing
-        colSoldDebit.DecimalPlaces = 2
-        colSoldDebit.Format = KBotFormat.Standard
-        colSoldDebit.FormatString = Nothing
-        colSoldDebit.HeaderText = "Debit"
-        colSoldDebit.HeaderTextAlign = ContentAlignment.MiddleCenter
-        colSoldDebit.Key = "debit"
-        colSoldDebit.OptionGroup = Nothing
-        colSoldDebit.ReadOnly = True
-        colSoldDebit.TextAlign = ContentAlignment.MiddleRight
-        colSoldDebit.ValueType = KBotValueType.Number
-        colSoldDebit.Width = 130
-        colSoldCredit.AggregateFormatString = Nothing
-        colSoldCredit.DecimalPlaces = 2
-        colSoldCredit.Format = KBotFormat.Standard
-        colSoldCredit.FormatString = Nothing
-        colSoldCredit.HeaderText = "Credit"
-        colSoldCredit.HeaderTextAlign = ContentAlignment.MiddleCenter
-        colSoldCredit.Key = "credit"
-        colSoldCredit.OptionGroup = Nothing
-        colSoldCredit.ReadOnly = True
-        colSoldCredit.TextAlign = ContentAlignment.MiddleRight
-        colSoldCredit.ValueType = KBotValueType.Number
-        colSoldCredit.Width = 130
-        colSoldSold.AggregateFormatString = Nothing
-        colSoldSold.FormatString = Nothing
-        colSoldSold.HeaderText = "Sold"
-        colSoldSold.HeaderTextAlign = ContentAlignment.MiddleCenter
-        colSoldSold.Key = "sold"
-        colSoldSold.OptionGroup = Nothing
-        colSoldSold.ReadOnly = True
-        colSoldSold.TextAlign = ContentAlignment.MiddleRight
-        colSoldSold.Width = 150
-        gridSold.AutoSizeColumnsMode = KBotAutoSizeMode.None
-        gridSold.BackColor = SystemColors.Window
-        gridSold.ColumnFillMode = KBotFillMode.SpecificColumn
-        gridSold.Columns.Add(colSoldEticheta)
-        gridSold.Columns.Add(colSoldDebit)
-        gridSold.Columns.Add(colSoldCredit)
-        gridSold.Columns.Add(colSoldSold)
-        gridSold.Dock = DockStyle.Fill
-        gridSold.FillColumnKey = "eticheta"
-        gridSold.Font = New Font("Calibri", 9F)
-        gridSold.Margin = New Padding(0)
-        gridSold.Name = "gridSold"
-        gridSold.Size = New Size(100, 100)
-        gridSold.TabIndex = 2
         '
         ' ModificareOperatiiForm
         '
@@ -494,7 +349,6 @@ Partial Class ModificareOperatiiForm
         tlyMain.ResumeLayout(False)
         pnlCard.ResumeLayout(False)
         tlyBody.ResumeLayout(False)
-        tlyInfo.ResumeLayout(False)
         ResumeLayout(False)
     End Sub
 
@@ -505,8 +359,4 @@ Partial Class ModificareOperatiiForm
     Friend WithEvents pnlCard As Panel
     Friend WithEvents tlyBody As KBotTableLayoutPanel
     Friend WithEvents gridOperatii As KBotDataView
-    Friend WithEvents tlyInfo As KBotTableLayoutPanel
-    Friend WithEvents lblInfo As KBotLabel
-    Friend WithEvents gridFacturi As KBotDataView
-    Friend WithEvents gridSold As KBotDataView
 End Class

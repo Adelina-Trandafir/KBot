@@ -570,7 +570,7 @@ Partial Public Class KbotForm
         Dim mapate As List(Of Angajament)
         busyBar.Running = True
         Try
-            mapate = Await _controller.DownloadListaAsync()
+            mapate = Await _controller.DownloadListaAsync(inainte)
         Finally
             busyBar.Running = False
         End Try
@@ -597,6 +597,7 @@ Partial Public Class KbotForm
         Finally
             busyBar.Running = False
         End Try
+        _controller.ConfirmaListaPrimita()   ' slice 0097-10: the server has the rows
         If rezultat.Inserate > 0 Then Await LoadTreeAsync(pastreazaSelectia:=True)
 
         For Each a As Angajament In mapate

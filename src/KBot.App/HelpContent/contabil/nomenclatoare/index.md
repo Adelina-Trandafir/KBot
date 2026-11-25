@@ -6,7 +6,7 @@ order: 70
 parent: contabil
 keywords: nomenclatoare, clasificatii, parteneri, jurnale
 ---
-<!-- slice: 0087, 0113, 0114, AV01-04, AV01-09, AV01-11, AV01-13, AV01-14, AV01-15, AV02-03, AV02-04, 0000-176, AV02-05, 0000-177 -->
+<!-- slice: 0087, 0113, 0114, AV01-04, AV01-09, AV01-11, AV01-13, AV01-14, AV01-15, AV02-03, AV02-04, 0000-176, AV02-05, 0000-177, DGV0-02, 0000-181 -->
 Din ribbon, fila **Date › Nomenclatoare**, se deschid trei machete, fiecare ca pagină a ferestrei principale
 (una câte una; le închizi cu «Închide» din ribbon sau cu Esc):
 
@@ -17,5 +17,5 @@ Din ribbon, fila **Date › Nomenclatoare**, se deschid trei machete, fiecare ca
 - [Jurnale](topic:contabil.nomenclatoare.jurnale) — jurnalele contabile ale unității; nu este o pagină, ci o fereastră mică deschisă
   peste pagina de pe ecran.
 - [Operații contabile](topic:contabil.nomenclatoare.operatii) — introducerea operațiilor: operații diverse din șabloane, facturi noi și plăți cu ordin de plată (fila **Introducere date › Introducere Date › Operații**).
-- [Modificare operații](topic:contabil.nomenclatoare.modificare-operatii) — lista tuturor operațiilor contabile ale anului, cu filtre, informații despre fiecare operație și ștergere (fila **Introducere date › Modificare Date**).
+- [Modificare operații](topic:contabil.nomenclatoare.modificare-operatii) — lista tuturor operațiilor contabile ale anului, cu filtre și ștergere (fila **Introducere date › Modificare Date**).
 - [Șabloane de operații](topic:contabil.nomenclatoare.sabloane) — operațiile contabile automate (cu clasificație și diverse) și șabloanele de salarii (fila **Date › Șabloane**).

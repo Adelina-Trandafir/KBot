@@ -14,6 +14,8 @@ OPERATIONS = {
     "read":          ("VR_CITIRE",        "citire",                         ALL, False),
     # SLICE-VC06-26: limited ANAF permission available to everyone with VR read, without new role grants.
     "parteneri_anaf": (None,               "parteneri: ANAF / cod fiscal negăsit", ALL, True),
+    # SLICE-VC20-01: adding a NEW supplier (ANAF data); held by whoever holds «receptie», without a new role grant (see __init__.rights).
+    "parteneri_adauga": (None,             "parteneri: adaugare furnizor nou (ANAF)", ALL, True),
     "nomenclatoare": ("VR_NOMENCLATOARE", "nomenclatoare (produse, categorii, gestionari)", ALL, True),
     "receptie":      ("VR_RECEPTIE",      "receptie (NIR)",                 ALL, True),
     "storno":        ("VR_STORNO",        "storno intrari",                 ALL, True),

@@ -8,6 +8,7 @@ from . import report_identity
 from . import report_balance
 from . import report_mf
 from . import report_receipt_dates
+from . import report_purchase_order
 from .stock_routes import optional_id
 
 
@@ -171,8 +172,9 @@ def register(bp, guard, scoped, session, build):
                 if custody or oi_document:
                     categories = {r['category']: r['account'] for r in source.rows('oi_accounts')}
                     receivers = {r['receiver']: r['party'] for r in source.rows('oi_holders')}
+                family = spec.get('family') or spec.get('incoming_family')
                 for row in source.rows(query):
-                    if row['annulled'] or spec.get('family') and row['family'] != spec['family']:
+                    if row['annulled'] or family and row['family'] != family:
                         continue
                     if row.get('supplier') is not None:
                         suppliers[row['supplier']] = row['party'] or str(row['supplier'])
@@ -223,6 +225,10 @@ def register(bp, guard, scoped, session, build):
             if model.get('letterhead_version') != report_identity.VERSION:
                 raise NomError('REPORT_EXPIRED', 'Generați din nou raportul pentru antetul actualizat.', 409)
             spec = report_catalog.spec_of(model['report_name'], ctx['type'])
+            if spec['id'] == report_purchase_order.REPORT_ID:
+                form = model['layout'].get('form') == report_purchase_order.FORM
+                if form != report_purchase_order.active(spec):
+                    raise NomError('REPORT_EXPIRED', 'Generați din nou nota de comandă pentru macheta curentă.', 409)
             if (({'ledger', 'receipts'} & set(model.get('versions', {}).get('queries', {}))
                  or spec['kind'] == 'depreciation')
                     and model.get('receipt_stock_date_version') != report_receipt_dates.VERSION):

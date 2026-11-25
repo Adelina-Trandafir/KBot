@@ -1,7 +1,7 @@
 # routes/efactura/primite_parteneri.py
 """
 The partner of a received e-invoice's supplier, found by TAX CODE ONLY (slice 00EF-55). Shared by the sending to VERCON (primite_vercon.py) and the «Contari»
-(primite_contari.py). Nothing else decides: not the name, not «Ascuns» (a hidden partner is found too), not the unit. The normalisation is the one rule of
+(NoteC_contari*, SLICE-AV08-04). Nothing else decides: not the name, not «Ascuns» (a hidden partner is found too), not the unit. The normalisation is the one rule of
 utils.vercon_suppliers.
 
 The partner in force for a supplier is, in this order: the one the operator named in the request; the one KEPT for that tax code (EF_FurnizorPartener, see

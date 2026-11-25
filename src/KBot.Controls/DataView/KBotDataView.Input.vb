@@ -637,6 +637,9 @@ Partial Class KBotDataView
                 Return
             End If
 
+            ' Slice DGV0-02: antetul de sub cursor decide când se arată pâlnia de filtrare.
+            UpdateHeaderCellHover(e.Location)
+
             ' Pictogramele din antet: hover + cursor de mână. Cât timp cursorul e peste una, nu
             ' se mai caută nici margine de redimensionare, nici etichetă de celulă.
             If UpdateHeaderIconHover(e.Location) Then
@@ -754,6 +757,7 @@ Partial Class KBotDataView
         HandleFooterMouseLeave()
         ClearHeaderIconHover()
         ClearFilterIconHover()
+        ClearHeaderCellHover()
         CancelCellTooltip()
     End Sub
 

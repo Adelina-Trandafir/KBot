@@ -198,6 +198,79 @@ def test_download_never_leaves_the_update_dir(client, update_dir):
 
 
 # ---------------------------------------------------------------------------
+# FISCOLINO scheme package channel: fiscolino-scheme.json (no `minimum`)
+# ---------------------------------------------------------------------------
+
+SCHEME = {
+    "version": "2026.11.18",
+    "file": "fiscolino-scheme-2026.11.18.zip",
+    "size": 3,
+    "sha256": "b" * 64,
+    "published_utc": "2026-11-18T10:00:00Z",
+}
+
+
+def _write_scheme(update_dir, data):
+    (update_dir / "fiscolino-scheme.json").write_text(json.dumps(data), encoding="utf-8")
+
+
+def test_scheme_latest_404_when_nothing_published(client, update_dir):
+    r = client.get("/api/update/fiscolino-scheme/latest")
+    assert r.status_code == 404
+    assert r.get_json()["reason"] == "NO_FISCOLINO_SCHEME_PUBLISHED"
+
+
+def test_scheme_latest_returns_the_block_without_minimum(client, update_dir):
+    _write_scheme(update_dir, SCHEME)
+    r = client.get("/api/update/fiscolino-scheme/latest")
+    assert r.status_code == 200
+    assert r.get_json() == SCHEME
+
+
+@pytest.mark.parametrize("broken", [
+    {k: v for k, v in SCHEME.items() if k != "sha256"},
+    {**SCHEME, "version": "azi"},
+    {**SCHEME, "size": -1},
+    {**SCHEME, "sha256": "abc"},
+    {**SCHEME, "file": "../secret.zip"},
+])
+def test_scheme_latest_500_when_block_invalid(client, update_dir, broken):
+    _write_scheme(update_dir, broken)
+    r = client.get("/api/update/fiscolino-scheme/latest")
+    assert r.status_code == 500
+    assert r.get_json()["reason"] == "FISCOLINO_SCHEME_INVALID"
+
+
+def test_scheme_does_not_touch_the_other_channels(client, update_dir):
+    # latest.json / fiscolino.json stay untouched by (and independent of) the scheme channel.
+    _write_scheme(update_dir, SCHEME)
+    assert client.get("/api/update/latest").status_code == 404
+    assert client.get("/api/update/fiscolino/latest").status_code == 404
+
+
+def test_scheme_download_404_and_500(client, update_dir):
+    assert client.get("/api/update/fiscolino-scheme").status_code == 404
+    _write_scheme(update_dir, SCHEME)
+    r = client.get("/api/update/fiscolino-scheme")
+    assert r.status_code == 500
+    assert r.get_json()["reason"] == "PACKAGE_MISSING"
+
+
+def test_scheme_download_sends_the_named_package_with_headers_and_range(client, update_dir):
+    content = bytes(range(256))
+    sha = _write_package(update_dir, SCHEME["file"], content)
+    _write_scheme(update_dir, {**SCHEME, "size": len(content), "sha256": sha})
+    r = client.get("/api/update/fiscolino-scheme")
+    assert r.status_code == 200
+    assert r.data == content
+    assert r.headers["X-KBot-Version"] == "2026.11.18"
+    assert r.headers["X-KBot-Sha256"] == sha
+    assert r.headers["Content-Type"] == "application/zip"
+    part = client.get("/api/update/fiscolino-scheme", headers={"Range": "bytes=10-19"})
+    assert part.status_code == 206 and part.data == content[10:20]
+
+
+# ---------------------------------------------------------------------------
 # get_update_dir -- the config seam
 # ---------------------------------------------------------------------------
 

@@ -1,7 +1,7 @@
 """Report data from owner-editable SQL. Exact decimals until the output boundary."""
 from collections import defaultdict
 from decimal import Decimal, localcontext
-from . import numeric, report_query, report_store, stock, oi_accounts, stock_valuation, report_receipt_dates
+from . import numeric, report_query, report_store, stock, oi_accounts, stock_valuation, report_receipt_dates, report_purchase_order
 from .nomenclatoare import NomError
 
 REQUIRED_FIELDS = {
@@ -249,18 +249,20 @@ def dataset(source, spec):
     if kind in ('consumption', 'consumption_sheet'):
         rows = documents(source, 'bc')
         return aggregate(rows, ('receiver', 'category', 'product', 'variant', 'price', 'um')) if kind == 'consumption' else rows
-    rows = documents(source)
+    rows = documents(source, spec.get('incoming_family'))
     if kind == 'purchases':
-        # Situatie/Plan source exports use Intrari only; the two referat sources
-        # also include the signed storno correction.
-        if spec['id'] in ('Plan_Achizitii', 'Situatie_Intrari', 'Nota_Comanda'):
+        # The order already loads NIR only. Plan/Situatie also exclude FCS,
+        # while the two referat reports include the signed correction.
+        if spec['id'] in ('Plan_Achizitii', 'Situatie_Intrari'):
             rows = [row for row in rows if row['family'] == 'nir']
-        else:
+        elif not spec.get('incoming_family'):
             rows = [{**row, 'quantity': str(-Decimal(row['quantity'])) if row['family'] == 'storno' else row['quantity'],
                      'value': str(-Decimal(row['value'])) if row['family'] == 'storno' and row['value'] is not None else row['value']} for row in rows]
         keys = ('category', 'product', 'um', 'cpv')
         if spec['id'] in ('Nota_Comanda', 'Referat_periodic_Intrari'):
             keys += ('supplier', 'party')
+        if report_purchase_order.active(spec):
+            keys += ('variant', 'code', 'price')
         return aggregate(rows, keys)
     if kind in ('receipts_summary', 'suppliers'):
         rows = [{**row, 'value': str(-Decimal(row['value'])) if row['family'] == 'storno' and row['value'] is not None else row['value']} for row in rows]

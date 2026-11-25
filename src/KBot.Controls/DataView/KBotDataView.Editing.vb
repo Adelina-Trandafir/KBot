@@ -291,6 +291,8 @@ Partial Class KBotDataView
                     Dim k_itemsArgs As New KBotComboItemsEventArgs(colKey, rowIndex, col.ComboItems)
                     RaiseEvent ComboItemsRequested(Me, k_itemsArgs)
                     editCombo.DropDownWidth = col.ComboDropDownWidth
+                    editCombo.RequireExplicitSelection = col.ComboRequireExplicitSelection
+                    editCombo.FindInItemOrder = col.ComboFindInItemOrder
                     editCombo.BeginUpdate()
                     Try
                         editCombo.Items.Clear()

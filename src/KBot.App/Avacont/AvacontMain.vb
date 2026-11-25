@@ -171,7 +171,7 @@ Public Class AvacontMain
 
     ' ---- Ribbon ---------------------------------------------------------------------------------
 
-    Private Sub Ribbon_ItemClicked(sender As Object, e As KBotRibbonItemClickedEventArgs) Handles ribbon.ItemClicked
+    Private Async Sub Ribbon_ItemClicked(sender As Object, e As KBotRibbonItemClickedEventArgs) Handles ribbon.ItemClicked
         Try
             Select Case e.Key
                 Case "sumar_parteneri"
@@ -182,8 +182,8 @@ Public Class AvacontMain
                     ' Slice AV01-06: a button of the group of the PAGE on screen (the «Plan de conturi» window), not of a shell view.
                     ' Slice 0126-03: the same for the «Clasificatii» window (Salveaza / Verifica bugetul / Trimite in Access).
                     TryCast(CurrentPage, IViewRibbon)?.RunRibbonButton(e.Key)
-                Case ModificareOperatiiForm.KeyReincarca, ModificareOperatiiForm.KeyInfo, ModificareOperatiiForm.KeyOrdonare, ModificareOperatiiForm.KeyCurata,
-                     ModificareOperatiiForm.KeyExcel, ModificareOperatiiForm.KeyExcelTot, ModificareOperatiiForm.KeyStergeOperatie, ModificareOperatiiForm.KeyStergeDocument
+                Case ModificareOperatiiForm.KeyReincarca, ModificareOperatiiForm.KeyOrdonare, ModificareOperatiiForm.KeyCurata,
+                     ModificareOperatiiForm.KeyExcel, ModificareOperatiiForm.KeyExcelTot, ModificareOperatiiForm.KeyEditeaza, ModificareOperatiiForm.KeyStergeOperatie, ModificareOperatiiForm.KeyStergeDocument
                     ' Slice AV02-05: the buttons of the «Modificare operatii» page.
                     TryCast(CurrentPage, IViewRibbon)?.RunRibbonButton(e.Key)
                 Case ParteneriForm.RibbonSterge, ParteneriForm.RibbonRenunta, ParteneriForm.RibbonAdauga, ParteneriForm.RibbonSalveaza
@@ -228,6 +228,8 @@ Public Class AvacontMain
                 Case "operatii_sabloane"
                     ' Slices AV02-03 / AV02-04: the posting window (operatii diverse, facturi si plati), a modal window (KbotForm.Operatii.vb).
                     _kbot.DeschideOperatiiSabloane()
+                Case KbotForm.MachetaNotaManuala
+                    Await _kbot.DeschideNotaManualaAsync()
                 Case "efactura_vanzare", "efactura_cumparare", "efactura_vercon"
                     ' the ribbon key is the key of the macheta
                     _kbot.OpenRegistered(e.Key, Sub() _kbot.RunEFacturaCommand(e.Key))
@@ -557,8 +559,8 @@ Public Class AvacontMain
         KeyContareAdauga, KeyContareSalveaza, KeyContareRenunta, KeyContareSalveazaCa, KeyContareAscunde, KeyContareStergePlata,
         "plati_leaga_ord", ClasificatiiBugetView.KeyAdd, "clasificatii_salveaza", "clasificatii_verifica", "clasificatii_access", "clasificatii_sterge",
         ParteneriForm.RibbonSterge, ParteneriForm.RibbonRenunta, ParteneriForm.RibbonAdauga, ParteneriForm.RibbonSalveaza,
-        ModificareOperatiiForm.KeyReincarca, ModificareOperatiiForm.KeyInfo, ModificareOperatiiForm.KeyOrdonare, ModificareOperatiiForm.KeyCurata,
-        ModificareOperatiiForm.KeyExcel, ModificareOperatiiForm.KeyExcelTot, ModificareOperatiiForm.KeyStergeOperatie, ModificareOperatiiForm.KeyStergeDocument}
+        ModificareOperatiiForm.KeyReincarca, ModificareOperatiiForm.KeyOrdonare, ModificareOperatiiForm.KeyCurata,
+        ModificareOperatiiForm.KeyExcel, ModificareOperatiiForm.KeyExcelTot, ModificareOperatiiForm.KeyEditeaza, ModificareOperatiiForm.KeyStergeOperatie, ModificareOperatiiForm.KeyStergeDocument}
 
     Private Shared Function IsContareKey(k_key As String) As Boolean
         Return String.Equals(k_key, KeyContareAdauga, StringComparison.Ordinal) OrElse String.Equals(k_key, KeyContareSalveaza, StringComparison.Ordinal) OrElse

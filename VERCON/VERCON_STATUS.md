@@ -1,5 +1,55 @@
 # VERCON — status (registru separat, ca ADECHIT_STATUS)
 
+## SLICE-VC24-04 — Schimbarea bonurilor atașate listei de alimente — 25.11.2026
+
+**IMPLEMENTAT LOCAL.** Meniul listei salvate deschide selectorul de bonuri cu selecție multiplă. Data unui bon nou atașat trebuie să fie cel mult data listei, iar bonurile atașate altor liste sunt excluse. Salvarea fără bonuri cere confirmare prin avertisment. Proba în aplicație și publicarea sunt în așteptare. [Worklog VC24-04](../docs/worklog/SLICE-VC24-04-schimba-bonurile-listei.md).
+
+## SLICE-VC25-01 — Macheta notei de comandă — 24.11.2026
+
+**IMPLEMENTAT LOCAL.** Nota de comandă folosește formularul din fotografie în orientare peisaj și este disponibilă și pentru obiecte de inventar și mijloace fixe. Ultimul rând afișează totalul valoric al comenzii pentru fiecare furnizor. Macheta anterioară este păstrată inactivă. Proba în aplicație și publicarea sunt în așteptare. [Worklog VC25-01](../docs/worklog/SLICE-VC25-01-nota-de-comanda.md).
+
+## SLICE-VC24-03 — Contorul după schimbarea ultimului număr — 24.11.2026
+
+**IMPLEMENTAT LOCAL.** La renumerotarea celui mai mare număr dintr-o serie de bonuri sau liste, contorul preia maximul activ rămas. De exemplu, după schimbarea ultimei liste din 10 în 9, următorul număr automat este 10. Proba în aplicație și publicarea sunt în așteptare. [Worklog VC24-03](../docs/worklog/SLICE-VC24-03-contor-dupa-renumerotare.md).
+
+## SLICE-VC24-02 — Afișarea numărului propus la Liste Alimente — 24.11.2026
+
+**IMPLEMENTAT LOCAL.** În lista nouă, **Număr listă** afișează următorul număr orientativ din seria gestiunii și a exercițiului. Cu câmpul gol, serverul atribuie numărul final la salvare. Proba în aplicație și publicarea sunt în așteptare. [Worklog VC24-02](../docs/worklog/SLICE-VC24-02-afisare-numar-propus-lista-alimente.md).
+
+## SLICE-VC20-03 — Numerotare și selecție produse la Bonuri Retur — 24.11.2026
+
+**IMPLEMENTAT LOCAL.** La un retur nou, **Număr BX** se completează la alegerea bonului de origine și se recalculează la schimbarea datei, în ordinea cronologică a seriei. Produsele se pot selecta direct din listă, iar cursorul trece la **Cantitate**. Teste nerulate și nepublicat. [Worklog VC20-03](../docs/worklog/SLICE-VC20-03-numerotare-si-selectie-produse-retur.md).
+
+## SLICE-VC24-01 — Număr listă de alimente și retur din BC asociat — 20.11.2026
+
+**IMPLEMENTAT LOCAL.** În arborele listelor salvate, **Modifică număr** verifică unicitatea și ordinea datelor în exercițiul deschis. Selectorul de retur include și BC-urile asociate listelor. Salvarea BX actualizează consumul net al listei și soldurile de depășiri și economii de la lista afectată încolo. Nereprodus în aplicație și nepublicat. [Worklog VC24-01](../docs/worklog/SLICE-VC24-01-numar-lista-alimente-si-retur.md).
+
+## SLICE-VC23-01 — Mesajul despre numărul NIR/FCS se actualizează la schimbarea datei sau a numărului — 19.11.2026
+
+**IMPLEMENTAT LOCAL.** Mesajul roșu din bara de stare a machetei NIR/FCS («Numărul trebuie să fie mai mare decât …») dispare acum la prima verificare reușită a numărului: după schimbarea datei (NIR sau factură) ori după corectarea numărului. Alte erori din bara de stare nu sunt atinse. Serverul neschimbat. Verificat doar sintaxa JS; nevăzut pe ecran, nepublicat. [Worklog VC23-01](../docs/worklog/SLICE-VC23-01-mesaj-numar-nir-se-actualizeaza.md).
+
+## SLICE-VC22-01 — Golire gestiune OI/MF: bonuri PTC + consumuri + NIR (KBotAdmin › Comenzi) — 18.11.2026
+
+**IMPLEMENTAT LOCAL.** O comandă nouă sub VERCON, «Golire gestiune OI/MF»: se scriu anii în casetă, «Rulează» face analiza (doar citire: numără pe tabelă, spune ce oprește), iar dacă totul e în regulă butonul devine «Rulează ștergerea» (confirmare, o tranzacție, Jurnal). Șterge pentru o gestiune OI/MF, în toți anii sau în anii aleși: BP/BT/BS cu registrul OI, toate consumurile (BC, BR) și NIR-urile cu legăturile lor (inclusiv E-Factura); contoarele goale revin la 0. Verificat doar `py_compile` și build KBotAdmin; **nerulat pe nicio bază**, nepublicat. [Worklog VC22-01](../docs/worklog/SLICE-VC22-01-golire-gestiune-oi-mf.md).
+
+## SLICE-VC21-01 — Clase comune de butoane OK1 / Cancel / OK2 — 18.11.2026
+
+**IMPLEMENTAT LOCAL.** Componentul `static/js/components/dialog-button/` (CSS + JS): trei roluri cu etichetă configurabilă — OK1 (acțiunea principală, fundal plin), Cancel (renunțare / închidere, neutru), OK2 (acțiune suplimentară, contur accent); rând `.k-dialog-buttons` cu Cancel în stânga și OK1 în dreapta; teme light/dark. Montat în fereastra «Produs din eFactura» («Renunță» = Cancel, «Salvează» = OK1) și în toate mesajele din `confirm-box.js` (confirmare, motiv, număr, notificare, alegere; cele pornite de grile): «Nu» = Cancel, «Da» = OK1, acțiunea suplimentară din notificare = OK2; avertizările păstrează butonul principal roșu. `confirm-box.js` / `confirm-box.css` încă neînregistrate pentru publicare. Verificat doar sintaxa JS; nevăzut pe ecran, nepublicat. [Worklog VC21-01](../docs/worklog/SLICE-VC21-01-butoane-ok1-ok2-cancel.md).
+
+## SLICE-VC20-02 — Bon de retur: «+» în arbore și editare pe loc ca la BC / FCS — 18.11.2026
+
+**IMPLEMENTAT LOCAL.** La Bonuri de retur: «+» în antetul arborelui; returul se editează în pagină (nu popup), cu «Bonul returnat» combo cu tastare (doar bonurile cu produse de returnat, fără cele de pe liste de alimente), tabel clasic cu rând gol ca la FCS, fără «+ Adaugă rând» și «Previzualizează»; în arbore, grupările și «Modifică număr» ca la BC. Verificat doar sintaxa; nevăzut pe ecran, nepublicat. [Worklog VC20-02](../docs/worklog/SLICE-VC20-02-br-plus-in-antetul-arborelui.md).
+
+## SLICE-VC20-01 — Adăugarea furnizorilor (ANAF) în macheta Furnizori și furnizorul nou din e-Factura — 18.11.2026
+
+**IMPLEMENTAT LOCAL.** În Configurări → Furnizori (Parteneri), «+» lângă titlul formularului: formularul se golește, lista se dezactivează, Cod partener primește următorul cod liber, iar la pierderea focusului din Cod fiscal se verifică duplicatul (toate unitățile clientului) și datele se iau din ANAF; «Renunță» / «Salvează» apar numai după «+». Nu se ating codurile de angajament și soldurile. Contabilul poate trimite la Vercon și o factură de la un furnizor nou; la «NIR din e-Factura…» furnizorul apare ca «(nou)» și se adaugă (ANAF) la salvarea NIR-ului. Prima variantă (pagină separată) a fost retrasă. Verificat doar sintaxa; nerulat în aplicație, nepublicat. [Worklog VC20-01](../docs/worklog/SLICE-VC20-01-adauga-furnizor-anaf.md).
+
+## SLICE-VC16-04 — Schimbă număr NIR din lista documentelor — 17.11.2026
+
+Popup-ul include **Propune Număr**, lângă câmp: cere propunerea pentru data NIR-ului din `receipt_number.py`, prin ruta existentă, și doar completează câmpul. Versiunea curentă a fost confirmată de Adelina prin `$ssh` la 17.11.2026, pentru înregistrare.
+
+**CONFIRMAT DE ADELINA PRIN `$ssh`.** Validarea și atribuirea numerelor NIR/FCS sunt centralizate în `receipt_number.py`, folosit de formular, ciornă, repartizare, salvare, inventar și schimbarea numărului. Vecinii se aleg după cele mai apropiate date: cazul 79 / 17.09 / 81 permite 80. Numărul rămâne editabil; popup-ul nu mai afișează textele despre citirea condițiilor și redeschidere. Algoritmul separat `nir_number.py` și validările paralele au fost eliminate. Agentul nu a rulat teste și nu a publicat. Ștergerea fișierului vechi de pe server rămâne separată de registrul de deployment, care acceptă numai fișiere existente. [Worklog VC16-04](../docs/worklog/SLICE-VC16-04-schimba-numar-nir.md).
+
 ## SLICE-VC16-03 — «Modifică furnizor» la NIR, în orice perioadă — 13.11.2026
 
 **IMPLEMENTAT LOCAL.** Meniul ⋮ al unui NIR oferă «Modifică furnizor»: se schimbă numai furnizorul (și al FCS-urilor recepției și al facturii comune, dacă nu o folosesc alte recepții), inclusiv într-un exercițiu închis. Refuzat la NIR anulat, NIR asociat cu eFactură și factură comună partajată. Verificat doar sintaxa; nerulat în aplicație, nepublicat. [Worklog VC16-03](../docs/worklog/SLICE-VC16-03-nir-modifica-furnizor-orice-perioada.md).

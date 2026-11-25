@@ -41,6 +41,7 @@ Partial Class PushFilesView
         tlyDebug = New KBotTableLayoutPanel()
         chkDebugging = New KBotCheckBox()
         btnFinalizeDebug = New KBotButton()
+        btnDeleteMissing = New KBotButton()
         lblDebug = New Label()
         btnScan = New KBotButton()
         btnSend = New KBotButton()
@@ -130,27 +131,35 @@ Partial Class PushFilesView
         tlyDebug.AutoFitToTheme = False
         tlyDebug.Dock = DockStyle.Fill
         tlyDebug.Margin = New Padding(0)
-        tlyDebug.ColumnCount = 3
+        tlyDebug.ColumnCount = 4
         tlyDebug.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 260F))
+        tlyDebug.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 220F))
         tlyDebug.ColumnStyles.Add(New ColumnStyle(SizeType.Absolute, 220F))
         tlyDebug.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
         tlyDebug.RowCount = 1
         tlyDebug.RowStyles.Add(New RowStyle(SizeType.Percent, 100F))
         tlyDebug.Controls.Add(chkDebugging, 0, 0)
         tlyDebug.Controls.Add(btnFinalizeDebug, 1, 0)
-        tlyDebug.Controls.Add(lblDebug, 2, 0)
+        tlyDebug.Controls.Add(btnDeleteMissing, 2, 0)
+        tlyDebug.Controls.Add(lblDebug, 3, 0)
         chkDebugging.Dock = DockStyle.Fill
         chkDebugging.Margin = New Padding(0)
         chkDebugging.Text = "Publicare debugging (fără Git)"
         btnFinalizeDebug.Dock = DockStyle.Fill
         btnFinalizeDebug.Margin = New Padding(0, 2, 6, 6)
         btnFinalizeDebug.Text = "Finalizează debugging"
+        btnDeleteMissing.Dock = DockStyle.Fill
+        btnDeleteMissing.Margin = New Padding(0, 2, 6, 6)
+        btnDeleteMissing.Name = "btnDeleteMissing"
+        btnDeleteMissing.Text = "Șterge de pe server"
         lblDebug.Dock = DockStyle.Fill
         lblDebug.AutoEllipsis = True
         lblDebug.TextAlign = ContentAlignment.MiddleLeft
         lblDebug.Text = "După test: folosiți bifele Debugging pentru finalizare Git; Trimite pentru încărcare."
         tips.SetToolTipHeader(chkDebugging, "Publicare debugging")
         tips.SetToolTipText(chkDebugging, "Trimite toate fișierele bifate fără Git, chiar dacă au slice și motiv. Datele Git existente sunt păstrate. Fără această bifă, fișierele fără informații Git sunt tot publicate fără Git.")
+        tips.SetToolTipHeader(btnDeleteMissing, "Șterge de pe server")
+        tips.SetToolTipText(btnDeleteMissing, "Fișierele cu starea ȘTERS LOCAL au fost publicate debugging de aici, apoi șterse pe acest PC, dar există încă pe server. Butonul le șterge de pe server (după confirmarea listei) și le scoate din evidența debugging, ca să nu mai rămână în listă. Se șterg doar rândurile bifate în coloana Trimite; config.py nu se șterge niciodată. Nu face Git și nu repornește serviciul.")
         tips.SetToolTipHeader(btnFinalizeDebug, "Finalizare debugging — numai Git")
         tips.SetToolTipText(btnFinalizeDebug, "Finalizează fișierele bifate în coloana Debugging, independent de coloana Trimite. La scanare, fișierele din evidența debugging sunt bifate în această coloană; debifați-le pe cele pe care nu doriți să le finalizați. Folosește direct slice-urile și motivele deja înregistrate și face numai Git, fără dialog suplimentar, reîncărcare sau repornire.")
         '
@@ -619,6 +628,7 @@ Partial Class PushFilesView
     Friend WithEvents tlyDebug As KBotTableLayoutPanel
     Friend WithEvents chkDebugging As KBotCheckBox
     Friend WithEvents btnFinalizeDebug As KBotButton
+    Friend WithEvents btnDeleteMissing As KBotButton
     Friend WithEvents lblDebug As Label
     Friend WithEvents btnScan As KBotButton
     Friend WithEvents btnSend As KBotButton

@@ -4,6 +4,7 @@
 // proposed (ticked in «Categorie / cont») and the lines WITHOUT a product (the Administrator picks the product of each). Nothing is saved here: the NIR
 // is saved by the editor, and its body carries `efactura` so the server closes the sending in the same transaction.
 import { pickEfactura } from './efactura-queue-dialog.js';
+import { markNewSupplier } from './supplier-new.js';
 
 export function efacturaIntake({ api, sel }) {
   const read = (path, extra = {}) => api(`/api/vercon/doc/nir/efactura${path}?${new URLSearchParams(Object.entries({ ...sel(), ...extra }).filter(([, value]) => value != null && value !== ''))}`);
@@ -13,9 +14,12 @@ export function efacturaIntake({ api, sel }) {
 
   // Puts the invoice in the draft. `zec` = the decimals of the gestiune is not needed: prices and quantities are copied as the invoice wrote them.
   // Returns the accounts that could NOT be ticked (an account of a gestiune this context does not offer): the page says so.
-  function apply(detail, { draft, allocation, newLine }) {
+  function apply(detail, { draft, allocation, newLine, lookups }) {
     const header = draft.header;
     header.CodFiscal = detail.partner ? detail.partner.cf : null;
+    // VC20-01: a supplier that is not in the list yet is added (ANAF data) when the NIR is saved
+    draft.newSupplier = null;
+    if (!detail.partner && markNewSupplier(draft, lookups, detail)) header.CodFiscal = draft.newSupplier.cf;
     header.NrFact = detail.number || '';
     header.DataFc = detail.date || header.DataFc;
     header.Valoare = detail.total;

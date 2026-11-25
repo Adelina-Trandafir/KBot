@@ -8,6 +8,8 @@ Public Enum PushState
     Modified
     Identical
     AwaitingGit
+    ''' <summary>ME01-38: published debugging from here, deleted locally, still on the server.</summary>
+    DeletedLocally
 End Enum
 
 ''' <summary>One local file that is allowed to be pushed, compared with the server.</summary>
@@ -215,9 +217,13 @@ Public NotInheritable Class PushService
                 If k_scanned.Contains(k_debugEntry.path) Then Continue For
                 Dim k_remoteEntry As RemoteEntry = Nothing
                 Dim k_hasRemote As Boolean = k_listing IsNot Nothing AndAlso k_listing.TryGetValue(k_debugEntry.path, k_remoteEntry)
+                Dim k_localPath As String = Path.Combine(k_localRoot, k_debugEntry.path)
+                ' ME01-38: gone locally but still on the server (current_sha256 is set) -> offered for removal from the server.
+                Dim k_deletedLocally As Boolean = k_debugEntry.current_sha256 <> String.Empty AndAlso Not File.Exists(k_localPath) AndAlso
+                    Not IsIgnored(k_settings, k_ignoreFile, k_debugEntry.path)   ' .pushignore wins: never offered for deletion
                 k_result.Files.Add(New PushFile With {.RelativePath = k_debugEntry.path,
-                    .LocalFullPath = Path.Combine(k_localRoot, k_debugEntry.path), .RemotePath = k_remoteRoot & "/" & k_debugEntry.path,
-                    .DebugHash = k_debugEntry.sha256, .State = PushState.AwaitingGit,
+                    .LocalFullPath = k_localPath, .RemotePath = k_remoteRoot & "/" & k_debugEntry.path,
+                    .DebugHash = k_debugEntry.sha256, .State = If(k_deletedLocally, PushState.DeletedLocally, PushState.AwaitingGit),
                     .RemoteSize = If(k_hasRemote, k_remoteEntry.Size, 0),
                     .RemoteMtimeUtc = If(k_hasRemote, k_remoteEntry.MtimeUtc, DateTime.MinValue)})
             Next
@@ -246,6 +252,17 @@ Public NotInheritable Class PushService
             GlobalErrorLog.Write("PushService.Scan", ex)
             Throw
         End Try
+    End Function
+
+    ''' <summary>
+    ''' ME01-38. True when .pushignore (or, with no .pushignore rule for the path, the fixed ignore list) holds the
+    ''' file back. A file held back is NEVER deleted from the server, whatever else says it is gone locally.
+    ''' </summary>
+    Public Shared Function IsIgnored(k_settings As AdminSettings, k_ignoreFile As PushIgnore, k_relativePath As String) As Boolean
+        Dim k_rel As String = k_relativePath.Replace("\"c, "/"c)
+        Dim k_ruled As Boolean? = k_ignoreFile.Match(k_rel)
+        If k_ruled.HasValue Then Return k_ruled.Value
+        Return FirstMatchingPattern(k_rel, k_settings.IgnorePatterns) <> String.Empty
     End Function
 
     Private Structure RemoteEntry

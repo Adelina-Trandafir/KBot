@@ -15,12 +15,12 @@ Jurnalele și istoria versiunilor nu mai sunt pagini aici: au machetele lor, **�
 versiuni»**, în același grup al ribbonului — [Jurnal activitate](topic:contabil.jurnal),
 [Actualizarea K-BOT](topic:contabil.actualizare).
 
-<!-- capture: setari | caption: Setările, deschise ca pagină a ferestrei principale | goto: setari:aplicatie | redo: 2026-10-13 17:30 | why: 0113 / 0118: setările sunt acum o pagină a ferestrei principale (fără bara de titlu proprie și fără «Închide»), iar paginile «Istoric versiuni» și «Jurnal» au ieșit din lista din stânga; înainte, 0078-14: pagina «Aplicație» are un comutator nou, «Avertizează dacă Adobe e mai vechi de 2025» (sub tutorialul de început); înainte, 000T-07: pagina «Aplicație» are un comutator nou, «Arată tutorialul de început la pornirea K-BOT» (sub turul inițial); înainte, 0100-02: comutatoarele regrupate (Fereastra principală, FOREXE, Avansat) și rândul «Descărcări multiple» (apare doar când unitatea o permite). -->
+<!-- capture: setari | caption: Setările, deschise ca pagină a ferestrei principale | goto: setari:aplicatie | redo: 2026-11-24 18:00 | why: AV08-01: pagina «Aplicație» are o filă nouă, «AVACONT»; înainte, 0113 / 0118: setările sunt acum o pagină a ferestrei principale (fără bara de titlu proprie și fără «Închide»), iar paginile «Istoric versiuni» și «Jurnal» au ieșit din lista din stânga; înainte, 0078-14: pagina «Aplicație» are un comutator nou, «Avertizează dacă Adobe e mai vechi de 2025» (sub tutorialul de început); înainte, 000T-07: pagina «Aplicație» are un comutator nou, «Arată tutorialul de început la pornirea K-BOT» (sub turul inițial); înainte, 0100-02: comutatoarele regrupate (Fereastra principală, FOREXE, Avansat) și rândul «Descărcări multiple» (apare doar când unitatea o permite). -->
 
 | Pagina | Ce găsești |
 |--------|------------|
 | **Informații** | datele sesiunii (utilizator, unitate, an, versiunile K-BOT), **schimbarea parolei** și «Caută actualizări» |
-| **Aplicație** | comutatoarele de zi cu zi și opțiunile listei de angajamente (sortare, coloane) |
+| **Aplicație** | comutatoarele de zi cu zi, opțiunile listei de angajamente (sortare, coloane) și fila **AVACONT** (operațiile contabile) |
 | **FOREXE** | certificatul memorat, mini-meniul din pagina FOREXE, testul de viteză și timpii de așteptare ai robotului — mai jos |
 | **Descărcări multiple** | **apare doar dacă unitatea permite descărcarea pe mai multe taburi** — câte angajamente se descarcă deodată și actualizarea la conectare — [Mai multe descărcări deodată](topic:contabil.forexe.descarcare-multipla) |
 | **Extrase** | coloanele grilelor de extrase — vezi [Extrase de cont](topic:contabil.vederi.extrase) |
@@ -76,6 +76,14 @@ Din grupul **Fereastra principală**:
   mai vechi sau neoriginal pot apărea mesaje de eroare la completarea sau la semnarea documentelor.
   În fereastra avertismentului, **«Da»** la întrebarea «Vrei să nu mai primești acest avertisment?»
   îl oprește (debifează comutatorul), iar **«Nu»** îl lasă. Îl bifezi din nou de aici.
+
+## Pagina «Aplicație»: fila «AVACONT»
+<!-- slice: AV08-01, 0000-182 -->
+
+Fila **AVACONT** are, la **«Operații contabile»**, bifa **«Protecție operații»** (pusă la început). Cu ea pusă, în
+[Notă manuală și Modifică operație](topic:contabil.nomenclatoare.nota-manuala) lista de conturi arată doar conturile potrivite
+clasificației alese, iar salvarea refuză un cont nepotrivit; debifată, poți alege orice cont al subunității. Bifa e a ta:
+fiecare utilizator are bifa lui.
 
 ## Pagina «FOREXE»: mini-meniul din pagină
 <!-- slice: 0097-02 -->

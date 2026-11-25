@@ -21,6 +21,7 @@ Partial Class SetariAplicatieView
         Dim KBotNavItem1 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem2 As KBotNavItem = New KBotNavItem()
         Dim KBotNavItem3 As KBotNavItem = New KBotNavItem()
+        Dim KBotNavItem4 As KBotNavItem = New KBotNavItem()
         tips = New KBotToolTip(components)
         cboVerbose = New KBotComboBox()
         chkLogViewer = New CheckBox()
@@ -78,6 +79,9 @@ Partial Class SetariAplicatieView
         lblColoaneData = New Label()
         lblLatimeCod = New Label()
         lblLatimeSurse = New Label()
+        tlyPaginaAvacont = New KBotTableLayoutPanel()
+        lblTitluAvacont = New Label()
+        chkProtectieOperatii = New CheckBox()
         CType(navPagini, ComponentModel.ISupportInitialize).BeginInit()
         tlyGenerale.SuspendLayout()
         tlyComutatoare.SuspendLayout()
@@ -85,6 +89,7 @@ Partial Class SetariAplicatieView
         tlyDocumente.SuspendLayout()
         tlyPaginaKbot.SuspendLayout()
         tlyArbore.SuspendLayout()
+        tlyPaginaAvacont.SuspendLayout()
         SuspendLayout()
         '
         ' cboVerbose
@@ -572,7 +577,11 @@ Partial Class SetariAplicatieView
         KBotNavItem3.Text = "KBOT"
         navPagini.Items.Add(KBotNavItem1)
         navPagini.Items.Add(KBotNavItem2)
+        KBotNavItem4.Image = My.Resources.Resources.cells
+        KBotNavItem4.Key = "avacont"
+        KBotNavItem4.Text = "AVACONT"
         navPagini.Items.Add(KBotNavItem3)
+        navPagini.Items.Add(KBotNavItem4)
         navPagini.Location = New Point(0, 0)
         navPagini.Margin = New Padding(0)
         navPagini.Name = "navPagini"
@@ -929,6 +938,50 @@ Partial Class SetariAplicatieView
         tips.SetToolTipHeader(txtLatimeSurse, "Lățimea coloanei SURSE")
         tips.SetToolTipText(txtLatimeSurse, "În pixeli la 100% (se mărește singură pe ecranele scalate)." & vbLf & "Între 30 și 600. Se salvează la Enter sau când ieși din câmp.")
         '
+        ' tlyPaginaAvacont
+        '
+        tlyPaginaAvacont.AutoScroll = True
+        tlyPaginaAvacont.ColumnCount = 1
+        tlyPaginaAvacont.ColumnStyles.Add(New ColumnStyle(SizeType.Percent, 100F))
+        tlyPaginaAvacont.Controls.Add(lblTitluAvacont, 0, 0)
+        tlyPaginaAvacont.Controls.Add(chkProtectieOperatii, 0, 1)
+        tlyPaginaAvacont.Dock = DockStyle.Fill
+        tlyPaginaAvacont.Location = New Point(0, 60)
+        tlyPaginaAvacont.Margin = New Padding(0)
+        tlyPaginaAvacont.Name = "tlyPaginaAvacont"
+        tlyPaginaAvacont.Padding = New Padding(24, 18, 24, 18)
+        tlyPaginaAvacont.RowCount = 3
+        tlyPaginaAvacont.RowStyles.Add(New RowStyle())
+        tlyPaginaAvacont.RowStyles.Add(New RowStyle())
+        tlyPaginaAvacont.RowStyles.Add(New RowStyle(SizeType.Absolute, 20F))
+        tlyPaginaAvacont.Size = New Size(960, 397)
+        tlyPaginaAvacont.TabIndex = 4
+        tlyPaginaAvacont.Visible = False
+        '
+        ' lblTitluAvacont
+        '
+        lblTitluAvacont.AutoSize = True
+        lblTitluAvacont.Font = New Font("Segoe UI Semibold", 12F)
+        lblTitluAvacont.Location = New Point(28, 18)
+        lblTitluAvacont.Margin = New Padding(4, 0, 4, 8)
+        lblTitluAvacont.Name = "lblTitluAvacont"
+        lblTitluAvacont.Size = New Size(222, 32)
+        lblTitluAvacont.TabIndex = 0
+        lblTitluAvacont.Text = "Operații contabile"
+        '
+        ' chkProtectieOperatii
+        '
+        chkProtectieOperatii.AutoSize = True
+        chkProtectieOperatii.Location = New Point(28, 58)
+        chkProtectieOperatii.Margin = New Padding(4, 0, 4, 10)
+        chkProtectieOperatii.Name = "chkProtectieOperatii"
+        chkProtectieOperatii.Size = New Size(209, 26)
+        chkProtectieOperatii.TabIndex = 1
+        chkProtectieOperatii.Text = "Protecție operații"
+        tips.SetToolTipHeader(chkProtectieOperatii, "Protecție operații")
+        tips.SetToolTipText(chkProtectieOperatii, "Bifat: în nota manuală și la modificarea unei operații, lista de conturi arată doar conturile potrivite clasificației alese, iar salvarea refuză un cont nepotrivit." & vbLf & "Debifat: se pot alege toate conturile subunității." & vbLf & "Nu se aplică operațiilor de închidere.")
+        chkProtectieOperatii.UseVisualStyleBackColor = True
+        '
         ' SetariAplicatieView
         '
         AutoScaleDimensions = New SizeF(144F, 144F)
@@ -936,6 +989,7 @@ Partial Class SetariAplicatieView
         Controls.Add(tlyGenerale)
         Controls.Add(tlyPaginaDocumente)
         Controls.Add(tlyPaginaKbot)
+        Controls.Add(tlyPaginaAvacont)
         Controls.Add(navPagini)
         Name = "SetariAplicatieView"
         Size = New Size(960, 457)
@@ -952,6 +1006,8 @@ Partial Class SetariAplicatieView
         tlyPaginaKbot.PerformLayout()
         tlyArbore.ResumeLayout(False)
         tlyArbore.PerformLayout()
+        tlyPaginaAvacont.ResumeLayout(False)
+        tlyPaginaAvacont.PerformLayout()
         ResumeLayout(False)
     End Sub
 
@@ -1012,4 +1068,7 @@ Partial Class SetariAplicatieView
     Friend WithEvents txtLatimeCod As KBotTextField
     Friend WithEvents lblLatimeSurse As Label
     Friend WithEvents txtLatimeSurse As KBotTextField
+    Friend WithEvents tlyPaginaAvacont As KBotTableLayoutPanel
+    Friend WithEvents lblTitluAvacont As Label
+    Friend WithEvents chkProtectieOperatii As CheckBox
 End Class

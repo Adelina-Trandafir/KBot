@@ -9,82 +9,6 @@ Imports System.Text
 Public Class CommandsView
     Implements IAdminView
 
-    Private Const MaxColumnWidth As Integer = 60
-
-    ' Repair buttons use the count in each check's summary, tied to the selected command/database.
-    Private Const SignCheckName As String = "oi_semne"
-    Private Const SignRepairName As String = "oi_semne_repara"
-    Private Const SignBlockTitle As String = "Semne diferite"
-    Private Const RepairableColumn As String = "cu cantitate negativa"
-    Private Const StornoCheckName As String = "storno_preturi"
-    Private Const StornoRepairName As String = "storno_preturi_repara"
-    Private Const StornoBlockTitle As String = "Preturi storno si retur VERCON - sumar"
-
-    ' The FX_DDF check finds, the «Explică» button (and the code box) explains ONE code. Both only read.
-    Private Const DdfCheckName As String = "ddf_antete"
-    Private Const DdfExplainName As String = "ddf_antete_explica"
-    Private Const DdfRepairName As String = "ddf_antete_repara"
-    Private Const DdfBlockTitle As String = "Documente de fundamentare (FX_DDF) - sumar"
-    Private Const DdfCountColumn As String = "cazuri"
-    Private Const DdfConclusionTitle As String = "Concluzie pentru "
-    Private Const DdfRepairableMark As String = "REPARABIL"
-
-    ' The reception-chain check finds, the «Repară recepțiile» button repairs ONE code (two steps, no explain in between:
-    ' the check's detail already says what each repairable case will do).
-    Private Const LanturiCheckName As String = "receptii_lanturi"
-    Private Const LanturiRepairName As String = "receptii_lanturi_repara"
-    Private Const LanturiBlockTitle As String = "Lanturi de receptii (instantanee) - sumar"
-    Private Const LanturiRepairableColumn As String = "reparabile"
-
-    ' Duplicate Clasificatii: the check lists them, «Repara» deletes the ones no other table holds (the repair command only exists behind the button).
-    Private Const ClsfDupCheckName As String = "clasificatii_dubluri"
-    Private Const ClsfDupRepairName As String = "clasificatii_dubluri_repara"
-    Private Const ClsfDupBlockTitle As String = "Clasificatii dublate - sumar"
-
-    ' The wipe of a wrongly migrated VERCON database (slice ME01-16): the typed value must be the database name.
-    Private Const WipeCommandName As String = "vercon_golire"
-    ' Archives and deletes the documents annulled before VC14-04 (they leave the trees, their numbers are free); the typed value must be the database name.
-    Private Const ArchiveCancelledName As String = "vercon_arhiva_anulate"
-    ' The same wipe for the accounting data of Avacont (TZ_ + the links of the invoices to their operations): the typed value must be the database name.
-    Private Const AvacontWipeCommandName As String = "avacont_golire"
-    Private Const DeleteBcName As String = "vercon_bc_sterge"
-    Private Const PreviewDeleteBcName As String = "vercon_bc_analiza_stergerii"
-    Private Const DeletedBcTitle As String = "Bon de consum șters"
-
-    ' Deleting ONE angajament with everything the FX_ tables hold (EF_ untouched); the typed value is the code.
-    ' The analysis (read only) finds what would go; «Șterge angajamentul» deletes it for that code (the delete command only exists behind the button).
-    Private Const AngAnalysisName As String = "angajament_analiza"
-    Private Const DeleteAngName As String = "angajament_stergere"
-    Private Const AngAnalysisBlockTitle As String = "Stergere angajament - analiza"
-    Private Const AngAnalysisCountColumn As String = "randuri de sters"
-
-    ' Commands that only exist behind a button, never in the list.
-    Private Shared ReadOnly HiddenCommands As New HashSet(Of String)(StringComparer.Ordinal) From {DdfExplainName, DdfRepairName, LanturiRepairName, ClsfDupRepairName, DeleteAngName, PreviewDeleteBcName}
-
-    ' ADECHIT: everything the unit database holds about ONE child, asked by CNP (slice ME03-01); read only, several blocks.
-    Private Const AdechitChildName As String = "adechit_copil"
-
-    ' The roots of the command list, in the order they are shown. A command is listed under the application it works for; the server
-    ' does not say which, so the table below does (a command it does not name goes under NoAppRoot).
-    Private Const NoAppRoot As String = "_FARA APLICATIE"
-    Private Shared ReadOnly AppRoots As String() = {"VERCON", "FOREXE", "AVACONT", "ADECHIT", NoAppRoot}
-    Private Shared ReadOnly CommandApps As New Dictionary(Of String, String)(StringComparer.Ordinal) From {
-        {"profil_produs", "VERCON"},
-        {AdechitChildName, "ADECHIT"},
-        {WipeCommandName, "VERCON"},
-        {ArchiveCancelledName, "VERCON"},
-        {DeleteBcName, "VERCON"},
-        {AvacontWipeCommandName, "AVACONT"},
-        {SignCheckName, "VERCON"},
-        {SignRepairName, "VERCON"},
-        {StornoCheckName, "VERCON"},
-        {StornoRepairName, "VERCON"},
-        {"fisa_angajament", "FOREXE"},
-        {AngAnalysisName, "FOREXE"},
-        {DeleteAngName, "FOREXE"},
-        {DdfCheckName, "FOREXE"},
-        {LanturiCheckName, "FOREXE"}
-    }
 
     Private _context As AdminContext
     Private _commands As New List(Of CommandInfo)()
@@ -99,31 +23,24 @@ Public Class CommandsView
     Private _delName As String = String.Empty
     Private _bonDb As String = String.Empty
     Private _bonParam As String = String.Empty
-
-    ' One bon the deletion search found: Key = SubunitId/GestiuneId/ExercitiuId/IdBonConsum, the same identifier the server accepts as «ID Key».
-    Private NotInheritable Class BonChoice
-        Public ReadOnly Key As String
-        Public ReadOnly Caption As String
-
-        Public Sub New(k_key As String, k_caption As String)
-            Key = k_key
-            Caption = k_caption
-        End Sub
-
-        Public ReadOnly Property Selector As String
-            Get
-                Return "ID " & Key
-            End Get
-        End Property
-
-        Public Overrides Function ToString() As String
-            Return Caption
-        End Function
-    End Class
+    Private _moveDb As String = String.Empty
+    Private _moveParam As String = String.Empty
+    Private _moveFrom As String = String.Empty
+    Private _moveTo As String = String.Empty
+    Private _moveDest As String = String.Empty
+    Private _fillingMove As Boolean
+    Private _partnerDb As String = String.Empty
+    Private _runText As String = String.Empty
+    Private _oiDb As String = String.Empty
+    Private _oiParam As String = String.Empty
+    Private _oiToken As String = String.Empty
+    Private _oiLabel As String = String.Empty
 
     Public Sub New()
         InitializeComponent()
+        _runText = btnRun.Text
         HideBon()
+        HideMove()
     End Sub
 
     Public Sub Attach(k_context As AdminContext) Implements IAdminView.Attach
@@ -164,32 +81,6 @@ Public Class CommandsView
         ShowTarget()
     End Sub
 
-    ' What to expect from each command, by the name the server gives it (verb «commands»). A command the server adds later and this list
-    ' does not know falls back to the generic sentence below.
-    Private Shared ReadOnly Expectations As New Dictionary(Of String, String)(StringComparer.Ordinal) From {
-        {DeleteBcName, "Alegeți o bază și scrieți numărul bonului (de exemplu BC 123) sau ID-ul afișat în rezultat. «Rulează» caută bonurile cu acel număr și le pune într-o listă (data, gestiunea, exercițiul, contul, valoarea) sub bara de comenzi; nu șterge nimic. Alegeți din listă bonul dorit și apăsați «Șterge bonul»: se șterge DOAR el. După confirmare, antetul și pozițiile se șterg definitiv, într-o singură tranzacție, cu înregistrare în Jurnal. Bonul poate fi activ sau anulat. Dacă are retur, este asociat unei liste de alimente, provine dintr-un bon de predare sau exercițiul este închis, ștergerea este oprită."},
-        {LanturiCheckName, "Caută în baza aleasă recepțiile al căror ultim instantaneu nu are valoarea recepției (aceleași cazuri pe care le oprește garda din fereastra de asociere) și le desparte pe cauze: instantaneu așezat pe altă recepție (numele lui e numele altei recepții a angajamentului), recepție rescrisă de gemena ei din aceeași zi (are valorile gemenei, iar lanțul ei, neatins, spune altceva) și alte cazuri, care doar se listează. Rezultatul: un sumar cu câte cazuri sunt din fiecare fel și câte sunt reparabile automat, apoi o listă cu fiecare caz și cu ce s-ar face. Dacă există cazuri reparabile apar caseta pentru codul angajamentului și butonul «Repară recepțiile»: scrieți un cod din listă și apăsați-l. Repararea mută instantaneele pe recepția lor sau pune recepția la valorile din lanțul ei, recalculează diferențele și mută cifrele salvate (total recepții, rămas) ale ordonanțărilor afectate, ca ele să se listeze din nou, nu să se genereze din nou; într-o singură tranzacție, cu Jurnal. Verificarea doar citește și cere o singură bază."},
-        {DdfCheckName, "Caută în baza aleasă documentele de fundamentare care par greșite: coduri cu mai multe antete FX_DDF (editorul refuză atunci să salveze reviziile), angajamente care arată spre un document care nu e al lor, numere de revizie folosite de două ori în același document și revizii care poartă alt cod decât documentul lor. Rezultatul: un sumar cu câte cazuri sunt din fiecare fel și o listă cu fiecare caz. Sumar cu zero peste tot înseamnă că nu e nimic de semnalat. Dacă apar cazuri, apar caseta pentru codul angajamentului și butonul «Explică»: scrieți un cod din listă și vedeți ce are baza pentru el și ce ar strica ștergerea fiecărui antet (reviziile, rezervările și celelalte rânduri care ar dispărea odată cu el). Verificarea doar citește și cere o singură bază."},
-        {StornoCheckName, "Verifică prețurile cu TVA ale tuturor liniilor storno și bonurilor de retur din baza selectată, în toate gestiunile și exercițiile. Arată sumarul pe gestiune și tip, apoi fiecare diferență cu produsul, documentul, prețul actual și cel propus. Sunt reparabile liniile migrate, nemodificate și active, la care prețul întreg corespunde rotunjirii Access a prețului variantei din aceeași gestiune. Celelalte diferențe rămân pentru analiză. Dacă există cazuri reparabile, apare butonul «Repară», care le corectează pe toate în baza selectată. Verificarea doar citește și cere o singură bază."},
-        {StornoRepairName, "Repară toate cazurile eligibile de preț rotunjit la storno și bonuri de retur în baza selectată. Reface verificarea înainte să scrie, recuperează prețul cu TVA din varianta aceleiași gestiuni și actualizează reviziile liniilor și documentelor. Nu adaugă încă o dată TVA și păstrează cantitățile și valorile din antete. Corecțiile au audit cu prețul vechi/nou și o înregistrare în Jurnal; operația este într-o singură tranzacție pentru ambele tipuri. La sfârșit arată liniile corectate și diferențele rămase pentru analiză. Nu se rulează pe <TOATE BAZELE>."},
-        {ClsfDupCheckName, "Caută în tabela Clasificatii a bazei alese rândurile repetate (aceeași unitate și același cod Capitol.Subcapitol.Articol.Alineat), de exemplu după ce clasificațiile au fost transferate de mai multe ori. Pentru fiecare rând arată de ce alte tabele este legat (orice coloană IdClsf și orice cheie străină spre Clasificatii) și ce s-ar face cu el: «RAMANE - legat», «RAMANE - nelegat, pastrat din grup», sau «SE STERGE». O legătură doar din Clasificatii_Rectificari sau Clasificatii_Buget nu oprește ștergerea (rândul se șterge odată cu rândurile lui de acolo); o legătură din FX_, EF_ sau orice altă tabelă o oprește. Rezultatul: un sumar (câte grupuri, câte rânduri sunt reparabile, adică nelegate de nimic) și lista rândurilor. Dacă există rânduri reparabile apare butonul «Repară», care șterge DOAR dublurile nelegate, într-o singură tranzacție, cu Jurnal; un grup fără niciun rând legat păstrează unul. Grupurile cu mai multe rânduri legate nu se ating, se analizează de mână. Verificarea doar citește și se poate rula și pe <TOATE BAZELE>; repararea merge pe o bază anume."},
-        {AngAnalysisName, "Arată, pentru codul scris în casetă, ce angajament este (denumirea, descrierea, obiectul și partenerul documentului de fundamentare, starea) și ce s-ar șterge din baza aleasă, tabelă cu tabelă: indicatorii și istoricul, documentele de fundamentare cu reviziile, PDF-urile și rezervările lor, recepțiile, plățile și operațiunile, ordonanțările cu părțile și PDF-urile lor, numerele blocate și corecțiile lui din notele CAB (nota însăși rămâne dacă o mai folosește alt angajament). Spune și ce rămâne: tabelele EF_ (facturile primite) nu se ating; singura excepție inevitabilă sunt legăturile factură–document de fundamentare alese de mână, care pleacă odată cu documentul și rămân scrise în Jurnal; Clasificațiile, partenerii, legăturile Parteneri_Angajamente și extrasele rămân. Analiza doar citește. Dacă codul există, apare butonul «Șterge angajamentul», care cere confirmare cu denumirea și șterge exact ce ați văzut, într-o singură tranzacție (dacă ceva nu merge, nu se șterge nimic); nu se poate anula. Cere o singură bază."},
-        {"ping", "Un singur rând pe bază: versiunea MariaDB, contul cu care s-a conectat serverul, charset-ul și collation-ul bazei și timpul de răspuns. Normal: charset utf8mb3, collation utf8mb3_general_ci, un timp de răspuns de câteva zeci de milisecunde. Altceva, sau sute de milisecunde, merită verificat."},
-        {"tables", "Lista tuturor tabelelor bazei, cele mai mari primele, cu mărimea în MB, motorul și collation-ul. Numărul de rânduri e doar estimat de server, nu exact. Se citește, nu se schimbă nimic."},
-        {"counts", "Numărul exact de rânduri al fiecărei tabele. Tabelele de peste 3 milioane de rânduri rămân pe estimare (nota de sub rezultat spune câte). Pe baze mari poate dura câteva secunde."},
-        {"processlist", "Conexiunile deschise acum pe bază: cine, în ce stare, de câte secunde și ce comandă rulează. Normal: puține rânduri. Multe rânduri cu timp mare arată conexiuni rămase agățate."},
-        {"journal", "Ultimele 50 de intrări din Jurnal pentru baza aleasă (cont, acțiune, țintă, rezultat), cele mai noi primele."},
-        {"activity", "Pentru fiecare cont al bazei: ultima acțiune și numărul de acțiuni din Jurnal. Un cont care lipsește din listă nu a făcut nimic înregistrat."},
-        {"charset", "Rezultatul bun este LISTA GOALĂ (nota spune că totul este utf8mb3_general_ci). Fiecare rând apărut este o coloană cu alt collation și trebuie corectată."},
-        {"analyze", "Rulează ANALYZE TABLE pe fiecare tabelă: se reînnoiesc doar statisticile, datele rămân neschimbate. Fiecare tabelă ar trebui să răspundă «OK». Cere confirmare, fiindcă scrie în statistici; pe baze mari poate dura."},
-        {"fisa_angajament", "Un tabel cu tot ce știe baza despre angajamentul scris: întâi rândurile DIAG (verificările calculate), apoi rândurile brute din toate tabelele. Cere o bază anume și codul angajamentului; nu merge pe <TOATE BAZELE>. Rândurile nu se trunchiază, ca rezultatul să poată fi copiat."},
-        {"oi_semne_repara", "Corectează în registrul OI al bazei alese rândurile cu cantitate negativă și valoare pozitivă: valoarea devine negativă, ca cantitatea. Rândurile cu cantitate pozitivă și valoare negativă nu se ating, rămân în rezultat. SCRIE în baza aleasă, cere confirmare, notează în Jurnal și arată apoi ce a mai rămas. Merge doar pe o bază anume. În mod obișnuit nu se alege de aici: butonul «Repară» apare singur după «Semne greșite»."},
-        {"oi_semne", "Caută în registrul OI (VC_OI_Produse) rândurile la care cantitatea și valoarea au semne diferite, de exemplu cantitate -1 și valoare +184,99. Rezultatul: pe fiecare gestiune, câte rânduri sunt, la câte produse, pe ce fel de bon (predare, transfer, casare) și primele numere IDOI. Lista goală înseamnă că nu e nimic de corectat. Se poate rula pe <TOATE BAZELE>; o bază fără tabelele VERCON o spune și trece mai departe. Se citește, nu se schimbă nimic."},
-        {WipeCommandName, "Șterge TOATE rândurile din tabelele VC_ ale bazei alese (documente, produse, gestiuni, exerciții, subunități, setări, numerotare, markerii de import) și din tabelele de trimitere spre Vercon ale facturilor primite (EF_PrimiteVercon*, EF_VERCON_*), ca baza să poată fi migrată din nou. Structura tabelelor rămâne. Partenerii, FX_, AD_ și TZ_ nu se ating. Cere o bază anume (nu <TOATE BAZELE>) și numele ei scris în casetă, ca să nu se golească baza greșită. Rezultatul: câte rânduri au fost în fiecare tabelă și câte au rămas (trebuie să fie 0 peste tot). NU SE POATE ANULA: faceți mai întâi o copie a bazei dacă mai e nevoie de date."},
-        {AvacontWipeCommandName, "Șterge TOATE rândurile din tabelele TZ_ ale bazei alese (note, documente, operații, debit/credit, plan de conturi, solduri inițiale, jurnale, șabloane de operații și de salarii, subunități, OP-uri, OPME, plăți pe facturi, setări) și din tabela EF_PrimiteOperatii (legăturile facturilor primite cu operațiile), ca datele contabile să poată fi migrate din nou de la zero. Structura rămâne. Partenerii, clasificațiile, FX_, AD_, VC_ și restul tabelelor EF_ (facturile primite, liniile și mesajele lor) nu se ating. Nu merge pe AVACONT_SURSA și AVACONT_COMUN, care țin doar structura. Cere o bază anume și numele ei scris în caseta de mai sus. Rezultatul: câte rânduri au fost în fiecare tabelă și câte au rămas (trebuie să fie 0 peste tot). După golire: rulați migrarea (Subunități, Plan de conturi, Jurnale, Șabloane, Operații, Plăți) și importul E-Factura din Access, care pune la loc legăturile facturilor. NU SE POATE ANULA: faceți mai întâi o copie a bazei."},
-        {"profil_produs","Cere o bază anume și IdProdus (numărul variantei produsului din gestiune, nu codul din nomenclator). Rezultatul, de sus în jos: produsul (denumire, cod, preț, câte gestiuni îl au); în ce tabele VC_ apare și câte rânduri; apoi, pe fiecare gestiune, observațiile despre registrul OI (liniile de bon care nu-și găsesc contul în registru, adică exact cazul OI_ACCOUNT_ORIGIN), stocul OI pe deținător și, la urmă, fiecare rând din fiecare tabelă, cu antetul bonului sau NIR-ului lângă el. Se citește, nu se schimbă nimic. Rezultatul se copiază cu butonul de copiere și se poate lipi în conversație."}
-    }
-
     Private Sub ShowTarget()
         btnRepair.Visible = False   ' a result belongs to the database and the command it was run for
         _repairCommand = String.Empty
@@ -199,15 +90,32 @@ Public Class CommandsView
         HideLanturi()
         HideFix()
         HideDelete()
+        HideMove()
         HideBon()
+        HideOiWipe()
+        HidePartner()
         Dim k_target As String = If(_context.IsAll, AdminContext.AllDatabasesCaption, _context.SelectedDb)
         Dim k_command As CommandInfo = CurrentCommand()
         'lblDesc.Text = If(k_command Is Nothing, String.Empty, k_command.Description & "   Țintă: " & k_target)
         txtExplain.Text = If(k_command Is Nothing, String.Empty, ExplainCommand(k_command, k_target))
         ' the typed value exists only for a command that needs it; another choice in the combo makes the box disappear
         Dim k_needsParam As Boolean = k_command IsNot Nothing AndAlso k_command.Param <> String.Empty
-        txtParam.Visible = k_needsParam
+        Dim k_choosesPartner As Boolean = k_command IsNot Nothing AndAlso k_command.Name = PartnerInvoicesName
+        txtParam.Visible = k_needsParam AndAlso Not k_choosesPartner
         If k_needsParam Then txtParam.PlaceholderText = k_command.Param
+        ShowSecondParam(k_command IsNot Nothing AndAlso k_command.Name = MoveListName)
+        If k_choosesPartner Then ShowPartner()
+    End Sub
+
+
+    ''' <summary>The second typed value (the child who receives the payment) exists only for the payment move; without it the first box takes the whole width.</summary>
+    Private Sub ShowSecondParam(k_visible As Boolean)
+        txtParam2.Visible = k_visible
+        If Not k_visible Then txtParam2.Text = String.Empty
+        tlyParam.ColumnStyles(0).SizeType = SizeType.Percent
+        tlyParam.ColumnStyles(0).Width = If(k_visible, 50.0F, 100.0F)
+        tlyParam.ColumnStyles(1).SizeType = If(k_visible, SizeType.Percent, SizeType.Absolute)
+        tlyParam.ColumnStyles(1).Width = If(k_visible, 50.0F, 0.0F)
     End Sub
 
     Private Shared Function ExplainCommand(k_command As CommandInfo, k_target As String) As String
@@ -239,19 +147,43 @@ Public Class CommandsView
             If k_command Is Nothing Then Return
             If k_command.SingleDb AndAlso _context.RequireSingleDb("Comanda «" & k_command.Title & "»") = String.Empty Then Return
             Dim k_param As String = String.Empty
+            Dim k_moveDest As String = txtParam2.Text.Trim()
             If k_command.Param <> String.Empty Then
                 ' a command with a typed value runs on ONE database: refuse «all databases» before anything goes to the server
                 If _context.RequireSingleDb("Comanda «" & k_command.Title & "»") = String.Empty Then Return
-                k_param = txtParam.Text.Trim()
-                If k_param = String.Empty Then
-                    KBotMessage.Show("Scrieți " & k_command.Param.ToLowerInvariant() & ".", "Comenzi", MessageBoxButtons.OK, MessageBoxIcon.Information)
-                    txtParam.Focus()
+                If k_command.Name = PartnerInvoicesName Then
+                    Dim k_partner As PartnerChoice = TryCast(cmbPartener.SelectedItem, PartnerChoice)
+                    If k_partner Is Nothing OrElse Not String.Equals(_partnerDb, _context.SelectedDb, StringComparison.OrdinalIgnoreCase) Then
+                        KBotMessage.Show("Alegeți furnizorul din listă.", "Comenzi", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                        cmbPartener.Focus()
+                        Return
+                    End If
+                    k_param = k_partner.Key
+                Else
+                    k_param = txtParam.Text.Trim()
+                    If k_param = String.Empty Then
+                        KBotMessage.Show("Scrieți " & k_command.Param.ToLowerInvariant() & ".", "Comenzi", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                        txtParam.Focus()
+                        Return
+                    End If
+                End If
+                If k_command.Name = MoveListName AndAlso k_moveDest = String.Empty Then
+                    KBotMessage.Show("Scrieți CNP-ul sau ID-ul copilului care primește plata.", "Comenzi", MessageBoxButtons.OK, MessageBoxIcon.Information)
+                    txtParam2.Focus()
                     Return
                 End If
             End If
             If k_command.Name = DeleteBcName Then
                 Await FindBonsAsync(k_command, _context.SelectedDb, k_param)
                 Return
+            End If
+            If k_command.Name = OiWipeAnalysisName AndAlso _oiToken <> String.Empty Then
+                ' the analysis for exactly this database and this typed value found nothing against the deletion: the button now deletes
+                If String.Equals(_oiDb, _context.SelectedDb, StringComparison.OrdinalIgnoreCase) AndAlso String.Equals(_oiParam, k_param, StringComparison.Ordinal) Then
+                    Await RunOiWipeAsync(k_command)
+                    Return
+                End If
+                HideOiWipe()
             End If
             Dim k_target As String = If(_context.IsAll, "TOATE bazele", "baza " & _context.SelectedDb)
             If k_command.Name = WipeCommandName Then
@@ -283,7 +215,9 @@ Public Class CommandsView
             HideLanturi()
             HideFix()
             HideDelete()
-            txtParam.Visible = k_command.Param <> String.Empty
+            HideMove()
+            HideOiWipe()
+            txtParam.Visible = k_command.Param <> String.Empty AndAlso k_command.Name <> PartnerInvoicesName
             Await UiRun.Guard("CommandsView.BtnRun_Click", _context,
                 Async Function()
                     _context.Say("Se rulează «" & k_command.Title & "» pe " & k_target & "...")
@@ -296,415 +230,12 @@ Public Class CommandsView
                     ConfigureExplain(k_result, k_command.Name, k_db)
                     ConfigureLanturi(k_result, k_command.Name, k_db)
                     ConfigureDelete(k_result, k_command.Name, k_db, k_param)
+                    ConfigureMovePayments(k_result, k_command.Name, k_db, k_moveDest)
+                    ConfigureOiWipe(k_result, k_command.Name, k_db, k_param)
                     _context.Say("Gata.")
                 End Function)
         Catch ex As Exception
             GlobalErrorLog.Write("CommandsView.BtnRun_Click", ex)
-        End Try
-    End Sub
-
-    ''' <summary>«Rulează» on the bon deletion: finds the bons for the typed value and lists them in <c>cmbBon</c>. Deletes NOTHING; the chosen bon is deleted by «Șterge bonul».</summary>
-    Private Async Function FindBonsAsync(k_command As CommandInfo, k_db As String, k_param As String) As Task
-        btnRun.Enabled = False
-        Try
-            HideBon()
-            Await UiRun.Guard("CommandsView.FindBonsAsync", _context,
-                Async Function()
-                    _context.Say("Se caută bonul de consum…")
-                    txtOutput.Text = String.Empty
-                    Dim k_preview As CommandResult = Await _context.Client.CallAsync(Of CommandResult)("command", "--name", PreviewDeleteBcName, "--db", k_db, "--param=" & k_param)
-                    If CurrentCommand() IsNot k_command OrElse _context.SelectedDb <> k_db OrElse txtParam.Text.Trim() <> k_param Then Return
-                    txtOutput.Text = RenderResult(k_preview)
-                    Dim k_found As List(Of BonChoice) = ReadBons(k_preview, k_db)
-                    If k_found.Count = 0 Then
-                        lblState.Text = "Nu s-a găsit niciun bon de consum cu această valoare."
-                    Else
-                        ShowBons(k_found, k_db, k_param)
-                        lblState.Text = If(k_found.Count = 1, "1 bon găsit. Verificați-l și apăsați «Șterge bonul».",
-                                           k_found.Count.ToString(CultureInfo.InvariantCulture) & " bonuri găsite. Alegeți bonul de șters și apăsați «Șterge bonul».")
-                    End If
-                    _context.Say(lblState.Text)
-                End Function)
-        Finally
-            btnRun.Enabled = True
-        End Try
-    End Function
-
-    ''' <summary>The bons of the analysis result: the list block («identificator», «bon») when several matched, the single-bon block when one did. Rows without an identifier are skipped.</summary>
-    Private Shared Function ReadBons(k_result As CommandResult, k_db As String) As List(Of BonChoice)
-        Dim k_found As New List(Of BonChoice)()
-        For Each k_block As CommandBlock In k_result.Blocks
-            If Not String.Equals(k_block.Db, k_db, StringComparison.OrdinalIgnoreCase) Then Continue For
-            Dim k_isList As Boolean = k_block.Columns.Count > 0 AndAlso k_block.Columns(0) = "identificator"
-            For Each k_row As List(Of String) In k_block.Rows
-                If k_row.Count = 0 Then Continue For
-                Dim k_m As System.Text.RegularExpressions.Match = System.Text.RegularExpressions.Regex.Match(k_row(0).Trim(), "ID\s+(\d{1,10}/\d{1,10}/\d{1,10}/\d{1,10})$")
-                If Not k_m.Success Then Continue For
-                Dim k_caption As String = If(k_isList AndAlso k_row.Count > 1, k_row(1) & " | " & k_row(0).Trim(), k_row(0).Trim())
-                k_found.Add(New BonChoice(k_m.Groups(1).Value, k_caption))
-            Next
-        Next
-        Return k_found
-    End Function
-
-    Private Sub ShowBons(k_found As List(Of BonChoice), k_db As String, k_param As String)
-        _bonDb = k_db
-        _bonParam = k_param
-        cmbBon.Items.Clear()
-        For Each k_choice As BonChoice In k_found
-            cmbBon.Items.Add(k_choice)
-        Next
-        ' several bons: nothing is preselected, the operator must pick the one to delete
-        cmbBon.SelectedIndex = If(k_found.Count = 1, 0, -1)
-        tlyBon.Visible = True
-        tlyMain.SetRowCollapsed(1, False)
-    End Sub
-
-    Private Sub HideBon()
-        tlyBon.Visible = False
-        tlyMain.SetRowCollapsed(1, True)
-        cmbBon.Items.Clear()
-        _bonDb = String.Empty
-        _bonParam = String.Empty
-    End Sub
-
-    ''' <summary>Deletes ONLY the bon chosen in <c>cmbBon</c>: the server analysis is repeated for that exact identifier, and the confirmation token it returns must belong to that bon.</summary>
-    Private Async Sub BtnDeleteBon_Click(k_sender As Object, e As EventArgs) Handles btnDeleteBon.Click
-        Try
-            Dim k_db As String = _context.RequireSingleDb("Ștergerea unui bon de consum")
-            If k_db = String.Empty OrElse Not String.Equals(_bonDb, k_db, StringComparison.OrdinalIgnoreCase) Then Return
-            Dim k_command As CommandInfo = CurrentCommand()
-            If k_command Is Nothing OrElse k_command.Name <> DeleteBcName Then Return
-            Dim k_choice As BonChoice = TryCast(cmbBon.SelectedItem, BonChoice)
-            If k_choice Is Nothing Then
-                KBotMessage.Show("Alegeți din listă bonul de șters.", k_command.Title, MessageBoxButtons.OK, MessageBoxIcon.Information)
-                cmbBon.Focus()
-                Return
-            End If
-            btnDeleteBon.Enabled = False
-            Try
-                Await UiRun.Guard("CommandsView.BtnDeleteBon_Click", _context,
-                    Async Function()
-                        _context.Say("Se verifică bonul ales…")
-                        Dim k_preview As CommandResult = Await _context.Client.CallAsync(Of CommandResult)("command", "--name", PreviewDeleteBcName, "--db", k_db, "--param=" & k_choice.Selector)
-                        If CurrentCommand() IsNot k_command OrElse _context.SelectedDb <> k_db OrElse cmbBon.SelectedItem IsNot k_choice Then Return
-                        txtOutput.Text = RenderResult(k_preview)
-                        If k_preview.Blocks.Count <> 1 Then Return
-                        Dim k_match As CommandBlock = k_preview.Blocks(0)
-                        If Not String.Equals(k_match.Db, k_db, StringComparison.OrdinalIgnoreCase) Then Return
-                        If String.IsNullOrEmpty(k_match.ConfirmationToken) Then
-                            lblState.Text = "Bonul ales nu poate fi șters."
-                            KBotMessage.Show(If(k_match.Note <> String.Empty, k_match.Note, "Bonul ales nu a mai fost găsit. Rulați din nou comanda."), k_command.Title, MessageBoxButtons.OK, MessageBoxIcon.Warning)
-                            Return
-                        End If
-                        ' the token is built from the identifier of the bon the server found: it must be the chosen one
-                        If Not k_match.ConfirmationToken.StartsWith(k_choice.Key & "/", StringComparison.Ordinal) Then
-                            lblState.Text = "Serverul a găsit alt bon decât cel ales; nu s-a șters nimic."
-                            Return
-                        End If
-                        If Not UiRun.Confirm("Se șterge definitiv bonul din baza " & k_db & "." & vbLf &
-                                             k_match.ConfirmationLabel & vbLf & vbLf &
-                                             "Operația este ireversibilă. Continuați?", k_command.Title) Then Return
-                        Dim k_result As CommandResult = Await _context.Client.CallAsync(Of CommandResult)("command", "--name", DeleteBcName, "--db", k_db, "--param", k_match.ConfirmationToken)
-                        txtOutput.Text = RenderResult(k_result)
-                        Dim k_deleted As Boolean = k_result.Blocks.Any(Function(k_block) k_block.Title = DeletedBcTitle)
-                        lblState.Text = If(k_deleted, DeletedBcTitle, "Ștergerea nu a fost confirmată de server.")
-                        _context.Say(lblState.Text)
-                        If k_deleted Then
-                            ' the deleted bon leaves the list; the others stay, untouched
-                            cmbBon.Items.Remove(k_choice)
-                            If cmbBon.Items.Count = 0 Then HideBon() Else cmbBon.SelectedIndex = -1
-                        End If
-                    End Function)
-            Finally
-                btnDeleteBon.Enabled = True
-            End Try
-        Catch ex As Exception
-            GlobalErrorLog.Write("CommandsView.BtnDeleteBon_Click", ex)
-        End Try
-    End Sub
-
-    Private Sub HideLanturi()
-        btnLanturi.Visible = False
-        _lanturiDb = String.Empty
-    End Sub
-
-    Private Sub HideDelete()
-        btnDeleteAng.Visible = False
-        _delDb = String.Empty
-        _delCode = String.Empty
-        _delName = String.Empty
-    End Sub
-
-    ''' <summary>After the analysis of ONE code found rows to delete: «Șterge angajamentul» appears, tied to this code and this database. Typing another code hides it.</summary>
-    Private Sub ConfigureDelete(k_result As CommandResult, k_check As String, k_db As String, k_code As String)
-        HideDelete()
-        Dim k_current As CommandInfo = CurrentCommand()
-        If k_check <> AngAnalysisName OrElse _context.IsAll OrElse k_current Is Nothing OrElse k_current.Name <> k_check OrElse _context.SelectedDb <> k_db Then Return
-        If k_result.Blocks.Any(Function(k_b) Not String.Equals(k_b.Db, k_db, StringComparison.OrdinalIgnoreCase)) Then Return
-        If Not HasRepairableRows(k_result, AngAnalysisBlockTitle, AngAnalysisCountColumn) Then Return
-        _delDb = k_db
-        _delCode = k_code
-        _delName = AnalysedName(k_result)
-        btnDeleteAng.Visible = True
-    End Sub
-
-    ''' <summary>The name of the analysed angajament, read from the analysis summary («denumire» column), so the confirmation shows WHAT is deleted, not only the code.</summary>
-    Private Shared Function AnalysedName(k_result As CommandResult) As String
-        For Each k_block As CommandBlock In k_result.Blocks
-            If Not k_block.Title.StartsWith(AngAnalysisBlockTitle, StringComparison.Ordinal) Then Continue For
-            Dim k_column As Integer = k_block.Columns.IndexOf("denumire")
-            If k_column >= 0 AndAlso k_block.Rows.Count > 0 AndAlso k_column < k_block.Rows(0).Count Then Return k_block.Rows(0)(k_column)
-        Next
-        Return String.Empty
-    End Function
-
-    ''' <summary>Deletes the analysed code (FX_ tables, EF_ untouched) after a confirmation that names it; ONE database, ONE code.</summary>
-    Private Async Sub BtnDeleteAng_Click(k_sender As Object, e As EventArgs) Handles btnDeleteAng.Click
-        Try
-            Dim k_db As String = _context.RequireSingleDb("Ștergerea unui angajament")
-            If k_db = String.Empty OrElse _delDb <> k_db OrElse _delCode = String.Empty Then Return
-            Dim k_code As String = _delCode
-            Dim k_label As String = k_code & If(_delName <> String.Empty, " – " & _delName, String.Empty)
-            If Not UiRun.Confirm("Se șterge angajamentul " & k_label & " din baza " & k_db & ", exact ce a arătat analiza: tabelele FX_ ale codului (indicatori, istoric, documente de fundamentare, rezervări, recepții, plăți, ordonanțări, corecții CAB)." & vbLf &
-                                 "Facturile primite (EF_) nu se ating, dar legăturile factură-document de fundamentare alese de mână pleacă odată cu documentul (rămân în Jurnal)." & vbLf &
-                                 "Totul într-o singură tranzacție; dacă ceva nu merge, nu se șterge nimic. Operația NU se poate anula. Continuați?", "Ștergere angajament") Then Return
-            HideDelete()
-            Await UiRun.Guard("CommandsView.BtnDeleteAng_Click", _context,
-                Async Function()
-                    _context.Say("Se șterge «" & k_label & "» din baza " & k_db & "...")
-                    Dim k_started As DateTime = DateTime.Now
-                    Dim k_result As CommandResult = Await _context.Client.CallAsync(Of CommandResult)("command", "--name", DeleteAngName, "--db", k_db, "--param", k_code)
-                    txtOutput.Text = RenderResult(k_result)
-                    lblState.Text = "Șters " & k_label & ". " & (DateTime.Now - k_started).TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture) & " s."
-                    _context.Say("Gata.")
-                End Function)
-        Catch ex As Exception
-            GlobalErrorLog.Write("CommandsView.BtnDeleteAng_Click", ex)
-        End Try
-    End Sub
-
-    ''' <summary>After the reception-chain check found repairable cases: the code box and «Repară recepțiile» appear, tied to this one command and this database.</summary>
-    Private Sub ConfigureLanturi(k_result As CommandResult, k_check As String, k_db As String)
-        HideLanturi()
-        Dim k_current As CommandInfo = CurrentCommand()
-        If k_check <> LanturiCheckName OrElse _context.IsAll OrElse k_current Is Nothing OrElse k_current.Name <> k_check OrElse _context.SelectedDb <> k_db Then Return
-        If k_result.Blocks.Any(Function(k_b) Not String.Equals(k_b.Db, k_db, StringComparison.OrdinalIgnoreCase)) Then Return
-        If Not HasRepairableRows(k_result, LanturiBlockTitle, LanturiRepairableColumn) Then Return
-        _lanturiDb = k_db
-        txtParam.PlaceholderText = "Cod angajament"
-        txtParam.Visible = True
-        btnLanturi.Visible = True
-    End Sub
-
-    ''' <summary>Repairs the reception chains of ONE code the check listed (moves snapshots, puts a reception back, moves the ordonantare figures); ONE database, ONE code.</summary>
-    Private Async Sub BtnLanturi_Click(k_sender As Object, e As EventArgs) Handles btnLanturi.Click
-        Try
-            Dim k_db As String = _context.RequireSingleDb("Repararea lanțurilor de recepții")
-            If k_db = String.Empty OrElse _lanturiDb <> k_db Then Return
-            Dim k_code As String = txtParam.Text.Trim()
-            If k_code = String.Empty Then
-                KBotMessage.Show("Scrieți codul angajamentului.", "Comenzi", MessageBoxButtons.OK, MessageBoxIcon.Information)
-                txtParam.Focus()
-                Return
-            End If
-            If Not UiRun.Confirm("În baza " & k_db & ", pentru angajamentul " & k_code & ": lanțurile de recepții găsite de verificare se repară." & vbLf &
-                                 "Instantaneele așezate pe altă recepție se mută pe a lor; o recepție rescrisă de gemena ei din aceeași zi se pune la valorile din lanțul ei; se recalculează diferențele (DIF); totalul de recepții și rămasul din liniile ordonanțărilor afectate se mută cu diferența (ordonanțările se listează din nou, nu se generează din nou). Ce nu e clar nu se atinge." & vbLf &
-                                 "Totul se face într-o singură tranzacție; dacă ceva nu e clar, nu se schimbă nimic. Se scrie în baza de date și rămâne în Jurnal, cu valorile de dinainte. Continuați?", "Repară recepțiile") Then Return
-            HideLanturi()
-            Await UiRun.Guard("CommandsView.BtnLanturi_Click", _context,
-                Async Function()
-                    _context.Say("Se repară lanțurile de recepții ale «" & k_code & "» în baza " & k_db & "...")
-                    Dim k_started As DateTime = DateTime.Now
-                    Dim k_result As CommandResult = Await _context.Client.CallAsync(Of CommandResult)("command", "--name", LanturiRepairName, "--db", k_db, "--param", k_code)
-                    txtOutput.Text = RenderResult(k_result)
-                    lblState.Text = "Reparat " & k_code & ". " & (DateTime.Now - k_started).TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture) & " s. Rulați din nou verificarea ca să vedeți ce a mai rămas."
-                    _context.Say("Gata.")
-                End Function)
-        Catch ex As Exception
-            GlobalErrorLog.Write("CommandsView.BtnLanturi_Click", ex)
-        End Try
-    End Sub
-
-    ''' <summary>After the FX_DDF check found cases: the code box and the «Explică» button appear, tied to this one command and this database.</summary>
-    Private Sub ConfigureExplain(k_result As CommandResult, k_check As String, k_db As String)
-        btnExplain.Visible = False
-        _explainDb = String.Empty
-        Dim k_current As CommandInfo = CurrentCommand()
-        If k_check <> DdfCheckName OrElse _context.IsAll OrElse k_current Is Nothing OrElse k_current.Name <> k_check OrElse _context.SelectedDb <> k_db Then Return
-        If Not HasRepairableRows(k_result, DdfBlockTitle, DdfCountColumn) Then Return
-        _explainDb = k_db
-        txtParam.PlaceholderText = "Cod angajament"
-        txtParam.Visible = True
-        btnExplain.Visible = True
-    End Sub
-
-    ''' <summary>Explains ONE code of the checked database in plain words; reads only.</summary>
-    Private Async Sub BtnExplain_Click(k_sender As Object, e As EventArgs) Handles btnExplain.Click
-        Try
-            Dim k_db As String = _context.RequireSingleDb("Explicația pentru un cod de angajament")
-            If k_db = String.Empty OrElse _explainDb <> k_db Then Return
-            Dim k_code As String = txtParam.Text.Trim()
-            If k_code = String.Empty Then
-                KBotMessage.Show("Scrieți codul angajamentului.", "Comenzi", MessageBoxButtons.OK, MessageBoxIcon.Information)
-                txtParam.Focus()
-                Return
-            End If
-            Await UiRun.Guard("CommandsView.BtnExplain_Click", _context,
-                Async Function()
-                    _context.Say("Se explică «" & k_code & "» în baza " & k_db & "...")
-                    Dim k_started As DateTime = DateTime.Now
-                    Dim k_result As CommandResult = Await _context.Client.CallAsync(Of CommandResult)("command", "--name", DdfExplainName, "--db", k_db, "--param", k_code)
-                    txtOutput.Text = RenderResult(k_result)
-                    lblState.Text = "Explicație pentru " & k_code & ". " & (DateTime.Now - k_started).TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture) & " s."
-                    ConfigureFix(k_result, k_db, k_code)
-                    _context.Say("Gata.")
-                End Function)
-        Catch ex As Exception
-            GlobalErrorLog.Write("CommandsView.BtnExplain_Click", ex)
-        End Try
-    End Sub
-
-    Private Sub HideFix()
-        btnFix.Visible = False
-        _fixDb = String.Empty
-        _fixCode = String.Empty
-    End Sub
-
-    ''' <summary>The «Repară codul» button shows only when the explanation of THIS code in THIS database ends with REPARABIL.</summary>
-    Private Sub ConfigureFix(k_result As CommandResult, k_db As String, k_code As String)
-        HideFix()
-        If _context.IsAll OrElse _context.SelectedDb <> k_db Then Return
-        For Each k_block As CommandBlock In k_result.Blocks
-            If Not k_block.Title.StartsWith(DdfConclusionTitle, StringComparison.Ordinal) Then Continue For
-            For Each k_row As List(Of String) In k_block.Rows
-                If k_row.Count > 0 AndAlso k_row(0).StartsWith(DdfRepairableMark, StringComparison.Ordinal) Then
-                    _fixDb = k_db
-                    _fixCode = k_code
-                    btnFix.Visible = True
-                    Return
-                End If
-            Next
-        Next
-    End Sub
-
-    ''' <summary>A button that was earned for one code must not stay when another code is typed.</summary>
-    Private Sub TxtParam_TextChanged(k_sender As Object, e As EventArgs) Handles txtParam.TextChanged
-        If btnFix.Visible AndAlso Not String.Equals(txtParam.Text.Trim(), _fixCode, StringComparison.Ordinal) Then HideFix()
-        If btnDeleteAng.Visible AndAlso Not String.Equals(txtParam.Text.Trim(), _delCode, StringComparison.Ordinal) Then HideDelete()
-        If tlyBon.Visible AndAlso Not String.Equals(txtParam.Text.Trim(), _bonParam, StringComparison.Ordinal) Then HideBon()
-    End Sub
-
-    ''' <summary>Moves the revisions of the extra headers of the explained code under the main header and deletes the emptied ones; ONE database, ONE code.</summary>
-    Private Async Sub BtnFix_Click(k_sender As Object, e As EventArgs) Handles btnFix.Click
-        Try
-            Dim k_db As String = _context.RequireSingleDb("Repararea documentelor de fundamentare")
-            If k_db = String.Empty OrElse _fixDb <> k_db OrElse _fixCode = String.Empty Then Return
-            Dim k_code As String = _fixCode
-            If Not UiRun.Confirm("În baza " & k_db & ", pentru angajamentul " & k_code & ": reviziile antetelor în plus care EXISTĂ DEJA în antetul principal (aceeași dată și aceeași sumă) se șterg, fără mutare (rezervările lor, care sunt unice, nu se șterg: trec pe revizia care rămâne)." & vbLf &
-                                 "Doar reviziile care nu există deja în antetul principal se mută sub el. Antetele rămase goale se șterg. Detaliul, revizie cu revizie, e în «Concluzie»." & vbLf &
-                                 "Totul se face într-o singură tranzacție; dacă ceva nu e clar, nu se schimbă nimic. Se scrie în baza de date și rămâne în Jurnal, cu conținutul reviziilor șterse și valorile antetelor șterse. Continuați?", "Repară codul") Then Return
-            HideFix()
-            Await UiRun.Guard("CommandsView.BtnFix_Click", _context,
-                Async Function()
-                    _context.Say("Se repară «" & k_code & "» în baza " & k_db & "...")
-                    Dim k_started As DateTime = DateTime.Now
-                    Dim k_result As CommandResult = Await _context.Client.CallAsync(Of CommandResult)("command", "--name", DdfRepairName, "--db", k_db, "--param", k_code)
-                    txtOutput.Text = RenderResult(k_result)
-                    lblState.Text = "Reparat " & k_code & ". " & (DateTime.Now - k_started).TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture) & " s."
-                    ConfigureFix(k_result, k_db, k_code)
-                    _context.Say("Gata.")
-                End Function)
-        Catch ex As Exception
-            GlobalErrorLog.Write("CommandsView.BtnFix_Click", ex)
-        End Try
-    End Sub
-
-    Private Sub ConfigureRepair(k_result As CommandResult, k_check As String, k_db As String)
-        btnRepair.Visible = False
-        _repairCommand = String.Empty
-        _repairDb = String.Empty
-        Dim k_current As CommandInfo = CurrentCommand()
-        If _context.IsAll OrElse k_current Is Nothing OrElse k_current.Name <> k_check OrElse _context.SelectedDb <> k_db Then Return
-        If k_result.Blocks.Any(Function(k_b) Not String.Equals(k_b.Db, k_db, StringComparison.OrdinalIgnoreCase)) Then Return
-        Dim k_title As String
-        Dim k_column As String
-        Dim k_repair As String
-        Select Case k_check
-            Case SignCheckName
-                k_title = SignBlockTitle
-                k_column = RepairableColumn
-                k_repair = SignRepairName
-            Case StornoCheckName
-                k_title = StornoBlockTitle
-                k_column = "reparabile"
-                k_repair = StornoRepairName
-            Case ClsfDupCheckName
-                k_title = ClsfDupBlockTitle
-                k_column = "reparabile"
-                k_repair = ClsfDupRepairName
-            Case Else
-                Return
-        End Select
-        If Not HasRepairableRows(k_result, k_title, k_column) Then Return
-        _repairCommand = k_repair
-        _repairDb = k_db
-        btnRepair.Visible = True
-    End Sub
-
-    ''' <summary>Uses the summary count, so detail truncation cannot limit the repair.</summary>
-    Private Shared Function HasRepairableRows(k_result As CommandResult, k_title As String, k_columnName As String) As Boolean
-        For Each k_block As CommandBlock In k_result.Blocks
-            If Not k_block.Title.StartsWith(k_title, StringComparison.Ordinal) Then Continue For
-            Dim k_column As Integer = k_block.Columns.IndexOf(k_columnName)
-            If k_column < 0 Then Continue For
-            For Each k_row As List(Of String) In k_block.Rows
-                Dim k_count As Long
-                If k_column < k_row.Count AndAlso Long.TryParse(k_row(k_column), NumberStyles.Integer, CultureInfo.InvariantCulture, k_count) AndAlso k_count > 0 Then Return True
-            Next
-        Next
-        Return False
-    End Function
-
-    ''' <summary>Repairs what the selected check found in ONE database, then shows the remaining differences.</summary>
-    Private Async Sub BtnRepair_Click(k_sender As Object, e As EventArgs) Handles btnRepair.Click
-        Try
-            Dim k_db As String = _context.RequireSingleDb("Repararea datelor verificate")
-            If k_db = String.Empty Then Return
-            Dim k_current As CommandInfo = CurrentCommand()
-            Dim k_repair As String = _repairCommand
-            If k_repair = String.Empty OrElse _repairDb <> k_db OrElse k_current Is Nothing Then Return
-            Dim k_check As String
-            Dim k_explanation As String
-            Select Case k_repair
-                Case StornoRepairName
-                    k_check = StornoCheckName
-                    k_explanation = "Se repară toate prețurile storno și retur eligibile din baza " & k_db & ", în toate gestiunile și exercițiile: se recuperează zecimalele din prețul variantei aceleiași gestiuni. Cazurile de analizat rămân neschimbate."
-                Case ClsfDupRepairName
-                    k_check = ClsfDupCheckName
-                    k_explanation = "În baza " & k_db & " se șterg clasificațiile dublate pe care nu le ține nicio altă tabelă în afară de Clasificatii_Rectificari și Clasificatii_Buget (un grup fără niciun rând legat păstrează unul). Rectificările și bugetele lor se șterg odată cu ele. Cele legate de FX_, EF_ sau altceva nu se ating; ce s-a șters sau mutat rămâne în Jurnal."
-                Case Else
-                    k_check = SignCheckName
-                    k_explanation = "Se repară registrul OI al bazei " & k_db & ": rândurile cu cantitate negativă și valoare pozitivă primesc valoarea negativă."
-            End Select
-            If k_current.Name <> k_check Then Return
-            If Not UiRun.Confirm(k_explanation & vbLf &
-                                 "Se scrie în baza de date și rămâne în Jurnal. Continuați?", "Repară") Then Return
-            btnRepair.Visible = False
-            _repairCommand = String.Empty
-            _repairDb = String.Empty
-            Await UiRun.Guard("CommandsView.BtnRepair_Click", _context,
-                Async Function()
-                    _context.Say("Se repară datele verificate din baza " & k_db & "...")
-                    Dim k_started As DateTime = DateTime.Now
-                    Dim k_result As CommandResult = Await _context.Client.CallAsync(Of CommandResult)("command", "--name", k_repair, "--db", k_db, "--param", String.Empty)
-                    txtOutput.Text = RenderResult(k_result)
-                    lblState.Text = "Reparat. " & (DateTime.Now - k_started).TotalSeconds.ToString("0.0", CultureInfo.InvariantCulture) & " s."
-                    ConfigureRepair(k_result, k_check, k_db)
-                    _context.Say("Gata.")
-                End Function)
-        Catch ex As Exception
-            GlobalErrorLog.Write("CommandsView.BtnRepair_Click", ex)
         End Try
     End Sub
 
@@ -715,55 +246,6 @@ Public Class CommandsView
         Catch ex As Exception
             GlobalErrorLog.Write("CommandsView.BtnCopy_Click", ex)
         End Try
-    End Sub
-
-    ' ------------------------------------------------------------------
-    ' Formatting: aligned text, one block per database
-    ' ------------------------------------------------------------------
-
-    Private Shared Function RenderResult(k_result As CommandResult) As String
-        Dim k_sb As New StringBuilder()
-        For Each k_block As CommandBlock In k_result.Blocks
-            k_sb.AppendLine("== " & k_block.Db & " - " & k_block.Title & " ==")
-            If k_block.Raw Then
-                ' one untruncated line per row (the result is meant to be copied and handed over)
-                For Each k_row As List(Of String) In k_block.Rows
-                    k_sb.AppendLine(String.Join(" | ", k_row))
-                Next
-                If k_block.Rows.Count = 0 Then k_sb.AppendLine("(niciun rând)")
-                If k_block.Note <> String.Empty Then k_sb.AppendLine(k_block.Note)
-                k_sb.AppendLine()
-                Continue For
-            End If
-            Dim k_widths(k_block.Columns.Count - 1) As Integer
-            For k_i As Integer = 0 To k_block.Columns.Count - 1
-                k_widths(k_i) = Math.Min(MaxColumnWidth, k_block.Columns(k_i).Length)
-            Next
-            For Each k_row As List(Of String) In k_block.Rows
-                For k_i As Integer = 0 To Math.Min(k_row.Count, k_widths.Length) - 1
-                    k_widths(k_i) = Math.Max(k_widths(k_i), Math.Min(MaxColumnWidth, k_row(k_i).Length))
-                Next
-            Next
-            AppendRow(k_sb, k_block.Columns, k_widths)
-            k_sb.AppendLine(New String("-"c, Math.Max(1, k_widths.Sum() + 2 * Math.Max(0, k_widths.Length - 1))))
-            For Each k_row As List(Of String) In k_block.Rows
-                AppendRow(k_sb, k_row, k_widths)
-            Next
-            If k_block.Rows.Count = 0 Then k_sb.AppendLine("(niciun rând)")
-            If k_block.Note <> String.Empty Then k_sb.AppendLine(k_block.Note)
-            k_sb.AppendLine()
-        Next
-        Return k_sb.ToString()
-    End Function
-
-    Private Shared Sub AppendRow(k_sb As StringBuilder, k_cells As List(Of String), k_widths As Integer())
-        For k_i As Integer = 0 To k_widths.Length - 1
-            Dim k_text As String = If(k_i < k_cells.Count, k_cells(k_i), String.Empty).Replace(vbCr, " ").Replace(vbLf, " ")
-            If k_text.Length > MaxColumnWidth Then k_text = k_text.Substring(0, MaxColumnWidth - 1) & "…"
-            k_sb.Append(k_text.PadRight(k_widths(k_i)))
-            If k_i < k_widths.Length - 1 Then k_sb.Append("  ")
-        Next
-        k_sb.AppendLine()
     End Sub
 
 End Class

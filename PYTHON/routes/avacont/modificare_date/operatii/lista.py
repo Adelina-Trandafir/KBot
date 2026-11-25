@@ -26,7 +26,7 @@ from utils.database import get_kbot_connection
 
 from ... import avacont_bp
 from ...common import json_utf8
-from ...introducere_date.operatii import plati, postare
+from ...introducere_date.operatii import NoteC
 from . import citire
 
 logger = logging.getLogger(__name__)
@@ -60,7 +60,7 @@ def _bani(valoare):
 
 
 def _suma(row):
-    """The amount of the operation: the debit total (= the credit total, the posting service checks the balance); one side only when the other is missing."""
+    """The amount of the operation: the debit total (= the credit total, NoteC checks the balance); one side only when the other is missing."""
     if row["SumaDebit"] is not None:
         return _bani(row["SumaDebit"])
     return _bani(row["SumaCredit"])
@@ -70,7 +70,7 @@ def randuri_lista(cursor, where, params):
     """The list rows (dicts with the JSON keys) for a filter on TZ_Oper o / TZ_Documente d / TZ_NoteC n."""
     rows = citire.operatii(cursor, where, params)
     facturi = citire.facturi_ale_operatiilor(cursor, where, params)
-    cu_receptie = plati.primite_cu_receptie(cursor, {f for s in facturi.values() for f in s})
+    cu_receptie = NoteC.primite_cu_receptie(cursor, {f for s in facturi.values() for f in s})
     inchid = citire.inchideri(cursor, {(r["IdSubunitate"], r["An"]) for r in rows})
     azi = date.today()
     out = []
@@ -83,7 +83,7 @@ def randuri_lista(cursor, where, params):
             "credit": citire.cont_text(r["ContCredit"], r["PartCredit"], r["LiniiCredit"]),
             "suma": _suma(r), "chelt": bool(r["Chelt"]), "cfpp": bool(r["Cfpp"]),
             "ord": citire.stare_ord(r), "receptie": citire.stare_receptie(facturi.get(int(r["IdOper"])), cu_receptie),
-            "refuz": citire.motiv_refuz(r, inchid.get((r["IdSubunitate"], r["An"])), azi)})
+            "refuz": NoteC.motiv_stergere(r, inchid.get((r["IdSubunitate"], r["An"])), azi)})
     return out
 
 
@@ -99,7 +99,7 @@ def get_modificare_operatii_lista():
         conn = get_kbot_connection(db_name)
         cursor = conn.cursor(dictionary=True)
         randuri = randuri_lista(cursor, "n.IdSubunitate = %s AND n.An = %s", (id_subunitate, an))
-        inchidere = postare.data_ultimei_inchideri(cursor, id_subunitate, an)
+        inchidere = NoteC.data_ultimei_inchideri(cursor, id_subunitate, an)
         return json_utf8({"operatii": randuri, "inchidere": _iso(inchidere)}, 200)
     except ListaEroare as err:
         return json_utf8({"error": str(err)}, err.status)
